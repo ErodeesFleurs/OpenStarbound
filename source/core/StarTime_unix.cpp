@@ -1,4 +1,6 @@
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.thread;
 import star.time;
 
 #include <sys/time.h>
@@ -8,6 +10,7 @@ import star.time;
 #else
 #include <time.h>
 #endif
+import star.string;
 
 namespace Star {
 namespace Time {

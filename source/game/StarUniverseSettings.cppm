@@ -1,8 +1,13 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.variant;
+import star.maybe;
+import star.json;
 
-#include "StarThread.hpp"
-#include "StarDataStream.hpp"
+import star.thread;
+import star.data_stream;
 import star.uuid;
 import star.vector;
 import star.game_types;

@@ -1,9 +1,11 @@
 module;
 
 import std;
-#include "StarList.hpp"
-#include "StarMap.hpp"
-#include "StarSet.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.list;
+import star.map;
+import star.set;
 import star.math_common;
 import star.block_allocator;
 import star.lexical_cast;

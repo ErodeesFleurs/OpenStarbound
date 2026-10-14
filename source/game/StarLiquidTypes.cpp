@@ -1,4 +1,5 @@
-#include "StarMaybe.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
 import star.math_common;
 import star.liquid_types;
 

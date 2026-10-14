@@ -1,8 +1,11 @@
-#include "StarString.hpp"
-#include "StarFormat.hpp"
-#include "StarJson.hpp"
-#include "StarMaybe.hpp"
-#include "StarSet.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.unicode;
+import star.format;
+import star.json;
+import star.maybe;
+import star.set;
 import star.line;
 import star.matrix3;
 import star.vector;

@@ -1,8 +1,13 @@
 module;
-#include "StarVariant.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.set;
+import star.hash;
+import star.maybe;
+import star.variant;
 import star.rect;
-#include "StarMap.hpp"
-#include "StarOrderedSet.hpp"
+import star.map;
+import star.ordered_set;
 import star.random;
 import star.block_allocator;
 

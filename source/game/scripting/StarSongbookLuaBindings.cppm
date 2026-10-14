@@ -1,11 +1,14 @@
 module;
-#include "StarJson.hpp"
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.maybe;
+import star.json;
+import star.thread;
 import star.vector;
 // Match existing consumers' include order for SIMD intrinsics used by xxhash and fast_float.
 import star.game_types;
 
-#include "StarLua.hpp"
+import star.lua;
 #include "StarLuaConverters.hpp"
 
 import star.songbook;

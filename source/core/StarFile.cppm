@@ -1,7 +1,10 @@
-#pragma once
+module;
+#include "StarConfig.hpp"
+import star.format;
 
-#include "StarIODevice.hpp"
-#include "StarString.hpp"
+import star.io_device;
+import star.string;
+import star.list;
 
 import star.byte_array;
 namespace Star {
@@ -151,4 +154,16 @@ private:
   void* m_file;
 };
 
+}
+
+export module star.file;
+
+export namespace Star {
+  using ::Star::File;
+  using ::Star::FilePtr;
+  using ::Star::FileConstPtr;
+  using ::Star::FileWeakPtr;
+  using ::Star::FileConstWeakPtr;
+  using ::Star::FileUPtr;
+  using ::Star::FileConstUPtr;
 }

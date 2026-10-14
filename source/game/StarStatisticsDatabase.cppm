@@ -1,8 +1,10 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.json;
 
-#include "StarThread.hpp"
-#include "StarOrderedMap.hpp"
+import star.thread;
+import star.ordered_map;
 import star.lru_cache;
 
 namespace Star {

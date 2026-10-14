@@ -1,5 +1,7 @@
-#include "StarIODevice.hpp"
-#include "StarFormat.hpp"
+#include "StarConfig.hpp"
+import star.io_device;
+import star.string;
+import star.format;
 
 import star.byte_array;
 namespace Star {

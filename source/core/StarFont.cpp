@@ -1,9 +1,11 @@
-#include "StarFile.hpp"
-#include "StarFormat.hpp"
+#include "StarConfig.hpp"
+import star.file;
+import star.format;
 import star.vector;
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
+import star.string;
 import star.image;
 import star.font;
 

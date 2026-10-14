@@ -1,6 +1,9 @@
 module;
 
-#include "StarVariant.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.format;
+import star.variant;
 
 namespace Star {
 

@@ -1,8 +1,11 @@
 module;
 
-#include "StarMap.hpp"
+#include "StarConfig.hpp"
+import star.output_proxy;
+import star.format;
+import star.map;
 import star.math_common;
-#include "StarDataStream.hpp"
+import star.data_stream;
 
 namespace Star {
 

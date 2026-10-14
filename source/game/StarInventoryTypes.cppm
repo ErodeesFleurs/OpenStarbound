@@ -1,8 +1,11 @@
 module;
-#include "StarStreamFormatter.hpp"
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.variant;
+import star.stream_formatter;
+import star.json;
 
-#include "StarBiMap.hpp"
+import star.bi_map;
 #include "StarStrongTypedef.hpp"
 
 import star.algorithm;

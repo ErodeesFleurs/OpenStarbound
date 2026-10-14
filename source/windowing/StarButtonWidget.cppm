@@ -1,5 +1,6 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.json;
 
 import star.vector;
 #include "StarCasting.hpp"
@@ -14,32 +15,26 @@ import star.rect;
 import star.application_controller;
 import star.color;
 import star.font;
-#include "StarVariant.hpp"
-#include "StarBiMap.hpp"
+import star.variant;
+import star.bi_map;
 import star.ref_ptr;
 import star.renderer;
-#include "StarList.hpp"
+import star.list;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarDataStream.hpp"
-#include "StarStringView.hpp"
-#include "StarThread.hpp"
+import star.hash;
+import star.data_stream;
+import star.string_view;
+import star.thread;
 import star.directives;
-#include "StarBiMap.hpp"
-#include "StarStringView.hpp"
-#include "StarString.hpp"
+import star.string;
 import star.text;
-#include "StarString.hpp"
-#include "StarDataStream.hpp"
 import star.asset_path;
-#include "StarMaybe.hpp"
+import star.maybe;
 import star.listener;
-#include "StarThread.hpp"
 import star.game_types;
-#include "StarSet.hpp"
+import star.set;
 import star.audio;
-#include "StarList.hpp"
-#include "StarMap.hpp"
+import star.map;
 
 import star.font_texture_group;
 import star.anchor_types;

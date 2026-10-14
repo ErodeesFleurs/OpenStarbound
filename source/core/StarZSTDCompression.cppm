@@ -1,4 +1,5 @@
 module;
+#include "StarConfig.hpp"
 
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"

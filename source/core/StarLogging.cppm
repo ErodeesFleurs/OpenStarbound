@@ -1,12 +1,15 @@
-#pragma once
+module;
+#include "StarConfig.hpp"
 
-#include "StarThread.hpp"
-#include "StarSet.hpp"
-#include "StarString.hpp"
+import star.thread;
+import star.set;
+import star.string;
+import star.map;
+import star.list;
+import star.format;
 import star.poly;
-#include "StarBiMap.hpp"
-import star.time;
-#include "StarFile.hpp"
+import star.bi_map;
+import star.file;
 
 import star.array;
 import star.vector;
@@ -251,4 +254,23 @@ void LogMap::set(String const& key, T const& t) {
   setValue(key, toString(t));
 }
 
+}
+
+export module star.logging;
+
+export namespace Star {
+  using ::Star::LogLevel;
+  using ::Star::LogLevelNames;
+  using ::Star::LogSink;
+  using ::Star::LogSinkPtr;
+  using ::Star::LogSinkConstPtr;
+  using ::Star::LogSinkWeakPtr;
+  using ::Star::LogSinkConstWeakPtr;
+  using ::Star::LogSinkUPtr;
+  using ::Star::LogSinkConstUPtr;
+  using ::Star::StdoutLogSink;
+  using ::Star::FileLogSink;
+  using ::Star::Logger;
+  using ::Star::LogMap;
+  using ::Star::SpatialLogger;
 }

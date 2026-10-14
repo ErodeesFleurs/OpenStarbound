@@ -1,8 +1,11 @@
-#include "StarHash.hpp"
-#include "StarString.hpp"
-#include "StarStringView.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.string_view;
+import star.hash;
+import star.unicode;
+import star.list;
 import star.bytes;
-#include "StarFormat.hpp"
+import star.format;
 
 import std;
 #include <re2/re2.h>

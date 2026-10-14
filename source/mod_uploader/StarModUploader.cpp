@@ -1,4 +1,8 @@
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.string;
+import star.list;
+import star.json;
 #include <QApplication>
 #include <QFileDialog>
 #include <QHBoxLayout>
@@ -8,8 +12,8 @@
 #include <QCloseEvent>
 
 #include "StarModUploader.hpp"
-#include "StarFile.hpp"
-#include "StarThread.hpp"
+import star.file;
+import star.thread;
 import star.lexical_cast;
 #include "StarStringConversion.hpp"
 import star.packed_asset_source;

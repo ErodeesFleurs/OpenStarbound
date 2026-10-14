@@ -1,6 +1,7 @@
 import star.vector;
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
+#include "StarConfig.hpp"
+import star.data_stream;
+import star.bi_map;
 
 import star.light_source;
 #include "StarDataStreamExtra.hpp"

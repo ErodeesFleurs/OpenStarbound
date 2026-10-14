@@ -1,9 +1,12 @@
 module;
 
-#include "StarOrderedMap.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.hash;
+import star.ordered_map;
 import star.block_allocator;
 import star.lru_cache;
-#include "StarThread.hpp"
+import star.thread;
 import star.time;
 import star.random;
 

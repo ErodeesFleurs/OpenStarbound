@@ -1,9 +1,14 @@
 module;
 
-#include "StarJson.hpp"
-#include "StarDataStream.hpp"
-#include "StarThread.hpp"
+import star.json;
+import star.data_stream;
+import star.thread;
 #include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.map;
+import star.lua;
+import star.format;
 import star.version;
 #include "StarLuaRoot.hpp"
 

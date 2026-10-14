@@ -1,9 +1,10 @@
-#include "StarMaybe.hpp"
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.maybe;
+import star.string;
 import star.lock_file;
-#include "StarThread.hpp"
+import star.thread;
 import star.time;
-#include "StarThread.hpp"
 
 #include <sys/file.h>
 #include <fcntl.h>

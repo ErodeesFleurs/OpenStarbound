@@ -1,5 +1,6 @@
 import star.vector;
-#include "StarBiMap.hpp"
+#include "StarConfig.hpp"
+import star.bi_map;
 import star.a_star;
 import star.platformer_astar_types;
 

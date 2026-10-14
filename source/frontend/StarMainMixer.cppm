@@ -1,12 +1,13 @@
 module;
 
 import star.audio;
-#include "StarThread.hpp"
-#include "StarList.hpp"
-#include "StarMap.hpp"
-#include "StarSet.hpp"
-#include "StarMaybe.hpp"
-#include "StarBiMap.hpp"
+#include "StarConfig.hpp"
+import star.thread;
+import star.list;
+import star.map;
+import star.set;
+import star.maybe;
+import star.bi_map;
 import star.game_types;
 
 

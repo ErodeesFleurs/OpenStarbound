@@ -1,4 +1,6 @@
-#include "StarOrderedSet.hpp"
+#include "StarConfig.hpp"
+import star.ordered_set;
+import star.list;
 
 #include "gtest/gtest.h"
 

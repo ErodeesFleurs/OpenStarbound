@@ -1,15 +1,15 @@
 module;
-#include "StarXXHash.hpp"
-#include "StarJson.hpp"
+import star.xx_hash;
+import star.json;
 #include "StarJsonExtra.hpp"
-#include "StarLua.hpp"
-#include "StarString.hpp"
+import star.lua;
+import star.string;
 import star.either;
-#include "StarDataStream.hpp"
+import star.data_stream;
 #include "StarStrongTypedef.hpp"
-#include "StarOrderedSet.hpp"
-#include "StarIODevice.hpp"
-#include "StarThread.hpp"
+import star.ordered_set;
+import star.io_device;
+import star.thread;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
@@ -22,17 +22,17 @@ import star.zstd_compression;
 import star.net_compatibility;
 #include "StarConfig.hpp"
 import star.id_map;
-#include "StarList.hpp"
+import star.list;
 import star.version;
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 import star.rect;
 #include "StarCasting.hpp"
-#include "StarSet.hpp"
+import star.set;
 import star.vector;
 import star.worker_pool;
 
 import star.sector_array_2d;
-#include "StarBiMap.hpp"
+import star.bi_map;
 import star.random;
 import star.perlin;
 #include "StarBTree.hpp"
@@ -41,19 +41,19 @@ import star.btree_database;
 import star.rpc_promise;
 import star.image;
 import star.audio;
-#include "StarMap.hpp"
-#include "StarVariant.hpp"
+import star.map;
+import star.variant;
 import star.game_types;
 import star.color;
-#include "StarMaybe.hpp"
+import star.maybe;
 import star.weighted_pool;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarStringView.hpp"
+import star.hash;
+import star.string_view;
 import star.directives;
 import star.asset_path;
 import star.ref_ptr;
-#include "StarLogging.hpp"
+import star.logging;
 import star.listener;
 
 

@@ -1,8 +1,13 @@
 module;
 
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.variant;
+import star.maybe;
+import star.json;
 #include "StarStrongTypedef.hpp"
-#include "StarDataStream.hpp"
+import star.data_stream;
 import star.id_map;
 import star.status_types;
 

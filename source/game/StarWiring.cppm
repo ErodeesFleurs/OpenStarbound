@@ -1,10 +1,11 @@
 module;
-#include "StarHash.hpp"
+#include "StarConfig.hpp"
+import star.hash;
 
 import star.vector;
 import star.game_types;
 import star.world_geometry;
-#include "StarDataStream.hpp"
+import star.data_stream;
 
 namespace Star {
 
@@ -74,6 +75,12 @@ public:
 }
 
 export module star.wiring;
+
+export namespace Star {
+  template <>
+  struct hash<WireConnection>;
+}
+
 
 export namespace Star {
   using ::Star::WireCoordinator;

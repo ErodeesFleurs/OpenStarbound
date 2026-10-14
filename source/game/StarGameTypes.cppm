@@ -1,8 +1,11 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.variant;
+import star.maybe;
+import star.json;
 
-#include "StarString.hpp"
-#include "StarBiMap.hpp"
+import star.string;
+import star.bi_map;
 import star.vector;
 import star.rpc_promise;
 import star.math_common;

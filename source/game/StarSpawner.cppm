@@ -3,17 +3,21 @@ module;
 import star.random;
 import star.periodic;
 import star.id_map;
-#include "StarOrderedMap.hpp"
+#include "StarConfig.hpp"
+import star.map;
+import star.set;
+import star.maybe;
+import star.ordered_map;
 import star.lru_cache;
-#include "StarThread.hpp"
+import star.thread;
 import star.time;
 import star.ttl_cache;
 import star.world_geometry;
 import star.vector;
 import star.game_types;
 import star.liquid_types;
-#include "StarList.hpp"
-#include "StarBiMap.hpp"
+import star.list;
+import star.bi_map;
 import star.collision_block;
 import star.weighted_pool;
 

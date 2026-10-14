@@ -1,7 +1,12 @@
 module;
 
-#include "StarBiMap.hpp"
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.variant;
+import star.maybe;
+import star.bi_map;
+import star.json;
 import star.game_types;
 
 namespace Star {

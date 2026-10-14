@@ -1,8 +1,16 @@
 module;
 
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.map;
+import star.set;
+import star.variant;
+import star.maybe;
+import star.format;
+import star.json;
 import star.game_types;
-#include "StarLua.hpp"
+import star.lua;
 
 import star.behavior_database;
 

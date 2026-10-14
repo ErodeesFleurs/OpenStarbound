@@ -1,7 +1,10 @@
 #pragma once
 
-#include "StarThread.hpp"
-#include "StarLua.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.maybe;
+import star.thread;
+import star.lua;
 import star.listener;
 
 import star.byte_array;

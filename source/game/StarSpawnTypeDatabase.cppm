@@ -1,8 +1,13 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.set;
+import star.variant;
+import star.format;
+import star.json;
 
 import star.vector;
-#include "StarBiMap.hpp"
+import star.bi_map;
 import star.random;
 import star.weighted_pool;
 

@@ -1,5 +1,11 @@
-#include "StarVariant.hpp"
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.format;
+import star.string;
+import star.list;
+import star.logging;
+import star.variant;
+import star.thread;
 import star.random;
 import star.input_event;
 import star.application;
@@ -23,11 +29,11 @@ import star.rpc_promise;
 import star.p2p_networking_service_pc;
 import star.lexical_cast;
 import star.either;
-#include "StarLogging.hpp"
-#include "StarString.hpp"
+import star.logging;
+import star.string;
 import star.byte_array;
 import star.encode;
-#include "StarDataStream.hpp"
+import star.data_stream;
 import star.uuid;
 
 namespace Star {

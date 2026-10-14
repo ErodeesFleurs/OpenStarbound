@@ -1,5 +1,7 @@
-#include "StarString.hpp"
-#include "StarBiMap.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.string;
+import star.bi_map;
 import star.game_types;
 import star.gui_types;
 

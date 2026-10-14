@@ -1,5 +1,6 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.json;
 
 
 export module star.terrain_basic;

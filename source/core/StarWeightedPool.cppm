@@ -1,7 +1,7 @@
 module;
 
-#include "StarSet.hpp"
-#include "StarList.hpp"
+import star.set;
+import star.list;
 #include "StarConfig.hpp"
 import star.random;
 

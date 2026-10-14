@@ -1,5 +1,6 @@
-#include "StarList.hpp"
-#include "StarBiMap.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.bi_map;
 import star.collision_block;
 
 namespace Star {

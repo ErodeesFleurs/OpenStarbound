@@ -1,11 +1,12 @@
 module;
 
-#include "StarFormat.hpp"
+#include "StarConfig.hpp"
+import star.format;
 import std;
 
 import star.byte_array;
-#include "StarMaybe.hpp"
-#include "StarUnicode.inc"
+import star.maybe;
+import star.unicode;
 
 namespace Star {
 

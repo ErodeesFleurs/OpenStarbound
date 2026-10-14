@@ -1,8 +1,7 @@
 module;
 
 #include "StarConfig.hpp"
-#include "StarStreamFormatter.hpp"
-import star.memory;
+import star.stream_formatter;
 
 namespace Star {
 

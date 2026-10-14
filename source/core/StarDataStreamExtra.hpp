@@ -1,14 +1,18 @@
 #pragma once
 
-#include "StarVariant.hpp"
-#include "StarDataStream.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.map;
+import star.set;
+import star.variant;
+import star.data_stream;
 import star.multi_array;
 import star.color;
 import star.poly;
-#include "StarMaybe.hpp"
+import star.maybe;
 import star.either;
-#include "StarOrderedMap.hpp"
-#include "StarOrderedSet.hpp"
+import star.ordered_map;
+import star.ordered_set;
 
 import star.array;
 import star.vector;

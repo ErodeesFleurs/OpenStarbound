@@ -1,4 +1,11 @@
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.format;
+import star.json;
+import star.string;
+import star.map;
+import star.file;
+import star.io_device;
 import star.input_event;
 import star.application;
 import star.vector;
@@ -9,24 +16,24 @@ import star.desktop_service;
 import star.image;
 import star.rect;
 import star.application_controller;
-#include "StarVariant.hpp"
-#include "StarBiMap.hpp"
+import star.variant;
+import star.bi_map;
 import star.ref_ptr;
 import star.renderer;
 import star.main_application;
-#include "StarLogging.hpp"
+import star.logging;
 #include "StarCasting.hpp"
 import star.texture_atlas;
 
 #include "GL/glew.h"
 import star.renderer_opengl;
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 import star.lru_cache;
-#include "StarThread.hpp"
+import star.thread;
 import star.time;
 import star.random;
 import star.ttl_cache;
-#include "StarList.hpp"
+import star.list;
 import star.image_processing;
 
 #include "SDL3/SDL.h"

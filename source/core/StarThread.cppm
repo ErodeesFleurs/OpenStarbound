@@ -1,7 +1,9 @@
-#pragma once
+module;
+#include "StarConfig.hpp"
 
-#include "StarException.hpp"
-#include "StarString.hpp"
+import star.format;
+import star.string;
+import star.maybe;
 
 //#define STAR_MUTEX_LOG
 
@@ -428,4 +430,59 @@ inline bool SpinLock::tryLock() {
   return !m_lock.test_and_set(std::memory_order_acquire);
 }
 
+}
+
+export module star.thread;
+
+export namespace Star {
+  using ::Star::ThreadImpl;
+  using ::Star::ThreadImplPtr;
+  using ::Star::ThreadImplConstPtr;
+  using ::Star::ThreadImplWeakPtr;
+  using ::Star::ThreadImplConstWeakPtr;
+  using ::Star::ThreadImplUPtr;
+  using ::Star::ThreadImplConstUPtr;
+  using ::Star::ThreadFunctionImpl;
+  using ::Star::ThreadFunctionImplPtr;
+  using ::Star::ThreadFunctionImplConstPtr;
+  using ::Star::ThreadFunctionImplWeakPtr;
+  using ::Star::ThreadFunctionImplConstWeakPtr;
+  using ::Star::ThreadFunctionImplUPtr;
+  using ::Star::ThreadFunctionImplConstUPtr;
+  using ::Star::MutexImpl;
+  using ::Star::MutexImplPtr;
+  using ::Star::MutexImplConstPtr;
+  using ::Star::MutexImplWeakPtr;
+  using ::Star::MutexImplConstWeakPtr;
+  using ::Star::MutexImplUPtr;
+  using ::Star::MutexImplConstUPtr;
+  using ::Star::ConditionVariableImpl;
+  using ::Star::ConditionVariableImplPtr;
+  using ::Star::ConditionVariableImplConstPtr;
+  using ::Star::ConditionVariableImplWeakPtr;
+  using ::Star::ConditionVariableImplConstWeakPtr;
+  using ::Star::ConditionVariableImplUPtr;
+  using ::Star::ConditionVariableImplConstUPtr;
+  using ::Star::RecursiveMutexImpl;
+  using ::Star::RecursiveMutexImplPtr;
+  using ::Star::RecursiveMutexImplConstPtr;
+  using ::Star::RecursiveMutexImplWeakPtr;
+  using ::Star::RecursiveMutexImplConstWeakPtr;
+  using ::Star::RecursiveMutexImplUPtr;
+  using ::Star::RecursiveMutexImplConstUPtr;
+  using ::Star::Thread;
+  using ::Star::ThreadFunction;
+  template <>
+  class ThreadFunction<void>;
+  using ::Star::Mutex;
+  using ::Star::ConditionVariable;
+  using ::Star::RecursiveMutex;
+  using ::Star::MLocker;
+  using ::Star::MutexLocker;
+  using ::Star::RecursiveMutexLocker;
+  using ::Star::ReadersWriterMutex;
+  using ::Star::ReadLocker;
+  using ::Star::WriteLocker;
+  using ::Star::SpinLock;
+  using ::Star::SpinLocker;
 }

@@ -1,15 +1,17 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.json;
 import star.id_map;
 import star.poly;
-#include "StarVariant.hpp"
+import star.variant;
 #include "StarCasting.hpp"
 import star.vector;
-#include "StarDataStream.hpp"
+import star.data_stream;
 import star.game_types;
 #include "StarStrongTypedef.hpp"
-#include "StarBiMap.hpp"
-#include "StarList.hpp"
+import star.bi_map;
+import star.list;
 
 
 import star.damage_types;

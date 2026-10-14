@@ -1,7 +1,12 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.map;
+import star.variant;
+import star.json;
 
-#include "StarDataStream.hpp"
+import star.data_stream;
 import star.game_types;
 import star.damage_types;
 import star.world_geometry;
@@ -9,7 +14,6 @@ import star.world_geometry;
 import star.id_map;
 import star.status_types;
 import star.damage;
-#include "StarDataStream.hpp"
 import star.game_types;
 import star.damage_types;
 

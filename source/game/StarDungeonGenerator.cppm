@@ -1,17 +1,23 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.map;
+import star.maybe;
+import star.format;
+import star.json;
 import star.image;
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
+import star.data_stream;
+import star.bi_map;
 import star.poly;
 import star.vector;
 import star.game_types;
 import star.liquid_types;
 import star.material_types;
 import star.random;
-#include "StarSet.hpp"
-#include "StarThread.hpp"
-#include "StarOrderedMap.hpp"
+import star.set;
+import star.thread;
+import star.ordered_map;
 import star.lru_cache;
 
 import star.item_descriptor;

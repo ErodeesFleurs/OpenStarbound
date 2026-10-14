@@ -1,12 +1,19 @@
 module;
 import star.byte_array;
 
-#include "StarSet.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.map;
+import star.io_device;
+import star.maybe;
+import star.format;
+import star.set;
 #include "StarBTree.hpp"
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
-#include "StarThread.hpp"
+import star.thread;
 
 namespace Star {
 

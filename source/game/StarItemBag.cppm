@@ -1,9 +1,11 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.json;
 
 import star.math_common;
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
+import star.data_stream;
+import star.bi_map;
 import star.item_descriptor;
 
 namespace Star {

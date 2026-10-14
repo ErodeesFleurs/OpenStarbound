@@ -1,10 +1,12 @@
 module;
 
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.string;
 import star.vector;
 import star.image;
 import star.byte_array;
-#include "StarMap.hpp"
+import star.map;
 
 namespace Star {
 

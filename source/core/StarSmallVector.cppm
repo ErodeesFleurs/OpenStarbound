@@ -1,7 +1,7 @@
 module;
 
-#include "StarException.hpp"
-#include "StarFormat.hpp"
+#include "StarConfig.hpp"
+import star.format;
 import star.algorithm;
 import star.memory;
 

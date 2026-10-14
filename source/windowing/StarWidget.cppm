@@ -1,15 +1,17 @@
 module;
-#include "StarStreamFormatter.hpp"
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.stream_formatter;
+import star.json;
 
 import star.vector;
 #include "StarCasting.hpp"
 import star.input_event;
-#include "StarString.hpp"
+import star.string;
 import star.poly;
-#include "StarMaybe.hpp"
-#include "StarList.hpp"
-#include "StarMap.hpp"
+import star.maybe;
+import star.list;
+import star.map;
 
 import star.rect;
 namespace Star {

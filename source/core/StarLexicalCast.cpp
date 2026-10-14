@@ -1,5 +1,6 @@
-#include "StarFormat.hpp"
-#include "StarStringView.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.string_view;
 #include "fast_float.h"
 
 import star.lexical_cast;

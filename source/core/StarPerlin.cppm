@@ -1,7 +1,9 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.json;
 
-#include "StarBiMap.hpp"
+import star.bi_map;
 import star.interpolation;
 import star.random;
 

@@ -1,3 +1,6 @@
+#include "StarConfig.hpp"
+import star.data_stream;
+import star.format;
 #include "StarDataStreamDevices.hpp"
 
 import star.net_element;

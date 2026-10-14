@@ -1,6 +1,7 @@
 module;
 
-#include "StarBiMap.hpp"
+#include "StarConfig.hpp"
+import star.bi_map;
 
 namespace Star {
 

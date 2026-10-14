@@ -1,9 +1,10 @@
 #pragma once
 
-#include "StarIODevice.hpp"
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.io_device;
+import star.string;
 import star.buffer;
-#include "StarDataStream.hpp"
+import star.data_stream;
 
 import star.either;
 import star.byte_array;

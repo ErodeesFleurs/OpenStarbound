@@ -1,6 +1,12 @@
 #pragma once
 
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.json;
+import star.lua;
+import star.maybe;
+import star.thread;
 #include "StarLuaRoot.hpp"
 #include "StarLuaComponents.hpp"
 import star.rpc_promise;

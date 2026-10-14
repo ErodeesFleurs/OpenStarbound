@@ -1,10 +1,11 @@
 
-#include "StarException.hpp"
+#include "StarConfig.hpp"
+import star.format;
 #include "gtest/gtest.h"
 
 #include "StarDataStreamDevices.hpp"
-#include "StarList.hpp"
-#include "StarString.hpp"
+import star.list;
+import star.string;
 import star.vector;
 #include "StarDataStreamExtra.hpp"
 import star.interpolation;

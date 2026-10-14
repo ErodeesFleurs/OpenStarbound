@@ -1,4 +1,5 @@
-#include "StarSet.hpp"
+#include "StarConfig.hpp"
+import star.set;
 
 #include "gtest/gtest.h"
 

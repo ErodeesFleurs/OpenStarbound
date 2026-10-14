@@ -1,9 +1,16 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.map;
+import star.variant;
+import star.maybe;
+import star.format;
+import star.json;
 
 import star.vector;
-#include "StarThread.hpp"
-#include "StarOrderedMap.hpp"
+import star.thread;
+import star.ordered_map;
 import star.lru_cache;
 import star.time;
 import star.random;

@@ -1,11 +1,15 @@
-#include "StarSet.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.list;
+import star.io_device;
+import star.set;
 #include "StarBTree.hpp"
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
-#include "StarThread.hpp"
+import star.thread;
 import star.btree_database;
-#include "StarFile.hpp"
+import star.file;
 import star.random;
 
 #include "gtest/gtest.h"

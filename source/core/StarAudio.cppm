@@ -1,7 +1,10 @@
 module;
 import star.byte_array;
 
-#include "StarIODevice.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.format;
+import star.io_device;
 //#define STAR_STREAM_AUDIO
 
 namespace Star {

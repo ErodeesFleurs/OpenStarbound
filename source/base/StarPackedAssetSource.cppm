@@ -1,17 +1,19 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.json;
 import star.byte_array;
 
 import std;
 
-#include "StarOrderedMap.hpp"
-#include "StarFile.hpp"
-#include "StarIODevice.hpp"
+import star.ordered_map;
+import star.file;
+import star.io_device;
 import star.asset_source;
-#include "StarString.hpp"
+import star.string;
 import star.directory_asset_source;
 
-#include "StarOrderedSet.hpp"
+import star.ordered_set;
 #include "StarDataStreamDevices.hpp"
 #include "StarDataStreamExtra.hpp"
 import star.math_common;

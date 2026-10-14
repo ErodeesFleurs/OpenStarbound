@@ -1,4 +1,5 @@
-#include "StarException.hpp"
+#include "StarConfig.hpp"
+import star.format;
 
 #include <QApplication>
 #include <QMessageBox>

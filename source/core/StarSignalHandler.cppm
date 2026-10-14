@@ -1,11 +1,11 @@
 module;
 
-#include "StarException.hpp"
+#include "StarConfig.hpp"
+import star.format;
 
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
-#include "StarFormat.hpp"
-#include "StarString.hpp"
-#include "StarLogging.hpp"
+import star.string;
+import star.logging;
 #define NOMINMAX
 #include <windows.h>
 #include <dbghelp.h>

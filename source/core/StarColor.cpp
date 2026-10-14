@@ -1,10 +1,11 @@
-#include "StarMap.hpp"
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.map;
+import star.string;
 import star.byte_array;
 import star.encode;
-#include "StarFormat.hpp"
+import star.format;
 import star.interpolation;
-#include "StarStringView.hpp"
+import star.string_view;
 import star.vector;
 import star.color;
 

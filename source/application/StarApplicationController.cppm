@@ -1,10 +1,12 @@
 module;
 import star.byte_array;
 
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.string;
 import star.input_event;
 import star.application;
-#include "StarMap.hpp"
+import star.map;
 import star.rect;
 
 import star.vector;

@@ -1,5 +1,6 @@
 import star.byte_array;
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.string;
 import star.encode;
 
 #include "gtest/gtest.h"

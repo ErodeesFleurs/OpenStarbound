@@ -1,5 +1,6 @@
 import star.small_vector;
-#include "StarFormat.hpp"
+#include "StarConfig.hpp"
+import star.format;
 
 #include "gtest/gtest.h"
 

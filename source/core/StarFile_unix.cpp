@@ -15,10 +15,13 @@
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #endif
-#include "StarFile.hpp"
-#include "StarFormat.hpp"
+#include "StarConfig.hpp"
+import star.file;
+import star.io_device;
+import star.list;
+import star.format;
 import star.random;
-#include "StarString.hpp"
+import star.string;
 import star.byte_array;
 import star.encode;
 

@@ -1,9 +1,10 @@
 module;
 
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.string;
 import star.byte_array;
 import std;
-#include "StarFormat.hpp"
+import star.format;
 import star.encode;
 
 export module star.sha256;

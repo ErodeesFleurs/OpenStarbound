@@ -1,5 +1,10 @@
 #include "StarJsonExtra.hpp"
-#include "StarLogging.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.json;
+import star.format;
+import star.logging;
 import star.random;
 
 import star.vector;

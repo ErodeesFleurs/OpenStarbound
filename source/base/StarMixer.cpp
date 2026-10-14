@@ -1,15 +1,18 @@
 import star.audio;
-#include "StarThread.hpp"
-#include "StarList.hpp"
-#include "StarMap.hpp"
-#include "StarSet.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.format;
+import star.thread;
+import star.list;
+import star.map;
+import star.set;
 import star.vector;
-#include "StarMaybe.hpp"
-#include "StarBiMap.hpp"
+import star.maybe;
+import star.bi_map;
 import star.mixer;
 import star.interpolation;
 import star.time;
-#include "StarLogging.hpp"
+import star.logging;
 
 import star.math_common;
 import star.algorithm;

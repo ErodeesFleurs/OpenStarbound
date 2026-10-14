@@ -1,25 +1,26 @@
 module;
-#include "StarJson.hpp"
+import star.json;
 import star.vector;
 import star.game_types;
-#include "StarLua.hpp"
+import star.lua;
 #include "StarLuaConverters.hpp"
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 import star.rect;
-#include "StarBiMap.hpp"
-#include "StarThread.hpp"
-#include "StarIODevice.hpp"
-#include "StarList.hpp"
+import star.bi_map;
+import star.thread;
+import star.io_device;
+import star.list;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarDataStream.hpp"
-#include "StarStringView.hpp"
+import star.hash;
+import star.data_stream;
+import star.string_view;
 import star.directives;
 import star.asset_path;
 import star.ref_ptr;
-#include "StarLogging.hpp"
+import star.logging;
 import star.listener;
 #include "StarConfig.hpp"
+import star.maybe;
 import star.version;
 
 import star.world_geometry;

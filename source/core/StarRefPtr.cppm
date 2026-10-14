@@ -1,7 +1,8 @@
 module;
 
-#include "StarException.hpp"
-#include "StarHash.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.hash;
 
 namespace Star {
 
@@ -300,6 +301,12 @@ inline RefCounter::RefCounter()
 }
 
 export module star.ref_ptr;
+
+export namespace Star {
+  template <typename T>
+  struct hash<RefPtr<T>>;
+}
+
 
 export namespace Star {
   using ::Star::RefPtr;

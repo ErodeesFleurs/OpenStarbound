@@ -1,5 +1,8 @@
-#include "StarLogging.hpp"
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.logging;
+import star.thread;
+import star.string;
+import star.file;
 import star.input_event;
 import star.application;
 import star.statistics_service;

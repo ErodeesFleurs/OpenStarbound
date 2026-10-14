@@ -1,9 +1,16 @@
 module;
-#include "StarHash.hpp"
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.map;
+import star.variant;
+import star.maybe;
+import star.format;
+import star.hash;
+import star.json;
 import star.vector;
 import star.input_event;
-#include "StarThread.hpp"
+import star.thread;
 import star.listener;
 
 
@@ -241,6 +248,12 @@ private:
 }
 
 export module star.input;
+
+export namespace Star {
+  template <>
+  struct hash<InputVariant>;
+}
+
 
 export namespace Star {
   using ::Star::Input;

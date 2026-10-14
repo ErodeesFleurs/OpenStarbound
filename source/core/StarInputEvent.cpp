@@ -1,4 +1,5 @@
-#include "StarBiMap.hpp"
+#include "StarConfig.hpp"
+import star.bi_map;
 import star.input_event;
 
 namespace Star {

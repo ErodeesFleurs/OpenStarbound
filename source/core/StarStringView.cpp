@@ -1,4 +1,8 @@
-#include "StarStringView.hpp"
+#include "StarConfig.hpp"
+import star.string_view;
+import star.string;
+import star.unicode;
+import star.format;
 
 import star.byte_array;
 import star.algorithm;

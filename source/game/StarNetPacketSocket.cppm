@@ -1,18 +1,20 @@
 module;
 
-#include "StarIODevice.hpp"
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.maybe;
+import star.io_device;
+import star.string;
 import star.either;
 import star.host_address;
-#include "StarThread.hpp"
+import star.thread;
 import star.socket;
 import star.tcp;
 import std;
 
-#include "StarThread.hpp"
 import star.p2p_networking_service;
 import star.byte_array;
-#include "StarMap.hpp"
+import star.map;
 #include "StarDataStreamDevices.hpp"
 
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;

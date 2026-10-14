@@ -1,6 +1,8 @@
 module;
 
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.json;
 
 namespace Star {
 

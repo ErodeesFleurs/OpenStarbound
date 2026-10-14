@@ -1,8 +1,9 @@
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.string;
 import star.byte_array;
 import star.encode;
 import star.bytes;
-#include "StarFormat.hpp"
+import star.format;
 import star.shell_parser;
 
 #include "gtest/gtest.h"

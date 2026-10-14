@@ -1,11 +1,19 @@
-#include "StarSet.hpp"
+#include "StarConfig.hpp"
+import star.time;
+import star.string;
+import star.list;
+import star.io_device;
+import star.memory;
+import star.maybe;
+import star.format;
+import star.set;
 #include "StarBTree.hpp"
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
-#include "StarThread.hpp"
+import star.thread;
 import star.btree_database;
-#include "StarLogging.hpp"
+import star.logging;
 
 import star.sha256;
 

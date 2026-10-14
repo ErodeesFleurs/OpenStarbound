@@ -1,6 +1,7 @@
 module;
 
-#include "StarHash.hpp"
+#include "StarConfig.hpp"
+import star.hash;
 
 import star.array;
 import star.math_common;
@@ -922,6 +923,12 @@ T operator^(Vector<T, 2> const& v1, Vector<T, 2> const& v2) {
 }
 
 export module star.vector;
+
+export namespace Star {
+  template <typename T, size_t N>
+  struct hash<Vector<T, N>>;
+}
+
 
 export namespace Star {
   using ::Star::Vector;

@@ -1,33 +1,32 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.lua;
+import star.maybe;
+import star.json;
 
-#include "StarSet.hpp"
+import star.set;
 import star.json_rpc;
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
+import star.data_stream;
+import star.bi_map;
 import star.item_descriptor;
-#include "StarString.hpp"
-#include "StarDataStream.hpp"
+import star.string;
 import star.color;
-#include "StarList.hpp"
+import star.list;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarStringView.hpp"
-#include "StarThread.hpp"
+import star.hash;
+import star.string_view;
+import star.thread;
 import star.directives;
 import star.asset_path;
 import star.drawable;
 import star.vector;
 import star.celestial_coordinate;
-#include "StarThread.hpp"
 import star.game_types;
 #include "StarStrongTypedef.hpp"
-#include "StarDataStream.hpp"
 import star.quest_descriptor;
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarDataStream.hpp"
 import star.uuid;
 import star.warping;
 

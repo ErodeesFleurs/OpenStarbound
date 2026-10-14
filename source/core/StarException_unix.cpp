@@ -1,6 +1,8 @@
-#include "StarException.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.maybe;
 #include "StarCasting.hpp"
-#include "StarLogging.hpp"
+import star.logging;
 
 import std;
 #include <stdlib.h>
@@ -108,7 +110,7 @@ StarException::StarException(char const* type, std::string message, bool genStac
 }
 
 StarException::StarException(char const* type, std::string message, std::exception const& cause) noexcept
-  : StarException(type, std::move(message)) {
+  : StarException(type, std::move(message), true) {
   auto printException = [](std::ostream& os, bool fullStacktrace, function<void(std::ostream&, bool)> self, function<void(std::ostream&, bool)> cause) {
     self(os, fullStacktrace);
     os << std::endl << "Caused by: ";

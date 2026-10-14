@@ -3,7 +3,11 @@ import star.net_compatibility;
 
 import std;
 
-#include "StarDataStream.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.maybe;
+import star.format;
+import star.data_stream;
 import star.interpolation;
 
 import star.net_element;

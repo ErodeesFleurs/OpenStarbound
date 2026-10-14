@@ -1,7 +1,8 @@
-#pragma once
+module;
+#include "StarConfig.hpp"
 
-#include "StarFlatHashTable.hpp"
-#include "StarHash.hpp"
+import star.flat_hash_table;
+import star.hash;
 
 namespace Star {
 
@@ -491,4 +492,10 @@ bool FlatHashSet<Key, Hash, Equals, Allocator>::operator!=(FlatHashSet const& rh
   return m_table != rhs.m_table;
 }
 
+}
+
+export module star.flat_hash_set;
+
+export namespace Star {
+  using ::Star::FlatHashSet;
 }

@@ -1,7 +1,8 @@
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.thread;
 import star.input_event;
 import star.application;
-#include "StarString.hpp"
+import star.string;
 import star.statistics_service;
 import star.p2p_networking_service;
 import star.user_generated_content_service;

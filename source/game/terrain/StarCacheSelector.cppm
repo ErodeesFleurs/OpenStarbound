@@ -1,7 +1,9 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.json;
 
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 import star.lru_cache;
 import star.vector;
 

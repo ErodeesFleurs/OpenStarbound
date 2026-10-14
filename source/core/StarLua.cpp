@@ -1,6 +1,17 @@
-#include "StarLua.hpp"
+#include "StarConfig.hpp"
+#include <lua.hpp>
+import star.lua;
+import star.json;
+import star.string;
+import star.string_view;
+import star.list;
+import star.map;
+import star.set;
+import star.maybe;
+import star.variant;
+import star.format;
 import star.array;
-#include "StarThread.hpp"
+import star.thread;
 import star.time;
 #include "imgui_lua_bindings.hpp"
 
@@ -1370,8 +1381,8 @@ LuaTable LuaDetail::insertJsonMetatable(LuaEngine& engine, LuaTable const& table
     table.rawSet(key, value);
   };
 
-  auto mt = engine.createTable();
-  auto nils = engine.createTable();
+  auto mt = engine.createTable(0, 0);
+  auto nils = engine.createTable(0, 0);
   mt.rawSet("__nils", nils);
   mt.rawSet("__newindex", engine.createFunction(newIndexMetaMethod));
   mt.rawSet("__typehint", type == Json::Type::Array ? 1 : 2);
@@ -1383,7 +1394,7 @@ LuaTable LuaDetail::jsonContainerToTable(LuaEngine& engine, Json const& containe
   if (!container.isType(Json::Type::Array) && !container.isType(Json::Type::Object))
     throw LuaException("jsonContainerToTable called on improper json type");
 
-  auto table = engine.createTable();
+  auto table = engine.createTable(0, 0);
   auto nils = insertJsonMetatable(engine, table, container.type());
 
   if (container.isType(Json::Type::Array)) {

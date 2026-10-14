@@ -1,13 +1,14 @@
-#include "StarException.hpp"
-#include "StarFlatHashSet.hpp"
-#include "StarFlatHashMap.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.flat_hash_set;
+import star.flat_hash_map;
 import star.random;
 import star.vector;
 import star.iterator;
 
 #include "gtest/gtest.h"
 
-#include "StarList.hpp"
+import star.list;
 using namespace Star;
 
 TEST(FlatHashSet, Preset) {
@@ -221,4 +222,65 @@ TEST(FlatHashMap, Iterator) {
   auto i = values.begin();
   std::advance(i, values.size());
   ASSERT_EQ(i, values.end());
+}
+
+TEST(FlatHashMap, NonDefaultAlignedValueLifetime) {
+  struct alignas(32) Payload {
+    Payload() = delete;
+    explicit Payload(std::shared_ptr<int> value) : value(std::move(value)) {}
+    std::shared_ptr<int> value;
+  };
+  struct CollisionHash {
+    size_t operator()(int) const { return 0; }
+  };
+  using Map = FlatHashMap<int, Payload, CollisionHash>;
+
+  std::array<std::weak_ptr<int>, 32> lifetimes;
+  Map original;
+  for (int i = 0; i < 32; ++i) {
+    auto value = std::make_shared<int>(i);
+    lifetimes[i] = value;
+    ASSERT_TRUE(original.insert({i, Payload(std::move(value))}).second);
+  }
+  original.reserve(128);
+  for (auto const& entry : original) {
+    EXPECT_EQ(*entry.second.value, entry.first);
+    EXPECT_EQ(reinterpret_cast<std::uintptr_t>(&entry.second) % alignof(Payload), 0u);
+    EXPECT_EQ(lifetimes[entry.first].use_count(), 1);
+  }
+
+  Map copy = original;
+  copy.reserve(256);
+  for (int i = 0; i < 32; ++i) {
+    ASSERT_NE(copy.find(i), copy.end());
+    EXPECT_EQ(*copy.find(i)->second.value, i);
+    EXPECT_EQ(lifetimes[i].use_count(), 2);
+  }
+  ASSERT_EQ(original.erase(0), 1u);
+  EXPECT_EQ(lifetimes[0].use_count(), 1);
+
+  Map moved = std::move(copy);
+  ASSERT_EQ(moved.size(), 32u);
+  moved.clear();
+  EXPECT_TRUE(lifetimes[0].expired());
+  for (int i = 1; i < 32; ++i)
+    EXPECT_EQ(lifetimes[i].use_count(), 1);
+
+  moved = original;
+  for (int i = 1; i < 32; ++i)
+    EXPECT_EQ(lifetimes[i].use_count(), 2);
+  original.clear();
+  for (int i = 1; i < 32; ++i)
+    EXPECT_EQ(lifetimes[i].use_count(), 1);
+  moved = original;
+  for (auto const& lifetime : lifetimes)
+    EXPECT_TRUE(lifetime.expired());
+
+  auto reused = std::make_shared<int>(99);
+  lifetimes[0] = reused;
+  ASSERT_TRUE(original.insert({99, Payload(std::move(reused))}).second);
+  ASSERT_NE(original.find(99), original.end());
+  EXPECT_EQ(*original.find(99)->second.value, 99);
+  original.clear();
+  EXPECT_TRUE(lifetimes[0].expired());
 }

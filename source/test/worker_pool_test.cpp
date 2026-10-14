@@ -1,4 +1,6 @@
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.thread;
+import star.list;
 import star.worker_pool;
 
 #include "gtest/gtest.h"

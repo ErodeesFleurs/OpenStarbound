@@ -3,8 +3,11 @@ import star.net_compatibility;
 
 import std;
 
-#include "StarDataStream.hpp"
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.maybe;
+import star.data_stream;
+import star.string;
 import star.byte_array;
 
 import star.net_element;

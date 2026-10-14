@@ -1,13 +1,17 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.map;
+import star.maybe;
+import star.json;
 
-#include "StarDataStream.hpp"
+import star.data_stream;
 import star.rpc_promise;
 import star.game_types;
 import star.chat_types;
-#include "StarSet.hpp"
-#include "StarThread.hpp"
-#include "StarDataStream.hpp"
+import star.set;
+import star.thread;
 import star.uuid;
 
 namespace Star {

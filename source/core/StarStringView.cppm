@@ -1,6 +1,8 @@
-#pragma once
+module;
+#include "StarConfig.hpp"
 
-#include "StarString.hpp"
+import star.string;
+import star.unicode;
 
 import star.byte_array;
 namespace Star {
@@ -117,7 +119,19 @@ private:
 
 }
 
-template <> struct std::formatter<Star::StringView> : std::formatter<std::string_view> {
+export module star.string_view;
+
+export namespace Star {
+  using ::Star::StringView;
+  using ::Star::StringViewPtr;
+  using ::Star::StringViewConstPtr;
+  using ::Star::StringViewWeakPtr;
+  using ::Star::StringViewConstWeakPtr;
+  using ::Star::StringViewUPtr;
+  using ::Star::StringViewConstUPtr;
+}
+
+export template <> struct std::formatter<Star::StringView> : std::formatter<std::string_view> {
   template <typename Context>
   auto format(Star::StringView const& s, Context& ctx) const -> typename Context::iterator {
     return std::formatter<std::string_view>::format(s.utf8(), ctx);

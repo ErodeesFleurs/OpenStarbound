@@ -1,15 +1,20 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.format;
+import star.maybe;
+import star.json;
 import star.image;
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
+import star.data_stream;
+import star.bi_map;
 import star.game_types;
 import star.random;
-#include "StarThread.hpp"
+import star.thread;
 import star.lexical_cast;
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 import star.lru_cache;
-#include "StarSet.hpp"
+import star.set;
 
 
 import star.item_descriptor;

@@ -1,7 +1,8 @@
 module;
 
-#include "StarStreamFormatter.hpp"
-#include "StarHash.hpp"
+#include "StarConfig.hpp"
+import star.stream_formatter;
+import star.hash;
 
 import star.math_common;
 import star.vector;
@@ -291,6 +292,12 @@ struct hash<Line<T, N>> {
 }
 
 export module star.line;
+
+export namespace Star {
+  template <typename T, size_t N>
+  struct hash<Line<T, N>>;
+}
+
 
 export template <typename T, size_t N>
 struct std::formatter<Star::Line<T, N>> : Star::StreamFormatter {};

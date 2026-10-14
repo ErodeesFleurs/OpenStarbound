@@ -1,10 +1,11 @@
 module;
 #include "StarJsonExtra.hpp"
-#include "StarJson.hpp"
+import star.json;
+import star.xx_hash;
 import star.id_map;
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 import star.lru_cache;
-#include "StarThread.hpp"
+import star.thread;
 import star.time;
 import star.random;
 import star.ttl_cache;
@@ -12,39 +13,40 @@ import star.ttl_cache;
 import star.game_types;
 import star.liquid_types;
 import star.material_types;
-#include "StarMaybe.hpp"
-#include "StarVariant.hpp"
+import star.maybe;
+import star.variant;
 import star.rpc_promise;
 import star.vector;
 import star.rect;
-#include "StarBiMap.hpp"
+import star.bi_map;
 import star.a_star;
-#include "StarList.hpp"
+import star.list;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarDataStream.hpp"
-#include "StarStringView.hpp"
+import star.hash;
+import star.data_stream;
+import star.string_view;
 import star.directives;
 import star.asset_path;
 import star.perlin;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
-#include "StarLua.hpp"
+import star.lua;
 import star.parametric_function;
 import star.multi_array_interpolator;
 import star.multi_table;
-#include "StarSet.hpp"
-#include "StarString.hpp"
+import star.set;
+import star.string;
 import star.color;
-#include "StarIODevice.hpp"
+import star.io_device;
 import star.ref_ptr;
-#include "StarLogging.hpp"
+import star.logging;
 import star.listener;
 #include "StarConfig.hpp"
+import star.format;
 import star.version;
 import star.periodic_function;
 import star.audio;
-#include "StarMap.hpp"
+import star.map;
 import star.image;
 
 
@@ -240,18 +242,15 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
   callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialFootstepSound", bind(RootCallbacks::materialFootstepSound, root, _1, _2));
 
   auto getVariant = [](unsigned x, unsigned y, bool isMatMod, VariantTerrainLayer layer, unsigned variants) -> unsigned {
-    static thread_local std::unique_ptr<XXH32_state_t, decltype(&XXH32_freeState)>
-      unique_state(XXH32_createState(), XXH32_freeState);
-    XXH32_state_t* state = unique_state.get();
-    XXH32_reset(state, 2938728349);
-    XXH32_update(state, &x, sizeof(x));
-    XXH32_update(state, &y, sizeof(y));
-    XXH32_update(state, &layer, sizeof(layer));
+    XXHash32 state(2938728349);
+    state.push(reinterpret_cast<char const*>(&x), sizeof(x));
+    state.push(reinterpret_cast<char const*>(&y), sizeof(y));
+    state.push(reinterpret_cast<char const*>(&layer), sizeof(layer));
     if (isMatMod)
-      XXH32_update(state, "mod", 3);
+      state.push("mod", 3);
     else
-      XXH32_update(state, "main", 4);
-    return XXH32_digest(state) % variants;
+      state.push("main", 4);
+    return state.digest() % variants;
   };
 
   callbacks.registerCallback("materialVariant", [getVariant](Vec2U const& tilePosition, String const& layer, unsigned variants) -> unsigned {

@@ -70,6 +70,11 @@ constexpr bool DebugEnabled = true;
 #else
 constexpr bool DebugEnabled = false;
 #endif
+#ifdef STAR_DEBUG
+#define starAssert(COND) Star::starAssertFailed((COND), std::source_location::current())
+#else
+#define starAssert(COND) ((void)0)
+#endif
 
 // A version of string::npos that's used in general to mean "not a position"
 // and is the largest value for size_t.

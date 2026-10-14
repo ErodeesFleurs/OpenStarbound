@@ -1,9 +1,10 @@
-#include "StarHash.hpp"
-#include "StarDataStream.hpp"
+#include "StarConfig.hpp"
+import star.hash;
+import star.data_stream;
 import star.uuid;
 import star.random;
-#include "StarFormat.hpp"
-#include "StarString.hpp"
+import star.format;
+import star.string;
 import star.byte_array;
 import star.encode;
 

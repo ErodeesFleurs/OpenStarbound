@@ -1,6 +1,7 @@
 module;
 
-#include "StarException.hpp"
+#include "StarConfig.hpp"
+import star.format;
 import std;
 import star.output_proxy;
 

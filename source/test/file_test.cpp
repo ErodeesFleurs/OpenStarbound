@@ -1,10 +1,10 @@
-#include "StarFile.hpp"
-#include "StarIODevice.hpp"
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.file;
+import star.io_device;
+import star.string;
 import star.buffer;
 #include "vorbis/vorbisfile.h"
-#include "StarString.hpp"
-#include "StarFormat.hpp"
+import star.format;
 
 import std;
 

@@ -1,6 +1,6 @@
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.thread;
 import star.time;
-#include "StarThread.hpp"
 
 #include "gtest/gtest.h"
 

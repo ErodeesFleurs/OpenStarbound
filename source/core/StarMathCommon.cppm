@@ -1,7 +1,9 @@
 module;
 
 import std;
-#include "StarMaybe.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.maybe;
 
 namespace Star {
 

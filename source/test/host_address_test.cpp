@@ -1,4 +1,5 @@
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.string;
 import star.either;
 import star.host_address;
 

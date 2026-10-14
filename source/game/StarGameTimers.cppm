@@ -1,6 +1,9 @@
 module;
 
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.data_stream;
+import star.maybe;
+import star.json;
 import star.game_types;
 
 namespace Star {

@@ -1,8 +1,10 @@
-#include "StarJson.hpp"
-#include "StarVariant.hpp"
+#include "StarConfig.hpp"
+import star.json;
+import star.variant;
+import star.list;
 import star.image;
 import star.poly;
-#include "StarBiMap.hpp"
+import star.bi_map;
 import star.ref_ptr;
 import star.renderer;
 

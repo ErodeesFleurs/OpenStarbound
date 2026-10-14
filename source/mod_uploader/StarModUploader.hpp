@@ -10,10 +10,13 @@
 
 #include "../application/StarSteamDispatch.hpp"
 
-#include "StarIODevice.hpp"
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.io_device;
+import star.json;
+import star.map;
+import star.maybe;
 import star.asset_source;
-#include "StarString.hpp"
+import star.string;
 import star.directory_asset_source;
 #include "StarSPlainTextEdit.hpp"
 

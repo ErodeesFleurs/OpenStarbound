@@ -1,5 +1,6 @@
 import star.block_allocator;
-#include "StarMap.hpp"
+#include "StarConfig.hpp"
+import star.map;
 
 #include "gtest/gtest.h"
 

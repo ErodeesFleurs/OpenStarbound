@@ -1,17 +1,22 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.set;
+import star.maybe;
+import star.json;
 
 import star.game_types;
 import star.byte_array;
-#include "StarMap.hpp"
+import star.map;
 import star.net_compatibility;
 #include "StarStrongTypedef.hpp"
-#include "StarDataStream.hpp"
+import star.data_stream;
 import star.uuid;
 import star.vector;
 import star.celestial_coordinate;
 import star.warping;
-#include "StarThread.hpp"
+import star.thread;
 import star.rpc_promise;
 
 namespace Star {

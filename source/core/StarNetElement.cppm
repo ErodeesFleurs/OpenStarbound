@@ -2,7 +2,8 @@ module;
 import star.net_compatibility;
 import star.version;
 
-#include "StarDataStream.hpp"
+#include "StarConfig.hpp"
+import star.data_stream;
 
 namespace Star {
 

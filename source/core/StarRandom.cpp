@@ -1,5 +1,8 @@
-#include "StarXXHash.hpp"
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.format;
+import star.xx_hash;
+import star.thread;
 import star.math_common;
 
 import star.random;

@@ -1,7 +1,10 @@
-#include "StarDataStream.hpp"
+#include <string.h>
+#include "StarConfig.hpp"
+import star.data_stream;
+import star.string;
+import star.format;
 import star.bytes;
 
-#include <string.h>
 
 import star.vlq;
 
@@ -10,7 +13,7 @@ import star.byte_array;
 import star.algorithm;
 namespace Star {
 
-unsigned const CurrentStreamVersion = 18; // update OpenProtocolVersion too!
+extern unsigned const CurrentStreamVersion = 18; // update OpenProtocolVersion too!
 
 DataStream::DataStream()
   : m_byteOrder(ByteOrder::BigEndian),

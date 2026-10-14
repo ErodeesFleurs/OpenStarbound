@@ -1,15 +1,18 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.maybe;
+import star.json;
 #include "StarJsonExtra.hpp"
 import star.id_map;
-#include "StarVariant.hpp"
+import star.variant;
 #include "StarCasting.hpp"
 import star.vector;
-#include "StarDataStream.hpp"
+import star.data_stream;
 import star.game_types;
 #include "StarStrongTypedef.hpp"
-#include "StarBiMap.hpp"
-#include "StarList.hpp"
+import star.bi_map;
+import star.list;
 import star.rpc_promise;
 
 #include "StarLuaComponents.hpp"

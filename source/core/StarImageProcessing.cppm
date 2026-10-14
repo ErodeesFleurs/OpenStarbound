@@ -1,10 +1,12 @@
 module;
 
-#include "StarList.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.list;
 import star.rect;
-#include "StarMap.hpp"
-#include "StarVariant.hpp"
-#include "StarString.hpp"
+import star.map;
+import star.variant;
+import star.string;
 
 import star.array;
 import star.vector;

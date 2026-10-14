@@ -1,12 +1,16 @@
-#include "StarThread.hpp"
-import star.time;
-#include "StarLogging.hpp"
 
 #define NOMINMAX
 #include <windows.h>
 #include <stdio.h>
 #include <process.h>
 #include <locale.h>
+#include "StarConfig.hpp"
+import star.thread;
+import star.string;
+import star.maybe;
+import star.format;
+import star.time;
+import star.logging;
 
 import star.algorithm;
 namespace Star {

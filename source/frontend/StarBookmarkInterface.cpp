@@ -1,8 +1,8 @@
-#include "StarJson.hpp"
+import star.json;
 #include "StarStrongTypedef.hpp"
-#include "StarDataStream.hpp"
+import star.data_stream;
 import star.game_types;
-#include "StarVariant.hpp"
+import star.variant;
 import star.random;
 import star.weighted_pool;
 import star.either;
@@ -10,27 +10,28 @@ import star.either;
 import star.input_event;
 import star.color;
 import star.font;
-#include "StarList.hpp"
+import star.list;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarStringView.hpp"
-#include "StarThread.hpp"
+import star.hash;
+import star.string_view;
+import star.thread;
 import star.directives;
-#include "StarBiMap.hpp"
-#include "StarOrderedMap.hpp"
-#include "StarIODevice.hpp"
+import star.bi_map;
+import star.ordered_map;
+import star.io_device;
 import star.ref_ptr;
-#include "StarLogging.hpp"
+import star.logging;
 #include "StarConfig.hpp"
+import star.format;
 import star.version;
-#include "StarString.hpp"
+import star.string;
 import star.text;
 import star.asset_path;
-#include "StarMaybe.hpp"
+import star.maybe;
 import star.listener;
-#include "StarSet.hpp"
+import star.set;
 import star.audio;
-#include "StarMap.hpp"
+import star.map;
 
 
 // Parse foundations before importing global bookmark value types on GCC.

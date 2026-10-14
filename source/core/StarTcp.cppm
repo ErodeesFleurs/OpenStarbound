@@ -1,12 +1,12 @@
 module;
 
-#include "StarIODevice.hpp"
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.io_device;
+import star.string;
 import star.either;
 import star.host_address;
-#include "StarThread.hpp"
+import star.thread;
 import star.socket;
-#include "StarThread.hpp"
 
 namespace Star {
 

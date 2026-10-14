@@ -1,23 +1,23 @@
 module;
-#include "StarJson.hpp"
-#include "StarXXHash.hpp"
+import star.json;
+import star.xx_hash;
 import star.id_map;
-#include "StarMaybe.hpp"
+import star.maybe;
 import star.color;
-#include "StarList.hpp"
+import star.list;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarDataStream.hpp"
-#include "StarStringView.hpp"
-#include "StarThread.hpp"
+import star.hash;
+import star.data_stream;
+import star.string_view;
+import star.thread;
 import star.directives;
 import star.vector;
-#include "StarBiMap.hpp"
+import star.bi_map;
 import star.image;
 import star.game_types;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarString.hpp"
+import star.string;
 import star.asset_path;
 import star.either;
 import star.random;
@@ -28,11 +28,11 @@ import star.listener;
 import star.perlin;
 import star.random_point;
 import std;
-#include "StarSet.hpp"
+import star.set;
 import star.worker_pool;
 
 import star.sector_array_2d;
-#include "StarVariant.hpp"
+import star.variant;
 
 
 import star.tile_damage;

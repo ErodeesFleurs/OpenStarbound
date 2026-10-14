@@ -1,8 +1,10 @@
-#include "StarStreamFormatter.hpp"
-#include "StarJson.hpp"
-#include "StarBiMap.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.stream_formatter;
+import star.json;
+import star.bi_map;
 #include "StarStrongTypedef.hpp"
-#include "StarFormat.hpp"
+import star.format;
 #include "StarJsonExtra.hpp"
 import star.inventory_types;
 

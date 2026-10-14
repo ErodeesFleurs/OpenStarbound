@@ -1,9 +1,13 @@
 #include <ctype.h>
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.unicode;
+import star.maybe;
+import star.string;
 import star.byte_array;
 import star.encode;
 import star.bytes;
-#include "StarFormat.hpp"
+import star.format;
 import star.shell_parser;
 
 namespace Star {

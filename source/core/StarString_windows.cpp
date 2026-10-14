@@ -1,4 +1,8 @@
-#include "StarString_windows.hpp"
+#define NOMINMAX
+#include <windows.h>
+#include "StarConfig.hpp"
+import star.string_windows;
+import star.string;
 
 namespace Star {
 

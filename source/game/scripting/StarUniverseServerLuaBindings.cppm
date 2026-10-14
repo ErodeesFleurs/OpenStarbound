@@ -1,7 +1,8 @@
 module;
 
-#include "StarJson.hpp"
-#include "StarLua.hpp"
+#include "StarConfig.hpp"
+import star.json;
+import star.lua;
 
 namespace Star {
 STAR_CLASS(UniverseServer);

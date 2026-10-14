@@ -1,5 +1,6 @@
 module;
-#include "StarMaybe.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
 
 import star.math_common;
 

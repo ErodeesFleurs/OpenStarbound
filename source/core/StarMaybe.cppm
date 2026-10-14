@@ -1,9 +1,10 @@
-#pragma once
-#include "StarStreamFormatter.hpp"
-#include "StarHash.hpp"
+module;
+#include "StarConfig.hpp"
+import star.stream_formatter;
+import star.hash;
 
 
-#include "StarException.hpp"
+import star.format;
 
 namespace Star {
 
@@ -401,5 +402,21 @@ size_t hash<Maybe<T>>::operator()(Maybe<T> const& m) const {
 
 }
 
-template <typename T>
+export module star.maybe;
+
+export namespace Star {
+  template <typename T>
+  struct hash<Maybe<T>>;
+}
+
+
+export template <typename T>
 struct std::formatter<Star::Maybe<T>> : Star::StreamFormatter {};
+
+export namespace Star {
+  using ::Star::InvalidMaybeAccessExceptionTag;
+  using ::Star::InvalidMaybeAccessException;
+  using ::Star::Maybe;
+  using ::Star::operator<<;
+  using ::Star::hash;
+}

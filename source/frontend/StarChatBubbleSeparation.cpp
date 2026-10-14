@@ -1,10 +1,10 @@
 
 import star.rect;
-#include "StarList.hpp"
+#include "StarConfig.hpp"
+import star.list;
 
 
 import star.chat_bubble_separation;
-//#include "StarLogging.hpp"
 
 import star.vector;
 import star.algorithm;

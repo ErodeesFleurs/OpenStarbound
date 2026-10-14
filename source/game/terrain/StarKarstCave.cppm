@@ -1,15 +1,17 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.json;
 #include "StarJsonExtra.hpp"
 
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 import star.lru_cache;
 import star.vector;
-#include "StarBiMap.hpp"
+import star.bi_map;
 import star.random;
 import star.perlin;
 import star.game_types;
-#include "StarLogging.hpp"
+import star.logging;
 import star.math_common;
 
 export module star.terrain_karst_cave;

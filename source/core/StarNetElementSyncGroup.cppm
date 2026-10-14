@@ -1,7 +1,8 @@
 module;
 import star.net_compatibility;
 
-#include "StarDataStream.hpp"
+#include "StarConfig.hpp"
+import star.data_stream;
 
 import star.net_element_group;
 

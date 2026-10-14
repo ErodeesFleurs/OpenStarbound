@@ -1,8 +1,11 @@
 module;
 
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.format;
+import star.string;
 import star.vector;
-#include "StarIODevice.hpp"
+import star.io_device;
 
 import star.math_common;
 namespace Star {

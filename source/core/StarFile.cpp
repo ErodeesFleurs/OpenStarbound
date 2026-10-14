@@ -1,5 +1,8 @@
-#include "StarFile.hpp"
-#include "StarFormat.hpp"
+#include "StarConfig.hpp"
+import star.file;
+import star.io_device;
+import star.string;
+import star.format;
 
 import std;
 
@@ -279,7 +282,7 @@ IODevicePtr File::clone() {
     // Open with same mode
     cloned->open(mode());
     // Seek to same position
-    cloned->seek(pos());
+    cloned->seek(pos(), IOSeek::Absolute);
   }
   return cloned;
 }

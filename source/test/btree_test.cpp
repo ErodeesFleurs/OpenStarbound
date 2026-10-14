@@ -1,7 +1,11 @@
 #include "StarBTree.hpp"
-#include "StarString.hpp"
-#include "StarMap.hpp"
-#include "StarSet.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.format;
+import star.maybe;
+import star.string;
+import star.map;
+import star.set;
 import star.lexical_cast;
 import star.random;
 

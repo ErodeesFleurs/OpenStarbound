@@ -1,7 +1,11 @@
 module;
 
-#include "StarJson.hpp"
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.map;
+import star.maybe;
+import star.format;
+import star.json;
 import star.lexical_cast;
 import star.json_path;
 

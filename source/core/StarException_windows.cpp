@@ -1,12 +1,16 @@
-#include "StarException.hpp"
+#define NOMINMAX
+#include <windows.h>
+#include <dbghelp.h>
+
+import star.format;
+import star.maybe;
 import star.output_proxy;
-#include "StarLogging.hpp"
+import star.logging;
 #include "StarCasting.hpp"
-#include "StarString_windows.hpp"
+import star.string_windows;
 #include "StarConfig.hpp"
 import star.version;
 
-#include <dbghelp.h>
 
 import star.array;
 import star.math_common;
@@ -186,7 +190,7 @@ StarException::StarException(char const* type, std::string message, bool genStac
 }
 
 StarException::StarException(char const* type, std::string message, std::exception const& cause) noexcept
-    : StarException(type, std::move(message)) {
+    : StarException(type, std::move(message), true) {
   auto printException = [](std::ostream& os,
       bool fullStacktrace,
       function<void(std::ostream&, bool)> self,

@@ -1,13 +1,15 @@
 module;
 
-#include "StarDataStream.hpp"
-#include "StarVariant.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.data_stream;
+import star.variant;
 import star.vector;
 import star.game_types;
 import star.liquid_types;
 import star.material_types;
-#include "StarList.hpp"
-#include "StarBiMap.hpp"
+import star.list;
+import star.bi_map;
 import star.collision_block;
 
 namespace Star {

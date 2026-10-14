@@ -1,6 +1,6 @@
 module;
 
-#include "StarStreamFormatter.hpp"
+import star.stream_formatter;
 #include "StarConfig.hpp"
 
 import star.array;

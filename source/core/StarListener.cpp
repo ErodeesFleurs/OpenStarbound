@@ -1,4 +1,5 @@
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.thread;
 import star.listener;
 
 import star.algorithm;

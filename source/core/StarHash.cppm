@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarConfig.hpp"
 import star.bytes;
@@ -94,4 +94,23 @@ size_t hashOf(T1 const& t1, T2 const& t2, TL const&... rest) {
   return hash;
 };
 
+}
+
+export module star.hash;
+
+export namespace Star {
+  template <typename first_t, typename second_t>
+  class hash<std::pair<first_t, second_t>>;
+  template <typename... TTypes>
+  class hash<std::tuple<TTypes...>>;
+  template <typename EnumType>
+  struct hash<EnumType, typename std::enable_if<std::is_enum<EnumType>::value>::type>;
+}
+
+
+export namespace Star {
+  using ::Star::hash;
+  using ::Star::hashCombine;
+  using ::Star::PLHasher;
+  using ::Star::hashOf;
 }

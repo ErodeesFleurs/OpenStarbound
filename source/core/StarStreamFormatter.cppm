@@ -1,4 +1,4 @@
-#pragma once
+module;
 #include "StarConfig.hpp"
 import std;
 
@@ -75,4 +75,10 @@ struct StreamFormatter : std::formatter<std::string_view> {
   }
 };
 
+}
+
+export module star.stream_formatter;
+
+export namespace Star {
+using ::Star::StreamFormatter;
 }

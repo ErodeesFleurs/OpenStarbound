@@ -1,9 +1,12 @@
 module;
-#include "StarJson.hpp"
+import star.json;
 #include "StarConfig.hpp"
+import star.string;
+import star.variant;
+import star.maybe;
 import star.rpc_promise;
 import star.game_types;
-#include "StarDataStream.hpp"
+import star.data_stream;
 
 import star.uuid;
 

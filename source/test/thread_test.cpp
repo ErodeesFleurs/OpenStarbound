@@ -1,4 +1,7 @@
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.thread;
+import star.string;
+import star.maybe;
 
 #include "gtest/gtest.h"
 

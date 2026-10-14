@@ -1,4 +1,5 @@
 module;
+#include "StarConfig.hpp"
 import star.net_compatibility;
 import star.byte_array;
 

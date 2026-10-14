@@ -1,6 +1,12 @@
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.set;
+import star.maybe;
+import star.format;
+import star.json;
 import star.game_types;
-#include "StarLua.hpp"
+import star.lua;
 import star.random;
 #include "StarLuaGameConverters.hpp"
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "StarException.hpp"
-#include "StarFormat.hpp"
+#include "StarConfig.hpp"
+import star.format;
 
 namespace Star {
 

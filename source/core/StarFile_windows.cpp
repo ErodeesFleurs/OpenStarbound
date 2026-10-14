@@ -1,17 +1,20 @@
-#include "StarFile.hpp"
-#include "StarFormat.hpp"
-import star.random;
-#include "StarString.hpp"
-import star.byte_array;
-import star.encode;
-#include "StarThread.hpp"
-
-#include "StarString_windows.hpp"
-
 #include <errno.h>
 #include <io.h>
 #include <stdio.h>
+#define NOMINMAX
 #include <windows.h>
+
+#include "StarConfig.hpp"
+import star.file;
+import star.io_device;
+import star.list;
+import star.format;
+import star.random;
+import star.string;
+import star.byte_array;
+import star.encode;
+import star.thread;
+import star.string_windows;
 
 #ifndef MAX_PATH
 #define MAX_PATH 1024

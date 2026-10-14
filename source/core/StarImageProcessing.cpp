@@ -1,16 +1,19 @@
 import std;
-#include "StarJson.hpp"
-#include "StarList.hpp"
+#include "StarConfig.hpp"
+import star.time;
+import star.format;
+import star.json;
+import star.list;
 import star.rect;
 import star.image_processing;
 import star.lexical_cast;
 import star.color;
 import star.image;
-#include "StarStringView.hpp"
-#include "StarString.hpp"
+import star.string_view;
+import star.string;
 import star.byte_array;
 import star.encode;
-#include "StarLogging.hpp"
+import star.logging;
 
 import star.image_scaling;
 

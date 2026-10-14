@@ -1,30 +1,30 @@
 module;
-#include "StarJson.hpp"
+import star.json;
 #include "StarJsonExtra.hpp"
-#include "StarXXHash.hpp"
-#include "StarLua.hpp"
+import star.xx_hash;
+import star.lua;
 import star.game_types;
 import star.rpc_promise;
 #include "StarStrongTypedef.hpp"
-#include "StarDataStream.hpp"
+import star.data_stream;
 import star.vector;
-#include "StarMaybe.hpp"
-#include "StarString.hpp"
+import star.maybe;
+import star.string;
 import star.either;
-#include "StarVariant.hpp"
+import star.variant;
 import star.color;
-#include "StarBiMap.hpp"
+import star.bi_map;
 import star.random;
 import star.weighted_pool;
-#include "StarList.hpp"
+import star.list;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarStringView.hpp"
-#include "StarThread.hpp"
+import star.hash;
+import star.string_view;
+import star.thread;
 import star.directives;
 import star.asset_path;
-#include "StarOrderedSet.hpp"
-#include "StarIODevice.hpp"
+import star.ordered_set;
+import star.io_device;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
@@ -36,11 +36,12 @@ typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 import star.net_compatibility;
 #include "StarConfig.hpp"
+import star.format;
 import star.id_map;
 import star.version;
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 #include "StarCasting.hpp"
-#include "StarSet.hpp"
+import star.set;
 import star.worker_pool;
 
 import star.sector_array_2d;
@@ -50,7 +51,7 @@ import star.lru_cache;
 import star.btree_database;
 import star.image;
 import star.audio;
-#include "StarMap.hpp"
+import star.map;
 
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.

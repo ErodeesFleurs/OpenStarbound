@@ -1,13 +1,18 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.json;
+import star.string;
+import star.list;
+import star.map;
+import star.set;
 import star.byte_array;
 import star.array;
-#include "StarBiMap.hpp"
-#include "StarException.hpp"
+import star.bi_map;
+import star.format;
 import star.vector;
 import star.game_types;
-#include "StarMaybe.hpp"
-#include "StarThread.hpp"
+import star.maybe;
+import star.thread;
 #include "StarDataStreamDevices.hpp"
 
 

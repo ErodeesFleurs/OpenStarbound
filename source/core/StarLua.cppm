@@ -1,19 +1,25 @@
-#pragma once
-#include "StarStreamFormatter.hpp"
-#include "StarJson.hpp"
+module;
+#include "StarConfig.hpp"
+import star.stream_formatter;
+import star.json;
 
 import std;
 #include <lua.hpp>
 
 import star.lexical_cast;
-#include "StarString.hpp"
+import star.string;
 import star.ref_ptr;
-#include "StarList.hpp"
+import star.list;
+import star.map;
+import star.set;
+import star.maybe;
+import star.variant;
+import star.format;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarDataStream.hpp"
-#include "StarStringView.hpp"
-#include "StarThread.hpp"
+import star.hash;
+import star.data_stream;
+import star.string_view;
+import star.thread;
 import star.directives;
 
 import star.byte_array;
@@ -2227,4 +2233,200 @@ size_t LuaEngine::pushArguments(lua_State* state, Args const&... args) {
 
 }
 
-template <> struct std::formatter<Star::LuaValue> : Star::StreamFormatter {};
+export module star.lua;
+
+export namespace Star {
+  template <>
+  struct LuaConverter<bool>;
+
+  template <>
+  struct LuaConverter<char>;
+
+  template <>
+  struct LuaConverter<unsigned char>;
+
+  template <>
+  struct LuaConverter<short>;
+
+  template <>
+  struct LuaConverter<unsigned short>;
+
+  template <>
+  struct LuaConverter<long>;
+
+  template <>
+  struct LuaConverter<unsigned long>;
+
+  template <>
+  struct LuaConverter<int>;
+
+  template <>
+  struct LuaConverter<unsigned int>;
+
+  template <>
+  struct LuaConverter<long long>;
+
+  template <>
+  struct LuaConverter<unsigned long long>;
+
+  template <>
+  struct LuaConverter<float>;
+
+  template <>
+  struct LuaConverter<double>;
+
+  template <>
+  struct LuaConverter<String>;
+
+  template <>
+  struct LuaConverter<std::string>;
+
+  template <>
+  struct LuaConverter<char const*>;
+
+  template <size_t s>
+  struct LuaConverter<char[s]>;
+
+  template <>
+  struct LuaConverter<Directives>;
+
+  template <>
+  struct LuaConverter<LuaString>;
+
+  template <>
+  struct LuaConverter<LuaTable>;
+
+  template <>
+  struct LuaConverter<LuaFunction>;
+
+  template <>
+  struct LuaConverter<LuaThread>;
+
+  template <>
+  struct LuaConverter<LuaUserData>;
+
+  template <>
+  struct LuaConverter<LuaValue>;
+
+  template <typename T>
+  struct LuaConverter<Maybe<T>>;
+
+  template <typename T, typename Allocator>
+  struct LuaConverter<List<T, Allocator>>;
+
+  template <typename T, typename Allocator, typename Equals>
+  struct LuaConverter<HashSet<T, Allocator, Equals>>;
+
+  template <typename T, size_t MaxSize>
+  struct LuaConverter<StaticList<T, MaxSize>>;
+
+  template <typename T, size_t MaxStackSize>
+  struct LuaConverter<SmallList<T, MaxStackSize>>;
+
+  template <>
+  struct LuaConverter<StringList>;
+
+  template <typename T, typename BaseSet>
+  struct LuaConverter<Set<T, BaseSet>>;
+
+  template <typename T, typename BaseSet>
+  struct LuaConverter<HashSet<T, BaseSet>>;
+
+  template <typename Key, typename Value, typename Compare, typename Allocator>
+  struct LuaConverter<Map<Key, Value, Compare, Allocator>>;
+
+  template <typename Key, typename Value, typename Hash, typename Equals, typename Allocator>
+  struct LuaConverter<HashMap<Key, Value, Hash, Equals, Allocator>>;
+
+  template <>
+  struct LuaConverter<Json>;
+
+  template <>
+  struct LuaConverter<JsonObject>;
+
+  template <>
+  struct LuaConverter<JsonArray>;
+
+  using ::Star::LuaEngine;
+  using ::Star::LuaEnginePtr;
+  using ::Star::LuaExceptionTag;
+  using ::Star::LuaException;
+  using ::Star::LuaIncompleteStatementExceptionTag;
+  using ::Star::LuaIncompleteStatementException;
+  using ::Star::LuaInstructionLimitReachedTag;
+  using ::Star::LuaInstructionLimitReached;
+  using ::Star::LuaRecursionLimitReachedTag;
+  using ::Star::LuaRecursionLimitReached;
+  using ::Star::LuaConversionExceptionTag;
+  using ::Star::LuaConversionException;
+  using ::Star::LuaNilType;
+  using ::Star::LuaBoolean;
+  using ::Star::LuaInt;
+  using ::Star::LuaFloat;
+  using ::Star::LuaValue;
+  using ::Star::LuaReference;
+  using ::Star::LuaString;
+  using ::Star::LuaTable;
+  using ::Star::LuaFunction;
+  using ::Star::LuaThread;
+  using ::Star::LuaUserData;
+  using ::Star::LuaVariadic;
+  using ::Star::LuaTupleReturn;
+  using ::Star::luaUnpack;
+  using ::Star::luaTie;
+  using ::Star::luaTupleReturn;
+  using ::Star::LuaNil;
+  using ::Star::LuaCallbacks;
+  using ::Star::LuaMethods;
+  using ::Star::LuaContext;
+  using ::Star::LuaNullTermWrapper;
+  using ::Star::LuaNullEnforcer;
+  using ::Star::LuaProfileEntry;
+  using ::Star::LuaConverter;
+  using ::Star::LuaUserDataMethods;
+  using ::Star::LuaUserDataConverter;
+  using ::Star::LuaIntConverter;
+  using ::Star::LuaFloatConverter;
+  using ::Star::LuaValueConverter;
+  using ::Star::LuaMapConverter;
+  using ::Star::LuaContainerConverter;
+  using ::Star::operator<<;
+  using ::Star::operator==;
+  namespace LuaDetail {
+    using ::Star::LuaDetail::LuaHandle;
+    using ::Star::LuaDetail::LuaFunctionReturn;
+    using ::Star::LuaDetail::LuaWrappedFunction;
+    using ::Star::LuaDetail::FromFunctionReturn;
+    using ::Star::LuaDetail::toVariadicReturn;
+    using ::Star::LuaDetail::toWrappedReturn;
+    using ::Star::LuaDetail::ArgGet;
+    using ::Star::LuaDetail::FunctionWrapper;
+    using ::Star::LuaDetail::wrapFunctionWithSignature;
+    using ::Star::LuaDetail::wrapFunctionArgs;
+    using ::Star::LuaDetail::wrapFunction;
+    using ::Star::LuaDetail::MethodWrapper;
+    using ::Star::LuaDetail::wrapMethodWithSignature;
+    using ::Star::LuaDetail::wrapMethodArgs;
+    using ::Star::LuaDetail::wrapMethod;
+    using ::Star::LuaDetail::TableIteratorWrapper;
+    using ::Star::LuaDetail::wrapTableIteratorWithSignature;
+    using ::Star::LuaDetail::wrapTableIteratorArgs;
+    using ::Star::LuaDetail::wrapTableIterator;
+    using ::Star::LuaDetail::rawSetField;
+    using ::Star::LuaDetail::rawGetField;
+    using ::Star::LuaDetail::shallowCopy;
+    using ::Star::LuaDetail::insertJsonMetatable;
+    using ::Star::LuaDetail::jsonContainerToTable;
+    using ::Star::LuaDetail::tableToJsonContainer;
+    using ::Star::LuaDetail::jarrayCreate;
+    using ::Star::LuaDetail::jobjectCreate;
+    using ::Star::LuaDetail::jarray;
+    using ::Star::LuaDetail::jobject;
+    using ::Star::LuaDetail::jcontRemove;
+    using ::Star::LuaDetail::jcontSize;
+    using ::Star::LuaDetail::jcontResize;
+    using ::Star::LuaDetail::asInteger;
+  }
+}
+
+export template <> struct std::formatter<Star::LuaValue> : Star::StreamFormatter {};

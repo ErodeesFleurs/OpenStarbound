@@ -1,3 +1,11 @@
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.map;
+import star.json;
+import star.lua;
+import star.maybe;
+import star.format;
 #include "StarLuaGameConverters.hpp"
 
 import star.collection_database;

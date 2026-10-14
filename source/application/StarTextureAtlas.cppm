@@ -1,7 +1,11 @@
 module;
 
 import star.rect;
-#include "StarSet.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.format;
+import star.set;
+import star.list;
 import star.image;
 #include "StarCasting.hpp"
 

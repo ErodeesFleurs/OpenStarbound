@@ -1,13 +1,18 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.json;
 import star.byte_array;
+import star.string;
+import star.list;
+import star.set;
 
 import star.rect;
 import star.image;
 #include "StarCasting.hpp"
 import star.texture_atlas;
-#include "StarVariant.hpp"
-#include "StarBiMap.hpp"
+import star.variant;
+import star.bi_map;
 import star.ref_ptr;
 import star.renderer;
 

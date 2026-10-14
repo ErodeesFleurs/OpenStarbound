@@ -1,6 +1,10 @@
 module;
-#include "StarStreamFormatter.hpp"
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.data_stream;
+import star.format;
+import star.stream_formatter;
+import star.json;
 
 import star.vector;
 

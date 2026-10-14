@@ -1,7 +1,9 @@
-#pragma once
+module;
+#include "StarConfig.hpp"
 
 import star.byte_array;
-#include "StarString.hpp"
+import star.string;
+import star.format;
 
 namespace Star {
 
@@ -133,4 +135,25 @@ inline bool IODevice::isWritable() const {
   return m_mode & IOMode::Write;
 }
 
+}
+
+export module star.io_device;
+
+export namespace Star {
+  using ::Star::EofExceptionTag;
+  using ::Star::EofException;
+  using ::Star::IOMode;
+  using ::Star::IOSeek;
+  using ::Star::Absolute;
+  using ::Star::Relative;
+  using ::Star::End;
+  using ::Star::IODevice;
+  using ::Star::IODevicePtr;
+  using ::Star::IODeviceConstPtr;
+  using ::Star::IODeviceWeakPtr;
+  using ::Star::IODeviceConstWeakPtr;
+  using ::Star::IODeviceUPtr;
+  using ::Star::IODeviceConstUPtr;
+  using ::Star::operator|;
+  using ::Star::operator&;
 }

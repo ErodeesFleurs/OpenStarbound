@@ -1,10 +1,13 @@
 module;
 
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.maybe;
+import star.string;
 import star.byte_array;
 import star.encode;
 import star.bytes;
-#include "StarFormat.hpp"
+import star.format;
 
 namespace Star {
 

@@ -1,20 +1,22 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.json;
 import star.net_compatibility;
 import star.byte_array;
 
-#include "StarMaybe.hpp"
+import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.color;
-#include "StarBiMap.hpp"
-#include "StarList.hpp"
+import star.bi_map;
+import star.list;
 import star.rect;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarDataStream.hpp"
-#include "StarStringView.hpp"
-#include "StarThread.hpp"
+import star.hash;
+import star.data_stream;
+import star.string_view;
+import star.thread;
 import star.directives;
 import star.asset_path;
 import star.animation;

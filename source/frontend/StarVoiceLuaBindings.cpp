@@ -1,12 +1,15 @@
 module;
-#include "StarJson.hpp"
-#include "StarLua.hpp"
+#include "StarConfig.hpp"
+import star.json;
+import star.lua;
+import star.string;
+import star.list;
 #include "StarLuaConverters.hpp"
-#include "StarBiMap.hpp"
-#include "StarException.hpp"
+import star.bi_map;
+import star.format;
 import star.game_types;
-#include "StarMaybe.hpp"
-#include "StarThread.hpp"
+import star.maybe;
+import star.thread;
 #include "StarDataStreamDevices.hpp"
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.

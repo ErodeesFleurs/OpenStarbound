@@ -1,8 +1,11 @@
 module;
 import star.byte_array;
 
-#include "StarJson.hpp"
-#include "StarIODevice.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.format;
+import star.json;
+import star.io_device;
 
 namespace Star {
 

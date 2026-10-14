@@ -1,8 +1,13 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.data_stream;
+import star.maybe;
+import star.json;
 
 import star.color;
-#include "StarBiMap.hpp"
+import star.bi_map;
 import star.sky_types;
 import star.either;
 import star.vector;

@@ -1,5 +1,7 @@
-#include "StarHash.hpp"
-#include "StarXXHash.hpp"
+#include "StarConfig.hpp"
+import star.hash;
+import star.string;
+import star.xx_hash;
 
 #include "gtest/gtest.h"
 

@@ -1,9 +1,12 @@
 module;
-#include "StarStreamFormatter.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.format;
+import star.stream_formatter;
 
 import star.vector;
 import star.rect;
-#include "StarBiMap.hpp"
+import star.bi_map;
 import star.a_star;
 
 namespace Star {

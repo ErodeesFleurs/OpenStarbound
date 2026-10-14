@@ -1,8 +1,11 @@
 module;
 
 import star.rect;
-#include "StarString.hpp"
-#include "StarSet.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.maybe;
+import star.string;
+import star.set;
 
 import star.vector;
 namespace Star {

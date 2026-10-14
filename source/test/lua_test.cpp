@@ -1,4 +1,11 @@
-#include "StarLua.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.string;
+import star.list;
+import star.variant;
+import star.json;
+import star.maybe;
+import star.lua;
 #include "StarLuaConverters.hpp"
 import star.lexical_cast;
 

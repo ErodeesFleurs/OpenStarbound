@@ -1,6 +1,7 @@
 module;
 
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.string;
 import star.byte_array;
 
 namespace Star {

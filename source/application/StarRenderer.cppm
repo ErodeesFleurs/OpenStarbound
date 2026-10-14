@@ -1,10 +1,15 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.format;
+import star.json;
+import star.string;
+import star.list;
 
-#include "StarVariant.hpp"
+import star.variant;
 import star.image;
 import star.poly;
-#include "StarBiMap.hpp"
+import star.bi_map;
 import star.ref_ptr;
 
 import star.vector;

@@ -1,9 +1,12 @@
 module;
 
-#include "StarVariant.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.format;
+import star.variant;
 import star.either;
-#include "StarString.hpp"
-#include "StarThread.hpp"
+import star.string;
+import star.thread;
 
 // TODO: improve this
 

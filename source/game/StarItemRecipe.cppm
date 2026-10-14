@@ -1,10 +1,14 @@
 module;
-#include "StarStreamFormatter.hpp"
-#include "StarHash.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.format;
+import star.stream_formatter;
+import star.hash;
 
-#include "StarJson.hpp"
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
+import star.json;
+import star.data_stream;
+import star.bi_map;
 import star.item_descriptor;
 import star.game_types;
 
@@ -44,6 +48,12 @@ std::ostream& operator<<(std::ostream& os, ItemRecipe const& recipe);
 }
 
 export module star.item_recipe;
+
+export namespace Star {
+  template <>
+  struct hash<ItemRecipe>;
+}
+
 
 export template <> struct std::formatter<Star::ItemRecipe> : Star::StreamFormatter {};
 

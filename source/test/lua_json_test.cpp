@@ -1,4 +1,7 @@
-#include "StarLua.hpp"
+#include "StarConfig.hpp"
+import star.lua;
+import star.string;
+import star.json;
 
 #include "gtest/gtest.h"
 

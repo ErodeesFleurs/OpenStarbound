@@ -1,12 +1,21 @@
-#include "StarHash.hpp"
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.json;
+import star.hash;
+import star.xx_hash;
+import star.string;
+import star.list;
+import star.map;
+import star.maybe;
+import star.variant;
+import star.data_stream;
+import star.algorithm;
 import star.lexical_cast;
-#include "StarFormat.hpp"
+import star.format;
 
 import star.json_parser;
 import star.json_builder;
 import star.json_path;
-#include "StarFile.hpp"
+import star.file;
 
 namespace Star {
 
@@ -873,7 +882,7 @@ String Json::printJson(int pretty, bool sort) const {
 String Json::printString() const {
   if (type() == Type::String)
     return *m_data.get<StringConstPtr>();
-  return repr();
+  return repr(0, false);
 }
 
 std::ostream& operator<<(std::ostream& os, Json const& v) {

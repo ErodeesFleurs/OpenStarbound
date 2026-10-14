@@ -1,30 +1,31 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.json;
 #include "StarJsonExtra.hpp"
-#include "StarLua.hpp"
-#include "StarList.hpp"
+import star.lua;
+import star.list;
 import star.observer_stream;
 #include "StarStrongTypedef.hpp"
-#include "StarDataStream.hpp"
+import star.data_stream;
 import star.id_map;
 import star.either;
 import star.game_types;
 import star.random;
 import star.periodic_function;
-#include "StarOrderedMap.hpp"
-#include "StarString.hpp"
+import star.ordered_map;
+import star.string;
 import star.color;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarStringView.hpp"
-#include "StarThread.hpp"
+import star.hash;
+import star.string_view;
+import star.thread;
 import star.directives;
 import star.asset_path;
-#include "StarBiMap.hpp"
+import star.bi_map;
 import star.audio;
-#include "StarMap.hpp"
-#include "StarSet.hpp"
-#include "StarMaybe.hpp"
+import star.map;
+import star.set;
+import star.maybe;
 
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.

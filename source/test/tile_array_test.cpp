@@ -1,13 +1,14 @@
 import star.rect;
+import star.list;
 import star.multi_array;
-#include "StarSet.hpp"
+#include "StarConfig.hpp"
+import star.set;
 import star.vector;
-#include "StarThread.hpp"
+import star.thread;
 import star.worker_pool;
 
 import std;
 import star.sector_array_2d;
-#include "StarThread.hpp"
 
 import star.worker_pool;
 import star.tile_sector_array;

@@ -1,10 +1,11 @@
 module;
 
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.json;
 import star.byte_array;
-#include "StarSet.hpp"
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
+import star.set;
+import star.data_stream;
+import star.bi_map;
 import star.item_descriptor;
 
 namespace Star {

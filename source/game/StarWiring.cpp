@@ -1,7 +1,8 @@
-#include "StarHash.hpp"
+#include "StarConfig.hpp"
+import star.hash;
 import star.game_types;
 import star.world_geometry;
-#include "StarDataStream.hpp"
+import star.data_stream;
 import star.wiring;
 #include "StarDataStreamExtra.hpp"
 

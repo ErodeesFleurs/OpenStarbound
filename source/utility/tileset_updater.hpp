@@ -1,4 +1,8 @@
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.json;
+import star.string;
+import star.list;
+import star.map;
 import star.image;
 
 import star.tileset_database;

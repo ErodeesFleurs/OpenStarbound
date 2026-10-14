@@ -2,7 +2,8 @@ module;
 
 import star.vector;
 import star.interpolation;
-#include "StarLogging.hpp"
+#include "StarConfig.hpp"
+import star.logging;
 import star.lru_cache;
 
 import star.array;

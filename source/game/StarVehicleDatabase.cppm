@@ -1,8 +1,11 @@
 module;
 import star.byte_array;
 
-#include "StarJson.hpp"
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.format;
+import star.json;
+import star.thread;
 import star.net_compatibility;
 
 namespace Star {

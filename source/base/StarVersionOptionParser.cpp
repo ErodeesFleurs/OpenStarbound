@@ -1,12 +1,13 @@
-#include "StarString.hpp"
-#include "StarVariant.hpp"
-#include "StarOrderedMap.hpp"
-#include "StarOrderedSet.hpp"
+import star.string;
+import star.variant;
+import star.ordered_map;
+import star.ordered_set;
 import star.option_parser;
 #include "StarConfig.hpp"
+import star.format;
 import star.version;
 import star.version_option_parser;
-#include "StarFile.hpp"
+import star.file;
 
 namespace Star {
 

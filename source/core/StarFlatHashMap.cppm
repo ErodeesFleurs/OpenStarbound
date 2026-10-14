@@ -1,9 +1,10 @@
-#pragma once
+module;
+#include "StarConfig.hpp"
 
 import std;
 
-#include "StarFlatHashTable.hpp"
-#include "StarHash.hpp"
+import star.flat_hash_table;
+import star.hash;
 
 namespace Star {
 
@@ -539,4 +540,10 @@ bool FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::operator!=(FlatHashMap c
   return m_table != rhs.m_table;
 }
 
+}
+
+export module star.flat_hash_map;
+
+export namespace Star {
+  using ::Star::FlatHashMap;
 }

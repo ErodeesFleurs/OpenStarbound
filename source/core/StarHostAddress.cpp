@@ -1,8 +1,11 @@
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.string;
 import star.either;
 import star.host_address;
 import star.lexical_cast;
 #include "StarNetImpl.hpp"
+import star.hash;
 
 namespace Star {
 

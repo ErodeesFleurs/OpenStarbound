@@ -1,5 +1,6 @@
-#include "StarJson.hpp"
-#include "StarBiMap.hpp"
+#include "StarConfig.hpp"
+import star.json;
+import star.bi_map;
 import star.random;
 import star.perlin;
 

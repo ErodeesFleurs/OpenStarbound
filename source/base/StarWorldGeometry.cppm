@@ -1,6 +1,7 @@
 module;
-#include "StarList.hpp"
-#include "StarMaybe.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.maybe;
 
 import star.poly;
 

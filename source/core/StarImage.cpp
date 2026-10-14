@@ -1,7 +1,10 @@
-#include "StarIODevice.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.format;
+import star.io_device;
 import star.vector;
 import star.image;
-#include "StarLogging.hpp"
+import star.logging;
 
 #include <png.h>
 

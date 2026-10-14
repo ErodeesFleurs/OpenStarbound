@@ -1,7 +1,8 @@
 module;
 
 import std;
-#include "StarException.hpp"
+#include "StarConfig.hpp"
+import star.format;
 
 namespace Star {
 

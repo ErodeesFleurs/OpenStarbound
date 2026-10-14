@@ -1,21 +1,24 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.format;
+import star.json;
 import star.byte_array;
 
-#include "StarString.hpp"
+import star.string;
 import star.poly;
-#include "StarList.hpp"
+import star.list;
 import star.rect;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarDataStream.hpp"
-#include "StarStringView.hpp"
-#include "StarThread.hpp"
+import star.hash;
+import star.data_stream;
+import star.string_view;
+import star.thread;
 import star.directives;
 import star.asset_path;
 import star.input_event;
 import star.vector;
-#include "StarSet.hpp"
+import star.set;
 
 namespace Star {
 class Image;

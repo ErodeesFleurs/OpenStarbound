@@ -1,7 +1,13 @@
-#pragma once
-#include "StarStreamFormatter.hpp"
+module;
+#include "StarConfig.hpp"
+import star.stream_formatter;
 
-#include "StarMap.hpp"
+import star.map;
+import star.flat_hash_map;
+import star.list;
+import star.maybe;
+import star.hash;
+import star.format;
 
 import star.output_proxy;
 import star.algorithm;
@@ -656,5 +662,14 @@ std::ostream& operator<<(std::ostream& os, OrderedMapWrapper<Map, Key, Value, Al
 
 }
 
-template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
+export module star.ordered_map;
+
+export template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 struct std::formatter<Star::OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>> : Star::StreamFormatter {};
+
+export namespace Star {
+  using ::Star::OrderedMapWrapper;
+  using ::Star::OrderedMap;
+  using ::Star::OrderedHashMap;
+  using ::Star::operator<<;
+}

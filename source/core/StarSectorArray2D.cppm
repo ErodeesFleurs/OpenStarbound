@@ -1,9 +1,12 @@
 module;
 
 import star.multi_array;
-#include "StarSet.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.format;
+import star.set;
 import star.vector;
-#include "StarThread.hpp"
+import star.thread;
 import star.worker_pool;
 
 import std;

@@ -1,10 +1,14 @@
-#pragma once
-#include "StarStreamFormatter.hpp"
+module;
+#include "StarConfig.hpp"
+import star.stream_formatter;
 
 import std;
 
-#include "StarFlatHashMap.hpp"
-#include "StarList.hpp"
+import star.flat_hash_map;
+import star.list;
+import star.maybe;
+import star.hash;
+import star.format;
 
 import star.output_proxy;
 import star.algorithm;
@@ -319,5 +323,18 @@ std::ostream& operator<<(std::ostream& os, MapMixin<BaseMap> const& m) {
 
 }
 
-template <typename BaseMap>
+export module star.map;
+
+export template <typename BaseMap>
 struct std::formatter<Star::MapMixin<BaseMap>> : Star::StreamFormatter {};
+
+export namespace Star {
+  using ::Star::MapExceptionTag;
+  using ::Star::MapException;
+  using ::Star::MapMixin;
+  using ::Star::Map;
+  using ::Star::HashMap;
+  using ::Star::StableHashMap;
+  using ::Star::printMap;
+  using ::Star::operator<<;
+}

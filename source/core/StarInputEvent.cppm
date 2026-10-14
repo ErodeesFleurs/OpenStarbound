@@ -1,8 +1,9 @@
 module;
 
-#include "StarString.hpp"
-#include "StarBiMap.hpp"
-#include "StarVariant.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.bi_map;
+import star.variant;
 import star.vector;
 
 namespace Star {

@@ -1,4 +1,10 @@
 module;
+#include "StarConfig.hpp"
+import star.list;
+import star.set;
+import star.variant;
+import star.data_stream;
+import star.format;
 import star.net_compatibility;
 import star.byte_array;
 

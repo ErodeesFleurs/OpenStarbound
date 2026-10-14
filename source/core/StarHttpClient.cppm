@@ -1,13 +1,14 @@
 module;
 
-#include "StarString.hpp"
-#include "StarMap.hpp"
-#include "StarMaybe.hpp"
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.map;
+import star.maybe;
+import star.thread;
 import star.worker_pool;
 
-#include "StarLogging.hpp"
-#include "StarFormat.hpp"
+import star.logging;
+import star.format;
 #include <cpr/cpr.h>
 
 export module star.http_client;

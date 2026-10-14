@@ -1,17 +1,22 @@
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.format;
+import star.json;
+import star.string;
+import star.list;
 #include "StarJsonExtra.hpp"
 import star.rect;
 import star.image;
 #include "StarCasting.hpp"
 import star.texture_atlas;
-#include "StarVariant.hpp"
-#include "StarBiMap.hpp"
+import star.variant;
+import star.bi_map;
 import star.ref_ptr;
 import star.renderer;
 
 #include "GL/glew.h"
 import star.renderer_opengl;
-#include "StarLogging.hpp"
+import star.logging;
 
 import star.vector;
 import star.matrix3;

@@ -1,4 +1,7 @@
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.format;
+import star.thread;
 import star.worker_pool;
 
 namespace Star {

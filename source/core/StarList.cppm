@@ -1,15 +1,15 @@
-#pragma once
-#include "StarStreamFormatter.hpp"
-#include "StarHash.hpp"
+module;
+#include "StarConfig.hpp"
+import star.stream_formatter;
+import star.hash;
 
 import std;
 
-#include "StarException.hpp"
 import star.static_vector;
 import star.small_vector;
 import star.pythonic;
-#include "StarMaybe.hpp"
-#include "StarFormat.hpp"
+import star.maybe;
+import star.format;
 
 import star.algorithm;
 namespace Star {
@@ -1135,5 +1135,39 @@ typename ListEnumerateTypes<Container>::Result enumerate(Container&& container) 
 
 }
 
-template <typename BaseList>
+export module star.list;
+
+export namespace Star {
+  template <typename Element, typename Allocator>
+  struct hash<List<Element, Allocator>>;
+  template <typename Element, size_t MaxStackSize>
+  struct hash<StaticList<Element, MaxStackSize>>;
+  template <typename Element, size_t MaxStackSize>
+  struct hash<SmallList<Element, MaxStackSize>>;
+  template <typename Element, typename Allocator>
+  struct hash<Deque<Element, Allocator>>;
+  template <typename Element, typename Allocator>
+  struct hash<LinkedList<Element, Allocator>>;
+}
+
+
+export template <typename BaseList>
 struct std::formatter<Star::ListMixin<BaseList>> : Star::StreamFormatter {};
+
+export namespace Star {
+  using ::Star::ListMixin;
+  using ::Star::ListHasher;
+  using ::Star::RandomAccessListMixin;
+  using ::Star::FrontModifyingListMixin;
+  using ::Star::List;
+  using ::Star::StaticList;
+  using ::Star::SmallList;
+  using ::Star::Deque;
+  using ::Star::LinkedList;
+  using ::Star::ListZipTypes;
+  using ::Star::ListEnumerateTypes;
+  using ::Star::zip;
+  using ::Star::enumerate;
+  using ::Star::operator<<;
+  using ::Star::hash;
+}

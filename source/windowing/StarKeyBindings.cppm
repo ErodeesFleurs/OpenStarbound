@@ -1,9 +1,13 @@
 module;
 
-#include "StarJson.hpp"
-#include "StarBiMap.hpp"
+#include "StarConfig.hpp"
+import star.json;
+import star.string;
+import star.list;
+import star.map;
+import star.bi_map;
 import star.input_event;
-#include "StarSet.hpp"
+import star.set;
 
 namespace Star {
 

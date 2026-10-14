@@ -1,8 +1,13 @@
 module;
 
-#include "StarHash.hpp"
-#include "StarDataStream.hpp"
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.string_view;
+import star.list;
+import star.format;
+import star.hash;
+import star.data_stream;
+import star.thread;
 import star.image_processing;
 
 namespace Star {
@@ -149,6 +154,12 @@ inline Directives::Shared const* Directives::operator->() const {
 }
 
 export module star.directives;
+
+export namespace Star {
+  template <>
+  struct hash<DirectivesGroup>;
+}
+
 
 export namespace Star {
   using ::Star::Directives;

@@ -1,8 +1,10 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.json;
 #include "StarJsonExtra.hpp"
 
-#include "StarBiMap.hpp"
+import star.bi_map;
 import star.random;
 import star.perlin;
 import star.vector;

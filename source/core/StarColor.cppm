@@ -1,9 +1,11 @@
 module;
-#include "StarStreamFormatter.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.stream_formatter;
 
-#include "StarStringView.hpp"
+import star.string_view;
 import star.vector;
-#include "StarFormat.hpp"
+import star.format;
 
 import star.math_common;
 namespace Star {

@@ -1,53 +1,54 @@
-#include "StarJson.hpp"
-#include "StarXXHash.hpp"
+import star.json;
+import star.xx_hash;
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
 import star.id_map;
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 import star.lru_cache;
-#include "StarThread.hpp"
+import star.thread;
 import star.time;
 import star.random;
 import star.ttl_cache;
 #include "StarCasting.hpp"
 import star.poly;
-#include "StarList.hpp"
-#include "StarBiMap.hpp"
-#include "StarDataStream.hpp"
+import star.list;
+import star.bi_map;
+import star.data_stream;
 import star.game_types;
 import star.json_rpc;
 #include "StarStrongTypedef.hpp"
 import star.vector;
-#include "StarString.hpp"
+import star.string;
 import star.byte_array;
 import star.encode;
 import star.rect;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarStringView.hpp"
+import star.hash;
+import star.string_view;
 import star.directives;
 import star.color;
 import star.asset_path;
-#include "StarVariant.hpp"
+import star.variant;
 import star.rpc_promise;
-#include "StarSet.hpp"
-#include "StarMaybe.hpp"
+import star.set;
+import star.maybe;
 import star.a_star;
-#include "StarOrderedSet.hpp"
+import star.ordered_set;
 import star.audio;
-#include "StarMap.hpp"
+import star.map;
 import star.either;
 import star.interpolation;
 import star.periodic_function;
 import star.matrix3;
-#include "StarIODevice.hpp"
+import star.io_device;
 import star.ref_ptr;
-#include "StarLogging.hpp"
+import star.logging;
 import star.listener;
 #include "StarConfig.hpp"
+import star.format;
 import star.version;
 import star.spline;
-#include "StarLua.hpp"
+import star.lua;
 import star.observer_stream;
 import star.weighted_pool;
 #include "StarDataStreamDevices.hpp"
@@ -2670,7 +2671,7 @@ List<ChatAction> Player::pullPendingChatActions() {
 Maybe<String> Player::inspectionLogName() const {
   auto identifier = uniqueId();
   if (String* str = identifier.ptr()) {
-    auto hash = XXH3_128bits(str->utf8Ptr(), str->utf8Size());
+    auto hash = xxHash3_128(str->utf8Ptr(), str->utf8Size());
     return String("Player #") + hexEncode((const char*)&hash, sizeof(hash));
   }
   return identifier;

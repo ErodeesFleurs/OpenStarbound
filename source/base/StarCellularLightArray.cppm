@@ -1,6 +1,8 @@
 module;
 
-#include "StarList.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.list;
 import star.vector;
 
 import star.math_common;

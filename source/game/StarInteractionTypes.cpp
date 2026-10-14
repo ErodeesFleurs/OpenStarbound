@@ -1,5 +1,8 @@
-#include "StarBiMap.hpp"
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.data_stream;
+import star.bi_map;
+import star.json;
 import star.game_types;
 #include "StarDataStreamExtra.hpp"
 import star.interaction_types;

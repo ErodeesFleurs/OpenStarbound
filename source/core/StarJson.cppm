@@ -1,11 +1,15 @@
-#pragma once
-#include "StarStreamFormatter.hpp"
-#include "StarHash.hpp"
-#include "StarXXHash.hpp"
+module;
+#include "StarConfig.hpp"
+import star.stream_formatter;
+import star.hash;
+import star.xx_hash;
 
-#include "StarDataStream.hpp"
-#include "StarVariant.hpp"
-#include "StarString.hpp"
+import star.data_stream;
+import star.variant;
+import star.string;
+import star.list;
+import star.maybe;
+import star.format;
 
 import star.algorithm;
 namespace Star {
@@ -381,5 +385,40 @@ bool jsonPartialMatch(Json const& base, Json const& compare);
 
 }
 
-template <> struct std::formatter<Star::Json> : Star::StreamFormatter {};
-template <> struct std::formatter<Star::JsonObject> : Star::StreamFormatter {};
+export module star.json;
+
+export namespace Star {
+  template <>
+  struct hash<Json>;
+}
+
+
+export namespace Star {
+  using ::Star::JsonExceptionTag;
+  using ::Star::JsonException;
+  using ::Star::JsonParsingExceptionTag;
+  using ::Star::JsonParsingException;
+  using ::Star::Json;
+  using ::Star::JsonPtr;
+  using ::Star::JsonConstPtr;
+  using ::Star::JsonWeakPtr;
+  using ::Star::JsonConstWeakPtr;
+  using ::Star::JsonUPtr;
+  using ::Star::JsonConstUPtr;
+  using ::Star::JsonArray;
+  using ::Star::JsonArrayConstPtr;
+  using ::Star::JsonObject;
+  using ::Star::JsonObjectConstPtr;
+  using ::Star::jsonMerge;
+  using ::Star::jsonMergeNulling;
+  using ::Star::jsonMergeQuery;
+  using ::Star::jsonMergeQueryImpl;
+  using ::Star::jsonMergeQueryDef;
+  using ::Star::jsonPartialMatch;
+  using ::Star::hash;
+  using ::Star::operator<<;
+  using ::Star::operator>>;
+}
+
+export template <> struct std::formatter<Star::Json> : Star::StreamFormatter {};
+export template <> struct std::formatter<Star::JsonObject> : Star::StreamFormatter {};

@@ -1,7 +1,10 @@
 module;
 
-#include "StarJson.hpp"
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.json;
+import star.thread;
 
 namespace Star {
 

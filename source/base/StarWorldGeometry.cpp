@@ -1,5 +1,7 @@
-#include "StarList.hpp"
-#include "StarMaybe.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.list;
+import star.maybe;
 import star.poly;
 import star.world_geometry;
 

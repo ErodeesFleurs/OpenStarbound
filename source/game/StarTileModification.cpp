@@ -1,8 +1,9 @@
-#include "StarDataStream.hpp"
-#include "StarVariant.hpp"
+#include "StarConfig.hpp"
+import star.data_stream;
+import star.variant;
 import star.game_types;
-#include "StarList.hpp"
-#include "StarBiMap.hpp"
+import star.list;
+import star.bi_map;
 import star.collision_block;
 #include "StarDataStreamExtra.hpp"
 import star.tile_modification;

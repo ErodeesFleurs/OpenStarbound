@@ -1,4 +1,7 @@
-#include "StarOrderedMap.hpp"
+#include "StarConfig.hpp"
+import star.ordered_map;
+import star.list;
+import star.maybe;
 
 #include "gtest/gtest.h"
 

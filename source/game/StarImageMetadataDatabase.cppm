@@ -1,16 +1,17 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.json;
 
 import star.rect;
-#include "StarThread.hpp"
-#include "StarList.hpp"
+import star.thread;
+import star.list;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarDataStream.hpp"
-#include "StarStringView.hpp"
+import star.hash;
+import star.data_stream;
+import star.string_view;
 import star.directives;
 import star.asset_path;
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 import star.lru_cache;
 import star.time;
 import star.random;

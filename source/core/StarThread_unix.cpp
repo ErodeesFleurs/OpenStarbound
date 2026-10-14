@@ -1,7 +1,4 @@
 #include <stdio.h>
-#include "StarThread.hpp"
-import star.time;
-#include "StarLogging.hpp"
 
 #include <limits.h>
 #include <libgen.h>
@@ -16,6 +13,13 @@ import star.time;
 #endif
 #include <sys/time.h>
 #include <errno.h>
+#include "StarConfig.hpp"
+import star.thread;
+import star.string;
+import star.maybe;
+import star.format;
+import star.time;
+import star.logging;
 
 #ifdef MAXCOMLEN
 #define MAX_THREAD_NAMELEN MAXCOMLEN

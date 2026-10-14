@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 import std;
 
@@ -32,9 +32,13 @@ private:
     bool isEmpty() const;
     bool isEnd() const;
 
-    union {
+    // Named storage avoids xclang's imported anonymous-union member IR failure.
+    // Neither constructor nor destructor activates or destroys the Value.
+    union ValueStorage {
+      ValueStorage() {}
+      ~ValueStorage() {}
       Value value;
-    };
+    } storage;
     size_t hash;
   };
 
@@ -130,14 +134,14 @@ template <typename Value, typename Key, typename GetKey, typename Hash, typename
 FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::Bucket(Bucket const& rhs) {
   this->hash = rhs.hash;
   if (auto o = rhs.valuePtr())
-    new (&this->value) Value(*o);
+    new (&this->storage.value) Value(*o);
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::Bucket(Bucket&& rhs) {
   this->hash = rhs.hash;
   if (auto o = rhs.valuePtr())
-    new (&this->value) Value(std::move(*o));
+    new (&this->storage.value) Value(std::move(*o));
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
@@ -146,7 +150,7 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::operato
     if (auto s = valuePtr())
       *s = *o;
     else
-      new (&this->value) Value(*o);
+      new (&this->storage.value) Value(*o);
   } else {
     if (auto s = valuePtr())
       s->~Value();
@@ -161,7 +165,7 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::operato
     if (auto s = valuePtr())
       *s = std::move(*o);
     else
-      new (&this->value) Value(std::move(*o));
+      new (&this->storage.value) Value(std::move(*o));
   } else {
     if (auto s = valuePtr())
       s->~Value();
@@ -175,7 +179,7 @@ void FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::setFill
   if (auto s = valuePtr())
     *s = std::move(value);
   else
-    new (&this->value) Value(std::move(value));
+    new (&this->storage.value) Value(std::move(value));
   this->hash = hash | FilledHashBit;
 }
 
@@ -196,14 +200,14 @@ void FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::setEnd(
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 Value const* FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::valuePtr() const {
   if (hash & FilledHashBit)
-    return &this->value;
+    return &this->storage.value;
   return nullptr;
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 Value* FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::valuePtr() {
   if (hash & FilledHashBit)
-    return &this->value;
+    return &this->storage.value;
   return nullptr;
 }
 
@@ -556,4 +560,10 @@ void FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::checkCapacity(s
   }
 }
 
+}
+
+export module star.flat_hash_table;
+
+export namespace Star {
+  using ::Star::FlatHashTable;
 }

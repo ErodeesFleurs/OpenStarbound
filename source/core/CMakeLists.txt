@@ -1,74 +1,23 @@
 set (star_core_HEADERS
     StarBTree.hpp
-    StarBiMap.hpp
     StarCasting.hpp
     StarConfig.hpp
-    StarDataStream.hpp
     StarDataStreamDevices.hpp
     StarDataStreamExtra.hpp
-    StarException.hpp
-    StarFile.hpp
-    StarFlatHashMap.hpp
-    StarFlatHashSet.hpp
-    StarFormat.hpp
-    StarHash.hpp
-    StarIODevice.hpp
-    StarJson.hpp
     StarJsonExtra.hpp
-    StarList.hpp
-    StarLogging.hpp
-    StarLua.hpp
     StarLuaConverters.hpp
-    StarMap.hpp
-    StarMaybe.hpp
     StarNetImpl.hpp
-    StarOrderedMap.hpp
-    StarOrderedSet.hpp
-    StarSet.hpp
-    StarStreamFormatter.hpp
-    StarString.hpp
-    StarStringView.hpp
     StarStrongTypedef.hpp
-    StarThread.hpp
-    StarXXHash.hpp
     scripting/StarUtilityLuaBindings.hpp
   )
 
 set (star_core_SOURCES
-    StarDataStream.cpp
     StarDataStreamDevices.cpp
-    StarFile.cpp
-    StarIODevice.cpp
-    StarJson.cpp
     StarJsonExtra.cpp
-    StarLogging.cpp
-    StarLua.cpp
     StarLuaConverters.cpp
-    StarString.cpp
-    StarStringView.cpp
-    StarThread.cpp
     scripting/StarUtilityLuaBindings.cpp
   )
 
-if (STAR_SYSTEM_FAMILY_UNIX)
-  set (star_core_SOURCES ${star_core_SOURCES}
-      StarException_unix.cpp
-      StarFile_unix.cpp
-      StarThread_unix.cpp
-    )
-elseif (STAR_SYSTEM_FAMILY_WINDOWS)
-  set (star_core_HEADERS ${star_core_HEADERS}
-      StarString_windows.hpp
-    )
-
-  set (star_core_SOURCES ${star_core_SOURCES}
-      StarFile_windows.cpp
-      StarString_windows.cpp
-      StarThread_windows.cpp
-      StarException_windows.cpp
-    )
-
-endif ()
 
 configure_file (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 add_library (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS})
@@ -80,6 +29,13 @@ target_include_directories (star_core PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_COR
 add_library (star_modules STATIC)
 target_sources (star_modules PUBLIC FILE_SET CXX_MODULES
     FILES StarVlqEncoding.cppm StarCurve25519.cppm
+          StarFormat.cppm StarStreamFormatter.cppm
+          StarHash.cppm StarFlatHashTable.cppm StarFlatHashMap.cppm StarFlatHashSet.cppm
+          StarMaybe.cppm StarVariant.cppm StarList.cppm StarMap.cppm StarSet.cppm
+          StarOrderedMap.cppm StarOrderedSet.cppm
+          StarString.cppm StarStringView.cppm StarThread.cppm StarBiMap.cppm
+          StarIODevice.cppm StarFile.cppm StarDataStream.cppm StarXXHash.cppm
+          StarJson.cppm StarLogging.cppm StarLua.cppm
           StarSha256.cppm StarImageScaling.cppm StarSecureRandom.cppm
           StarSignalHandler.cppm StarDynamicLib.cppm StarHttpClient.cppm StarUdp.cppm
           StarIODeviceCallbacks.cppm StarCompression.cppm StarJsonPatch.cppm
@@ -136,6 +92,9 @@ target_sources (star_modules PUBLIC FILE_SET CXX_MODULES
           StarSectorArray2D.cppm)
 target_sources (star_modules PRIVATE
     StarUuid.cpp StarHostAddress.cpp StarSocket.cpp StarTcp.cpp
+    StarString.cpp StarStringView.cpp StarThread.cpp
+    StarIODevice.cpp StarFile.cpp StarDataStream.cpp
+    StarJson.cpp StarLogging.cpp StarLua.cpp
     StarWorkerPool.cpp StarOptionParser.cpp StarShellParser.cpp StarJsonPath.cpp
     StarJsonBuilder.cpp StarFormattedJson.cpp StarJsonRpc.cpp
     StarNetElement.cpp StarNetElementBasicFields.cpp
@@ -152,7 +111,6 @@ target_sources (star_modules PRIVATE
     StarText.cpp
     StarTime.cpp
     StarUnicode.cpp
-    StarUnicode.inc
     StarZSTDCompression.cpp
     StarListener.cpp
     StarAudio.cpp
@@ -162,9 +120,12 @@ target_sources (star_modules PRIVATE
     StarInputEvent.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 if (STAR_SYSTEM_FAMILY_UNIX)
-  target_sources (star_modules PRIVATE StarLockFile_unix.cpp StarTime_unix.cpp)
+  target_sources (star_modules PRIVATE StarLockFile_unix.cpp StarTime_unix.cpp
+      StarException_unix.cpp StarFile_unix.cpp StarThread_unix.cpp)
 elseif (STAR_SYSTEM_FAMILY_WINDOWS)
-  target_sources (star_modules PRIVATE StarLockFile_windows.cpp StarTime_windows.cpp)
+  target_sources (star_modules PUBLIC FILE_SET CXX_MODULES FILES StarString_windows.cppm)
+  target_sources (star_modules PRIVATE StarLockFile_windows.cpp StarTime_windows.cpp
+      StarException_windows.cpp StarFile_windows.cpp StarString_windows.cpp StarThread_windows.cpp)
 endif ()
 set_target_properties (star_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
 target_include_directories (star_modules PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})

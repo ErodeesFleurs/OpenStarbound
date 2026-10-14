@@ -1,10 +1,13 @@
 module;
-#include "StarStreamFormatter.hpp"
-#include "StarHash.hpp"
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.maybe;
+import star.stream_formatter;
+import star.hash;
+import star.json;
 
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
+import star.data_stream;
+import star.bi_map;
 
 namespace Star {
 
@@ -81,6 +84,12 @@ struct hash<ItemDescriptor> {
 }
 
 export module star.item_descriptor;
+
+export namespace Star {
+  template <>
+  struct hash<ItemDescriptor>;
+}
+
 
 export template <> struct std::formatter<Star::ItemDescriptor> : Star::StreamFormatter {};
 

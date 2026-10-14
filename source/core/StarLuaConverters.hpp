@@ -2,11 +2,14 @@
 
 import star.rect;
 import star.vector;
-#include "StarLua.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.maybe;
+import star.lua;
 import star.color;
 import star.poly;
 import star.line;
-#include "StarVariant.hpp"
+import star.variant;
 import star.rpc_promise;
 
 import star.matrix3;

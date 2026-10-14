@@ -1,5 +1,7 @@
 #include <ctype.h>
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.string;
 import star.byte_array;
 import star.encode;
 

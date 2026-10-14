@@ -1,8 +1,11 @@
 module;
-#include "StarStreamFormatter.hpp"
-#include "StarHash.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.maybe;
+import star.stream_formatter;
+import star.hash;
 
-#include "StarDataStream.hpp"
+import star.data_stream;
 import star.directives;
 
 namespace Star {
@@ -82,6 +85,12 @@ struct hash<AssetPath> {
 }
 
 export module star.asset_path;
+
+export namespace Star {
+  template <>
+  struct hash<AssetPath>;
+}
+
 
 export template <> struct std::formatter<Star::AssetPath> : Star::StreamFormatter {};
 

@@ -1,9 +1,13 @@
-#include "StarException.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.string;
+import star.list;
+import star.json;
 
 #include <QApplication>
 #include <QGridLayout>
 #include <QPushButton>
-#include "StarFile.hpp"
+import star.file;
 #include "json_tool.hpp"
 #include "editor_gui.hpp"
 

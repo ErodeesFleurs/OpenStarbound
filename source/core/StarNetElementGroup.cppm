@@ -2,7 +2,11 @@ module;
 import star.net_compatibility;
 import star.version;
 
-#include "StarSet.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.map;
+import star.data_stream;
+import star.set;
 #include "StarDataStreamDevices.hpp"
 
 import star.net_element;

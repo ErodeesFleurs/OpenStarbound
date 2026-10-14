@@ -1,9 +1,12 @@
 module;
-#include "StarHash.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.format;
+import star.hash;
 import star.byte_array;
 
 import star.array;
-#include "StarDataStream.hpp"
+import star.data_stream;
 
 namespace Star {
 
@@ -50,6 +53,12 @@ DataStream& operator<<(DataStream& ds, Uuid const& uuid);
 }
 
 export module star.uuid;
+
+export namespace Star {
+  template <>
+  struct hash<Uuid>;
+}
+
 
 export namespace Star {
   using ::Star::UuidExceptionTag;

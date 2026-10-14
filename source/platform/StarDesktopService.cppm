@@ -1,6 +1,7 @@
 module;
 
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.string;
 
 namespace Star {
 

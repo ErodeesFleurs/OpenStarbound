@@ -1,12 +1,13 @@
 module;
 
-#include "StarVariant.hpp"
+#include "StarConfig.hpp"
+import star.variant;
 
 import star.byte_array;
 import star.either;
-#include "StarList.hpp"
-#include "StarMaybe.hpp"
-#include "StarString.hpp"
+import star.list;
+import star.maybe;
+import star.string;
 #include "StarStrongTypedef.hpp"
 import star.rpc_promise;
 

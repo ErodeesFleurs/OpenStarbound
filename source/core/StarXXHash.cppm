@@ -1,6 +1,7 @@
-#pragma once
+module;
+#include "StarConfig.hpp"
 
-#include "StarString.hpp"
+import star.string;
 import star.byte_array;
 
 #define XXH_STATIC_LINKING_ONLY
@@ -198,6 +199,10 @@ inline uint64_t xxHash3(char const* source, size_t length) {
   return XXH3_64bits(source, length);
 }
 
+inline auto xxHash3_128(char const* source, size_t length) {
+  return XXH3_128bits(source, length);
+}
+
 inline uint64_t xxHash3(ByteArray const& in) {
   return xxHash3(in.ptr(), in.size());
 }
@@ -205,4 +210,19 @@ inline uint64_t xxHash3(ByteArray const& in) {
 inline uint64_t xxHash3(String const& in) {
   return xxHash3(in.utf8Ptr(), in.utf8Size());
 }
+}
+
+export module star.xx_hash;
+
+export namespace Star {
+  using ::Star::XXHash32;
+  using ::Star::XXHash64;
+  using ::Star::XXHash3;
+  using ::Star::xxHash32;
+  using ::Star::xxHash64;
+  using ::Star::xxHash3;
+  using ::Star::xxHash3_128;
+  using ::Star::xxHash32Push;
+  using ::Star::xxHash64Push;
+  using ::Star::xxHash3Push;
 }

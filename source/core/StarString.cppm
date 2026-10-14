@@ -1,15 +1,16 @@
-#pragma once
-#include "StarHash.hpp"
+module;
+#include "StarConfig.hpp"
+import star.hash;
 
-#include "StarFormat.hpp"
+import star.format;
 import std;
 
 import star.byte_array;
-#include "StarMaybe.hpp"
-#include "StarList.hpp"
-#include "StarMap.hpp"
-#include "StarSet.hpp"
-#include "StarUnicode.inc"
+import star.maybe;
+import star.list;
+import star.map;
+import star.set;
+import star.unicode;
 
 import star.pythonic;
 namespace Star {
@@ -523,7 +524,52 @@ StringList StringList::sorted(Comparator&& comparator) const {
 
 }
 
-template <> struct std::formatter<Star::String> : std::formatter<std::string> {
+export module star.string;
+
+export namespace Star {
+  template <>
+  struct hash<String>;
+  template <>
+  struct hash<StringList>;
+}
+
+
+export namespace Star {
+  using ::Star::StringExceptionTag;
+  using ::Star::StringException;
+  using ::Star::String;
+  using ::Star::StringPtr;
+  using ::Star::StringConstPtr;
+  using ::Star::StringWeakPtr;
+  using ::Star::StringConstWeakPtr;
+  using ::Star::StringUPtr;
+  using ::Star::StringConstUPtr;
+  using ::Star::StringList;
+  using ::Star::StringListPtr;
+  using ::Star::StringListConstPtr;
+  using ::Star::StringListWeakPtr;
+  using ::Star::StringListConstWeakPtr;
+  using ::Star::StringListUPtr;
+  using ::Star::StringListConstUPtr;
+  using ::Star::StringView;
+  using ::Star::StringViewPtr;
+  using ::Star::StringViewConstPtr;
+  using ::Star::StringViewWeakPtr;
+  using ::Star::StringViewConstWeakPtr;
+  using ::Star::StringViewUPtr;
+  using ::Star::StringViewConstUPtr;
+  using ::Star::CaseInsensitiveStringHash;
+  using ::Star::CaseInsensitiveStringCompare;
+  using ::Star::StringSet;
+  using ::Star::CaseInsensitiveStringSet;
+  using ::Star::StringMap;
+  using ::Star::StableStringMap;
+  using ::Star::CaseInsensitiveStringMap;
+  using ::Star::hash;
+  using ::Star::operator<<;
+}
+
+export template <> struct std::formatter<Star::String> : std::formatter<std::string> {
   template <typename Context>
   auto format(Star::String const& s, Context& ctx) const -> typename Context::iterator {
     return std::formatter<std::string>::format(s.utf8(), ctx);

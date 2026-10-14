@@ -1,14 +1,17 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.json;
+import star.string;
 #include "StarJsonExtra.hpp"
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
-#include "StarLua.hpp"
+import star.lua;
 #include "StarLuaConverters.hpp"
 #include "StarClientApplication.hpp"
-#include "StarVariant.hpp"
+import star.variant;
 import star.image;
-#include "StarBiMap.hpp"
+import star.bi_map;
 import star.ref_ptr;
 import star.renderer;
 

@@ -1,10 +1,11 @@
-#include "StarJson.hpp"
-#include "StarThread.hpp"
+import star.json;
+import star.thread;
 #include "StarConfig.hpp"
+import star.string;
 import star.version;
 import star.configuration;
-#include "StarFile.hpp"
-#include "StarLogging.hpp"
+import star.file;
+import star.logging;
 
 namespace Star {
 

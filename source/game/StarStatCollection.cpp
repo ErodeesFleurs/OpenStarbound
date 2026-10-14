@@ -1,12 +1,17 @@
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.variant;
+import star.maybe;
+import star.json;
 import star.either;
 #include "StarStrongTypedef.hpp"
-#include "StarDataStream.hpp"
+import star.data_stream;
 import star.id_map;
 import star.status_types;
 #include "StarDataStreamExtra.hpp"
 import star.game_types;
-#include "StarLogging.hpp"
+import star.logging;
 
 import star.stat_set;
 import star.stat_collection;

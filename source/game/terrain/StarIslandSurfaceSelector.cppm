@@ -1,10 +1,11 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.json;
 #include "StarJsonExtra.hpp"
 
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 import star.lru_cache;
-#include "StarBiMap.hpp"
+import star.bi_map;
 import star.random;
 import star.perlin;
 import star.game_types;

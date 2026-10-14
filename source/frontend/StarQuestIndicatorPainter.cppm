@@ -1,6 +1,8 @@
 module;
 
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.map;
 import star.vector;
 import star.game_types;
 

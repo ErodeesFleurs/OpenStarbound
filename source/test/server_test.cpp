@@ -1,16 +1,16 @@
-#include "StarJson.hpp"
-#include "StarXXHash.hpp"
+import star.json;
+import star.xx_hash;
 import star.id_map;
 #include "StarConfig.hpp"
-#include "StarMaybe.hpp"
-#include "StarString.hpp"
+import star.maybe;
+import star.string;
 import star.lock_file;
-#include "StarThread.hpp"
+import star.thread;
 import star.game_types;
 import star.either;
-#include "StarDataStream.hpp"
+import star.data_stream;
 import star.rpc_promise;
-#include "StarIODevice.hpp"
+import star.io_device;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
@@ -21,15 +21,15 @@ typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 import star.net_compatibility;
-#include "StarSet.hpp"
+import star.set;
 #include "StarBTree.hpp"
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 import star.lru_cache;
 import star.btree_database;
 #include "StarCasting.hpp"
-#include "StarOrderedSet.hpp"
-#include "StarList.hpp"
-#include "StarBiMap.hpp"
+import star.ordered_set;
+import star.list;
+import star.bi_map;
 import star.version;
 import star.random;
 import star.perlin;
@@ -40,15 +40,15 @@ import star.worker_pool;
 import star.sector_array_2d;
 import star.color;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarStringView.hpp"
+import star.hash;
+import star.string_view;
 import star.directives;
 import star.asset_path;
-#include "StarVariant.hpp"
+import star.variant;
 import star.image;
-#include "StarMap.hpp"
+import star.map;
 import star.ref_ptr;
-#include "StarLogging.hpp"
+import star.logging;
 import star.listener;
 
 #include "StarLuaRoot.hpp"

@@ -1,7 +1,7 @@
 module;
 
 #include "StarConfig.hpp"
-#include "StarHash.hpp"
+import star.hash;
 import star.version;
 
 namespace Star {
@@ -70,6 +70,12 @@ struct hash<NetCompatibilityRules> {
 }
 
 export module star.net_compatibility;
+
+export namespace Star {
+  template <>
+  struct hash<NetCompatibilityRules>;
+}
+
 
 export namespace Star {
   using ::Star::OpenProtocolVersion;

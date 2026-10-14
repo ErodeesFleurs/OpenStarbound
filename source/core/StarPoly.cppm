@@ -1,8 +1,9 @@
 module;
 
 import std;
-#include "StarList.hpp"
-#include "StarMaybe.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.maybe;
 
 import star.math_common;
 import star.algorithm;

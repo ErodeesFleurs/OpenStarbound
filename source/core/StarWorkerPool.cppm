@@ -1,6 +1,11 @@
 module;
 
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.maybe;
+import star.format;
+import star.thread;
 
 namespace Star {
 

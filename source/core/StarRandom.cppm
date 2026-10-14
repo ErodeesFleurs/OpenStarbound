@@ -1,6 +1,7 @@
 module;
 
-#include "StarException.hpp"
+#include "StarConfig.hpp"
+import star.format;
 import star.static_random;
 import star.byte_array;
 

@@ -1,5 +1,9 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.format;
+import star.json;
 
 import star.rect;
 import star.vector;

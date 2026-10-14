@@ -1,6 +1,7 @@
 module;
 
-#include "StarIODevice.hpp"
+#include "StarConfig.hpp"
+import star.io_device;
 #define OV_EXCLUDE_STATIC_CALLBACKS
 #include "vorbis/codec.h"
 #include "vorbis/vorbisfile.h"

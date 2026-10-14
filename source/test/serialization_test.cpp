@@ -1,4 +1,6 @@
 #include "StarDataStreamDevices.hpp"
+import star.string;
+import star.map;
 
 #include "gtest/gtest.h"
 

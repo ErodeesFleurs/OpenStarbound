@@ -1,4 +1,6 @@
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.json;
+import star.list;
 import star.interpolation;
 import star.parametric_function;
 import star.multi_array_interpolator;

@@ -1,8 +1,13 @@
 #include <stdio.h>
 
-#include "StarJson.hpp"
-#include "StarFile.hpp"
-#include "StarLogging.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.string;
+import star.list;
+import star.format;
+import star.json;
+import star.file;
+import star.logging;
 #include "json_tool.hpp"
 #include "editor_gui.hpp"
 

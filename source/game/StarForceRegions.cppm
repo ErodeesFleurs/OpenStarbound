@@ -1,8 +1,12 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.data_stream;
+import star.maybe;
+import star.json;
 
 import star.poly;
-#include "StarVariant.hpp"
+import star.variant;
 
 import star.vector;
 import star.line;

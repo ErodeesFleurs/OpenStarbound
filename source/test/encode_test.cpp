@@ -1,4 +1,5 @@
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.string;
 import star.byte_array;
 import star.encode;
 

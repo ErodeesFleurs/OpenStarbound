@@ -1,7 +1,8 @@
 module;
 
-#include "StarMaybe.hpp"
-#include "StarException.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.format;
 
 import star.math_common;
 import star.array;

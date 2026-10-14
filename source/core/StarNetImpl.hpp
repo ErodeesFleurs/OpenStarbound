@@ -5,7 +5,7 @@
 #include <ws2tcpip.h>
 #include <stdio.h>
 
-#include "StarString_windows.hpp"
+import star.string_windows;
 #else
 #ifdef STAR_SYSTEM_FREEBSD
 #include <sys/types.h>
@@ -23,7 +23,9 @@
 #include <poll.h>
 #endif
 
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.format;
 import star.either;
 import star.host_address;
 

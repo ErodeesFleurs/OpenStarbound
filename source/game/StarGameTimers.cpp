@@ -1,5 +1,7 @@
 import std;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.data_stream;
+import star.json;
 #include "StarJsonExtra.hpp"
 import star.game_types;
 #include "StarDataStreamExtra.hpp"

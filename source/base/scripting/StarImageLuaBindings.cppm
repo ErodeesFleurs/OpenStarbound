@@ -1,6 +1,7 @@
 module;
-#include "StarJson.hpp"
-#include "StarLua.hpp"
+#include "StarConfig.hpp"
+import star.json;
+import star.lua;
 
 
 namespace Star {
@@ -20,6 +21,12 @@ struct LuaUserDataMethods<Image> {
 export module star.image_lua_bindings;
 
 export namespace Star {
+  template <>
+  struct LuaConverter<Image>;
+
+  template <>
+  struct LuaUserDataMethods<Image>;
+
   using ::Star::Image;
   using ::Star::ImagePtr;
   using ::Star::ImageConstPtr;

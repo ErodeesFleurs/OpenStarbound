@@ -1,7 +1,11 @@
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.thread;
 import star.input_event;
 import star.application;
-#include "StarString.hpp"
+import star.string;
+import star.list;
+import star.format;
 import star.statistics_service;
 import star.p2p_networking_service;
 import star.user_generated_content_service;
@@ -16,7 +20,7 @@ import star.desktop_service;
 #endif
 import star.platform_services_pc;
 import star.user_generated_content_service_pc_steam;
-#include "StarLogging.hpp"
+import star.logging;
 import star.lexical_cast;
 
 namespace Star {

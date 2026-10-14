@@ -1,14 +1,17 @@
-#include "StarHash.hpp"
-#include "StarJson.hpp"
-#include "StarXXHash.hpp"
-#include "StarList.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.format;
+import star.hash;
+import star.json;
+import star.xx_hash;
+import star.list;
 import star.image_processing;
-#include "StarDataStream.hpp"
-#include "StarStringView.hpp"
-#include "StarThread.hpp"
+import star.data_stream;
+import star.string_view;
+import star.thread;
 import star.directives;
 import star.image;
-#include "StarLogging.hpp"
+import star.logging;
 
 namespace Star {
 
@@ -55,7 +58,7 @@ Directives::Shared::Shared() {}
 Directives::Shared::Shared(List<Entry>&& givenEntries, String&& givenString) {
   entries = std::move(givenEntries);
   string = std::move(givenString);
-  hash = string.empty() ? 0 : XXH3_64bits(string.utf8Ptr(), string.utf8Size());
+  hash = string.empty() ? 0 : xxHash3(string.utf8Ptr(), string.utf8Size());
 }
 
 Directives::Directives() {}

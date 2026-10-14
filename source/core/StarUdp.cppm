@@ -1,11 +1,13 @@
 module;
 
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.string;
 import star.either;
 import star.host_address;
-#include "StarThread.hpp"
+import star.thread;
 import star.socket;
-#include "StarLogging.hpp"
+import star.logging;
 #include "StarNetImpl.hpp"
 
 export module star.udp;

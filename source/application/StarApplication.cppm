@@ -1,6 +1,8 @@
 module;
 
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.string;
 import star.vector;
 import star.input_event;
 

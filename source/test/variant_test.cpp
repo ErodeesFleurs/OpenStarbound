@@ -1,5 +1,6 @@
-#include "StarVariant.hpp"
-#include "StarMaybe.hpp"
+#include "StarConfig.hpp"
+import star.variant;
+import star.maybe;
 
 #include "gtest/gtest.h"
 

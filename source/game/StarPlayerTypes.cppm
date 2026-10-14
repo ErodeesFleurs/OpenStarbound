@@ -1,7 +1,11 @@
 module;
 
-#include "StarJson.hpp"
-#include "StarBiMap.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.data_stream;
+import star.maybe;
+import star.json;
+import star.bi_map;
 import star.either;
 
 namespace Star {

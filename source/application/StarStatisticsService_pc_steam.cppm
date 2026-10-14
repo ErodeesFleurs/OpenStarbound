@@ -1,7 +1,10 @@
 module;
 
-#include "StarThread.hpp"
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.thread;
+import star.json;
+import star.string;
 import star.input_event;
 import star.application;
 import star.statistics_service;

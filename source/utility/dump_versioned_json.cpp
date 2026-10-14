@@ -1,5 +1,7 @@
-#include "StarFile.hpp"
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.file;
+import star.json;
 
 import star.versioning_database;
 

@@ -1,5 +1,8 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.variant;
+import star.json;
 
 import star.vector;
 import star.game_types;

@@ -1,7 +1,9 @@
 module;
-#include "StarStreamFormatter.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.stream_formatter;
 
-#include "StarString.hpp"
+import star.string;
 import star.either;
 
 namespace Star {
@@ -98,6 +100,14 @@ struct hash<HostAddressWithPort> {
 }
 
 export module star.host_address;
+
+export namespace Star {
+  template <>
+  struct hash<HostAddress>;
+  template <>
+  struct hash<HostAddressWithPort>;
+}
+
 
 export template <> struct std::formatter<Star::HostAddress> : Star::StreamFormatter {};
 export template <> struct std::formatter<Star::HostAddressWithPort> : Star::StreamFormatter {};

@@ -1,21 +1,19 @@
 module;
-#include "StarJson.hpp"
+import star.json;
 
-#include "StarDataStream.hpp"
+import star.data_stream;
 import star.uuid;
-#include "StarString.hpp"
-#include "StarDataStream.hpp"
+import star.string;
 import star.color;
-#include "StarList.hpp"
+import star.list;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarStringView.hpp"
-#include "StarThread.hpp"
+import star.hash;
+import star.string_view;
+import star.thread;
 import star.directives;
 import star.asset_path;
 import star.drawable;
 #include "StarStrongTypedef.hpp"
-#include "StarDataStream.hpp"
 import star.vector;
 import star.celestial_coordinate;
 import star.rpc_promise;
@@ -23,6 +21,8 @@ import star.game_types;
 import star.warping;
 import star.json_rpc;
 #include "StarConfig.hpp"
+import star.variant;
+import star.maybe;
 import star.version;
 
 namespace Star {

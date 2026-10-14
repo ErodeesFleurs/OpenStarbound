@@ -8,6 +8,8 @@
 #include <QTextEdit>
 
 #include "json_tool.hpp"
+import star.string;
+import star.list;
 
 namespace Star {
 

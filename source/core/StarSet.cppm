@@ -1,9 +1,13 @@
-#pragma once
+module;
+#include "StarConfig.hpp"
 
 import std;
 
-#include "StarFlatHashSet.hpp"
-#include "StarList.hpp"
+import star.flat_hash_set;
+import star.list;
+import star.maybe;
+import star.hash;
+import star.format;
 
 namespace Star {
 
@@ -318,4 +322,17 @@ HashSetMixin<BaseMap> HashSetMixin<BaseMap>::combination(HashSetMixin const& s) 
   return ret;
 }
 
+}
+
+export module star.set;
+
+export namespace Star {
+  using ::Star::SetExceptionTag;
+  using ::Star::SetException;
+  using ::Star::SetMixin;
+  using ::Star::Set;
+  using ::Star::HashSetMixin;
+  using ::Star::HashSet;
+  using ::Star::StableHashSet;
+  using ::Star::operator<<;
 }

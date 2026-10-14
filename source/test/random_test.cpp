@@ -1,4 +1,5 @@
-#include "StarException.hpp"
+#include "StarConfig.hpp"
+import star.format;
 import star.random;
 import star.static_random;
 

@@ -1,6 +1,12 @@
-#pragma once
+module;
+#include "StarConfig.hpp"
 
-#include "StarString.hpp"
+import star.string;
+import star.map;
+import star.list;
+import star.maybe;
+import star.hash;
+import star.format;
 
 import star.output_proxy;
 namespace Star {
@@ -414,4 +420,12 @@ bool BiMap<LeftT, RightT, LeftMapT, RightMapT>::operator==(BiMap const& m) const
   return true;
 }
 
+}
+
+export module star.bi_map;
+
+export namespace Star {
+  using ::Star::BiMap;
+  using ::Star::BiHashMap;
+  using ::Star::EnumMap;
 }

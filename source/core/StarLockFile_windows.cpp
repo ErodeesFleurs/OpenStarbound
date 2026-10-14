@@ -1,13 +1,16 @@
-#include "StarMaybe.hpp"
-#include "StarString.hpp"
-import star.lock_file;
-#include "StarThread.hpp"
-import star.time;
-#include "StarThread.hpp"
-
-#include "StarString_windows.hpp"
-
+#define NOMINMAX
 #include <windows.h>
+
+#include "StarConfig.hpp"
+import star.format;
+import star.maybe;
+import star.string;
+import star.lock_file;
+import star.thread;
+import star.time;
+
+import star.string_windows;
+
 
 namespace Star {
 

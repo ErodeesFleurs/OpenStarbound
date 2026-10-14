@@ -1,6 +1,7 @@
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.json;
 #include "StarJsonExtra.hpp"
-#include "StarBiMap.hpp"
+import star.bi_map;
 import star.either;
 import star.player_types;
 

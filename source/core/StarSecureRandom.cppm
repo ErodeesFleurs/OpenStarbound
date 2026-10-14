@@ -1,6 +1,7 @@
 module;
 
-#include "StarException.hpp"
+#include "StarConfig.hpp"
+import star.format;
 
 import star.byte_array;
 
@@ -9,7 +10,8 @@ import star.byte_array;
 #include <windows.h>
 #include <wincrypt.h>
 #else
-#include "StarFile.hpp"
+import star.file;
+import star.io_device;
 #endif
 
 export module star.secure_random;

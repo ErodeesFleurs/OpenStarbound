@@ -1,42 +1,49 @@
-#include "StarXXHash.hpp"
-#include "StarJson.hpp"
+#ifdef STAR_SYSTEM_WINDOWS
+#define NOMINMAX
+#include <windows.h>
+#include <stdio.h>
+#endif
+
+import star.xx_hash;
+import star.json;
 #include "StarJsonExtra.hpp"
-#include "StarThread.hpp"
+import star.thread;
 #include "StarConfig.hpp"
+import star.time;
 import star.version;
-#include "StarFile.hpp"
-#include "StarString.hpp"
+import star.file;
+import star.string;
 import star.byte_array;
 import star.encode;
-#include "StarLogging.hpp"
-#include "StarVariant.hpp"
-#include "StarOrderedMap.hpp"
-#include "StarOrderedSet.hpp"
-#include "StarException.hpp"
+import star.logging;
+import star.variant;
+import star.ordered_map;
+import star.ordered_set;
+import star.format;
 #include "StarDataStreamDevices.hpp"
 import star.interpolation;
-#include "StarBiMap.hpp"
+import star.bi_map;
 import star.game_types;
 import star.vector;
 #include "StarCasting.hpp"
 import star.input_event;
 import star.color;
 import star.font;
-#include "StarList.hpp"
+import star.list;
 import star.rect;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarDataStream.hpp"
-#include "StarStringView.hpp"
+import star.hash;
+import star.data_stream;
+import star.string_view;
 import star.directives;
 import star.text;
 import star.asset_path;
-#include "StarMaybe.hpp"
+import star.maybe;
 import star.listener;
-#include "StarSet.hpp"
+import star.set;
 import star.audio;
-#include "StarMap.hpp"
-#include "StarIODevice.hpp"
+import star.map;
+import star.io_device;
 import star.ref_ptr;
 import star.id_map;
 import star.rpc_promise;
@@ -1602,7 +1609,6 @@ void ClientApplication::updateCamera(float dt) {
 }
 
 #if defined STAR_SYSTEM_WINDOWS
-#include <windows.h>
 
 int __stdcall WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   int nArgs;

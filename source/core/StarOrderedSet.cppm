@@ -1,11 +1,15 @@
-#pragma once
-#include "StarStreamFormatter.hpp"
+module;
+#include "StarConfig.hpp"
+import star.stream_formatter;
 
 import std;
 
-#include "StarFlatHashMap.hpp"
-#include "StarSet.hpp"
-#include "StarList.hpp"
+import star.flat_hash_map;
+import star.set;
+import star.list;
+import star.maybe;
+import star.hash;
+import star.format;
 
 import star.either;
 namespace Star {
@@ -428,5 +432,14 @@ std::ostream& operator<<(std::ostream& os, OrderedSetWrapper<Map, Value, Allocat
 
 }
 
-template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
+export module star.ordered_set;
+
+export template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
 struct std::formatter<Star::OrderedSetWrapper<Map, Value, Allocator, Args...>> : Star::StreamFormatter {};
+
+export namespace Star {
+  using ::Star::OrderedSetWrapper;
+  using ::Star::OrderedSet;
+  using ::Star::OrderedHashSet;
+  using ::Star::operator<<;
+}

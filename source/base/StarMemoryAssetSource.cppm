@@ -1,12 +1,15 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.variant;
+import star.format;
+import star.json;
 import star.byte_array;
 
 import std;
 
-#include "StarIODevice.hpp"
+import star.io_device;
 import star.asset_source;
-#include "StarIODevice.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarDataStreamExtra.hpp"
 import star.image;

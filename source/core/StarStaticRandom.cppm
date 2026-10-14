@@ -1,9 +1,10 @@
 module;
 import std;
 
-#include "StarXXHash.hpp"
-#include "StarString.hpp"
-#include "StarException.hpp"
+#include "StarConfig.hpp"
+import star.xx_hash;
+import star.string;
+import star.format;
 
 namespace Star {
 

@@ -1,9 +1,10 @@
 module;
 
-#include "StarFormat.hpp"
-#include "StarString.hpp"
-#include "StarStringView.hpp"
-#include "StarMaybe.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.string;
+import star.string_view;
+import star.maybe;
 #include "fast_float.h"
 
 namespace Star {

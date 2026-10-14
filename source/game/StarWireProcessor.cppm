@@ -3,7 +3,10 @@ module;
 import star.vector;
 import star.game_types;
 import star.world_geometry;
-#include "StarDataStream.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.map;
+import star.data_stream;
 import star.wiring;
 
 namespace Star {

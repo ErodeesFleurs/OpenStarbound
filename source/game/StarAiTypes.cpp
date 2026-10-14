@@ -1,12 +1,12 @@
 #include "StarJsonExtra.hpp"
-#include "StarJson.hpp"
-#include "StarOrderedSet.hpp"
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
+#include "StarConfig.hpp"
+import star.json;
+import star.ordered_set;
+import star.data_stream;
+import star.bi_map;
 import star.item_descriptor;
 import star.game_types;
 #include "StarStrongTypedef.hpp"
-#include "StarDataStream.hpp"
 import star.item_descriptor;
 import star.celestial_coordinate;
 import star.quest_descriptor;

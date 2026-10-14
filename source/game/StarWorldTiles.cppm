@@ -1,30 +1,30 @@
 module;
-#include "StarXXHash.hpp"
-#include "StarJson.hpp"
-#include "StarList.hpp"
-#include "StarBiMap.hpp"
+import star.xx_hash;
+import star.json;
+import star.list;
+import star.bi_map;
 import star.multi_array;
 import std;
 import star.game_types;
 import star.material_types;
 import star.vector;
-#include "StarSet.hpp"
-#include "StarThread.hpp"
+import star.set;
+import star.thread;
 import star.worker_pool;
 
 import star.sector_array_2d;
 import star.random;
 import star.perlin;
-#include "StarMaybe.hpp"
+import star.maybe;
 import star.weighted_pool;
 import star.color;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarDataStream.hpp"
-#include "StarStringView.hpp"
+import star.hash;
+import star.data_stream;
+import star.string_view;
 import star.directives;
 import star.asset_path;
-#include "StarVariant.hpp"
+import star.variant;
 #include "StarConfig.hpp"
 import star.version;
 

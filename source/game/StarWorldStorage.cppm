@@ -1,22 +1,26 @@
 module;
-#include "StarXXHash.hpp"
-#include "StarJson.hpp"
+import star.xx_hash;
+import star.json;
 import star.id_map;
-#include "StarSet.hpp"
+import star.set;
 #include "StarBTree.hpp"
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
-#include "StarThread.hpp"
+import star.thread;
 import star.btree_database;
 #include "StarCasting.hpp"
-#include "StarDataStream.hpp"
-#include "StarOrderedSet.hpp"
-#include "StarList.hpp"
-#include "StarBiMap.hpp"
+import star.data_stream;
+import star.ordered_set;
+import star.list;
+import star.bi_map;
 import star.game_types;
 import star.vector;
 #include "StarConfig.hpp"
+import star.string;
+import star.map;
+import star.io_device;
+import star.format;
 import star.version;
 import star.rpc_promise;
 import star.random;
@@ -28,14 +32,14 @@ import star.rect;
 import star.worker_pool;
 
 import star.sector_array_2d;
-#include "StarMaybe.hpp"
+import star.maybe;
 import star.color;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarStringView.hpp"
+import star.hash;
+import star.string_view;
 import star.directives;
 import star.asset_path;
-#include "StarVariant.hpp"
+import star.variant;
 
 import star.damage_types;
 import star.world_geometry;

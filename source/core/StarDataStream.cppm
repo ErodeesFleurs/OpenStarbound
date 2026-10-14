@@ -1,6 +1,8 @@
-#pragma once
+module;
+#include "StarConfig.hpp"
 
-#include "StarString.hpp"
+import star.string;
+import star.format;
 import star.net_compatibility;
 
 import star.byte_array;
@@ -394,4 +396,13 @@ void DataStream::readMapContainer(Container& container) {
     });
 }
 
+}
+
+export module star.data_stream;
+
+export namespace Star {
+  using ::Star::DataStreamExceptionTag;
+  using ::Star::DataStreamException;
+  using ::Star::CurrentStreamVersion;
+  using ::Star::DataStream;
 }

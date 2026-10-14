@@ -1,9 +1,13 @@
 module;
 
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.map;
+import star.maybe;
+import star.format;
+import star.string;
 import star.either;
 import star.host_address;
-#include "StarThread.hpp"
+import star.thread;
 
 namespace Star {
 

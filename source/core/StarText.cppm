@@ -1,12 +1,15 @@
 module;
 
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.string_view;
+import star.unicode;
+import star.string;
 import star.vector;
-#include "StarList.hpp"
+import star.list;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarDataStream.hpp"
-#include "StarThread.hpp"
+import star.hash;
+import star.data_stream;
+import star.thread;
 import star.directives;
 
 namespace Star {

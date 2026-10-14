@@ -1,7 +1,8 @@
 module;
 
 import std;
-#include "StarHash.hpp"
+#include "StarConfig.hpp"
+import star.hash;
 
 namespace Star {
 
@@ -223,6 +224,12 @@ size_t hash<Array<DataT, SizeT>>::operator()(Array<DataT, SizeT> const& a) const
 }
 
 export module star.array;
+
+export namespace Star {
+  template <typename DataT, size_t SizeT>
+  struct hash<Array<DataT, SizeT>>;
+}
+
 
 export namespace Star {
   using ::Star::Array;

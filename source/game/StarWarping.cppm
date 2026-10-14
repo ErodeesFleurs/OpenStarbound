@@ -1,14 +1,18 @@
 module;
-#include "StarStreamFormatter.hpp"
-#include "StarHash.hpp"
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.variant;
+import star.maybe;
+import star.stream_formatter;
+import star.hash;
+import star.json;
 
 #include "StarStrongTypedef.hpp"
-#include "StarDataStream.hpp"
+import star.data_stream;
 import star.uuid;
 import star.vector;
 import star.celestial_coordinate;
-#include "StarBiMap.hpp"
+import star.bi_map;
 import star.game_types;
 
 namespace Star {
@@ -249,6 +253,14 @@ DataStream& operator<<(DataStream& ds, WarpToWorld const& warpToWorld);
 }
 
 export module star.warping;
+
+export namespace Star {
+  template <>
+  struct hash<InstanceWorldId>;
+  template <>
+  struct hash<ClientCustomWorldId>;
+}
+
 
 export template <> struct std::formatter<Star::CelestialWorldId> : Star::StreamFormatter {};
 export template <> struct std::formatter<Star::ClientShipWorldId> : Star::StreamFormatter {};

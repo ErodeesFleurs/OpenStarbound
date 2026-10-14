@@ -1,3 +1,6 @@
+#include "StarConfig.hpp"
+import star.lua;
+import star.maybe;
 #include "StarLuaConverters.hpp"
 import star.color;
 

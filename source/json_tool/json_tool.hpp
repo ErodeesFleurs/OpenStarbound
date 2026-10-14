@@ -1,6 +1,10 @@
 #pragma once
 
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.json;
+import star.string;
+import star.list;
+import star.variant;
 import star.lexical_cast;
 
 import star.formatted_json;

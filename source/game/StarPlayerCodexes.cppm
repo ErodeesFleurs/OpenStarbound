@@ -1,7 +1,10 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.json;
 
-#include "StarDataStream.hpp"
+import star.data_stream;
 import star.uuid;
 
 namespace Star {

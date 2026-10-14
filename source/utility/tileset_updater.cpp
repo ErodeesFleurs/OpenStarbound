@@ -1,5 +1,11 @@
-#include "StarLogging.hpp"
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.string;
+import star.io_device;
+import star.file;
+import star.maybe;
+import star.logging;
+import star.json;
 import star.game_types;
 import star.lexical_cast;
 #include "tileset_updater.hpp"

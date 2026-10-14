@@ -1,5 +1,6 @@
 module;
-#include "StarList.hpp"
+#include "StarConfig.hpp"
+import star.list;
 
 
 STAR_STRUCT(PreviewTile);

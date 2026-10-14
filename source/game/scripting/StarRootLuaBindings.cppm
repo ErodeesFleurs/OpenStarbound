@@ -1,5 +1,6 @@
 module;
-#include "StarLua.hpp"
+#include "StarConfig.hpp"
+import star.lua;
 
 export module star.root_lua_bindings;
 

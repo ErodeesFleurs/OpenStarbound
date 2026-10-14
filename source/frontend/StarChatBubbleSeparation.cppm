@@ -1,7 +1,8 @@
 module;
 
 import star.rect;
-#include "StarList.hpp"
+#include "StarConfig.hpp"
+import star.list;
 
 import star.vector;
 namespace Star {

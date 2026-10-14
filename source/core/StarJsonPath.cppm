@@ -1,5 +1,9 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.maybe;
+import star.format;
+import star.json;
 #include "StarJsonExtra.hpp"
 
 import star.lexical_cast;

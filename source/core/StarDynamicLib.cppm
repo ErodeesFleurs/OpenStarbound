@@ -1,12 +1,16 @@
 module;
 
-#include "StarString.hpp"
-
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
-#include "StarFormat.hpp"
-#include "StarString_windows.hpp"
 #define NOMINMAX
 #include <windows.h>
+#endif
+
+#include "StarConfig.hpp"
+import star.string;
+
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+import star.format;
+import star.string_windows;
 #else
 #include <dlfcn.h>
 #endif

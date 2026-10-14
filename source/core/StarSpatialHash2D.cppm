@@ -1,8 +1,12 @@
 module;
 
 import star.rect;
-#include "StarMap.hpp"
-#include "StarSet.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.hash;
+import star.maybe;
+import star.map;
+import star.set;
 import star.block_allocator;
 
 import star.vector;

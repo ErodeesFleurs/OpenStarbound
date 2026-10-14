@@ -1,11 +1,17 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.map;
+import star.maybe;
+import star.format;
+import star.json;
 
-#include "StarBiMap.hpp"
+import star.bi_map;
 #include "StarStrongTypedef.hpp"
 import star.inventory_types;
 import star.multi_array;
-#include "StarDataStream.hpp"
+import star.data_stream;
 import star.item_descriptor;
 
 import star.net_element_basic_fields;

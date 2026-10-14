@@ -1,5 +1,6 @@
-#include "StarThread.hpp"
-#include "StarFormat.hpp"
+#include "StarConfig.hpp"
+import star.thread;
+import star.format;
 
 namespace Star {
 

@@ -1,10 +1,12 @@
-#pragma once
-#include "StarStreamFormatter.hpp"
+module;
+#include "StarConfig.hpp"
+import star.stream_formatter;
 
 import std;
 
 
-#include "StarMaybe.hpp"
+import star.maybe;
+import star.format;
 
 namespace Star {
 
@@ -957,5 +959,24 @@ void MVariant<Types...>::ConstRefCaller<Function>::operator()(T const& t) {
 
 }
 
-template <typename FirstType, typename... RestTypes>
+export module star.variant;
+
+export template <typename FirstType, typename... RestTypes>
 struct std::formatter<Star::Variant<FirstType, RestTypes...>> : Star::StreamFormatter {};
+
+export namespace Star {
+  using ::Star::BadVariantCastTag;
+  using ::Star::BadVariantCast;
+  using ::Star::BadVariantTypeTag;
+  using ::Star::BadVariantType;
+  using ::Star::VariantTypeIndex;
+  using ::Star::InvalidVariantType;
+  using ::Star::Variant;
+  using ::Star::MVariant;
+
+  namespace detail {
+    using ::Star::detail::HasType;
+    using ::Star::detail::IsNothrowMoveConstructible;
+    using ::Star::detail::IsNothrowMoveAssignable;
+  }
+}

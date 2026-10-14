@@ -1,4 +1,6 @@
-#include "StarDataStream.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.data_stream;
 
 import star.net_element_basic_fields;
 

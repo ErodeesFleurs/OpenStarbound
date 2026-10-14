@@ -1,3 +1,5 @@
+#include "StarConfig.hpp"
+import star.format;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 

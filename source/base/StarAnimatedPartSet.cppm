@@ -1,7 +1,11 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.maybe;
+import star.format;
+import star.json;
 
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 import star.matrix3;
 
 namespace Star {

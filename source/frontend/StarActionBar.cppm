@@ -1,7 +1,8 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.json;
 
-#include "StarBiMap.hpp"
+import star.bi_map;
 #include "StarStrongTypedef.hpp"
 
 import star.game_types;
@@ -9,27 +10,22 @@ import star.vector;
 #include "StarCasting.hpp"
 import star.input_event;
 import star.color;
-#include "StarList.hpp"
+import star.list;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarDataStream.hpp"
-#include "StarStringView.hpp"
-#include "StarThread.hpp"
+import star.hash;
+import star.data_stream;
+import star.string_view;
+import star.thread;
 import star.directives;
-#include "StarStringView.hpp"
-#include "StarString.hpp"
+import star.string;
 import star.text;
-#include "StarString.hpp"
-#include "StarDataStream.hpp"
 import star.asset_path;
-#include "StarMaybe.hpp"
+import star.maybe;
 import star.listener;
-#include "StarThread.hpp"
-#include "StarSet.hpp"
+import star.set;
 import star.audio;
-#include "StarList.hpp"
-#include "StarMap.hpp"
-#include "StarOrderedMap.hpp"
+import star.map;
+import star.ordered_map;
 
 
 

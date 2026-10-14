@@ -1,11 +1,14 @@
-#include "StarJson.hpp"
-#include "StarIODevice.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.format;
+import star.json;
+import star.io_device;
 import star.asset_source;
-#include "StarString.hpp"
+import star.string;
 import star.directory_asset_source;
-#include "StarFile.hpp"
+import star.file;
 #include "StarJsonExtra.hpp"
-#include "StarLogging.hpp"
+import star.logging;
 
 import std;
 

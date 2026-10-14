@@ -1,5 +1,8 @@
-#include "StarUnicode.inc"
-#include "StarString.hpp"
+#include "StarConfig.hpp"
+import star.unicode;
+import star.string;
+import star.format;
+import star.maybe;
 import star.encode;
 
 import star.byte_array;

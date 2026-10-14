@@ -1,7 +1,11 @@
 module;
 
-#include "StarJson.hpp"
-#include "StarLua.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.maybe;
+import star.json;
+import star.lua;
 
 namespace Star {
 

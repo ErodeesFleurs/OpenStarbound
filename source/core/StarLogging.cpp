@@ -1,4 +1,15 @@
-#include "StarLogging.hpp"
+#include "StarConfig.hpp"
+import star.logging;
+import star.thread;
+import star.string;
+import star.set;
+import star.map;
+import star.list;
+import star.bi_map;
+import star.file;
+import star.io_device;
+import star.format;
+import star.time;
 
 import star.array;
 import star.vector;
@@ -7,7 +18,7 @@ import star.poly;
 import star.algorithm;
 namespace Star {
 
-EnumMap<LogLevel> const LogLevelNames{
+extern EnumMap<LogLevel> const LogLevelNames{
   {LogLevel::Debug, "Debug"},
   {LogLevel::Info, "Info"},
   {LogLevel::Warn, "Warn"},

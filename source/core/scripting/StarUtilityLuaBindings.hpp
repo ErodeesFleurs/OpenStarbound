@@ -1,6 +1,11 @@
 #pragma once
 
-#include "StarLua.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.json;
+import star.maybe;
+import star.lua;
 
 namespace Star {
 

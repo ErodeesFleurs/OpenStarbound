@@ -1,12 +1,16 @@
 module;
 
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.thread;
+import star.lua;
+import star.maybe;
+import star.json;
 import star.game_types;
-#include "StarString.hpp"
+import star.string;
 import star.byte_array;
 import star.encode;
 import star.bytes;
-#include "StarFormat.hpp"
+import star.format;
 import star.shell_parser;
 #include "StarLuaComponents.hpp"
 #include "StarLuaRoot.hpp"

@@ -1,6 +1,9 @@
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.format;
+import star.json;
 #include "StarJsonExtra.hpp"
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 import star.matrix3;
 import star.animated_part_set;
 import star.math_common;

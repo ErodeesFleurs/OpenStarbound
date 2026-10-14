@@ -1,5 +1,9 @@
-#include "StarThread.hpp"
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.format;
+import star.thread;
+import star.json;
+import star.string;
 import star.input_event;
 import star.application;
 import star.statistics_service;
@@ -16,7 +20,7 @@ import star.desktop_service;
 #endif
 import star.platform_services_pc;
 import star.statistics_service_pc_steam;
-#include "StarLogging.hpp"
+import star.logging;
 
 namespace Star {
 

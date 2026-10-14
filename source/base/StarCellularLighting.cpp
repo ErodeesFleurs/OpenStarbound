@@ -1,13 +1,14 @@
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.json;
 import star.either;
 import star.rect;
 import star.image;
 import star.color;
 import star.interpolation;
-#include "StarList.hpp"
+import star.list;
 import star.vector;
 import star.cellular_light_array;
-#include "StarThread.hpp"
+import star.thread;
 import star.cellular_lighting;
 
 import star.algorithm;

@@ -1,7 +1,12 @@
 module;
 import star.byte_array;
 
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.maybe;
+import star.string;
+import star.list;
+import star.map;
+import star.thread;
 import star.input_event;
 import star.application;
 import star.host_address;
@@ -21,7 +26,7 @@ import star.platform_services_pc;
 import star.algorithm;
 #include "StarStrongTypedef.hpp"
 import star.either;
-#include "StarVariant.hpp"
+import star.variant;
 import star.rpc_promise;
 
 namespace Star {

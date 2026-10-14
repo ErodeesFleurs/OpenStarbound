@@ -1,11 +1,15 @@
-#include "StarJson.hpp"
-#include "StarDataStream.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.list;
+import star.maybe;
+import star.format;
+import star.json;
+import star.data_stream;
 import star.rpc_promise;
 import star.game_types;
 import star.chat_types;
-#include "StarSet.hpp"
-#include "StarThread.hpp"
-#include "StarDataStream.hpp"
+import star.set;
+import star.thread;
 import star.uuid;
 
 import star.chat_processor;

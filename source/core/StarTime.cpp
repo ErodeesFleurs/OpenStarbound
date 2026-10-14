@@ -1,4 +1,7 @@
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.string;
+import star.format;
+import star.thread;
 import star.time;
 import star.math_common;
 import star.lexical_cast;

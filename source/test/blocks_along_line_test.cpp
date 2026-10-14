@@ -1,6 +1,7 @@
 import star.vector;
 import star.blocks_along_line;
-#include "StarList.hpp"
+#include "StarConfig.hpp"
+import star.list;
 
 #include "gtest/gtest.h"
 

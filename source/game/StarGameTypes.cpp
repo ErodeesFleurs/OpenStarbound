@@ -1,6 +1,7 @@
-#include "StarBiMap.hpp"
+#include "StarConfig.hpp"
+import star.bi_map;
 import star.math_common;
-#include "StarException.hpp"
+import star.format;
 import star.game_types;
 
 namespace Star {

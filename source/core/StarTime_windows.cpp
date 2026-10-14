@@ -1,4 +1,6 @@
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.format;
+import star.thread;
 import star.time;
 import star.lexical_cast;
 
@@ -6,6 +8,7 @@ import std;
 #include <time.h>
 #define NOMINMAX
 #include <windows.h>
+import star.string;
 
 namespace Star {
 namespace Time {

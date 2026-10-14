@@ -1,10 +1,13 @@
 module;
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.maybe;
+import star.json;
 
 import star.array;
 import star.game_types;
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
+import star.data_stream;
+import star.bi_map;
 import star.item_descriptor;
 #include "StarStrongTypedef.hpp"
 import star.id_map;

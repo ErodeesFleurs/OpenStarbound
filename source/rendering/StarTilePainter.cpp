@@ -1,16 +1,17 @@
-#include "StarJson.hpp"
+import star.json;
 #include "StarJsonExtra.hpp"
-#include "StarXXHash.hpp"
+import star.xx_hash;
 import star.id_map;
-#include "StarList.hpp"
-#include "StarBiMap.hpp"
-#include "StarDataStream.hpp"
+import star.list;
+import star.map;
+import star.bi_map;
+import star.data_stream;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 import star.lexical_cast;
-#include "StarOrderedMap.hpp"
+import star.ordered_map;
 import star.lru_cache;
-#include "StarThread.hpp"
+import star.thread;
 import star.time;
 import star.random;
 import star.ttl_cache;
@@ -20,29 +21,30 @@ import star.material_types;
 import star.math_common;
 import star.vector;
 #include "StarConfig.hpp"
+import star.format;
 import star.version;
 import star.color;
-#include "StarString.hpp"
+import star.string;
 import star.rect;
 import star.image_processing;
-#include "StarHash.hpp"
-#include "StarStringView.hpp"
+import star.hash;
+import star.string_view;
 import star.directives;
 import star.asset_path;
 import star.either;
-#include "StarMaybe.hpp"
+import star.maybe;
 import star.weighted_pool;
-#include "StarSet.hpp"
+import star.set;
 import star.worker_pool;
 
 import std;
 import star.sector_array_2d;
-#include "StarIODevice.hpp"
+import star.io_device;
 import star.ref_ptr;
-#include "StarLogging.hpp"
+import star.logging;
 import star.listener;
 import star.perlin;
-#include "StarVariant.hpp"
+import star.variant;
 
 import star.tile_sector_array;
 import star.asset_source;
@@ -216,7 +218,7 @@ TilePainter::ChunkHash TilePainter::terrainChunkHash(WorldRenderData& renderData
   });
 
   //return hasher.digest();
-  return XXH3_64bits(buffer.ptr(), buffer.size());
+  return xxHash3(buffer.ptr(), buffer.size());
 }
 
 TilePainter::ChunkHash TilePainter::liquidChunkHash(WorldRenderData& renderData, Vec2I chunkIndex) {
@@ -231,7 +233,7 @@ TilePainter::ChunkHash TilePainter::liquidChunkHash(WorldRenderData& renderData,
   });
 
   //return hasher.digest();
-  return XXH3_64bits(buffer.ptr(), buffer.size());
+  return xxHash3(buffer.ptr(), buffer.size());
 }
 
 void TilePainter::renderTerrainChunks(WorldCamera const& camera, TerrainLayer terrainLayer) {

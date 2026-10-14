@@ -1,6 +1,12 @@
 module;
 
-#include "StarMap.hpp"
+#include "StarConfig.hpp"
+import star.list;
+import star.variant;
+import star.data_stream;
+import star.maybe;
+import star.format;
+import star.map;
 #include "StarDataStreamExtra.hpp"
 #include "StarStrongTypedef.hpp"
 
