@@ -35,7 +35,41 @@ public:
   virtual Maybe<ByteArray> receiveMessage() = 0;
 };
 
-strong_typedef(String, P2PNetworkingPeerId);
+template <typename BaseType>
+struct P2PNetworkingPeerIdWrapper : BaseType {
+  using BaseType::BaseType;
+
+  P2PNetworkingPeerIdWrapper() : BaseType() {}
+
+  P2PNetworkingPeerIdWrapper(P2PNetworkingPeerIdWrapper const& nt) : BaseType(nt) {}
+
+  P2PNetworkingPeerIdWrapper(P2PNetworkingPeerIdWrapper&& nt) : BaseType(std::move(nt)) {}
+
+  explicit P2PNetworkingPeerIdWrapper(BaseType const& bt) : BaseType(bt) {}
+
+  explicit P2PNetworkingPeerIdWrapper(BaseType&& bt) : BaseType(std::move(bt)) {}
+
+  P2PNetworkingPeerIdWrapper& operator=(P2PNetworkingPeerIdWrapper const& rhs) {
+    BaseType::operator=(rhs);
+    return *this;
+  }
+
+  P2PNetworkingPeerIdWrapper& operator=(P2PNetworkingPeerIdWrapper&& rhs) {
+    BaseType::operator=(std::move(rhs));
+    return *this;
+  }
+
+  template <class Arg>
+  P2PNetworkingPeerIdWrapper& operator=(Arg&& other) {
+    static_assert(std::is_base_of<BaseType, typename std::decay<Arg>::type>::value == false
+            || std::is_same<P2PNetworkingPeerIdWrapper, typename std::decay<Arg>::type>::value,
+        "P2PNetworkingPeerId can not implicitly be assigned from String-derived classes or strong String typedefs");
+
+    BaseType::operator=(std::forward<Arg>(other));
+    return *this;
+  }
+};
+typedef P2PNetworkingPeerIdWrapper<String> P2PNetworkingPeerId;
 
 // API for platform specific peer to peer multiplayer services.
 class P2PNetworkingService {

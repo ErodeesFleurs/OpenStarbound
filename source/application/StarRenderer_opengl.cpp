@@ -1298,19 +1298,23 @@ void OpenGlRenderer::renderGlBuffer(GlRenderBuffer const& renderBuffer, Mat3F co
     glBindBuffer(GL_ARRAY_BUFFER, vb.vertexBuffer);
 
     // check if these exist (might not in mod shaders) so we don't get a bunch of useless errors
-#define APPLY_IF_VALID(Func, Arg1, ...) \
-    if (Arg1 != -1) Func(Arg1 __VA_OPT__(,) __VA_ARGS__)
+    if (m_positionAttribute != -1)
+      glEnableVertexAttribArray(m_positionAttribute);
+    if (m_texCoordAttribute != -1)
+      glEnableVertexAttribArray(m_texCoordAttribute);
+    if (m_colorAttribute != -1)
+      glEnableVertexAttribArray(m_colorAttribute);
+    if (m_dataAttribute != -1)
+      glEnableVertexAttribArray(m_dataAttribute);
 
-    APPLY_IF_VALID(glEnableVertexAttribArray, m_positionAttribute);
-    APPLY_IF_VALID(glEnableVertexAttribArray, m_texCoordAttribute);
-    APPLY_IF_VALID(glEnableVertexAttribArray, m_colorAttribute);
-    APPLY_IF_VALID(glEnableVertexAttribArray, m_dataAttribute);
-
-    APPLY_IF_VALID(glVertexAttribPointer,  m_positionAttribute, 2, GL_FLOAT,         GL_FALSE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, pos));
-    APPLY_IF_VALID(glVertexAttribPointer,  m_texCoordAttribute, 2, GL_FLOAT,         GL_FALSE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, uv));
-    APPLY_IF_VALID(glVertexAttribPointer,  m_colorAttribute,    4, GL_UNSIGNED_BYTE, GL_TRUE,  sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, color));
-    APPLY_IF_VALID(glVertexAttribIPointer, m_dataAttribute,     1, GL_INT,                     sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, pack));
-#undef APPLY_IF_VALID
+    if (m_positionAttribute != -1)
+      glVertexAttribPointer(m_positionAttribute, 2, GL_FLOAT, GL_FALSE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, pos));
+    if (m_texCoordAttribute != -1)
+      glVertexAttribPointer(m_texCoordAttribute, 2, GL_FLOAT, GL_FALSE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, uv));
+    if (m_colorAttribute != -1)
+      glVertexAttribPointer(m_colorAttribute, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, color));
+    if (m_dataAttribute != -1)
+      glVertexAttribIPointer(m_dataAttribute, 1, GL_INT, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, pack));
 
     glDrawArrays(GL_TRIANGLES, 0, vb.vertexCount);
   }

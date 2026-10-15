@@ -124,16 +124,29 @@ static const std::uint32_t K[64] = {0x428a2f98U,
     0xc67178f2UL};
 
 // Various logical functions
-#define Ch(x, y, z) ((x & y) ^ (~x & z))
-#define Maj(x, y, z) ((x & y) ^ (x & z) ^ (y & z))
-// SHA-256 rotates to the right, and the macro the tree carried before did too:
-// (x >> n) | (x << (32 - n)).
-#define S(x, n) std::rotr((x), (n))
-#define R(x, n) ((x) >> (n))
-#define Sigma0(x) (S(x, 2) ^ S(x, 13) ^ S(x, 22))
-#define Sigma1(x) (S(x, 6) ^ S(x, 11) ^ S(x, 25))
-#define Gamma0(x) (S(x, 7) ^ S(x, 18) ^ R(x, 3))
-#define Gamma1(x) (S(x, 17) ^ S(x, 19) ^ R(x, 10))
+static constexpr std::uint32_t shaChoice(std::uint32_t x, std::uint32_t y, std::uint32_t z) noexcept {
+  return (x & y) ^ (~x & z);
+}
+
+static constexpr std::uint32_t shaMajority(std::uint32_t x, std::uint32_t y, std::uint32_t z) noexcept {
+  return (x & y) ^ (x & z) ^ (y & z);
+}
+
+static constexpr std::uint32_t shaSigma0(std::uint32_t x) noexcept {
+  return std::rotr(x, 2) ^ std::rotr(x, 13) ^ std::rotr(x, 22);
+}
+
+static constexpr std::uint32_t shaSigma1(std::uint32_t x) noexcept {
+  return std::rotr(x, 6) ^ std::rotr(x, 11) ^ std::rotr(x, 25);
+}
+
+static constexpr std::uint32_t shaGamma0(std::uint32_t x) noexcept {
+  return std::rotr(x, 7) ^ std::rotr(x, 18) ^ (x >> 3);
+}
+
+static constexpr std::uint32_t shaGamma1(std::uint32_t x) noexcept {
+  return std::rotr(x, 17) ^ std::rotr(x, 19) ^ (x >> 10);
+}
 
 // compress 512-bits
 static void sha_compress(sha_state* md) {
@@ -151,12 +164,12 @@ static void sha_compress(sha_state* md) {
 
   /* fill W[16..63] */
   for (i = 16; i < 64; i++)
-    W[i] = Gamma1(W[i - 2]) + W[i - 7] + Gamma0(W[i - 15]) + W[i - 16];
+    W[i] = shaGamma1(W[i - 2]) + W[i - 7] + shaGamma0(W[i - 15]) + W[i - 16];
 
   /* Compress */
   for (i = 0; i < 64; i++) {
-    t0 = S[7] + Sigma1(S[4]) + Ch(S[4], S[5], S[6]) + K[i] + W[i];
-    t1 = Sigma0(S[0]) + Maj(S[0], S[1], S[2]);
+    t0 = S[7] + shaSigma1(S[4]) + shaChoice(S[4], S[5], S[6]) + K[i] + W[i];
+    t1 = shaSigma0(S[0]) + shaMajority(S[0], S[1], S[2]);
     S[7] = S[6];
     S[6] = S[5];
     S[5] = S[4];

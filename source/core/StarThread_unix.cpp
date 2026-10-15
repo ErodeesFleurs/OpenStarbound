@@ -22,13 +22,9 @@ import star.time;
 import star.logging;
 
 #ifdef MAXCOMLEN
-#define MAX_THREAD_NAMELEN MAXCOMLEN
+static constexpr std::size_t MaxThreadNameLength = MAXCOMLEN;
 #else
-#define MAX_THREAD_NAMELEN 16
-#endif
-
-#ifndef STAR_SYSTEM_MACOS
-#define STAR_RECURSIVE_MUTEX_TIMED
+static constexpr std::size_t MaxThreadNameLength = 16;
 #endif
 
 import star.algorithm;
@@ -40,7 +36,7 @@ struct ThreadImpl {
     try {
 #ifdef STAR_SYSTEM_MACOS
       // ensure the name is under the max allowed
-      char tname[MAX_THREAD_NAMELEN];
+      char tname[MaxThreadNameLength];
       std::snprintf(tname, sizeof(tname), "%s", ptr->name.utf8Ptr());
 
       pthread_setname_np(tname);
@@ -79,7 +75,7 @@ struct ThreadImpl {
     }
 
     // ensure the name is under the max allowed
-    char tname[MAX_THREAD_NAMELEN];
+    char tname[MaxThreadNameLength];
     std::snprintf(tname, sizeof(tname), "%s", name.utf8Ptr());
 
 #ifdef STAR_SYSTEM_FREEBSD
@@ -221,7 +217,7 @@ struct RecursiveMutexImpl {
   }
 
   void lock() {
-#ifdef STAR_RECURSIVE_MUTEX_TIMED
+#ifndef STAR_SYSTEM_MACOS
     timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     ts.tv_sec += 15;

@@ -37,7 +37,7 @@ extern EnumMap<EquipmentSlot> const EquipmentSlotNames;
 
 typedef std::pair<String, std::uint8_t> BagSlot;
 
-// Preserve the original strong_typedef expansion so its native wrapper can declare precise stream ADL.
+// Keep native wrappers so SwapSlot can declare precise stream ADL.
 template <typename BaseType> struct TrashSlotWrapper;
   template <typename BaseType>
   struct SwapSlotWrapper : BaseType {
@@ -77,7 +77,41 @@ template <typename BaseType> struct TrashSlotWrapper;
         Variant<EquipmentSlot, BagSlot, SwapSlotWrapper<Empty>, TrashSlotWrapper<Empty>> const& slot);
   };
   typedef SwapSlotWrapper<Empty> SwapSlot;
-strong_typedef(Empty, TrashSlot);
+template <typename BaseType>
+struct TrashSlotWrapper : BaseType {
+  using BaseType::BaseType;
+
+  TrashSlotWrapper() : BaseType() {}
+
+  TrashSlotWrapper(TrashSlotWrapper const& nt) : BaseType(nt) {}
+
+  TrashSlotWrapper(TrashSlotWrapper&& nt) : BaseType(std::move(nt)) {}
+
+  explicit TrashSlotWrapper(BaseType const& bt) : BaseType(bt) {}
+
+  explicit TrashSlotWrapper(BaseType&& bt) : BaseType(std::move(bt)) {}
+
+  TrashSlotWrapper& operator=(TrashSlotWrapper const& rhs) {
+    BaseType::operator=(rhs);
+    return *this;
+  }
+
+  TrashSlotWrapper& operator=(TrashSlotWrapper&& rhs) {
+    BaseType::operator=(std::move(rhs));
+    return *this;
+  }
+
+  template <class Arg>
+  TrashSlotWrapper& operator=(Arg&& other) {
+    static_assert(std::is_base_of<BaseType, typename std::decay<Arg>::type>::value == false
+            || std::is_same<TrashSlotWrapper, typename std::decay<Arg>::type>::value,
+        "TrashSlot can not implicitly be assigned from Empty-derived classes or strong Empty typedefs");
+
+    BaseType::operator=(std::forward<Arg>(other));
+    return *this;
+  }
+};
+typedef TrashSlotWrapper<Empty> TrashSlot;
 
 // Any manageable location in the player inventory can be pointed to by an
 // InventorySlot

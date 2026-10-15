@@ -1,5 +1,4 @@
 module;
-#define XXH_STATIC_LINKING_ONLY
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 #include "xxh3.h"
@@ -58,56 +57,120 @@ std::uint64_t xxHash3(char const* source, std::size_t length);
 std::uint64_t xxHash3(ByteArray const& in);
 std::uint64_t xxHash3(String const& in);
 
-#define XXHASH32_PRIMITIVE(TYPE, CAST_TYPE)                 \
-  inline void xxHash32Push(XXHash32& hash, TYPE const& v) { \
-    CAST_TYPE cv = v;                                       \
-    cv = toLittleEndian(cv);                                \
-    hash.push((char const*)(&cv), sizeof(cv));              \
-  }
+template <typename Representation, typename Hasher, typename Value>
+static inline void xxHashPushPrimitive(Hasher& hash, Value const& v) {
+  Representation cv = v;
+  cv = toLittleEndian(cv);
+  hash.push(reinterpret_cast<char const*>(&cv), sizeof(cv));
+}
 
-#define XXHASH64_PRIMITIVE(TYPE, CAST_TYPE)                 \
-  inline void xxHash64Push(XXHash64& hash, TYPE const& v) { \
-    CAST_TYPE cv = v;                                       \
-    cv = toLittleEndian(cv);                                \
-    hash.push((char const*)(&cv), sizeof(cv));              \
-  }
+inline void xxHash32Push(XXHash32& hash, bool const& v) {
+  xxHashPushPrimitive<bool>(hash, v);
+}
 
-#define XXHASH3_PRIMITIVE(TYPE, CAST_TYPE)                  \
-  inline void xxHash3Push(XXHash3& hash, TYPE const& v) {   \
-    CAST_TYPE cv = v;                                       \
-    cv = toLittleEndian(cv);                                \
-    hash.push((char const*)(&cv), sizeof(cv));              \
-  }
+inline void xxHash32Push(XXHash32& hash, int const& v) {
+  xxHashPushPrimitive<std::int32_t>(hash, v);
+}
 
-XXHASH32_PRIMITIVE(bool, bool);
-XXHASH32_PRIMITIVE(int, std::int32_t);
-XXHASH32_PRIMITIVE(long, std::int64_t);
-XXHASH32_PRIMITIVE(long long, std::int64_t);
-XXHASH32_PRIMITIVE(unsigned int, std::uint32_t);
-XXHASH32_PRIMITIVE(unsigned long, std::uint64_t);
-XXHASH32_PRIMITIVE(unsigned long long, std::uint64_t);
-XXHASH32_PRIMITIVE(float, float);
-XXHASH32_PRIMITIVE(double, double);
+inline void xxHash32Push(XXHash32& hash, long const& v) {
+  xxHashPushPrimitive<std::int64_t>(hash, v);
+}
 
-XXHASH64_PRIMITIVE(bool, bool);
-XXHASH64_PRIMITIVE(int, std::int32_t);
-XXHASH64_PRIMITIVE(long, std::int64_t);
-XXHASH64_PRIMITIVE(long long, std::int64_t);
-XXHASH64_PRIMITIVE(unsigned int, std::uint32_t);
-XXHASH64_PRIMITIVE(unsigned long, std::uint64_t);
-XXHASH64_PRIMITIVE(unsigned long long, std::uint64_t);
-XXHASH64_PRIMITIVE(float, float);
-XXHASH64_PRIMITIVE(double, double);
+inline void xxHash32Push(XXHash32& hash, long long const& v) {
+  xxHashPushPrimitive<std::int64_t>(hash, v);
+}
 
-XXHASH3_PRIMITIVE(bool, bool);
-XXHASH3_PRIMITIVE(int, std::int32_t);
-XXHASH3_PRIMITIVE(long, std::int64_t);
-XXHASH3_PRIMITIVE(long long, std::int64_t);
-XXHASH3_PRIMITIVE(unsigned int, std::uint32_t);
-XXHASH3_PRIMITIVE(unsigned long, std::uint64_t);
-XXHASH3_PRIMITIVE(unsigned long long, std::uint64_t);
-XXHASH3_PRIMITIVE(float, float);
-XXHASH3_PRIMITIVE(double, double);
+inline void xxHash32Push(XXHash32& hash, unsigned int const& v) {
+  xxHashPushPrimitive<std::uint32_t>(hash, v);
+}
+
+inline void xxHash32Push(XXHash32& hash, unsigned long const& v) {
+  xxHashPushPrimitive<std::uint64_t>(hash, v);
+}
+
+inline void xxHash32Push(XXHash32& hash, unsigned long long const& v) {
+  xxHashPushPrimitive<std::uint64_t>(hash, v);
+}
+
+inline void xxHash32Push(XXHash32& hash, float const& v) {
+  xxHashPushPrimitive<float>(hash, v);
+}
+
+inline void xxHash32Push(XXHash32& hash, double const& v) {
+  xxHashPushPrimitive<double>(hash, v);
+}
+
+inline void xxHash64Push(XXHash64& hash, bool const& v) {
+  xxHashPushPrimitive<bool>(hash, v);
+}
+
+inline void xxHash64Push(XXHash64& hash, int const& v) {
+  xxHashPushPrimitive<std::int32_t>(hash, v);
+}
+
+inline void xxHash64Push(XXHash64& hash, long const& v) {
+  xxHashPushPrimitive<std::int64_t>(hash, v);
+}
+
+inline void xxHash64Push(XXHash64& hash, long long const& v) {
+  xxHashPushPrimitive<std::int64_t>(hash, v);
+}
+
+inline void xxHash64Push(XXHash64& hash, unsigned int const& v) {
+  xxHashPushPrimitive<std::uint32_t>(hash, v);
+}
+
+inline void xxHash64Push(XXHash64& hash, unsigned long const& v) {
+  xxHashPushPrimitive<std::uint64_t>(hash, v);
+}
+
+inline void xxHash64Push(XXHash64& hash, unsigned long long const& v) {
+  xxHashPushPrimitive<std::uint64_t>(hash, v);
+}
+
+inline void xxHash64Push(XXHash64& hash, float const& v) {
+  xxHashPushPrimitive<float>(hash, v);
+}
+
+inline void xxHash64Push(XXHash64& hash, double const& v) {
+  xxHashPushPrimitive<double>(hash, v);
+}
+
+inline void xxHash3Push(XXHash3& hash, bool const& v) {
+  xxHashPushPrimitive<bool>(hash, v);
+}
+
+inline void xxHash3Push(XXHash3& hash, int const& v) {
+  xxHashPushPrimitive<std::int32_t>(hash, v);
+}
+
+inline void xxHash3Push(XXHash3& hash, long const& v) {
+  xxHashPushPrimitive<std::int64_t>(hash, v);
+}
+
+inline void xxHash3Push(XXHash3& hash, long long const& v) {
+  xxHashPushPrimitive<std::int64_t>(hash, v);
+}
+
+inline void xxHash3Push(XXHash3& hash, unsigned int const& v) {
+  xxHashPushPrimitive<std::uint32_t>(hash, v);
+}
+
+inline void xxHash3Push(XXHash3& hash, unsigned long const& v) {
+  xxHashPushPrimitive<std::uint64_t>(hash, v);
+}
+
+inline void xxHash3Push(XXHash3& hash, unsigned long long const& v) {
+  xxHashPushPrimitive<std::uint64_t>(hash, v);
+}
+
+inline void xxHash3Push(XXHash3& hash, float const& v) {
+  xxHashPushPrimitive<float>(hash, v);
+}
+
+inline void xxHash3Push(XXHash3& hash, double const& v) {
+  xxHashPushPrimitive<double>(hash, v);
+}
 
 inline void xxHash32Push(XXHash32& hash, char const* str) {
   hash.push(str, std::strlen(str));

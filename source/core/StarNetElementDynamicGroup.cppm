@@ -71,9 +71,77 @@ private:
   typedef ElementId ElementRemovalType;
   typedef std::pair<ElementId, ByteArray> ElementAdditionType;
 
-  strong_typedef(Empty, ElementReset);
+  template <typename BaseType>
+  struct ElementResetWrapper : BaseType {
+    using BaseType::BaseType;
+
+    ElementResetWrapper() : BaseType() {}
+
+    ElementResetWrapper(ElementResetWrapper const& nt) : BaseType(nt) {}
+
+    ElementResetWrapper(ElementResetWrapper&& nt) : BaseType(std::move(nt)) {}
+
+    explicit ElementResetWrapper(BaseType const& bt) : BaseType(bt) {}
+
+    explicit ElementResetWrapper(BaseType&& bt) : BaseType(std::move(bt)) {}
+
+    ElementResetWrapper& operator=(ElementResetWrapper const& rhs) {
+      BaseType::operator=(rhs);
+      return *this;
+    }
+
+    ElementResetWrapper& operator=(ElementResetWrapper&& rhs) {
+      BaseType::operator=(std::move(rhs));
+      return *this;
+    }
+
+    template <class Arg>
+    ElementResetWrapper& operator=(Arg&& other) {
+      static_assert(std::is_base_of<BaseType, typename std::decay<Arg>::type>::value == false
+              || std::is_same<ElementResetWrapper, typename std::decay<Arg>::type>::value,
+          "ElementReset can not implicitly be assigned from Empty-derived classes or strong Empty typedefs");
+
+      BaseType::operator=(std::forward<Arg>(other));
+      return *this;
+    }
+  };
+  typedef ElementResetWrapper<Empty> ElementReset;
   using ElementRemoval = StrongTypedefBuiltin<ElementRemovalType, struct ElementRemovalTag>;
-  strong_typedef(ElementAdditionType, ElementAddition);
+  template <typename BaseType>
+  struct ElementAdditionWrapper : BaseType {
+    using BaseType::BaseType;
+
+    ElementAdditionWrapper() : BaseType() {}
+
+    ElementAdditionWrapper(ElementAdditionWrapper const& nt) : BaseType(nt) {}
+
+    ElementAdditionWrapper(ElementAdditionWrapper&& nt) : BaseType(std::move(nt)) {}
+
+    explicit ElementAdditionWrapper(BaseType const& bt) : BaseType(bt) {}
+
+    explicit ElementAdditionWrapper(BaseType&& bt) : BaseType(std::move(bt)) {}
+
+    ElementAdditionWrapper& operator=(ElementAdditionWrapper const& rhs) {
+      BaseType::operator=(rhs);
+      return *this;
+    }
+
+    ElementAdditionWrapper& operator=(ElementAdditionWrapper&& rhs) {
+      BaseType::operator=(std::move(rhs));
+      return *this;
+    }
+
+    template <class Arg>
+    ElementAdditionWrapper& operator=(Arg&& other) {
+      static_assert(std::is_base_of<BaseType, typename std::decay<Arg>::type>::value == false
+              || std::is_same<ElementAdditionWrapper, typename std::decay<Arg>::type>::value,
+          "ElementAddition can not implicitly be assigned from ElementAdditionType-derived classes or strong ElementAdditionType typedefs");
+
+      BaseType::operator=(std::forward<Arg>(other));
+      return *this;
+    }
+  };
+  typedef ElementAdditionWrapper<ElementAdditionType> ElementAddition;
 
   typedef Variant<ElementReset, ElementRemoval, ElementAddition> ElementChange;
 

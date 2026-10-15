@@ -206,8 +206,76 @@ std::ostream& operator<<(std::ostream& os, CustomWorldId const& worldId);
 std::ostream& operator<<(std::ostream& os, ClientCustomWorldId const& worldId);
 std::ostream& operator<<(std::ostream& os, WorldId const& worldId);
 
-strong_typedef(String, SpawnTargetUniqueEntity);
-strong_typedef(Vec2F, SpawnTargetPosition);
+template <typename BaseType>
+struct SpawnTargetUniqueEntityWrapper : BaseType {
+  using BaseType::BaseType;
+
+  SpawnTargetUniqueEntityWrapper() : BaseType() {}
+
+  SpawnTargetUniqueEntityWrapper(SpawnTargetUniqueEntityWrapper const& nt) : BaseType(nt) {}
+
+  SpawnTargetUniqueEntityWrapper(SpawnTargetUniqueEntityWrapper&& nt) : BaseType(std::move(nt)) {}
+
+  explicit SpawnTargetUniqueEntityWrapper(BaseType const& bt) : BaseType(bt) {}
+
+  explicit SpawnTargetUniqueEntityWrapper(BaseType&& bt) : BaseType(std::move(bt)) {}
+
+  SpawnTargetUniqueEntityWrapper& operator=(SpawnTargetUniqueEntityWrapper const& rhs) {
+    BaseType::operator=(rhs);
+    return *this;
+  }
+
+  SpawnTargetUniqueEntityWrapper& operator=(SpawnTargetUniqueEntityWrapper&& rhs) {
+    BaseType::operator=(std::move(rhs));
+    return *this;
+  }
+
+  template <class Arg>
+  SpawnTargetUniqueEntityWrapper& operator=(Arg&& other) {
+    static_assert(std::is_base_of<BaseType, typename std::decay<Arg>::type>::value == false
+            || std::is_same<SpawnTargetUniqueEntityWrapper, typename std::decay<Arg>::type>::value,
+        "SpawnTargetUniqueEntity can not implicitly be assigned from String-derived classes or strong String typedefs");
+
+    BaseType::operator=(std::forward<Arg>(other));
+    return *this;
+  }
+};
+typedef SpawnTargetUniqueEntityWrapper<String> SpawnTargetUniqueEntity;
+template <typename BaseType>
+struct SpawnTargetPositionWrapper : BaseType {
+  using BaseType::BaseType;
+
+  SpawnTargetPositionWrapper() : BaseType() {}
+
+  SpawnTargetPositionWrapper(SpawnTargetPositionWrapper const& nt) : BaseType(nt) {}
+
+  SpawnTargetPositionWrapper(SpawnTargetPositionWrapper&& nt) : BaseType(std::move(nt)) {}
+
+  explicit SpawnTargetPositionWrapper(BaseType const& bt) : BaseType(bt) {}
+
+  explicit SpawnTargetPositionWrapper(BaseType&& bt) : BaseType(std::move(bt)) {}
+
+  SpawnTargetPositionWrapper& operator=(SpawnTargetPositionWrapper const& rhs) {
+    BaseType::operator=(rhs);
+    return *this;
+  }
+
+  SpawnTargetPositionWrapper& operator=(SpawnTargetPositionWrapper&& rhs) {
+    BaseType::operator=(std::move(rhs));
+    return *this;
+  }
+
+  template <class Arg>
+  SpawnTargetPositionWrapper& operator=(Arg&& other) {
+    static_assert(std::is_base_of<BaseType, typename std::decay<Arg>::type>::value == false
+            || std::is_same<SpawnTargetPositionWrapper, typename std::decay<Arg>::type>::value,
+        "SpawnTargetPosition can not implicitly be assigned from Vec2F-derived classes or strong Vec2F typedefs");
+
+    BaseType::operator=(std::forward<Arg>(other));
+    return *this;
+  }
+};
+typedef SpawnTargetPositionWrapper<Vec2F> SpawnTargetPosition;
 using SpawnTargetX = StrongTypedefBuiltin<float, struct SpawnTargetXTag>;
 typedef MVariant<SpawnTargetUniqueEntity, SpawnTargetPosition, SpawnTargetX> SpawnTarget;
 
@@ -233,7 +301,41 @@ struct WarpToWorld {
   Json toJson() const;
 };
 
-strong_typedef(Uuid, WarpToPlayer);
+template <typename BaseType>
+struct WarpToPlayerWrapper : BaseType {
+  using BaseType::BaseType;
+
+  WarpToPlayerWrapper() : BaseType() {}
+
+  WarpToPlayerWrapper(WarpToPlayerWrapper const& nt) : BaseType(nt) {}
+
+  WarpToPlayerWrapper(WarpToPlayerWrapper&& nt) : BaseType(std::move(nt)) {}
+
+  explicit WarpToPlayerWrapper(BaseType const& bt) : BaseType(bt) {}
+
+  explicit WarpToPlayerWrapper(BaseType&& bt) : BaseType(std::move(bt)) {}
+
+  WarpToPlayerWrapper& operator=(WarpToPlayerWrapper const& rhs) {
+    BaseType::operator=(rhs);
+    return *this;
+  }
+
+  WarpToPlayerWrapper& operator=(WarpToPlayerWrapper&& rhs) {
+    BaseType::operator=(std::move(rhs));
+    return *this;
+  }
+
+  template <class Arg>
+  WarpToPlayerWrapper& operator=(Arg&& other) {
+    static_assert(std::is_base_of<BaseType, typename std::decay<Arg>::type>::value == false
+            || std::is_same<WarpToPlayerWrapper, typename std::decay<Arg>::type>::value,
+        "WarpToPlayer can not implicitly be assigned from Uuid-derived classes or strong Uuid typedefs");
+
+    BaseType::operator=(std::forward<Arg>(other));
+    return *this;
+  }
+};
+typedef WarpToPlayerWrapper<Uuid> WarpToPlayer;
 
 enum class WarpAlias {
   Return,

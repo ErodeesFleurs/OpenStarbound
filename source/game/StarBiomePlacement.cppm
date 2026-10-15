@@ -56,8 +56,76 @@ typedef std::pair<TreeVariant, TreeVariant> TreePair;
 // Weighted pairs of object name / parameters.
 typedef WeightedPool<std::pair<String, Json>> ObjectPool;
 
-strong_typedef(String, TreasureBoxSet);
-strong_typedef(StringSet, MicroDungeonNames);
+template <typename BaseType>
+struct TreasureBoxSetWrapper : BaseType {
+  using BaseType::BaseType;
+
+  TreasureBoxSetWrapper() : BaseType() {}
+
+  TreasureBoxSetWrapper(TreasureBoxSetWrapper const& nt) : BaseType(nt) {}
+
+  TreasureBoxSetWrapper(TreasureBoxSetWrapper&& nt) : BaseType(std::move(nt)) {}
+
+  explicit TreasureBoxSetWrapper(BaseType const& bt) : BaseType(bt) {}
+
+  explicit TreasureBoxSetWrapper(BaseType&& bt) : BaseType(std::move(bt)) {}
+
+  TreasureBoxSetWrapper& operator=(TreasureBoxSetWrapper const& rhs) {
+    BaseType::operator=(rhs);
+    return *this;
+  }
+
+  TreasureBoxSetWrapper& operator=(TreasureBoxSetWrapper&& rhs) {
+    BaseType::operator=(std::move(rhs));
+    return *this;
+  }
+
+  template <class Arg>
+  TreasureBoxSetWrapper& operator=(Arg&& other) {
+    static_assert(std::is_base_of<BaseType, typename std::decay<Arg>::type>::value == false
+            || std::is_same<TreasureBoxSetWrapper, typename std::decay<Arg>::type>::value,
+        "TreasureBoxSet can not implicitly be assigned from String-derived classes or strong String typedefs");
+
+    BaseType::operator=(std::forward<Arg>(other));
+    return *this;
+  }
+};
+typedef TreasureBoxSetWrapper<String> TreasureBoxSet;
+template <typename BaseType>
+struct MicroDungeonNamesWrapper : BaseType {
+  using BaseType::BaseType;
+
+  MicroDungeonNamesWrapper() : BaseType() {}
+
+  MicroDungeonNamesWrapper(MicroDungeonNamesWrapper const& nt) : BaseType(nt) {}
+
+  MicroDungeonNamesWrapper(MicroDungeonNamesWrapper&& nt) : BaseType(std::move(nt)) {}
+
+  explicit MicroDungeonNamesWrapper(BaseType const& bt) : BaseType(bt) {}
+
+  explicit MicroDungeonNamesWrapper(BaseType&& bt) : BaseType(std::move(bt)) {}
+
+  MicroDungeonNamesWrapper& operator=(MicroDungeonNamesWrapper const& rhs) {
+    BaseType::operator=(rhs);
+    return *this;
+  }
+
+  MicroDungeonNamesWrapper& operator=(MicroDungeonNamesWrapper&& rhs) {
+    BaseType::operator=(std::move(rhs));
+    return *this;
+  }
+
+  template <class Arg>
+  MicroDungeonNamesWrapper& operator=(Arg&& other) {
+    static_assert(std::is_base_of<BaseType, typename std::decay<Arg>::type>::value == false
+            || std::is_same<MicroDungeonNamesWrapper, typename std::decay<Arg>::type>::value,
+        "MicroDungeonNames can not implicitly be assigned from StringSet-derived classes or strong StringSet typedefs");
+
+    BaseType::operator=(std::forward<Arg>(other));
+    return *this;
+  }
+};
+typedef MicroDungeonNamesWrapper<StringSet> MicroDungeonNames;
 
 typedef Variant<GrassVariant, BushVariant, TreePair, ObjectPool, TreasureBoxSet, MicroDungeonNames> BiomeItem;
 BiomeItem variantToBiomeItem(Json const& store);

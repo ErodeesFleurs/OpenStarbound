@@ -56,12 +56,80 @@ public:
   void addPendingJoin(String connectionString);
 
 private:
-  strong_typedef(Empty, JoinUnavailable);
+  template <typename BaseType>
+  struct JoinUnavailableWrapper : BaseType {
+    using BaseType::BaseType;
+
+    JoinUnavailableWrapper() : BaseType() {}
+
+    JoinUnavailableWrapper(JoinUnavailableWrapper const& nt) : BaseType(nt) {}
+
+    JoinUnavailableWrapper(JoinUnavailableWrapper&& nt) : BaseType(std::move(nt)) {}
+
+    explicit JoinUnavailableWrapper(BaseType const& bt) : BaseType(bt) {}
+
+    explicit JoinUnavailableWrapper(BaseType&& bt) : BaseType(std::move(bt)) {}
+
+    JoinUnavailableWrapper& operator=(JoinUnavailableWrapper const& rhs) {
+      BaseType::operator=(rhs);
+      return *this;
+    }
+
+    JoinUnavailableWrapper& operator=(JoinUnavailableWrapper&& rhs) {
+      BaseType::operator=(std::move(rhs));
+      return *this;
+    }
+
+    template <class Arg>
+    JoinUnavailableWrapper& operator=(Arg&& other) {
+      static_assert(std::is_base_of<BaseType, typename std::decay<Arg>::type>::value == false
+              || std::is_same<JoinUnavailableWrapper, typename std::decay<Arg>::type>::value,
+          "JoinUnavailable can not implicitly be assigned from Empty-derived classes or strong Empty typedefs");
+
+      BaseType::operator=(std::forward<Arg>(other));
+      return *this;
+    }
+  };
+  typedef JoinUnavailableWrapper<Empty> JoinUnavailable;
   struct JoinLocal {
     bool operator==(JoinLocal const& rhs) const { return capacity == rhs.capacity; };
     std::uint32_t capacity;
   };
-  strong_typedef(HostAddressWithPort, JoinRemote);
+  template <typename BaseType>
+  struct JoinRemoteWrapper : BaseType {
+    using BaseType::BaseType;
+
+    JoinRemoteWrapper() : BaseType() {}
+
+    JoinRemoteWrapper(JoinRemoteWrapper const& nt) : BaseType(nt) {}
+
+    JoinRemoteWrapper(JoinRemoteWrapper&& nt) : BaseType(std::move(nt)) {}
+
+    explicit JoinRemoteWrapper(BaseType const& bt) : BaseType(bt) {}
+
+    explicit JoinRemoteWrapper(BaseType&& bt) : BaseType(std::move(bt)) {}
+
+    JoinRemoteWrapper& operator=(JoinRemoteWrapper const& rhs) {
+      BaseType::operator=(rhs);
+      return *this;
+    }
+
+    JoinRemoteWrapper& operator=(JoinRemoteWrapper&& rhs) {
+      BaseType::operator=(std::move(rhs));
+      return *this;
+    }
+
+    template <class Arg>
+    JoinRemoteWrapper& operator=(Arg&& other) {
+      static_assert(std::is_base_of<BaseType, typename std::decay<Arg>::type>::value == false
+              || std::is_same<JoinRemoteWrapper, typename std::decay<Arg>::type>::value,
+          "JoinRemote can not implicitly be assigned from HostAddressWithPort-derived classes or strong HostAddressWithPort typedefs");
+
+      BaseType::operator=(std::forward<Arg>(other));
+      return *this;
+    }
+  };
+  typedef JoinRemoteWrapper<HostAddressWithPort> JoinRemote;
   typedef Variant<JoinUnavailable, JoinLocal, JoinRemote> JoinLocation;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
