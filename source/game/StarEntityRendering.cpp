@@ -63,7 +63,7 @@ void RenderCallback::addParticles(List<Particle> particles, Vec2F translate) {
   }
 }
 
-void RenderCallback::addAudios(List<AudioInstancePtr> audios, Vec2F translate) {
+void RenderCallback::addAudios(List<std::shared_ptr<AudioInstance>> audios, Vec2F translate) {
   for (auto& audio : audios) {
     audio->translate(translate);
     addAudio(std::move(audio));

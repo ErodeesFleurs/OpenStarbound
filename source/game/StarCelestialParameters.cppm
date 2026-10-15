@@ -29,14 +29,6 @@ import star.world_parameters;
 import star.byte_array;
 namespace Star {
 
-class CelestialParameters;
-using CelestialParametersPtr = std::shared_ptr<CelestialParameters>;
-using CelestialParametersConstPtr = std::shared_ptr<const CelestialParameters>;
-using CelestialParametersWeakPtr = std::weak_ptr<CelestialParameters>;
-using CelestialParametersConstWeakPtr = std::weak_ptr<const CelestialParameters>;
-using CelestialParametersUPtr = std::unique_ptr<CelestialParameters>;
-using CelestialParametersConstUPtr = std::unique_ptr<const CelestialParameters>;
-
 class CelestialParameters {
 public:
   CelestialParameters();
@@ -65,15 +57,15 @@ public:
   // Not all worlds are visitable, if the world is not visitable its
   // visitableParameters will be empty.
   bool isVisitable() const;
-  VisitableWorldParametersConstPtr visitableParameters() const;
-  void setVisitableParameters(VisitableWorldParametersPtr const& newVisitableParameters);
+  std::shared_ptr<VisitableWorldParameters const> visitableParameters() const;
+  void setVisitableParameters(std::shared_ptr<VisitableWorldParameters> const& newVisitableParameters);
 
 private:
   CelestialCoordinate m_coordinate;
   std::uint64_t m_seed;
   String m_name;
   Json m_parameters;
-  VisitableWorldParametersConstPtr m_visitableParameters;
+  std::shared_ptr<VisitableWorldParameters const> m_visitableParameters;
 };
 
 }
@@ -82,10 +74,4 @@ export module star.celestial_parameters;
 
 export namespace Star {
   using ::Star::CelestialParameters;
-  using ::Star::CelestialParametersPtr;
-  using ::Star::CelestialParametersConstPtr;
-  using ::Star::CelestialParametersWeakPtr;
-  using ::Star::CelestialParametersConstWeakPtr;
-  using ::Star::CelestialParametersUPtr;
-  using ::Star::CelestialParametersConstUPtr;
 }

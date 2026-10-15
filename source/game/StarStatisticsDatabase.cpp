@@ -67,18 +67,18 @@ StatisticsDatabase::StatisticsDatabase() : m_cacheMutex(), m_eventCache() {
   }
 }
 
-StatEventPtr StatisticsDatabase::event(String const& name) const {
+std::shared_ptr<StatEvent> StatisticsDatabase::event(String const& name) const {
   MutexLocker locker(m_cacheMutex);
-  return m_eventCache.get(name, [this](String const& name) -> StatEventPtr {
+  return m_eventCache.get(name, [this](String const& name) -> std::shared_ptr<StatEvent> {
       if (auto path = m_eventPaths.maybe(name))
         return readEvent(*path);
       return {};
     });
 }
 
-AchievementPtr StatisticsDatabase::achievement(String const& name) const {
+std::shared_ptr<Achievement> StatisticsDatabase::achievement(String const& name) const {
   MutexLocker locker(m_cacheMutex);
-  return m_achievementCache.get(name, [this](String const& name) -> AchievementPtr {
+  return m_achievementCache.get(name, [this](String const& name) -> std::shared_ptr<Achievement> {
       if (auto path = m_achievementPaths.maybe(name))
         return readAchievement(*path);
       return {};
@@ -93,7 +93,7 @@ StringList StatisticsDatabase::achievementsForStat(String const& statName) const
   return m_statAchievements.value(statName);
 }
 
-StatEventPtr StatisticsDatabase::readEvent(String const& path) {
+std::shared_ptr<StatEvent> StatisticsDatabase::readEvent(String const& path) {
   auto assets = Root::singleton().assets();
   Json config = assets->json(path);
 
@@ -104,7 +104,7 @@ StatEventPtr StatisticsDatabase::readEvent(String const& path) {
     });
 }
 
-AchievementPtr StatisticsDatabase::readAchievement(String const& path) {
+std::shared_ptr<Achievement> StatisticsDatabase::readAchievement(String const& path) {
   auto assets = Root::singleton().assets();
   Json config = assets->json(path);
 

@@ -78,8 +78,8 @@ TEST(ItemTest, ItemDescriptorConstruction) {
 
 TEST(ItemTest, ItemComparison) {
   auto itemDatabase = Root::singleton().itemDatabase();
-  ItemPtr testItem = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1));
-  ItemPtr testItemParams = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1, JsonObject{{"testParameter", "testValue"}}));
+  std::shared_ptr<::Star::Item> testItem = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1));
+  std::shared_ptr<::Star::Item> testItemParams = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1, JsonObject{{"testParameter", "testValue"}}));
 
   List<ItemDescriptor> testItemDescriptors = List<ItemDescriptor>{
     ItemDescriptor("perfectlygenericitem", 1),
@@ -189,5 +189,5 @@ TEST(ItemTest, ConstructItems) {
   auto itemDatabase = Root::singleton().itemDatabase();
 
   for (auto itemName : itemDatabase->allItems())
-    ItemPtr item = itemDatabase->item(ItemDescriptor(itemName, 1));
+    std::shared_ptr<::Star::Item> item = itemDatabase->item(ItemDescriptor(itemName, 1));
 }

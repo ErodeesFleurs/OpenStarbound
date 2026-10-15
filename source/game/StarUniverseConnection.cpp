@@ -104,7 +104,7 @@ namespace Star {
 
 static const int PacketSocketPollSleep = 1;
 
-UniverseConnection::UniverseConnection(PacketSocketUPtr packetSocket)
+UniverseConnection::UniverseConnection(std::unique_ptr<PacketSocket> packetSocket)
     : m_packetSocket(std::move(packetSocket)) {}
 
 UniverseConnection::UniverseConnection(UniverseConnection&& rhs) {
@@ -134,22 +134,22 @@ void UniverseConnection::close() {
   m_packetSocket->close();
 }
 
-void UniverseConnection::push(List<PacketPtr> packets) {
+void UniverseConnection::push(List<std::shared_ptr<Packet>> packets) {
   MutexLocker locker(m_mutex);
   m_sendQueue.appendAll(std::move(packets));
 }
 
-void UniverseConnection::pushSingle(PacketPtr packet) {
+void UniverseConnection::pushSingle(std::shared_ptr<Packet> packet) {
   MutexLocker locker(m_mutex);
   m_sendQueue.append(std::move(packet));
 }
 
-List<PacketPtr> UniverseConnection::pull() {
+List<std::shared_ptr<Packet>> UniverseConnection::pull() {
   MutexLocker locker(m_mutex);
-  return List<PacketPtr>::from(take(m_receiveQueue));
+  return List<std::shared_ptr<Packet>>::from(take(m_receiveQueue));
 }
 
-PacketPtr UniverseConnection::pullSingle() {
+std::shared_ptr<Packet> UniverseConnection::pullSingle() {
   MutexLocker locker(m_mutex);
   if (m_receiveQueue.empty())
     return {};
@@ -256,7 +256,7 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
               dataTransmitted |= p.second->packetSocket->writeData();
 
               dataTransmitted |= p.second->packetSocket->readData();
-              List<PacketPtr> receivePackets = p.second->packetSocket->receivePackets();
+              List<std::shared_ptr<Packet>> receivePackets = p.second->packetSocket->receivePackets();
               if (!receivePackets.empty()) {
                 p.second->lastActivityTime = Time::monotonicMilliseconds();
                 m_workerStats[i].packetsProcessed += receivePackets.size();
@@ -264,7 +264,7 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
               }
 
               if (!p.second->receiveQueue.empty()) {
-                List<PacketPtr> toReceive = List<PacketPtr>::from(take(p.second->receiveQueue));
+                List<std::shared_ptr<Packet>> toReceive = List<std::shared_ptr<Packet>>::from(take(p.second->receiveQueue));
                 connectionLocker.unlock();
 
                 try {
@@ -375,7 +375,7 @@ List<UniverseConnection> UniverseConnectionServer::removeAllConnections() {
   return removedConnections;
 }
 
-void UniverseConnectionServer::sendPackets(ConnectionId clientId, List<PacketPtr> packets) {
+void UniverseConnectionServer::sendPackets(ConnectionId clientId, List<std::shared_ptr<Packet>> packets) {
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   if (auto conn = m_connections.value(clientId)) {
     connectionsLocker.unlock();

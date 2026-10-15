@@ -47,17 +47,9 @@ import star.world_tiles;
 import star.algorithm;
 namespace Star {
 
-class ParticleManager;
-using ParticleManagerPtr = std::shared_ptr<ParticleManager>;
-using ParticleManagerConstPtr = std::shared_ptr<const ParticleManager>;
-using ParticleManagerWeakPtr = std::weak_ptr<ParticleManager>;
-using ParticleManagerConstWeakPtr = std::weak_ptr<const ParticleManager>;
-using ParticleManagerUPtr = std::unique_ptr<ParticleManager>;
-using ParticleManagerConstUPtr = std::unique_ptr<const ParticleManager>;
-
 class ParticleManager {
 public:
-  ParticleManager(WorldGeometry const& worldGeometry, ClientTileSectorArrayPtr const& tileSectorArray);
+  ParticleManager(WorldGeometry const& worldGeometry, std::shared_ptr<ClientTileSectorArray> const& tileSectorArray);
 
   void add(Particle particle);
   void addParticles(List<Particle> particles);
@@ -81,7 +73,7 @@ private:
 
   WorldGeometry m_worldGeometry;
   float m_undergroundLevel;
-  ClientTileSectorArrayPtr m_tileSectorArray;
+  std::shared_ptr<ClientTileSectorArray> m_tileSectorArray;
 };
 
 }
@@ -90,10 +82,4 @@ export module star.particle_manager;
 
 export namespace Star {
 using ::Star::ParticleManager;
-using ::Star::ParticleManagerPtr;
-using ::Star::ParticleManagerConstPtr;
-using ::Star::ParticleManagerWeakPtr;
-using ::Star::ParticleManagerConstWeakPtr;
-using ::Star::ParticleManagerUPtr;
-using ::Star::ParticleManagerConstUPtr;
 }

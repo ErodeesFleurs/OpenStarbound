@@ -234,7 +234,7 @@ void QuestTrackerPane::update(float dt) {
   Pane::update(dt);
 }
 
-void QuestTrackerPane::setQuest(QuestPtr const& quest) {
+void QuestTrackerPane::setQuest(std::shared_ptr<Quest> const& quest) {
   m_currentQuest = quest;
 }
 

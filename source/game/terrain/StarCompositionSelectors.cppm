@@ -19,7 +19,7 @@ struct MaxSelector : TerrainSelector {
 
   float get(int x, int y) const override;
 
-  List<TerrainSelectorConstPtr> m_sources;
+  List<std::shared_ptr<TerrainSelector const>> m_sources;
 };
 
 
@@ -31,7 +31,7 @@ struct MinMaxSelector : TerrainSelector {
 
   float get(int x, int y) const override;
 
-  List<TerrainSelectorConstPtr> m_sources;
+  List<std::shared_ptr<TerrainSelector const>> m_sources;
 };
 
 
@@ -43,9 +43,9 @@ struct MixSelector : TerrainSelector {
 
   float get(int x, int y) const override;
 
-  TerrainSelectorConstPtr m_mixSource;
-  TerrainSelectorConstPtr m_aSource;
-  TerrainSelectorConstPtr m_bSource;
+  std::shared_ptr<TerrainSelector const> m_mixSource;
+  std::shared_ptr<TerrainSelector const> m_aSource;
+  std::shared_ptr<TerrainSelector const> m_bSource;
 };
 
 }

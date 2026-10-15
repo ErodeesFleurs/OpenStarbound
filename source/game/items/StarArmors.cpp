@@ -276,7 +276,7 @@ HeadArmor::HeadArmor(Json const& config, String const& directory, Json const& da
     m_maskDirectives = maskDirectivesStr;
 }
 
-ItemPtr HeadArmor::clone() const {
+std::shared_ptr<Item> HeadArmor::clone() const {
   return std::make_shared<HeadArmor>(*this);
 }
 
@@ -295,9 +295,9 @@ Directives const& HeadArmor::maskDirectives() const {
   return m_maskDirectives;
 }
 
-List<Drawable> HeadArmor::preview(PlayerPtr const& viewer) const {
+List<Drawable> HeadArmor::preview(std::shared_ptr<Player> const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender);
+  std::shared_ptr<Humanoid> humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender);
   return humanoid->renderDummy(gender, this, nullptr, nullptr, nullptr);
 }
 
@@ -314,7 +314,7 @@ ChestArmor::ChestArmor(Json const& config, String const& directory, Json const& 
   m_femaleBackSleeveImage = AssetPath::relativeTo(directory, femaleImages.getString("backSleeve"));
 }
 
-ItemPtr ChestArmor::clone() const {
+std::shared_ptr<Item> ChestArmor::clone() const {
   return std::make_shared<ChestArmor>(*this);
 }
 
@@ -343,9 +343,9 @@ String const& ChestArmor::backSleeveFrameset(Gender gender) const {
     return m_femaleBackSleeveImage;
 }
 
-List<Drawable> ChestArmor::preview(PlayerPtr const& viewer) const {
+List<Drawable> ChestArmor::preview(std::shared_ptr<Player> const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender);
+  std::shared_ptr<Humanoid> humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender);
   return humanoid->renderDummy(gender, nullptr, this, nullptr, nullptr);
 }
 
@@ -355,7 +355,7 @@ LegsArmor::LegsArmor(Json const& config, String const& directory, Json const& da
   m_femaleImage = AssetPath::relativeTo(directory, config.getString("femaleFrames"));
 }
 
-ItemPtr LegsArmor::clone() const {
+std::shared_ptr<Item> LegsArmor::clone() const {
   return std::make_shared<LegsArmor>(*this);
 }
 
@@ -370,9 +370,9 @@ String const& LegsArmor::frameset(Gender gender) const {
     return m_femaleImage;
 }
 
-List<Drawable> LegsArmor::preview(PlayerPtr const& viewer) const {
+List<Drawable> LegsArmor::preview(std::shared_ptr<Player> const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender);
+  std::shared_ptr<Humanoid> humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender);
   return humanoid->renderDummy(gender, nullptr, nullptr, this, nullptr);
 }
 
@@ -382,7 +382,7 @@ BackArmor::BackArmor(Json const& config, String const& directory, Json const& da
   m_femaleImage = AssetPath::relativeTo(directory, config.getString("femaleFrames"));
 }
 
-ItemPtr BackArmor::clone() const {
+std::shared_ptr<Item> BackArmor::clone() const {
   return std::make_shared<BackArmor>(*this);
 }
 
@@ -397,9 +397,9 @@ String const& BackArmor::frameset(Gender gender) const {
     return m_femaleImage;
 }
 
-List<Drawable> BackArmor::preview(PlayerPtr const& viewer) const {
+List<Drawable> BackArmor::preview(std::shared_ptr<Player> const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender);
+  std::shared_ptr<Humanoid> humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender);
   return humanoid->renderDummy(gender, nullptr, nullptr, nullptr, this);
 }
 

@@ -13,21 +13,6 @@ export module star.udp;
 
 export namespace Star {
 
-class UdpSocket;
-using UdpSocketPtr = std::shared_ptr<UdpSocket>;
-using UdpSocketConstPtr = std::shared_ptr<const UdpSocket>;
-using UdpSocketWeakPtr = std::weak_ptr<UdpSocket>;
-using UdpSocketConstWeakPtr = std::weak_ptr<const UdpSocket>;
-using UdpSocketUPtr = std::unique_ptr<UdpSocket>;
-using UdpSocketConstUPtr = std::unique_ptr<const UdpSocket>;
-class UdpServer;
-using UdpServerPtr = std::shared_ptr<UdpServer>;
-using UdpServerConstPtr = std::shared_ptr<const UdpServer>;
-using UdpServerWeakPtr = std::weak_ptr<UdpServer>;
-using UdpServerConstWeakPtr = std::weak_ptr<const UdpServer>;
-using UdpServerUPtr = std::unique_ptr<UdpServer>;
-using UdpServerConstUPtr = std::unique_ptr<const UdpServer>;
-
 // A Good default assumption for a maximum size of a UDP datagram without
 // fragmentation
 inline constexpr unsigned MaxUdpData = 1460;
@@ -53,7 +38,7 @@ public:
 
 private:
   HostAddressWithPort const m_hostAddress;
-  UdpSocketPtr m_listenSocket;
+  std::shared_ptr<UdpSocket> m_listenSocket;
 };
 
 }

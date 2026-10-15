@@ -123,43 +123,43 @@ import star.item_bag;
 import star.matrix3;
 namespace Star {
 
-LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
-  LuaMethods<CanvasWidgetPtr> methods;
+LuaMethods<std::shared_ptr<CanvasWidget>> LuaUserDataMethods<std::shared_ptr<CanvasWidget>>::make() {
+  LuaMethods<std::shared_ptr<CanvasWidget>> methods;
 
-  methods.registerMethodWithSignature<Vec2I, CanvasWidgetPtr>("size", std::mem_fn(&CanvasWidget::size));
-  methods.registerMethodWithSignature<Vec2I, CanvasWidgetPtr>("mousePosition", std::mem_fn(&CanvasWidget::mousePosition));
+  methods.registerMethodWithSignature<Vec2I, std::shared_ptr<CanvasWidget>>("size", std::mem_fn(&CanvasWidget::size));
+  methods.registerMethodWithSignature<Vec2I, std::shared_ptr<CanvasWidget>>("mousePosition", std::mem_fn(&CanvasWidget::mousePosition));
 
-  methods.registerMethodWithSignature<void, CanvasWidgetPtr>("clear", std::mem_fn(&CanvasWidget::clear));
+  methods.registerMethodWithSignature<void, std::shared_ptr<CanvasWidget>>("clear", std::mem_fn(&CanvasWidget::clear));
 
-  methods.registerMethod("drawDrawable", [](CanvasWidgetPtr canvasWidget, Drawable drawable, Maybe<Vec2F> screenPos) {
+  methods.registerMethod("drawDrawable", [](std::shared_ptr<CanvasWidget> canvasWidget, Drawable drawable, Maybe<Vec2F> screenPos) {
     canvasWidget->drawDrawable(std::move(drawable), screenPos.value(Vec2F()));
   });
 
-  methods.registerMethod("drawDrawables", [](CanvasWidgetPtr canvasWidget, List<Drawable> drawables, Maybe<Vec2F> screenPos) {
+  methods.registerMethod("drawDrawables", [](std::shared_ptr<CanvasWidget> canvasWidget, List<Drawable> drawables, Maybe<Vec2F> screenPos) {
     Vec2F pos = screenPos.value(Vec2F());
     for (auto& drawable : drawables)
       canvasWidget->drawDrawable(std::move(drawable), pos);
   });
 
-  methods.registerMethod("drawJsonDrawable", [](CanvasWidgetPtr canvasWidget, Json drawable, Maybe<Vec2F> screenPos) {
+  methods.registerMethod("drawJsonDrawable", [](std::shared_ptr<CanvasWidget> canvasWidget, Json drawable, Maybe<Vec2F> screenPos) {
     canvasWidget->drawDrawable(Drawable(drawable), screenPos.value(Vec2F()));
   });
 
-  methods.registerMethod("drawJsonDrawables", [](CanvasWidgetPtr canvasWidget, JsonArray drawables, Maybe<Vec2F> screenPos) {
+  methods.registerMethod("drawJsonDrawables", [](std::shared_ptr<CanvasWidget> canvasWidget, JsonArray drawables, Maybe<Vec2F> screenPos) {
     Vec2F pos = screenPos.value(Vec2F());
     for (auto& drawable : drawables)
       canvasWidget->drawDrawable(Drawable(drawable), pos);
   });
 
   methods.registerMethod("drawImage",
-      [](CanvasWidgetPtr canvasWidget, String image, Vec2F position, Maybe<float> scale, Maybe<Color> color, Maybe<bool> centered) {
+      [](std::shared_ptr<CanvasWidget> canvasWidget, String image, Vec2F position, Maybe<float> scale, Maybe<Color> color, Maybe<bool> centered) {
         if (centered && *centered)
           canvasWidget->drawImageCentered(image, position, scale.value(1.0f), color.value(Color::White).toRgba());
         else
           canvasWidget->drawImage(image, position, scale.value(1.0f), color.value(Color::White).toRgba());
       });
   methods.registerMethod("drawImageDrawable",
-      [](CanvasWidgetPtr canvasWidget, String image, Vec2F position, MVariant<Vec2F, float> scale, Maybe<Color> color, Maybe<float> rotation) {
+      [](std::shared_ptr<CanvasWidget> canvasWidget, String image, Vec2F position, MVariant<Vec2F, float> scale, Maybe<Color> color, Maybe<float> rotation) {
         auto drawable = Drawable::makeImage(image, 1.0, true, {0.0, 0.0}, color.value(Color::White));
         if (auto s = scale.maybe<Vec2F>())
           drawable.transform(Mat3F::scaling(*s));
@@ -170,27 +170,27 @@ LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
         canvasWidget->drawDrawable(drawable, position);
       });
   methods.registerMethod("drawImageRect",
-      [](CanvasWidgetPtr canvasWidget, String image, RectF texCoords, RectF screenCoords, Maybe<Color> color) {
+      [](std::shared_ptr<CanvasWidget> canvasWidget, String image, RectF texCoords, RectF screenCoords, Maybe<Color> color) {
         canvasWidget->drawImageRect(image, texCoords, screenCoords, color.value(Color::White).toRgba());
       });
   methods.registerMethod("drawTiledImage",
-      [](CanvasWidgetPtr canvasWidget, String image, Vec2D offset, RectF screenCoords, Maybe<float> scale, Maybe<Color> color) {
+      [](std::shared_ptr<CanvasWidget> canvasWidget, String image, Vec2D offset, RectF screenCoords, Maybe<float> scale, Maybe<Color> color) {
         canvasWidget->drawTiledImage(image, scale.value(1.0f), offset, screenCoords, color.value(Color::White).toRgba());
       });
   methods.registerMethod("drawLine",
-      [](CanvasWidgetPtr canvasWidget, Vec2F begin, Vec2F end, Maybe<Color> color, Maybe<float> lineWidth) {
+      [](std::shared_ptr<CanvasWidget> canvasWidget, Vec2F begin, Vec2F end, Maybe<Color> color, Maybe<float> lineWidth) {
         canvasWidget->drawLine(begin, end, color.value(Color::White).toRgba(), lineWidth.value(1.0f));
       });
   methods.registerMethod("drawRect",
-      [](CanvasWidgetPtr canvasWidget, RectF rect, Maybe<Color> color) {
+      [](std::shared_ptr<CanvasWidget> canvasWidget, RectF rect, Maybe<Color> color) {
         canvasWidget->drawRect(rect, color.value(Color::White).toRgba());
       });
   methods.registerMethod("drawPoly",
-      [](CanvasWidgetPtr canvasWidget, PolyF poly, Maybe<Color> color, Maybe<float> lineWidth) {
+      [](std::shared_ptr<CanvasWidget> canvasWidget, PolyF poly, Maybe<Color> color, Maybe<float> lineWidth) {
         canvasWidget->drawPoly(poly, color.value(Color::White).toRgba(), lineWidth.value(1.0f));
       });
   methods.registerMethod("drawTriangles",
-      [](CanvasWidgetPtr canvasWidget, List<PolyF> triangles, Maybe<Color> color) {
+      [](std::shared_ptr<CanvasWidget> canvasWidget, List<PolyF> triangles, Maybe<Color> color) {
         auto tris = triangles.transformed([](PolyF const& poly) {
             if (poly.sides() != 3)
               throw StarException("Triangle must have exactly 3 sides");
@@ -199,7 +199,7 @@ LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
         canvasWidget->drawTriangles(tris, color.value(Color::White).toRgba());
       });
   methods.registerMethod("drawText",
-      [](CanvasWidgetPtr canvasWidget, String text, Json tp, unsigned fontSize, Maybe<Color> color, Maybe<float> lineSpacing, Maybe<String> font, Maybe<String> directives) {
+      [](std::shared_ptr<CanvasWidget> canvasWidget, String text, Json tp, unsigned fontSize, Maybe<Color> color, Maybe<float> lineSpacing, Maybe<String> font, Maybe<String> directives) {
         canvasWidget->drawText(text, TextPositioning(tp), fontSize, color.value(Color::White).toRgba(), FontMode::Normal, lineSpacing.value(DefaultLineSpacing), font.value(""), directives.value(""));
       });
 
@@ -208,7 +208,7 @@ LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
 
 namespace LuaBindings {
 
-LuaCallbacks makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr reader) {
+LuaCallbacks makeWidgetCallbacks(Widget* parentWidget, std::shared_ptr<GuiReader> reader) {
   if (!reader)
     reader = std::make_shared<GuiReader>();
 
@@ -217,13 +217,13 @@ LuaCallbacks makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr reader) {
   // a bit miscellaneous, but put this here since widgets have access to gui context
 
   callbacks.registerCallback("playSound",
-      [parentWidget](String const& audio, Maybe<int> loops, Maybe<float> volume) -> AudioInstancePtr {
+      [parentWidget](String const& audio, Maybe<int> loops, Maybe<float> volume) -> std::shared_ptr<AudioInstance> {
         return parentWidget->context()->playAudio(audio, loops.value(0), volume.value(1.0f));
       });
 
   // widget userdata methods
 
-  callbacks.registerCallback("bindCanvas", [parentWidget](String const& widgetName) -> Maybe<CanvasWidgetPtr> {
+  callbacks.registerCallback("bindCanvas", [parentWidget](String const& widgetName) -> Maybe<std::shared_ptr<CanvasWidget>> {
       if (auto canvas = parentWidget->fetchChild<CanvasWidget>(widgetName))
         return canvas;
       return {};
@@ -570,7 +570,7 @@ LuaCallbacks makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr reader) {
 
   callbacks.registerCallback("addFlowImage", [parentWidget](String const& widgetName, String const& childName, String const& image) {
       if (auto flow = parentWidget->fetchChild<FlowLayout>(widgetName)) {
-        WidgetPtr newChild = std::make_shared<ImageWidget>(image);
+        std::shared_ptr<Widget> newChild = std::make_shared<ImageWidget>(image);
         flow->addChild(childName, newChild);
       }
     });

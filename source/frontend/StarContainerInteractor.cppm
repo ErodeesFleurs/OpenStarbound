@@ -28,19 +28,11 @@ import star.container_entity;
 
 namespace Star {
 
-class ContainerInteractor;
-using ContainerInteractorPtr = std::shared_ptr<ContainerInteractor>;
-using ContainerInteractorConstPtr = std::shared_ptr<ContainerInteractor const>;
-using ContainerInteractorWeakPtr = std::weak_ptr<ContainerInteractor>;
-using ContainerInteractorConstWeakPtr = std::weak_ptr<ContainerInteractor const>;
-using ContainerInteractorUPtr = std::unique_ptr<ContainerInteractor>;
-using ContainerInteractorConstUPtr = std::unique_ptr<ContainerInteractor const>;
-
-typedef List<ItemPtr> ContainerResult;
+typedef List<std::shared_ptr<Item>> ContainerResult;
 
 class ContainerInteractor {
 public:
-  void openContainer(ContainerEntityPtr containerEntity);
+  void openContainer(std::shared_ptr<ContainerEntity> containerEntity);
   void closeContainer();
 
   bool containerOpen() const;
@@ -49,14 +41,14 @@ public:
   EntityId openContainerId() const;
 
   // This does not perform any checks; make sure to check if it is valid if you use it!
-  ContainerEntityPtr const& openContainer() const;
+  std::shared_ptr<ContainerEntity> const& openContainer() const;
 
   List<ContainerResult> pullContainerResults();
 
-  void swapInContainer(std::size_t slot, ItemPtr const& items);
-  void addToContainer(ItemPtr const& items);
+  void swapInContainer(std::size_t slot, std::shared_ptr<Item> const& items);
+  void addToContainer(std::shared_ptr<Item> const& items);
   void takeFromContainerSlot(std::size_t slot, std::size_t count);
-  void applyAugmentInContainer(std::size_t slot, ItemPtr const& augment);
+  void applyAugmentInContainer(std::size_t slot, std::shared_ptr<Item> const& augment);
 
   void startCraftingInContainer();
   void stopCraftingInContainer();
@@ -64,9 +56,9 @@ public:
   void clearContainer();
 
 private:
-  static ContainerResult resultFromItem(ItemPtr const& items);
+  static ContainerResult resultFromItem(std::shared_ptr<Item> const& items);
 
-  mutable ContainerEntityPtr m_openContainer;
+  mutable std::shared_ptr<ContainerEntity> m_openContainer;
   List<RpcPromise<ContainerResult>> m_pendingResults;
 };
 
@@ -76,11 +68,5 @@ export module star.container_interactor;
 
 export namespace Star {
   using ::Star::ContainerInteractor;
-  using ::Star::ContainerInteractorPtr;
-  using ::Star::ContainerInteractorConstPtr;
-  using ::Star::ContainerInteractorWeakPtr;
-  using ::Star::ContainerInteractorConstWeakPtr;
-  using ::Star::ContainerInteractorUPtr;
-  using ::Star::ContainerInteractorConstUPtr;
   using ::Star::ContainerResult;
 }

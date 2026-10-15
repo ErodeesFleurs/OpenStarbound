@@ -18,14 +18,6 @@ struct SpawnTypeDatabaseExceptionTag {
 };
 using SpawnTypeDatabaseException = StarError<SpawnTypeDatabaseExceptionTag, StarException>;
 
-class SpawnTypeDatabase;
-using SpawnTypeDatabasePtr = std::shared_ptr<SpawnTypeDatabase>;
-using SpawnTypeDatabaseConstPtr = std::shared_ptr<const SpawnTypeDatabase>;
-using SpawnTypeDatabaseWeakPtr = std::weak_ptr<SpawnTypeDatabase>;
-using SpawnTypeDatabaseConstWeakPtr = std::weak_ptr<const SpawnTypeDatabase>;
-using SpawnTypeDatabaseUPtr = std::unique_ptr<SpawnTypeDatabase>;
-using SpawnTypeDatabaseConstUPtr = std::unique_ptr<const SpawnTypeDatabase>;
-
 struct SpawnParameters {
   enum class Area : std::uint8_t {
     Surface,
@@ -112,8 +104,6 @@ export namespace Star {
   using ::Star::SpawnTypeDatabaseExceptionTag;
   using ::Star::SpawnTypeDatabaseException;
   using ::Star::SpawnTypeDatabase;
-  using ::Star::SpawnTypeDatabasePtr;
-  using ::Star::SpawnTypeDatabaseConstPtr;
   using ::Star::SpawnParameters;
   using ::Star::SpawnType;
   using ::Star::SpawnProfile;

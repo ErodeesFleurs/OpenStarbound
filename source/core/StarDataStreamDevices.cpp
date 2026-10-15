@@ -21,10 +21,10 @@ void DataStreamFunctions::writeData(char const* data, std::size_t len) {
   m_writer(data, len);
 }
 
-DataStreamIODevice::DataStreamIODevice(IODevicePtr device)
+DataStreamIODevice::DataStreamIODevice(std::shared_ptr<IODevice> device)
   : m_device(std::move(device)) {}
 
-IODevicePtr const& DataStreamIODevice::device() const {
+std::shared_ptr<IODevice> const& DataStreamIODevice::device() const {
   return m_device;
 }
 
@@ -74,7 +74,7 @@ void DataStreamBuffer::clear() {
   m_buffer->clear();
 }
 
-BufferPtr const& DataStreamBuffer::device() const {
+std::shared_ptr<Buffer> const& DataStreamBuffer::device() const {
   return m_buffer;
 }
 

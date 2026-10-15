@@ -187,7 +187,7 @@ void Widget::markAsContainer() {
   m_container = true;
 }
 
-WidgetPtr Widget::keyboardCapturer() const {
+std::shared_ptr<Widget> Widget::keyboardCapturer() const {
   if (active()) {
     for (auto const& member : m_members) {
       auto mode = member->keyboardCaptureMode();
@@ -350,14 +350,14 @@ Pane const* Widget::window() const {
   return nullptr;
 }
 
-void Widget::addChild(String const& name, WidgetPtr member) {
+void Widget::addChild(String const& name, std::shared_ptr<Widget> member) {
   member->setName(name);
   m_members.push_back(member);
   m_memberHash[member->name()] = member;
   member->setParent(this);
 }
 
-void Widget::addChildAt(String const& name, WidgetPtr member, std::size_t at) {
+void Widget::addChildAt(String const& name, std::shared_ptr<Widget> member, std::size_t at) {
   if (at > m_members.size())
     throw GuiException("Attempted to insert item after the end of the list.");
 
@@ -422,8 +422,8 @@ bool Widget::containsChild(String const& name) {
   return false;
 }
 
-WidgetPtr Widget::fetchChild(String const& name) {
-  WidgetPtr res;
+std::shared_ptr<Widget> Widget::fetchChild(String const& name) {
+  std::shared_ptr<Widget> res;
   if (name.contains(".")) {
     StringList nameList = name.split(".", 1);
     if (auto child = m_memberHash.value(nameList[0], {}))
@@ -435,7 +435,7 @@ WidgetPtr Widget::fetchChild(String const& name) {
   return {};
 }
 
-WidgetPtr Widget::findChild(String const& name) {
+std::shared_ptr<Widget> Widget::findChild(String const& name) {
   if (auto found = fetchChild(name))
     return found;
   for (auto const& child : m_members) {
@@ -445,7 +445,7 @@ WidgetPtr Widget::findChild(String const& name) {
   return {};
 }
 
-WidgetPtr Widget::childPtr(Widget const* child) const {
+std::shared_ptr<Widget> Widget::childPtr(Widget const* child) const {
   for (auto const& m : m_members) {
     if (m.get() == child)
       return m;
@@ -455,7 +455,7 @@ WidgetPtr Widget::childPtr(Widget const* child) const {
   return {};
 }
 
-WidgetPtr Widget::getChildAt(Vec2I const& pos) {
+std::shared_ptr<Widget> Widget::getChildAt(Vec2I const& pos) {
   for (auto child : reverseIterate(m_members)) {
     if (child->inMember(pos)) {
       auto res = child->getChildAt(pos);
@@ -473,7 +473,7 @@ std::size_t Widget::numChildren() const {
   return m_members.size();
 }
 
-WidgetPtr Widget::getChildNum(std::size_t num) const {
+std::shared_ptr<Widget> Widget::getChildNum(std::size_t num) const {
   return m_members.at(num);
 }
 

@@ -240,15 +240,15 @@ float ScrollBar::scrollRatio() const {
   return 0;
 }
 
-ButtonWidgetPtr ScrollBar::forwardButton() const {
+std::shared_ptr<ButtonWidget> ScrollBar::forwardButton() const {
   return m_forward;
 }
 
-ButtonWidgetPtr ScrollBar::backwardButton() const {
+std::shared_ptr<ButtonWidget> ScrollBar::backwardButton() const {
   return m_backward;
 }
 
-ScrollThumbPtr ScrollBar::thumb() const {
+std::shared_ptr<ScrollThumb> ScrollBar::thumb() const {
   return m_thumb;
 }
 

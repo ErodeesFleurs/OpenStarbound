@@ -201,7 +201,7 @@ import star.humanoid;
 
 namespace Star {
 
-OptionsMenu::OptionsMenu(PaneManager* manager, UniverseClientPtr client)
+OptionsMenu::OptionsMenu(PaneManager* manager, std::shared_ptr<UniverseClient> client)
   : m_sfxRange(0, 100), m_musicRange(0, 100), m_paneManager(manager) {
   auto root = Root::singletonPtr();
   auto assets = root->assets();

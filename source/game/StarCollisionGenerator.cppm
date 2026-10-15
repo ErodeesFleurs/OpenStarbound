@@ -11,14 +11,6 @@ import star.vector;
 import star.rect;
 namespace Star {
 
-class CollisionGenerator;
-using CollisionGeneratorPtr = std::shared_ptr<CollisionGenerator>;
-using CollisionGeneratorConstPtr = std::shared_ptr<const CollisionGenerator>;
-using CollisionGeneratorWeakPtr = std::weak_ptr<CollisionGenerator>;
-using CollisionGeneratorConstWeakPtr = std::weak_ptr<const CollisionGenerator>;
-using CollisionGeneratorUPtr = std::unique_ptr<CollisionGenerator>;
-using CollisionGeneratorConstUPtr = std::unique_ptr<const CollisionGenerator>;
-
 // Turns cell geometry into "smoothed" polygonal geometry.  Used by World to
 // generate ramps and slopes based on tiles.
 class CollisionGenerator {
@@ -60,10 +52,4 @@ export module star.collision_generator;
 
 export namespace Star {
   using ::Star::CollisionGenerator;
-  using ::Star::CollisionGeneratorPtr;
-  using ::Star::CollisionGeneratorConstPtr;
-  using ::Star::CollisionGeneratorWeakPtr;
-  using ::Star::CollisionGeneratorConstWeakPtr;
-  using ::Star::CollisionGeneratorUPtr;
-  using ::Star::CollisionGeneratorConstUPtr;
 }

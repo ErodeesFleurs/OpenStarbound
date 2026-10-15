@@ -82,7 +82,7 @@ import star.object_database;
 
 namespace Star {
 
-LoungeableObject::LoungeableObject(ObjectConfigConstPtr config, Json const& parameters) : Object(config, parameters) {
+LoungeableObject::LoungeableObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters) : Object(config, parameters) {
   m_interactive.set(true);
 }
 
@@ -122,7 +122,7 @@ std::size_t LoungeableObject::anchorCount() const {
   return m_sitPositions.size();
 }
 
-LoungeAnchorConstPtr LoungeableObject::loungeAnchor(std::size_t positionIndex) const {
+std::shared_ptr<LoungeAnchor const> LoungeableObject::loungeAnchor(std::size_t positionIndex) const {
   if (positionIndex >= m_sitPositions.size())
     return {};
 

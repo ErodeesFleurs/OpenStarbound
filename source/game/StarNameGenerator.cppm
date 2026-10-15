@@ -13,14 +13,6 @@ struct NameGeneratorExceptionTag {
 };
 using NameGeneratorException = StarError<NameGeneratorExceptionTag, StarException>;
 
-class PatternedNameGenerator;
-using PatternedNameGeneratorPtr = std::shared_ptr<PatternedNameGenerator>;
-using PatternedNameGeneratorConstPtr = std::shared_ptr<const PatternedNameGenerator>;
-using PatternedNameGeneratorWeakPtr = std::weak_ptr<PatternedNameGenerator>;
-using PatternedNameGeneratorConstWeakPtr = std::weak_ptr<const PatternedNameGenerator>;
-using PatternedNameGeneratorUPtr = std::unique_ptr<PatternedNameGenerator>;
-using PatternedNameGeneratorConstUPtr = std::unique_ptr<const PatternedNameGenerator>;
-
 struct MarkovSource {
   std::size_t prefixSize;
   std::size_t endSize;
@@ -57,10 +49,4 @@ export namespace Star {
   using ::Star::NameGeneratorException;
   using ::Star::MarkovSource;
   using ::Star::PatternedNameGenerator;
-  using ::Star::PatternedNameGeneratorPtr;
-  using ::Star::PatternedNameGeneratorConstPtr;
-  using ::Star::PatternedNameGeneratorWeakPtr;
-  using ::Star::PatternedNameGeneratorConstWeakPtr;
-  using ::Star::PatternedNameGeneratorUPtr;
-  using ::Star::PatternedNameGeneratorConstUPtr;
 }

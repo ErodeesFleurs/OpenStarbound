@@ -30,33 +30,8 @@ import star.interaction_types;
 namespace Star {
 
 class Item;
-using ItemPtr = std::shared_ptr<Item>;
-using ItemConstPtr = std::shared_ptr<const Item>;
-using ItemWeakPtr = std::weak_ptr<Item>;
-using ItemConstWeakPtr = std::weak_ptr<const Item>;
-using ItemUPtr = std::unique_ptr<Item>;
-using ItemConstUPtr = std::unique_ptr<const Item>;
-class ToolUserEntity;
-using ToolUserEntityPtr = std::shared_ptr<ToolUserEntity>;
-using ToolUserEntityConstPtr = std::shared_ptr<const ToolUserEntity>;
-using ToolUserEntityWeakPtr = std::weak_ptr<ToolUserEntity>;
-using ToolUserEntityConstWeakPtr = std::weak_ptr<const ToolUserEntity>;
-using ToolUserEntityUPtr = std::unique_ptr<ToolUserEntity>;
-using ToolUserEntityConstUPtr = std::unique_ptr<const ToolUserEntity>;
 class ActorMovementController;
-using ActorMovementControllerPtr = std::shared_ptr<ActorMovementController>;
-using ActorMovementControllerConstPtr = std::shared_ptr<const ActorMovementController>;
-using ActorMovementControllerWeakPtr = std::weak_ptr<ActorMovementController>;
-using ActorMovementControllerConstWeakPtr = std::weak_ptr<const ActorMovementController>;
-using ActorMovementControllerUPtr = std::unique_ptr<ActorMovementController>;
-using ActorMovementControllerConstUPtr = std::unique_ptr<const ActorMovementController>;
 class StatusController;
-using StatusControllerPtr = std::shared_ptr<StatusController>;
-using StatusControllerConstPtr = std::shared_ptr<const StatusController>;
-using StatusControllerWeakPtr = std::weak_ptr<StatusController>;
-using StatusControllerConstWeakPtr = std::weak_ptr<const StatusController>;
-using StatusControllerUPtr = std::unique_ptr<StatusController>;
-using StatusControllerConstUPtr = std::unique_ptr<const StatusController>;
 
 // FIXME: This interface is a complete mess.
 class ToolUserEntity : public virtual ActorEntity {
@@ -82,10 +57,10 @@ public:
   // direction and angle as input, the result will always be behind.
   virtual Vec2F handPosition(ToolHand hand, Vec2F const& handOffset = Vec2F()) const = 0;
 
-  // FIXME: This was used for an Item to get an ItemPtr to itself, which was
+  // FIXME: This was used for an Item to get a shared pointer to itself, which was
   // super bad and weird, but it COULD be used to get the item in the owner's
   // other hand, which is LESS bad.
-  virtual ItemPtr handItem(ToolHand hand) const = 0;
+  virtual std::shared_ptr<Item> handItem(ToolHand hand) const = 0;
 
   // FIXME: What is the difference between interactRadius (which defines a tool
   // range) and inToolRange (which also defines a tool range indirectly).
@@ -147,31 +122,7 @@ export module star.tool_user_entity;
 
 export namespace Star {
   using ::Star::Item;
-  using ::Star::ItemPtr;
-  using ::Star::ItemConstPtr;
-  using ::Star::ItemWeakPtr;
-  using ::Star::ItemConstWeakPtr;
-  using ::Star::ItemUPtr;
-  using ::Star::ItemConstUPtr;
   using ::Star::ToolUserEntity;
-  using ::Star::ToolUserEntityPtr;
-  using ::Star::ToolUserEntityConstPtr;
-  using ::Star::ToolUserEntityWeakPtr;
-  using ::Star::ToolUserEntityConstWeakPtr;
-  using ::Star::ToolUserEntityUPtr;
-  using ::Star::ToolUserEntityConstUPtr;
   using ::Star::ActorMovementController;
-  using ::Star::ActorMovementControllerPtr;
-  using ::Star::ActorMovementControllerConstPtr;
-  using ::Star::ActorMovementControllerWeakPtr;
-  using ::Star::ActorMovementControllerConstWeakPtr;
-  using ::Star::ActorMovementControllerUPtr;
-  using ::Star::ActorMovementControllerConstUPtr;
   using ::Star::StatusController;
-  using ::Star::StatusControllerPtr;
-  using ::Star::StatusControllerConstPtr;
-  using ::Star::StatusControllerWeakPtr;
-  using ::Star::StatusControllerConstWeakPtr;
-  using ::Star::StatusControllerUPtr;
-  using ::Star::StatusControllerConstUPtr;
 }

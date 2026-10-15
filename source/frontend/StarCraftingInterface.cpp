@@ -206,7 +206,7 @@ import star.player_inventory;
 import star.algorithm;
 namespace Star {
 
-CraftingPane::CraftingPane(WorldClientPtr worldClient, PlayerPtr player, Json const& settings, EntityId sourceEntityId) {
+CraftingPane::CraftingPane(std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, Json const& settings, EntityId sourceEntityId) {
   m_worldClient = std::move(worldClient);
   m_player = std::move(player);
   m_blueprints = m_player->blueprints();
@@ -355,7 +355,7 @@ void CraftingPane::dismissed() {
   m_itemCache.clear();
 }
 
-PanePtr CraftingPane::createTooltip(Vec2I const& screenPosition) {
+std::shared_ptr<Pane> CraftingPane::createTooltip(Vec2I const& screenPosition) {
   for (std::size_t i = 0; i < m_guiList->numChildren(); ++i) {
     auto entry = m_guiList->itemAt(i);
     if (entry->getChildAt(screenPosition)) {
@@ -364,7 +364,7 @@ PanePtr CraftingPane::createTooltip(Vec2I const& screenPosition) {
     }
   }
 
-  if (WidgetPtr child = getChildAt(screenPosition)) {
+  if (std::shared_ptr<Widget> child = getChildAt(screenPosition)) {
     if (child->name() == "btnUpgrade") {
       if (m_upgradeRecipe)
         return setupTooltip(*m_upgradeRecipe);
@@ -402,7 +402,7 @@ void CraftingPane::upgradeTable() {
   }
 }
 
-std::size_t CraftingPane::itemCount(List<ItemPtr> const& store, ItemDescriptor const& item) {
+std::size_t CraftingPane::itemCount(List<std::shared_ptr<Item>> const& store, ItemDescriptor const& item) {
   auto itemDb = Root::singleton().itemDatabase();
   return itemDb->getCountOfItem(store, item);
 }
@@ -457,7 +457,7 @@ void CraftingPane::update(float dt) {
       currentRecipeIcon->setItem(nullptr);
     } else {
       auto single = recipe.output.singular();
-      ItemPtr item = m_itemCache[single];
+      std::shared_ptr<Item> item = m_itemCache[single];
       currentRecipeIcon->setItem(item);
 
       if (m_crafting)
@@ -558,11 +558,11 @@ void CraftingPane::updateAvailableRecipes() {
   }
 }
 
-void CraftingPane::setupWidget(WidgetPtr const& widget, ItemRecipe const& recipe, HashMap<ItemDescriptor, std::uint64_t> const& normalizedBag) {
+void CraftingPane::setupWidget(std::shared_ptr<Widget> const& widget, ItemRecipe const& recipe, HashMap<ItemDescriptor, std::uint64_t> const& normalizedBag) {
   auto& root = Root::singleton();
 
   auto single = recipe.output.singular();
-  ItemPtr item = m_itemCache[single];
+  std::shared_ptr<Item> item = m_itemCache[single];
   if (!item) {
     item = root.itemDatabase()->itemShared(single);
     m_itemCache[single] = item;
@@ -626,7 +626,7 @@ void CraftingPane::setupWidget(WidgetPtr const& widget, ItemRecipe const& recipe
   widget->show();
 }
 
-PanePtr CraftingPane::setupTooltip(ItemRecipe const& recipe) {
+std::shared_ptr<Pane> CraftingPane::setupTooltip(ItemRecipe const& recipe) {
   auto& root = Root::singleton();
 
   auto tooltip = std::make_shared<Pane>();
@@ -640,7 +640,7 @@ PanePtr CraftingPane::setupTooltip(ItemRecipe const& recipe) {
 
   auto itemDb = root.itemDatabase();
 
-  auto addIngredient = [guiList](ItemPtr const& item, std::size_t availableCount, std::size_t requiredCount) {
+  auto addIngredient = [guiList](std::shared_ptr<Item> const& item, std::size_t availableCount, std::size_t requiredCount) {
       auto widget = guiList->addItem();
       widget->fetchChild<LabelWidget>("itemName")->setText(item->friendlyName());
       auto countWidget = widget->fetchChild<LabelWidget>("count");

@@ -26,48 +26,10 @@ import star.asset_source;
 namespace Star {
 
 class Font;
-using FontPtr = std::shared_ptr<Font>;
-using FontConstPtr = std::shared_ptr<Font const>;
-using FontWeakPtr = std::weak_ptr<Font>;
-using FontConstWeakPtr = std::weak_ptr<Font const>;
-using FontUPtr = std::unique_ptr<Font>;
-using FontConstUPtr = std::unique_ptr<Font const>;
 class Audio;
-using AudioPtr = std::shared_ptr<Audio>;
-using AudioConstPtr = std::shared_ptr<Audio const>;
-using AudioWeakPtr = std::weak_ptr<Audio>;
-using AudioConstWeakPtr = std::weak_ptr<Audio const>;
-using AudioUPtr = std::unique_ptr<Audio>;
-using AudioConstUPtr = std::unique_ptr<Audio const>;
 class Image;
-using ImagePtr = std::shared_ptr<Image>;
-using ImageConstPtr = std::shared_ptr<Image const>;
-using ImageWeakPtr = std::weak_ptr<Image>;
-using ImageConstWeakPtr = std::weak_ptr<Image const>;
-using ImageUPtr = std::unique_ptr<Image>;
-using ImageConstUPtr = std::unique_ptr<Image const>;
-struct FramesSpecification;
-using FramesSpecificationPtr = std::shared_ptr<FramesSpecification>;
-using FramesSpecificationConstPtr = std::shared_ptr<FramesSpecification const>;
-using FramesSpecificationWeakPtr = std::weak_ptr<FramesSpecification>;
-using FramesSpecificationConstWeakPtr = std::weak_ptr<FramesSpecification const>;
-using FramesSpecificationUPtr = std::unique_ptr<FramesSpecification>;
-using FramesSpecificationConstUPtr = std::unique_ptr<FramesSpecification const>;
-class Assets;
-using AssetsPtr = std::shared_ptr<Assets>;
-using AssetsConstPtr = std::shared_ptr<Assets const>;
-using AssetsWeakPtr = std::weak_ptr<Assets>;
-using AssetsConstWeakPtr = std::weak_ptr<Assets const>;
-using AssetsUPtr = std::unique_ptr<Assets>;
-using AssetsConstUPtr = std::unique_ptr<Assets const>;
 
 class LuaContext;
-using LuaContextPtr = std::shared_ptr<LuaContext>;
-using LuaContextConstPtr = std::shared_ptr<LuaContext const>;
-using LuaContextWeakPtr = std::weak_ptr<LuaContext>;
-using LuaContextConstWeakPtr = std::weak_ptr<LuaContext const>;
-using LuaContextUPtr = std::unique_ptr<LuaContext>;
-using LuaContextConstUPtr = std::unique_ptr<LuaContext const>;
 
 struct AssetExceptionTag {
   static constexpr char const* name() { return "AssetException"; }
@@ -173,11 +135,11 @@ public:
   struct ImageData : AssetData {
     bool shouldPersist() const override;
 
-    ImageConstPtr image;
+    std::shared_ptr<Image const> image;
 
     // *Optional* sub-frames data for this image, only will exist when the
     // image is a top-level image and has an associated frames file.
-    FramesSpecificationConstPtr frames;
+    std::shared_ptr<FramesSpecification const> frames;
 
     // If this image aliases another asset entry, this will be true and
     // shouldPersist will never be true (to ensure that this alias and its
@@ -188,28 +150,28 @@ public:
   struct AudioData : AssetData {
     bool shouldPersist() const override;
 
-    AudioConstPtr audio;
+    std::shared_ptr<Audio const> audio;
   };
 
   struct FontData : AssetData {
     bool shouldPersist() const override;
 
-    FontConstPtr font;
+    std::shared_ptr<Font const> font;
   };
 
   struct BytesData : AssetData {
     bool shouldPersist() const override;
 
-    ByteArrayConstPtr bytes;
+    std::shared_ptr<ByteArray const> bytes;
   };
 
   struct AssetFileDescriptor {
     // The mixed case original source name;
     String sourceName;
     // The source that has the primary asset copy
-    AssetSourcePtr source;
+    std::shared_ptr<AssetSource> source;
     // List of source names and sources for patches to this file.
-    List<std::pair<String, AssetSourcePtr>> patchSources;
+    List<std::pair<String, std::shared_ptr<AssetSource>>> patchSources;
   };
 
   Assets(Settings settings, StringList assetSources);
@@ -237,7 +199,7 @@ public:
   // The name of the asset source within which the path exists.
   String assetSource(String const& path) const;
 
-  Maybe<String> assetSourcePath(AssetSourcePtr const& source) const;
+  Maybe<String> assetSourcePath(std::shared_ptr<AssetSource> const& source) const;
 
   // Scans for all assets with the given suffix in any directory.
   StringList scan(String const& suffix) const;
@@ -270,37 +232,37 @@ public:
   // <full-path-minus-extension>.frames or default.frames, going up to assets
   // root.  May return the same ImageConstPtr for different paths if the paths
   // are equivalent or they are aliases of other image paths.
-  ImageConstPtr image(AssetPath const& path) const;
+  std::shared_ptr<Image const> image(AssetPath const& path) const;
   // Load images using background processing
   void queueImages(StringList const& paths) const;
   void queueImages(CaseInsensitiveStringSet const& paths) const;
   // Return the given image *if* it is already loaded, otherwise queue it for
   // loading.
-  ImageConstPtr tryImage(AssetPath const& path) const;
+  std::shared_ptr<Image const> tryImage(AssetPath const& path) const;
 
   // Returns the best associated FramesSpecification for a given image path, if
   // it exists.  The given path must not contain sub-paths or directives, and
   // this function may return nullptr if no frames file is associated with the
   // given image path.
-  FramesSpecificationConstPtr imageFrames(String const& path) const;
+  std::shared_ptr<FramesSpecification const> imageFrames(String const& path) const;
 
   // Returns a pointer to a shared audio asset;
-  AudioConstPtr audio(String const& path) const;
+  std::shared_ptr<Audio const> audio(String const& path) const;
   // Load audios using background processing
   void queueAudios(StringList const& paths) const;
   void queueAudios(CaseInsensitiveStringSet const& paths) const;
   // Return the given audio *if* it is already loaded, otherwise queue it for
   // loading.
-  AudioConstPtr tryAudio(String const& path) const;
+  std::shared_ptr<Audio const> tryAudio(String const& path) const;
 
   // Returns pointer to shared font asset
-  FontConstPtr font(String const& path) const;
+  std::shared_ptr<Font const> font(String const& path) const;
 
   // Returns a bytes asset (Reads asset as an opaque binary blob)
-  ByteArrayConstPtr bytes(String const& path) const;
+  std::shared_ptr<ByteArray const> bytes(String const& path) const;
 
   // Bypass asset caching and open an asset file directly.
-  IODevicePtr openFile(String const& basePath) const;
+  std::shared_ptr<IODevice> openFile(String const& basePath) const;
 
   // Clear all cached assets that are not queued, persistent, or broken.
   void clearCache();
@@ -336,16 +298,16 @@ private:
   decltype(auto) unlockDuring(Function f) const;
 
   // Returns the best frames specification for the given image path, if it exists.
-  FramesSpecificationConstPtr bestFramesSpecification(String const& basePath) const;
+  std::shared_ptr<FramesSpecification const> bestFramesSpecification(String const& basePath) const;
 
-  IODevicePtr open(String const& basePath) const;
+  std::shared_ptr<IODevice> open(String const& basePath) const;
   ByteArray read(String const& basePath) const;
-  ImageConstPtr readImage(String const& path) const;
-  ImageConstPtr applyImagePatches(ImageConstPtr image, String const& path, List<std::pair<String, AssetSourcePtr>> patches) const;
+  std::shared_ptr<Image const> readImage(String const& path) const;
+  std::shared_ptr<Image const> applyImagePatches(std::shared_ptr<Image const> image, String const& path, List<std::pair<String, std::shared_ptr<AssetSource>>> patches) const;
 
   Json readJson(String const& basePath) const;
-  Json applyJsonPatches(Json const& input, String const& path, List<std::pair<String, AssetSourcePtr>> patches) const;
-  Json checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const;
+  Json applyJsonPatches(Json const& input, String const& path, List<std::pair<String, std::shared_ptr<AssetSource>>> patches) const;
+  Json checkPatchArray(String const& path, std::shared_ptr<AssetSource> const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const;
 
   // Load / post process an asset and log any exception.  Returns true if the
   // work was performed (whether successful or not), false if the work is
@@ -382,18 +344,18 @@ private:
   mutable HashMap<AssetId, std::shared_ptr<AssetData>, AssetIdHash> m_assetsCache;
 
   mutable StringMap<String> m_bestFramesFiles;
-  mutable StringMap<FramesSpecificationConstPtr> m_framesSpecifications;
+  mutable StringMap<std::shared_ptr<FramesSpecification const>> m_framesSpecifications;
 
   // Lua
   RefPtr<RefCounter> m_luaEngine; // dumb but to avoid including Lua.hpp in here...
-  mutable HashMap<std::pair<AssetSource*, String>, LuaContextPtr> m_patchContexts;
+  mutable HashMap<std::pair<AssetSource*, String>, std::shared_ptr<LuaContext>> m_patchContexts;
   mutable RecursiveMutex m_luaMutex;
 
   // Paths of all used asset sources, in load order.
   StringList m_assetSources;
 
   // Maps an asset path to the loaded asset source and vice versa
-  BiMap<String, AssetSourcePtr> m_assetSourcePaths;
+  BiMap<String, std::shared_ptr<AssetSource>> m_assetSourcePaths;
 
   // Maps the source asset name to the source containing it
   CaseInsensitiveStringMap<AssetFileDescriptor> m_files;
@@ -412,47 +374,11 @@ export module star.assets;
 
 export namespace Star {
   using ::Star::Font;
-  using ::Star::FontPtr;
-  using ::Star::FontConstPtr;
-  using ::Star::FontWeakPtr;
-  using ::Star::FontConstWeakPtr;
-  using ::Star::FontUPtr;
-  using ::Star::FontConstUPtr;
   using ::Star::Audio;
-  using ::Star::AudioPtr;
-  using ::Star::AudioConstPtr;
-  using ::Star::AudioWeakPtr;
-  using ::Star::AudioConstWeakPtr;
-  using ::Star::AudioUPtr;
-  using ::Star::AudioConstUPtr;
   using ::Star::Image;
-  using ::Star::ImagePtr;
-  using ::Star::ImageConstPtr;
-  using ::Star::ImageWeakPtr;
-  using ::Star::ImageConstWeakPtr;
-  using ::Star::ImageUPtr;
-  using ::Star::ImageConstUPtr;
   using ::Star::FramesSpecification;
-  using ::Star::FramesSpecificationPtr;
-  using ::Star::FramesSpecificationConstPtr;
-  using ::Star::FramesSpecificationWeakPtr;
-  using ::Star::FramesSpecificationConstWeakPtr;
-  using ::Star::FramesSpecificationUPtr;
-  using ::Star::FramesSpecificationConstUPtr;
   using ::Star::Assets;
-  using ::Star::AssetsPtr;
-  using ::Star::AssetsConstPtr;
-  using ::Star::AssetsWeakPtr;
-  using ::Star::AssetsConstWeakPtr;
-  using ::Star::AssetsUPtr;
-  using ::Star::AssetsConstUPtr;
   using ::Star::LuaContext;
-  using ::Star::LuaContextPtr;
-  using ::Star::LuaContextConstPtr;
-  using ::Star::LuaContextWeakPtr;
-  using ::Star::LuaContextConstWeakPtr;
-  using ::Star::LuaContextUPtr;
-  using ::Star::LuaContextConstUPtr;
   using ::Star::AssetExceptionTag;
   using ::Star::AssetException;
 }

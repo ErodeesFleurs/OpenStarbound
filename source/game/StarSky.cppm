@@ -40,27 +40,7 @@ import star.net_element_system;
 namespace Star {
 
 class Clock;
-using ClockPtr = std::shared_ptr<Clock>;
-using ClockConstPtr = std::shared_ptr<const Clock>;
-using ClockWeakPtr = std::weak_ptr<Clock>;
-using ClockConstWeakPtr = std::weak_ptr<const Clock>;
-using ClockUPtr = std::unique_ptr<Clock>;
-using ClockConstUPtr = std::unique_ptr<const Clock>;
 class AudioInstance;
-using AudioInstancePtr = std::shared_ptr<AudioInstance>;
-using AudioInstanceConstPtr = std::shared_ptr<const AudioInstance>;
-using AudioInstanceWeakPtr = std::weak_ptr<AudioInstance>;
-using AudioInstanceConstWeakPtr = std::weak_ptr<const AudioInstance>;
-using AudioInstanceUPtr = std::unique_ptr<AudioInstance>;
-using AudioInstanceConstUPtr = std::unique_ptr<const AudioInstance>;
-
-class Sky;
-using SkyPtr = std::shared_ptr<Sky>;
-using SkyConstPtr = std::shared_ptr<const Sky>;
-using SkyWeakPtr = std::weak_ptr<Sky>;
-using SkyConstWeakPtr = std::weak_ptr<const Sky>;
-using SkyUPtr = std::unique_ptr<Sky>;
-using SkyConstUPtr = std::unique_ptr<const Sky>;
 
 // Sky objects, such as stars and orbiters, are given in a pseudo screen space,
 // "view space", that does not take the pixel ratio into account.  "viewSize"
@@ -108,11 +88,11 @@ public:
 
   // If a reference clock is set, then the epoch time is driven by the
   // reference clock rather than an internal timer
-  void setReferenceClock(ClockConstPtr const& referenceClock);
-  ClockConstPtr referenceClock() const;
+  void setReferenceClock(std::shared_ptr<Clock const> const& referenceClock);
+  std::shared_ptr<Clock const> referenceClock() const;
 
   String ambientNoise() const;
-  List<AudioInstancePtr> pullSounds();
+  List<std::shared_ptr<AudioInstance>> pullSounds();
 
   // How close is the atmosphere to space?
   float spaceLevel() const;
@@ -176,7 +156,7 @@ private:
 
   double m_time = 0.0;
 
-  ClockConstPtr m_referenceClock;
+  std::shared_ptr<Clock const> m_referenceClock;
   Maybe<double> m_clockTrackingTime;
 
   float m_altitude = 0.0f;
@@ -242,24 +222,6 @@ export module star.sky;
 
 export namespace Star {
 using ::Star::Clock;
-using ::Star::ClockPtr;
-using ::Star::ClockConstPtr;
-using ::Star::ClockWeakPtr;
-using ::Star::ClockConstWeakPtr;
-using ::Star::ClockUPtr;
-using ::Star::ClockConstUPtr;
 using ::Star::AudioInstance;
-using ::Star::AudioInstancePtr;
-using ::Star::AudioInstanceConstPtr;
-using ::Star::AudioInstanceWeakPtr;
-using ::Star::AudioInstanceConstWeakPtr;
-using ::Star::AudioInstanceUPtr;
-using ::Star::AudioInstanceConstUPtr;
 using ::Star::Sky;
-using ::Star::SkyPtr;
-using ::Star::SkyConstPtr;
-using ::Star::SkyWeakPtr;
-using ::Star::SkyConstWeakPtr;
-using ::Star::SkyUPtr;
-using ::Star::SkyConstUPtr;
 }

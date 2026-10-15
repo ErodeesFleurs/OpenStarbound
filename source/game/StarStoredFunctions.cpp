@@ -198,21 +198,21 @@ StringList FunctionDatabase::namedConfigFunctions() const {
   return m_configFunctions.keys();
 }
 
-StoredFunctionPtr FunctionDatabase::function(Json const& configOrName) const {
+std::shared_ptr<StoredFunction> FunctionDatabase::function(Json const& configOrName) const {
   if (configOrName.type() == Json::Type::String)
     return m_functions.get(configOrName.toString());
   else
     return std::make_shared<StoredFunction>(parametricFunctionFromConfig(configOrName));
 }
 
-StoredFunction2Ptr FunctionDatabase::function2(Json const& configOrName) const {
+std::shared_ptr<StoredFunction2> FunctionDatabase::function2(Json const& configOrName) const {
   if (configOrName.type() == Json::Type::String)
     return m_functions2.get(configOrName.toString());
   else
     return std::make_shared<StoredFunction2>(multiTable2DFromConfig(configOrName));
 }
 
-StoredConfigFunctionPtr FunctionDatabase::configFunction(Json const& configOrName) const {
+std::shared_ptr<StoredConfigFunction> FunctionDatabase::configFunction(Json const& configOrName) const {
   if (configOrName.type() == Json::Type::String)
     return m_configFunctions.get(configOrName.toString());
   else

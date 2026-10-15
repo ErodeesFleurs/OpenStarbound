@@ -88,14 +88,6 @@ import star.damage_manager;
 import star.byte_array;
 namespace Star {
 
-struct Packet;
-using PacketPtr = std::shared_ptr<Packet>;
-using PacketConstPtr = std::shared_ptr<const Packet>;
-using PacketWeakPtr = std::weak_ptr<Packet>;
-using PacketConstWeakPtr = std::weak_ptr<const Packet>;
-using PacketUPtr = std::unique_ptr<Packet>;
-using PacketConstUPtr = std::unique_ptr<const Packet>;
-
 struct StarPacketExceptionTag {
   static constexpr char const* name() { return "StarPacketException"; }
 };
@@ -245,8 +237,8 @@ struct Packet {
   PacketCompressionMode m_compressionMode = PacketCompressionMode::Automatic;
 };
 
-PacketPtr createPacket(PacketType type);
-PacketPtr createPacket(PacketType type, Maybe<Json> const& args);
+std::shared_ptr<Packet> createPacket(PacketType type);
+std::shared_ptr<Packet> createPacket(PacketType type, Maybe<Json> const& args);
 
 template <PacketType PacketT>
 struct PacketBase : public Packet {
@@ -1112,13 +1104,13 @@ struct ClientCustomWorldCreate : PacketBase<PacketType::ClientCustomWorldCreate>
 // wrapper packet for client world threads
 struct ClientSubWorldPackets : PacketBase<PacketType::ClientSubWorldPackets> {
   ClientSubWorldPackets();
-  ClientSubWorldPackets(ClientSubWorldId const& subWorldId, List<PacketPtr> packets);
+  ClientSubWorldPackets(ClientSubWorldId const& subWorldId, List<std::shared_ptr<Packet>> packets);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
   ClientSubWorldId subWorldId;
-  List<PacketPtr> packets;
+  List<std::shared_ptr<Packet>> packets;
 };
 
 struct ClientSubWorldRequest : PacketBase<PacketType::ClientSubWorldRequest> {
@@ -1195,12 +1187,6 @@ export module star.net_packets;
 
 export namespace Star {
   using ::Star::Packet;
-  using ::Star::PacketPtr;
-  using ::Star::PacketConstPtr;
-  using ::Star::PacketWeakPtr;
-  using ::Star::PacketConstWeakPtr;
-  using ::Star::PacketUPtr;
-  using ::Star::PacketConstUPtr;
   using ::Star::StarPacketExceptionTag;
   using ::Star::StarPacketException;
   using ::Star::StarProtocolVersion;

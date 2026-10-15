@@ -78,9 +78,7 @@ struct LiquidCellEngineParameters {
 template <typename LiquidId>
 class LiquidCellEngine {
 public:
-  typedef std::shared_ptr<CellularLiquidWorld<LiquidId>> CellularLiquidWorldPtr;
-
-  LiquidCellEngine(LiquidCellEngineParameters parameters, CellularLiquidWorldPtr cellWorld);
+  LiquidCellEngine(LiquidCellEngineParameters parameters, std::shared_ptr<CellularLiquidWorld<LiquidId>> cellWorld);
 
   unsigned liquidTickDelta(LiquidId liquid);
   void setLiquidTickDelta(LiquidId liquid, unsigned tickDelta);
@@ -149,7 +147,7 @@ private:
 
   RandomSource m_random;
   LiquidCellEngineParameters m_engineParameters;
-  CellularLiquidWorldPtr m_cellWorld;
+  std::shared_ptr<CellularLiquidWorld<LiquidId>> m_cellWorld;
 
   BAHashMap<LiquidId, BAOrderedHashSet<Vec2I>> m_activeCells;
   BAHashMap<LiquidId, unsigned> m_liquidTickDeltas;
@@ -184,7 +182,7 @@ template <typename LiquidId>
 void CellularLiquidWorld<LiquidId>::liquidCollision(Vec2I const&, LiquidId, Vec2I const&) {}
 
 template <typename LiquidId>
-LiquidCellEngine<LiquidId>::LiquidCellEngine(LiquidCellEngineParameters parameters, CellularLiquidWorldPtr cellWorld)
+LiquidCellEngine<LiquidId>::LiquidCellEngine(LiquidCellEngineParameters parameters, std::shared_ptr<CellularLiquidWorld<LiquidId>> cellWorld)
   : m_engineParameters(parameters), m_cellWorld(cellWorld), m_step(0) {}
 
 template <typename LiquidId>

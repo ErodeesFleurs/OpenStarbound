@@ -62,27 +62,8 @@ import star.sky_parameters;
 
 namespace Star {
 
-class WorldTemplate;
-using WorldTemplatePtr = std::shared_ptr<WorldTemplate>;
-using WorldTemplateConstPtr = std::shared_ptr<const WorldTemplate>;
-using WorldTemplateWeakPtr = std::weak_ptr<WorldTemplate>;
-using WorldTemplateConstWeakPtr = std::weak_ptr<const WorldTemplate>;
-using WorldTemplateUPtr = std::unique_ptr<WorldTemplate>;
-using WorldTemplateConstUPtr = std::unique_ptr<const WorldTemplate>;
 class CelestialDatabase;
-using CelestialDatabasePtr = std::shared_ptr<CelestialDatabase>;
-using CelestialDatabaseConstPtr = std::shared_ptr<const CelestialDatabase>;
-using CelestialDatabaseWeakPtr = std::weak_ptr<CelestialDatabase>;
-using CelestialDatabaseConstWeakPtr = std::weak_ptr<const CelestialDatabase>;
-using CelestialDatabaseUPtr = std::unique_ptr<CelestialDatabase>;
-using CelestialDatabaseConstUPtr = std::unique_ptr<const CelestialDatabase>;
 struct AmbientNoisesDescription;
-using AmbientNoisesDescriptionPtr = std::shared_ptr<AmbientNoisesDescription>;
-using AmbientNoisesDescriptionConstPtr = std::shared_ptr<const AmbientNoisesDescription>;
-using AmbientNoisesDescriptionWeakPtr = std::weak_ptr<AmbientNoisesDescription>;
-using AmbientNoisesDescriptionConstWeakPtr = std::weak_ptr<const AmbientNoisesDescription>;
-using AmbientNoisesDescriptionUPtr = std::unique_ptr<AmbientNoisesDescription>;
-using AmbientNoisesDescriptionConstUPtr = std::unique_ptr<const AmbientNoisesDescription>;
 
 // Reference object that describes the generation of a single world, and all
 // of the world metadata.  Meant to remain static (or relatively static)
@@ -156,21 +137,21 @@ public:
   // Creates a blank world with the given size
   WorldTemplate(Vec2U const& size);
   // Creates a world from the given visitable celestial object.
-  WorldTemplate(CelestialCoordinate const& celestialCoordinate, CelestialDatabasePtr const& celestialDatabase);
+  WorldTemplate(CelestialCoordinate const& celestialCoordinate, std::shared_ptr<CelestialDatabase> const& celestialDatabase);
   // Creates a world from a bare VisitableWorldParameters structure
-  WorldTemplate(VisitableWorldParametersConstPtr const& worldParameters, SkyParameters const& skyParameters, std::uint64_t seed);
+  WorldTemplate(std::shared_ptr<VisitableWorldParameters const> const& worldParameters, SkyParameters const& skyParameters, std::uint64_t seed);
   // Load a world template from the given stored data.
   WorldTemplate(Json const& store);
 
   Json store() const;
 
   Maybe<CelestialParameters> const& celestialParameters() const;
-  VisitableWorldParametersConstPtr worldParameters() const;
+  std::shared_ptr<VisitableWorldParameters const> worldParameters() const;
   SkyParameters skyParameters() const;
-  WorldLayoutPtr worldLayout() const;
+  std::shared_ptr<WorldLayout> worldLayout() const;
 
-  void setWorldParameters(VisitableWorldParametersPtr newParameters);
-  void setWorldLayout(WorldLayoutPtr newLayout);
+  void setWorldParameters(std::shared_ptr<VisitableWorldParameters> newParameters);
+  void setWorldLayout(std::shared_ptr<WorldLayout> newLayout);
   void setSkyParameters(SkyParameters newParameters);
 
   std::uint64_t worldSeed() const;
@@ -222,10 +203,10 @@ public:
 
   BiomeIndex blockBiomeIndex(int x, int y) const;
   BiomeIndex environmentBiomeIndex(int x, int y) const;
-  BiomeConstPtr biome(BiomeIndex biomeIndex) const;
+  std::shared_ptr<Biome const> biome(BiomeIndex biomeIndex) const;
 
-  BiomeConstPtr blockBiome(int x, int y) const;
-  BiomeConstPtr environmentBiome(int x, int y) const;
+  std::shared_ptr<Biome const> blockBiome(int x, int y) const;
+  std::shared_ptr<Biome const> environmentBiome(int x, int y) const;
 
   MaterialId biomeMaterial(BiomeIndex biomeIndex, int x, int y) const;
 
@@ -234,8 +215,8 @@ public:
   MaterialHue biomeMaterialHueShift(BiomeIndex biomeIndex, MaterialId material) const;
   MaterialHue biomeModHueShift(BiomeIndex biomeIndex, ModId mod) const;
 
-  AmbientNoisesDescriptionPtr ambientNoises(int x, int y) const;
-  AmbientNoisesDescriptionPtr musicTrack(int x, int y) const;
+  std::shared_ptr<AmbientNoisesDescription> ambientNoises(int x, int y) const;
+  std::shared_ptr<AmbientNoisesDescription> musicTrack(int x, int y) const;
 
   StringList environmentStatusEffects(int x, int y) const;
   bool breathable(int x, int y) const;
@@ -281,11 +262,11 @@ private:
   float m_customTerrainBlendWeight;
 
   Maybe<CelestialParameters> m_celestialParameters;
-  VisitableWorldParametersConstPtr m_worldParameters;
+  std::shared_ptr<VisitableWorldParameters const> m_worldParameters;
   SkyParameters m_skyParameters;
   std::uint64_t m_seed;
   WorldGeometry m_geometry;
-  WorldLayoutPtr m_layout;
+  std::shared_ptr<WorldLayout> m_layout;
   String m_worldName;
 
   List<WeatherDomain> m_weatherDomains;
@@ -302,24 +283,6 @@ export module star.world_template;
 
 export namespace Star {
   using ::Star::WorldTemplate;
-  using ::Star::WorldTemplatePtr;
-  using ::Star::WorldTemplateConstPtr;
-  using ::Star::WorldTemplateWeakPtr;
-  using ::Star::WorldTemplateConstWeakPtr;
-  using ::Star::WorldTemplateUPtr;
-  using ::Star::WorldTemplateConstUPtr;
   using ::Star::CelestialDatabase;
-  using ::Star::CelestialDatabasePtr;
-  using ::Star::CelestialDatabaseConstPtr;
-  using ::Star::CelestialDatabaseWeakPtr;
-  using ::Star::CelestialDatabaseConstWeakPtr;
-  using ::Star::CelestialDatabaseUPtr;
-  using ::Star::CelestialDatabaseConstUPtr;
   using ::Star::AmbientNoisesDescription;
-  using ::Star::AmbientNoisesDescriptionPtr;
-  using ::Star::AmbientNoisesDescriptionConstPtr;
-  using ::Star::AmbientNoisesDescriptionWeakPtr;
-  using ::Star::AmbientNoisesDescriptionConstWeakPtr;
-  using ::Star::AmbientNoisesDescriptionUPtr;
-  using ::Star::AmbientNoisesDescriptionConstUPtr;
 }

@@ -105,7 +105,7 @@ Json ProjectileDatabase::projectileConfig(String const& type) const {
   return m_configs.get(type)->config;
 }
 
-ProjectilePtr ProjectileDatabase::createProjectile(String const& type, Json const& parameters) const {
+std::shared_ptr<Projectile> ProjectileDatabase::createProjectile(String const& type, Json const& parameters) const {
   if (!m_configs.contains(type))
     throw ProjectileDatabaseException(strf("Unknown projectile with typeName {}.", type));
   return std::make_shared<Projectile>(m_configs.get(type), parameters);
@@ -125,14 +125,14 @@ float ProjectileDatabase::gravityMultiplier(String const& type) const {
   return config->movementSettings.getFloat("gravityMultiplier", 1);
 }
 
-ProjectilePtr ProjectileDatabase::netLoadProjectile(ByteArray const& netStore, NetCompatibilityRules rules) const {
+std::shared_ptr<Projectile> ProjectileDatabase::netLoadProjectile(ByteArray const& netStore, NetCompatibilityRules rules) const {
   DataStreamBuffer ds(netStore);
   ds.setStreamCompatibilityVersion(rules);
   String typeName = ds.read<String>();
   return std::make_shared<Projectile>(m_configs.get(typeName), ds, rules);
 }
 
-ProjectileConfigPtr ProjectileDatabase::readConfig(String const& path) {
+std::shared_ptr<ProjectileConfig> ProjectileDatabase::readConfig(String const& path) {
   auto assets = Root::singleton().assets();
 
   Json config = assets->json(path);

@@ -67,7 +67,7 @@ namespace Star {
 
 class FarmableObject : public Object {
 public:
-  FarmableObject(ObjectConfigConstPtr config, Json const& parameters);
+  FarmableObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters);
 
   void update(float dt, std::uint64_t currentStep) override;
 

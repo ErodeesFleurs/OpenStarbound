@@ -458,12 +458,12 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
   return variant;
 }
 
-NpcPtr NpcDatabase::createNpc(NpcVariant const& npcVariant) const {
+std::shared_ptr<Npc> NpcDatabase::createNpc(NpcVariant const& npcVariant) const {
   return std::make_shared<Npc>(npcVariant);
 }
 
-NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
-  NpcPtr npc;
+std::shared_ptr<Npc> NpcDatabase::diskLoadNpc(Json const& diskStore) const {
+  std::shared_ptr<Npc> npc;
   try {
     NpcVariant npcVariant = readNpcVariantFromJson(diskStore.get("npcVariant"));
     npc = std::make_shared<Npc>(npcVariant, diskStore);
@@ -486,7 +486,7 @@ NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
   return npc;
 }
 
-NpcPtr NpcDatabase::netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules) const {
+std::shared_ptr<Npc> NpcDatabase::netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules) const {
   return std::make_shared<Npc>(readNpcVariant(netStore, rules));
 }
 
@@ -496,7 +496,7 @@ List<Drawable> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMo
   auto itemDatabase = Root::singleton().itemDatabase();
   auto items = StringMap<ItemDescriptor, CaseInsensitiveStringHash, CaseInsensitiveStringCompare>::from(npcVariant.items);
 
-  auto makeItem = [&npcVariant, &itemDatabase](ItemDescriptor itemDescriptor) -> ItemPtr {
+  auto makeItem = [&npcVariant, &itemDatabase](ItemDescriptor itemDescriptor) -> std::shared_ptr<Item> {
     return itemDatabase->item(itemDescriptor, npcVariant.level, npcVariant.seed);
   };
 

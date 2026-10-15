@@ -10,35 +10,6 @@ import star.multi_table;
 
 namespace Star {
 
-class StoredFunction;
-using StoredFunctionPtr = std::shared_ptr<StoredFunction>;
-using StoredFunctionConstPtr = std::shared_ptr<const StoredFunction>;
-using StoredFunctionWeakPtr = std::weak_ptr<StoredFunction>;
-using StoredFunctionConstWeakPtr = std::weak_ptr<const StoredFunction>;
-using StoredFunctionUPtr = std::unique_ptr<StoredFunction>;
-using StoredFunctionConstUPtr = std::unique_ptr<const StoredFunction>;
-class StoredFunction2;
-using StoredFunction2Ptr = std::shared_ptr<StoredFunction2>;
-using StoredFunction2ConstPtr = std::shared_ptr<const StoredFunction2>;
-using StoredFunction2WeakPtr = std::weak_ptr<StoredFunction2>;
-using StoredFunction2ConstWeakPtr = std::weak_ptr<const StoredFunction2>;
-using StoredFunction2UPtr = std::unique_ptr<StoredFunction2>;
-using StoredFunction2ConstUPtr = std::unique_ptr<const StoredFunction2>;
-class StoredConfigFunction;
-using StoredConfigFunctionPtr = std::shared_ptr<StoredConfigFunction>;
-using StoredConfigFunctionConstPtr = std::shared_ptr<const StoredConfigFunction>;
-using StoredConfigFunctionWeakPtr = std::weak_ptr<StoredConfigFunction>;
-using StoredConfigFunctionConstWeakPtr = std::weak_ptr<const StoredConfigFunction>;
-using StoredConfigFunctionUPtr = std::unique_ptr<StoredConfigFunction>;
-using StoredConfigFunctionConstUPtr = std::unique_ptr<const StoredConfigFunction>;
-class FunctionDatabase;
-using FunctionDatabasePtr = std::shared_ptr<FunctionDatabase>;
-using FunctionDatabaseConstPtr = std::shared_ptr<const FunctionDatabase>;
-using FunctionDatabaseWeakPtr = std::weak_ptr<FunctionDatabase>;
-using FunctionDatabaseConstWeakPtr = std::weak_ptr<const FunctionDatabase>;
-using FunctionDatabaseUPtr = std::unique_ptr<FunctionDatabase>;
-using FunctionDatabaseConstUPtr = std::unique_ptr<const FunctionDatabase>;
-
 struct StoredFunctionExceptionTag {
   static constexpr char const* name() { return "StoredFunctionException"; }
 };
@@ -111,18 +82,18 @@ public:
 
   // If configOrName is a string, loads the named function.  If it is an inline
   // config, reads the inline config.
-  StoredFunctionPtr function(Json const& configOrName) const;
-  StoredFunction2Ptr function2(Json const& configOrName) const;
-  StoredConfigFunctionPtr configFunction(Json const& configOrName) const;
+  std::shared_ptr<StoredFunction> function(Json const& configOrName) const;
+  std::shared_ptr<StoredFunction2> function2(Json const& configOrName) const;
+  std::shared_ptr<StoredConfigFunction> configFunction(Json const& configOrName) const;
 
 private:
   static ParametricFunction<double, double> parametricFunctionFromConfig(Json descriptor);
   static ParametricTable<int, Json> parametricTableFromConfig(Json descriptor);
   static MultiTable2D multiTable2DFromConfig(Json descriptor);
 
-  StringMap<StoredFunctionPtr> m_functions;
-  StringMap<StoredFunction2Ptr> m_functions2;
-  StringMap<StoredConfigFunctionPtr> m_configFunctions;
+  StringMap<std::shared_ptr<StoredFunction>> m_functions;
+  StringMap<std::shared_ptr<StoredFunction2>> m_functions2;
+  StringMap<std::shared_ptr<StoredConfigFunction>> m_configFunctions;
 };
 
 }
@@ -134,31 +105,7 @@ export namespace Star {
   using ::Star::StoredFunctionException;
   using ::Star::Monotonicity;
   using ::Star::StoredFunction;
-  using ::Star::StoredFunctionPtr;
-  using ::Star::StoredFunctionConstPtr;
-  using ::Star::StoredFunctionWeakPtr;
-  using ::Star::StoredFunctionConstWeakPtr;
-  using ::Star::StoredFunctionUPtr;
-  using ::Star::StoredFunctionConstUPtr;
   using ::Star::StoredFunction2;
-  using ::Star::StoredFunction2Ptr;
-  using ::Star::StoredFunction2ConstPtr;
-  using ::Star::StoredFunction2WeakPtr;
-  using ::Star::StoredFunction2ConstWeakPtr;
-  using ::Star::StoredFunction2UPtr;
-  using ::Star::StoredFunction2ConstUPtr;
   using ::Star::StoredConfigFunction;
-  using ::Star::StoredConfigFunctionPtr;
-  using ::Star::StoredConfigFunctionConstPtr;
-  using ::Star::StoredConfigFunctionWeakPtr;
-  using ::Star::StoredConfigFunctionConstWeakPtr;
-  using ::Star::StoredConfigFunctionUPtr;
-  using ::Star::StoredConfigFunctionConstUPtr;
   using ::Star::FunctionDatabase;
-  using ::Star::FunctionDatabasePtr;
-  using ::Star::FunctionDatabaseConstPtr;
-  using ::Star::FunctionDatabaseWeakPtr;
-  using ::Star::FunctionDatabaseConstWeakPtr;
-  using ::Star::FunctionDatabaseUPtr;
-  using ::Star::FunctionDatabaseConstUPtr;
 }

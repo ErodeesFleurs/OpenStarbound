@@ -71,7 +71,7 @@ export namespace Star {
 
 class TeleporterObject : public Object, public WarpTargetEntity {
 public:
-  TeleporterObject(ObjectConfigConstPtr config, Json const& parameters = JsonObject());
+  TeleporterObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters = JsonObject());
 
   Vec2F footPosition() const override;
 };
@@ -80,7 +80,7 @@ public:
 
 namespace Star {
 
-TeleporterObject::TeleporterObject(ObjectConfigConstPtr config, Json const& parameters) : Object(config, parameters) {
+TeleporterObject::TeleporterObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters) : Object(config, parameters) {
   setUniqueId(configValue("uniqueId", Uuid().hex()).optString());
 }
 

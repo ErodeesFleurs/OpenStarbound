@@ -121,7 +121,7 @@ import star.image_metadata_database;
 
 namespace Star {
 
-PortraitWidget::PortraitWidget(PortraitEntityPtr entity, PortraitMode mode) : m_entity(entity), m_portraitMode(mode) {
+PortraitWidget::PortraitWidget(std::shared_ptr<PortraitEntity> entity, PortraitMode mode) : m_entity(entity), m_portraitMode(mode) {
   m_scale = 1;
   m_renderHumanoid = false;
   m_iconMode = false;
@@ -154,7 +154,7 @@ void PortraitWidget::renderImpl() {
     context()->drawInterfaceQuad(m_iconImage, Vec2F(screenPosition()), m_scale);
   }
   if (m_entity) {
-    HumanoidPtr humanoid = nullptr;
+    std::shared_ptr<Humanoid> humanoid = nullptr;
     if (m_renderHumanoid) {
       if (auto player = as<Player>(m_entity))
         if (!player->isPermaDead())
@@ -192,7 +192,7 @@ void PortraitWidget::init() {
   updateSize();
 }
 
-void PortraitWidget::setEntity(PortraitEntityPtr entity) {
+void PortraitWidget::setEntity(std::shared_ptr<PortraitEntity> entity) {
   m_entity = entity;
   updateSize();
 }

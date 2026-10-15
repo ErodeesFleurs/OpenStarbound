@@ -10,14 +10,6 @@ import star.listener;
 import star.byte_array;
 namespace Star {
 
-class LuaRoot;
-using LuaRootPtr = std::shared_ptr<LuaRoot>;
-using LuaRootConstPtr = std::shared_ptr<const LuaRoot>;
-using LuaRootWeakPtr = std::weak_ptr<LuaRoot>;
-using LuaRootConstWeakPtr = std::weak_ptr<const LuaRoot>;
-using LuaRootUPtr = std::unique_ptr<LuaRoot>;
-using LuaRootConstUPtr = std::unique_ptr<const LuaRoot>;
-
 // Loads and caches lua scripts from assets.  Automatically clears cache on
 // root reload.  Uses an internal LuaEngine, so this and all contexts are meant
 // for single threaded access and have no locking.
@@ -73,7 +65,7 @@ private:
   StringMap<LuaCallbacks> m_luaCallbacks;
   std::shared_ptr<ScriptCache> m_scriptCache;
 
-  ListenerPtr m_rootReloadListener;
+  std::shared_ptr<Listener> m_rootReloadListener;
 
   String m_storageDirectory;
 };

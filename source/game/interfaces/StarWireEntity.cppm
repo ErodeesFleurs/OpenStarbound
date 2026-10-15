@@ -37,14 +37,6 @@ import star.tile_entity;
 
 namespace Star {
 
-class WireEntity;
-using WireEntityPtr = std::shared_ptr<WireEntity>;
-using WireEntityConstPtr = std::shared_ptr<const WireEntity>;
-using WireEntityWeakPtr = std::weak_ptr<WireEntity>;
-using WireEntityConstWeakPtr = std::weak_ptr<const WireEntity>;
-using WireEntityUPtr = std::unique_ptr<WireEntity>;
-using WireEntityConstUPtr = std::unique_ptr<const WireEntity>;
-
 class WireEntity : public virtual TileEntity {
 public:
   virtual ~WireEntity() {}
@@ -69,10 +61,4 @@ export module star.wire_entity;
 
 export namespace Star {
   using ::Star::WireEntity;
-  using ::Star::WireEntityPtr;
-  using ::Star::WireEntityConstPtr;
-  using ::Star::WireEntityWeakPtr;
-  using ::Star::WireEntityConstWeakPtr;
-  using ::Star::WireEntityUPtr;
-  using ::Star::WireEntityConstUPtr;
 }

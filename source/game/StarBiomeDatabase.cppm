@@ -26,21 +26,7 @@ import star.sky_types;
 namespace Star {
 
 struct Biome;
-using BiomePtr = std::shared_ptr<Biome>;
-using BiomeConstPtr = std::shared_ptr<const Biome>;
-using BiomeWeakPtr = std::weak_ptr<Biome>;
-using BiomeConstWeakPtr = std::weak_ptr<const Biome>;
-using BiomeUPtr = std::unique_ptr<Biome>;
-using BiomeConstUPtr = std::unique_ptr<const Biome>;
 struct BiomePlaceables;
-
-class BiomeDatabase;
-using BiomeDatabasePtr = std::shared_ptr<BiomeDatabase>;
-using BiomeDatabaseConstPtr = std::shared_ptr<const BiomeDatabase>;
-using BiomeDatabaseWeakPtr = std::weak_ptr<BiomeDatabase>;
-using BiomeDatabaseConstWeakPtr = std::weak_ptr<const BiomeDatabase>;
-using BiomeDatabaseUPtr = std::unique_ptr<BiomeDatabase>;
-using BiomeDatabaseConstUPtr = std::unique_ptr<const BiomeDatabase>;
 
 class BiomeDatabase {
 public:
@@ -60,7 +46,7 @@ public:
   StringList weatherNames() const;
   WeatherType weatherType(String const& weatherName) const;
 
-  BiomePtr createBiome(String const& biomeName, std::uint64_t seed, float verticalMidPoint, float threatLevel) const;
+  std::shared_ptr<Biome> createBiome(String const& biomeName, std::uint64_t seed, float verticalMidPoint, float threatLevel) const;
 
   Json biomeConfig(String const& biomeName) const;
 
@@ -88,17 +74,5 @@ export module star.biome_database;
 
 export namespace Star {
   using ::Star::Biome;
-  using ::Star::BiomePtr;
-  using ::Star::BiomeConstPtr;
-  using ::Star::BiomeWeakPtr;
-  using ::Star::BiomeConstWeakPtr;
-  using ::Star::BiomeUPtr;
-  using ::Star::BiomeConstUPtr;
   using ::Star::BiomeDatabase;
-  using ::Star::BiomeDatabasePtr;
-  using ::Star::BiomeDatabaseConstPtr;
-  using ::Star::BiomeDatabaseWeakPtr;
-  using ::Star::BiomeDatabaseConstWeakPtr;
-  using ::Star::BiomeDatabaseUPtr;
-  using ::Star::BiomeDatabaseConstUPtr;
 }

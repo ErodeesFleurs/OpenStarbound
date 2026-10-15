@@ -26,14 +26,6 @@ import star.widget;
 
 namespace Star {
 
-class CanvasWidget;
-using CanvasWidgetPtr = std::shared_ptr<CanvasWidget>;
-using CanvasWidgetConstPtr = std::shared_ptr<CanvasWidget const>;
-using CanvasWidgetWeakPtr = std::weak_ptr<CanvasWidget>;
-using CanvasWidgetConstWeakPtr = std::weak_ptr<CanvasWidget const>;
-using CanvasWidgetUPtr = std::unique_ptr<CanvasWidget>;
-using CanvasWidgetConstUPtr = std::unique_ptr<CanvasWidget const>;
-
 // Very simple Widget that allows easy drawing to its surface, to easily tie a
 // simplified rendering / input context into the regular widget / GuiReader
 // system.
@@ -138,10 +130,4 @@ export module star.canvas_widget;
 
 export namespace Star {
   using ::Star::CanvasWidget;
-  using ::Star::CanvasWidgetPtr;
-  using ::Star::CanvasWidgetConstPtr;
-  using ::Star::CanvasWidgetWeakPtr;
-  using ::Star::CanvasWidgetConstWeakPtr;
-  using ::Star::CanvasWidgetUPtr;
-  using ::Star::CanvasWidgetConstUPtr;
 }

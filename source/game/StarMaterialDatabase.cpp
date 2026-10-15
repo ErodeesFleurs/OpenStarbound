@@ -466,7 +466,7 @@ bool MaterialDatabase::isMultiColor(MaterialId materialId) const {
   return false;
 }
 
-ParticleConfigPtr MaterialDatabase::miningParticle(MaterialId materialId, ModId modId) const {
+std::shared_ptr<ParticleConfig> MaterialDatabase::miningParticle(MaterialId materialId, ModId modId) const {
   if (isRealMod(modId)) {
     auto const& modInfo = getModInfo(modId);
     if (modInfo->miningParticle)
@@ -479,7 +479,7 @@ ParticleConfigPtr MaterialDatabase::miningParticle(MaterialId materialId, ModId 
       return matInfo->miningParticle;
   }
 
-  return ParticleConfigPtr();
+  return std::shared_ptr<ParticleConfig>();
 }
 
 String MaterialDatabase::miningSound(MaterialId materialId, ModId modId) const {

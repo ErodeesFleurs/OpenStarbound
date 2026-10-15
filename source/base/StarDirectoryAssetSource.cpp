@@ -63,7 +63,7 @@ StringList DirectoryAssetSource::assetPaths() const {
   return m_assetPaths;
 }
 
-IODevicePtr DirectoryAssetSource::open(String const& path) {
+std::shared_ptr<IODevice> DirectoryAssetSource::open(String const& path) {
   auto file = std::make_shared<File>(toFilesystem(path));
   file->open(IOMode::Read);
   return file;

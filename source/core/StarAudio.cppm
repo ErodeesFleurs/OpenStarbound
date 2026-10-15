@@ -18,26 +18,7 @@ float amplitudeToPerceptual(float amp, float normalizedMax = 1.f,
   float range = DefaultPerceptualRangeDb, float boostRange = DefaultPerceptualBoostRangeDb);
 
 class CompressedAudioImpl;
-using CompressedAudioImplPtr = std::shared_ptr<CompressedAudioImpl>;
-using CompressedAudioImplConstPtr = std::shared_ptr<const CompressedAudioImpl>;
-using CompressedAudioImplWeakPtr = std::weak_ptr<CompressedAudioImpl>;
-using CompressedAudioImplConstWeakPtr = std::weak_ptr<const CompressedAudioImpl>;
-using CompressedAudioImplUPtr = std::unique_ptr<CompressedAudioImpl>;
-using CompressedAudioImplConstUPtr = std::unique_ptr<const CompressedAudioImpl>;
 class UncompressedAudioImpl;
-using UncompressedAudioImplPtr = std::shared_ptr<UncompressedAudioImpl>;
-using UncompressedAudioImplConstPtr = std::shared_ptr<const UncompressedAudioImpl>;
-using UncompressedAudioImplWeakPtr = std::weak_ptr<UncompressedAudioImpl>;
-using UncompressedAudioImplConstWeakPtr = std::weak_ptr<const UncompressedAudioImpl>;
-using UncompressedAudioImplUPtr = std::unique_ptr<UncompressedAudioImpl>;
-using UncompressedAudioImplConstUPtr = std::unique_ptr<const UncompressedAudioImpl>;
-class Audio;
-using AudioPtr = std::shared_ptr<Audio>;
-using AudioConstPtr = std::shared_ptr<const Audio>;
-using AudioWeakPtr = std::weak_ptr<Audio>;
-using AudioConstWeakPtr = std::weak_ptr<const Audio>;
-using AudioUPtr = std::unique_ptr<Audio>;
-using AudioConstUPtr = std::unique_ptr<const Audio>;
 
 struct AudioExceptionTag {
   static constexpr char const* name() { return "AudioException"; }
@@ -51,7 +32,7 @@ using AudioException = StarError<AudioExceptionTag, StarException>;
 // instances is not expensive.
 class Audio {
 public:
-  explicit Audio(IODevicePtr device, String name = "");
+  explicit Audio(std::shared_ptr<IODevice> device, String name = "");
   Audio(Audio const& audio);
   Audio(Audio&& audio);
 
@@ -120,8 +101,8 @@ public:
 
 private:
   // If audio is uncompressed, this will be null.
-  CompressedAudioImplPtr m_compressed;
-  UncompressedAudioImplPtr m_uncompressed;
+  std::shared_ptr<CompressedAudioImpl> m_compressed;
+  std::shared_ptr<UncompressedAudioImpl> m_uncompressed;
 
   ByteArray m_workingBuffer;
   String m_name;
@@ -139,24 +120,6 @@ export namespace Star {
   using ::Star::AudioExceptionTag;
   using ::Star::AudioException;
   using ::Star::CompressedAudioImpl;
-  using ::Star::CompressedAudioImplPtr;
-  using ::Star::CompressedAudioImplConstPtr;
-  using ::Star::CompressedAudioImplWeakPtr;
-  using ::Star::CompressedAudioImplConstWeakPtr;
-  using ::Star::CompressedAudioImplUPtr;
-  using ::Star::CompressedAudioImplConstUPtr;
   using ::Star::UncompressedAudioImpl;
-  using ::Star::UncompressedAudioImplPtr;
-  using ::Star::UncompressedAudioImplConstPtr;
-  using ::Star::UncompressedAudioImplWeakPtr;
-  using ::Star::UncompressedAudioImplConstWeakPtr;
-  using ::Star::UncompressedAudioImplUPtr;
-  using ::Star::UncompressedAudioImplConstUPtr;
   using ::Star::Audio;
-  using ::Star::AudioPtr;
-  using ::Star::AudioConstPtr;
-  using ::Star::AudioWeakPtr;
-  using ::Star::AudioConstWeakPtr;
-  using ::Star::AudioUPtr;
-  using ::Star::AudioConstUPtr;
 }

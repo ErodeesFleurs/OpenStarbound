@@ -96,168 +96,28 @@ import star.net_element_system;
 namespace Star {
 
 class ArmorItem;
-using ArmorItemPtr = std::shared_ptr<ArmorItem>;
-using ArmorItemConstPtr = std::shared_ptr<const ArmorItem>;
-using ArmorItemWeakPtr = std::weak_ptr<ArmorItem>;
-using ArmorItemConstWeakPtr = std::weak_ptr<const ArmorItem>;
-using ArmorItemUPtr = std::unique_ptr<ArmorItem>;
-using ArmorItemConstUPtr = std::unique_ptr<const ArmorItem>;
 class ArmorWearer;
-using ArmorWearerPtr = std::shared_ptr<ArmorWearer>;
-using ArmorWearerConstPtr = std::shared_ptr<const ArmorWearer>;
-using ArmorWearerWeakPtr = std::weak_ptr<ArmorWearer>;
-using ArmorWearerConstWeakPtr = std::weak_ptr<const ArmorWearer>;
-using ArmorWearerUPtr = std::unique_ptr<ArmorWearer>;
-using ArmorWearerConstUPtr = std::unique_ptr<const ArmorWearer>;
 class ToolUser;
-using ToolUserPtr = std::shared_ptr<ToolUser>;
-using ToolUserConstPtr = std::shared_ptr<const ToolUser>;
-using ToolUserWeakPtr = std::weak_ptr<ToolUser>;
-using ToolUserConstWeakPtr = std::weak_ptr<const ToolUser>;
-using ToolUserUPtr = std::unique_ptr<ToolUser>;
-using ToolUserConstUPtr = std::unique_ptr<const ToolUser>;
 class EffectEmitter;
-using EffectEmitterPtr = std::shared_ptr<EffectEmitter>;
-using EffectEmitterConstPtr = std::shared_ptr<const EffectEmitter>;
-using EffectEmitterWeakPtr = std::weak_ptr<EffectEmitter>;
-using EffectEmitterConstWeakPtr = std::weak_ptr<const EffectEmitter>;
-using EffectEmitterUPtr = std::unique_ptr<EffectEmitter>;
-using EffectEmitterConstUPtr = std::unique_ptr<const EffectEmitter>;
 
 struct PlayerConfig;
-using PlayerConfigPtr = std::shared_ptr<PlayerConfig>;
-using PlayerConfigConstPtr = std::shared_ptr<const PlayerConfig>;
-using PlayerConfigWeakPtr = std::weak_ptr<PlayerConfig>;
-using PlayerConfigConstWeakPtr = std::weak_ptr<const PlayerConfig>;
-using PlayerConfigUPtr = std::unique_ptr<PlayerConfig>;
-using PlayerConfigConstUPtr = std::unique_ptr<const PlayerConfig>;
 class Songbook;
-using SongbookPtr = std::shared_ptr<Songbook>;
-using SongbookConstPtr = std::shared_ptr<const Songbook>;
-using SongbookWeakPtr = std::weak_ptr<Songbook>;
-using SongbookConstWeakPtr = std::weak_ptr<const Songbook>;
-using SongbookUPtr = std::unique_ptr<Songbook>;
-using SongbookConstUPtr = std::unique_ptr<const Songbook>;
 class WireConnector;
-using WireConnectorPtr = std::shared_ptr<WireConnector>;
-using WireConnectorConstPtr = std::shared_ptr<const WireConnector>;
-using WireConnectorWeakPtr = std::weak_ptr<WireConnector>;
-using WireConnectorConstWeakPtr = std::weak_ptr<const WireConnector>;
-using WireConnectorUPtr = std::unique_ptr<WireConnector>;
-using WireConnectorConstUPtr = std::unique_ptr<const WireConnector>;
 class PlayerInventory;
-using PlayerInventoryPtr = std::shared_ptr<PlayerInventory>;
-using PlayerInventoryConstPtr = std::shared_ptr<const PlayerInventory>;
-using PlayerInventoryWeakPtr = std::weak_ptr<PlayerInventory>;
-using PlayerInventoryConstWeakPtr = std::weak_ptr<const PlayerInventory>;
-using PlayerInventoryUPtr = std::unique_ptr<PlayerInventory>;
-using PlayerInventoryConstUPtr = std::unique_ptr<const PlayerInventory>;
 class PlayerBlueprints;
-using PlayerBlueprintsPtr = std::shared_ptr<PlayerBlueprints>;
-using PlayerBlueprintsConstPtr = std::shared_ptr<const PlayerBlueprints>;
-using PlayerBlueprintsWeakPtr = std::weak_ptr<PlayerBlueprints>;
-using PlayerBlueprintsConstWeakPtr = std::weak_ptr<const PlayerBlueprints>;
-using PlayerBlueprintsUPtr = std::unique_ptr<PlayerBlueprints>;
-using PlayerBlueprintsConstUPtr = std::unique_ptr<const PlayerBlueprints>;
 class PlayerTech;
-using PlayerTechPtr = std::shared_ptr<PlayerTech>;
-using PlayerTechConstPtr = std::shared_ptr<const PlayerTech>;
-using PlayerTechWeakPtr = std::weak_ptr<PlayerTech>;
-using PlayerTechConstWeakPtr = std::weak_ptr<const PlayerTech>;
-using PlayerTechUPtr = std::unique_ptr<PlayerTech>;
-using PlayerTechConstUPtr = std::unique_ptr<const PlayerTech>;
 class PlayerCompanions;
-using PlayerCompanionsPtr = std::shared_ptr<PlayerCompanions>;
-using PlayerCompanionsConstPtr = std::shared_ptr<const PlayerCompanions>;
-using PlayerCompanionsWeakPtr = std::weak_ptr<PlayerCompanions>;
-using PlayerCompanionsConstWeakPtr = std::weak_ptr<const PlayerCompanions>;
-using PlayerCompanionsUPtr = std::unique_ptr<PlayerCompanions>;
-using PlayerCompanionsConstUPtr = std::unique_ptr<const PlayerCompanions>;
 class PlayerDeployment;
-using PlayerDeploymentPtr = std::shared_ptr<PlayerDeployment>;
-using PlayerDeploymentConstPtr = std::shared_ptr<const PlayerDeployment>;
-using PlayerDeploymentWeakPtr = std::weak_ptr<PlayerDeployment>;
-using PlayerDeploymentConstWeakPtr = std::weak_ptr<const PlayerDeployment>;
-using PlayerDeploymentUPtr = std::unique_ptr<PlayerDeployment>;
-using PlayerDeploymentConstUPtr = std::unique_ptr<const PlayerDeployment>;
 class PlayerLog;
-using PlayerLogPtr = std::shared_ptr<PlayerLog>;
-using PlayerLogConstPtr = std::shared_ptr<const PlayerLog>;
-using PlayerLogWeakPtr = std::weak_ptr<PlayerLog>;
-using PlayerLogConstWeakPtr = std::weak_ptr<const PlayerLog>;
-using PlayerLogUPtr = std::unique_ptr<PlayerLog>;
-using PlayerLogConstUPtr = std::unique_ptr<const PlayerLog>;
 class TechController;
-using TechControllerPtr = std::shared_ptr<TechController>;
-using TechControllerConstPtr = std::shared_ptr<const TechController>;
-using TechControllerWeakPtr = std::weak_ptr<TechController>;
-using TechControllerConstWeakPtr = std::weak_ptr<const TechController>;
-using TechControllerUPtr = std::unique_ptr<TechController>;
-using TechControllerConstUPtr = std::unique_ptr<const TechController>;
 class ClientContext;
-using ClientContextPtr = std::shared_ptr<ClientContext>;
-using ClientContextConstPtr = std::shared_ptr<const ClientContext>;
-using ClientContextWeakPtr = std::weak_ptr<ClientContext>;
-using ClientContextConstWeakPtr = std::weak_ptr<const ClientContext>;
-using ClientContextUPtr = std::unique_ptr<ClientContext>;
-using ClientContextConstUPtr = std::unique_ptr<const ClientContext>;
 class Statistics;
-using StatisticsPtr = std::shared_ptr<Statistics>;
-using StatisticsConstPtr = std::shared_ptr<const Statistics>;
-using StatisticsWeakPtr = std::weak_ptr<Statistics>;
-using StatisticsConstWeakPtr = std::weak_ptr<const Statistics>;
-using StatisticsUPtr = std::unique_ptr<Statistics>;
-using StatisticsConstUPtr = std::unique_ptr<const Statistics>;
 class StatusController;
-using StatusControllerPtr = std::shared_ptr<StatusController>;
-using StatusControllerConstPtr = std::shared_ptr<const StatusController>;
-using StatusControllerWeakPtr = std::weak_ptr<StatusController>;
-using StatusControllerConstWeakPtr = std::weak_ptr<const StatusController>;
-using StatusControllerUPtr = std::unique_ptr<StatusController>;
-using StatusControllerConstUPtr = std::unique_ptr<const StatusController>;
 class PlayerCodexes;
-using PlayerCodexesPtr = std::shared_ptr<PlayerCodexes>;
-using PlayerCodexesConstPtr = std::shared_ptr<const PlayerCodexes>;
-using PlayerCodexesWeakPtr = std::weak_ptr<PlayerCodexes>;
-using PlayerCodexesConstWeakPtr = std::weak_ptr<const PlayerCodexes>;
-using PlayerCodexesUPtr = std::unique_ptr<PlayerCodexes>;
-using PlayerCodexesConstUPtr = std::unique_ptr<const PlayerCodexes>;
 class QuestManager;
-using QuestManagerPtr = std::shared_ptr<QuestManager>;
-using QuestManagerConstPtr = std::shared_ptr<const QuestManager>;
-using QuestManagerWeakPtr = std::weak_ptr<QuestManager>;
-using QuestManagerConstWeakPtr = std::weak_ptr<const QuestManager>;
-using QuestManagerUPtr = std::unique_ptr<QuestManager>;
-using QuestManagerConstUPtr = std::unique_ptr<const QuestManager>;
 class InteractiveEntity;
-using InteractiveEntityPtr = std::shared_ptr<InteractiveEntity>;
-using InteractiveEntityConstPtr = std::shared_ptr<const InteractiveEntity>;
-using InteractiveEntityWeakPtr = std::weak_ptr<InteractiveEntity>;
-using InteractiveEntityConstWeakPtr = std::weak_ptr<const InteractiveEntity>;
-using InteractiveEntityUPtr = std::unique_ptr<InteractiveEntity>;
-using InteractiveEntityConstUPtr = std::unique_ptr<const InteractiveEntity>;
 class PlayerUniverseMap;
-using PlayerUniverseMapPtr = std::shared_ptr<PlayerUniverseMap>;
-using PlayerUniverseMapConstPtr = std::shared_ptr<const PlayerUniverseMap>;
-using PlayerUniverseMapWeakPtr = std::weak_ptr<PlayerUniverseMap>;
-using PlayerUniverseMapConstWeakPtr = std::weak_ptr<const PlayerUniverseMap>;
-using PlayerUniverseMapUPtr = std::unique_ptr<PlayerUniverseMap>;
-using PlayerUniverseMapConstUPtr = std::unique_ptr<const PlayerUniverseMap>;
 class UniverseClient;
-using UniverseClientPtr = std::shared_ptr<UniverseClient>;
-using UniverseClientConstPtr = std::shared_ptr<const UniverseClient>;
-using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
-using UniverseClientConstWeakPtr = std::weak_ptr<const UniverseClient>;
-using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
-using UniverseClientConstUPtr = std::unique_ptr<const UniverseClient>;
-
-class Player;
-using PlayerPtr = std::shared_ptr<Player>;
-using PlayerConstPtr = std::shared_ptr<const Player>;
-using PlayerWeakPtr = std::weak_ptr<Player>;
-using PlayerConstWeakPtr = std::weak_ptr<const Player>;
-using PlayerUPtr = std::unique_ptr<Player>;
-using PlayerConstUPtr = std::unique_ptr<const Player>;
 
 class Player :
   public virtual ToolUserEntity,
@@ -286,22 +146,22 @@ public:
   };
   static EnumMap<State> const StateNames;
 
-  Player(PlayerConfigPtr config, Uuid uuid = Uuid());
-  Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules = {});
-  Player(PlayerConfigPtr config, Json const& diskStore);
+  Player(std::shared_ptr<PlayerConfig> config, Uuid uuid = Uuid());
+  Player(std::shared_ptr<PlayerConfig> config, ByteArray const& netStore, NetCompatibilityRules rules = {});
+  Player(std::shared_ptr<PlayerConfig> config, Json const& diskStore);
 
   void diskLoad(Json const& diskStore);
 
-  ClientContextPtr clientContext() const;
-  void setClientContext(ClientContextPtr clientContext);
+  std::shared_ptr<ClientContext> clientContext() const;
+  void setClientContext(std::shared_ptr<ClientContext> clientContext);
 
-  StatisticsPtr statistics() const;
-  void setStatistics(StatisticsPtr statistics);
+  std::shared_ptr<Statistics> statistics() const;
+  void setStatistics(std::shared_ptr<Statistics> statistics);
 
   void setUniverseClient(UniverseClient* universeClient);
   UniverseClient* universeClient() const;
 
-  QuestManagerPtr questManager() const;
+  std::shared_ptr<QuestManager> questManager() const;
 
   Json diskStore();
   ByteArray netStore(NetCompatibilityRules rules = {});
@@ -424,20 +284,20 @@ public:
   Json getGenericProperty(String const& name, Json const& defaultValue = Json()) const;
   void setGenericProperty(String const& name, Json const& value);
 
-  PlayerInventoryPtr inventory() const;
+  std::shared_ptr<PlayerInventory> inventory() const;
   // Returns the number of items from this stack that could be
   // picked up from the world, using inventory tab filtering
-  std::uint64_t itemsCanHold(ItemPtr const& items) const;
+  std::uint64_t itemsCanHold(std::shared_ptr<Item> const& items) const;
   // Adds items to the inventory, returning the overflow.
   // The items parameter is invalid after use.
-  ItemPtr pickupItems(ItemPtr const& items, bool silent = false);
+  std::shared_ptr<Item> pickupItems(std::shared_ptr<Item> const& items, bool silent = false);
   // Pick up all of the given items as possible, dropping the overflow.
   // The item parameter is invalid after use.
-  void giveItem(ItemPtr const& item);
+  void giveItem(std::shared_ptr<Item> const& item);
 
-  void triggerPickupEvents(ItemPtr const& item);
+  void triggerPickupEvents(std::shared_ptr<Item> const& item);
 
-  ItemPtr essentialItem(EssentialItem essentialItem) const;
+  std::shared_ptr<Item> essentialItem(EssentialItem essentialItem) const;
   bool hasItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
   std::uint64_t hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
   // altough multiple entries may match, they might have different
@@ -454,26 +314,26 @@ public:
   // Refresh worn equipment from the inventory
   void refreshEquipment();
 
-  PlayerBlueprintsPtr blueprints() const;
+  std::shared_ptr<PlayerBlueprints> blueprints() const;
   bool addBlueprint(ItemDescriptor const& descriptor, bool showFailure = false);
   bool blueprintKnown(ItemDescriptor const& descriptor) const;
 
   bool addCollectable(String const& collectionName, String const& collectableName);
 
-  PlayerUniverseMapPtr universeMap() const;
+  std::shared_ptr<PlayerUniverseMap> universeMap() const;
 
-  PlayerCodexesPtr codexes() const;
+  std::shared_ptr<PlayerCodexes> codexes() const;
 
-  PlayerTechPtr techs() const;
+  std::shared_ptr<PlayerTech> techs() const;
   void overrideTech(Maybe<StringList> const& techModules);
   bool techOverridden() const;
 
-  PlayerCompanionsPtr companions() const;
+  std::shared_ptr<PlayerCompanions> companions() const;
 
-  PlayerLogPtr log() const;
+  std::shared_ptr<PlayerLog> log() const;
 
-  InteractiveEntityPtr bestInteractionEntity(bool includeNearby);
-  void interactWithEntity(InteractiveEntityPtr entity);
+  std::shared_ptr<InteractiveEntity> bestInteractionEntity(bool includeNearby);
+  void interactWithEntity(std::shared_ptr<InteractiveEntity> entity);
 
   // Aim this player's target at the given world position.
   void aim(Vec2F const& position);
@@ -483,7 +343,7 @@ public:
   Vec2F handOffset(ToolHand hand, Direction facingDirection) const override;
 
   Vec2F handPosition(ToolHand hand, Vec2F const& handOffset = {}) const override;
-  ItemPtr handItem(ToolHand hand) const override;
+  std::shared_ptr<Item> handItem(ToolHand hand) const override;
 
   Vec2F armAdjustment() const override;
 
@@ -509,8 +369,8 @@ public:
   void beginTrigger();
   void endTrigger();
 
-  ItemPtr primaryHandItem() const;
-  ItemPtr altHandItem() const;
+  std::shared_ptr<Item> primaryHandItem() const;
+  std::shared_ptr<Item> altHandItem() const;
 
   Uuid uuid() const;
 
@@ -568,8 +428,8 @@ public:
   void setPersonality(Personality const& personality);
   void setImagePath(Maybe<String> const& imagePath);
 
-  HumanoidPtr humanoid();
-  HumanoidPtr humanoid() const;
+  std::shared_ptr<Humanoid> humanoid();
+  std::shared_ptr<Humanoid> humanoid() const;
   HumanoidIdentity const& identity() const;
 
   void setIdentity(HumanoidIdentity identity);
@@ -618,10 +478,10 @@ public:
   void moveTo(Vec2F const& footPosition);
 
   List<String> pullQueuedMessages();
-  List<ItemPtr> pullQueuedItemDrops();
+  List<std::shared_ptr<Item>> pullQueuedItemDrops();
 
   void queueUIMessage(String const& message) override;
-  void queueItemPickupMessage(ItemPtr const& item);
+  void queueItemPickupMessage(std::shared_ptr<Item> const& item);
 
   void addChatMessage(String const& message, Json const& config = {});
   void addEmote(HumanoidEmote const& emote, Maybe<float> emoteCooldown = {});
@@ -648,12 +508,12 @@ public:
 
   List<PhysicsForceRegion> forceRegions() const override;
 
-  StatusControllerPtr statusControllerPtr();
-  ActorMovementControllerPtr movementControllerPtr();
+  std::shared_ptr<StatusController> statusControllerPtr();
+  std::shared_ptr<ActorMovementController> movementControllerPtr();
 
-  PlayerConfigPtr config();
+  std::shared_ptr<PlayerConfig> config();
 
-  SongbookPtr songbook() const;
+  std::shared_ptr<Songbook> songbook() const;
 
   void finalizeCreation();
 
@@ -666,7 +526,7 @@ public:
 
   bool isOutside();
 
-  void dropSelectedItems(std::function<bool(ItemPtr)> filter);
+  void dropSelectedItems(std::function<bool(std::shared_ptr<Item>)> filter);
   void dropEverything();
 
   bool isPermaDead() const;
@@ -699,13 +559,13 @@ public:
   bool inspecting() const;
 
   // Will return the highlight effect to give an inspectable entity when inspecting
-  EntityHighlightEffect inspectionHighlight(InspectableEntityPtr const& inspectableEntity) const;
+  EntityHighlightEffect inspectionHighlight(std::shared_ptr<InspectableEntity> const& inspectableEntity) const;
 
   Vec2F cameraPosition();
 
   using Entity::setTeam;
 
-  NetworkedAnimatorPtr effectsAnimator();
+  std::shared_ptr<NetworkedAnimator> effectsAnimator();
 
   // We need to store ephemeral/large/always-changing networked properties that other clients can read. Candidates:
   // genericProperties:
@@ -732,9 +592,8 @@ public:
 
 private:
   typedef LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>> GenericScriptComponent;
-  typedef std::shared_ptr<GenericScriptComponent> GenericScriptComponentPtr;
 
-  typedef std::function<void(ItemPtr)> ItemSetFunc;
+  typedef std::function<void(std::shared_ptr<Item>)> ItemSetFunc;
 
   // handle input and other events (master only) that happen BEFORE movement/tech controller updates
   void processControls();
@@ -745,7 +604,7 @@ private:
   void getNetStates(bool initial);
   void setNetStates();
   void getNetArmorSecrets();
-  void setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor, bool visible = true);
+  void setNetArmorSecret(EquipmentSlot slot, std::shared_ptr<ArmorItem> const& armor, bool visible = true);
   void setNetArmorSecrets(bool includeEmpty = false);
 
   List<Drawable> drawables() const;
@@ -763,25 +622,25 @@ private:
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
   NetworkedAnimator::DynamicTarget m_humanoidDynamicTarget;
 
-  PlayerConfigPtr m_config;
+  std::shared_ptr<PlayerConfig> m_config;
 
   NetElementTopGroup m_netGroup;
 
-  ClientContextPtr m_clientContext;
-  StatisticsPtr m_statistics;
-  QuestManagerPtr m_questManager;
+  std::shared_ptr<ClientContext> m_clientContext;
+  std::shared_ptr<Statistics> m_statistics;
+  std::shared_ptr<QuestManager> m_questManager;
 
-  PlayerInventoryPtr m_inventory;
-  PlayerBlueprintsPtr m_blueprints;
-  PlayerUniverseMapPtr m_universeMap;
-  PlayerCodexesPtr m_codexes;
-  PlayerTechPtr m_techs;
-  PlayerCompanionsPtr m_companions;
-  PlayerDeploymentPtr m_deployment;
-  PlayerLogPtr m_log;
+  std::shared_ptr<PlayerInventory> m_inventory;
+  std::shared_ptr<PlayerBlueprints> m_blueprints;
+  std::shared_ptr<PlayerUniverseMap> m_universeMap;
+  std::shared_ptr<PlayerCodexes> m_codexes;
+  std::shared_ptr<PlayerTech> m_techs;
+  std::shared_ptr<PlayerCompanions> m_companions;
+  std::shared_ptr<PlayerDeployment> m_deployment;
+  std::shared_ptr<PlayerLog> m_log;
 
   UniverseClient* m_client; // required for celestial callbacks in scripts
-  StringMap<GenericScriptComponentPtr> m_genericScriptContexts;
+  StringMap<std::shared_ptr<Player::GenericScriptComponent>> m_genericScriptContexts;
   JsonObject m_genericProperties;
 
   State m_state;
@@ -804,7 +663,7 @@ private:
   bool m_footstepPending;
 
   String m_teleportAnimationType;
-  NetworkedAnimatorPtr m_effectsAnimator;
+  std::shared_ptr<NetworkedAnimator> m_effectsAnimator;
   NetworkedAnimator::DynamicTarget m_effectsAnimatorDynamicTarget;
 
   float m_emoteCooldown;
@@ -824,8 +683,8 @@ private:
   ShipUpgrades m_shipUpgrades;
   String m_shipSpecies;
 
-  ToolUserPtr m_tools;
-  ArmorWearerPtr m_armor;
+  std::shared_ptr<ToolUser> m_tools;
+  std::shared_ptr<ArmorWearer> m_armor;
   HashMap<EquipmentSlot, std::uint64_t> m_armorSecretNetVersions;
 
   bool m_useDown;
@@ -835,9 +694,9 @@ private:
 
   Maybe<EntityId> m_cameraFocusEntity;
 
-  ActorMovementControllerPtr m_movementController;
-  TechControllerPtr m_techController;
-  StatusControllerPtr m_statusController;
+  std::shared_ptr<ActorMovementController> m_movementController;
+  std::shared_ptr<TechController> m_techController;
+  std::shared_ptr<StatusController> m_statusController;
 
   float m_foodLowThreshold;
   List<PersistentStatusEffect> m_foodLowStatusEffects;
@@ -860,7 +719,7 @@ private:
   List<std::tuple<String, float, float>> m_callbackSounds;
 
   List<String> m_queuedMessages;
-  List<ItemPtr> m_queuedItemPickups;
+  List<std::shared_ptr<Item>> m_queuedItemPickups;
 
   List<ChatAction> m_pendingChatActions;
 
@@ -879,9 +738,9 @@ private:
   bool m_chatMessageChanged;
   bool m_chatMessageUpdated;
 
-  EffectEmitterPtr m_effectEmitter;
+  std::shared_ptr<EffectEmitter> m_effectEmitter;
 
-  SongbookPtr m_songbook;
+  std::shared_ptr<Songbook> m_songbook;
 
   int m_hitDamageNotificationLimiter;
   int m_hitDamageNotificationLimit;
@@ -909,164 +768,26 @@ export module star.player;
 
 export namespace Star {
   using ::Star::ArmorItem;
-  using ::Star::ArmorItemPtr;
-  using ::Star::ArmorItemConstPtr;
-  using ::Star::ArmorItemWeakPtr;
-  using ::Star::ArmorItemConstWeakPtr;
-  using ::Star::ArmorItemUPtr;
-  using ::Star::ArmorItemConstUPtr;
   using ::Star::ArmorWearer;
-  using ::Star::ArmorWearerPtr;
-  using ::Star::ArmorWearerConstPtr;
-  using ::Star::ArmorWearerWeakPtr;
-  using ::Star::ArmorWearerConstWeakPtr;
-  using ::Star::ArmorWearerUPtr;
-  using ::Star::ArmorWearerConstUPtr;
   using ::Star::ToolUser;
-  using ::Star::ToolUserPtr;
-  using ::Star::ToolUserConstPtr;
-  using ::Star::ToolUserWeakPtr;
-  using ::Star::ToolUserConstWeakPtr;
-  using ::Star::ToolUserUPtr;
-  using ::Star::ToolUserConstUPtr;
   using ::Star::EffectEmitter;
-  using ::Star::EffectEmitterPtr;
-  using ::Star::EffectEmitterConstPtr;
-  using ::Star::EffectEmitterWeakPtr;
-  using ::Star::EffectEmitterConstWeakPtr;
-  using ::Star::EffectEmitterUPtr;
-  using ::Star::EffectEmitterConstUPtr;
   using ::Star::PlayerConfig;
-  using ::Star::PlayerConfigPtr;
-  using ::Star::PlayerConfigConstPtr;
-  using ::Star::PlayerConfigWeakPtr;
-  using ::Star::PlayerConfigConstWeakPtr;
-  using ::Star::PlayerConfigUPtr;
-  using ::Star::PlayerConfigConstUPtr;
   using ::Star::Songbook;
-  using ::Star::SongbookPtr;
-  using ::Star::SongbookConstPtr;
-  using ::Star::SongbookWeakPtr;
-  using ::Star::SongbookConstWeakPtr;
-  using ::Star::SongbookUPtr;
-  using ::Star::SongbookConstUPtr;
   using ::Star::WireConnector;
-  using ::Star::WireConnectorPtr;
-  using ::Star::WireConnectorConstPtr;
-  using ::Star::WireConnectorWeakPtr;
-  using ::Star::WireConnectorConstWeakPtr;
-  using ::Star::WireConnectorUPtr;
-  using ::Star::WireConnectorConstUPtr;
   using ::Star::PlayerInventory;
-  using ::Star::PlayerInventoryPtr;
-  using ::Star::PlayerInventoryConstPtr;
-  using ::Star::PlayerInventoryWeakPtr;
-  using ::Star::PlayerInventoryConstWeakPtr;
-  using ::Star::PlayerInventoryUPtr;
-  using ::Star::PlayerInventoryConstUPtr;
   using ::Star::PlayerBlueprints;
-  using ::Star::PlayerBlueprintsPtr;
-  using ::Star::PlayerBlueprintsConstPtr;
-  using ::Star::PlayerBlueprintsWeakPtr;
-  using ::Star::PlayerBlueprintsConstWeakPtr;
-  using ::Star::PlayerBlueprintsUPtr;
-  using ::Star::PlayerBlueprintsConstUPtr;
   using ::Star::PlayerTech;
-  using ::Star::PlayerTechPtr;
-  using ::Star::PlayerTechConstPtr;
-  using ::Star::PlayerTechWeakPtr;
-  using ::Star::PlayerTechConstWeakPtr;
-  using ::Star::PlayerTechUPtr;
-  using ::Star::PlayerTechConstUPtr;
   using ::Star::PlayerCompanions;
-  using ::Star::PlayerCompanionsPtr;
-  using ::Star::PlayerCompanionsConstPtr;
-  using ::Star::PlayerCompanionsWeakPtr;
-  using ::Star::PlayerCompanionsConstWeakPtr;
-  using ::Star::PlayerCompanionsUPtr;
-  using ::Star::PlayerCompanionsConstUPtr;
   using ::Star::PlayerDeployment;
-  using ::Star::PlayerDeploymentPtr;
-  using ::Star::PlayerDeploymentConstPtr;
-  using ::Star::PlayerDeploymentWeakPtr;
-  using ::Star::PlayerDeploymentConstWeakPtr;
-  using ::Star::PlayerDeploymentUPtr;
-  using ::Star::PlayerDeploymentConstUPtr;
   using ::Star::PlayerLog;
-  using ::Star::PlayerLogPtr;
-  using ::Star::PlayerLogConstPtr;
-  using ::Star::PlayerLogWeakPtr;
-  using ::Star::PlayerLogConstWeakPtr;
-  using ::Star::PlayerLogUPtr;
-  using ::Star::PlayerLogConstUPtr;
   using ::Star::TechController;
-  using ::Star::TechControllerPtr;
-  using ::Star::TechControllerConstPtr;
-  using ::Star::TechControllerWeakPtr;
-  using ::Star::TechControllerConstWeakPtr;
-  using ::Star::TechControllerUPtr;
-  using ::Star::TechControllerConstUPtr;
   using ::Star::ClientContext;
-  using ::Star::ClientContextPtr;
-  using ::Star::ClientContextConstPtr;
-  using ::Star::ClientContextWeakPtr;
-  using ::Star::ClientContextConstWeakPtr;
-  using ::Star::ClientContextUPtr;
-  using ::Star::ClientContextConstUPtr;
   using ::Star::Statistics;
-  using ::Star::StatisticsPtr;
-  using ::Star::StatisticsConstPtr;
-  using ::Star::StatisticsWeakPtr;
-  using ::Star::StatisticsConstWeakPtr;
-  using ::Star::StatisticsUPtr;
-  using ::Star::StatisticsConstUPtr;
   using ::Star::StatusController;
-  using ::Star::StatusControllerPtr;
-  using ::Star::StatusControllerConstPtr;
-  using ::Star::StatusControllerWeakPtr;
-  using ::Star::StatusControllerConstWeakPtr;
-  using ::Star::StatusControllerUPtr;
-  using ::Star::StatusControllerConstUPtr;
   using ::Star::PlayerCodexes;
-  using ::Star::PlayerCodexesPtr;
-  using ::Star::PlayerCodexesConstPtr;
-  using ::Star::PlayerCodexesWeakPtr;
-  using ::Star::PlayerCodexesConstWeakPtr;
-  using ::Star::PlayerCodexesUPtr;
-  using ::Star::PlayerCodexesConstUPtr;
   using ::Star::QuestManager;
-  using ::Star::QuestManagerPtr;
-  using ::Star::QuestManagerConstPtr;
-  using ::Star::QuestManagerWeakPtr;
-  using ::Star::QuestManagerConstWeakPtr;
-  using ::Star::QuestManagerUPtr;
-  using ::Star::QuestManagerConstUPtr;
   using ::Star::InteractiveEntity;
-  using ::Star::InteractiveEntityPtr;
-  using ::Star::InteractiveEntityConstPtr;
-  using ::Star::InteractiveEntityWeakPtr;
-  using ::Star::InteractiveEntityConstWeakPtr;
-  using ::Star::InteractiveEntityUPtr;
-  using ::Star::InteractiveEntityConstUPtr;
   using ::Star::PlayerUniverseMap;
-  using ::Star::PlayerUniverseMapPtr;
-  using ::Star::PlayerUniverseMapConstPtr;
-  using ::Star::PlayerUniverseMapWeakPtr;
-  using ::Star::PlayerUniverseMapConstWeakPtr;
-  using ::Star::PlayerUniverseMapUPtr;
-  using ::Star::PlayerUniverseMapConstUPtr;
   using ::Star::UniverseClient;
-  using ::Star::UniverseClientPtr;
-  using ::Star::UniverseClientConstPtr;
-  using ::Star::UniverseClientWeakPtr;
-  using ::Star::UniverseClientConstWeakPtr;
-  using ::Star::UniverseClientUPtr;
-  using ::Star::UniverseClientConstUPtr;
   using ::Star::Player;
-  using ::Star::PlayerPtr;
-  using ::Star::PlayerConstPtr;
-  using ::Star::PlayerWeakPtr;
-  using ::Star::PlayerConstWeakPtr;
-  using ::Star::PlayerUPtr;
-  using ::Star::PlayerConstUPtr;
 }

@@ -198,7 +198,7 @@ void Cinematic::load(Json const& definition) {
   }
 
   for (auto panelDefinition : definition.getArray("panels")) {
-    PanelPtr panel = std::make_shared<Panel>();
+    std::shared_ptr<Panel> panel = std::make_shared<Panel>();
     panel->useCamera = panelDefinition.getBool("useCamera", true);
     panel->drawables = panelDefinition.getArray("drawables", {});
     panel->animationFrames = panelDefinition.getInt("animationFrames", std::numeric_limits<int>::max());
@@ -232,7 +232,7 @@ void Cinematic::load(Json const& definition) {
     m_completionTime = std::max(m_completionTime, cue.timecode);
     m_completionTime = std::max(m_completionTime, cue.endTimecode);
   }
-  m_activeAudio = std::vector<AudioInstancePtr>(m_audioCues.size());
+  m_activeAudio = std::vector<std::shared_ptr<AudioInstance>>(m_audioCues.size());
 
   if (definition.contains("offset"))
     m_offset = jsonToVec2F(definition.get("offset"));
@@ -258,7 +258,7 @@ void Cinematic::load(Json const& definition) {
   m_timer.start();
 }
 
-void Cinematic::setPlayer(PlayerPtr player) {
+void Cinematic::setPlayer(std::shared_ptr<Player> player) {
   m_player = player;
 }
 
@@ -394,7 +394,7 @@ void Cinematic::render() {
     } else if (m_audioCues[i].timecode <= currentTimecode()) {
       if (m_activeAudio[i])
         continue;
-      AudioInstancePtr audioInstance = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(m_audioCues[i].resource));
+      std::shared_ptr<AudioInstance> audioInstance = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(m_audioCues[i].resource));
       audioInstance->setLoops(m_audioCues[i].loops);
       audioInstance->setMixerGroup(MixerGroup::Cinematic);
       mixer->play(audioInstance);
@@ -501,7 +501,7 @@ float Cinematic::currentTimecode() const {
   return std::min((float)m_timer.time() - m_backgroundFadeTime, m_completionTime - 2 * m_backgroundFadeTime);
 }
 
-Cinematic::PanelValues Cinematic::determinePanelValues(PanelPtr panel, float timecode) {
+Cinematic::PanelValues Cinematic::determinePanelValues(std::shared_ptr<Panel> panel, float timecode) {
   if (panel->endTime != 0) {
     if (timecode > panel->endTime) {
       Cinematic::PanelValues result{};

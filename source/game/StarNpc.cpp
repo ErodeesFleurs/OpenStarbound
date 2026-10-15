@@ -1164,7 +1164,7 @@ void Npc::setDance(Maybe<String> const& danceName) {
 
   if (danceName.isValid()) {
     auto danceDatabase = Root::singleton().danceDatabase();
-    DancePtr dance = danceDatabase->getDance(*danceName);
+    std::shared_ptr<Dance> dance = danceDatabase->getDance(*danceName);
     m_danceCooldownTimer = GameTimer(dance->duration);
   }
 }
@@ -1266,7 +1266,7 @@ Vec2F Npc::handPosition(ToolHand hand, Vec2F const& handOffset) const {
   return m_tools->handPosition(hand, *humanoid(), handOffset);
 }
 
-ItemPtr Npc::handItem(ToolHand hand) const {
+std::shared_ptr<Item> Npc::handItem(ToolHand hand) const {
   if (hand == ToolHand::Primary)
     return m_tools->primaryHandItem();
   return m_tools->altHandItem();
@@ -1552,10 +1552,10 @@ void Npc::setDescription(String const& description) {
   m_npcVariant.description = description;
 }
 
-HumanoidPtr Npc::humanoid() {
+std::shared_ptr<Humanoid> Npc::humanoid() {
   return m_netHumanoid.netElements().last()->humanoid();
 }
-HumanoidPtr Npc::humanoid() const {
+std::shared_ptr<Humanoid> Npc::humanoid() const {
   return m_netHumanoid.netElements().last()->humanoid();
 }
 

@@ -9,14 +9,6 @@ namespace Star {
 using StreamOffset = std::int64_t;
 
 
-class IODevice;
-using IODevicePtr = std::shared_ptr<IODevice>;
-using IODeviceConstPtr = std::shared_ptr<const IODevice>;
-using IODeviceWeakPtr = std::weak_ptr<IODevice>;
-using IODeviceConstWeakPtr = std::weak_ptr<const IODevice>;
-using IODeviceUPtr = std::unique_ptr<IODevice>;
-using IODeviceConstUPtr = std::unique_ptr<const IODevice>;
-
 struct EofExceptionTag {
   static constexpr char const* name() { return "EofException"; }
 };
@@ -84,7 +76,7 @@ public:
   virtual void sync();
 
   // Returns a clone of this device with the same mode
-  virtual IODevicePtr clone() = 0;
+  virtual std::shared_ptr<IODevice> clone() = 0;
 
   // Default implementation just prints address of generic IODevice
   virtual String deviceName() const;
@@ -157,12 +149,6 @@ export namespace Star {
   using ::Star::Relative;
   using ::Star::End;
   using ::Star::IODevice;
-  using ::Star::IODevicePtr;
-  using ::Star::IODeviceConstPtr;
-  using ::Star::IODeviceWeakPtr;
-  using ::Star::IODeviceConstWeakPtr;
-  using ::Star::IODeviceUPtr;
-  using ::Star::IODeviceConstUPtr;
   using ::Star::operator|;
   using ::Star::operator&;
 }

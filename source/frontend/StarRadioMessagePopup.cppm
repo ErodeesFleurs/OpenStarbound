@@ -52,26 +52,8 @@ import star.game_timers;
 namespace Star {
 
 class LabelWidget;
-using LabelWidgetPtr = std::shared_ptr<LabelWidget>;
-using LabelWidgetConstPtr = std::shared_ptr<LabelWidget const>;
-using LabelWidgetWeakPtr = std::weak_ptr<LabelWidget>;
-using LabelWidgetConstWeakPtr = std::weak_ptr<LabelWidget const>;
-using LabelWidgetUPtr = std::unique_ptr<LabelWidget>;
-using LabelWidgetConstUPtr = std::unique_ptr<LabelWidget const>;
 class ImageWidget;
-using ImageWidgetPtr = std::shared_ptr<ImageWidget>;
-using ImageWidgetConstPtr = std::shared_ptr<ImageWidget const>;
-using ImageWidgetWeakPtr = std::weak_ptr<ImageWidget>;
-using ImageWidgetConstWeakPtr = std::weak_ptr<ImageWidget const>;
-using ImageWidgetUPtr = std::unique_ptr<ImageWidget>;
-using ImageWidgetConstUPtr = std::unique_ptr<ImageWidget const>;
 class AudioInstance;
-using AudioInstancePtr = std::shared_ptr<AudioInstance>;
-using AudioInstanceConstPtr = std::shared_ptr<AudioInstance const>;
-using AudioInstanceWeakPtr = std::weak_ptr<AudioInstance>;
-using AudioInstanceConstWeakPtr = std::weak_ptr<AudioInstance const>;
-using AudioInstanceUPtr = std::unique_ptr<AudioInstance>;
-using AudioInstanceConstUPtr = std::unique_ptr<AudioInstance const>;
 
 class RadioMessagePopup : public Pane {
 public:
@@ -96,8 +78,8 @@ private:
   PopupStage m_popupStage;
   GameTimer m_stageTimer;
 
-  LabelWidgetPtr m_messageLabel;
-  ImageWidgetPtr m_portraitImage;
+  std::shared_ptr<LabelWidget> m_messageLabel;
+  std::shared_ptr<ImageWidget> m_portraitImage;
 
   RadioMessage m_message;
 
@@ -118,7 +100,7 @@ private:
   float m_slideTimer;
   float m_slideTime;
 
-  AudioInstancePtr m_chatterSound;
+  std::shared_ptr<AudioInstance> m_chatterSound;
 };
 
 }
@@ -127,25 +109,7 @@ export module star.radio_message_popup;
 
 export namespace Star {
   using ::Star::LabelWidget;
-  using ::Star::LabelWidgetPtr;
-  using ::Star::LabelWidgetConstPtr;
-  using ::Star::LabelWidgetWeakPtr;
-  using ::Star::LabelWidgetConstWeakPtr;
-  using ::Star::LabelWidgetUPtr;
-  using ::Star::LabelWidgetConstUPtr;
   using ::Star::ImageWidget;
-  using ::Star::ImageWidgetPtr;
-  using ::Star::ImageWidgetConstPtr;
-  using ::Star::ImageWidgetWeakPtr;
-  using ::Star::ImageWidgetConstWeakPtr;
-  using ::Star::ImageWidgetUPtr;
-  using ::Star::ImageWidgetConstUPtr;
   using ::Star::AudioInstance;
-  using ::Star::AudioInstancePtr;
-  using ::Star::AudioInstanceConstPtr;
-  using ::Star::AudioInstanceWeakPtr;
-  using ::Star::AudioInstanceConstWeakPtr;
-  using ::Star::AudioInstanceUPtr;
-  using ::Star::AudioInstanceConstUPtr;
   using ::Star::RadioMessagePopup;
 }

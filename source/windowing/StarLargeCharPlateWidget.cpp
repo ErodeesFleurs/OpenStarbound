@@ -121,7 +121,7 @@ import star.large_char_plate_widget;
 
 namespace Star {
 
-LargeCharPlateWidget::LargeCharPlateWidget(WidgetCallbackFunc mainCallback, PlayerPtr player) : m_player(player) {
+LargeCharPlateWidget::LargeCharPlateWidget(WidgetCallbackFunc mainCallback, std::shared_ptr<Player> player) : m_player(player) {
   m_portraitScale = 0;
 
   setSize(ButtonWidget::size());
@@ -217,7 +217,7 @@ void LargeCharPlateWidget::mouseOut() {
   ButtonWidget::mouseOut();
 }
 
-void LargeCharPlateWidget::setPlayer(PlayerPtr player) {
+void LargeCharPlateWidget::setPlayer(std::shared_ptr<Player> player) {
   m_player = player;
   m_portrait->setEntity(m_player);
 

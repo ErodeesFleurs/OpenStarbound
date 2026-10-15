@@ -30,14 +30,6 @@ import star.entity;
 
 namespace Star {
 
-class PortraitEntity;
-using PortraitEntityPtr = std::shared_ptr<PortraitEntity>;
-using PortraitEntityConstPtr = std::shared_ptr<const PortraitEntity>;
-using PortraitEntityWeakPtr = std::weak_ptr<PortraitEntity>;
-using PortraitEntityConstWeakPtr = std::weak_ptr<const PortraitEntity>;
-using PortraitEntityUPtr = std::unique_ptr<PortraitEntity>;
-using PortraitEntityConstUPtr = std::unique_ptr<const PortraitEntity>;
-
 class PortraitEntity : public virtual Entity {
 public:
   virtual List<Drawable> portrait(PortraitMode mode) const = 0;
@@ -49,10 +41,4 @@ export module star.portrait_entity;
 
 export namespace Star {
   using ::Star::PortraitEntity;
-  using ::Star::PortraitEntityPtr;
-  using ::Star::PortraitEntityConstPtr;
-  using ::Star::PortraitEntityWeakPtr;
-  using ::Star::PortraitEntityConstWeakPtr;
-  using ::Star::PortraitEntityUPtr;
-  using ::Star::PortraitEntityConstUPtr;
 }

@@ -113,17 +113,17 @@ TerrainDatabase::Config TerrainDatabase::selectorConfig(String const& name) cons
     throw TerrainException(strf("No such terrain selector '{}'", name));
 }
 
-TerrainSelectorConstPtr TerrainDatabase::createNamedSelector(String const& name, TerrainSelectorParameters const& parameters) const {
+std::shared_ptr<TerrainSelector const> TerrainDatabase::createNamedSelector(String const& name, TerrainSelectorParameters const& parameters) const {
   auto config = selectorConfig(name);
 
   return createSelectorType(config.type, config.parameters, parameters);
 }
 
-TerrainSelectorConstPtr TerrainDatabase::constantSelector(float value) {
+std::shared_ptr<TerrainSelector const> TerrainDatabase::constantSelector(float value) {
   return createSelectorType(ConstantSelector::Name, JsonObject{{"value", value}}, TerrainSelectorParameters());
 }
 
-Json TerrainDatabase::storeSelector(TerrainSelectorConstPtr const& selector) const {
+Json TerrainDatabase::storeSelector(std::shared_ptr<TerrainSelector const> const& selector) const {
   if (!selector)
     return {};
 
@@ -134,14 +134,14 @@ Json TerrainDatabase::storeSelector(TerrainSelectorConstPtr const& selector) con
   };
 }
 
-TerrainSelectorConstPtr TerrainDatabase::loadSelector(Json const& store) const {
+std::shared_ptr<TerrainSelector const> TerrainDatabase::loadSelector(Json const& store) const {
   if (store.isNull())
     return {};
   return createSelectorType(store.getString("type"), store.get("config"),
       TerrainSelectorParameters(store.get("parameters")));
 }
 
-TerrainSelectorConstPtr TerrainDatabase::createSelectorType(String const& type, Json const& config, TerrainSelectorParameters const& parameters) const {
+std::shared_ptr<TerrainSelector const> TerrainDatabase::createSelectorType(String const& type, Json const& config, TerrainSelectorParameters const& parameters) const {
   if (type == WormCaveSelector::Name)
     return std::make_shared<WormCaveSelector>(config, parameters);
   else if (type == KarstCaveSelector::Name)

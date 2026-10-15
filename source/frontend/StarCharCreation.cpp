@@ -197,7 +197,7 @@ import star.player_factory;
 
 namespace Star {
 
-CharCreationPane::CharCreationPane(std::function<void(PlayerPtr)> requestCloseFunc) {
+CharCreationPane::CharCreationPane(std::function<void(std::shared_ptr<Player>)> requestCloseFunc) {
   auto& root = Root::singleton();
 
   m_speciesList = jsonToStringList(root.assets()->json("/interface/windowconfig/charcreation.config:speciesOrdering"));
@@ -462,7 +462,7 @@ void CharCreationPane::changed() {
 
   for (auto const& nameDefPair : root.speciesDatabase()->allSpecies()) {
     String name;
-    SpeciesDefinitionPtr def;
+    std::shared_ptr<SpeciesDefinition> def;
     std::tie(name, def) = nameDefPair;
     // NOTE: Probably not hot enough to matter, but this contains and indexOf makes this loop
     // O(n^2).  This is less than ideal.
@@ -518,9 +518,9 @@ void CharCreationPane::nameBoxCallback(Widget* object) {
     throw GuiException("Invalid object type, expected TextBoxWidget.");
 }
 
-PanePtr CharCreationPane::createTooltip(Vec2I const& screenPosition) {
+std::shared_ptr<Pane> CharCreationPane::createTooltip(Vec2I const& screenPosition) {
   // what's under my cursor
-  if (WidgetPtr child = getChildAt(screenPosition)) {
+  if (std::shared_ptr<Widget> child = getChildAt(screenPosition)) {
     // is it a species button ?
     if (child->parent()->name() == "species") {
       // which species is it ?
@@ -531,10 +531,10 @@ PanePtr CharCreationPane::createTooltip(Vec2I const& screenPosition) {
         return {};
 
       String speciesName = m_speciesList[speciesIndex];
-      Star::SpeciesDefinitionPtr speciesDefinition = Root::singleton().speciesDatabase()->species(speciesName);
+      std::shared_ptr<SpeciesDefinition> speciesDefinition = Root::singleton().speciesDatabase()->species(speciesName);
 
       // make a tooltip from the config file
-      PanePtr tooltip = std::make_shared<Pane>();
+      std::shared_ptr<Pane> tooltip = std::make_shared<Pane>();
       tooltip->removeAllChildren();
       GuiReader reader;
       auto& root = Root::singleton();
@@ -544,7 +544,7 @@ PanePtr CharCreationPane::createTooltip(Vec2I const& screenPosition) {
       // find out the gender option block from the currently selected gender
       auto genderOption = speciesDefinition->options().genderOptions.wrap(m_genderChoice);
       // makes an icon out of the default gendered character image
-      WidgetPtr titleIcon = std::make_shared<ImageWidget>(genderOption.characterImage);
+      std::shared_ptr<Widget> titleIcon = std::make_shared<ImageWidget>(genderOption.characterImage);
 
       // read the description out of the already loaded species database.
       String title = speciesDefinition->tooltip().title;

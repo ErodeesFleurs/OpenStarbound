@@ -19,11 +19,11 @@ bool g_steamIsFlatpak = false;
 
 void Application::startup(StringList const&) {}
 
-void Application::applicationInit(ApplicationControllerPtr appController) {
+void Application::applicationInit(std::shared_ptr<ApplicationController> appController) {
   m_appController = std::move(appController);
 }
 
-void Application::renderInit(RendererPtr renderer) {
+void Application::renderInit(std::shared_ptr<Renderer> renderer) {
   m_renderer = std::move(renderer);
 }
 

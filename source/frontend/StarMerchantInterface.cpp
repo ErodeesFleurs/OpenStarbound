@@ -198,7 +198,7 @@ import star.algorithm;
 namespace Star {
 
 MerchantPane::MerchantPane(
-    WorldClientPtr worldClient, PlayerPtr player, Json const& settings, EntityId sourceEntityId) {
+    std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, Json const& settings, EntityId sourceEntityId) {
   m_worldClient = std::move(worldClient);
   m_player = std::move(player);
   m_sourceEntityId = sourceEntityId;
@@ -300,13 +300,13 @@ void MerchantPane::dismissed() {
     m_worldClient->sendEntityMessage(m_sourceEntityId, "onMerchantClosed");
 }
 
-PanePtr MerchantPane::createTooltip(Vec2I const& screenPosition) {
+std::shared_ptr<Pane> MerchantPane::createTooltip(Vec2I const& screenPosition) {
   if (m_tabSet->selectedTab() == 0) {
     for (std::size_t i = 0; i < m_itemGuiList->numChildren(); ++i) {
       auto entry = m_itemGuiList->itemAt(i);
       if (entry->getChildAt(screenPosition)) {
         auto itemConfig = m_itemList.get(i);
-        ItemPtr item = Root::singleton().itemDatabase()->itemShared(ItemDescriptor(itemConfig.get("item")));
+        std::shared_ptr<Item> item = Root::singleton().itemDatabase()->itemShared(ItemDescriptor(itemConfig.get("item")));
         return ItemTooltipBuilder::buildItemTooltip(item, m_player);
       }
     }
@@ -341,7 +341,7 @@ EntityId MerchantPane::sourceEntityId() const {
   return m_sourceEntityId;
 }
 
-ItemPtr MerchantPane::addItems(ItemPtr const& items) {
+std::shared_ptr<Item> MerchantPane::addItems(std::shared_ptr<Item> const& items) {
   if (m_tabSet->selectedTab() == 1) {
     auto remainder = m_itemBag->addItems(items);
     updateSellTotal();
@@ -352,7 +352,7 @@ ItemPtr MerchantPane::addItems(ItemPtr const& items) {
 }
 
 void MerchantPane::swapSlot() {
-  ItemPtr source = m_player->inventory()->swapSlotItem();
+  std::shared_ptr<Item> source = m_player->inventory()->swapSlotItem();
   auto inv = m_player->inventory();
   if (context()->shiftHeld()) {
     if (m_itemGrid->selectedItem()) {
@@ -408,10 +408,10 @@ void MerchantPane::buildItemList() {
   }
 }
 
-void MerchantPane::setupWidget(WidgetPtr const& widget, Json const& itemConfig) {
+void MerchantPane::setupWidget(std::shared_ptr<Widget> const& widget, Json const& itemConfig) {
   auto& root = Root::singleton();
   auto assets = root.assets();
-  ItemPtr item = root.itemDatabase()->itemShared(ItemDescriptor(itemConfig.get("item")));
+  std::shared_ptr<Item> item = root.itemDatabase()->itemShared(ItemDescriptor(itemConfig.get("item")));
 
   String name = item->friendlyName();
   if (item->count() > 1)

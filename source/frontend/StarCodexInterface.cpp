@@ -133,7 +133,7 @@ import star.button_widget;
 import star.algorithm;
 namespace Star {
 
-CodexInterface::CodexInterface(PlayerPtr player) {
+CodexInterface::CodexInterface(std::shared_ptr<Player> player) {
   m_player = player;
 
   auto assets = Root::singleton().assets();
@@ -182,7 +182,7 @@ void CodexInterface::showSelectedContents() {
 }
 
 void CodexInterface::showContents(String const& codexId) {
-  CodexConstPtr result;
+  std::shared_ptr<Codex const> result;
   for (auto entry : m_codexList)
     if (entry.first->id() == codexId) {
       result = entry.first;
@@ -192,7 +192,7 @@ void CodexInterface::showContents(String const& codexId) {
     showContents(result);
 }
 
-void CodexInterface::showContents(CodexConstPtr codex) {
+void CodexInterface::showContents(std::shared_ptr<Codex const> codex) {
   if (m_player->codexes()->markCodexRead(codex->id()))
     updateCodexList();
   m_currentCodex = codex;

@@ -77,10 +77,10 @@ private:
   void leftCallback();
   void rightCallback();
 
-  ButtonWidgetPtr m_leftButton;
-  ButtonWidgetPtr m_rightButton;
-  ImageWidgetPtr m_grid;
-  ButtonWidgetPtr m_jog;
+  std::shared_ptr<ButtonWidget> m_leftButton;
+  std::shared_ptr<ButtonWidget> m_rightButton;
+  std::shared_ptr<ImageWidget> m_grid;
+  std::shared_ptr<ButtonWidget> m_jog;
   int m_low;
   int m_high;
   int m_delta;
@@ -96,12 +96,10 @@ private:
 
   WidgetCallbackFunc m_callback;
 };
-typedef std::shared_ptr<SliderBarWidget> SliderBarWidgetPtr;
 }
 
 export module star.slider_bar;
 
 export namespace Star {
   using ::Star::SliderBarWidget;
-  using ::Star::SliderBarWidgetPtr;
 }

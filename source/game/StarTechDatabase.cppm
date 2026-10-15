@@ -15,14 +15,6 @@ struct TechDatabaseExceptionTag {
 };
 using TechDatabaseException = StarError<TechDatabaseExceptionTag, StarException>;
 
-class TechDatabase;
-using TechDatabasePtr = std::shared_ptr<TechDatabase>;
-using TechDatabaseConstPtr = std::shared_ptr<const TechDatabase>;
-using TechDatabaseWeakPtr = std::weak_ptr<TechDatabase>;
-using TechDatabaseConstWeakPtr = std::weak_ptr<const TechDatabase>;
-using TechDatabaseUPtr = std::unique_ptr<TechDatabase>;
-using TechDatabaseConstUPtr = std::unique_ptr<const TechDatabase>;
-
 enum class TechType {
   Head,
   Body,
@@ -67,8 +59,6 @@ export namespace Star {
   using ::Star::TechDatabaseExceptionTag;
   using ::Star::TechDatabaseException;
   using ::Star::TechDatabase;
-  using ::Star::TechDatabasePtr;
-  using ::Star::TechDatabaseConstPtr;
   using ::Star::TechType;
   using ::Star::TechTypeNames;
   using ::Star::TechConfig;

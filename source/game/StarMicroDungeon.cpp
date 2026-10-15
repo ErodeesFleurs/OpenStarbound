@@ -60,7 +60,7 @@ Maybe<std::pair<List<RectI>, Set<Vec2I>>> MicroDungeonFactory::generate(RectI co
     Vec2I const& position,
     std::uint64_t seed,
     float threatLevel,
-    DungeonGeneratorWorldFacadePtr facade,
+    std::shared_ptr<DungeonGeneratorWorldFacade> facade,
     bool forcePlacement) {
   Dungeon::DungeonGeneratorWriter writer(facade, {}, {});
 

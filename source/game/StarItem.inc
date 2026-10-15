@@ -21,19 +21,7 @@ import star.game_types;
 
 namespace Star {
 class Item;
-using ItemPtr = std::shared_ptr<Item>;
-using ItemConstPtr = std::shared_ptr<const Item>;
-using ItemWeakPtr = std::weak_ptr<Item>;
-using ItemConstWeakPtr = std::weak_ptr<const Item>;
-using ItemUPtr = std::unique_ptr<Item>;
-using ItemConstUPtr = std::unique_ptr<const Item>;
 class GenericItem;
-using GenericItemPtr = std::shared_ptr<GenericItem>;
-using GenericItemConstPtr = std::shared_ptr<const GenericItem>;
-using GenericItemWeakPtr = std::weak_ptr<GenericItem>;
-using GenericItemConstWeakPtr = std::weak_ptr<const GenericItem>;
-using GenericItemUPtr = std::unique_ptr<GenericItem>;
-using GenericItemConstUPtr = std::unique_ptr<const GenericItem>;
 }
 
 import star.drawable;
@@ -61,7 +49,7 @@ public:
 
   virtual ~Item();
 
-  virtual ItemPtr clone() const = 0;
+  virtual std::shared_ptr<Item> clone() const = 0;
 
   // Unique identifying item name
   String name() const;
@@ -76,22 +64,22 @@ public:
   // Is this item type stackable with the given item type at all?  Base class
   // implementation compares name(), and m_parameters fields and returns true
   // if they are both the same, similarly to matches.
-  virtual bool stackableWith(ItemConstPtr const& item) const;
+  virtual bool stackableWith(std::shared_ptr<Item const> const& item) const;
   std::uint64_t maxStack() const;
 
   // Return how many of the given item could be shifted into this item, taking
   // into acount whether the item is stackable at all, as well as maxStack and
   // the count available.
-  std::uint64_t couldStack(ItemConstPtr const& item) const;
+  std::uint64_t couldStack(std::shared_ptr<Item const> const& item) const;
 
   // If the given item is stackable with this one, takes as many from the given
   // item as possible and shifts it into this item's count.  Returns true if
   // any items at all were shifted.
-  bool stackWith(ItemPtr const& item);
+  bool stackWith(std::shared_ptr<Item> const& item);
 
   // Does this item match the given item or itemDescriptor
   bool matches(ItemDescriptor const& descriptor, bool exactMatch = false) const;
-  bool matches(ItemConstPtr const& other, bool exactMatch = false) const;
+  bool matches(std::shared_ptr<Item const> const& other, bool exactMatch = false) const;
 
   // List of itemdescriptors for which the current item could be used in the
   // place of
@@ -104,7 +92,7 @@ public:
 
   // Take as many of this item as possible up to the given max (default is all)
   // and return the new set.  Implementation uses clone() method.
-  ItemPtr take(std::uint64_t max = NPos);
+  std::shared_ptr<Item> take(std::uint64_t max = NPos);
 
   // count() is 0
   bool empty() const;
@@ -154,7 +142,7 @@ public:
   // Returns just the dynamic parameters
   Json parameters() const;
 
-  static bool itemsEqual(ItemConstPtr const& a, ItemConstPtr const& b);
+  static bool itemsEqual(std::shared_ptr<Item const> const& a, std::shared_ptr<Item const> const& b);
 
 protected:
   void setMaxStack(std::uint64_t maxStack);
@@ -203,22 +191,22 @@ private:
 class GenericItem : public Item {
 public:
   GenericItem(Json const& config, String const& directory, Json const& parameters);
-  virtual ItemPtr clone() const;
+  virtual std::shared_ptr<Item> clone() const;
 };
 
-inline std::uint64_t itemSafeCount(ItemPtr const& item) {
+inline std::uint64_t itemSafeCount(std::shared_ptr<Item> const& item) {
   return item ? item->count() : 0;
 }
 
-inline bool itemSafeTwoHanded(ItemPtr const& item) {
+inline bool itemSafeTwoHanded(std::shared_ptr<Item> const& item) {
   return item && item->twoHanded();
 }
 
-inline bool itemSafeOneHanded(ItemPtr const& item) {
+inline bool itemSafeOneHanded(std::shared_ptr<Item> const& item) {
   return item && !item->twoHanded();
 }
 
-inline ItemDescriptor itemSafeDescriptor(ItemPtr const& item) {
+inline ItemDescriptor itemSafeDescriptor(std::shared_ptr<Item> const& item) {
   return item ? item->descriptor() : ItemDescriptor();
 }
 }

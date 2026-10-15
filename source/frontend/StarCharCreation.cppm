@@ -52,26 +52,18 @@ import star.pane;
 namespace Star {
 
 class Player;
-typedef std::shared_ptr<Player> PlayerPtr;
 
 struct CharCreationExceptionTag {
   static constexpr char const* name() { return "CharCreationException"; }
 };
 using CharCreationException = StarError<CharCreationExceptionTag, StarException>;
 
-class CharCreationPane;
-using CharCreationPanePtr = std::shared_ptr<CharCreationPane>;
-using CharCreationPaneConstPtr = std::shared_ptr<CharCreationPane const>;
-using CharCreationPaneWeakPtr = std::weak_ptr<CharCreationPane>;
-using CharCreationPaneConstWeakPtr = std::weak_ptr<CharCreationPane const>;
-using CharCreationPaneUPtr = std::unique_ptr<CharCreationPane>;
-using CharCreationPaneConstUPtr = std::unique_ptr<CharCreationPane const>;
 class CharCreationPane : public Pane {
 public:
   // The callback here is either called with null (when the user hits the
   // cancel button) or the newly created player (when the user hits the save
   // button).
-  CharCreationPane(std::function<void(PlayerPtr)> requestCloseFunc);
+  CharCreationPane(std::function<void(std::shared_ptr<Player>)> requestCloseFunc);
 
   void randomize();
   void randomizeName();
@@ -79,7 +71,7 @@ public:
   virtual void tick(float dt) override;
   virtual bool sendEvent(InputEvent const& event) override;
 
-  virtual PanePtr createTooltip(Vec2I const&) override;
+  virtual std::shared_ptr<Pane> createTooltip(Vec2I const&) override;
 
 private:
   void nameBoxCallback(Widget* object);
@@ -88,7 +80,7 @@ private:
 
   void createPlayer();
 
-  PlayerPtr m_previewPlayer;
+  std::shared_ptr<Player> m_previewPlayer;
 
   StringList m_speciesList;
 
@@ -112,14 +104,7 @@ export module star.char_creation;
 
 export namespace Star {
   using ::Star::Player;
-  using ::Star::PlayerPtr;
   using ::Star::CharCreationExceptionTag;
   using ::Star::CharCreationException;
   using ::Star::CharCreationPane;
-  using ::Star::CharCreationPanePtr;
-  using ::Star::CharCreationPaneConstPtr;
-  using ::Star::CharCreationPaneWeakPtr;
-  using ::Star::CharCreationPaneConstWeakPtr;
-  using ::Star::CharCreationPaneUPtr;
-  using ::Star::CharCreationPaneConstUPtr;
 }

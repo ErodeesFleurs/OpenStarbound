@@ -19,14 +19,6 @@ import star.entity;
 
 namespace Star {
 
-class AggressiveEntity;
-using AggressiveEntityPtr = std::shared_ptr<AggressiveEntity>;
-using AggressiveEntityConstPtr = std::shared_ptr<const AggressiveEntity>;
-using AggressiveEntityWeakPtr = std::weak_ptr<AggressiveEntity>;
-using AggressiveEntityConstWeakPtr = std::weak_ptr<const AggressiveEntity>;
-using AggressiveEntityUPtr = std::unique_ptr<AggressiveEntity>;
-using AggressiveEntityConstUPtr = std::unique_ptr<const AggressiveEntity>;
-
 class AggressiveEntity : public virtual Entity {
 public:
   virtual bool aggressive() const = 0;
@@ -38,10 +30,4 @@ export module star.aggressive_entity;
 
 export namespace Star {
   using ::Star::AggressiveEntity;
-  using ::Star::AggressiveEntityPtr;
-  using ::Star::AggressiveEntityConstPtr;
-  using ::Star::AggressiveEntityWeakPtr;
-  using ::Star::AggressiveEntityConstWeakPtr;
-  using ::Star::AggressiveEntityUPtr;
-  using ::Star::AggressiveEntityConstUPtr;
 }

@@ -107,7 +107,7 @@ void scanMaterials(TilesetUpdater& updater) {
 
     String tileset = materials->materialCategory(id);
     String imagePath = renderProfile->pieceImage(renderProfile->representativePiece, 0);
-    ImageConstPtr image = root.assets()->image(imagePath);
+    std::shared_ptr<::Star::Image const> image = root.assets()->image(imagePath);
 
     Tiled::Properties properties;
     properties.set("material", materialName);
@@ -165,8 +165,8 @@ StringSet categorizeObject(String const& objectName, Vec2U imageSize) {
   return transform<StringSet>(categories, [](String const& category) { return category.toLower(); });
 }
 
-void drawNodes(ImagePtr const& image, Vec2I imagePosition, JsonArray nodes, String nodeImagePath) {
-  ImageConstPtr nodeImage = Root::singleton().assets()->image(nodeImagePath);
+void drawNodes(std::shared_ptr<::Star::Image> const& image, Vec2I imagePosition, JsonArray nodes, String nodeImagePath) {
+  std::shared_ptr<::Star::Image const> nodeImage = Root::singleton().assets()->image(nodeImagePath);
   for (Json const& node : nodes) {
     Vec2I nodePos = jsonToVec2I(node) * TilePixels + Vec2I(0, TilePixels - nodeImage->height());
     Vec2U nodeImagePos = Vec2U(nodePos - imagePosition);
@@ -176,22 +176,22 @@ void drawNodes(ImagePtr const& image, Vec2I imagePosition, JsonArray nodes, Stri
 
 void defineObjectOrientation(TilesetUpdater& updater,
     String const& objectName,
-    List<ObjectOrientationPtr> const& orientations,
+    List<std::shared_ptr<::Star::ObjectOrientation>> const& orientations,
     int orientationIndex) {
   auto& root = Root::singleton();
   auto assets = root.assets();
   auto objects = root.objectDatabase();
 
-  ObjectOrientationPtr orientation = orientations[orientationIndex];
+  std::shared_ptr<::Star::ObjectOrientation> orientation = orientations[orientationIndex];
 
   Vec2I imagePosition = Vec2I(orientation->imagePosition * TilePixels);
 
-  List<ImageConstPtr> layers;
+  List<std::shared_ptr<::Star::Image const>> layers;
   unsigned width = 0, height = 0;
   for (auto const& imageLayer : orientation->imageLayers) {
     String imageName = AssetPath::join(imageLayer.imagePart().image).replaceTags(StringMap<String>{}, true, "default");
 
-    ImageConstPtr image = assets->image(imageName);
+    std::shared_ptr<::Star::Image const> image = assets->image(imageName);
     layers.append(image);
     width = std::max(width, image->width());
     height = std::max(height, image->height());
@@ -204,9 +204,9 @@ void defineObjectOrientation(TilesetUpdater& updater,
   // when objects are flipped in the editor, they're still aligned correctly.
   Vec2U imageSize(width + 2 * imagePadding.x(), height + imagePadding.y());
 
-  ImagePtr combinedImage = std::make_shared<Image>(imageSize, PixelFormat::RGBA32);
+  std::shared_ptr<::Star::Image> combinedImage = std::make_shared<Image>(imageSize, PixelFormat::RGBA32);
   combinedImage->fill(Vec4B(0, 0, 0, 0));
-  for (ImageConstPtr const& layer : layers) {
+  for (std::shared_ptr<::Star::Image const> const& layer : layers) {
     combinedImage->drawInto(imagePadding, *layer);
   }
 
@@ -216,7 +216,7 @@ void defineObjectOrientation(TilesetUpdater& updater,
   drawNodes(combinedImage, imagePosition, objectConfig->config.getArray("inputNodes", {}), InboundNode);
   drawNodes(combinedImage, imagePosition, objectConfig->config.getArray("outputNodes", {}), OutboundNode);
 
-  ObjectPtr example = objects->createObject(objectName);
+  std::shared_ptr<::Star::Object> example = objects->createObject(objectName);
 
   Tiled::Properties properties;
   properties.set("object", objectName);
@@ -245,7 +245,7 @@ void defineObjectOrientation(TilesetUpdater& updater,
   String source = assets->assetSource(objectConfig->path);
 
   for (String const& tileset : tilesets) {
-    TilePtr tile = std::make_shared<Tile>(Tile{source, "objects", tileset, tileName, combinedImage, properties});
+    std::shared_ptr<::Star::Tile> tile = std::make_shared<Tile>(Tile{source, "objects", tileset, tileName, combinedImage, properties});
     updater.defineTile(tile);
   }
 }
@@ -262,7 +262,7 @@ void scanObjects(TilesetUpdater& updater) {
     }
 
     // Always export the first orientation
-    ObjectOrientationPtr orientation = orientations[0];
+    std::shared_ptr<::Star::ObjectOrientation> orientation = orientations[0];
     defineObjectOrientation(updater, objectName, orientations, 0);
 
     // If there are more than 2 orientations or the imagePositions are different
@@ -284,7 +284,7 @@ void scanLiquids(TilesetUpdater& updater) {
   Vec2U imageSize(TilePixels, TilePixels);
 
   for (auto liquid : liquids->allLiquidSettings()) {
-    ImagePtr image = std::make_shared<Image>(imageSize, PixelFormat::RGBA32);
+    std::shared_ptr<::Star::Image> image = std::make_shared<Image>(imageSize, PixelFormat::RGBA32);
     image->fill(liquid->liquidColor);
 
     String assetSource = assets->assetSource(liquid->path);
@@ -295,7 +295,7 @@ void scanLiquids(TilesetUpdater& updater) {
     auto tile = std::make_shared<Tile>(Tile{assetSource, "liquids", "liquids", liquid->name, image, properties});
     updater.defineTile(tile);
 
-    ImagePtr sourceImage = std::make_shared<Image>(imageSize, PixelFormat::RGBA32);
+    std::shared_ptr<::Star::Image> sourceImage = std::make_shared<Image>(imageSize, PixelFormat::RGBA32);
     sourceImage->copyInto(Vec2U(), *image.get());
     sourceImage->fillRect(Vec2U(), Vec2U(image->width(), 1), SourceLiquidBorderColor);
     sourceImage->fillRect(Vec2U(), Vec2U(1, image->height()), SourceLiquidBorderColor);
@@ -315,7 +315,7 @@ int main(int argc, char** argv) {
 
     rootLoader.setSummary("Updates Tiled JSON tilesets in unpacked assets directories");
 
-    RootUPtr root;
+    std::unique_ptr<::Star::Root> root;
     OptionParser::Options options;
     std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 

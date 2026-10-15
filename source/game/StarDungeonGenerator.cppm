@@ -31,27 +31,7 @@ struct DungeonExceptionTag {
 };
 using DungeonException = StarError<DungeonExceptionTag, StarException>;
 
-class DungeonGeneratorWorldFacade;
-using DungeonGeneratorWorldFacadePtr = std::shared_ptr<DungeonGeneratorWorldFacade>;
-using DungeonGeneratorWorldFacadeConstPtr = std::shared_ptr<const DungeonGeneratorWorldFacade>;
-using DungeonGeneratorWorldFacadeWeakPtr = std::weak_ptr<DungeonGeneratorWorldFacade>;
-using DungeonGeneratorWorldFacadeConstWeakPtr = std::weak_ptr<const DungeonGeneratorWorldFacade>;
-using DungeonGeneratorWorldFacadeUPtr = std::unique_ptr<DungeonGeneratorWorldFacade>;
-using DungeonGeneratorWorldFacadeConstUPtr = std::unique_ptr<const DungeonGeneratorWorldFacade>;
 class DungeonDefinition;
-using DungeonDefinitionPtr = std::shared_ptr<DungeonDefinition>;
-using DungeonDefinitionConstPtr = std::shared_ptr<const DungeonDefinition>;
-using DungeonDefinitionWeakPtr = std::weak_ptr<DungeonDefinition>;
-using DungeonDefinitionConstWeakPtr = std::weak_ptr<const DungeonDefinition>;
-using DungeonDefinitionUPtr = std::unique_ptr<DungeonDefinition>;
-using DungeonDefinitionConstUPtr = std::unique_ptr<const DungeonDefinition>;
-class DungeonDefinitions;
-using DungeonDefinitionsPtr = std::shared_ptr<DungeonDefinitions>;
-using DungeonDefinitionsConstPtr = std::shared_ptr<const DungeonDefinitions>;
-using DungeonDefinitionsWeakPtr = std::weak_ptr<DungeonDefinitions>;
-using DungeonDefinitionsConstWeakPtr = std::weak_ptr<const DungeonDefinitions>;
-using DungeonDefinitionsUPtr = std::unique_ptr<DungeonDefinitions>;
-using DungeonDefinitionsConstUPtr = std::unique_ptr<const DungeonDefinitions>;
 
 class DungeonGeneratorWorldFacade {
 public:
@@ -92,59 +72,12 @@ public:
 };
 
 namespace Dungeon {
-  class DungeonGeneratorWriter;
-  using DungeonGeneratorWriterPtr = std::shared_ptr<DungeonGeneratorWriter>;
-  using DungeonGeneratorWriterConstPtr = std::shared_ptr<const DungeonGeneratorWriter>;
-  using DungeonGeneratorWriterWeakPtr = std::weak_ptr<DungeonGeneratorWriter>;
-  using DungeonGeneratorWriterConstWeakPtr = std::weak_ptr<const DungeonGeneratorWriter>;
-  using DungeonGeneratorWriterUPtr = std::unique_ptr<DungeonGeneratorWriter>;
-  using DungeonGeneratorWriterConstUPtr = std::unique_ptr<const DungeonGeneratorWriter>;
-  class PartReader;
-  using PartReaderPtr = std::shared_ptr<PartReader>;
-  using PartReaderConstPtr = std::shared_ptr<const PartReader>;
-  using PartReaderWeakPtr = std::weak_ptr<PartReader>;
-  using PartReaderConstWeakPtr = std::weak_ptr<const PartReader>;
-  using PartReaderUPtr = std::unique_ptr<PartReader>;
-  using PartReaderConstUPtr = std::unique_ptr<const PartReader>;
   class Part;
-  using PartPtr = std::shared_ptr<Part>;
-  using PartConstPtr = std::shared_ptr<const Part>;
-  using PartWeakPtr = std::weak_ptr<Part>;
-  using PartConstWeakPtr = std::weak_ptr<const Part>;
-  using PartUPtr = std::unique_ptr<Part>;
-  using PartConstUPtr = std::unique_ptr<const Part>;
-  class Rule;
-  using RulePtr = std::shared_ptr<Rule>;
-  using RuleConstPtr = std::shared_ptr<const Rule>;
-  using RuleWeakPtr = std::weak_ptr<Rule>;
-  using RuleConstWeakPtr = std::weak_ptr<const Rule>;
-  using RuleUPtr = std::unique_ptr<Rule>;
-  using RuleConstUPtr = std::unique_ptr<const Rule>;
-  class Brush;
-  using BrushPtr = std::shared_ptr<Brush>;
-  using BrushConstPtr = std::shared_ptr<const Brush>;
-  using BrushWeakPtr = std::weak_ptr<Brush>;
-  using BrushConstWeakPtr = std::weak_ptr<const Brush>;
-  using BrushUPtr = std::unique_ptr<Brush>;
-  using BrushConstUPtr = std::unique_ptr<const Brush>;
   struct Tile;
-  using TilePtr = std::shared_ptr<Tile>;
-  using TileConstPtr = std::shared_ptr<const Tile>;
-  using TileWeakPtr = std::weak_ptr<Tile>;
-  using TileConstWeakPtr = std::weak_ptr<const Tile>;
-  using TileUPtr = std::unique_ptr<Tile>;
-  using TileConstUPtr = std::unique_ptr<const Tile>;
-  class Connector;
-  using ConnectorPtr = std::shared_ptr<Connector>;
-  using ConnectorConstPtr = std::shared_ptr<const Connector>;
-  using ConnectorWeakPtr = std::weak_ptr<Connector>;
-  using ConnectorConstWeakPtr = std::weak_ptr<const Connector>;
-  using ConnectorUPtr = std::unique_ptr<Connector>;
-  using ConnectorConstUPtr = std::unique_ptr<const Connector>;
 
   class DungeonGeneratorWriter {
   public:
-    DungeonGeneratorWriter(DungeonGeneratorWorldFacadePtr facade, Maybe<int> terrainMarkingSurfaceLevel, Maybe<int> terrainSurfaceSpaceExtends);
+    DungeonGeneratorWriter(std::shared_ptr<DungeonGeneratorWorldFacade> facade, Maybe<int> terrainMarkingSurfaceLevel, Maybe<int> terrainSurfaceSpaceExtends);
 
     Vec2I wrapPosition(Vec2I const& pos) const;
 
@@ -207,7 +140,7 @@ namespace Dungeon {
       Json parameters;
     };
 
-    DungeonGeneratorWorldFacadePtr m_facade;
+    std::shared_ptr<DungeonGeneratorWorldFacade> m_facade;
     Maybe<int> m_terrainMarkingSurfaceLevel;
     Maybe<int> m_terrainSurfaceSpaceExtends;
 
@@ -240,8 +173,8 @@ namespace Dungeon {
 
   class Rule {
   public:
-    static Maybe<RuleConstPtr> parse(Json const& rule);
-    static List<RuleConstPtr> readRules(Json const& rules);
+    static Maybe<std::shared_ptr<Rule const>> parse(Json const& rule);
+    static List<std::shared_ptr<Rule const>> readRules(Json const& rules);
 
     virtual ~Rule() {}
 
@@ -381,8 +314,8 @@ namespace Dungeon {
 
   class Brush {
   public:
-    static BrushConstPtr parse(Json const& brush);
-    static List<BrushConstPtr> readBrushes(Json const& brushes);
+    static std::shared_ptr<Brush const> parse(Json const& brush);
+    static List<std::shared_ptr<Brush const>> readBrushes(Json const& brushes);
 
     virtual ~Brush() {}
 
@@ -399,7 +332,7 @@ namespace Dungeon {
     virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
-    List<BrushConstPtr> m_brushes;
+    List<std::shared_ptr<Brush const>> m_brushes;
     std::int64_t m_seed;
   };
 
@@ -592,7 +525,7 @@ namespace Dungeon {
   public:
     Connector(Part* part, String value, bool forwardOnly, Direction direction, Vec2I offset);
 
-    bool connectsTo(ConnectorConstPtr connector) const;
+    bool connectsTo(std::shared_ptr<Connector const> connector) const;
 
     String value() const;
     Vec2I positionAdjustment() const;
@@ -633,7 +566,7 @@ namespace Dungeon {
 
   class Part {
   public:
-    Part(DungeonDefinition* dungeon, Json const& part, PartReaderPtr reader);
+    Part(DungeonDefinition* dungeon, Json const& part, std::shared_ptr<PartReader> reader);
 
     String const& name() const;
     Vec2U size() const;
@@ -646,7 +579,7 @@ namespace Dungeon {
     int placementLevelConstraint() const;
     bool ignoresPartMaximum() const;
     bool allowsPlacement(int currentPlacementCount) const;
-    List<ConnectorConstPtr> const& connections() const;
+    List<std::shared_ptr<Connector const>> const& connections() const;
     bool doesNotConnectTo(Part* part) const;
     bool checkPartCombinationsAllowed(StringMap<int> const& placementCounts) const;
     bool collidesWithPlaces(Vec2I pos, Set<Vec2I>& places) const;
@@ -666,12 +599,12 @@ namespace Dungeon {
     void scanConnectors();
     void scanAnchor();
 
-    PartReaderConstPtr m_reader;
+    std::shared_ptr<PartReader const> m_reader;
 
     String m_name;
-    List<RuleConstPtr> m_rules;
+    List<std::shared_ptr<Rule const>> m_rules;
     DungeonDefinition* m_dungeon;
-    List<ConnectorConstPtr> m_connections;
+    List<std::shared_ptr<Connector const>> m_connections;
     Vec2I m_anchorPoint;
     bool m_overrideAllowAlways;
     Maybe<float> m_minimumThreatLevel;
@@ -698,8 +631,8 @@ namespace Dungeon {
     bool requiresSolid() const;
     bool requiresLiquid() const;
 
-    List<BrushConstPtr> brushes;
-    List<RuleConstPtr> rules;
+    List<std::shared_ptr<Brush const>> brushes;
+    List<std::shared_ptr<Rule const>> rules;
     Maybe<TileConnector> connector;
   };
 }
@@ -715,7 +648,7 @@ public:
   bool isProtected() const;
   Maybe<float> gravity() const;
   Maybe<bool> breathable() const;
-  StringMap<Dungeon::PartConstPtr> const& parts() const;
+  StringMap<std::shared_ptr<Dungeon::Part const>> const& parts() const;
 
   List<String> const& anchors() const;
   Maybe<Json> const& optTileset() const;
@@ -732,8 +665,8 @@ private:
   String m_displayName;
   String m_species;
   bool m_isProtected;
-  List<Dungeon::RuleConstPtr> m_rules;
-  StringMap<Dungeon::PartConstPtr> m_parts;
+  List<std::shared_ptr<Dungeon::Rule const>> m_rules;
+  StringMap<std::shared_ptr<Dungeon::Part const>> m_parts;
   List<String> m_anchors;
   Maybe<Json> m_tileset;
 
@@ -749,31 +682,31 @@ class DungeonDefinitions {
 public:
   DungeonDefinitions();
 
-  DungeonDefinitionConstPtr get(String const& name) const;
+  std::shared_ptr<DungeonDefinition const> get(String const& name) const;
   JsonObject getMetadata(String const& name) const;
 
 private:
-  static DungeonDefinitionPtr readDefinition(String const& path);
+  static std::shared_ptr<DungeonDefinition> readDefinition(String const& path);
 
   StringMap<String> m_paths;
   mutable Mutex m_cacheMutex;
-  mutable HashLruCache<String, DungeonDefinitionPtr> m_definitionCache;
+  mutable HashLruCache<String, std::shared_ptr<DungeonDefinition>> m_definitionCache;
 };
 
 class DungeonGenerator {
 public:
   DungeonGenerator(String const& dungeonName, std::uint64_t seed, float threatLevel, Maybe<DungeonId> dungeonId);
 
-  Maybe<std::pair<List<RectI>, Set<Vec2I>>> generate(DungeonGeneratorWorldFacadePtr facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement);
+  Maybe<std::pair<List<RectI>, Set<Vec2I>>> generate(std::shared_ptr<DungeonGeneratorWorldFacade> facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement);
 
-  std::pair<List<RectI>, Set<Vec2I>> buildDungeon(Dungeon::PartConstPtr anchor, Vec2I pos, Dungeon::DungeonGeneratorWriter* writer, bool forcePlacement);
-  Dungeon::PartConstPtr pickAnchor();
-  List<Dungeon::ConnectorConstPtr> findConnectablePart(Dungeon::ConnectorConstPtr connector) const;
+  std::pair<List<RectI>, Set<Vec2I>> buildDungeon(std::shared_ptr<Dungeon::Part const> anchor, Vec2I pos, Dungeon::DungeonGeneratorWriter* writer, bool forcePlacement);
+  std::shared_ptr<Dungeon::Part const> pickAnchor();
+  List<std::shared_ptr<Dungeon::Connector const>> findConnectablePart(std::shared_ptr<Dungeon::Connector const> connector) const;
 
-  DungeonDefinitionConstPtr definition() const;
+  std::shared_ptr<DungeonDefinition const> definition() const;
 
 private:
-  DungeonDefinitionConstPtr m_def;
+  std::shared_ptr<DungeonDefinition const> m_def;
 
   RandomSource m_rand;
   float m_threatLevel;
@@ -788,79 +721,19 @@ export namespace Star {
   using ::Star::DungeonExceptionTag;
   using ::Star::DungeonException;
   using ::Star::DungeonGeneratorWorldFacade;
-  using ::Star::DungeonGeneratorWorldFacadePtr;
-  using ::Star::DungeonGeneratorWorldFacadeConstPtr;
-  using ::Star::DungeonGeneratorWorldFacadeWeakPtr;
-  using ::Star::DungeonGeneratorWorldFacadeConstWeakPtr;
-  using ::Star::DungeonGeneratorWorldFacadeUPtr;
-  using ::Star::DungeonGeneratorWorldFacadeConstUPtr;
   using ::Star::DungeonDefinition;
-  using ::Star::DungeonDefinitionPtr;
-  using ::Star::DungeonDefinitionConstPtr;
-  using ::Star::DungeonDefinitionWeakPtr;
-  using ::Star::DungeonDefinitionConstWeakPtr;
-  using ::Star::DungeonDefinitionUPtr;
-  using ::Star::DungeonDefinitionConstUPtr;
   using ::Star::DungeonDefinitions;
-  using ::Star::DungeonDefinitionsPtr;
-  using ::Star::DungeonDefinitionsConstPtr;
-  using ::Star::DungeonDefinitionsWeakPtr;
-  using ::Star::DungeonDefinitionsConstWeakPtr;
-  using ::Star::DungeonDefinitionsUPtr;
-  using ::Star::DungeonDefinitionsConstUPtr;
   using ::Star::DungeonGenerator;
 }
 
 export namespace Star::Dungeon {
   using ::Star::Dungeon::DungeonGeneratorWriter;
-  using ::Star::Dungeon::DungeonGeneratorWriterPtr;
-  using ::Star::Dungeon::DungeonGeneratorWriterConstPtr;
-  using ::Star::Dungeon::DungeonGeneratorWriterWeakPtr;
-  using ::Star::Dungeon::DungeonGeneratorWriterConstWeakPtr;
-  using ::Star::Dungeon::DungeonGeneratorWriterUPtr;
-  using ::Star::Dungeon::DungeonGeneratorWriterConstUPtr;
   using ::Star::Dungeon::PartReader;
-  using ::Star::Dungeon::PartReaderPtr;
-  using ::Star::Dungeon::PartReaderConstPtr;
-  using ::Star::Dungeon::PartReaderWeakPtr;
-  using ::Star::Dungeon::PartReaderConstWeakPtr;
-  using ::Star::Dungeon::PartReaderUPtr;
-  using ::Star::Dungeon::PartReaderConstUPtr;
   using ::Star::Dungeon::Part;
-  using ::Star::Dungeon::PartPtr;
-  using ::Star::Dungeon::PartConstPtr;
-  using ::Star::Dungeon::PartWeakPtr;
-  using ::Star::Dungeon::PartConstWeakPtr;
-  using ::Star::Dungeon::PartUPtr;
-  using ::Star::Dungeon::PartConstUPtr;
   using ::Star::Dungeon::Rule;
-  using ::Star::Dungeon::RulePtr;
-  using ::Star::Dungeon::RuleConstPtr;
-  using ::Star::Dungeon::RuleWeakPtr;
-  using ::Star::Dungeon::RuleConstWeakPtr;
-  using ::Star::Dungeon::RuleUPtr;
-  using ::Star::Dungeon::RuleConstUPtr;
   using ::Star::Dungeon::Brush;
-  using ::Star::Dungeon::BrushPtr;
-  using ::Star::Dungeon::BrushConstPtr;
-  using ::Star::Dungeon::BrushWeakPtr;
-  using ::Star::Dungeon::BrushConstWeakPtr;
-  using ::Star::Dungeon::BrushUPtr;
-  using ::Star::Dungeon::BrushConstUPtr;
   using ::Star::Dungeon::Tile;
-  using ::Star::Dungeon::TilePtr;
-  using ::Star::Dungeon::TileConstPtr;
-  using ::Star::Dungeon::TileWeakPtr;
-  using ::Star::Dungeon::TileConstWeakPtr;
-  using ::Star::Dungeon::TileUPtr;
-  using ::Star::Dungeon::TileConstUPtr;
   using ::Star::Dungeon::Connector;
-  using ::Star::Dungeon::ConnectorPtr;
-  using ::Star::Dungeon::ConnectorConstPtr;
-  using ::Star::Dungeon::ConnectorWeakPtr;
-  using ::Star::Dungeon::ConnectorConstWeakPtr;
-  using ::Star::Dungeon::ConnectorUPtr;
-  using ::Star::Dungeon::ConnectorConstUPtr;
   using ::Star::Dungeon::WorldGenMustContainAirRule;
   using ::Star::Dungeon::WorldGenMustContainSolidRule;
   using ::Star::Dungeon::WorldGenMustContainLiquidRule;

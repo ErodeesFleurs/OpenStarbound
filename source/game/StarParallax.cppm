@@ -20,21 +20,6 @@ import star.plant_database;
 
 namespace Star {
 
-class Parallax;
-using ParallaxPtr = std::shared_ptr<Parallax>;
-using ParallaxConstPtr = std::shared_ptr<const Parallax>;
-using ParallaxWeakPtr = std::weak_ptr<Parallax>;
-using ParallaxConstWeakPtr = std::weak_ptr<const Parallax>;
-using ParallaxUPtr = std::unique_ptr<Parallax>;
-using ParallaxConstUPtr = std::unique_ptr<const Parallax>;
-struct ParallaxLayer;
-using ParallaxLayerPtr = std::shared_ptr<ParallaxLayer>;
-using ParallaxLayerConstPtr = std::shared_ptr<const ParallaxLayer>;
-using ParallaxLayerWeakPtr = std::weak_ptr<ParallaxLayer>;
-using ParallaxLayerConstWeakPtr = std::weak_ptr<const ParallaxLayer>;
-using ParallaxLayerUPtr = std::unique_ptr<ParallaxLayer>;
-using ParallaxLayerConstUPtr = std::unique_ptr<const ParallaxLayer>;
-
 struct ParallaxLayer {
   friend DataStream& operator>>(DataStream& ds, ParallaxLayer& parallaxLayer);
   friend DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer);
@@ -86,7 +71,7 @@ public:
   Json store() const;
 
   void fadeToSkyColor(Color const& skyColor);
-  ParallaxPtr createOverlay(String const& assetFile) const;
+  std::shared_ptr<Parallax> createOverlay(String const& assetFile) const;
 
   ParallaxLayers const& layers() const;
 
@@ -109,18 +94,6 @@ export module star.parallax;
 
 export namespace Star {
   using ::Star::Parallax;
-  using ::Star::ParallaxPtr;
-  using ::Star::ParallaxConstPtr;
-  using ::Star::ParallaxWeakPtr;
-  using ::Star::ParallaxConstWeakPtr;
-  using ::Star::ParallaxUPtr;
-  using ::Star::ParallaxConstUPtr;
   using ::Star::ParallaxLayer;
-  using ::Star::ParallaxLayerPtr;
-  using ::Star::ParallaxLayerConstPtr;
-  using ::Star::ParallaxLayerWeakPtr;
-  using ::Star::ParallaxLayerConstWeakPtr;
-  using ::Star::ParallaxLayerUPtr;
-  using ::Star::ParallaxLayerConstUPtr;
   using ::Star::ParallaxLayers;
 }

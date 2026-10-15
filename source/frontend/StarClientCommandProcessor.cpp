@@ -218,7 +218,7 @@ import star.statistics;
 
 namespace Star {
 
-ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient, CinematicPtr cinematicOverlay,
+ClientCommandProcessor::ClientCommandProcessor(std::shared_ptr<UniverseClient> universeClient, std::shared_ptr<Cinematic> cinematicOverlay,
   MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands)
   : m_universeClient(std::move(universeClient)), m_cinematicOverlay(std::move(cinematicOverlay)),
   m_paneManager(paneManager), m_macroCommands(std::move(macroCommands)) {
@@ -267,7 +267,7 @@ bool ClientCommandProcessor::adminCommandAllowed() const {
     m_universeClient->mainPlayer()->isAdmin();
 }
 
-String ClientCommandProcessor::previewQuestPane(StringList const& arguments, std::function<PanePtr(QuestPtr)> createPane) {
+String ClientCommandProcessor::previewQuestPane(StringList const& arguments, std::function<std::shared_ptr<Pane>(std::shared_ptr<Quest>)> createPane) {
   Maybe<String> templateId = {};
   templateId = arguments[0];
   if (auto quest = createPreviewQuest(*templateId, arguments.at(1), arguments.at(2), m_universeClient->mainPlayer().get())) {
@@ -501,7 +501,7 @@ String ClientCommandProcessor::previewNewQuest(String const& argumentsString) {
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
-  return previewQuestPane(arguments, [this](QuestPtr const& quest) {
+  return previewQuestPane(arguments, [this](std::shared_ptr<Quest> const& quest) {
     return std::make_shared<NewQuestInterface>(m_universeClient->questManager(), quest, m_universeClient->mainPlayer());
   });
 }
@@ -511,8 +511,8 @@ String ClientCommandProcessor::previewQuestComplete(String const& argumentsStrin
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
-  return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-    return std::make_shared<QuestCompleteInterface>(quest, m_universeClient->mainPlayer(), CinematicPtr{});
+  return previewQuestPane(arguments, [this](std::shared_ptr<Quest> const& quest) {
+    return std::make_shared<QuestCompleteInterface>(quest, m_universeClient->mainPlayer(), std::shared_ptr<Cinematic>{});
   });
 }
 
@@ -521,7 +521,7 @@ String ClientCommandProcessor::previewQuestFailed(String const& argumentsString)
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
-  return previewQuestPane(arguments, [this](QuestPtr const& quest) {
+  return previewQuestPane(arguments, [this](std::shared_ptr<Quest> const& quest) {
     return std::make_shared<QuestFailedInterface>(quest, m_universeClient->mainPlayer());
   });
 }
@@ -766,16 +766,16 @@ String ClientCommandProcessor::render(String const& path) {
       assetPath.basePath = "/assetmissing.png" + assetPath.basePath;
   }
   auto assets = Root::singleton().assets();
-  ImageConstPtr image;
+  std::shared_ptr<Image const> image;
   if (outputSheet) {
     auto sheet = std::make_shared<Image>(*assets->image(assetPath.basePath));
     sheet->convert(PixelFormat::RGBA32);
     AssetPath framePath = assetPath;
 
-    StringMap<std::pair<RectU, ImageConstPtr>> frames;
+    StringMap<std::pair<RectU, std::shared_ptr<Image const>>> frames;
     if (auto imageFrames = assets->imageFrames(assetPath.basePath))
       for (auto& pair : imageFrames->frames)
-        frames[pair.first] = std::make_pair(pair.second, ImageConstPtr());
+        frames[pair.first] = std::make_pair(pair.second, std::shared_ptr<Image const>());
 
     if (frames.empty())
       return "^red;Failed to save image^reset;";

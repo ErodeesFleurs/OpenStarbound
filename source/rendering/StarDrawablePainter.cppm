@@ -24,25 +24,17 @@ import star.asset_texture_group;
 
 namespace Star {
 
-class DrawablePainter;
-using DrawablePainterPtr = std::shared_ptr<DrawablePainter>;
-using DrawablePainterConstPtr = std::shared_ptr<DrawablePainter const>;
-using DrawablePainterWeakPtr = std::weak_ptr<DrawablePainter>;
-using DrawablePainterConstWeakPtr = std::weak_ptr<DrawablePainter const>;
-using DrawablePainterUPtr = std::unique_ptr<DrawablePainter>;
-using DrawablePainterConstUPtr = std::unique_ptr<DrawablePainter const>;
-
 class DrawablePainter {
 public:
-  DrawablePainter(RendererPtr renderer, AssetTextureGroupPtr textureGroup);
+  DrawablePainter(std::shared_ptr<Renderer> renderer, std::shared_ptr<AssetTextureGroup> textureGroup);
 
   void drawDrawable(Drawable const& drawable);
 
   void cleanup(std::int64_t textureTimeout);
 
 private:
-  RendererPtr m_renderer;
-  AssetTextureGroupPtr m_textureGroup;
+  std::shared_ptr<Renderer> m_renderer;
+  std::shared_ptr<AssetTextureGroup> m_textureGroup;
 };
 
 }
@@ -51,10 +43,4 @@ export module star.drawable_painter;
 
 export namespace Star {
   using ::Star::DrawablePainter;
-  using ::Star::DrawablePainterPtr;
-  using ::Star::DrawablePainterConstPtr;
-  using ::Star::DrawablePainterWeakPtr;
-  using ::Star::DrawablePainterConstWeakPtr;
-  using ::Star::DrawablePainterUPtr;
-  using ::Star::DrawablePainterConstUPtr;
 }

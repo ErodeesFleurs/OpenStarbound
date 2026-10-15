@@ -96,7 +96,7 @@ List<String> QuestTemplateDatabase::allQuestTemplateIds() const {
   return m_templates.keys();
 }
 
-QuestTemplatePtr QuestTemplateDatabase::questTemplate(String const& templateId) const {
+std::shared_ptr<QuestTemplate> QuestTemplateDatabase::questTemplate(String const& templateId) const {
   if (!m_templates.contains(templateId)) {
     Logger::error("No quest template found for id '{}'", templateId);
     return {};

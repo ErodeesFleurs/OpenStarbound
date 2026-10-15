@@ -98,7 +98,7 @@ float const EnvironmentPainter::RayUnscaledAlphaVariance = 2.0943f;
 float const EnvironmentPainter::RayMinUnscaledAlpha = 1;
 Vec3B const EnvironmentPainter::RayColor = Vec3B(255, 255, 200);
 
-EnvironmentPainter::EnvironmentPainter(RendererPtr renderer) {
+EnvironmentPainter::EnvironmentPainter(std::shared_ptr<Renderer> renderer) {
   m_renderer = std::move(renderer);
   m_textureGroup = std::make_shared<AssetTextureGroup>(m_renderer->createTextureGroup(TextureGroupSize::Large));
   m_timer = 0;

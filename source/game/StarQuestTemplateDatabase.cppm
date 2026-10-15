@@ -13,33 +13,7 @@ import star.vector;
 namespace Star {
 
 class SpeciesTextVariants;
-using SpeciesTextVariantsPtr = std::shared_ptr<SpeciesTextVariants>;
-using SpeciesTextVariantsConstPtr = std::shared_ptr<const SpeciesTextVariants>;
-using SpeciesTextVariantsWeakPtr = std::weak_ptr<SpeciesTextVariants>;
-using SpeciesTextVariantsConstWeakPtr = std::weak_ptr<const SpeciesTextVariants>;
-using SpeciesTextVariantsUPtr = std::unique_ptr<SpeciesTextVariants>;
-using SpeciesTextVariantsConstUPtr = std::unique_ptr<const SpeciesTextVariants>;
 class PositionalTextVariants;
-using PositionalTextVariantsPtr = std::shared_ptr<PositionalTextVariants>;
-using PositionalTextVariantsConstPtr = std::shared_ptr<const PositionalTextVariants>;
-using PositionalTextVariantsWeakPtr = std::weak_ptr<PositionalTextVariants>;
-using PositionalTextVariantsConstWeakPtr = std::weak_ptr<const PositionalTextVariants>;
-using PositionalTextVariantsUPtr = std::unique_ptr<PositionalTextVariants>;
-using PositionalTextVariantsConstUPtr = std::unique_ptr<const PositionalTextVariants>;
-class QuestTemplate;
-using QuestTemplatePtr = std::shared_ptr<QuestTemplate>;
-using QuestTemplateConstPtr = std::shared_ptr<const QuestTemplate>;
-using QuestTemplateWeakPtr = std::weak_ptr<QuestTemplate>;
-using QuestTemplateConstWeakPtr = std::weak_ptr<const QuestTemplate>;
-using QuestTemplateUPtr = std::unique_ptr<QuestTemplate>;
-using QuestTemplateConstUPtr = std::unique_ptr<const QuestTemplate>;
-class QuestTemplateDatabase;
-using QuestTemplateDatabasePtr = std::shared_ptr<QuestTemplateDatabase>;
-using QuestTemplateDatabaseConstPtr = std::shared_ptr<const QuestTemplateDatabase>;
-using QuestTemplateDatabaseWeakPtr = std::weak_ptr<QuestTemplateDatabase>;
-using QuestTemplateDatabaseConstWeakPtr = std::weak_ptr<const QuestTemplateDatabase>;
-using QuestTemplateDatabaseUPtr = std::unique_ptr<QuestTemplateDatabase>;
-using QuestTemplateDatabaseConstUPtr = std::unique_ptr<const QuestTemplateDatabase>;
 
 // A Quest Template
 // Used to check prerequisites for quest availability and by the QuestManager to
@@ -100,10 +74,10 @@ public:
   List<String> allQuestTemplateIds() const;
 
   // Return the template for the given template id
-  QuestTemplatePtr questTemplate(String const& templateId) const;
+  std::shared_ptr<QuestTemplate> questTemplate(String const& templateId) const;
 
 private:
-  StringMap<QuestTemplatePtr> m_templates;
+  StringMap<std::shared_ptr<QuestTemplate>> m_templates;
 };
 
 }
@@ -112,15 +86,7 @@ export module star.quest_template_database;
 
 export namespace Star {
   using ::Star::SpeciesTextVariants;
-  using ::Star::SpeciesTextVariantsPtr;
-  using ::Star::SpeciesTextVariantsConstPtr;
   using ::Star::PositionalTextVariants;
-  using ::Star::PositionalTextVariantsPtr;
-  using ::Star::PositionalTextVariantsConstPtr;
   using ::Star::QuestTemplate;
-  using ::Star::QuestTemplatePtr;
-  using ::Star::QuestTemplateConstPtr;
   using ::Star::QuestTemplateDatabase;
-  using ::Star::QuestTemplateDatabasePtr;
-  using ::Star::QuestTemplateDatabaseConstPtr;
 }

@@ -49,26 +49,8 @@ import star.rect;
 namespace Star {
 
 class World;
-using WorldPtr = std::shared_ptr<World>;
-using WorldConstPtr = std::shared_ptr<const World>;
-using WorldWeakPtr = std::weak_ptr<World>;
-using WorldConstWeakPtr = std::weak_ptr<const World>;
-using WorldUPtr = std::unique_ptr<World>;
-using WorldConstUPtr = std::unique_ptr<const World>;
 class TileEntity;
-using TileEntityPtr = std::shared_ptr<TileEntity>;
-using TileEntityConstPtr = std::shared_ptr<const TileEntity>;
-using TileEntityWeakPtr = std::weak_ptr<TileEntity>;
-using TileEntityConstWeakPtr = std::weak_ptr<const TileEntity>;
-using TileEntityUPtr = std::unique_ptr<TileEntity>;
-using TileEntityConstUPtr = std::unique_ptr<const TileEntity>;
 class ScriptedEntity;
-using ScriptedEntityPtr = std::shared_ptr<ScriptedEntity>;
-using ScriptedEntityConstPtr = std::shared_ptr<const ScriptedEntity>;
-using ScriptedEntityWeakPtr = std::weak_ptr<ScriptedEntity>;
-using ScriptedEntityConstWeakPtr = std::weak_ptr<const ScriptedEntity>;
-using ScriptedEntityUPtr = std::unique_ptr<ScriptedEntity>;
-using ScriptedEntityConstUPtr = std::unique_ptr<const ScriptedEntity>;
 
 typedef std::function<void(World*)> WorldAction;
 
@@ -109,14 +91,14 @@ public:
 
   virtual bool isTileProtected(Vec2I const& pos) const = 0;
 
-  virtual EntityPtr entity(EntityId entityId) const = 0;
+  virtual std::shared_ptr<Entity> entity(EntityId entityId) const = 0;
   // *If* the entity is initialized immediately and locally, then will use the
   // passed in pointer directly and initialize it, and entity will have a valid
   // id in this world and be ready for use.  This is always the case on the
   // server, but not *always* the case on the client.
-  virtual void addEntity(EntityPtr const& entity, EntityId entityId = NullEntityId) = 0;
+  virtual void addEntity(std::shared_ptr<Entity> const& entity, EntityId entityId = NullEntityId) = 0;
 
-  virtual EntityPtr closestEntity(Vec2F const& center, float radius, EntityFilter selector = {}) const = 0;
+  virtual std::shared_ptr<Entity> closestEntity(Vec2F const& center, float radius, EntityFilter selector = {}) const = 0;
 
   virtual void forAllEntities(EntityCallback entityCallback) const = 0;
 
@@ -129,10 +111,10 @@ public:
   virtual void forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEntity> entityCallback) const = 0;
 
   // Like forEachEntity, but stops scanning when entityFilter returns true, and
-  // returns the EntityPtr found, otherwise returns a null pointer.
-  virtual EntityPtr findEntity(RectF const& boundBox, EntityFilter entityFilter) const = 0;
-  virtual EntityPtr findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter entityFilter) const = 0;
-  virtual EntityPtr findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const = 0;
+  // returns the shared entity pointer found, otherwise returns a null pointer.
+  virtual std::shared_ptr<Entity> findEntity(RectF const& boundBox, EntityFilter entityFilter) const = 0;
+  virtual std::shared_ptr<Entity> findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter entityFilter) const = 0;
+  virtual std::shared_ptr<Entity> findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const = 0;
 
   // Is the given tile layer and position occupied by an entity or block?
   virtual bool tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral = false, bool checkCollision = false) const = 0;
@@ -169,7 +151,7 @@ public:
   // position are only damaged once)
   virtual TileDamageResult damageTiles(List<Vec2I> const& tilePositions, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, Maybe<EntityId> sourceEntity = {}) = 0;
 
-  virtual InteractiveEntityPtr getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const = 0;
+  virtual std::shared_ptr<InteractiveEntity> getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const = 0;
   // Can the target entity be reached from the given position within the given radius?
   virtual bool canReachEntity(Vec2F const& position, float radius, EntityId targetEntity, bool preferInteractive = true) const = 0;
   virtual RpcPromise<InteractAction> interact(InteractRequest const& request) = 0;
@@ -197,7 +179,7 @@ public:
   virtual float dayLength() const = 0;
   virtual float timeOfDay() const = 0;
 
-  virtual LuaRootPtr luaRoot() = 0;
+  virtual std::shared_ptr<LuaRoot> luaRoot() = 0;
   virtual StringMap<LuaCallbacks> luaThreadCallbacks() const = 0;
 
   // Locate a unique entity, if the target is local, the promise will be
@@ -215,10 +197,10 @@ public:
   bool isServer() const;
   bool isClient() const;
 
-  List<EntityPtr> entityQuery(RectF const& boundBox, EntityFilter selector = {}) const;
-  List<EntityPtr> entityLineQuery(Vec2F const& begin, Vec2F const& end, EntityFilter selector = {}) const;
+  List<std::shared_ptr<Entity>> entityQuery(RectF const& boundBox, EntityFilter selector = {}) const;
+  List<std::shared_ptr<Entity>> entityLineQuery(Vec2F const& begin, Vec2F const& end, EntityFilter selector = {}) const;
 
-  List<TileEntityPtr> entitiesAtTile(Vec2I const& pos, EntityFilter filter = EntityFilter()) const;
+  List<std::shared_ptr<TileEntity>> entitiesAtTile(Vec2I const& pos, EntityFilter filter = EntityFilter()) const;
 
   // Find tiles near the given point that are not occupied (according to
   // tileIsOccupied)
@@ -232,7 +214,7 @@ public:
 
   // Returns closest entity for which lineCollision between the given center
   // position and the entity position returns false.
-  EntityPtr closestEntityInSight(Vec2F const& center, float radius, CollisionSet const& collisionSet = DefaultCollisionSet, EntityFilter selector = {}) const;
+  std::shared_ptr<Entity> closestEntityInSight(Vec2F const& center, float radius, CollisionSet const& collisionSet = DefaultCollisionSet, EntityFilter selector = {}) const;
 
   // Returns whether point collides with any collision geometry.
   bool pointCollision(Vec2F const& point, CollisionSet const& collisionSet = DefaultCollisionSet) const;
@@ -274,7 +256,7 @@ std::shared_ptr<EntityT> World::get(EntityId entityId) const {
 template <typename EntityT>
 List<std::shared_ptr<EntityT>> World::query(RectF const& boundBox, EntityFilterOf<EntityT> selector) const {
   List<std::shared_ptr<EntityT>> list;
-  forEachEntity(boundBox, [&](EntityPtr const& entity) {
+  forEachEntity(boundBox, [&](std::shared_ptr<Entity> const& entity) {
       if (auto e = as<EntityT>(entity)) {
         if (!selector || selector(e))
           list.append(std::move(e));
@@ -299,7 +281,7 @@ template <typename EntityT>
 List<std::shared_ptr<EntityT>> World::lineQuery(
     Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> selector) const {
   List<std::shared_ptr<EntityT>> list;
-  forEachEntityLine(begin, end, [&](EntityPtr entity) {
+  forEachEntityLine(begin, end, [&](std::shared_ptr<Entity> entity) {
       if (auto e = as<EntityT>(std::move(entity))) {
         if (!selector || selector(e))
           list.append(std::move(e));
@@ -312,7 +294,7 @@ List<std::shared_ptr<EntityT>> World::lineQuery(
 template <typename EntityT>
 List<std::shared_ptr<EntityT>> World::atTile(Vec2I const& pos) const {
   List<std::shared_ptr<EntityT>> list;
-  forEachEntityAtTile(pos, [&](TileEntityPtr const& entity) {
+  forEachEntityAtTile(pos, [&](std::shared_ptr<TileEntity> const& entity) {
       if (auto e = as<EntityT>(entity))
         list.append(std::move(e));
     });
@@ -324,25 +306,7 @@ export module star.world;
 
 export namespace Star {
   using ::Star::World;
-  using ::Star::WorldPtr;
-  using ::Star::WorldConstPtr;
-  using ::Star::WorldWeakPtr;
-  using ::Star::WorldConstWeakPtr;
-  using ::Star::WorldUPtr;
-  using ::Star::WorldConstUPtr;
   using ::Star::TileEntity;
-  using ::Star::TileEntityPtr;
-  using ::Star::TileEntityConstPtr;
-  using ::Star::TileEntityWeakPtr;
-  using ::Star::TileEntityConstWeakPtr;
-  using ::Star::TileEntityUPtr;
-  using ::Star::TileEntityConstUPtr;
   using ::Star::ScriptedEntity;
-  using ::Star::ScriptedEntityPtr;
-  using ::Star::ScriptedEntityConstPtr;
-  using ::Star::ScriptedEntityWeakPtr;
-  using ::Star::ScriptedEntityConstWeakPtr;
-  using ::Star::ScriptedEntityUPtr;
-  using ::Star::ScriptedEntityConstUPtr;
   using ::Star::WorldAction;
 }

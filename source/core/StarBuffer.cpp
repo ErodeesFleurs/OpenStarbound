@@ -278,14 +278,14 @@ void ExternalBuffer::reset(char const* externalData, std::size_t len) {
   m_size = len;
 }
 
-IODevicePtr Buffer::clone() {
+std::shared_ptr<IODevice> Buffer::clone() {
   auto cloned = std::make_shared<Buffer>(*this);
   // Reset position to 0 while preserving mode and data
   cloned->seek(0, IOSeek::Absolute);
   return cloned;
 }
 
-IODevicePtr ExternalBuffer::clone() {
+std::shared_ptr<IODevice> ExternalBuffer::clone() {
   Logger::info("Cloning ExternalBuffer");
   return std::make_shared<ExternalBuffer>(*this);
 }

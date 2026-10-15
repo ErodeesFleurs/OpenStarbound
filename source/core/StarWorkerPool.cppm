@@ -14,12 +14,6 @@ struct WorkerPoolExceptionTag {
 using WorkerPoolException = StarError<WorkerPoolExceptionTag, StarException>;
 
 class WorkerPool;
-using WorkerPoolPtr = std::shared_ptr<WorkerPool>;
-using WorkerPoolConstPtr = std::shared_ptr<const WorkerPool>;
-using WorkerPoolWeakPtr = std::weak_ptr<WorkerPool>;
-using WorkerPoolConstWeakPtr = std::weak_ptr<const WorkerPool>;
-using WorkerPoolUPtr = std::unique_ptr<WorkerPool>;
-using WorkerPoolConstUPtr = std::unique_ptr<const WorkerPool>;
 
 // Shareable handle for a WorkerPool computation that does not produce any
 // value.
@@ -242,10 +236,4 @@ export namespace Star {
   using ::Star::WorkerPoolHandle;
   using ::Star::WorkerPoolPromise;
   using ::Star::WorkerPool;
-  using ::Star::WorkerPoolPtr;
-  using ::Star::WorkerPoolConstPtr;
-  using ::Star::WorkerPoolWeakPtr;
-  using ::Star::WorkerPoolConstWeakPtr;
-  using ::Star::WorkerPoolUPtr;
-  using ::Star::WorkerPoolConstUPtr;
 }

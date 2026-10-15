@@ -16,7 +16,7 @@ using namespace Star;
 int const ImagePreviewWidth = 300;
 int const ImagePreviewHeight = 600;
 
-JsonEditor::JsonEditor(JsonPath::PathPtr const& path, Options const& options, List<String> const& files)
+JsonEditor::JsonEditor(std::shared_ptr<::Star::JsonPath::Path> const& path, Options const& options, List<String> const& files)
   : QMainWindow(), m_path(path), m_editFormat(options.editFormat), m_options(options), m_files(files), m_fileIndex(0) {
   auto* w = new QWidget(this);
   w->setObjectName("background");
@@ -182,7 +182,7 @@ void JsonEditor::updateValueEditor() {
 
 void JsonEditor::updateImagePreview() {
   String file = m_files.get(m_fileIndex);
-  for (JsonPath::PathPtr const& imagePath : m_options.editorImages) {
+  for (std::shared_ptr<::Star::JsonPath::Path> const& imagePath : m_options.editorImages) {
     try {
       String image = imagePath->get(m_currentJson).toJson().toString();
       image = File::relativeTo(File::dirName(file), image.extract(":"));
@@ -197,7 +197,7 @@ void JsonEditor::updateImagePreview() {
   }
 }
 
-int Star::edit(int argc, char* argv[], JsonPath::PathPtr const& path, Options const& options, List<Input> const& inputs) {
+int Star::edit(int argc, char* argv[], std::shared_ptr<::Star::JsonPath::Path> const& path, Options const& options, List<Input> const& inputs) {
   QApplication app(argc, argv);
   StringList files;
   for (Input const& input : inputs) {

@@ -13,14 +13,6 @@ import star.status_types;
 
 namespace Star {
 
-class StatSet;
-using StatSetPtr = std::shared_ptr<StatSet>;
-using StatSetConstPtr = std::shared_ptr<const StatSet>;
-using StatSetWeakPtr = std::weak_ptr<StatSet>;
-using StatSetConstWeakPtr = std::weak_ptr<const StatSet>;
-using StatSetUPtr = std::unique_ptr<StatSet>;
-using StatSetConstUPtr = std::unique_ptr<const StatSet>;
-
 // Manages a collection of Stats and Resources.
 //
 // Stats are named floating point values of any base value, with an arbitrary
@@ -168,10 +160,4 @@ export module star.stat_set;
 
 export namespace Star {
   using ::Star::StatSet;
-  using ::Star::StatSetPtr;
-  using ::Star::StatSetConstPtr;
-  using ::Star::StatSetWeakPtr;
-  using ::Star::StatSetConstWeakPtr;
-  using ::Star::StatSetUPtr;
-  using ::Star::StatSetConstUPtr;
 }

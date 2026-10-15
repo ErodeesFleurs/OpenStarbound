@@ -23,14 +23,6 @@ import star.chat_action;
 
 namespace Star {
 
-class ChattyEntity;
-using ChattyEntityPtr = std::shared_ptr<ChattyEntity>;
-using ChattyEntityConstPtr = std::shared_ptr<const ChattyEntity>;
-using ChattyEntityWeakPtr = std::weak_ptr<ChattyEntity>;
-using ChattyEntityConstWeakPtr = std::weak_ptr<const ChattyEntity>;
-using ChattyEntityUPtr = std::unique_ptr<ChattyEntity>;
-using ChattyEntityConstUPtr = std::unique_ptr<const ChattyEntity>;
-
 class ChattyEntity : public virtual Entity {
 public:
   virtual Vec2F mouthPosition() const = 0;
@@ -44,10 +36,4 @@ export module star.chatty_entity;
 
 export namespace Star {
   using ::Star::ChattyEntity;
-  using ::Star::ChattyEntityPtr;
-  using ::Star::ChattyEntityConstPtr;
-  using ::Star::ChattyEntityWeakPtr;
-  using ::Star::ChattyEntityConstWeakPtr;
-  using ::Star::ChattyEntityUPtr;
-  using ::Star::ChattyEntityConstUPtr;
 }

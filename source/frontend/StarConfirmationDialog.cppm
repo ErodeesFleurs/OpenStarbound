@@ -40,14 +40,6 @@ import star.pane;
 
 namespace Star {
 
-class ConfirmationDialog;
-using ConfirmationDialogPtr = std::shared_ptr<ConfirmationDialog>;
-using ConfirmationDialogConstPtr = std::shared_ptr<ConfirmationDialog const>;
-using ConfirmationDialogWeakPtr = std::weak_ptr<ConfirmationDialog>;
-using ConfirmationDialogConstWeakPtr = std::weak_ptr<ConfirmationDialog const>;
-using ConfirmationDialogUPtr = std::unique_ptr<ConfirmationDialog>;
-using ConfirmationDialogConstUPtr = std::unique_ptr<ConfirmationDialog const>;
-
 class ConfirmationDialog : public Pane {
 public:
   ConfirmationDialog();
@@ -79,10 +71,4 @@ export module star.confirmation_dialog;
 
 export namespace Star {
   using ::Star::ConfirmationDialog;
-  using ::Star::ConfirmationDialogPtr;
-  using ::Star::ConfirmationDialogConstPtr;
-  using ::Star::ConfirmationDialogWeakPtr;
-  using ::Star::ConfirmationDialogConstWeakPtr;
-  using ::Star::ConfirmationDialogUPtr;
-  using ::Star::ConfirmationDialogConstUPtr;
 }

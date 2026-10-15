@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
     rootLoader.addArgument("searchRoot", OptionParser::Required);
     rootLoader.addArgument("tilesetsPath", OptionParser::Required);
 
-    RootUPtr root;
+    std::unique_ptr<::Star::Root> root;
     OptionParser::Options options;
     std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 

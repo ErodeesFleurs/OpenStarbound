@@ -111,117 +111,20 @@ import star.game_timers;
 namespace Star {
 
 struct Biome;
-using BiomePtr = std::shared_ptr<Biome>;
-using BiomeConstPtr = std::shared_ptr<const Biome>;
-using BiomeWeakPtr = std::weak_ptr<Biome>;
-using BiomeConstWeakPtr = std::weak_ptr<const Biome>;
-using BiomeUPtr = std::unique_ptr<Biome>;
-using BiomeConstUPtr = std::unique_ptr<const Biome>;
 class WorldTemplate;
-using WorldTemplatePtr = std::shared_ptr<WorldTemplate>;
-using WorldTemplateConstPtr = std::shared_ptr<const WorldTemplate>;
-using WorldTemplateWeakPtr = std::weak_ptr<WorldTemplate>;
-using WorldTemplateConstWeakPtr = std::weak_ptr<const WorldTemplate>;
-using WorldTemplateUPtr = std::unique_ptr<WorldTemplate>;
-using WorldTemplateConstUPtr = std::unique_ptr<const WorldTemplate>;
 class Sky;
-using SkyPtr = std::shared_ptr<Sky>;
-using SkyConstPtr = std::shared_ptr<const Sky>;
-using SkyWeakPtr = std::weak_ptr<Sky>;
-using SkyConstWeakPtr = std::weak_ptr<const Sky>;
-using SkyUPtr = std::unique_ptr<Sky>;
-using SkyConstUPtr = std::unique_ptr<const Sky>;
 class Parallax;
-using ParallaxPtr = std::shared_ptr<Parallax>;
-using ParallaxConstPtr = std::shared_ptr<const Parallax>;
-using ParallaxWeakPtr = std::weak_ptr<Parallax>;
-using ParallaxConstWeakPtr = std::weak_ptr<const Parallax>;
-using ParallaxUPtr = std::unique_ptr<Parallax>;
-using ParallaxConstUPtr = std::unique_ptr<const Parallax>;
 class LuaRoot;
-using LuaRootPtr = std::shared_ptr<LuaRoot>;
-using LuaRootConstPtr = std::shared_ptr<const LuaRoot>;
-using LuaRootWeakPtr = std::weak_ptr<LuaRoot>;
-using LuaRootConstWeakPtr = std::weak_ptr<const LuaRoot>;
-using LuaRootUPtr = std::unique_ptr<LuaRoot>;
-using LuaRootConstUPtr = std::unique_ptr<const LuaRoot>;
 class DamageManager;
-using DamageManagerPtr = std::shared_ptr<DamageManager>;
-using DamageManagerConstPtr = std::shared_ptr<const DamageManager>;
-using DamageManagerWeakPtr = std::weak_ptr<DamageManager>;
-using DamageManagerConstWeakPtr = std::weak_ptr<const DamageManager>;
-using DamageManagerUPtr = std::unique_ptr<DamageManager>;
-using DamageManagerConstUPtr = std::unique_ptr<const DamageManager>;
 class EntityMap;
-using EntityMapPtr = std::shared_ptr<EntityMap>;
-using EntityMapConstPtr = std::shared_ptr<const EntityMap>;
-using EntityMapWeakPtr = std::weak_ptr<EntityMap>;
-using EntityMapConstWeakPtr = std::weak_ptr<const EntityMap>;
-using EntityMapUPtr = std::unique_ptr<EntityMap>;
-using EntityMapConstUPtr = std::unique_ptr<const EntityMap>;
 class ParticleManager;
-using ParticleManagerPtr = std::shared_ptr<ParticleManager>;
-using ParticleManagerConstPtr = std::shared_ptr<const ParticleManager>;
-using ParticleManagerWeakPtr = std::weak_ptr<ParticleManager>;
-using ParticleManagerConstWeakPtr = std::weak_ptr<const ParticleManager>;
-using ParticleManagerUPtr = std::unique_ptr<ParticleManager>;
-using ParticleManagerConstUPtr = std::unique_ptr<const ParticleManager>;
-class WorldClient;
-using WorldClientPtr = std::shared_ptr<WorldClient>;
-using WorldClientConstPtr = std::shared_ptr<const WorldClient>;
-using WorldClientWeakPtr = std::weak_ptr<WorldClient>;
-using WorldClientConstWeakPtr = std::weak_ptr<const WorldClient>;
-using WorldClientUPtr = std::unique_ptr<WorldClient>;
-using WorldClientConstUPtr = std::unique_ptr<const WorldClient>;
 class UniverseClient;
-using UniverseClientPtr = std::shared_ptr<UniverseClient>;
-using UniverseClientConstPtr = std::shared_ptr<const UniverseClient>;
-using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
-using UniverseClientConstWeakPtr = std::weak_ptr<const UniverseClient>;
-using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
-using UniverseClientConstUPtr = std::unique_ptr<const UniverseClient>;
 class Player;
-using PlayerPtr = std::shared_ptr<Player>;
-using PlayerConstPtr = std::shared_ptr<const Player>;
-using PlayerWeakPtr = std::weak_ptr<Player>;
-using PlayerConstWeakPtr = std::weak_ptr<const Player>;
-using PlayerUPtr = std::unique_ptr<Player>;
-using PlayerConstUPtr = std::unique_ptr<const Player>;
 class Item;
-using ItemPtr = std::shared_ptr<Item>;
-using ItemConstPtr = std::shared_ptr<const Item>;
-using ItemWeakPtr = std::weak_ptr<Item>;
-using ItemConstWeakPtr = std::weak_ptr<const Item>;
-using ItemUPtr = std::unique_ptr<Item>;
-using ItemConstUPtr = std::unique_ptr<const Item>;
 class CelestialLog;
-using CelestialLogPtr = std::shared_ptr<CelestialLog>;
-using CelestialLogConstPtr = std::shared_ptr<const CelestialLog>;
-using CelestialLogWeakPtr = std::weak_ptr<CelestialLog>;
-using CelestialLogConstWeakPtr = std::weak_ptr<const CelestialLog>;
-using CelestialLogUPtr = std::unique_ptr<CelestialLog>;
-using CelestialLogConstUPtr = std::unique_ptr<const CelestialLog>;
 class ClientContext;
-using ClientContextPtr = std::shared_ptr<ClientContext>;
-using ClientContextConstPtr = std::shared_ptr<const ClientContext>;
-using ClientContextWeakPtr = std::weak_ptr<ClientContext>;
-using ClientContextConstWeakPtr = std::weak_ptr<const ClientContext>;
-using ClientContextUPtr = std::unique_ptr<ClientContext>;
-using ClientContextConstUPtr = std::unique_ptr<const ClientContext>;
 class PlayerStorage;
-using PlayerStoragePtr = std::shared_ptr<PlayerStorage>;
-using PlayerStorageConstPtr = std::shared_ptr<const PlayerStorage>;
-using PlayerStorageWeakPtr = std::weak_ptr<PlayerStorage>;
-using PlayerStorageConstWeakPtr = std::weak_ptr<const PlayerStorage>;
-using PlayerStorageUPtr = std::unique_ptr<PlayerStorage>;
-using PlayerStorageConstUPtr = std::unique_ptr<const PlayerStorage>;
 struct OverheadBar;
-using OverheadBarPtr = std::shared_ptr<OverheadBar>;
-using OverheadBarConstPtr = std::shared_ptr<const OverheadBar>;
-using OverheadBarWeakPtr = std::weak_ptr<OverheadBar>;
-using OverheadBarConstWeakPtr = std::weak_ptr<const OverheadBar>;
-using OverheadBarUPtr = std::unique_ptr<OverheadBar>;
-using OverheadBarConstUPtr = std::unique_ptr<const OverheadBar>;
 
 struct WorldClientExceptionTag {
   static constexpr char const* name() { return "WorldClientException"; }
@@ -231,9 +134,8 @@ using WorldClientException = StarError<WorldClientExceptionTag, StarException>;
 class WorldClient : public World {
 public:
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> ScriptComponent;
-  typedef std::shared_ptr<ScriptComponent> ScriptComponentPtr;
   
-  WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot, UniverseClient* universe);
+  WorldClient(std::shared_ptr<Player> mainPlayer, std::shared_ptr<LuaRoot> luaRoot, UniverseClient* universe);
   WorldClient(ClientSubWorldId subWorldId, UniverseClient* universe);
   ~WorldClient();
 
@@ -251,16 +153,16 @@ public:
   TileModificationList applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) override;
   TileModificationList replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage = false) override;
   bool damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const override;
-  EntityPtr entity(EntityId entityId) const override;
-  void addEntity(EntityPtr const& entity, EntityId entityId = NullEntityId) override;
-  EntityPtr closestEntity(Vec2F const& center, float radius, EntityFilter selector = EntityFilter()) const override;
+  std::shared_ptr<Entity> entity(EntityId entityId) const override;
+  void addEntity(std::shared_ptr<Entity> const& entity, EntityId entityId = NullEntityId) override;
+  std::shared_ptr<Entity> closestEntity(Vec2F const& center, float radius, EntityFilter selector = EntityFilter()) const override;
   void forAllEntities(EntityCallback entityCallback) const override;
   void forEachEntity(RectF const& boundBox, EntityCallback callback) const override;
   void forEachEntityLine(Vec2F const& begin, Vec2F const& end, EntityCallback callback) const override;
   void forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEntity> entityCallback) const override;
-  EntityPtr findEntity(RectF const& boundBox, EntityFilter entityFilter) const override;
-  EntityPtr findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter entityFilter) const override;
-  EntityPtr findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const override;
+  std::shared_ptr<Entity> findEntity(RectF const& boundBox, EntityFilter entityFilter) const override;
+  std::shared_ptr<Entity> findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter entityFilter) const override;
+  std::shared_ptr<Entity> findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const override;
   bool tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral = false, bool checkCollision = false) const override;
   CollisionKind tileCollisionKind(Vec2I const& pos) const override;
   void forEachCollisionBlock(RectI const& region, std::function<void(CollisionBlock const&)> const& iterator) const override;
@@ -271,7 +173,7 @@ public:
   List<Vec2I> collidingTilesAlongLine(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet, int maxSize = -1, bool includeEdges = true) const override;
   bool rectTileCollision(RectI const& region, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
   TileDamageResult damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, Maybe<EntityId> sourceEntity = {}) override;
-  InteractiveEntityPtr getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const override;
+  std::shared_ptr<InteractiveEntity> getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const override;
   bool canReachEntity(Vec2F const& position, float radius, EntityId targetEntity, bool preferInteractive = true) const override;
   RpcPromise<InteractAction> interact(InteractRequest const& request) override;
   float gravity(Vec2F const& pos) const override;
@@ -293,7 +195,7 @@ public:
   std::uint32_t day() const override;
   float dayLength() const override;
   float timeOfDay() const override;
-  LuaRootPtr luaRoot() override;
+  std::shared_ptr<LuaRoot> luaRoot() override;
   RpcPromise<Vec2F> findUniqueEntity(String const& uniqueId) override;
   RpcPromise<Json> sendEntityMessage(Variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) override;
   bool isTileProtected(Vec2I const& pos) const override;
@@ -318,14 +220,14 @@ public:
   void resendEntity(EntityId entityId);
   void removeEntity(EntityId entityId, bool andDie);
 
-  WorldTemplateConstPtr currentTemplate() const;
+  std::shared_ptr<WorldTemplate const> currentTemplate() const;
   void setTemplate(Json newTemplate);
-  SkyConstPtr currentSky() const;
+  std::shared_ptr<Sky const> currentSky() const;
 
   void dimWorld();
   bool interactiveHighlightMode() const;
   void setInteractiveHighlightMode(bool enabled);
-  void setParallax(ParallaxPtr newParallax);
+  void setParallax(std::shared_ptr<Parallax> newParallax);
   void overrideGravity(float gravity);
   void resetGravity();
 
@@ -341,8 +243,8 @@ public:
   bool collisionDebug() const;
   void setCollisionDebug(bool collisionDebug);
 
-  void handleIncomingPackets(List<PacketPtr> const& packets);
-  List<PacketPtr> getOutgoingPackets();
+  void handleIncomingPackets(List<std::shared_ptr<Packet>> const& packets);
+  List<std::shared_ptr<Packet>> getOutgoingPackets();
 
   // Set the rendering window for this client.
   void setClientWindow(RectI window);
@@ -354,14 +256,14 @@ public:
 
   Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args);
 
-  ScriptComponentPtr scriptContext(String const& contextName);
+  std::shared_ptr<WorldClient::ScriptComponent> scriptContext(String const& contextName);
 
   void update(float dt);
   // borderTiles here should extend the client window for border tile
   // calculations.  It is not necessary on the light array.
   void render(WorldRenderData& renderData, unsigned borderTiles);
-  List<AudioInstancePtr> pullPendingAudio();
-  List<AudioInstancePtr> pullPendingMusic();
+  List<std::shared_ptr<AudioInstance>> pullPendingAudio();
+  List<std::shared_ptr<AudioInstance>> pullPendingMusic();
 
   bool playerCanReachEntity(EntityId entityId, bool preferInteractive = true) const;
 
@@ -373,7 +275,7 @@ public:
   // on completely vanilla servers by smuggling it through a DamageNotification.
   // It's cursed as fuck, but it works.
   bool sendSecretBroadcast(StringView broadcast, bool raw = false, bool compress = true);
-  bool handleSecretBroadcast(PlayerPtr player, StringView broadcast);
+  bool handleSecretBroadcast(std::shared_ptr<Player> player, StringView broadcast);
 
   List<ChatAction> pullPendingChatActions();
 
@@ -385,7 +287,7 @@ public:
 
   bool waitForLighting(WorldRenderData* renderData = nullptr);
 
-  typedef std::function<bool(PlayerPtr, StringView)> BroadcastCallback;
+  typedef std::function<bool(std::shared_ptr<Player>, StringView)> BroadcastCallback;
   BroadcastCallback& broadcastCallback();
   
   bool shouldExpire();
@@ -400,14 +302,14 @@ private:
     void addDrawable(Drawable drawable, EntityRenderLayer renderLayer) override;
     void addLightSource(LightSource lightSource) override;
     void addParticle(Particle particle) override;
-    void addAudio(AudioInstancePtr audio) override;
+    void addAudio(std::shared_ptr<AudioInstance> audio) override;
     void addTilePreview(PreviewTile preview) override;
     void addOverheadBar(OverheadBar bar) override;
 
     Map<EntityRenderLayer, List<Drawable>> drawables;
     List<LightSource> lightSources;
     List<Particle> particles;
-    List<AudioInstancePtr> audios;
+    List<std::shared_ptr<AudioInstance>> audios;
     List<PreviewTile> previewTiles;
     List<OverheadBar> overheadBars;
   };
@@ -434,9 +336,9 @@ private:
 
   void initWorld(WorldStartPacket const& packet);
   void clearWorld();
-  void tryGiveMainPlayerItem(ItemPtr item, bool silent = false);
+  void tryGiveMainPlayerItem(std::shared_ptr<Item> item, bool silent = false);
 
-  void notifyEntityCreate(EntityPtr const& entity);
+  void notifyEntityCreate(std::shared_ptr<Entity> const& entity);
 
   // Queues pending (step based) updates to server,
   void queueUpdatePackets(bool sendEntityUpdates);
@@ -446,15 +348,15 @@ private:
 
   Vec2I environmentBiomeTrackPosition() const;
   Maybe<String> currentWeatherDomain() const;
-  AmbientNoisesDescriptionPtr currentAmbientNoises() const;
-  WeatherNoisesDescriptionPtr currentWeatherNoises() const;
-  AmbientNoisesDescriptionPtr currentMusicTrack() const;
-  AmbientNoisesDescriptionPtr currentAltMusicTrack() const;
+  std::shared_ptr<AmbientNoisesDescription> currentAmbientNoises() const;
+  std::shared_ptr<WeatherNoisesDescription> currentWeatherNoises() const;
+  std::shared_ptr<AmbientNoisesDescription> currentMusicTrack() const;
+  std::shared_ptr<AmbientNoisesDescription> currentAltMusicTrack() const;
 
   void playAltMusic(StringList const& newTracks, float fadeTime, int loops = -1);
   void stopAltMusic(float fadeTime);
 
-  BiomeConstPtr mainEnvironmentBiome() const;
+  std::shared_ptr<Biome const> mainEnvironmentBiome() const;
 
   // Populates foregroundTransparent / backgroundTransparent flag on ClientTile
   // based on transparency rules.
@@ -470,17 +372,17 @@ private:
   void setupForceRegions();
 
   Json m_clientConfig;
-  WorldTemplatePtr m_worldTemplate;
+  std::shared_ptr<WorldTemplate> m_worldTemplate;
   WorldStructure m_centralStructure;
   Vec2F m_playerStart;
   bool m_respawnInWorld = false;
   JsonObject m_worldProperties;
 
-  EntityMapPtr m_entityMap;
-  ClientTileSectorArrayPtr m_tileArray;
+  std::shared_ptr<EntityMap> m_entityMap;
+  std::shared_ptr<ClientTileSectorArray> m_tileArray;
   ClientTileGetter m_tileGetterFunction;
-  DamageManagerPtr m_damageManager;
-  LuaRootPtr m_luaRoot;
+  std::shared_ptr<DamageManager> m_damageManager;
+  std::shared_ptr<LuaRoot> m_luaRoot;
 
   WorldGeometry m_geometry;
   std::uint64_t m_currentStep;
@@ -507,14 +409,14 @@ private:
   Vec2I m_lightMinPosition;
   List<PreviewTile> m_previewTiles;
 
-  SkyPtr m_sky;
+  std::shared_ptr<Sky> m_sky;
 
   CollisionGenerator m_collisionGenerator;
 
   WorldClientState m_clientState;
   Maybe<ConnectionId> m_clientId;
 
-  PlayerPtr m_mainPlayer;
+  std::shared_ptr<Player> m_mainPlayer;
 
   bool m_collisionDebug = false;
 
@@ -535,11 +437,11 @@ private:
   bool m_interactiveHighlightMode = false;
 
   GameTimer m_parallaxFadeTimer;
-  ParallaxPtr m_currentParallax;
-  ParallaxPtr m_nextParallax;
+  std::shared_ptr<Parallax> m_currentParallax;
+  std::shared_ptr<Parallax> m_nextParallax;
   Maybe<String> m_weatherParallaxAsset;
-  BiomeConstPtr m_weatherParallaxBiome;
-  ParallaxPtr m_weatherParallax;
+  std::shared_ptr<Biome const> m_weatherParallaxBiome;
+  std::shared_ptr<Parallax> m_weatherParallax;
   Maybe<String> m_weatherDomain;
   Maybe<double> m_lastParallaxWindEpoch;
   double m_parallaxWindDirectionTime = 0.0;
@@ -549,17 +451,17 @@ private:
   Maybe<float> m_overrideGravity;
 
   ClientWeather m_weather;
-  ParticleManagerPtr m_particles;
+  std::shared_ptr<ParticleManager> m_particles;
 
-  List<AudioInstancePtr> m_samples;
-  List<AudioInstancePtr> m_music;
+  List<std::shared_ptr<AudioInstance>> m_samples;
+  List<std::shared_ptr<AudioInstance>> m_music;
 
   HashMap<EntityId, std::uint64_t> m_masterEntitiesNetVersion;
 
   InterpolationTracker m_interpolationTracker;
   GameTimer m_entityUpdateTimer;
 
-  List<PacketPtr> m_outgoingPackets;
+  List<std::shared_ptr<Packet>> m_outgoingPackets;
   Maybe<std::int64_t> m_pingTime;
   std::int64_t m_latency;
 
@@ -584,10 +486,10 @@ private:
   Map<DamageNumberKey, DamageNumber> m_damageNumbers;
   float m_damageNotificationBatchDuration;
 
-  AudioInstancePtr m_spaceSound;
+  std::shared_ptr<AudioInstance> m_spaceSound;
   String m_activeSpaceSound;
 
-  AmbientNoisesDescriptionPtr m_altMusicTrackDescription;
+  std::shared_ptr<AmbientNoisesDescription> m_altMusicTrackDescription;
   bool m_altMusicActive = false;
 
   int m_modifiedTilePredictionTimeout;
@@ -610,7 +512,7 @@ private:
   // used to keep track of already-printed stack traces caused by remote entities, so they don't clog the log
   HashSet<std::uint64_t> m_entityExceptionsLogged;
   
-  StringMap<ScriptComponentPtr> m_scriptContexts;
+  StringMap<std::shared_ptr<WorldClient::ScriptComponent>> m_scriptContexts;
 
   GameTimer m_expiryTimer;
   
@@ -625,117 +527,21 @@ export module star.world_client;
 
 export namespace Star {
   using ::Star::Biome;
-  using ::Star::BiomePtr;
-  using ::Star::BiomeConstPtr;
-  using ::Star::BiomeWeakPtr;
-  using ::Star::BiomeConstWeakPtr;
-  using ::Star::BiomeUPtr;
-  using ::Star::BiomeConstUPtr;
   using ::Star::WorldTemplate;
-  using ::Star::WorldTemplatePtr;
-  using ::Star::WorldTemplateConstPtr;
-  using ::Star::WorldTemplateWeakPtr;
-  using ::Star::WorldTemplateConstWeakPtr;
-  using ::Star::WorldTemplateUPtr;
-  using ::Star::WorldTemplateConstUPtr;
   using ::Star::Sky;
-  using ::Star::SkyPtr;
-  using ::Star::SkyConstPtr;
-  using ::Star::SkyWeakPtr;
-  using ::Star::SkyConstWeakPtr;
-  using ::Star::SkyUPtr;
-  using ::Star::SkyConstUPtr;
   using ::Star::Parallax;
-  using ::Star::ParallaxPtr;
-  using ::Star::ParallaxConstPtr;
-  using ::Star::ParallaxWeakPtr;
-  using ::Star::ParallaxConstWeakPtr;
-  using ::Star::ParallaxUPtr;
-  using ::Star::ParallaxConstUPtr;
   using ::Star::LuaRoot;
-  using ::Star::LuaRootPtr;
-  using ::Star::LuaRootConstPtr;
-  using ::Star::LuaRootWeakPtr;
-  using ::Star::LuaRootConstWeakPtr;
-  using ::Star::LuaRootUPtr;
-  using ::Star::LuaRootConstUPtr;
   using ::Star::DamageManager;
-  using ::Star::DamageManagerPtr;
-  using ::Star::DamageManagerConstPtr;
-  using ::Star::DamageManagerWeakPtr;
-  using ::Star::DamageManagerConstWeakPtr;
-  using ::Star::DamageManagerUPtr;
-  using ::Star::DamageManagerConstUPtr;
   using ::Star::EntityMap;
-  using ::Star::EntityMapPtr;
-  using ::Star::EntityMapConstPtr;
-  using ::Star::EntityMapWeakPtr;
-  using ::Star::EntityMapConstWeakPtr;
-  using ::Star::EntityMapUPtr;
-  using ::Star::EntityMapConstUPtr;
   using ::Star::ParticleManager;
-  using ::Star::ParticleManagerPtr;
-  using ::Star::ParticleManagerConstPtr;
-  using ::Star::ParticleManagerWeakPtr;
-  using ::Star::ParticleManagerConstWeakPtr;
-  using ::Star::ParticleManagerUPtr;
-  using ::Star::ParticleManagerConstUPtr;
   using ::Star::WorldClient;
-  using ::Star::WorldClientPtr;
-  using ::Star::WorldClientConstPtr;
-  using ::Star::WorldClientWeakPtr;
-  using ::Star::WorldClientConstWeakPtr;
-  using ::Star::WorldClientUPtr;
-  using ::Star::WorldClientConstUPtr;
   using ::Star::UniverseClient;
-  using ::Star::UniverseClientPtr;
-  using ::Star::UniverseClientConstPtr;
-  using ::Star::UniverseClientWeakPtr;
-  using ::Star::UniverseClientConstWeakPtr;
-  using ::Star::UniverseClientUPtr;
-  using ::Star::UniverseClientConstUPtr;
   using ::Star::Player;
-  using ::Star::PlayerPtr;
-  using ::Star::PlayerConstPtr;
-  using ::Star::PlayerWeakPtr;
-  using ::Star::PlayerConstWeakPtr;
-  using ::Star::PlayerUPtr;
-  using ::Star::PlayerConstUPtr;
   using ::Star::Item;
-  using ::Star::ItemPtr;
-  using ::Star::ItemConstPtr;
-  using ::Star::ItemWeakPtr;
-  using ::Star::ItemConstWeakPtr;
-  using ::Star::ItemUPtr;
-  using ::Star::ItemConstUPtr;
   using ::Star::CelestialLog;
-  using ::Star::CelestialLogPtr;
-  using ::Star::CelestialLogConstPtr;
-  using ::Star::CelestialLogWeakPtr;
-  using ::Star::CelestialLogConstWeakPtr;
-  using ::Star::CelestialLogUPtr;
-  using ::Star::CelestialLogConstUPtr;
   using ::Star::ClientContext;
-  using ::Star::ClientContextPtr;
-  using ::Star::ClientContextConstPtr;
-  using ::Star::ClientContextWeakPtr;
-  using ::Star::ClientContextConstWeakPtr;
-  using ::Star::ClientContextUPtr;
-  using ::Star::ClientContextConstUPtr;
   using ::Star::PlayerStorage;
-  using ::Star::PlayerStoragePtr;
-  using ::Star::PlayerStorageConstPtr;
-  using ::Star::PlayerStorageWeakPtr;
-  using ::Star::PlayerStorageConstWeakPtr;
-  using ::Star::PlayerStorageUPtr;
-  using ::Star::PlayerStorageConstUPtr;
   using ::Star::OverheadBar;
-  using ::Star::OverheadBarPtr;
-  using ::Star::OverheadBarConstPtr;
-  using ::Star::OverheadBarWeakPtr;
-  using ::Star::OverheadBarConstWeakPtr;
-  using ::Star::OverheadBarUPtr;
-  using ::Star::OverheadBarConstUPtr;
   using ::Star::WorldClientExceptionTag;
   using ::Star::WorldClientException;
 }

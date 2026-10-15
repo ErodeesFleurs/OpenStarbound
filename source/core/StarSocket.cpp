@@ -232,7 +232,7 @@ Socket::Socket(SocketType type, NetworkMode networkMode)
   setNonBlocking(false);
 }
 
-Socket::Socket(NetworkMode networkMode, SocketImplPtr impl, SocketMode socketMode)
+Socket::Socket(NetworkMode networkMode, std::shared_ptr<SocketImpl> impl, SocketMode socketMode)
   : m_networkMode(networkMode), m_impl(impl), m_socketMode(socketMode) {
   setTimeout(60000);
   setNonBlocking(false);

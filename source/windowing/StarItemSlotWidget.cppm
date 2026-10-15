@@ -52,33 +52,20 @@ import star.animation;
 namespace Star {
 
 class Item;
-using ItemPtr = std::shared_ptr<Item>;
-using ItemConstPtr = std::shared_ptr<Item const>;
-using ItemWeakPtr = std::weak_ptr<Item>;
-using ItemConstWeakPtr = std::weak_ptr<Item const>;
-using ItemUPtr = std::unique_ptr<Item>;
-using ItemConstUPtr = std::unique_ptr<Item const>;
-class ItemSlotWidget;
-using ItemSlotWidgetPtr = std::shared_ptr<ItemSlotWidget>;
-using ItemSlotWidgetConstPtr = std::shared_ptr<ItemSlotWidget const>;
-using ItemSlotWidgetWeakPtr = std::weak_ptr<ItemSlotWidget>;
-using ItemSlotWidgetConstWeakPtr = std::weak_ptr<ItemSlotWidget const>;
-using ItemSlotWidgetUPtr = std::unique_ptr<ItemSlotWidget>;
-using ItemSlotWidgetConstUPtr = std::unique_ptr<ItemSlotWidget const>;
 
 inline constexpr float ItemIndicateNewTime = 1.5f;
 
 class ItemSlotWidget : public Widget {
 public:
-  ItemSlotWidget(ItemPtr const& item, String const& backingImage);
+  ItemSlotWidget(std::shared_ptr<Item> const& item, String const& backingImage);
 
   virtual void update(float dt) override;
   bool sendEvent(InputEvent const& event) override;
   void setCallback(WidgetCallbackFunc callback);
   void setRightClickCallback(WidgetCallbackFunc callback);
   void setMiddleClickCallback(WidgetCallbackFunc callback);
-  void setItem(ItemPtr const& item);
-  ItemPtr item() const;
+  void setItem(std::shared_ptr<Item> const& item);
+  std::shared_ptr<Item> item() const;
   void setProgress(float progress);
   void setBackingImageAffinity(bool full, bool empty);
   void setCountPosition(TextPositioning textPositioning);
@@ -98,7 +85,7 @@ protected:
   virtual void renderImpl() override;
 
 private:
-  ItemPtr m_item;
+  std::shared_ptr<Item> m_item;
 
   String m_backingImage;
   bool m_drawBackingImageWhenFull;
@@ -122,7 +109,7 @@ private:
   WidgetCallbackFunc m_middleClickCallback;
   float m_progress;
 
-  ProgressWidgetPtr m_durabilityBar;
+  std::shared_ptr<ProgressWidget> m_durabilityBar;
 
   Animation m_newItemIndicator;
 
@@ -137,17 +124,5 @@ export module star.item_slot_widget;
 export namespace Star {
   using ::Star::ItemSlotWidget;
   using ::Star::Item;
-  using ::Star::ItemPtr;
-  using ::Star::ItemConstPtr;
-  using ::Star::ItemWeakPtr;
-  using ::Star::ItemConstWeakPtr;
-  using ::Star::ItemUPtr;
-  using ::Star::ItemConstUPtr;
-  using ::Star::ItemSlotWidgetPtr;
-  using ::Star::ItemSlotWidgetConstPtr;
-  using ::Star::ItemSlotWidgetWeakPtr;
-  using ::Star::ItemSlotWidgetConstWeakPtr;
-  using ::Star::ItemSlotWidgetUPtr;
-  using ::Star::ItemSlotWidgetConstUPtr;
   using ::Star::ItemIndicateNewTime;
 }

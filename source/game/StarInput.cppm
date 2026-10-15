@@ -16,13 +16,6 @@ import star.listener;
 
 namespace Star {
 
-class Input;
-using InputPtr = std::shared_ptr<Input>;
-using InputConstPtr = std::shared_ptr<const Input>;
-using InputWeakPtr = std::weak_ptr<Input>;
-using InputConstWeakPtr = std::weak_ptr<const Input>;
-using InputUPtr = std::unique_ptr<Input>;
-using InputConstUPtr = std::unique_ptr<const Input>;
 struct InputExceptionTag {
   static constexpr char const* name() { return "InputException"; }
 };
@@ -230,7 +223,7 @@ private:
   // Contains raw pointers to bind entries in categories, so also regenerated on reload.
   HashMap<InputVariant, List<BindRef>> m_bindMappings;
 
-  ListenerPtr m_rootReloadListener;
+  std::shared_ptr<Listener> m_rootReloadListener;
 
   // Per-frame input event storage for Lua.
   List<std::pair<InputEvent, bool>> m_inputEvents;
@@ -263,12 +256,6 @@ export namespace Star {
 
 export namespace Star {
   using ::Star::Input;
-  using ::Star::InputPtr;
-  using ::Star::InputConstPtr;
-  using ::Star::InputWeakPtr;
-  using ::Star::InputConstWeakPtr;
-  using ::Star::InputUPtr;
-  using ::Star::InputConstUPtr;
   using ::Star::InputExceptionTag;
   using ::Star::InputException;
   using ::Star::InputVariant;

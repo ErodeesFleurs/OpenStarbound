@@ -556,7 +556,7 @@ std::size_t Vehicle::anchorCount() const {
   return m_loungePositions.size();
 }
 
-LoungeAnchorConstPtr Vehicle::loungeAnchor(std::size_t positionIndex) const {
+std::shared_ptr<LoungeAnchor const> Vehicle::loungeAnchor(std::size_t positionIndex) const {
   auto const& positionConfig = m_loungePositions.valueAt(positionIndex);
   if (!positionConfig.enabled.get())
     return {};

@@ -88,10 +88,10 @@ class ThrownItem : public Item, public SwingableItem, public PreviewableItem {
 public:
   ThrownItem(Json const& config, String const& directory, Json const& itemParameters = JsonObject());
 
-  ItemPtr clone() const override;
+  std::shared_ptr<Item> clone() const override;
 
   List<Drawable> drawables() const override;
-  List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  List<Drawable> preview(std::shared_ptr<Player> const& viewer = {}) const override;
 
 protected:
   void fireTriggered() override;
@@ -117,7 +117,7 @@ ThrownItem::ThrownItem(Json const& config, String const& directory, Json const& 
   m_drawables = {Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F())};
 }
 
-ItemPtr ThrownItem::clone() const {
+std::shared_ptr<Item> ThrownItem::clone() const {
   return std::make_shared<ThrownItem>(*this);
 }
 
@@ -125,7 +125,7 @@ List<Drawable> ThrownItem::drawables() const {
   return m_drawables;
 }
 
-List<Drawable> ThrownItem::preview(PlayerPtr const&) const {
+List<Drawable> ThrownItem::preview(std::shared_ptr<Player> const&) const {
   return iconDrawables();
 }
 

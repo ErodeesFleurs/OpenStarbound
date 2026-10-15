@@ -47,7 +47,7 @@ AugmentItem::AugmentItem(Json const& config, String const& directory, Json const
 
 AugmentItem::AugmentItem(AugmentItem const& rhs) : AugmentItem(rhs.config(), rhs.directory(), rhs.parameters()) {}
 
-ItemPtr AugmentItem::clone() const {
+std::shared_ptr<Item> AugmentItem::clone() const {
   return std::make_shared<AugmentItem>(*this);
 }
 
@@ -55,7 +55,7 @@ StringList AugmentItem::augmentScripts() const {
   return jsonToStringList(instanceValue("scripts")).transformed(std::bind(&AssetPath::relativeTo, directory(), std::placeholders::_1));
 }
 
-ItemPtr AugmentItem::applyTo(ItemPtr const item) {
+std::shared_ptr<Item> AugmentItem::applyTo(std::shared_ptr<Item> const item) {
   return Root::singleton().itemDatabase()->applyAugment(item, this);
 }
 

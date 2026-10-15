@@ -193,12 +193,12 @@ bool WorldClientThread::shouldExpire() {
   return m_shouldExpire;
 }
 
-void WorldClientThread::pushIncomingPackets(List<PacketPtr> packets) {
+void WorldClientThread::pushIncomingPackets(List<std::shared_ptr<Packet>> packets) {
   RecursiveMutexLocker queueLocker(m_queueMutex);
   m_incomingPacketQueue.appendAll(std::move(packets));
 }
 
-List<PacketPtr> WorldClientThread::pullOutgoingPackets() {
+List<std::shared_ptr<Packet>> WorldClientThread::pullOutgoingPackets() {
   RecursiveMutexLocker queueLocker(m_queueMutex);
   return take(m_outgoingPacketQueue);
 }

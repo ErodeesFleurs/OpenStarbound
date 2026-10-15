@@ -48,14 +48,6 @@ inline Color const& fontModeToColor(FontMode mode) {
   return mode == FontMode::Shadow ? Color::Black : Color::Clear;
 }
 
-class TextPainter;
-using TextPainterPtr = std::shared_ptr<TextPainter>;
-using TextPainterConstPtr = std::shared_ptr<TextPainter const>;
-using TextPainterWeakPtr = std::weak_ptr<TextPainter>;
-using TextPainterConstWeakPtr = std::weak_ptr<TextPainter const>;
-using TextPainterUPtr = std::unique_ptr<TextPainter>;
-using TextPainterConstUPtr = std::unique_ptr<TextPainter const>;
-
 struct TextPositioning {
   TextPositioning();
 
@@ -81,7 +73,7 @@ struct TextPositioning {
 // kerning*.
 class TextPainter {
 public:
-  TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup);
+  TextPainter(std::shared_ptr<Renderer> renderer, std::shared_ptr<TextureGroup> textureGroup);
 
   RectF renderText(StringView s, TextPositioning const& position);
   RectF renderLine(StringView s, TextPositioning const& position);
@@ -110,7 +102,7 @@ public:
   void setFont(String const& font);
   TextStyle& setTextStyle(TextStyle const& textStyle);
   void clearTextStyle();
-  void addFont(FontPtr const& font, String const& name);
+  void addFont(std::shared_ptr<Font> const& font, String const& name);
   void reloadFonts();
 
   void cleanup(std::int64_t textureTimeout);
@@ -123,9 +115,9 @@ private:
 
   void renderPrimitives();
   void renderGlyph(String::Char c, Vec2F const& screenPos, List<RenderPrimitive>& out, unsigned fontSize, float scale, Vec4B color, Directives const* processingDirectives = nullptr);
-  static FontPtr loadFont(String const& fontPath, Maybe<String> fontName = {});
+  static std::shared_ptr<Font> loadFont(String const& fontPath, Maybe<String> fontName = {});
 
-  RendererPtr m_renderer;
+  std::shared_ptr<Renderer> m_renderer;
   List<RenderPrimitive> m_shadowPrimitives;
   List<RenderPrimitive> m_backPrimitives;
   List<RenderPrimitive> m_frontPrimitives;
@@ -136,7 +128,7 @@ private:
   TextStyle m_savedRenderSettings;
 
   String m_nonRenderedCharacters;
-  TrackerListenerPtr m_reloadTracker;
+  std::shared_ptr<TrackerListener> m_reloadTracker;
 };
 
 }
@@ -148,10 +140,4 @@ export namespace Star {
   using ::Star::fontModeToColor;
   using ::Star::TextPositioning;
   using ::Star::TextPainter;
-  using ::Star::TextPainterPtr;
-  using ::Star::TextPainterConstPtr;
-  using ::Star::TextPainterWeakPtr;
-  using ::Star::TextPainterConstWeakPtr;
-  using ::Star::TextPainterUPtr;
-  using ::Star::TextPainterConstUPtr;
 }

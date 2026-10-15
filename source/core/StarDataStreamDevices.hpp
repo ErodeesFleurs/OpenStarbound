@@ -26,9 +26,9 @@ private:
 
 class DataStreamIODevice : public DataStream {
 public:
-  DataStreamIODevice(IODevicePtr device);
+  DataStreamIODevice(std::shared_ptr<IODevice> device);
 
-  IODevicePtr const& device() const;
+  std::shared_ptr<IODevice> const& device() const;
 
   void seek(std::size_t pos, IOSeek seek = IOSeek::Absolute);
   bool atEnd() override;
@@ -38,7 +38,7 @@ public:
   void writeData(char const* data, std::size_t len) override;
 
 private:
-  IODevicePtr m_device;
+  std::shared_ptr<IODevice> m_device;
 };
 
 class DataStreamBuffer : public DataStream {
@@ -107,7 +107,7 @@ public:
   char* ptr();
   char const* ptr() const;
 
-  BufferPtr const& device() const;
+  std::shared_ptr<Buffer> const& device() const;
 
   std::size_t size() const;
   bool empty() const;
@@ -124,7 +124,7 @@ public:
   void writeData(char const* data, std::size_t len) override;
 
 private:
-  BufferPtr m_buffer;
+  std::shared_ptr<Buffer> m_buffer;
 };
 
 class DataStreamExternalBuffer : public DataStream {

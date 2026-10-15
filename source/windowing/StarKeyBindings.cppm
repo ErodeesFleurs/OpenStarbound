@@ -101,14 +101,6 @@ Json inputDescriptorToJson(KeyChord const& chord);
 
 String printInputDescriptor(KeyChord chord);
 
-class KeyBindings;
-using KeyBindingsPtr = std::shared_ptr<KeyBindings>;
-using KeyBindingsConstPtr = std::shared_ptr<KeyBindings const>;
-using KeyBindingsWeakPtr = std::weak_ptr<KeyBindings>;
-using KeyBindingsConstWeakPtr = std::weak_ptr<KeyBindings const>;
-using KeyBindingsUPtr = std::unique_ptr<KeyBindings>;
-using KeyBindingsConstUPtr = std::unique_ptr<KeyBindings const>;
-
 class KeyBindings {
 public:
   KeyBindings();
@@ -133,12 +125,6 @@ export namespace Star {
   using ::Star::InterfaceAction;
   using ::Star::KeyChord;
   using ::Star::KeyBindings;
-  using ::Star::KeyBindingsPtr;
-  using ::Star::KeyBindingsConstPtr;
-  using ::Star::KeyBindingsWeakPtr;
-  using ::Star::KeyBindingsConstWeakPtr;
-  using ::Star::KeyBindingsUPtr;
-  using ::Star::KeyBindingsConstUPtr;
   using ::Star::InterfaceActionNames;
   using ::Star::KeyChordMods;
   using ::Star::inputDescriptorFromJson;

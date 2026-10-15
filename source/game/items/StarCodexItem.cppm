@@ -111,7 +111,7 @@ export namespace Star {
 class CodexItem : public Item, public SwingableItem {
 public:
   CodexItem(Json const& config, String const& directory, Json const& data);
-  virtual ItemPtr clone() const override;
+  virtual std::shared_ptr<Item> clone() const override;
 
   virtual List<Drawable> drawables() const override;
 
@@ -141,7 +141,7 @@ CodexItem::CodexItem(Json const& config, String const& directory, Json const& da
   m_worldDrawables = {Drawable::makeImage(iconPath, 1.0f / TilePixels, true, Vec2F())};
 }
 
-ItemPtr CodexItem::clone() const {
+std::shared_ptr<Item> CodexItem::clone() const {
   return std::make_shared<CodexItem>(*this);
 }
 

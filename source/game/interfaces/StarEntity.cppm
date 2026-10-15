@@ -28,33 +28,8 @@ import star.algorithm;
 namespace Star {
 
 class RenderCallback;
-using RenderCallbackPtr = std::shared_ptr<RenderCallback>;
-using RenderCallbackConstPtr = std::shared_ptr<const RenderCallback>;
-using RenderCallbackWeakPtr = std::weak_ptr<RenderCallback>;
-using RenderCallbackConstWeakPtr = std::weak_ptr<const RenderCallback>;
-using RenderCallbackUPtr = std::unique_ptr<RenderCallback>;
-using RenderCallbackConstUPtr = std::unique_ptr<const RenderCallback>;
 class World;
-using WorldPtr = std::shared_ptr<World>;
-using WorldConstPtr = std::shared_ptr<const World>;
-using WorldWeakPtr = std::weak_ptr<World>;
-using WorldConstWeakPtr = std::weak_ptr<const World>;
-using WorldUPtr = std::unique_ptr<World>;
-using WorldConstUPtr = std::unique_ptr<const World>;
 struct DamageNotification;
-using DamageNotificationPtr = std::shared_ptr<DamageNotification>;
-using DamageNotificationConstPtr = std::shared_ptr<const DamageNotification>;
-using DamageNotificationWeakPtr = std::weak_ptr<DamageNotification>;
-using DamageNotificationConstWeakPtr = std::weak_ptr<const DamageNotification>;
-using DamageNotificationUPtr = std::unique_ptr<DamageNotification>;
-using DamageNotificationConstUPtr = std::unique_ptr<const DamageNotification>;
-class Entity;
-using EntityPtr = std::shared_ptr<Entity>;
-using EntityConstPtr = std::shared_ptr<const Entity>;
-using EntityWeakPtr = std::weak_ptr<Entity>;
-using EntityConstWeakPtr = std::weak_ptr<const Entity>;
-using EntityUPtr = std::unique_ptr<Entity>;
-using EntityConstUPtr = std::unique_ptr<const Entity>;
 
 struct EntityExceptionTag {
   static constexpr char const* name() { return "EntityException"; }
@@ -266,7 +241,7 @@ typedef EntityFilterOf<Entity> EntityFilter;
 // the given derived type filter.
 template <typename EntityT>
 EntityFilter entityTypeFilter(std::function<bool(std::shared_ptr<EntityT> const&)> filter = {}) {
-  return [filter](EntityPtr const& e) -> bool {
+  return [filter](std::shared_ptr<Entity> const& e) -> bool {
     if (auto entity = as<EntityT>(e)) {
       return !filter || filter(entity);
     } else {
@@ -280,33 +255,9 @@ export module star.entity;
 
 export namespace Star {
   using ::Star::RenderCallback;
-  using ::Star::RenderCallbackPtr;
-  using ::Star::RenderCallbackConstPtr;
-  using ::Star::RenderCallbackWeakPtr;
-  using ::Star::RenderCallbackConstWeakPtr;
-  using ::Star::RenderCallbackUPtr;
-  using ::Star::RenderCallbackConstUPtr;
   using ::Star::World;
-  using ::Star::WorldPtr;
-  using ::Star::WorldConstPtr;
-  using ::Star::WorldWeakPtr;
-  using ::Star::WorldConstWeakPtr;
-  using ::Star::WorldUPtr;
-  using ::Star::WorldConstUPtr;
   using ::Star::DamageNotification;
-  using ::Star::DamageNotificationPtr;
-  using ::Star::DamageNotificationConstPtr;
-  using ::Star::DamageNotificationWeakPtr;
-  using ::Star::DamageNotificationConstWeakPtr;
-  using ::Star::DamageNotificationUPtr;
-  using ::Star::DamageNotificationConstUPtr;
   using ::Star::Entity;
-  using ::Star::EntityPtr;
-  using ::Star::EntityConstPtr;
-  using ::Star::EntityWeakPtr;
-  using ::Star::EntityConstWeakPtr;
-  using ::Star::EntityUPtr;
-  using ::Star::EntityConstUPtr;
   using ::Star::EntityExceptionTag;
   using ::Star::EntityException;
   using ::Star::ClientEntityMode;

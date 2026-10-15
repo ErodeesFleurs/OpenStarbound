@@ -64,23 +64,11 @@ import star.bookmark_interface;
 namespace Star {
 
 class UniverseClient;
-using UniverseClientPtr = std::shared_ptr<UniverseClient>;
-using UniverseClientConstPtr = std::shared_ptr<UniverseClient const>;
-using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
-using UniverseClientConstWeakPtr = std::weak_ptr<UniverseClient const>;
-using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
-using UniverseClientConstUPtr = std::unique_ptr<UniverseClient const>;
 class PaneManager;
-using PaneManagerPtr = std::shared_ptr<PaneManager>;
-using PaneManagerConstPtr = std::shared_ptr<PaneManager const>;
-using PaneManagerWeakPtr = std::weak_ptr<PaneManager>;
-using PaneManagerConstWeakPtr = std::weak_ptr<PaneManager const>;
-using PaneManagerUPtr = std::unique_ptr<PaneManager>;
-using PaneManagerConstUPtr = std::unique_ptr<PaneManager const>;
 
 class TeleportDialog : public Pane {
 public:
-  TeleportDialog(UniverseClientPtr client,
+  TeleportDialog(std::shared_ptr<UniverseClient> client,
       PaneManager* paneManager,
       Json config,
       EntityId sourceEntityId,
@@ -94,7 +82,7 @@ public:
 
 private:
   EntityId m_sourceEntityId;
-  UniverseClientPtr m_client;
+  std::shared_ptr<UniverseClient> m_client;
   PaneManager* m_paneManager;
   List<std::pair<WarpAction, bool>> m_destinations;
   TeleportBookmark m_currentLocation;
@@ -106,18 +94,6 @@ export module star.teleport_dialog;
 
 export namespace Star {
   using ::Star::UniverseClient;
-  using ::Star::UniverseClientPtr;
-  using ::Star::UniverseClientConstPtr;
-  using ::Star::UniverseClientWeakPtr;
-  using ::Star::UniverseClientConstWeakPtr;
-  using ::Star::UniverseClientUPtr;
-  using ::Star::UniverseClientConstUPtr;
   using ::Star::PaneManager;
-  using ::Star::PaneManagerPtr;
-  using ::Star::PaneManagerConstPtr;
-  using ::Star::PaneManagerWeakPtr;
-  using ::Star::PaneManagerConstWeakPtr;
-  using ::Star::PaneManagerUPtr;
-  using ::Star::PaneManagerConstUPtr;
   using ::Star::TeleportDialog;
 }

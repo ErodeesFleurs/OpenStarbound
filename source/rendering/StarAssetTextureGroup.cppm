@@ -22,20 +22,12 @@ import star.asset_path;
 
 namespace Star {
 
-class AssetTextureGroup;
-using AssetTextureGroupPtr = std::shared_ptr<AssetTextureGroup>;
-using AssetTextureGroupConstPtr = std::shared_ptr<AssetTextureGroup const>;
-using AssetTextureGroupWeakPtr = std::weak_ptr<AssetTextureGroup>;
-using AssetTextureGroupConstWeakPtr = std::weak_ptr<AssetTextureGroup const>;
-using AssetTextureGroupUPtr = std::unique_ptr<AssetTextureGroup>;
-using AssetTextureGroupConstUPtr = std::unique_ptr<AssetTextureGroup const>;
-
 // Creates a renderer texture group for textures loaded directly from Assets.
 class AssetTextureGroup {
 public:
   // Creates a texture group using the given renderer and textureFiltering for
   // the managed textures.
-  AssetTextureGroup(TextureGroupPtr textureGroup);
+  AssetTextureGroup(std::shared_ptr<TextureGroup> textureGroup);
 
   // Load the given texture into the texture group if it is not loaded, and
   // return the texture pointer.
@@ -58,10 +50,10 @@ private:
   // immediately
   TexturePtr loadTexture(AssetPath const& imagePath, bool tryTexture);
 
-  TextureGroupPtr m_textureGroup;
+  std::shared_ptr<TextureGroup> m_textureGroup;
   HashMap<AssetPath, std::pair<TexturePtr, std::int64_t>> m_textureMap;
-  HashMap<ImageConstPtr, TexturePtr> m_textureDeduplicationMap;
-  TrackerListenerPtr m_reloadTracker;
+  HashMap<std::shared_ptr<Image const>, TexturePtr> m_textureDeduplicationMap;
+  std::shared_ptr<TrackerListener> m_reloadTracker;
 };
 
 }
@@ -70,10 +62,4 @@ export module star.asset_texture_group;
 
 export namespace Star {
   using ::Star::AssetTextureGroup;
-  using ::Star::AssetTextureGroupPtr;
-  using ::Star::AssetTextureGroupConstPtr;
-  using ::Star::AssetTextureGroupWeakPtr;
-  using ::Star::AssetTextureGroupConstWeakPtr;
-  using ::Star::AssetTextureGroupUPtr;
-  using ::Star::AssetTextureGroupConstUPtr;
 }

@@ -221,42 +221,42 @@ Root::Root(Settings settings) : RootBase() {
 
         {
           MutexLocker locker(m_objectDatabaseMutex);
-          if (ObjectDatabasePtr objectDb = m_objectDatabase) {
+          if (std::shared_ptr<ObjectDatabase> objectDb = m_objectDatabase) {
             locker.unlock();
             objectDb->cleanup();
           }
         }
         {
           MutexLocker locker(m_itemDatabaseMutex);
-          if (ItemDatabasePtr itemDb = m_itemDatabase) {
+          if (std::shared_ptr<ItemDatabase> itemDb = m_itemDatabase) {
             locker.unlock();
             itemDb->cleanup();
           }
         }
         {
           MutexLocker locker(m_monsterDatabaseMutex);
-          if (MonsterDatabasePtr monsterDb = m_monsterDatabase) {
+          if (std::shared_ptr<MonsterDatabase> monsterDb = m_monsterDatabase) {
             locker.unlock();
             monsterDb->cleanup();
           }
         }
         {
           MutexLocker locker(m_assetsMutex);
-          if (AssetsPtr assets = m_assets) {
+          if (std::shared_ptr<Assets> assets = m_assets) {
             locker.unlock();
             assets->cleanup();
           }
         }
         {
           MutexLocker locker(m_tenantDatabaseMutex);
-          if (TenantDatabasePtr tenantDb = m_tenantDatabase) {
+          if (std::shared_ptr<TenantDatabase> tenantDb = m_tenantDatabase) {
             locker.unlock();
             tenantDb->cleanup();
           }
         }
         {
           MutexLocker locker(m_imageMetadataDatabaseMutex);
-          if (ImageMetadataDatabasePtr imgMetaDb = m_imageMetadataDatabase) {
+          if (std::shared_ptr<ImageMetadataDatabase> imgMetaDb = m_imageMetadataDatabase) {
             locker.unlock();
             imgMetaDb->cleanup();
           }
@@ -490,7 +490,7 @@ void Root::fullyLoad() {
   }
 }
 
-void Root::registerReloadListener(ListenerWeakPtr reloadListener) {
+void Root::registerReloadListener(std::weak_ptr<Listener> reloadListener) {
   m_reloadListeners.addListener(std::move(reloadListener));
 }
 
@@ -503,7 +503,7 @@ String Root::toStoragePath(String const& path) const {
   return File::relativeTo(m_settings.storageDirectory, File::convertDirSeparators(path));
 }
 
-AssetsConstPtr Root::assets() {
+std::shared_ptr<Assets const> Root::assets() {
   return loadMemberFunction<Assets>(m_assets, m_assetsMutex, "Assets", [this]() {
       StringList assetDirectories = m_settings.assetDirectories;
       assetDirectories.appendAll(m_modDirectories);
@@ -515,7 +515,7 @@ AssetsConstPtr Root::assets() {
     });
 }
 
-ConfigurationPtr Root::configuration() {
+std::shared_ptr<Configuration> Root::configuration() {
   return loadMemberFunction<Configuration>(m_configuration, m_configurationMutex, "Configuration", [this]() {
       Json currentConfig;
 
@@ -553,155 +553,155 @@ ConfigurationPtr Root::configuration() {
     });
 }
 
-ObjectDatabaseConstPtr Root::objectDatabase() {
+std::shared_ptr<ObjectDatabase const> Root::objectDatabase() {
   return loadMember(m_objectDatabase, m_objectDatabaseMutex, "ObjectDatabase");
 }
 
-PlantDatabaseConstPtr Root::plantDatabase() {
+std::shared_ptr<PlantDatabase const> Root::plantDatabase() {
   return loadMember(m_plantDatabase, m_plantDatabaseMutex, "PlantDatabase");
 }
 
-ProjectileDatabaseConstPtr Root::projectileDatabase() {
+std::shared_ptr<ProjectileDatabase const> Root::projectileDatabase() {
   return loadMember(m_projectileDatabase, m_projectileDatabaseMutex, "ProjectileDatabase");
 }
 
-MonsterDatabaseConstPtr Root::monsterDatabase() {
+std::shared_ptr<MonsterDatabase const> Root::monsterDatabase() {
   return loadMember(m_monsterDatabase, m_monsterDatabaseMutex, "MonsterDatabase");
 }
 
-NpcDatabaseConstPtr Root::npcDatabase() {
+std::shared_ptr<NpcDatabase const> Root::npcDatabase() {
   return loadMember(m_npcDatabase, m_npcDatabaseMutex, "NpcDatabase");
 }
 
-StagehandDatabaseConstPtr Root::stagehandDatabase() {
+std::shared_ptr<StagehandDatabase const> Root::stagehandDatabase() {
   return loadMember(m_stagehandDatabase, m_stagehandDatabaseMutex, "StagehandDatabase");
 }
 
-VehicleDatabaseConstPtr Root::vehicleDatabase() {
+std::shared_ptr<VehicleDatabase const> Root::vehicleDatabase() {
   return loadMember(m_vehicleDatabase, m_vehicleDatabaseMutex, "VehicleDatabase");
 }
 
-PlayerFactoryConstPtr Root::playerFactory() {
+std::shared_ptr<PlayerFactory const> Root::playerFactory() {
   return loadMember(m_playerFactory, m_playerFactoryMutex, "PlayerFactory");
 }
 
-EntityFactoryConstPtr Root::entityFactory() {
+std::shared_ptr<EntityFactory const> Root::entityFactory() {
   return loadMember(m_entityFactory, m_entityFactoryMutex, "EntityFactory");
 }
 
-PatternedNameGeneratorConstPtr Root::nameGenerator() {
+std::shared_ptr<PatternedNameGenerator const> Root::nameGenerator() {
   return loadMember(m_nameGenerator, m_nameGeneratorMutex, "NameGenerator");
 }
 
-ItemDatabaseConstPtr Root::itemDatabase() {
+std::shared_ptr<ItemDatabase const> Root::itemDatabase() {
   return loadMember(m_itemDatabase, m_itemDatabaseMutex, "ItemDatabase");
 }
 
-MaterialDatabaseConstPtr Root::materialDatabase() {
+std::shared_ptr<MaterialDatabase const> Root::materialDatabase() {
   return loadMember(m_materialDatabase, m_materialDatabaseMutex, "MaterialDatabase");
 }
 
-TerrainDatabaseConstPtr Root::terrainDatabase() {
+std::shared_ptr<TerrainDatabase const> Root::terrainDatabase() {
   return loadMember(m_terrainDatabase, m_terrainDatabaseMutex, "TerrainDatabase");
 }
 
-BiomeDatabaseConstPtr Root::biomeDatabase() {
+std::shared_ptr<BiomeDatabase const> Root::biomeDatabase() {
   return loadMember(m_biomeDatabase, m_biomeDatabaseMutex, "BiomeDatabase");
 }
 
-LiquidsDatabaseConstPtr Root::liquidsDatabase() {
+std::shared_ptr<LiquidsDatabase const> Root::liquidsDatabase() {
   return loadMember(m_liquidsDatabase, m_liquidsDatabaseMutex, "LiquidsDatabase");
 }
 
-StatusEffectDatabaseConstPtr Root::statusEffectDatabase() {
+std::shared_ptr<StatusEffectDatabase const> Root::statusEffectDatabase() {
   return loadMember(m_statusEffectDatabase, m_statusEffectDatabaseMutex, "StatusEffectDatabase");
 }
 
-DamageDatabaseConstPtr Root::damageDatabase() {
+std::shared_ptr<DamageDatabase const> Root::damageDatabase() {
   return loadMember(m_damageDatabase, m_damageDatabaseMutex, "DamageDatabase");
 }
 
-ParticleDatabaseConstPtr Root::particleDatabase() {
+std::shared_ptr<ParticleDatabase const> Root::particleDatabase() {
   return loadMember(m_particleDatabase, m_particleDatabaseMutex, "ParticleDatabase");
 }
 
-EffectSourceDatabaseConstPtr Root::effectSourceDatabase() {
+std::shared_ptr<EffectSourceDatabase const> Root::effectSourceDatabase() {
   return loadMember(m_effectSourceDatabase, m_effectSourceDatabaseMutex, "EffectSourceDatabase");
 }
 
-FunctionDatabaseConstPtr Root::functionDatabase() {
+std::shared_ptr<FunctionDatabase const> Root::functionDatabase() {
   return loadMember(m_functionDatabase, m_functionDatabaseMutex, "FunctionDatabase");
 }
 
-TreasureDatabaseConstPtr Root::treasureDatabase() {
+std::shared_ptr<TreasureDatabase const> Root::treasureDatabase() {
   return loadMember(m_treasureDatabase, m_treasureDatabaseMutex, "TreasureDatabase");
 }
 
-DungeonDefinitionsConstPtr Root::dungeonDefinitions() {
+std::shared_ptr<DungeonDefinitions const> Root::dungeonDefinitions() {
   return loadMember(m_dungeonDefinitions, m_dungeonDefinitionsMutex, "DungeonDefinitions");
 }
 
-TilesetDatabaseConstPtr Root::tilesetDatabase() {
+std::shared_ptr<TilesetDatabase const> Root::tilesetDatabase() {
   return loadMember(m_tilesetDatabase, m_tilesetDatabaseMutex, "TilesetDatabase");
 }
 
-StatisticsDatabaseConstPtr Root::statisticsDatabase() {
+std::shared_ptr<StatisticsDatabase const> Root::statisticsDatabase() {
   return loadMember(m_statisticsDatabase, m_statisticsDatabaseMutex, "StatisticsDatabase");
 }
 
-EmoteProcessorConstPtr Root::emoteProcessor() {
+std::shared_ptr<EmoteProcessor const> Root::emoteProcessor() {
   return loadMember(m_emoteProcessor, m_emoteProcessorMutex, "EmoteProcessor");
 }
 
-SpeciesDatabaseConstPtr Root::speciesDatabase() {
+std::shared_ptr<SpeciesDatabase const> Root::speciesDatabase() {
   return loadMember(m_speciesDatabase, m_speciesDatabaseMutex, "SpeciesDatabase");
 }
 
-ImageMetadataDatabaseConstPtr Root::imageMetadataDatabase() {
+std::shared_ptr<ImageMetadataDatabase const> Root::imageMetadataDatabase() {
   return loadMember(m_imageMetadataDatabase, m_imageMetadataDatabaseMutex, "ImageMetadataDatabase");
 }
 
-VersioningDatabaseConstPtr Root::versioningDatabase() {
+std::shared_ptr<VersioningDatabase const> Root::versioningDatabase() {
   return loadMember(m_versioningDatabase, m_versioningDatabaseMutex, "VersioningDatabase");
 }
 
-QuestTemplateDatabaseConstPtr Root::questTemplateDatabase() {
+std::shared_ptr<QuestTemplateDatabase const> Root::questTemplateDatabase() {
   return loadMember(m_questTemplateDatabase, m_questTemplateDatabaseMutex, "QuestTemplateDatabase");
 }
 
-AiDatabaseConstPtr Root::aiDatabase() {
+std::shared_ptr<AiDatabase const> Root::aiDatabase() {
   return loadMember(m_aiDatabase, m_aiDatabaseMutex, "AiDatabase");
 }
 
-TechDatabaseConstPtr Root::techDatabase() {
+std::shared_ptr<TechDatabase const> Root::techDatabase() {
   return loadMember(m_techDatabase, m_techDatabaseMutex, "TechDatabase");
 }
 
-CodexDatabaseConstPtr Root::codexDatabase() {
+std::shared_ptr<CodexDatabase const> Root::codexDatabase() {
   return loadMember(m_codexDatabase, m_codexDatabaseMutex, "CodexDatabase");
 }
 
-BehaviorDatabaseConstPtr Root::behaviorDatabase() {
+std::shared_ptr<BehaviorDatabase const> Root::behaviorDatabase() {
   return loadMember(m_behaviorDatabase, m_behaviorDatabaseMutex, "BehaviorDatabase");
 }
 
-TenantDatabaseConstPtr Root::tenantDatabase() {
+std::shared_ptr<TenantDatabase const> Root::tenantDatabase() {
   return loadMember(m_tenantDatabase, m_tenantDatabaseMutex, "TenantDatabase");
 }
 
-DanceDatabaseConstPtr Root::danceDatabase() {
+std::shared_ptr<DanceDatabase const> Root::danceDatabase() {
   return loadMember(m_danceDatabase, m_danceDatabaseMutex, "DanceDatabase");
 }
 
-SpawnTypeDatabaseConstPtr Root::spawnTypeDatabase() {
+std::shared_ptr<SpawnTypeDatabase const> Root::spawnTypeDatabase() {
   return loadMember(m_spawnTypeDatabase, m_spawnTypeDatabaseMutex, "SpawnTypeDatabase");
 }
 
-RadioMessageDatabaseConstPtr Root::radioMessageDatabase() {
+std::shared_ptr<RadioMessageDatabase const> Root::radioMessageDatabase() {
   return loadMember(m_radioMessageDatabase, m_radioMessageDatabaseMutex, "RadioMessageDatabase");
 }
 
-CollectionDatabaseConstPtr Root::collectionDatabase() {
+std::shared_ptr<CollectionDatabase const> Root::collectionDatabase() {
   return loadMember(m_collectionDatabase, m_collectionDatabaseMutex, "CollectionDatabase");
 }
 
@@ -722,7 +722,7 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
   StringMap<std::shared_ptr<AssetSource>> namedSources;
 
   auto processEntry = [&](String const& sourcePath, bool isDirectory) -> bool {
-    AssetSourcePtr source;
+    std::shared_ptr<Star::AssetSource> source;
     auto name = File::baseName(sourcePath);
     if (name.beginsWith(".") || name.beginsWith("_"))
       Logger::info("Root: Skipping hidden '{}' in asset directory", name);

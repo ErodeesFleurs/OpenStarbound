@@ -298,7 +298,7 @@ MonsterVariant MonsterDatabase::readMonsterVariantFromJson(Json const& variant) 
   return monsterVariant(variant.getString("type"), variant.getUInt("seed"), variant.getObject("uniqueParameters"));
 }
 
-MonsterPtr MonsterDatabase::createMonster(
+std::shared_ptr<Monster> MonsterDatabase::createMonster(
     MonsterVariant monsterVariant, Maybe<float> level, Json uniqueParameters) const {
   if (uniqueParameters) {
     monsterVariant.uniqueParameters = jsonMerge(monsterVariant.uniqueParameters, uniqueParameters);
@@ -308,8 +308,8 @@ MonsterPtr MonsterDatabase::createMonster(
   return std::make_shared<Monster>(monsterVariant, level);
 }
 
-MonsterPtr MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
-  MonsterPtr monster;
+std::shared_ptr<Monster> MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
+  std::shared_ptr<Monster> monster;
   try {
     monster = std::make_shared<Monster>(diskStore);
   } catch (std::exception const& e) {
@@ -330,7 +330,7 @@ MonsterPtr MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
   return monster;
 }
 
-MonsterPtr MonsterDatabase::netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules) const {
+std::shared_ptr<Monster> MonsterDatabase::netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules) const {
   return std::make_shared<Monster>(readMonsterVariant(netStore, rules));
 }
 

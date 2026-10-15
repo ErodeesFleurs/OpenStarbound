@@ -95,7 +95,7 @@ extern EnumMap<MainInterfacePanes> const MainInterfacePanesNames{
   {MainInterfacePanes::CharacterSwap, "CharacterSwap"}
 };
 
-MainInterfaceConfigPtr MainInterfaceConfig::loadFromAssets() {
+std::shared_ptr<MainInterfaceConfig> MainInterfaceConfig::loadFromAssets() {
   auto& root = Root::singleton();
   auto assets = root.assets();
   auto imageMetadata = root.imageMetadataDatabase();

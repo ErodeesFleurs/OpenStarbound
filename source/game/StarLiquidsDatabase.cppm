@@ -23,21 +23,6 @@ import star.item_descriptor;
 
 namespace Star {
 
-struct LiquidSettings;
-using LiquidSettingsPtr = std::shared_ptr<LiquidSettings>;
-using LiquidSettingsConstPtr = std::shared_ptr<const LiquidSettings>;
-using LiquidSettingsWeakPtr = std::weak_ptr<LiquidSettings>;
-using LiquidSettingsConstWeakPtr = std::weak_ptr<const LiquidSettings>;
-using LiquidSettingsUPtr = std::unique_ptr<LiquidSettings>;
-using LiquidSettingsConstUPtr = std::unique_ptr<const LiquidSettings>;
-class LiquidsDatabase;
-using LiquidsDatabasePtr = std::shared_ptr<LiquidsDatabase>;
-using LiquidsDatabaseConstPtr = std::shared_ptr<const LiquidsDatabase>;
-using LiquidsDatabaseWeakPtr = std::weak_ptr<LiquidsDatabase>;
-using LiquidsDatabaseConstWeakPtr = std::weak_ptr<const LiquidsDatabase>;
-using LiquidsDatabaseUPtr = std::unique_ptr<LiquidsDatabase>;
-using LiquidsDatabaseConstUPtr = std::unique_ptr<const LiquidsDatabase>;
-
 struct LiquidExceptionTag {
   static constexpr char const* name() { return "LiquidException"; }
 };
@@ -73,7 +58,7 @@ public:
   StringList liquidNames() const;
 
   // Returns settings object for all liquids except "empty"
-  List<LiquidSettingsConstPtr> allLiquidSettings() const;
+  List<std::shared_ptr<LiquidSettings const>> allLiquidSettings() const;
 
   bool isLiquidName(String const& name) const;
   bool isValidLiquidId(LiquidId liquidId) const;
@@ -86,7 +71,7 @@ public:
   Maybe<Json> liquidConfig(LiquidId liquidId) const;
 
   // Returns null on EmptyLiquidId or invalid liquid id
-  LiquidSettingsConstPtr liquidSettings(LiquidId liquidId) const;
+  std::shared_ptr<LiquidSettings const> liquidSettings(LiquidId liquidId) const;
 
   Vec3F radiantLight(LiquidLevel level) const;
 
@@ -95,7 +80,7 @@ public:
 private:
   LiquidCellEngineParameters m_liquidEngineParameters;
   float m_backgroundDrain;
-  List<LiquidSettingsConstPtr> m_settings;
+  List<std::shared_ptr<LiquidSettings const>> m_settings;
   StringMap<LiquidId> m_liquidNames;
 };
 
@@ -111,7 +96,7 @@ inline bool LiquidsDatabase::isValidLiquidId(LiquidId liquidId) const {
   return liquidId == EmptyLiquidId || (liquidId < m_settings.size() && m_settings[liquidId]);
 }
 
-inline LiquidSettingsConstPtr LiquidsDatabase::liquidSettings(LiquidId liquidId) const {
+inline std::shared_ptr<LiquidSettings const> LiquidsDatabase::liquidSettings(LiquidId liquidId) const {
   if (liquidId >= m_settings.size())
     return {};
   return m_settings[liquidId];
@@ -135,17 +120,5 @@ export namespace Star {
   using ::Star::LiquidException;
   using ::Star::LiquidInteractionResult;
   using ::Star::LiquidSettings;
-  using ::Star::LiquidSettingsPtr;
-  using ::Star::LiquidSettingsConstPtr;
-  using ::Star::LiquidSettingsWeakPtr;
-  using ::Star::LiquidSettingsConstWeakPtr;
-  using ::Star::LiquidSettingsUPtr;
-  using ::Star::LiquidSettingsConstUPtr;
   using ::Star::LiquidsDatabase;
-  using ::Star::LiquidsDatabasePtr;
-  using ::Star::LiquidsDatabaseConstPtr;
-  using ::Star::LiquidsDatabaseWeakPtr;
-  using ::Star::LiquidsDatabaseConstWeakPtr;
-  using ::Star::LiquidsDatabaseUPtr;
-  using ::Star::LiquidsDatabaseConstUPtr;
 }

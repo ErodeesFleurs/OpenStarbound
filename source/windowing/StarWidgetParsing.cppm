@@ -49,19 +49,7 @@ import star.widget;
 namespace Star {
 
 class Widget;
-using WidgetPtr = std::shared_ptr<Widget>;
-using WidgetConstPtr = std::shared_ptr<Widget const>;
-using WidgetWeakPtr = std::weak_ptr<Widget>;
-using WidgetConstWeakPtr = std::weak_ptr<Widget const>;
-using WidgetUPtr = std::unique_ptr<Widget>;
-using WidgetConstUPtr = std::unique_ptr<Widget const>;
 class Pane;
-using PanePtr = std::shared_ptr<Pane>;
-using PaneConstPtr = std::shared_ptr<Pane const>;
-using PaneWeakPtr = std::weak_ptr<Pane>;
-using PaneConstWeakPtr = std::weak_ptr<Pane const>;
-using PaneUPtr = std::unique_ptr<Pane>;
-using PaneConstUPtr = std::unique_ptr<Pane const>;
 
 struct WidgetParserExceptionTag {
   static constexpr char const* name() { return "WidgetParserException"; }
@@ -70,9 +58,9 @@ using WidgetParserException = StarError<WidgetParserExceptionTag, StarException>
 
 struct WidgetConstructResult {
   WidgetConstructResult();
-  WidgetConstructResult(WidgetPtr obj, String const& name, float zlevel);
+  WidgetConstructResult(std::shared_ptr<Widget> obj, String const& name, float zlevel);
 
-  WidgetPtr obj;
+  std::shared_ptr<Widget> obj;
   String name;
   float zlevel;
 };
@@ -86,7 +74,7 @@ public:
 
   virtual void construct(Json const& config, Widget* widget = nullptr);
   void registerCallback(String const& name, WidgetCallbackFunc callback);
-  WidgetPtr makeSingle(String const& name, Json const& config);
+  std::shared_ptr<Widget> makeSingle(String const& name, Json const& config);
 
 protected:
   void constructImpl(Json const& config, Widget* widget);
@@ -121,7 +109,7 @@ protected:
   WidgetConstructResult layoutHandler(String const& name, Json const& config);
 
   // Utilities
-  void common(WidgetPtr widget, Json const& config, bool getChildren = true);
+  void common(std::shared_ptr<Widget> widget, Json const& config, bool getChildren = true);
   ImageStretchSet parseImageStretchSet(Json const& config);
 
   Pane* m_pane;
@@ -138,19 +126,7 @@ export namespace Star {
   using ::Star::WidgetConstructResult;
   using ::Star::WidgetParser;
   using ::Star::Widget;
-  using ::Star::WidgetPtr;
-  using ::Star::WidgetConstPtr;
-  using ::Star::WidgetWeakPtr;
-  using ::Star::WidgetConstWeakPtr;
-  using ::Star::WidgetUPtr;
-  using ::Star::WidgetConstUPtr;
   using ::Star::Pane;
-  using ::Star::PanePtr;
-  using ::Star::PaneConstPtr;
-  using ::Star::PaneWeakPtr;
-  using ::Star::PaneConstWeakPtr;
-  using ::Star::PaneUPtr;
-  using ::Star::PaneConstUPtr;
   using ::Star::WidgetParserException;
   using ::Star::ConstuctorFunc;
 }

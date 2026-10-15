@@ -138,23 +138,23 @@ import star.object_database;
 
 export namespace Star {
 namespace ItemTooltipBuilder {
-  PanePtr buildItemTooltip(ItemPtr const& item, PlayerPtr const& viewer = {});
+  std::shared_ptr<Pane> buildItemTooltip(std::shared_ptr<Item> const& item, std::shared_ptr<Player> const& viewer = {});
 
-  void buildItemDescription(WidgetPtr const& container, ItemPtr const& item);
+  void buildItemDescription(std::shared_ptr<Widget> const& container, std::shared_ptr<Item> const& item);
   void buildItemDescriptionInner(
-      WidgetPtr const& container, ItemPtr const& item, String const& tooltipKind, String& title, String& subtitle, PlayerPtr const& viewer = {});
+      std::shared_ptr<Widget> const& container, std::shared_ptr<Item> const& item, String const& tooltipKind, String& title, String& subtitle, std::shared_ptr<Player> const& viewer = {});
 
-  void describePersistentEffect(ListWidgetPtr const& container, PersistentStatusEffect const& effect);
+  void describePersistentEffect(std::shared_ptr<ListWidget> const& container, PersistentStatusEffect const& effect);
 };
 }
 
 namespace Star {
 
-PanePtr ItemTooltipBuilder::buildItemTooltip(ItemPtr const& item, PlayerPtr const& viewer) {
+std::shared_ptr<Pane> ItemTooltipBuilder::buildItemTooltip(std::shared_ptr<Item> const& item, std::shared_ptr<Player> const& viewer) {
   if (!item) {
     return {};
   } else {
-    PanePtr tooltip = std::make_shared<Pane>();
+    std::shared_ptr<Pane> tooltip = std::make_shared<Pane>();
     tooltip->removeAllChildren();
 
     String title;
@@ -178,7 +178,7 @@ PanePtr ItemTooltipBuilder::buildItemTooltip(ItemPtr const& item, PlayerPtr cons
   }
 }
 
-void ItemTooltipBuilder::buildItemDescription(WidgetPtr const& container, ItemPtr const& item) {
+void ItemTooltipBuilder::buildItemDescription(std::shared_ptr<Widget> const& container, std::shared_ptr<Item> const& item) {
   String tooltipKind = item->tooltipKind();
 
   if (tooltipKind.empty())
@@ -197,7 +197,7 @@ String categoryDisplayName(String const& category) {
 }
 
 void ItemTooltipBuilder::buildItemDescriptionInner(
-    WidgetPtr const& container, ItemPtr const& item, String const& tooltipKind, String& title, String& subTitle, PlayerPtr const& viewer) {
+    std::shared_ptr<Widget> const& container, std::shared_ptr<Item> const& item, String const& tooltipKind, String& title, String& subTitle, std::shared_ptr<Player> const& viewer) {
   GuiReader reader;
   auto& root = Root::singleton();
   auto assets = root.assets();
@@ -247,7 +247,7 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
       if (auto previewable = as<PreviewableItem>(item)) {
         if (is<ArmorItem>(previewable)) {
           objectImage->disableScissoring();
-          PlayerPtr armorViewer;
+          std::shared_ptr<Player> armorViewer;
           if (assets->json("/interface.config:tooltip.previewArmorWith").toString() == "player")
             armorViewer = viewer;
           objectImage->setDrawables(previewable->preview(armorViewer));
@@ -321,7 +321,7 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
 }
 
 void ItemTooltipBuilder::describePersistentEffect(
-    ListWidgetPtr const& container, PersistentStatusEffect const& effect) {
+    std::shared_ptr<ListWidget> const& container, PersistentStatusEffect const& effect) {
   if (auto uniqueStatusEffect = effect.ptr<UniqueStatusEffect>()) {
     auto statusEffectDatabase = Root::singleton().statusEffectDatabase();
     auto effectConfig = statusEffectDatabase->uniqueEffectConfig(*uniqueStatusEffect);

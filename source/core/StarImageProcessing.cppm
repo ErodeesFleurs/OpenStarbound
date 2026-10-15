@@ -16,12 +16,6 @@ class StringView;
 typedef List<Json> JsonArray;
 
 class Image;
-using ImagePtr = std::shared_ptr<Image>;
-using ImageConstPtr = std::shared_ptr<const Image>;
-using ImageWeakPtr = std::weak_ptr<Image>;
-using ImageConstWeakPtr = std::weak_ptr<const Image>;
-using ImageUPtr = std::unique_ptr<Image>;
-using ImageConstUPtr = std::unique_ptr<const Image>;
 
 struct ImageOperationExceptionTag {
   static constexpr char const* name() { return "ImageOperationException"; }
@@ -182,12 +176,6 @@ export module star.image_processing;
 
 export namespace Star {
   using ::Star::Image;
-  using ::Star::ImagePtr;
-  using ::Star::ImageConstPtr;
-  using ::Star::ImageUPtr;
-  using ::Star::ImageConstUPtr;
-  using ::Star::ImageWeakPtr;
-  using ::Star::ImageConstWeakPtr;
   using ::Star::ImageOperationExceptionTag;
   using ::Star::ImageOperationException;
   using ::Star::colorDirectivesFromConfig;

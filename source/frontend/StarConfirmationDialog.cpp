@@ -102,7 +102,7 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
       config.optString("paneLayout").value("/interface/windowconfig/confirmation.config:paneLayout");
   reader.construct(assets->json(paneLayoutPath), this);
 
-  ImageWidgetPtr titleIcon = {};
+  std::shared_ptr<ImageWidget> titleIcon = {};
   if (config.contains("icon"))
     titleIcon = std::make_shared<ImageWidget>(config.getString("icon"));
 

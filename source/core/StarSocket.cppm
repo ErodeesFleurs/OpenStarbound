@@ -17,20 +17,8 @@ struct SocketClosedExceptionTag {
 };
 using SocketClosedException = StarError<SocketClosedExceptionTag, NetworkException>;
 
-struct SocketImpl;
-using SocketImplPtr = std::shared_ptr<SocketImpl>;
-using SocketImplConstPtr = std::shared_ptr<const SocketImpl>;
-using SocketImplWeakPtr = std::weak_ptr<SocketImpl>;
-using SocketImplConstWeakPtr = std::weak_ptr<const SocketImpl>;
-using SocketImplUPtr = std::unique_ptr<SocketImpl>;
-using SocketImplConstUPtr = std::unique_ptr<const SocketImpl>;
 class Socket;
-using SocketPtr = std::shared_ptr<Socket>;
-using SocketConstPtr = std::shared_ptr<const Socket>;
-using SocketWeakPtr = std::weak_ptr<Socket>;
-using SocketConstWeakPtr = std::weak_ptr<const Socket>;
-using SocketUPtr = std::unique_ptr<Socket>;
-using SocketConstUPtr = std::unique_ptr<const Socket>;
+struct SocketImpl;
 
 enum class SocketMode {
   Closed,
@@ -55,8 +43,8 @@ struct SocketPollResultEntry {
   bool exception;
 };
 
-typedef Map<SocketPtr, SocketPollQueryEntry> SocketPollQuery;
-typedef Map<SocketPtr, SocketPollResultEntry> SocketPollResult;
+typedef Map<std::shared_ptr<Socket>, SocketPollQueryEntry> SocketPollQuery;
+typedef Map<std::shared_ptr<Socket>, SocketPollResultEntry> SocketPollResult;
 
 class Socket {
 public:
@@ -99,7 +87,7 @@ protected:
   };
 
   Socket(SocketType type, NetworkMode networkMode);
-  Socket(NetworkMode networkMode, SocketImplPtr impl, SocketMode socketMode);
+  Socket(NetworkMode networkMode, std::shared_ptr<SocketImpl> impl, SocketMode socketMode);
 
   void checkOpen(char const* methodName) const;
   void doShutdown();
@@ -107,7 +95,7 @@ protected:
 
   mutable ReadersWriterMutex m_mutex;
   NetworkMode m_networkMode;
-  SocketImplPtr m_impl;
+  std::shared_ptr<SocketImpl> m_impl;
   std::atomic<SocketMode> m_socketMode;
   HostAddressWithPort m_localAddress;
 };
@@ -125,17 +113,5 @@ export namespace Star {
   using ::Star::SocketPollQuery;
   using ::Star::SocketPollResult;
   using ::Star::SocketImpl;
-  using ::Star::SocketImplPtr;
-  using ::Star::SocketImplConstPtr;
-  using ::Star::SocketImplWeakPtr;
-  using ::Star::SocketImplConstWeakPtr;
-  using ::Star::SocketImplUPtr;
-  using ::Star::SocketImplConstUPtr;
   using ::Star::Socket;
-  using ::Star::SocketPtr;
-  using ::Star::SocketConstPtr;
-  using ::Star::SocketWeakPtr;
-  using ::Star::SocketConstWeakPtr;
-  using ::Star::SocketUPtr;
-  using ::Star::SocketConstUPtr;
 }

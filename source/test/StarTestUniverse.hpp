@@ -183,9 +183,9 @@ public:
 private:
   Vec2U m_clientWindowSize;
   String m_storagePath;
-  UniverseServerPtr m_server;
-  UniverseClientPtr m_client;
-  PlayerPtr m_mainPlayer;
+  std::shared_ptr<UniverseServer> m_server;
+  std::shared_ptr<UniverseClient> m_client;
+  std::shared_ptr<Player> m_mainPlayer;
 };
 
 }

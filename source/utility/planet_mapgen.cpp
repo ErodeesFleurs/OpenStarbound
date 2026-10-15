@@ -94,11 +94,11 @@ int main(int argc, char** argv) {
     rootLoader.addSwitch("weightingblocknoise", "apply layout block noise before outputting weighting");
     rootLoader.addSwitch("transition", "show biome transition regions");
 
-    RootUPtr root;
+    std::unique_ptr<::Star::Root> root;
     OptionParser::Options options;
     std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
-    CelestialMasterDatabasePtr celestialDatabase = std::make_shared<CelestialMasterDatabase>();
+    std::shared_ptr<::Star::CelestialMasterDatabase> celestialDatabase = std::make_shared<CelestialMasterDatabase>();
 
     Maybe<CelestialCoordinate> coordinate;
     if (!options.parameters["coordinate"].empty())

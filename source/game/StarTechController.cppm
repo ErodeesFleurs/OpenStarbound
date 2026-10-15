@@ -45,20 +45,7 @@ import star.net_element_group;
 
 namespace Star {
 
-class TechController;
-using TechControllerPtr = std::shared_ptr<TechController>;
-using TechControllerConstPtr = std::shared_ptr<const TechController>;
-using TechControllerWeakPtr = std::weak_ptr<TechController>;
-using TechControllerConstWeakPtr = std::weak_ptr<const TechController>;
-using TechControllerUPtr = std::unique_ptr<TechController>;
-using TechControllerConstUPtr = std::unique_ptr<const TechController>;
 class StatusController;
-using StatusControllerPtr = std::shared_ptr<StatusController>;
-using StatusControllerConstPtr = std::shared_ptr<const StatusController>;
-using StatusControllerWeakPtr = std::weak_ptr<StatusController>;
-using StatusControllerConstWeakPtr = std::weak_ptr<const StatusController>;
-using StatusControllerUPtr = std::unique_ptr<StatusController>;
-using StatusControllerConstUPtr = std::unique_ptr<const StatusController>;
 
 // Class that acts as a movement controller for the parent entity that supports
 // a variety scriptable "Tech" that the entity can use that affect movement,
@@ -127,7 +114,7 @@ public:
 
   List<LightSource> lightSources() const;
 
-  List<AudioInstancePtr> pullNewAudios();
+  List<std::shared_ptr<AudioInstance>> pullNewAudios();
   List<Particle> pullNewParticles();
 
   Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
@@ -222,17 +209,5 @@ export module star.tech_controller;
 
 export namespace Star {
   using ::Star::TechController;
-  using ::Star::TechControllerPtr;
-  using ::Star::TechControllerConstPtr;
-  using ::Star::TechControllerWeakPtr;
-  using ::Star::TechControllerConstWeakPtr;
-  using ::Star::TechControllerUPtr;
-  using ::Star::TechControllerConstUPtr;
   using ::Star::StatusController;
-  using ::Star::StatusControllerPtr;
-  using ::Star::StatusControllerConstPtr;
-  using ::Star::StatusControllerWeakPtr;
-  using ::Star::StatusControllerConstWeakPtr;
-  using ::Star::StatusControllerUPtr;
-  using ::Star::StatusControllerConstUPtr;
 }

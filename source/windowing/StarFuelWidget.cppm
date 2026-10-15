@@ -47,14 +47,6 @@ import star.widget;
 
 namespace Star {
 
-class FuelWidget;
-using FuelWidgetPtr = std::shared_ptr<FuelWidget>;
-using FuelWidgetConstPtr = std::shared_ptr<FuelWidget const>;
-using FuelWidgetWeakPtr = std::weak_ptr<FuelWidget>;
-using FuelWidgetConstWeakPtr = std::weak_ptr<FuelWidget const>;
-using FuelWidgetUPtr = std::unique_ptr<FuelWidget>;
-using FuelWidgetConstUPtr = std::unique_ptr<FuelWidget const>;
-
 class FuelWidget : public Widget {
 public:
   FuelWidget();
@@ -90,10 +82,4 @@ export module star.fuel_widget;
 
 export namespace Star {
   using ::Star::FuelWidget;
-  using ::Star::FuelWidgetPtr;
-  using ::Star::FuelWidgetConstPtr;
-  using ::Star::FuelWidgetWeakPtr;
-  using ::Star::FuelWidgetConstWeakPtr;
-  using ::Star::FuelWidgetUPtr;
-  using ::Star::FuelWidgetConstUPtr;
 }

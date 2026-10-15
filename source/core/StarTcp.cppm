@@ -9,27 +9,12 @@ import star.socket;
 
 namespace Star {
 
-class TcpSocket;
-using TcpSocketPtr = std::shared_ptr<TcpSocket>;
-using TcpSocketConstPtr = std::shared_ptr<const TcpSocket>;
-using TcpSocketWeakPtr = std::weak_ptr<TcpSocket>;
-using TcpSocketConstWeakPtr = std::weak_ptr<const TcpSocket>;
-using TcpSocketUPtr = std::unique_ptr<TcpSocket>;
-using TcpSocketConstUPtr = std::unique_ptr<const TcpSocket>;
-class TcpServer;
-using TcpServerPtr = std::shared_ptr<TcpServer>;
-using TcpServerConstPtr = std::shared_ptr<const TcpServer>;
-using TcpServerWeakPtr = std::weak_ptr<TcpServer>;
-using TcpServerConstWeakPtr = std::weak_ptr<const TcpServer>;
-using TcpServerUPtr = std::unique_ptr<TcpServer>;
-using TcpServerConstUPtr = std::unique_ptr<const TcpServer>;
-
 class TcpSocket : public Socket {
 public:
-  static TcpSocketPtr connectTo(HostAddressWithPort const& address);
-  static TcpSocketPtr listen(HostAddressWithPort const& address);
+  static std::shared_ptr<TcpSocket> connectTo(HostAddressWithPort const& address);
+  static std::shared_ptr<TcpSocket> listen(HostAddressWithPort const& address);
 
-  TcpSocketPtr accept();
+  std::shared_ptr<TcpSocket> accept();
 
   // Must be called after connect.  Sets TCP_NODELAY option.
   void setNoDelay(bool noDelay);
@@ -42,7 +27,7 @@ public:
 
 private:
   TcpSocket(NetworkMode networkMode);
-  TcpSocket(NetworkMode networkMode, SocketImplPtr impl);
+  TcpSocket(NetworkMode networkMode, std::shared_ptr<SocketImpl> impl);
 
   void connect(HostAddressWithPort const& address);
 
@@ -52,7 +37,7 @@ private:
 // Simple class to listen for and open TcpSocket instances.
 class TcpServer {
 public:
-  typedef std::function<void(TcpSocketPtr socket)> AcceptCallback;
+  typedef std::function<void(std::shared_ptr<TcpSocket> socket)> AcceptCallback;
 
   TcpServer(HostAddressWithPort const& address);
   // Listens to all interfaces.
@@ -65,7 +50,7 @@ public:
   // Blocks until next connection available for the given timeout.  Throws
   // ServerClosed if close() is called.  Cannot be called if AcceptCallback is
   // set.
-  TcpSocketPtr accept(unsigned timeout);
+  std::shared_ptr<TcpSocket> accept(unsigned timeout);
 
   // Rather than calling and blocking on accept(), if an AcceptCallback is set
   // here, it will be called whenever a new connection is available.
@@ -81,7 +66,7 @@ private:
   AcceptCallback m_callback;
   ThreadFunction<void> m_callbackThread;
   HostAddressWithPort m_hostAddress;
-  TcpSocketPtr m_listenSocket;
+  std::shared_ptr<TcpSocket> m_listenSocket;
 };
 
 }
@@ -90,17 +75,5 @@ export module star.tcp;
 
 export namespace Star {
   using ::Star::TcpSocket;
-  using ::Star::TcpSocketPtr;
-  using ::Star::TcpSocketConstPtr;
-  using ::Star::TcpSocketWeakPtr;
-  using ::Star::TcpSocketConstWeakPtr;
-  using ::Star::TcpSocketUPtr;
-  using ::Star::TcpSocketConstUPtr;
   using ::Star::TcpServer;
-  using ::Star::TcpServerPtr;
-  using ::Star::TcpServerConstPtr;
-  using ::Star::TcpServerWeakPtr;
-  using ::Star::TcpServerConstWeakPtr;
-  using ::Star::TcpServerUPtr;
-  using ::Star::TcpServerConstUPtr;
 }

@@ -47,26 +47,6 @@ import star.world_tiles;
 namespace Star {
 
 class MaterialDatabase;
-using MaterialDatabasePtr = std::shared_ptr<MaterialDatabase>;
-using MaterialDatabaseConstPtr = std::shared_ptr<const MaterialDatabase>;
-using MaterialDatabaseWeakPtr = std::weak_ptr<MaterialDatabase>;
-using MaterialDatabaseConstWeakPtr = std::weak_ptr<const MaterialDatabase>;
-using MaterialDatabaseUPtr = std::unique_ptr<MaterialDatabase>;
-using MaterialDatabaseConstUPtr = std::unique_ptr<const MaterialDatabase>;
-class FallingBlocksFacade;
-using FallingBlocksFacadePtr = std::shared_ptr<FallingBlocksFacade>;
-using FallingBlocksFacadeConstPtr = std::shared_ptr<const FallingBlocksFacade>;
-using FallingBlocksFacadeWeakPtr = std::weak_ptr<FallingBlocksFacade>;
-using FallingBlocksFacadeConstWeakPtr = std::weak_ptr<const FallingBlocksFacade>;
-using FallingBlocksFacadeUPtr = std::unique_ptr<FallingBlocksFacade>;
-using FallingBlocksFacadeConstUPtr = std::unique_ptr<const FallingBlocksFacade>;
-class FallingBlocksAgent;
-using FallingBlocksAgentPtr = std::shared_ptr<FallingBlocksAgent>;
-using FallingBlocksAgentConstPtr = std::shared_ptr<const FallingBlocksAgent>;
-using FallingBlocksAgentWeakPtr = std::weak_ptr<FallingBlocksAgent>;
-using FallingBlocksAgentConstWeakPtr = std::weak_ptr<const FallingBlocksAgent>;
-using FallingBlocksAgentUPtr = std::unique_ptr<FallingBlocksAgent>;
-using FallingBlocksAgentConstUPtr = std::unique_ptr<const FallingBlocksAgent>;
 
 enum class FallingBlockType {
   Immovable,
@@ -85,7 +65,7 @@ public:
 
 class FallingBlocksAgent {
 public:
-  FallingBlocksAgent(FallingBlocksFacadePtr worldFacade);
+  FallingBlocksAgent(std::shared_ptr<FallingBlocksFacade> worldFacade);
 
   void update();
 
@@ -93,7 +73,7 @@ public:
   void visitRegion(RectI const& region);
 
 private:
-  FallingBlocksFacadePtr m_facade;
+  std::shared_ptr<FallingBlocksFacade> m_facade;
   float m_immediateUpwardPropagateProbability;
   HashSet<Vec2I> m_pending;
   RandomSource m_random;
@@ -106,24 +86,6 @@ export module star.falling_blocks_agent;
 export namespace Star {
   using ::Star::FallingBlockType;
   using ::Star::MaterialDatabase;
-  using ::Star::MaterialDatabasePtr;
-  using ::Star::MaterialDatabaseConstPtr;
-  using ::Star::MaterialDatabaseWeakPtr;
-  using ::Star::MaterialDatabaseConstWeakPtr;
-  using ::Star::MaterialDatabaseUPtr;
-  using ::Star::MaterialDatabaseConstUPtr;
   using ::Star::FallingBlocksFacade;
-  using ::Star::FallingBlocksFacadePtr;
-  using ::Star::FallingBlocksFacadeConstPtr;
-  using ::Star::FallingBlocksFacadeWeakPtr;
-  using ::Star::FallingBlocksFacadeConstWeakPtr;
-  using ::Star::FallingBlocksFacadeUPtr;
-  using ::Star::FallingBlocksFacadeConstUPtr;
   using ::Star::FallingBlocksAgent;
-  using ::Star::FallingBlocksAgentPtr;
-  using ::Star::FallingBlocksAgentConstPtr;
-  using ::Star::FallingBlocksAgentWeakPtr;
-  using ::Star::FallingBlocksAgentConstWeakPtr;
-  using ::Star::FallingBlocksAgentUPtr;
-  using ::Star::FallingBlocksAgentConstUPtr;
 }

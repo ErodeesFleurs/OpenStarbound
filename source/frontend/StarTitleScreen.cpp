@@ -223,7 +223,7 @@ import star.sky;
 
 namespace Star {
 
-TitleScreen::TitleScreen(PlayerStoragePtr playerStorage, MixerPtr mixer, UniverseClientPtr client)
+TitleScreen::TitleScreen(std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Mixer> mixer, std::shared_ptr<UniverseClient> client)
   : m_playerStorage(playerStorage), m_skipMultiPlayerConnection(false), m_mixer(mixer) {
   m_titleState = TitleState::Quit;
 
@@ -254,7 +254,7 @@ TitleScreen::TitleScreen(PlayerStoragePtr playerStorage, MixerPtr mixer, Univers
   resetState();
 }
 
-void TitleScreen::renderInit(RendererPtr renderer) {
+void TitleScreen::renderInit(std::shared_ptr<Renderer> renderer) {
   m_renderer = std::move(renderer);
   m_environmentPainter = std::make_shared<EnvironmentPainter>(m_renderer);
 }
@@ -377,7 +377,7 @@ void TitleScreen::stopMusic() {
     m_currentMusicTrack->stop(8.0f);
 }
 
-PlayerPtr TitleScreen::currentlySelectedPlayer() const {
+std::shared_ptr<Player> TitleScreen::currentlySelectedPlayer() const {
   return m_mainAppPlayer;
 }
 
@@ -500,7 +500,7 @@ void TitleScreen::initCharSelectionMenu() {
         switchState(TitleState::SinglePlayerCreateCharacter);
       else if (m_titleState == TitleState::MultiPlayerSelectCharacter)
         switchState(TitleState::MultiPlayerCreateCharacter);
-    }, [this](PlayerPtr mainPlayer) {
+    }, [this](std::shared_ptr<Player> mainPlayer) {
       m_mainAppPlayer = mainPlayer;
       m_playerStorage->moveToFront(m_mainAppPlayer->uuid());
       if (m_titleState == TitleState::SinglePlayerSelectCharacter) {
@@ -522,14 +522,14 @@ void TitleScreen::initCharSelectionMenu() {
   charSelectionMenu->setAnchor(PaneAnchor::Center);
   charSelectionMenu->lockPosition();
 
-  m_paneManager.registerPane("deleteDialog", PaneLayer::ModalWindow, deleteDialog, [=](PanePtr const&) {
+  m_paneManager.registerPane("deleteDialog", PaneLayer::ModalWindow, deleteDialog, [=](std::shared_ptr<Pane> const&) {
       charSelectionMenu->updateCharacterPlates();
     });
   m_paneManager.registerPane("charSelectionMenu", PaneLayer::Hud, charSelectionMenu);
 }
 
 void TitleScreen::initCharCreationMenu() {
-  auto charCreationMenu = std::make_shared<CharCreationPane>([this](PlayerPtr newPlayer) {
+  auto charCreationMenu = std::make_shared<CharCreationPane>([this](std::shared_ptr<Player> newPlayer) {
     if (newPlayer) {
       m_mainAppPlayer = newPlayer;
       m_playerStorage->savePlayer(m_mainAppPlayer);
@@ -650,17 +650,17 @@ void TitleScreen::initMultiPlayerMenu() {
   populateServerList(serverList.get());
 
   m_paneManager.registerPane("multiplayerMenu", PaneLayer::Hud, m_multiPlayerMenu);
-  m_paneManager.registerPane("serverSelect", PaneLayer::Hud, m_serverSelectPane, [=](PanePtr const&) {
+  m_paneManager.registerPane("serverSelect", PaneLayer::Hud, m_serverSelectPane, [=](std::shared_ptr<Pane> const&) {
     serverList->clearSelected();
   });
 }
 
-void TitleScreen::initOptionsMenu(UniverseClientPtr client) {
+void TitleScreen::initOptionsMenu(std::shared_ptr<UniverseClient> client) {
   auto optionsMenu = std::make_shared<OptionsMenu>(&m_paneManager,client);
   optionsMenu->setAnchor(PaneAnchor::Center);
   optionsMenu->lockPosition();
 
-  m_paneManager.registerPane("optionsMenu", PaneLayer::Hud, optionsMenu, [this](PanePtr const&) {
+  m_paneManager.registerPane("optionsMenu", PaneLayer::Hud, optionsMenu, [this](std::shared_ptr<Pane> const&) {
       back();
     });
 }
@@ -670,7 +670,7 @@ void TitleScreen::initModsMenu() {
   modsMenu->setAnchor(PaneAnchor::Center);
   modsMenu->lockPosition();
 
-  m_paneManager.registerPane("modsMenu", PaneLayer::Hud, modsMenu, [this](PanePtr const&) {
+  m_paneManager.registerPane("modsMenu", PaneLayer::Hud, modsMenu, [this](std::shared_ptr<Pane> const&) {
       back();
     });
 }

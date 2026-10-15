@@ -152,7 +152,7 @@ EntityFactory::EntityFactory() {
   m_versioningDatabase = root.versioningDatabase();
 }
 
-ByteArray EntityFactory::netStoreEntity(EntityPtr const& entity, NetCompatibilityRules rules) const {
+ByteArray EntityFactory::netStoreEntity(std::shared_ptr<Entity> const& entity, NetCompatibilityRules rules) const {
   RecursiveMutexLocker locker(m_mutex);
 
   if (auto player = as<Player>(entity)) {
@@ -180,7 +180,7 @@ ByteArray EntityFactory::netStoreEntity(EntityPtr const& entity, NetCompatibilit
   }
 }
 
-EntityPtr EntityFactory::netLoadEntity(EntityType type, ByteArray const& netStore, NetCompatibilityRules rules) const {
+std::shared_ptr<Entity> EntityFactory::netLoadEntity(EntityType type, ByteArray const& netStore, NetCompatibilityRules rules) const {
   RecursiveMutexLocker locker(m_mutex);
 
   if (type == EntityType::Player) {
@@ -208,7 +208,7 @@ EntityPtr EntityFactory::netLoadEntity(EntityType type, ByteArray const& netStor
   }
 }
 
-Json EntityFactory::diskStoreEntity(EntityPtr const& entity) const {
+Json EntityFactory::diskStoreEntity(std::shared_ptr<Entity> const& entity) const {
   RecursiveMutexLocker locker(m_mutex);
 
   if (auto player = as<Player>(entity)) {
@@ -232,7 +232,7 @@ Json EntityFactory::diskStoreEntity(EntityPtr const& entity) const {
   }
 }
 
-EntityPtr EntityFactory::diskLoadEntity(EntityType type, Json const& diskStore) const {
+std::shared_ptr<Entity> EntityFactory::diskLoadEntity(EntityType type, Json const& diskStore) const {
   RecursiveMutexLocker locker(m_mutex);
 
   if (type == EntityType::Player) {
@@ -270,7 +270,7 @@ VersionedJson EntityFactory::storeVersionedJson(EntityType type, Json const& sto
   return m_versioningDatabase->makeCurrentVersionedJson(identifier, store);
 }
 
-EntityPtr EntityFactory::loadVersionedEntity(VersionedJson const& versionedJson) const {
+std::shared_ptr<Entity> EntityFactory::loadVersionedEntity(VersionedJson const& versionedJson) const {
   RecursiveMutexLocker locker(m_mutex);
 
   EntityType type = EntityStorageIdentifiers.getLeft(versionedJson.identifier);
@@ -278,7 +278,7 @@ EntityPtr EntityFactory::loadVersionedEntity(VersionedJson const& versionedJson)
   return diskLoadEntity(type, store);
 }
 
-VersionedJson EntityFactory::storeVersionedEntity(EntityPtr const& entityPtr) const {
+VersionedJson EntityFactory::storeVersionedEntity(std::shared_ptr<Entity> const& entityPtr) const {
   return storeVersionedJson(entityPtr->entityType(), diskStoreEntity(entityPtr));
 }
 

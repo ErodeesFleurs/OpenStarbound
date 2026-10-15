@@ -53,13 +53,6 @@ struct GUIBuilderExceptionTag {
   static constexpr char const* name() { return "GUIBuilderException"; }
 };
 using GUIBuilderException = StarError<GUIBuilderExceptionTag, StarException>;
-class GuiReader;
-using GuiReaderPtr = std::shared_ptr<GuiReader>;
-using GuiReaderConstPtr = std::shared_ptr<GuiReader const>;
-using GuiReaderWeakPtr = std::weak_ptr<GuiReader>;
-using GuiReaderConstWeakPtr = std::weak_ptr<GuiReader const>;
-using GuiReaderUPtr = std::unique_ptr<GuiReader>;
-using GuiReaderConstUPtr = std::unique_ptr<GuiReader const>;
 
 class GuiReader : public WidgetParser {
 public:
@@ -78,11 +71,5 @@ export module star.gui_reader;
 export namespace Star {
   using ::Star::GUIBuilderExceptionTag;
   using ::Star::GuiReader;
-  using ::Star::GuiReaderPtr;
-  using ::Star::GuiReaderConstPtr;
-  using ::Star::GuiReaderWeakPtr;
-  using ::Star::GuiReaderConstWeakPtr;
-  using ::Star::GuiReaderUPtr;
-  using ::Star::GuiReaderConstUPtr;
   using ::Star::GUIBuilderException;
 }

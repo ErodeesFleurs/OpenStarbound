@@ -95,7 +95,7 @@ void ErrorScreen::setMessage(String const& errorMessage) {
   m_accepted = false;
 
   if (!m_paneManager->isDisplayed(m_errorPane)) {
-    m_paneManager->displayPane(PaneLayer::Window, m_errorPane, [this](PanePtr) {
+    m_paneManager->displayPane(PaneLayer::Window, m_errorPane, [this](std::shared_ptr<Pane>) {
       m_accepted = true;
     });
   }

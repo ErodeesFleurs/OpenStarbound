@@ -55,14 +55,6 @@ import star.net_element_sync_group;
 
 namespace Star {
 
-class StatusController;
-using StatusControllerPtr = std::shared_ptr<StatusController>;
-using StatusControllerConstPtr = std::shared_ptr<const StatusController>;
-using StatusControllerWeakPtr = std::weak_ptr<StatusController>;
-using StatusControllerConstWeakPtr = std::weak_ptr<const StatusController>;
-using StatusControllerUPtr = std::unique_ptr<StatusController>;
-using StatusControllerConstUPtr = std::unique_ptr<const StatusController>;
-
 class StatusController : public NetElement {
 public:
   StatusController(Json const& config);
@@ -173,7 +165,7 @@ public:
   bool toolUsageSuppressed() const;
 
   // new audios and particles will only be generated on the client
-  List<AudioInstancePtr> pullNewAudios();
+  List<std::shared_ptr<AudioInstance>> pullNewAudios();
   List<Particle> pullNewParticles();
 
   Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
@@ -294,10 +286,4 @@ export module star.status_controller;
 
 export namespace Star {
   using ::Star::StatusController;
-  using ::Star::StatusControllerPtr;
-  using ::Star::StatusControllerConstPtr;
-  using ::Star::StatusControllerWeakPtr;
-  using ::Star::StatusControllerConstWeakPtr;
-  using ::Star::StatusControllerUPtr;
-  using ::Star::StatusControllerConstUPtr;
 }

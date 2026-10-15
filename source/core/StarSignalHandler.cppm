@@ -18,12 +18,6 @@ export module star.signal_handler;
 export namespace Star {
 
 struct SignalHandlerImpl;
-using SignalHandlerImplPtr = std::shared_ptr<SignalHandlerImpl>;
-using SignalHandlerImplConstPtr = std::shared_ptr<const SignalHandlerImpl>;
-using SignalHandlerImplWeakPtr = std::weak_ptr<SignalHandlerImpl>;
-using SignalHandlerImplConstWeakPtr = std::weak_ptr<const SignalHandlerImpl>;
-using SignalHandlerImplUPtr = std::unique_ptr<SignalHandlerImpl>;
-using SignalHandlerImplConstUPtr = std::unique_ptr<const SignalHandlerImpl>;
 
 // Singleton signal handler that registers handlers for segfault, fpe,
 // illegal instructions etc as well as non-fatal interrupts.
@@ -47,7 +41,7 @@ public:
 private:
   friend SignalHandlerImpl;
 
-  static SignalHandlerImplUPtr s_singleton;
+  static std::unique_ptr<SignalHandlerImpl> s_singleton;
 };
 
 }
@@ -289,7 +283,7 @@ struct SignalHandlerImpl {
 
 #endif
 
-SignalHandlerImplUPtr SignalHandler::s_singleton;
+std::unique_ptr<SignalHandlerImpl> SignalHandler::s_singleton;
 
 SignalHandler::SignalHandler() {
   if (s_singleton)

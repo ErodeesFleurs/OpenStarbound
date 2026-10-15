@@ -56,7 +56,7 @@ EffectSourceDatabase::EffectSourceDatabase() {
   }
 }
 
-EffectSourceConfigPtr EffectSourceDatabase::effectSourceConfig(String const& kind) const {
+std::shared_ptr<EffectSourceConfig> EffectSourceDatabase::effectSourceConfig(String const& kind) const {
   auto k = kind.toLower();
   if (!m_sourceConfigs.contains(k))
     throw StarException(strf("Unknown effect source definition with kind '{}'.", kind));
@@ -72,7 +72,7 @@ String const& EffectSourceConfig::kind() {
   return m_kind;
 }
 
-EffectSourcePtr EffectSourceConfig::instance(String const& suggestedSpawnLocation) {
+std::shared_ptr<EffectSource> EffectSourceConfig::instance(String const& suggestedSpawnLocation) {
   return std::make_shared<EffectSource>(kind(), suggestedSpawnLocation, m_config.getObject("definition"));
 }
 
@@ -129,8 +129,8 @@ List<String> EffectSource::particles() {
   return result;
 }
 
-List<AudioInstancePtr> EffectSource::sounds(Vec2F offset) {
-  List<AudioInstancePtr> result;
+List<std::shared_ptr<AudioInstance>> EffectSource::sounds(Vec2F offset) {
+  List<std::shared_ptr<AudioInstance>> result;
   if (m_initialTick) {
     result.appendAll(soundsFromDefinition(m_config.get("start", JsonObject()).get("sounds", Json()), offset));
 
@@ -190,7 +190,7 @@ List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position
   return {};
 }
 
-List<AudioInstancePtr> soundsFromDefinition(Json const& config, Vec2F const& position) {
+List<std::shared_ptr<AudioInstance>> soundsFromDefinition(Json const& config, Vec2F const& position) {
   Json sound;
   if (config.type() == Json::Type::Array)
     sound = Random::randValueFrom(config.toArray(), Json());
@@ -199,7 +199,7 @@ List<AudioInstancePtr> soundsFromDefinition(Json const& config, Vec2F const& pos
   if (!sound.isNull()) {
     if (sound.type() != Json::Type::Array)
       sound = JsonArray{sound};
-    List<AudioInstancePtr> result;
+    List<std::shared_ptr<AudioInstance>> result;
     auto assets = Root::singleton().assets();
     for (auto entry : sound.iterateArray()) {
       if (entry.type() != Json::Type::Object) {

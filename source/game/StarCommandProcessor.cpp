@@ -491,7 +491,7 @@ String CommandProcessor::setTileProtection(ConnectionId connectionId, String con
       }
     }
     std::size_t changed = 0;
-    if (!m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const&) {
+    if (!m_universe->executeForClient(connectionId, [&](WorldServer* world, std::shared_ptr<Player> const&) {
        changed = world->setTileProtection(dungeonIds, isProtected);
       })) {
       return "Invalid client state";
@@ -515,7 +515,7 @@ String CommandProcessor::setDungeonId(ConnectionId connectionId, String const& a
   try {
     DungeonId dungeonId = lexicalCast<DungeonId>(arguments.at(0));
 
-    bool done = m_universe->executeForClient(connectionId, [dungeonId](WorldServer* world, PlayerPtr const& player) {
+    bool done = m_universe->executeForClient(connectionId, [dungeonId](WorldServer* world, std::shared_ptr<Player> const& player) {
         world->setDungeonId(RectI::withSize(Vec2I(player->aimPosition()), Vec2I(1, 1)), dungeonId);
       });
 
@@ -529,7 +529,7 @@ String CommandProcessor::setPlayerStart(ConnectionId connectionId, String const&
   if (auto errorMsg = adminCheck(connectionId, "modify world properties"))
     return *errorMsg;
 
-  m_universe->executeForClient(connectionId, [](WorldServer* world, PlayerPtr const& player) {
+  m_universe->executeForClient(connectionId, [](WorldServer* world, std::shared_ptr<Player> const& player) {
       world->setPlayerStart(player->position() + player->feetOffset());
     });
 
@@ -564,7 +564,7 @@ String CommandProcessor::spawnItem(ConnectionId connectionId, String const& argu
     if (arguments.size() >= 5)
       seed = lexicalCast<std::uint64_t>(arguments.at(4));
 
-    bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
+    bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, std::shared_ptr<Player> const& player) {
         auto itemDatabase = Root::singleton().itemDatabase();
         world->addEntity(ItemDrop::createRandomizedDrop(itemDatabase->item(ItemDescriptor(kind, amount, parameters), level, seed, true), player->aimPosition()));
       });
@@ -601,7 +601,7 @@ String CommandProcessor::spawnTreasure(ConnectionId connectionId, String const& 
     if (arguments.size() >= 2)
       level = lexicalCast<float>(arguments.at(1));
 
-    bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
+    bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, std::shared_ptr<Player> const& player) {
         auto treasureDatabase = Root::singleton().treasureDatabase();
         for (auto const& treasureItem : treasureDatabase->createTreasure(treasurePool, level, Random::randu64()))
           world->addEntity(ItemDrop::createRandomizedDrop(treasureItem, player->aimPosition()));
@@ -631,7 +631,7 @@ String CommandProcessor::spawnMonster(ConnectionId connectionId, String const& a
     auto arguments = m_parser.tokenizeToStringList(argumentString);
 
     auto monsterDatabase = Root::singleton().monsterDatabase();
-    MonsterPtr monster;
+    std::shared_ptr<Monster> monster;
 
     float level = 1;
     if (arguments.size() >= 2)
@@ -643,7 +643,7 @@ String CommandProcessor::spawnMonster(ConnectionId connectionId, String const& a
 
     monster = monsterDatabase->createMonster(monsterDatabase->randomMonster(arguments.at(0), parameters.toObject()), level);
     bool done = m_universe->executeForClient(connectionId,
-        [&](WorldServer* world, PlayerPtr const& player) {
+        [&](WorldServer* world, std::shared_ptr<Player> const& player) {
           monster->setPosition(player->aimPosition());
           world->addEntity(monster);
         });
@@ -678,7 +678,7 @@ String CommandProcessor::spawnNpc(ConnectionId connectionId, String const& argum
       overrides = Json::parse(arguments.at(4)).toObject();
 
     auto npc = npcDatabase->createNpc(npcDatabase->generateNpcVariant(arguments.at(0), arguments.at(1), npcLevel, seed, overrides));
-    bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
+    bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, std::shared_ptr<Player> const& player) {
         npc->setPosition(player->aimPosition());
         world->addEntity(npc);
       });
@@ -698,7 +698,7 @@ String CommandProcessor::spawnVehicle(ConnectionId connectionId, String const& a
     auto vehicleDatabase = Root::singleton().vehicleDatabase();
     auto arguments = m_parser.tokenizeToStringList(argumentString);
 
-    VehiclePtr vehicle;
+    std::shared_ptr<Vehicle> vehicle;
 
     String name = arguments.at(0);
 
@@ -708,7 +708,7 @@ String CommandProcessor::spawnVehicle(ConnectionId connectionId, String const& a
 
     vehicle = vehicleDatabase->create(name, parameters);
     bool done = m_universe->executeForClient(connectionId,
-        [&](WorldServer* world, PlayerPtr const& player) {
+        [&](WorldServer* world, std::shared_ptr<Player> const& player) {
           vehicle->setPosition(player->aimPosition());
           world->addEntity(std::move(vehicle));
         });
@@ -734,7 +734,7 @@ String CommandProcessor::spawnStagehand(ConnectionId connectionId, String const&
       parameters = Json::parse(arguments.at(1)).toObject();
 
     auto stagehand = stagehandDatabase->createStagehand(arguments.at(0), parameters);
-    bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr player) {
+    bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, std::shared_ptr<Player> player) {
         stagehand->setPosition(player->aimPosition());
         world->addEntity(stagehand);
       });
@@ -752,7 +752,7 @@ String CommandProcessor::clearStagehand(ConnectionId connectionId, String const&
 
   unsigned removed = 0;
   bool done = m_universe->executeForClient(connectionId,
-      [&](WorldServer* world, PlayerPtr player) {
+      [&](WorldServer* world, std::shared_ptr<Player> player) {
         auto queryRect = RectF::withCenter(player->aimPosition(), Vec2F{2, 2});
         for (auto stagehand : world->query<Stagehand>(queryRect)) {
           world->removeEntity(stagehand->entityId(), true);
@@ -784,7 +784,7 @@ String CommandProcessor::spawnLiquid(ConnectionId connectionId, String const& ar
         return strf("Could not parse quantity value '{}'", arguments.at(1));
     }
 
-    bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
+    bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, std::shared_ptr<Player> const& player) {
         world->modifyTile(Vec2I(player->aimPosition().floor()), PlaceLiquid{liquid, quantity}, true);
       });
     return done ? "" : "Invalid client state";
@@ -967,7 +967,7 @@ String CommandProcessor::entityEval(ConnectionId connectionId, String const& lua
 
   String message;
   bool done = m_universe->executeForClient(connectionId,
-      [&lua, &message](WorldServer* world, PlayerPtr const& player) {
+      [&lua, &message](WorldServer* world, std::shared_ptr<Player> const& player) {
         auto queryRect = RectF::withCenter(player->aimPosition(), Vec2F{2, 2});
         auto entities = world->query<ScriptedEntity>(queryRect);
         if (entities.empty()) {
@@ -975,7 +975,7 @@ String CommandProcessor::entityEval(ConnectionId connectionId, String const& lua
           return;
         }
 
-        ScriptedEntityPtr targetEntity;
+        std::shared_ptr<ScriptedEntity> targetEntity;
         for (auto const& entity : entities) {
           if (!targetEntity
               || vmagSquared(entity->position() - player->aimPosition())
@@ -997,7 +997,7 @@ String CommandProcessor::enableSpawning(ConnectionId connectionId, String const&
     return *errorMsg;
 
   bool done = m_universe->executeForClient(
-      connectionId, [](WorldServer* world, PlayerPtr const&) { world->setSpawningEnabled(true); });
+      connectionId, [](WorldServer* world, std::shared_ptr<Player> const&) { world->setSpawningEnabled(true); });
   return done ? "enabled monster spawning" : "enabling monster spawning failed";
 }
 
@@ -1006,7 +1006,7 @@ String CommandProcessor::disableSpawning(ConnectionId connectionId, String const
     return *errorMsg;
 
   bool done = m_universe->executeForClient(
-      connectionId, [](WorldServer* world, PlayerPtr const&) { world->setSpawningEnabled(false); });
+      connectionId, [](WorldServer* world, std::shared_ptr<Player> const&) { world->setSpawningEnabled(false); });
   return done ? "disabled monster spawning" : "disabling monster spawning failed";
 }
 
@@ -1024,7 +1024,7 @@ String CommandProcessor::placeDungeon(ConnectionId connectionId, String const& a
   }
 
   bool done = m_universe->executeForClient(connectionId,
-      [dungeonName, targetPosition](WorldServer* world, PlayerPtr const& player) {
+      [dungeonName, targetPosition](WorldServer* world, std::shared_ptr<Player> const& player) {
         world->placeDungeon(dungeonName, targetPosition.value(Vec2I::floor(player->aimPosition())), true);
       });
 
@@ -1064,7 +1064,7 @@ String CommandProcessor::addBiomeRegion(ConnectionId connectionId, String const&
     subBlockSelector = arguments.at(2);
 
   bool done = m_universe->executeForClient(connectionId,
-      [biomeName, width, subBlockSelector](WorldServer* world, PlayerPtr const& player) {
+      [biomeName, width, subBlockSelector](WorldServer* world, std::shared_ptr<Player> const& player) {
         world->addBiomeRegion(Vec2I::floor(player->aimPosition()), biomeName, subBlockSelector, width);
       });
 
@@ -1080,7 +1080,7 @@ String CommandProcessor::expandBiomeRegion(ConnectionId connectionId, String con
   int newWidth = lexicalCast<int>(arguments.at(0));
 
   bool done = m_universe->executeForClient(connectionId,
-      [newWidth](WorldServer* world, PlayerPtr const& player) {
+      [newWidth](WorldServer* world, std::shared_ptr<Player> const& player) {
         world->expandBiomeRegion(Vec2I::floor(player->aimPosition()), newWidth);
       });
 
@@ -1111,7 +1111,7 @@ String CommandProcessor::setWeather(ConnectionId connectionId, String const& arg
   if (arguments.empty()) {
     StringList list;
     bool done = m_universe->executeForClient(connectionId,
-                                             [&list](WorldServer* world, PlayerPtr const& player) { list = world->weatherList(player->position()); });
+                                             [&list](WorldServer* world, std::shared_ptr<Player> const& player) { list = world->weatherList(player->position()); });
     return done ? strf("weathers: {}", list.join(", ")) : "failed to query weather";
   }
 
@@ -1132,7 +1132,7 @@ String CommandProcessor::setWeather(ConnectionId connectionId, String const& arg
   bool done;
   if (coordinate.isNull()) {
     done = m_universe->executeForClient(connectionId,
-                                        [weatherName, force](WorldServer* world, PlayerPtr const& player) { world->setWeather(player->position(), weatherName, force); });
+                                        [weatherName, force](WorldServer* world, std::shared_ptr<Player> const& player) { world->setWeather(player->position(), weatherName, force); });
   } else {
     done = m_universe->setWeather(coordinate, weatherName, force);
   }
@@ -1146,7 +1146,7 @@ String CommandProcessor::setEnvironmentBiome(ConnectionId connectionId, String c
     return *errorMsg;
 
   bool done = m_universe->executeForClient(connectionId,
-      [](WorldServer* world, PlayerPtr const& player) {
+      [](WorldServer* world, std::shared_ptr<Player> const& player) {
         world->setLayerEnvironmentBiome(Vec2I::floor(player->aimPosition()));
       });
 

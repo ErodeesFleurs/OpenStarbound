@@ -51,13 +51,6 @@ namespace Star {
 
 enum class SpecialRepeatKeyCodes : String::Char { None, Delete, Backspace, Left, Right };
 
-class TextBoxWidget;
-using TextBoxWidgetPtr = std::shared_ptr<TextBoxWidget>;
-using TextBoxWidgetConstPtr = std::shared_ptr<TextBoxWidget const>;
-using TextBoxWidgetWeakPtr = std::weak_ptr<TextBoxWidget>;
-using TextBoxWidgetConstWeakPtr = std::weak_ptr<TextBoxWidget const>;
-using TextBoxWidgetUPtr = std::unique_ptr<TextBoxWidget>;
-using TextBoxWidgetConstUPtr = std::unique_ptr<TextBoxWidget const>;
 class TextBoxWidget : public Widget {
 public:
   TextBoxWidget(String const& startingText, String const& hint, WidgetCallbackFunc callback);
@@ -151,10 +144,4 @@ export module star.text_box_widget;
 export namespace Star {
   using ::Star::SpecialRepeatKeyCodes;
   using ::Star::TextBoxWidget;
-  using ::Star::TextBoxWidgetPtr;
-  using ::Star::TextBoxWidgetConstPtr;
-  using ::Star::TextBoxWidgetWeakPtr;
-  using ::Star::TextBoxWidgetConstWeakPtr;
-  using ::Star::TextBoxWidgetUPtr;
-  using ::Star::TextBoxWidgetConstUPtr;
 }

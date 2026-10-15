@@ -11,14 +11,6 @@ import star.rect;
 import star.math_common;
 namespace Star {
 
-class WorldGeometry;
-using WorldGeometryPtr = std::shared_ptr<WorldGeometry>;
-using WorldGeometryConstPtr = std::shared_ptr<WorldGeometry const>;
-using WorldGeometryWeakPtr = std::weak_ptr<WorldGeometry>;
-using WorldGeometryConstWeakPtr = std::weak_ptr<WorldGeometry const>;
-using WorldGeometryUPtr = std::unique_ptr<WorldGeometry>;
-using WorldGeometryConstUPtr = std::unique_ptr<WorldGeometry const>;
-
 // Utility class for dealing with the non-euclidean nature of the World.
 // Handles the surprisingly complex job of deciding intersections and splitting
 // geometry across the world wrap boundary.
@@ -276,10 +268,4 @@ export module star.world_geometry;
 
 export namespace Star {
   using ::Star::WorldGeometry;
-  using ::Star::WorldGeometryPtr;
-  using ::Star::WorldGeometryConstPtr;
-  using ::Star::WorldGeometryWeakPtr;
-  using ::Star::WorldGeometryConstWeakPtr;
-  using ::Star::WorldGeometryUPtr;
-  using ::Star::WorldGeometryConstUPtr;
 }

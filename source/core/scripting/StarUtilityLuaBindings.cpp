@@ -195,7 +195,7 @@ LuaCallbacks LuaBindings::makeUtilityCallbacks() {
       });
   
   callbacks.registerCallback("makePromise",
-      []() -> std::pair<RpcPromise<Json>,AutoFailRpcPromiseKeeperPtr<Json>> {
+      []() -> std::pair<RpcPromise<Json>,std::shared_ptr<AutoFailRpcPromiseKeeper<Json>>> {
         auto pair = RpcPromise<Json>::createPair();
         return std::make_pair(pair.first,std::make_shared<AutoFailRpcPromiseKeeper<Json>>(pair.second));
       });

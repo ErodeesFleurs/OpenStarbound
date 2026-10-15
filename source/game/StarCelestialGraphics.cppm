@@ -30,12 +30,6 @@ import star.celestial_parameters;
 namespace Star {
 
 class CelestialDatabase;
-using CelestialDatabasePtr = std::shared_ptr<CelestialDatabase>;
-using CelestialDatabaseConstPtr = std::shared_ptr<const CelestialDatabase>;
-using CelestialDatabaseWeakPtr = std::weak_ptr<CelestialDatabase>;
-using CelestialDatabaseConstWeakPtr = std::weak_ptr<const CelestialDatabase>;
-using CelestialDatabaseUPtr = std::unique_ptr<CelestialDatabase>;
-using CelestialDatabaseConstUPtr = std::unique_ptr<const CelestialDatabase>;
 
 // Functions for generating and drawing worlds from a celestial database.
 // Guards against drawing unloaded celestial objects, will return empty if no
@@ -46,7 +40,7 @@ using CelestialDatabaseConstUPtr = std::unique_ptr<const CelestialDatabase>;
 class CelestialGraphics {
 public:
   // Some static versions of drawing functions are given that do not require an
-  // active CelestialDatabasePtr to draw.
+  // active CelestialDatabase to draw.
 
   static List<std::pair<String, float>> drawSystemPlanetaryObject(CelestialParameters const& celestialParameters);
   static List<std::pair<String, float>> drawSystemCentralBody(CelestialParameters const& celestialParameters);
@@ -64,23 +58,23 @@ public:
   static int planetRadialPositions();
   static int satelliteRadialPositions();
 
-  static List<std::pair<String, float>> drawSystemTwinkle(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& system, double twinkleTime);
+  static List<std::pair<String, float>> drawSystemTwinkle(std::shared_ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& system, double twinkleTime);
 
   // Returns the small graphic for the given planetary object appropriate for a
   // system-level view.
-  static List<std::pair<String, float>> drawSystemPlanetaryObject(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate);
-  static List<std::pair<String, float>> drawSystemCentralBody(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate);
+  static List<std::pair<String, float>> drawSystemPlanetaryObject(std::shared_ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate);
+  static List<std::pair<String, float>> drawSystemCentralBody(std::shared_ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate);
 
   // Returns the graphics appropriate to draw an entire world (planetary object
   // or satellite object) in a map view.  Shadows the satellite the same as
   // its parent planetary object.
-  static List<std::pair<String, float>> drawWorld(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate);
+  static List<std::pair<String, float>> drawWorld(std::shared_ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate);
 
   // Draw all of the left and right image pairs for all the layers for the
   // world horizon.
-  static List<std::pair<String, String>> worldHorizonImages(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate);
+  static List<std::pair<String, String>> worldHorizonImages(std::shared_ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate);
 
-  static int worldRadialPosition(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate);
+  static int worldRadialPosition(std::shared_ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate);
 
 private:
 };
@@ -92,10 +86,4 @@ export module star.celestial_graphics;
 export namespace Star {
   using ::Star::CelestialGraphics;
   using ::Star::CelestialDatabase;
-  using ::Star::CelestialDatabasePtr;
-  using ::Star::CelestialDatabaseConstPtr;
-  using ::Star::CelestialDatabaseWeakPtr;
-  using ::Star::CelestialDatabaseConstWeakPtr;
-  using ::Star::CelestialDatabaseUPtr;
-  using ::Star::CelestialDatabaseConstUPtr;
 }

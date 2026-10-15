@@ -81,19 +81,6 @@ import star.animation;
 import star.particle;
 import star.entity_rendering;
 struct PreviewTile;
-using PreviewTilePtr = std::shared_ptr<PreviewTile>;
-using PreviewTileConstPtr = std::shared_ptr<const PreviewTile>;
-using PreviewTileWeakPtr = std::weak_ptr<PreviewTile>;
-using PreviewTileConstWeakPtr = std::weak_ptr<const PreviewTile>;
-using PreviewTileUPtr = std::unique_ptr<PreviewTile>;
-using PreviewTileConstUPtr = std::unique_ptr<const PreviewTile>;
-class PreviewTileTool;
-using PreviewTileToolPtr = std::shared_ptr<PreviewTileTool>;
-using PreviewTileToolConstPtr = std::shared_ptr<const PreviewTileTool>;
-using PreviewTileToolWeakPtr = std::weak_ptr<PreviewTileTool>;
-using PreviewTileToolConstWeakPtr = std::weak_ptr<const PreviewTileTool>;
-using PreviewTileToolUPtr = std::unique_ptr<PreviewTileTool>;
-using PreviewTileToolConstUPtr = std::unique_ptr<const PreviewTileTool>;
 import star.preview_tile_tool;
 import star.tools;
 import star.asset_source;
@@ -182,7 +169,7 @@ MiningTool::MiningTool(Json const& config, String const& directory, Json const& 
   m_blockVolume = assets->json("/sfx.config:miningBlockVolume").toFloat();
 }
 
-ItemPtr MiningTool::clone() const {
+std::shared_ptr<Item> MiningTool::clone() const {
   return std::make_shared<MiningTool>(*this);
 }
 
@@ -314,7 +301,7 @@ HarvestingTool::HarvestingTool(Json const& config, String const& directory, Json
   m_frameTiming = 0;
 }
 
-ItemPtr HarvestingTool::clone() const {
+std::shared_ptr<Item> HarvestingTool::clone() const {
   return std::make_shared<HarvestingTool>(*this);
 }
 
@@ -377,7 +364,7 @@ WireTool::WireTool(Json const& config, String const& directory, Json const& para
   m_endType = EndType::Wire;
 }
 
-ItemPtr WireTool::clone() const {
+std::shared_ptr<Item> WireTool::clone() const {
   return std::make_shared<WireTool>(*this);
 }
 
@@ -466,7 +453,7 @@ BeamMiningTool::BeamMiningTool(Json const& config, String const& directory, Json
   m_inhandStatusEffects = instanceValue("inhandStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
 }
 
-ItemPtr BeamMiningTool::clone() const {
+std::shared_ptr<Item> BeamMiningTool::clone() const {
   return std::make_shared<BeamMiningTool>(*this);
 }
 
@@ -636,7 +623,7 @@ PaintingBeamTool::PaintingBeamTool(Json const& config, String const& directory, 
   m_color = m_colors[m_colorIndex];
 }
 
-ItemPtr PaintingBeamTool::clone() const {
+std::shared_ptr<Item> PaintingBeamTool::clone() const {
   return std::make_shared<PaintingBeamTool>(*this);
 }
 

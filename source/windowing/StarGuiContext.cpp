@@ -75,7 +75,7 @@ GuiContext& GuiContext::singleton() {
     return *s_singleton;
 }
 
-GuiContext::GuiContext(MixerPtr mixer, ApplicationControllerPtr appController) {
+GuiContext::GuiContext(std::shared_ptr<Mixer> mixer, std::shared_ptr<ApplicationController> appController) {
   if (s_singleton)
     throw GuiContextException("Singleton GuiContext has been constructed twice");
 
@@ -95,7 +95,7 @@ GuiContext::~GuiContext() {
   s_singleton = nullptr;
 }
 
-void GuiContext::renderInit(RendererPtr renderer) {
+void GuiContext::renderInit(std::shared_ptr<Renderer> renderer) {
   m_renderer = std::move(renderer);
   auto textureGroup = m_renderer->createTextureGroup();
   m_textureCollection = std::make_shared<AssetTextureGroup>(textureGroup);
@@ -103,27 +103,27 @@ void GuiContext::renderInit(RendererPtr renderer) {
   m_textPainter = std::make_shared<TextPainter>(m_renderer, textureGroup);
 }
 
-MixerPtr const& GuiContext::mixer() const {
+std::shared_ptr<Mixer> const& GuiContext::mixer() const {
   return m_mixer;
 }
 
-ApplicationControllerPtr const& GuiContext::applicationController() const {
+std::shared_ptr<ApplicationController> const& GuiContext::applicationController() const {
   return m_applicationController;
 }
 
-RendererPtr const& GuiContext::renderer() const {
+std::shared_ptr<Renderer> const& GuiContext::renderer() const {
   if (!m_renderer)
     throw GuiContextException("GuiContext::renderer() called before renderInit");
   return m_renderer;
 }
 
-AssetTextureGroupPtr const& GuiContext::assetTextureGroup() const {
+std::shared_ptr<AssetTextureGroup> const& GuiContext::assetTextureGroup() const {
   if (!m_textureCollection)
     throw GuiContextException("GuiContext::assetTextureGroup() called before renderInit");
   return m_textureCollection;
 }
 
-TextPainterPtr const& GuiContext::textPainter() const {
+std::shared_ptr<TextPainter> const& GuiContext::textPainter() const {
   if (!m_textPainter)
     throw GuiContextException("GuiContext::textPainter() called before renderInit");
   return m_textPainter;
@@ -491,11 +491,11 @@ void GuiContext::setShiftHeld(bool held) {
   m_shiftHeld = held;
 }
 
-void GuiContext::playAudio(AudioInstancePtr audioInstance) {
+void GuiContext::playAudio(std::shared_ptr<AudioInstance> audioInstance) {
   m_mixer->play(audioInstance);
 }
 
-AudioInstancePtr GuiContext::playAudio(String const& audioAsset, int loops, float volume, float pitch) {
+std::shared_ptr<AudioInstance> GuiContext::playAudio(String const& audioAsset, int loops, float volume, float pitch) {
   auto assets = Root::singleton().assets();
   auto config = Root::singleton().configuration();
   auto audioInstance = std::make_shared<AudioInstance>(*assets->audio(audioAsset));

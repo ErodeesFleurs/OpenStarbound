@@ -131,7 +131,7 @@ namespace Star {
 
 String const SongPathPrefix = "/songs/";
 
-SongbookInterface::SongbookInterface(PlayerPtr player) {
+SongbookInterface::SongbookInterface(std::shared_ptr<Player> player) {
   m_player = std::move(player);
 
   auto assets = Root::singleton().assets();

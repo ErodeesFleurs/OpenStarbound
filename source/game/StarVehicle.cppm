@@ -77,13 +77,6 @@ struct VehicleExceptionTag {
   static constexpr char const* name() { return "VehicleException"; }
 };
 using VehicleException = StarError<VehicleExceptionTag, StarException>;
-class Vehicle;
-using VehiclePtr = std::shared_ptr<Vehicle>;
-using VehicleConstPtr = std::shared_ptr<const Vehicle>;
-using VehicleWeakPtr = std::weak_ptr<Vehicle>;
-using VehicleConstWeakPtr = std::weak_ptr<const Vehicle>;
-using VehicleUPtr = std::unique_ptr<Vehicle>;
-using VehicleConstUPtr = std::unique_ptr<const Vehicle>;
 
 class Vehicle : 
   public virtual MobileEntity,
@@ -144,7 +137,7 @@ public:
   InteractAction interact(InteractRequest const& request) override;
 
   std::size_t anchorCount() const override;
-  LoungeAnchorConstPtr loungeAnchor(std::size_t positionIndex) const override;
+  std::shared_ptr<LoungeAnchor const> loungeAnchor(std::size_t positionIndex) const override;
   void loungeControl(std::size_t positionIndex, LoungeControl loungeControl) override;
   void loungeAim(std::size_t positionIndex, Vec2F const& aimPosition) override;
 
@@ -259,10 +252,4 @@ export namespace Star {
   using ::Star::VehicleExceptionTag;
   using ::Star::VehicleException;
   using ::Star::Vehicle;
-  using ::Star::VehiclePtr;
-  using ::Star::VehicleConstPtr;
-  using ::Star::VehicleWeakPtr;
-  using ::Star::VehicleConstWeakPtr;
-  using ::Star::VehicleUPtr;
-  using ::Star::VehicleConstUPtr;
 }

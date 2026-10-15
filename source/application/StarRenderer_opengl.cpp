@@ -740,7 +740,7 @@ void OpenGlRenderer::setMainHDR(bool enabled) {
   loadConfig(m_config);
 }
 
-TextureGroupPtr OpenGlRenderer::createTextureGroup(TextureGroupSize textureSize, TextureFiltering filtering) {
+std::shared_ptr<TextureGroup> OpenGlRenderer::createTextureGroup(TextureGroupSize textureSize, TextureFiltering filtering) {
   int maxTextureSize;
   glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
   maxTextureSize = std::min(maxTextureSize, (2 << 14));
@@ -764,7 +764,7 @@ TextureGroupPtr OpenGlRenderer::createTextureGroup(TextureGroupSize textureSize,
   return glTextureGroup;
 }
 
-RenderBufferPtr OpenGlRenderer::createRenderBuffer() {
+std::shared_ptr<RenderBuffer> OpenGlRenderer::createRenderBuffer() {
   return createGlRenderBuffer();
 }
 
@@ -776,7 +776,7 @@ void OpenGlRenderer::render(RenderPrimitive primitive) {
   m_immediatePrimitives.append(std::move(primitive));
 }
 
-void OpenGlRenderer::renderBuffer(RenderBufferPtr const& renderBuffer, Mat3F const& transformation) {
+void OpenGlRenderer::renderBuffer(std::shared_ptr<RenderBuffer> const& renderBuffer, Mat3F const& transformation) {
   flushImmediatePrimitives();
   renderGlBuffer(*convert<GlRenderBuffer>(renderBuffer.get()), transformation);
 }

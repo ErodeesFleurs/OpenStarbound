@@ -13,20 +13,6 @@ struct RadioMessageDatabaseExceptionTag {
   static constexpr char const* name() { return "RadioMessageDatabaseException"; }
 };
 using RadioMessageDatabaseException = StarError<RadioMessageDatabaseExceptionTag, StarException>;
-struct RadioMessage;
-using RadioMessagePtr = std::shared_ptr<RadioMessage>;
-using RadioMessageConstPtr = std::shared_ptr<const RadioMessage>;
-using RadioMessageWeakPtr = std::weak_ptr<RadioMessage>;
-using RadioMessageConstWeakPtr = std::weak_ptr<const RadioMessage>;
-using RadioMessageUPtr = std::unique_ptr<RadioMessage>;
-using RadioMessageConstUPtr = std::unique_ptr<const RadioMessage>;
-class RadioMessageDatabase;
-using RadioMessageDatabasePtr = std::shared_ptr<RadioMessageDatabase>;
-using RadioMessageDatabaseConstPtr = std::shared_ptr<const RadioMessageDatabase>;
-using RadioMessageDatabaseWeakPtr = std::weak_ptr<RadioMessageDatabase>;
-using RadioMessageDatabaseConstWeakPtr = std::weak_ptr<const RadioMessageDatabase>;
-using RadioMessageDatabaseUPtr = std::unique_ptr<RadioMessageDatabase>;
-using RadioMessageDatabaseConstUPtr = std::unique_ptr<const RadioMessageDatabase>;
 
 enum class RadioMessageType { Generic, Mission, Quest, Tutorial };
 extern EnumMap<RadioMessageType> const RadioMessageTypeNames;
@@ -73,9 +59,5 @@ export namespace Star {
   using ::Star::RadioMessageType;
   using ::Star::RadioMessageTypeNames;
   using ::Star::RadioMessage;
-  using ::Star::RadioMessagePtr;
-  using ::Star::RadioMessageConstPtr;
   using ::Star::RadioMessageDatabase;
-  using ::Star::RadioMessageDatabasePtr;
-  using ::Star::RadioMessageDatabaseConstPtr;
 }

@@ -36,7 +36,7 @@ DanceDatabase::DanceDatabase() {
   auto& files = assets->scanExtension("dance");
   for (auto& file : files) {
     try {
-      DancePtr dance = readDance(file);
+      std::shared_ptr<Dance> dance = readDance(file);
       m_dances[dance->name] = dance;
     } catch (std::exception const& e) {
       Logger::error("Error loading dance file {}: {}", file, outputException(e, true));
@@ -44,7 +44,7 @@ DanceDatabase::DanceDatabase() {
   }
 }
 
-DancePtr DanceDatabase::getDance(String const& name) const {
+std::shared_ptr<Dance> DanceDatabase::getDance(String const& name) const {
   if (auto dance = m_dances.ptr(name))
     return *dance;
   else {
@@ -53,7 +53,7 @@ DancePtr DanceDatabase::getDance(String const& name) const {
   }
 }
 
-DancePtr DanceDatabase::readDance(String const& path) {
+std::shared_ptr<Dance> DanceDatabase::readDance(String const& path) {
   auto assets = Root::singleton().assets();
   Json config = assets->json(path);
 

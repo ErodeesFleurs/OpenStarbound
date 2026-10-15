@@ -26,42 +26,7 @@ import star.net_compatibility;
 namespace Star {
 
 struct Packet;
-using PacketPtr = std::shared_ptr<Packet>;
-using PacketConstPtr = std::shared_ptr<const Packet>;
-using PacketWeakPtr = std::weak_ptr<Packet>;
-using PacketConstWeakPtr = std::weak_ptr<const Packet>;
-using PacketUPtr = std::unique_ptr<Packet>;
-using PacketConstUPtr = std::unique_ptr<const Packet>;
 enum class PacketType : std::uint8_t;
-
-class PacketSocket;
-using PacketSocketPtr = std::shared_ptr<PacketSocket>;
-using PacketSocketConstPtr = std::shared_ptr<const PacketSocket>;
-using PacketSocketWeakPtr = std::weak_ptr<PacketSocket>;
-using PacketSocketConstWeakPtr = std::weak_ptr<const PacketSocket>;
-using PacketSocketUPtr = std::unique_ptr<PacketSocket>;
-using PacketSocketConstUPtr = std::unique_ptr<const PacketSocket>;
-class LocalPacketSocket;
-using LocalPacketSocketPtr = std::shared_ptr<LocalPacketSocket>;
-using LocalPacketSocketConstPtr = std::shared_ptr<const LocalPacketSocket>;
-using LocalPacketSocketWeakPtr = std::weak_ptr<LocalPacketSocket>;
-using LocalPacketSocketConstWeakPtr = std::weak_ptr<const LocalPacketSocket>;
-using LocalPacketSocketUPtr = std::unique_ptr<LocalPacketSocket>;
-using LocalPacketSocketConstUPtr = std::unique_ptr<const LocalPacketSocket>;
-class TcpPacketSocket;
-using TcpPacketSocketPtr = std::shared_ptr<TcpPacketSocket>;
-using TcpPacketSocketConstPtr = std::shared_ptr<const TcpPacketSocket>;
-using TcpPacketSocketWeakPtr = std::weak_ptr<TcpPacketSocket>;
-using TcpPacketSocketConstWeakPtr = std::weak_ptr<const TcpPacketSocket>;
-using TcpPacketSocketUPtr = std::unique_ptr<TcpPacketSocket>;
-using TcpPacketSocketConstUPtr = std::unique_ptr<const TcpPacketSocket>;
-class P2PPacketSocket;
-using P2PPacketSocketPtr = std::shared_ptr<P2PPacketSocket>;
-using P2PPacketSocketConstPtr = std::shared_ptr<const P2PPacketSocket>;
-using P2PPacketSocketWeakPtr = std::weak_ptr<P2PPacketSocket>;
-using P2PPacketSocketConstWeakPtr = std::weak_ptr<const P2PPacketSocket>;
-using P2PPacketSocketUPtr = std::unique_ptr<P2PPacketSocket>;
-using P2PPacketSocketConstUPtr = std::unique_ptr<const P2PPacketSocket>;
 
 struct PacketStats {
   HashMap<PacketType, float> packetBytesPerSecond;
@@ -106,9 +71,9 @@ public:
   virtual void close() = 0;
 
   // Takes all packets from the given list and queues them for sending.
-  virtual void sendPackets(List<PacketPtr> packets) = 0;
+  virtual void sendPackets(List<std::shared_ptr<Packet>> packets) = 0;
   // Receives any packets from the incoming queue, if available
-  virtual List<PacketPtr> receivePackets() = 0;
+  virtual List<std::shared_ptr<Packet>> receivePackets() = 0;
 
   // Returns true if any sent packets on the queue are still not completely
   // written.
@@ -149,13 +114,13 @@ protected:
 // PacketSocket for local communication.
 class LocalPacketSocket : public PacketSocket {
 public:
-  static std::pair<LocalPacketSocketUPtr, LocalPacketSocketUPtr> openPair();
+  static std::pair<std::unique_ptr<LocalPacketSocket>, std::unique_ptr<LocalPacketSocket>> openPair();
 
   bool isOpen() const override;
   void close() override;
 
-  void sendPackets(List<PacketPtr> packets) override;
-  List<PacketPtr> receivePackets() override;
+  void sendPackets(List<std::shared_ptr<Packet>> packets) override;
+  List<std::shared_ptr<Packet>> receivePackets() override;
 
   bool sentPacketsPending() const override;
 
@@ -167,7 +132,7 @@ public:
 private:
   struct Pipe {
     Mutex mutex;
-    Deque<PacketPtr> queue;
+    Deque<std::shared_ptr<Packet>> queue;
   };
 
   LocalPacketSocket(std::shared_ptr<Pipe> incomingPipe, std::weak_ptr<Pipe> outgoingPipe);
@@ -180,13 +145,13 @@ private:
 // Wraps a TCP socket into a PacketSocket.
 class TcpPacketSocket : public CompressedPacketSocket {
 public:
-  static TcpPacketSocketUPtr open(TcpSocketPtr socket);
+  static std::unique_ptr<TcpPacketSocket> open(std::shared_ptr<TcpSocket> socket);
 
   bool isOpen() const override;
   void close() override;
 
-  void sendPackets(List<PacketPtr> packets) override;
-  List<PacketPtr> receivePackets() override;
+  void sendPackets(List<std::shared_ptr<Packet>> packets) override;
+  List<std::shared_ptr<Packet>> receivePackets() override;
 
   bool sentPacketsPending() const override;
 
@@ -196,9 +161,9 @@ public:
   Maybe<PacketStats> incomingStats() const override;
   Maybe<PacketStats> outgoingStats() const override;
 private:
-  TcpPacketSocket(TcpSocketPtr socket);
+  TcpPacketSocket(std::shared_ptr<TcpSocket> socket);
 
-  TcpSocketPtr m_socket;
+  std::shared_ptr<TcpSocket> m_socket;
 
   PacketStatCollector m_incomingStats;
   PacketStatCollector m_outgoingStats;
@@ -210,13 +175,13 @@ private:
 // Wraps a P2PSocket into a PacketSocket
 class P2PPacketSocket : public CompressedPacketSocket {
 public:
-  static P2PPacketSocketUPtr open(P2PSocketUPtr socket);
+  static std::unique_ptr<P2PPacketSocket> open(std::unique_ptr<P2PSocket> socket);
 
   bool isOpen() const override;
   void close() override;
 
-  void sendPackets(List<PacketPtr> packets) override;
-  List<PacketPtr> receivePackets() override;
+  void sendPackets(List<std::shared_ptr<Packet>> packets) override;
+  List<std::shared_ptr<Packet>> receivePackets() override;
 
   bool sentPacketsPending() const override;
 
@@ -227,9 +192,9 @@ public:
   Maybe<PacketStats> outgoingStats() const override;
 
 private:
-  P2PPacketSocket(P2PSocketPtr socket);
+  P2PPacketSocket(std::shared_ptr<P2PSocket> socket);
 
-  P2PSocketPtr m_socket;
+  std::shared_ptr<P2PSocket> m_socket;
 
   PacketStatCollector m_incomingStats;
   PacketStatCollector m_outgoingStats;
@@ -246,31 +211,7 @@ export namespace Star {
   using ::Star::PacketStatCollector;
   using ::Star::CompressedPacketSocket;
   using ::Star::PacketSocket;
-  using ::Star::PacketSocketPtr;
-  using ::Star::PacketSocketConstPtr;
-  using ::Star::PacketSocketWeakPtr;
-  using ::Star::PacketSocketConstWeakPtr;
-  using ::Star::PacketSocketUPtr;
-  using ::Star::PacketSocketConstUPtr;
   using ::Star::LocalPacketSocket;
-  using ::Star::LocalPacketSocketPtr;
-  using ::Star::LocalPacketSocketConstPtr;
-  using ::Star::LocalPacketSocketWeakPtr;
-  using ::Star::LocalPacketSocketConstWeakPtr;
-  using ::Star::LocalPacketSocketUPtr;
-  using ::Star::LocalPacketSocketConstUPtr;
   using ::Star::TcpPacketSocket;
-  using ::Star::TcpPacketSocketPtr;
-  using ::Star::TcpPacketSocketConstPtr;
-  using ::Star::TcpPacketSocketWeakPtr;
-  using ::Star::TcpPacketSocketConstWeakPtr;
-  using ::Star::TcpPacketSocketUPtr;
-  using ::Star::TcpPacketSocketConstUPtr;
   using ::Star::P2PPacketSocket;
-  using ::Star::P2PPacketSocketPtr;
-  using ::Star::P2PPacketSocketConstPtr;
-  using ::Star::P2PPacketSocketWeakPtr;
-  using ::Star::P2PPacketSocketConstWeakPtr;
-  using ::Star::P2PPacketSocketUPtr;
-  using ::Star::P2PPacketSocketConstUPtr;
 }

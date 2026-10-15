@@ -164,11 +164,11 @@ String File::temporaryFileName() {
   return relativeTo(utf16ToString(tempPath), strf("starbound.tmpfile.{}", hexEncode(Random::randBytes(16))));
 }
 
-FilePtr File::temporaryFile() {
+std::shared_ptr<File> File::temporaryFile() {
   return open(temporaryFileName(), IOMode::ReadWrite);
 }
 
-FilePtr File::ephemeralFile() {
+std::shared_ptr<File> File::ephemeralFile() {
   auto file = temporaryFile();
   DeleteFileW(stringToUtf16(file->fileName()).get());
   file->m_filename = "";

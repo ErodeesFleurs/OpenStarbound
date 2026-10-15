@@ -32,14 +32,6 @@ import star.portrait_entity;
 
 namespace Star {
 
-class DamageBarEntity;
-using DamageBarEntityPtr = std::shared_ptr<DamageBarEntity>;
-using DamageBarEntityConstPtr = std::shared_ptr<const DamageBarEntity>;
-using DamageBarEntityWeakPtr = std::weak_ptr<DamageBarEntity>;
-using DamageBarEntityConstWeakPtr = std::weak_ptr<const DamageBarEntity>;
-using DamageBarEntityUPtr = std::unique_ptr<DamageBarEntity>;
-using DamageBarEntityConstUPtr = std::unique_ptr<const DamageBarEntity>;
-
 enum class DamageBarType : std::uint8_t {
   Default,
   None,
@@ -60,12 +52,6 @@ export module star.damage_bar_entity;
 
 export namespace Star {
   using ::Star::DamageBarEntity;
-  using ::Star::DamageBarEntityPtr;
-  using ::Star::DamageBarEntityConstPtr;
-  using ::Star::DamageBarEntityWeakPtr;
-  using ::Star::DamageBarEntityConstWeakPtr;
-  using ::Star::DamageBarEntityUPtr;
-  using ::Star::DamageBarEntityConstUPtr;
   using ::Star::DamageBarType;
   using ::Star::DamageBarTypeNames;
 }

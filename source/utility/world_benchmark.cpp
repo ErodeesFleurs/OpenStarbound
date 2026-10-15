@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
     rootLoader.addParameter("fidelity", "server fidelity", OptionParser::Optional, "fidelity to run the server with, default high");
     rootLoader.addSwitch("profiling", "whether to use lua profiling, prints the profile with info logging");
     rootLoader.addSwitch("unsafe", "enables unsafe lua libraries");
-    RootUPtr root;
+    std::unique_ptr<::Star::Root> root;
     OptionParser::Options options;
     std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
@@ -141,7 +141,7 @@ int main(int argc, char** argv) {
     coutf(" done\n");
 
     String dungeon = options.arguments.first();
-    VisitableWorldParametersPtr worldParameters = generateFloatingDungeonWorldParameters(dungeon);
+    std::shared_ptr<::Star::VisitableWorldParameters> worldParameters = generateFloatingDungeonWorldParameters(dungeon);
     std::uint64_t worldSeed = Random::randu64();
     if (options.parameters.contains("seed"))
       worldSeed = lexicalCast<std::uint64_t>(options.parameters.get("seed").first());

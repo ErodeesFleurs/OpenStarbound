@@ -32,9 +32,7 @@ import star.byte_array;
 import star.bytes;
 import star.memory;
 struct OpusDecoder;
-typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
 struct OpusEncoder;
-typedef std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)> OpusEncoderPtr;
 import star.voice;
 import star.input_event;
 import star.application;
@@ -176,7 +174,7 @@ Voice& Voice::singleton() {
     return *s_singleton;
 }
 
-Voice::Voice(ApplicationControllerPtr appController) : m_encoder(nullptr, opus_encoder_destroy) {
+Voice::Voice(std::shared_ptr<ApplicationController> appController) : m_encoder(nullptr, opus_encoder_destroy) {
   if (s_singleton)
     throw VoiceException("Singleton Voice has been constructed twice");
 
@@ -311,7 +309,7 @@ void Voice::scheduleSave() {
     m_nextSaveTime = Time::monotonicMilliseconds() + 2000;
 }
 
-Voice::SpeakerPtr Voice::setLocalSpeaker(SpeakerId speakerId) {
+std::shared_ptr<Voice::Speaker> Voice::setLocalSpeaker(SpeakerId speakerId) {
   if (m_speakers.contains(m_speakerId))
     m_speakers.remove(m_speakerId);
 
@@ -319,29 +317,29 @@ Voice::SpeakerPtr Voice::setLocalSpeaker(SpeakerId speakerId) {
   return m_speakers.insert(m_speakerId, m_clientSpeaker).first->second;
 }
 
-Voice::SpeakerPtr Voice::localSpeaker() {
+std::shared_ptr<Voice::Speaker> Voice::localSpeaker() {
   return m_clientSpeaker;
 }
 
-Voice::SpeakerPtr Voice::speaker(SpeakerId speakerId) {
+std::shared_ptr<Voice::Speaker> Voice::speaker(SpeakerId speakerId) {
   if (m_speakerId == speakerId)
     return m_clientSpeaker;
   else {
-    if (SpeakerPtr const* ptr = m_speakers.ptr(speakerId))
+    if (std::shared_ptr<Speaker> const* ptr = m_speakers.ptr(speakerId))
       return *ptr;
     else
       return m_speakers.emplace(speakerId, std::make_shared<Speaker>(speakerId)).first->second;
   }
 }
 
-HashMap<Voice::SpeakerId, Voice::SpeakerPtr>& Voice::speakers() {
+HashMap<Voice::SpeakerId, std::shared_ptr<Voice::Speaker>>& Voice::speakers() {
   return m_speakers;
 }
 
-List<Voice::SpeakerPtr> Voice::sortedSpeakers(bool onlyPlaying) {
-  List<SpeakerPtr> result;
+List<std::shared_ptr<Voice::Speaker>> Voice::sortedSpeakers(bool onlyPlaying) {
+  List<std::shared_ptr<Speaker>> result;
 
-  auto sorter = [](SpeakerPtr const& a, SpeakerPtr const& b) -> bool {
+  auto sorter = [](std::shared_ptr<Speaker> const& a, std::shared_ptr<Speaker> const& b) -> bool {
     if (a->lastPlayTime != b->lastPlayTime)
       return a->lastPlayTime < b->lastPlayTime;
     else
@@ -420,7 +418,7 @@ void Voice::mix(std::int16_t* buffer, std::size_t frameCount, unsigned channels)
     MutexLocker lock(m_activeSpeakersMutex);
     auto it = m_activeSpeakers.begin();
     while (it != m_activeSpeakers.end()) {
-      SpeakerPtr const& speaker = *it;
+      std::shared_ptr<Speaker> const& speaker = *it;
       VoiceAudioStream* audio = speaker->audioStream.get();
       MutexLocker audioLock(audio->mutex);
       if (speaker->playing && !audio->samples.empty()) {
@@ -488,7 +486,7 @@ void Voice::mix(std::int16_t* buffer, std::size_t frameCount, unsigned channels)
 
 void Voice::update(float, PositionalAttenuationFunction positionalAttenuationFunction) {
   for (auto& entry : m_speakers) {
-    if (SpeakerPtr& speaker = entry.second) {
+    if (std::shared_ptr<Speaker>& speaker = entry.second) {
       Vec2F newChannelVolumes = positionalAttenuationFunction ? Vec2F{
           1.0f - positionalAttenuationFunction(0, speaker->position, 1.0f),
           1.0f - positionalAttenuationFunction(1, speaker->position, 1.0f)
@@ -564,7 +562,7 @@ int Voice::send(DataStreamBuffer& out, std::size_t budget) {
   return 1;
 }
 
-bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
+bool Voice::receive(std::shared_ptr<Speaker> speaker, std::string_view view) {
   if (!m_enabled || !speaker || view.empty())
     return false;
 
@@ -720,7 +718,7 @@ void Voice::closeDevice() {
   m_deviceOpen = false;
 }
 
-bool Voice::playSpeaker(SpeakerPtr const& speaker, int) {
+bool Voice::playSpeaker(std::shared_ptr<Speaker> const& speaker, int) {
   if (speaker->playing || speaker->audioStream->samples.size() < speaker->minimumPlaySamples)
     return false;
 

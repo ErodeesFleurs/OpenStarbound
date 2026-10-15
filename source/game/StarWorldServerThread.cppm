@@ -22,29 +22,9 @@ import star.rpc_promise;
 namespace Star {
 
 class WorldServer;
-using WorldServerPtr = std::shared_ptr<WorldServer>;
-using WorldServerConstPtr = std::shared_ptr<const WorldServer>;
-using WorldServerWeakPtr = std::weak_ptr<WorldServer>;
-using WorldServerConstWeakPtr = std::weak_ptr<const WorldServer>;
-using WorldServerUPtr = std::unique_ptr<WorldServer>;
-using WorldServerConstUPtr = std::unique_ptr<const WorldServer>;
 struct Packet;
-using PacketPtr = std::shared_ptr<Packet>;
-using PacketConstPtr = std::shared_ptr<const Packet>;
-using PacketWeakPtr = std::weak_ptr<Packet>;
-using PacketConstWeakPtr = std::weak_ptr<const Packet>;
-using PacketUPtr = std::unique_ptr<Packet>;
-using PacketConstUPtr = std::unique_ptr<const Packet>;
 enum class WorldServerFidelity;
 typedef HashMap<ByteArray, Maybe<ByteArray>> WorldChunks;
-
-class WorldServerThread;
-using WorldServerThreadPtr = std::shared_ptr<WorldServerThread>;
-using WorldServerThreadConstPtr = std::shared_ptr<const WorldServerThread>;
-using WorldServerThreadWeakPtr = std::weak_ptr<WorldServerThread>;
-using WorldServerThreadConstWeakPtr = std::weak_ptr<const WorldServerThread>;
-using WorldServerThreadUPtr = std::unique_ptr<WorldServerThread>;
-using WorldServerThreadConstUPtr = std::unique_ptr<const WorldServerThread>;
 
 // Runs a WorldServer in a separate thread and guards exceptions that occur in
 // it.  All methods are designed to not throw exceptions, but will instead log
@@ -59,7 +39,7 @@ public:
 
   typedef std::function<void(WorldServerThread*, WorldServer*)> WorldServerAction;
 
-  WorldServerThread(WorldServerPtr server, WorldId worldId);
+  WorldServerThread(std::shared_ptr<WorldServer> server, WorldId worldId);
   ~WorldServerThread();
 
   WorldId worldId() const;
@@ -78,7 +58,7 @@ public:
 
   bool addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin = false, NetCompatibilityRules netRules = {}, ClientSubWorldId subWorldId = MainClientWorldId);
   // Returns final outgoing packets
-  List<PacketPtr> removeClient(ConnectionId clientId);
+  List<std::shared_ptr<Packet>> removeClient(ConnectionId clientId);
 
   List<ConnectionId> clients() const;
   bool hasClient(ConnectionId clientId) const;
@@ -91,8 +71,8 @@ public:
   // outgoing packets should be sent to them.
   List<ConnectionId> erroredClients() const;
 
-  void pushIncomingPackets(ConnectionId clientId, List<PacketPtr> packets);
-  List<PacketPtr> pullOutgoingPackets(ConnectionId clientId);
+  void pushIncomingPackets(ConnectionId clientId, List<std::shared_ptr<Packet>> packets);
+  List<std::shared_ptr<Packet>> pullOutgoingPackets(ConnectionId clientId);
 
   Maybe<Vec2F> playerRevivePosition(ConnectionId clientId) const;
 
@@ -128,13 +108,13 @@ private:
 
   HashSet<ConnectionId> m_clients;
 
-  WorldServerPtr m_worldServer;
+  std::shared_ptr<WorldServer> m_worldServer;
   WorldId m_worldId;
   WorldServerAction m_updateAction;
 
   mutable RecursiveMutex m_queueMutex;
-  Map<ConnectionId, List<PacketPtr>> m_incomingPacketQueue;
-  Map<ConnectionId, List<PacketPtr>> m_outgoingPacketQueue;
+  Map<ConnectionId, List<std::shared_ptr<Packet>>> m_incomingPacketQueue;
+  Map<ConnectionId, List<std::shared_ptr<Packet>>> m_outgoingPacketQueue;
 
   mutable RecursiveMutex m_messageMutex;
   List<Message> m_messages;
@@ -152,10 +132,4 @@ export module star.world_server_thread;
 export namespace Star {
   using ::Star::WorldChunks;
   using ::Star::WorldServerThread;
-  using ::Star::WorldServerThreadPtr;
-  using ::Star::WorldServerThreadConstPtr;
-  using ::Star::WorldServerThreadWeakPtr;
-  using ::Star::WorldServerThreadConstWeakPtr;
-  using ::Star::WorldServerThreadUPtr;
-  using ::Star::WorldServerThreadConstUPtr;
 }

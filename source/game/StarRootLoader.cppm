@@ -80,10 +80,10 @@ public:
   RootLoader(Defaults defaults);
 
   std::pair<Root::Settings, Options> parseOrDie(StringList const& cmdLineArguments) const;
-  std::pair<RootUPtr, Options> initOrDie(StringList const& cmdLineArguments) const;
+  std::pair<std::unique_ptr<Root>, Options> initOrDie(StringList const& cmdLineArguments) const;
 
   std::pair<Root::Settings, Options> commandParseOrDie(int argc, char** argv);
-  std::pair<RootUPtr, Options> commandInitOrDie(int argc, char** argv);
+  std::pair<std::unique_ptr<Root>, Options> commandInitOrDie(int argc, char** argv);
 
 private:
   Root::Settings rootSettingsForOptions(Options const& options) const;

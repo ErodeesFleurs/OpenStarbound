@@ -152,14 +152,14 @@ void parseNodeParameters(JsonObject& parameters) {
 ActionNode::ActionNode(String name, StringMap<NodeParameter> parameters, StringMap<NodeOutput> output)
   : name(std::move(name)), parameters(std::move(parameters)), output(std::move(output)) { }
 
-DecoratorNode::DecoratorNode(String const& name, StringMap<NodeParameter> parameters, BehaviorNodeConstPtr child)
+DecoratorNode::DecoratorNode(String const& name, StringMap<NodeParameter> parameters, std::shared_ptr<BehaviorNode const> child)
   : name(name), parameters(parameters), child(child) { }
 
-SequenceNode::SequenceNode(List<BehaviorNodeConstPtr> children) : children(children) { }
+SequenceNode::SequenceNode(List<std::shared_ptr<BehaviorNode const>> children) : children(children) { }
 
-SelectorNode::SelectorNode(List<BehaviorNodeConstPtr> children) : children(children) { }
+SelectorNode::SelectorNode(List<std::shared_ptr<BehaviorNode const>> children) : children(children) { }
 
-ParallelNode::ParallelNode(StringMap<NodeParameter> parameters, List<BehaviorNodeConstPtr> children) : children(children) {
+ParallelNode::ParallelNode(StringMap<NodeParameter> parameters, List<std::shared_ptr<BehaviorNode const>> children) : children(children) {
   int s = parameters.get("success").second.get<Json>().optInt().value(-1);
   succeed = s == -1 ? children.size() : s;
 
@@ -167,9 +167,9 @@ ParallelNode::ParallelNode(StringMap<NodeParameter> parameters, List<BehaviorNod
   fail = f == -1 ? children.size() : f;
 }
 
-DynamicNode::DynamicNode(List<BehaviorNodeConstPtr> children) : children(children) { }
+DynamicNode::DynamicNode(List<std::shared_ptr<BehaviorNode const>> children) : children(children) { }
 
-RandomizeNode::RandomizeNode(List<BehaviorNodeConstPtr> children) : children(children) { }
+RandomizeNode::RandomizeNode(List<std::shared_ptr<BehaviorNode const>> children) : children(children) { }
 
 BehaviorTree::BehaviorTree(String const& name, StringSet scripts, JsonObject const& parameters)
   : name(name), scripts(scripts), parameters(parameters) { }
@@ -222,14 +222,14 @@ BehaviorDatabase::BehaviorDatabase() {
   }
 }
 
-BehaviorTreeConstPtr BehaviorDatabase::behaviorTree(String const& name) const {
+std::shared_ptr<BehaviorTree const> BehaviorDatabase::behaviorTree(String const& name) const {
   if (!m_behaviors.contains(name))
     throw StarException(strf("No such behavior tree \'{}\'", name));
 
   return m_behaviors.get(name);
 }
 
-BehaviorTreeConstPtr BehaviorDatabase::buildTree(Json const& config, StringMap<NodeParameterValue> const& overrides) const {
+std::shared_ptr<BehaviorTree const> BehaviorDatabase::buildTree(Json const& config, StringMap<NodeParameterValue> const& overrides) const {
   StringSet scripts = jsonToStringSet(config.get("scripts", JsonArray()));
   auto tree = BehaviorTree(config.getString("name"), scripts, config.getObject("parameters", {}));
 
@@ -238,7 +238,7 @@ BehaviorTreeConstPtr BehaviorDatabase::buildTree(Json const& config, StringMap<N
     parameters.set(p.first, p.second);
   for (auto p : overrides)
     parameters.set(p.first, p.second);
-  BehaviorNodeConstPtr root = behaviorNode(config.get("root"), parameters, tree);
+  std::shared_ptr<BehaviorNode const> root = behaviorNode(config.get("root"), parameters, tree);
   tree.root = root;
   return std::make_shared<BehaviorTree>(std::move(tree));
 }
@@ -255,7 +255,7 @@ void BehaviorDatabase::loadTree(String const& name) {
 }
 
 CompositeNode BehaviorDatabase::compositeNode(Json const& config, StringMap<NodeParameter> parameters, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const {
-  List<BehaviorNodeConstPtr> children = config.getArray("children", {}).transformed([this,treeParameters,&tree](Json const& child) {
+  List<std::shared_ptr<BehaviorNode const>> children = config.getArray("children", {}).transformed([this,treeParameters,&tree](Json const& child) {
       return behaviorNode(child, treeParameters, tree);
     });
 
@@ -275,7 +275,7 @@ CompositeNode BehaviorDatabase::compositeNode(Json const& config, StringMap<Node
   throw StarException(strf("Composite node type '{}' could not be created from JSON", CompositeTypeNames.getRight(type)));
 }
 
-BehaviorNodeConstPtr BehaviorDatabase::behaviorNode(Json const& json, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const {
+std::shared_ptr<BehaviorNode const> BehaviorDatabase::behaviorNode(Json const& json, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const {
   BehaviorNodeType type = BehaviorNodeTypeNames.getLeft(json.getString("type"));
 
   auto name = json.getString("name");
@@ -311,7 +311,7 @@ BehaviorNodeConstPtr BehaviorDatabase::behaviorNode(Json const& json, StringMap<
     return std::make_shared<BehaviorNode>(ActionNode(name, parameters, output));
   } else if (type == BehaviorNodeType::Decorator) {
     tree.functions.add(name);
-    BehaviorNodeConstPtr child = behaviorNode(json.get("child"), treeParameters, tree);
+    std::shared_ptr<BehaviorNode const> child = behaviorNode(json.get("child"), treeParameters, tree);
     return std::make_shared<BehaviorNode>(DecoratorNode(name, parameters, child));
   } else if (type == BehaviorNodeType::Composite) {
     return std::make_shared<BehaviorNode>(compositeNode(json, parameters, treeParameters, tree));

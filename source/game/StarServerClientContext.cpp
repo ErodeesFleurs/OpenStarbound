@@ -366,7 +366,7 @@ ByteArray ServerClientContext::writeUpdate() {
   return ds.takeData();
 }
 
-void ServerClientContext::setSystemWorld(SystemWorldServerThreadPtr systemWorldThread) {
+void ServerClientContext::setSystemWorld(std::shared_ptr<SystemWorldServerThread> systemWorldThread) {
   RecursiveMutexLocker locker(m_mutex);
   if (m_systemWorldThread == systemWorldThread)
     return;
@@ -374,7 +374,7 @@ void ServerClientContext::setSystemWorld(SystemWorldServerThreadPtr systemWorldT
   m_systemWorldThread = std::move(systemWorldThread);
 }
 
-SystemWorldServerThreadPtr ServerClientContext::systemWorld() const {
+std::shared_ptr<SystemWorldServerThread> ServerClientContext::systemWorld() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_systemWorldThread;
 }
@@ -384,7 +384,7 @@ void ServerClientContext::clearSystemWorld() {
   setSystemWorld({});
 }
 
-void ServerClientContext::setPlayerWorld(WorldServerThreadPtr worldThread) {
+void ServerClientContext::setPlayerWorld(std::shared_ptr<WorldServerThread> worldThread) {
   RecursiveMutexLocker locker(m_mutex);
   if (m_worldThread == worldThread)
     return;
@@ -396,7 +396,7 @@ void ServerClientContext::setPlayerWorld(WorldServerThreadPtr worldThread) {
     m_playerWorldIdNetState.set(WorldId());
 }
 
-WorldServerThreadPtr ServerClientContext::playerWorld() const {
+std::shared_ptr<WorldServerThread> ServerClientContext::playerWorld() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_worldThread;
 }
@@ -410,7 +410,7 @@ void ServerClientContext::clearPlayerWorld() {
   setPlayerWorld({});
 }
 
-void ServerClientContext::setSubWorld(ClientSubWorldId subWorldId, WorldServerThreadPtr worldThread) {
+void ServerClientContext::setSubWorld(ClientSubWorldId subWorldId, std::shared_ptr<WorldServerThread> worldThread) {
   RecursiveMutexLocker locker(m_mutex);
   if (m_subWorldThreads[subWorldId] == worldThread)
     return;
@@ -418,7 +418,7 @@ void ServerClientContext::setSubWorld(ClientSubWorldId subWorldId, WorldServerTh
   m_subWorldThreads[subWorldId] = std::move(worldThread);
 }
 
-WorldServerThreadPtr ServerClientContext::subWorld(ClientSubWorldId subWorldId) const {
+std::shared_ptr<WorldServerThread> ServerClientContext::subWorld(ClientSubWorldId subWorldId) const {
   RecursiveMutexLocker locker(m_mutex);
   if (m_subWorldThreads.contains(subWorldId)) {
     return m_subWorldThreads.get(subWorldId);

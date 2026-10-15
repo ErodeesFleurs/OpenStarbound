@@ -32,34 +32,9 @@ import star.warping;
 
 namespace Star {
 
-class Quest;
-using QuestPtr = std::shared_ptr<Quest>;
-using QuestConstPtr = std::shared_ptr<const Quest>;
-using QuestWeakPtr = std::weak_ptr<Quest>;
-using QuestConstWeakPtr = std::weak_ptr<const Quest>;
-using QuestUPtr = std::unique_ptr<Quest>;
-using QuestConstUPtr = std::unique_ptr<const Quest>;
 class Player;
-using PlayerPtr = std::shared_ptr<Player>;
-using PlayerConstPtr = std::shared_ptr<const Player>;
-using PlayerWeakPtr = std::weak_ptr<Player>;
-using PlayerConstWeakPtr = std::weak_ptr<const Player>;
-using PlayerUPtr = std::unique_ptr<Player>;
-using PlayerConstUPtr = std::unique_ptr<const Player>;
 class UniverseClient;
-using UniverseClientPtr = std::shared_ptr<UniverseClient>;
-using UniverseClientConstPtr = std::shared_ptr<const UniverseClient>;
-using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
-using UniverseClientConstWeakPtr = std::weak_ptr<const UniverseClient>;
-using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
-using UniverseClientConstUPtr = std::unique_ptr<const UniverseClient>;
 class QuestTemplate;
-using QuestTemplatePtr = std::shared_ptr<QuestTemplate>;
-using QuestTemplateConstPtr = std::shared_ptr<const QuestTemplate>;
-using QuestTemplateWeakPtr = std::weak_ptr<QuestTemplate>;
-using QuestTemplateConstWeakPtr = std::weak_ptr<const QuestTemplate>;
-using QuestTemplateUPtr = std::unique_ptr<QuestTemplate>;
-using QuestTemplateConstUPtr = std::unique_ptr<const QuestTemplate>;
 
 enum class QuestState {
   // New - being set up and quest hasn't been offered yet (or was offered and declined)
@@ -82,7 +57,7 @@ public:
   Quest(Json const& diskStore);
   Json diskStore() const;
 
-  QuestTemplatePtr getTemplate() const;
+  std::shared_ptr<QuestTemplate> getTemplate() const;
 
   void init(Player* player, World* world, UniverseClient* client);
   void uninit();
@@ -116,7 +91,7 @@ public:
   bool showDialog() const;
   void setDialogShown();
 
-  void setEntityParameter(String const& paramName, EntityConstPtr const& entity);
+  void setEntityParameter(String const& paramName, std::shared_ptr<Entity const> const& entity);
   void setParameter(String const& paramName, QuestParam const& paramValue);
 
   Maybe<List<Drawable>> portrait(String const& portraitName) const;
@@ -139,7 +114,7 @@ public:
   String failureText() const;
 
   std::size_t money() const;
-  List<ItemConstPtr> rewards() const;
+  List<std::shared_ptr<Item const>> rewards() const;
 
   // The time when this quest last changed state (active/completed/failed)
   std::int64_t lastUpdatedOn() const;
@@ -151,7 +126,7 @@ public:
   String questReceiverIndicator() const;
 
   // The String returned by this method is an image path, not a reference to a configured indicator
-  Maybe<String> customIndicator(EntityPtr const& entity) const;
+  Maybe<String> customIndicator(std::shared_ptr<Entity> const& entity) const;
 
   Maybe<JsonArray> objectiveList() const;
   Maybe<float> progress() const;
@@ -209,7 +184,7 @@ private:
   Maybe<std::pair<Vec3I, SystemLocation>> m_location;
   Maybe<Uuid> m_serverUuid;
   std::size_t m_money;
-  List<ItemConstPtr> m_rewards;
+  List<std::shared_ptr<Item const>> m_rewards;
   std::int64_t m_lastUpdatedOn;
   bool m_unread;
   bool m_canTurnIn;
@@ -236,7 +211,7 @@ private:
 // Create an instance of Quest for a specific template with all the parameters filled
 // in with examples. Doesn't necessarily make a valid quest that can be completed, since
 // its purpose is for previewing dialogs only.
-QuestPtr createPreviewQuest(
+std::shared_ptr<Quest> createPreviewQuest(
     String const& templateId, String const& position, String const& questGiverSpecies, Player* player);
 }
 
@@ -244,33 +219,9 @@ export module star.quests;
 
 export namespace Star {
 using ::Star::Quest;
-using ::Star::QuestPtr;
-using ::Star::QuestConstPtr;
-using ::Star::QuestWeakPtr;
-using ::Star::QuestConstWeakPtr;
-using ::Star::QuestUPtr;
-using ::Star::QuestConstUPtr;
 using ::Star::Player;
-using ::Star::PlayerPtr;
-using ::Star::PlayerConstPtr;
-using ::Star::PlayerWeakPtr;
-using ::Star::PlayerConstWeakPtr;
-using ::Star::PlayerUPtr;
-using ::Star::PlayerConstUPtr;
 using ::Star::UniverseClient;
-using ::Star::UniverseClientPtr;
-using ::Star::UniverseClientConstPtr;
-using ::Star::UniverseClientWeakPtr;
-using ::Star::UniverseClientConstWeakPtr;
-using ::Star::UniverseClientUPtr;
-using ::Star::UniverseClientConstUPtr;
 using ::Star::QuestTemplate;
-using ::Star::QuestTemplatePtr;
-using ::Star::QuestTemplateConstPtr;
-using ::Star::QuestTemplateWeakPtr;
-using ::Star::QuestTemplateConstWeakPtr;
-using ::Star::QuestTemplateUPtr;
-using ::Star::QuestTemplateConstUPtr;
 using ::Star::QuestState;
 using ::Star::QuestStateNames;
 using ::Star::createPreviewQuest;

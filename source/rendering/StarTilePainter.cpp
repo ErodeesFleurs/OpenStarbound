@@ -98,7 +98,7 @@ import star.static_random;
 import star.matrix3;
 namespace Star {
 
-TilePainter::TilePainter(RendererPtr renderer) : TileDrawer() {
+TilePainter::TilePainter(std::shared_ptr<Renderer> renderer) : TileDrawer() {
   m_renderer = std::move(renderer);
   m_textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
 
@@ -237,7 +237,7 @@ TilePainter::ChunkHash TilePainter::liquidChunkHash(WorldRenderData& renderData,
 }
 
 void TilePainter::renderTerrainChunks(WorldCamera const& camera, TerrainLayer terrainLayer) {
-  Map<QuadZLevel, List<RenderBufferPtr>> zOrderBuffers;
+  Map<QuadZLevel, List<std::shared_ptr<RenderBuffer>>> zOrderBuffers;
   for (auto const& chunk : m_pendingTerrainChunks) {
     for (auto const& pair : chunk->value(terrainLayer))
       zOrderBuffers[pair.first].append(pair.second);
@@ -352,7 +352,7 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
   if (terrainLayer == (isBlock ? TerrainLayer::Midground : TerrainLayer::Foreground))
     return false;
 
-  auto getPieceTexture = [this, assets](MaterialId material, MaterialRenderPieceConstPtr const& piece, MaterialHue hue, Directives const* directives, bool mod) {
+  auto getPieceTexture = [this, assets](MaterialId material, std::shared_ptr<MaterialRenderPiece const> const& piece, MaterialHue hue, Directives const* directives, bool mod) {
     return m_textureCache.get(MaterialPieceTextureKey(material, piece->pieceId, hue, mod), [&](auto const&) {
         AssetPath texture = (hue == 0) ? piece->texture : strf("{}?hueshift={}", piece->texture, materialHueToDegrees(hue));
 

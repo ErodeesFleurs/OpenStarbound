@@ -116,7 +116,7 @@ std::uint64_t Item::setCount(std::uint64_t count, bool overfill) {
   return count - m_count;
 }
 
-bool Item::stackableWith(ItemConstPtr const& item) const {
+bool Item::stackableWith(std::shared_ptr<Item const> const& item) const {
   return item && name() == item->name() && parameters() == item->parameters();
 }
 
@@ -124,7 +124,7 @@ std::uint64_t Item::maxStack() const {
   return m_maxStack;
 }
 
-std::uint64_t Item::couldStack(ItemConstPtr const& item) const {
+std::uint64_t Item::couldStack(std::shared_ptr<Item const> const& item) const {
   if (stackableWith(item) && m_count < m_maxStack) {
     std::uint64_t take = m_maxStack - m_count;
     return std::min(take, item->count());
@@ -133,7 +133,7 @@ std::uint64_t Item::couldStack(ItemConstPtr const& item) const {
   }
 }
 
-bool Item::stackWith(ItemPtr const& item) {
+bool Item::stackWith(std::shared_ptr<Item> const& item) {
   std::uint64_t take = couldStack(item);
 
   if (take > 0 && item->consume(take)) {
@@ -148,7 +148,7 @@ bool Item::matches(ItemDescriptor const& descriptor, bool exactMatch) const {
   return descriptor.name() == m_name && (!exactMatch || descriptor.parameters() == m_parameters);
 }
 
-bool Item::matches(ItemConstPtr const& other, bool exactMatch) const {
+bool Item::matches(std::shared_ptr<Item const> const& other, bool exactMatch) const {
   return other->name() == m_name && (!exactMatch || other->parameters() == m_parameters);
 }
 
@@ -161,7 +161,7 @@ bool Item::consume(std::uint64_t count) {
   }
 }
 
-ItemPtr Item::take(std::uint64_t max) {
+std::shared_ptr<Item> Item::take(std::uint64_t max) {
   std::uint64_t takeCount = std::min(m_count, max);
   if (takeCount != 0) {
     if (auto newItems = clone()) {
@@ -360,11 +360,11 @@ StringMap<String> Item::collectablesOnPickup() const {
 GenericItem::GenericItem(Json const& config, String const& directory, Json const& parameters)
   : Item(config, directory, parameters) {}
 
-ItemPtr GenericItem::clone() const {
+std::shared_ptr<Item> GenericItem::clone() const {
   return std::make_shared<GenericItem>(*this);
 }
 
-bool Item::itemsEqual(ItemConstPtr const& a, ItemConstPtr const& b) {
+bool Item::itemsEqual(std::shared_ptr<Item const> const& a, std::shared_ptr<Item const> const& b) {
   if (!a && !b) // Both are null
     return true;
   if (a && b) // Both aren't null, compare

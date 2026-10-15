@@ -62,7 +62,7 @@ extern EnumMap<LoungeControl> const LoungeControlNames{{LoungeControl::Left, "Le
     {LoungeControl::Walk, "Walk"},
 };
 
-EntityAnchorConstPtr LoungeableEntity::anchor(std::size_t anchorPositionIndex) const {
+std::shared_ptr<EntityAnchor const> LoungeableEntity::anchor(std::size_t anchorPositionIndex) const {
   return loungeAnchor(anchorPositionIndex);
 }
 
@@ -82,7 +82,7 @@ Set<EntityId> LoungeableEntity::entitiesLoungingIn(std::size_t positionIndex) co
 Set<std::pair<EntityId, std::size_t>> LoungeableEntity::entitiesLounging() const {
   Set<std::pair<EntityId, std::size_t>> loungingInEntities;
   world()->forEachEntity(metaBoundBox().translated(position()),
-      [&](EntityPtr const& entity) {
+      [&](std::shared_ptr<Entity> const& entity) {
         if (auto lounger = as<LoungingEntity>(entity)) {
           if (auto anchorStatus = lounger->loungingIn()) {
             if (anchorStatus->entityId == entityId())

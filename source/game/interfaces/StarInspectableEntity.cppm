@@ -21,14 +21,6 @@ import star.entity;
 
 namespace Star {
 
-class InspectableEntity;
-using InspectableEntityPtr = std::shared_ptr<InspectableEntity>;
-using InspectableEntityConstPtr = std::shared_ptr<const InspectableEntity>;
-using InspectableEntityWeakPtr = std::weak_ptr<InspectableEntity>;
-using InspectableEntityConstWeakPtr = std::weak_ptr<const InspectableEntity>;
-using InspectableEntityUPtr = std::unique_ptr<InspectableEntity>;
-using InspectableEntityConstUPtr = std::unique_ptr<const InspectableEntity>;
-
 class InspectableEntity : public virtual Entity {
 public:
   // Default implementation returns true
@@ -60,10 +52,4 @@ export module star.inspectable_entity;
 
 export namespace Star {
   using ::Star::InspectableEntity;
-  using ::Star::InspectableEntityPtr;
-  using ::Star::InspectableEntityConstPtr;
-  using ::Star::InspectableEntityWeakPtr;
-  using ::Star::InspectableEntityConstWeakPtr;
-  using ::Star::InspectableEntityUPtr;
-  using ::Star::InspectableEntityConstUPtr;
 }

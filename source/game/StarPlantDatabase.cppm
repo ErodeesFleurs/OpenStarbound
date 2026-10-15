@@ -12,19 +12,6 @@ import star.tile_damage;
 namespace Star {
 
 class Plant;
-using PlantPtr = std::shared_ptr<Plant>;
-using PlantConstPtr = std::shared_ptr<const Plant>;
-using PlantWeakPtr = std::weak_ptr<Plant>;
-using PlantConstWeakPtr = std::weak_ptr<const Plant>;
-using PlantUPtr = std::unique_ptr<Plant>;
-using PlantConstUPtr = std::unique_ptr<const Plant>;
-class PlantDatabase;
-using PlantDatabasePtr = std::shared_ptr<PlantDatabase>;
-using PlantDatabaseConstPtr = std::shared_ptr<const PlantDatabase>;
-using PlantDatabaseWeakPtr = std::weak_ptr<PlantDatabase>;
-using PlantDatabaseConstWeakPtr = std::weak_ptr<const PlantDatabase>;
-using PlantDatabaseUPtr = std::unique_ptr<PlantDatabase>;
-using PlantDatabaseConstUPtr = std::unique_ptr<const PlantDatabase>;
 
 struct PlantDatabaseExceptionTag {
   static constexpr char const* name() { return "PlantDatabaseException"; }
@@ -133,9 +120,9 @@ public:
   StringList bushMods(String const& bushName) const;
   BushVariant buildBushVariant(String const& bushName, float baseHueShift, String const& modName, float modHueShift) const;
 
-  PlantPtr createPlant(TreeVariant const& treeVariant, std::uint64_t seed) const;
-  PlantPtr createPlant(GrassVariant const& grassVariant, std::uint64_t seed) const;
-  PlantPtr createPlant(BushVariant const& bushVariant, std::uint64_t seed) const;
+  std::shared_ptr<Plant> createPlant(TreeVariant const& treeVariant, std::uint64_t seed) const;
+  std::shared_ptr<Plant> createPlant(GrassVariant const& grassVariant, std::uint64_t seed) const;
+  std::shared_ptr<Plant> createPlant(BushVariant const& bushVariant, std::uint64_t seed) const;
 
   Json treeFoliageConfig(String const& foliageName) const;
   Json treeStemConfig(String const& stemName) const;
@@ -166,17 +153,5 @@ export namespace Star {
   using ::Star::GrassVariant;
   using ::Star::BushVariant;
   using ::Star::Plant;
-  using ::Star::PlantPtr;
-  using ::Star::PlantConstPtr;
-  using ::Star::PlantWeakPtr;
-  using ::Star::PlantConstWeakPtr;
-  using ::Star::PlantUPtr;
-  using ::Star::PlantConstUPtr;
   using ::Star::PlantDatabase;
-  using ::Star::PlantDatabasePtr;
-  using ::Star::PlantDatabaseConstPtr;
-  using ::Star::PlantDatabaseWeakPtr;
-  using ::Star::PlantDatabaseConstWeakPtr;
-  using ::Star::PlantDatabaseUPtr;
-  using ::Star::PlantDatabaseConstUPtr;
 }

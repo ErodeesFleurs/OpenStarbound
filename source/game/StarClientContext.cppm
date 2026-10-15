@@ -83,19 +83,6 @@ import star.byte_array;
 namespace Star {
 
 class CelestialLog;
-using CelestialLogPtr = std::shared_ptr<CelestialLog>;
-using CelestialLogConstPtr = std::shared_ptr<const CelestialLog>;
-using CelestialLogWeakPtr = std::weak_ptr<CelestialLog>;
-using CelestialLogConstWeakPtr = std::weak_ptr<const CelestialLog>;
-using CelestialLogUPtr = std::unique_ptr<CelestialLog>;
-using CelestialLogConstUPtr = std::unique_ptr<const CelestialLog>;
-class ClientContext;
-using ClientContextPtr = std::shared_ptr<ClientContext>;
-using ClientContextConstPtr = std::shared_ptr<const ClientContext>;
-using ClientContextWeakPtr = std::weak_ptr<ClientContext>;
-using ClientContextConstWeakPtr = std::weak_ptr<const ClientContext>;
-using ClientContextUPtr = std::unique_ptr<ClientContext>;
-using ClientContextConstUPtr = std::unique_ptr<const ClientContext>;
 
 class ClientContext {
 public:
@@ -118,7 +105,7 @@ public:
   bool isAdmin() const;
   EntityDamageTeam team() const;
 
-  JsonRpcInterfacePtr rpcInterface() const;
+  std::shared_ptr<JsonRpcInterface> rpcInterface() const;
 
   WorldChunks newShipUpdates();
   ShipUpgrades shipUpgrades() const;
@@ -140,7 +127,7 @@ private:
   ConnectionId m_connectionId = 0;
   NetCompatibilityRules m_netCompatibilityRules;
 
-  JsonRpcPtr m_rpc;
+  std::shared_ptr<JsonRpc> m_rpc;
 
   NetElementTopGroup m_netGroup;
   NetElementData<Maybe<std::pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
@@ -159,17 +146,5 @@ export module star.client_context;
 
 export namespace Star {
 using ::Star::CelestialLog;
-using ::Star::CelestialLogPtr;
-using ::Star::CelestialLogConstPtr;
-using ::Star::CelestialLogWeakPtr;
-using ::Star::CelestialLogConstWeakPtr;
-using ::Star::CelestialLogUPtr;
-using ::Star::CelestialLogConstUPtr;
 using ::Star::ClientContext;
-using ::Star::ClientContextPtr;
-using ::Star::ClientContextConstPtr;
-using ::Star::ClientContextWeakPtr;
-using ::Star::ClientContextConstWeakPtr;
-using ::Star::ClientContextUPtr;
-using ::Star::ClientContextConstUPtr;
 }

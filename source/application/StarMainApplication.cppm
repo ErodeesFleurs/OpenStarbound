@@ -17,7 +17,7 @@ import star.ref_ptr;
 import star.renderer;
 
 namespace Star {
-  int runMainApplication(ApplicationUPtr application, StringList cmdLineArgs);
+  int runMainApplication(std::unique_ptr<Application> application, StringList cmdLineArgs);
 }
 
 export module star.main_application;

@@ -108,11 +108,11 @@ void LuaBaseComponent::setAutoReInit(bool autoReInit) {
   }
 }
 
-void LuaBaseComponent::setLuaRoot(LuaRootPtr luaRoot) {
+void LuaBaseComponent::setLuaRoot(std::shared_ptr<LuaRoot> luaRoot) {
   m_luaRoot = std::move(luaRoot);
 }
 
-LuaRootPtr const& LuaBaseComponent::luaRoot() {
+std::shared_ptr<LuaRoot> const& LuaBaseComponent::luaRoot() {
   return m_luaRoot;
 }
 

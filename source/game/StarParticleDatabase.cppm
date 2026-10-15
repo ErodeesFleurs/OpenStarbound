@@ -18,21 +18,6 @@ import star.particle;
 
 namespace Star {
 
-class ParticleConfig;
-using ParticleConfigPtr = std::shared_ptr<ParticleConfig>;
-using ParticleConfigConstPtr = std::shared_ptr<const ParticleConfig>;
-using ParticleConfigWeakPtr = std::weak_ptr<ParticleConfig>;
-using ParticleConfigConstWeakPtr = std::weak_ptr<const ParticleConfig>;
-using ParticleConfigUPtr = std::unique_ptr<ParticleConfig>;
-using ParticleConfigConstUPtr = std::unique_ptr<const ParticleConfig>;
-class ParticleDatabase;
-using ParticleDatabasePtr = std::shared_ptr<ParticleDatabase>;
-using ParticleDatabaseConstPtr = std::shared_ptr<const ParticleDatabase>;
-using ParticleDatabaseWeakPtr = std::weak_ptr<ParticleDatabase>;
-using ParticleDatabaseConstWeakPtr = std::weak_ptr<const ParticleDatabase>;
-using ParticleDatabaseUPtr = std::unique_ptr<ParticleDatabase>;
-using ParticleDatabaseConstUPtr = std::unique_ptr<const ParticleDatabase>;
-
 class ParticleConfig {
 public:
   ParticleConfig(Json const& config);
@@ -50,7 +35,7 @@ class ParticleDatabase {
 public:
   ParticleDatabase();
 
-  ParticleConfigPtr config(String const& kind) const;
+  std::shared_ptr<ParticleConfig> config(String const& kind) const;
 
   // If the given variant is a string, loads the particle of that kind,
   // otherwise loads the given config directly.  If the config is given
@@ -62,7 +47,7 @@ public:
   Particle particle(Json const& kindOrConfig, String const& relativePath = "") const;
 
 private:
-  StringMap<ParticleConfigPtr> m_configs;
+  StringMap<std::shared_ptr<ParticleConfig>> m_configs;
 };
 
 }
@@ -73,9 +58,5 @@ export namespace Star {
   using ::Star::Particle;
   using ::Star::ParticleVariantCreator;
   using ::Star::ParticleConfig;
-  using ::Star::ParticleConfigPtr;
-  using ::Star::ParticleConfigConstPtr;
   using ::Star::ParticleDatabase;
-  using ::Star::ParticleDatabasePtr;
-  using ::Star::ParticleDatabaseConstPtr;
 }

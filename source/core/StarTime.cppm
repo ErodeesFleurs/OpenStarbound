@@ -6,21 +6,6 @@ import star.thread;
 
 namespace Star {
 
-class Clock;
-using ClockPtr = std::shared_ptr<Clock>;
-using ClockConstPtr = std::shared_ptr<const Clock>;
-using ClockWeakPtr = std::weak_ptr<Clock>;
-using ClockConstWeakPtr = std::weak_ptr<const Clock>;
-using ClockUPtr = std::unique_ptr<Clock>;
-using ClockConstUPtr = std::unique_ptr<const Clock>;
-class Timer;
-using TimerPtr = std::shared_ptr<Timer>;
-using TimerConstPtr = std::shared_ptr<const Timer>;
-using TimerWeakPtr = std::weak_ptr<Timer>;
-using TimerConstWeakPtr = std::weak_ptr<const Timer>;
-using TimerUPtr = std::unique_ptr<Timer>;
-using TimerConstUPtr = std::unique_ptr<const Timer>;
-
 namespace Time {
   double timeSinceEpoch();
   std::int64_t millisecondsSinceEpoch();
@@ -127,19 +112,7 @@ export module star.time;
 
 export namespace Star {
   using ::Star::Clock;
-  using ::Star::ClockPtr;
-  using ::Star::ClockConstPtr;
-  using ::Star::ClockUPtr;
-  using ::Star::ClockConstUPtr;
-  using ::Star::ClockWeakPtr;
-  using ::Star::ClockConstWeakPtr;
   using ::Star::Timer;
-  using ::Star::TimerPtr;
-  using ::Star::TimerConstPtr;
-  using ::Star::TimerUPtr;
-  using ::Star::TimerConstUPtr;
-  using ::Star::TimerWeakPtr;
-  using ::Star::TimerConstWeakPtr;
 }
 
 export namespace Star::Time {

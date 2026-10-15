@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
 
     rootLoader.setSummary("Calculate a (very approximate) word count of user-facing text in assets");
 
-    RootUPtr root;
+    std::unique_ptr<::Star::Root> root;
     OptionParser::Options options;
     std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 

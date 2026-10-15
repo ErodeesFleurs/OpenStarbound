@@ -14,14 +14,6 @@ import star.game_types;
 
 namespace Star {
 
-class UniverseSettings;
-using UniverseSettingsPtr = std::shared_ptr<UniverseSettings>;
-using UniverseSettingsConstPtr = std::shared_ptr<const UniverseSettings>;
-using UniverseSettingsWeakPtr = std::weak_ptr<UniverseSettings>;
-using UniverseSettingsConstWeakPtr = std::weak_ptr<const UniverseSettings>;
-using UniverseSettingsUPtr = std::unique_ptr<UniverseSettings>;
-using UniverseSettingsConstUPtr = std::unique_ptr<const UniverseSettings>;
-
 struct PlaceDungeonFlagAction {
   String dungeonId;
   String targetInstance;
@@ -68,10 +60,4 @@ export namespace Star {
   using ::Star::UniverseFlagAction;
   using ::Star::parseUniverseFlagAction;
   using ::Star::UniverseSettings;
-  using ::Star::UniverseSettingsPtr;
-  using ::Star::UniverseSettingsConstPtr;
-  using ::Star::UniverseSettingsWeakPtr;
-  using ::Star::UniverseSettingsConstWeakPtr;
-  using ::Star::UniverseSettingsUPtr;
-  using ::Star::UniverseSettingsConstUPtr;
 }

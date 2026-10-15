@@ -180,11 +180,11 @@ QuestManager::QuestManager(Player* player) {
   m_trackOnWorldQuests = false;
 }
 
-QuestTemplatePtr getTemplate(String const& templateId) {
+std::shared_ptr<QuestTemplate> getTemplate(String const& templateId) {
   return Root::singleton().questTemplateDatabase()->questTemplate(templateId);
 }
 
-StringMap<QuestPtr> readQuests(Json const& json) {
+StringMap<std::shared_ptr<Quest>> readQuests(Json const& json) {
   auto versioningDatabase = Root::singleton().versioningDatabase();
   auto questTemplateDatabase = Root::singleton().questTemplateDatabase();
 
@@ -196,7 +196,7 @@ StringMap<QuestPtr> readQuests(Json const& json) {
       return true;
     };
 
-  StringMap<QuestPtr> result;
+  StringMap<std::shared_ptr<Quest>> result;
   for (auto const& questPair : json.iterateObject()) {
     // don't load the quest unless all quests in the arc exist
     Json diskStore = versioningDatabase->loadVersionedJson(VersionedJson::fromJson(questPair.second), "Quest");
@@ -207,8 +207,8 @@ StringMap<QuestPtr> readQuests(Json const& json) {
   return result;
 }
 
-std::function<bool (QuestPtr const&)> questFilter(QuestState state) {
-  return [state](QuestPtr const& quest) {
+std::function<bool (std::shared_ptr<Quest> const&)> questFilter(QuestState state) {
+  return [state](std::shared_ptr<Quest> const& quest) {
       return quest->state() == state;
     };
 }
@@ -219,12 +219,12 @@ void QuestManager::diskLoad(Json const& quests) {
 }
 
 Json QuestManager::diskStore() {
-  auto questPtrToJson = [](QuestPtr const& quest) { return quest->diskStore(); };
+  auto questPtrToJson = [](std::shared_ptr<Quest> const& quest) { return quest->diskStore(); };
 
   auto quests = m_quests.values();
 
   return JsonObject{
-      {"quests", jsonFromMapV<StringMap<QuestPtr>>(m_quests, questPtrToJson)},
+      {"quests", jsonFromMapV<StringMap<std::shared_ptr<Quest>>>(m_quests, questPtrToJson)},
       {"currentQuest", jsonFromMaybe(m_trackedQuestId)}
     };
 }
@@ -253,7 +253,7 @@ void QuestManager::init(World* world) {
 }
 
 void QuestManager::uninit() {
-  m_quests.values().exec([](QuestPtr const& quest) { quest->uninit(); });
+  m_quests.values().exec([](std::shared_ptr<Quest> const& quest) { quest->uninit(); });
   m_world = nullptr;
 }
 
@@ -284,20 +284,20 @@ bool QuestManager::canStart(QuestArcDescriptor const& questArc) const {
   return true;
 }
 
-void QuestManager::offer(QuestPtr const& quest) {
+void QuestManager::offer(std::shared_ptr<Quest> const& quest) {
   m_quests[quest->questId()] = quest;
   quest->init(m_player, m_world, m_client);
   quest->offer();
 }
 
-StringMap<QuestPtr> QuestManager::quests() const {
+StringMap<std::shared_ptr<Quest>> QuestManager::quests() const {
   return m_quests;
 }
 
-StringMap<QuestPtr> QuestManager::serverQuests() const {
-  StringMap<QuestPtr> filtered;
+StringMap<std::shared_ptr<Quest>> QuestManager::serverQuests() const {
+  StringMap<std::shared_ptr<Quest>> filtered;
   for (auto& pair : m_quests) {
-    QuestPtr q = pair.second;
+    std::shared_ptr<Quest> q = pair.second;
     if (!questValidOnServer(q))
       continue;
     filtered.insert(pair.first, q);
@@ -305,7 +305,7 @@ StringMap<QuestPtr> QuestManager::serverQuests() const {
   return filtered;
 }
 
-QuestPtr QuestManager::getQuest(String const& questId) const {
+std::shared_ptr<Quest> QuestManager::getQuest(String const& questId) const {
   return m_quests.get(questId);
 }
 
@@ -364,7 +364,7 @@ bool QuestManager::canTurnIn(String const& questId) const {
   return false;
 }
 
-Maybe<QuestPtr> QuestManager::getFirstNewQuest() {
+Maybe<std::shared_ptr<Quest>> QuestManager::getFirstNewQuest() {
   for (auto& q : m_quests) {
     if (questValidOnServer(q.second) && q.second->state() == QuestState::Offer)
       return q.second;
@@ -372,7 +372,7 @@ Maybe<QuestPtr> QuestManager::getFirstNewQuest() {
   return {};
 }
 
-Maybe<QuestPtr> QuestManager::getFirstCompletableQuest() {
+Maybe<std::shared_ptr<Quest>> QuestManager::getFirstCompletableQuest() {
   for (auto& q : m_quests) {
     if (questValidOnServer(q.second) && q.second->state() == QuestState::Complete && q.second->showDialog())
       return q.second;
@@ -380,7 +380,7 @@ Maybe<QuestPtr> QuestManager::getFirstCompletableQuest() {
   return {};
 }
 
-Maybe<QuestPtr> QuestManager::getFirstFailableQuest() {
+Maybe<std::shared_ptr<Quest>> QuestManager::getFirstFailableQuest() {
   for (auto& q : m_quests) {
     if (questValidOnServer(q.second) && q.second->state() == QuestState::Failed && q.second->showDialog())
       return q.second;
@@ -388,7 +388,7 @@ Maybe<QuestPtr> QuestManager::getFirstFailableQuest() {
   return {};
 }
 
-Maybe<QuestPtr> QuestManager::getFirstMainQuest() {
+Maybe<std::shared_ptr<Quest>> QuestManager::getFirstMainQuest() {
   for (auto& q : m_quests) {
     if (questValidOnServer(q.second) && q.second->state() == QuestState::Active && q.second->mainQuest())
       return q.second;
@@ -396,10 +396,10 @@ Maybe<QuestPtr> QuestManager::getFirstMainQuest() {
   return {};
 }
 
-void sortQuests(List<QuestPtr>& quests) {
+void sortQuests(List<std::shared_ptr<Quest>>& quests) {
   std::sort(quests.begin(),
       quests.end(),
-      [](QuestPtr const& left, QuestPtr const& right) -> bool {
+      [](std::shared_ptr<Quest> const& left, std::shared_ptr<Quest> const& right) -> bool {
         std::int64_t leftUpdated = left->lastUpdatedOn();
         std::int64_t rightUpdated = right->lastUpdatedOn();
         String leftQuestId = left->templateId();
@@ -408,27 +408,27 @@ void sortQuests(List<QuestPtr>& quests) {
       });
 }
 
-List<QuestPtr> QuestManager::listActiveQuests() const {
-  List<QuestPtr> result = serverQuests().values();
-  result.filter([&](QuestPtr quest) {
+List<std::shared_ptr<Quest>> QuestManager::listActiveQuests() const {
+  List<std::shared_ptr<Quest>> result = serverQuests().values();
+  result.filter([&](std::shared_ptr<Quest> quest) {
       return quest->state() == QuestState::Active && quest->showInLog();
     });
   sortQuests(result);
   return result;
 }
 
-List<QuestPtr> QuestManager::listCompletedQuests() const {
-  List<QuestPtr> result = serverQuests().values();
-  result.filter([](QuestPtr quest) {
+List<std::shared_ptr<Quest>> QuestManager::listCompletedQuests() const {
+  List<std::shared_ptr<Quest>> result = serverQuests().values();
+  result.filter([](std::shared_ptr<Quest> quest) {
       return quest->state() == QuestState::Complete && quest->showInLog();
     });
   sortQuests(result);
   return result;
 }
 
-List<QuestPtr> QuestManager::listFailedQuests() const {
-  List<QuestPtr> result = serverQuests().values();
-  result.filter([](QuestPtr quest) {
+List<std::shared_ptr<Quest>> QuestManager::listFailedQuests() const {
+  List<std::shared_ptr<Quest>> result = serverQuests().values();
+  result.filter([](std::shared_ptr<Quest> quest) {
       return quest->state() == QuestState::Failed && quest->showInLog();
     });
   sortQuests(result);
@@ -439,7 +439,7 @@ Maybe<String> QuestManager::currentQuestId() const {
   return m_trackedQuestId;
 }
 
-Maybe<QuestPtr> QuestManager::currentQuest() const {
+Maybe<std::shared_ptr<Quest>> QuestManager::currentQuest() const {
   auto questId = m_onWorldQuestId.orMaybe(m_trackedQuestId);
   if (questId && isActive(*questId)) {
     auto current = getQuest(*questId);
@@ -453,7 +453,7 @@ Maybe<String> QuestManager::trackedQuestId() const {
   return m_trackedQuestId;
 }
 
-Maybe<QuestPtr> QuestManager::trackedQuest() const {
+Maybe<std::shared_ptr<Quest>> QuestManager::trackedQuest() const {
   if (m_trackedQuestId && isActive(*m_trackedQuestId)) {
     auto current = getQuest(*m_trackedQuestId);
     if (current->showInLog())
@@ -462,7 +462,7 @@ Maybe<QuestPtr> QuestManager::trackedQuest() const {
   return {};
 }
 
-Maybe<QuestIndicator> QuestManager::getQuestIndicator(EntityPtr const& entity) const {
+Maybe<QuestIndicator> QuestManager::getQuestIndicator(std::shared_ptr<Entity> const& entity) const {
   Maybe<String> indicatorType;
   Vec2F indicatorPos = entity->position() + Vec2F(0, 2.75);
   auto questGiver = as<InteractiveEntity>(entity);
@@ -516,7 +516,7 @@ Maybe<QuestIndicator> QuestManager::getQuestIndicator(EntityPtr const& entity) c
 
 StringSet QuestManager::interestingObjects() {
   StringSet result;
-  m_quests.values().exec([&result](QuestPtr const& quest) {
+  m_quests.values().exec([&result](std::shared_ptr<Quest> const& quest) {
     if (auto resp = quest->receiveMessage("interestingObjects", true, JsonArray()))
       if (resp->is<Json>())
         result.addAll(jsonToStringSet(resp->get<Json>()));
@@ -530,7 +530,7 @@ Maybe<ChainableJsonMessageResponse> QuestManager::receiveMessage(String const& m
   }
   Maybe<ChainableJsonMessageResponse> result;
   m_quests.values().exec([&result, message, localMessage, args](
-      QuestPtr const& quest) { result = result.orMaybe(quest->receiveMessage(message, localMessage, args)); });
+      std::shared_ptr<Quest> const& quest) { result = result.orMaybe(quest->receiveMessage(message, localMessage, args)); });
   return result;
 }
 
@@ -551,7 +551,7 @@ void QuestManager::update(float dt) {
       m_onWorldQuestId = {};
   } else if (m_trackOnWorldQuests) {
     auto playerWorldId = m_client->clientContext()->playerWorldId();
-    auto trackedWorld = currentQuest().sequence([](QuestPtr q) { return q->worldId(); });
+    auto trackedWorld = currentQuest().sequence([](std::shared_ptr<Quest> q) { return q->worldId(); });
     if (!trackedWorld || playerWorldId != *trackedWorld) {
       // the currently tracked quest is not on this world, track another quest on this world
       for (auto quest : listActiveQuests()) {
@@ -594,12 +594,12 @@ void QuestManager::startInitialQuests() {
 }
 
 void QuestManager::setMostRecentQuestCurrent() {
-  List<QuestPtr> sortedActiveQuests = listActiveQuests();
+  List<std::shared_ptr<Quest>> sortedActiveQuests = listActiveQuests();
   if (sortedActiveQuests.size() > 0)
     setAsTracked(sortedActiveQuests.last()->questId());
 }
 
-bool QuestManager::questValidOnServer(QuestPtr q) const {
+bool QuestManager::questValidOnServer(std::shared_ptr<Quest> q) const {
   return !(q->hideCrossServer() && q->serverUuid().isValid() && *q->serverUuid() != m_player->clientContext()->serverUuid());
 }
 

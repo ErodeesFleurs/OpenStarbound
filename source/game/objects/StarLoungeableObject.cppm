@@ -70,14 +70,14 @@ namespace Star {
 
 class LoungeableObject : public Object, public virtual LoungeableEntity {
 public:
-  LoungeableObject(ObjectConfigConstPtr config, Json const& parameters = Json());
+  LoungeableObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters = Json());
 
   void render(RenderCallback* renderCallback) override;
 
   InteractAction interact(InteractRequest const& request) override;
 
   std::size_t anchorCount() const override;
-  LoungeAnchorConstPtr loungeAnchor(std::size_t positionIndex) const override;
+  std::shared_ptr<LoungeAnchor const> loungeAnchor(std::size_t positionIndex) const override;
 
 protected:
   void setOrientationIndex(std::size_t orientationIndex) override;

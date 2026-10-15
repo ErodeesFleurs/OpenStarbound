@@ -101,7 +101,7 @@ import star.byte_array;
 import star.algorithm;
 namespace Star {
 
-SystemWorldClient::SystemWorldClient(ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PlayerUniverseMapPtr universeMap)
+SystemWorldClient::SystemWorldClient(std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase, std::shared_ptr<PlayerUniverseMap> universeMap)
   : SystemWorld(universeClock, celestialDatabase), m_universeMap(std::move(universeMap)) {}
 
 CelestialCoordinate SystemWorldClient::currentSystem() const {
@@ -174,7 +174,7 @@ void SystemWorldClient::update(float dt) {
     celestialSlave->signalSystem(currentSystem()); // keeps the celestial chunk for our current system alive
 }
 
-List<SystemObjectPtr> SystemWorldClient::objects() const {
+List<std::shared_ptr<SystemObject>> SystemWorldClient::objects() const {
   return m_objects.values();
 }
 
@@ -182,16 +182,16 @@ List<Uuid> SystemWorldClient::objectKeys() const {
   return m_objects.keys();
 }
 
-SystemObjectPtr SystemWorldClient::getObject(Uuid const& uuid) const {
+std::shared_ptr<SystemObject> SystemWorldClient::getObject(Uuid const& uuid) const {
   return m_objects.maybe(uuid).value({});
 }
 
-List<SystemClientShipPtr> SystemWorldClient::ships() const
+List<std::shared_ptr<SystemClientShip>> SystemWorldClient::ships() const
 {
   return m_clientShips.values();
 }
 
-SystemClientShipPtr SystemWorldClient::getShip(Uuid const & uuid) const
+std::shared_ptr<SystemClientShip> SystemWorldClient::getShip(Uuid const & uuid) const
 {
   return m_clientShips.maybe(uuid).value({});
 }
@@ -202,7 +202,7 @@ Uuid SystemWorldClient::spawnObject(String typeName, Maybe<Vec2F> position, Mayb
   return objectUuid;
 }
 
-bool SystemWorldClient::handleIncomingPacket(PacketPtr packet) {
+bool SystemWorldClient::handleIncomingPacket(std::shared_ptr<Packet> packet) {
   if (auto updatePacket = as<SystemWorldUpdatePacket>(packet)) {
     auto location = m_ship->systemLocation();
     for (auto p : updatePacket->shipUpdates) {
@@ -256,11 +256,11 @@ bool SystemWorldClient::handleIncomingPacket(PacketPtr packet) {
   return true;
 }
 
-List<PacketPtr> SystemWorldClient::pullOutgoingPackets() {
+List<std::shared_ptr<Packet>> SystemWorldClient::pullOutgoingPackets() {
   return take(m_outgoingPackets);
 }
 
-SystemObjectPtr SystemWorldClient::netLoadObject(ByteArray netStore) {
+std::shared_ptr<SystemObject> SystemWorldClient::netLoadObject(ByteArray netStore) {
   DataStreamBuffer ds(std::move(netStore));
   Uuid uuid = ds.read<Uuid>();
 
@@ -273,7 +273,7 @@ SystemObjectPtr SystemWorldClient::netLoadObject(ByteArray netStore) {
   return std::make_shared<SystemObject>(objectConfig, uuid, position, parameters);
 }
 
-SystemClientShipPtr SystemWorldClient::netLoadShip(ByteArray netStore)
+std::shared_ptr<SystemClientShip> SystemWorldClient::netLoadShip(ByteArray netStore)
 {
   DataStreamBuffer ds(std::move(netStore));
   Uuid uuid = ds.read<Uuid>();

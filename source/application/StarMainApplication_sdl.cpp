@@ -483,7 +483,7 @@ ControllerButton controllerButtonFromSdlControllerButton(std::uint8_t button) {
 
 class SdlPlatform {
 public:
-  SdlPlatform(ApplicationUPtr application, StringList cmdLineArgs) {
+  SdlPlatform(std::unique_ptr<Application> application, StringList cmdLineArgs) {
     m_application = std::move(application);
 
     // extract application path from command line args
@@ -1021,7 +1021,7 @@ private:
       parent->m_cursorHardware = hardware;
     }
 
-    bool setCursorImage(const String& id, const ImageConstPtr& image, unsigned scale, const Vec2I& offset) override {
+    bool setCursorImage(const String& id, const std::shared_ptr<Image const>& image, unsigned scale, const Vec2I& offset) override {
       return parent->setCursorImage(id, image, scale, offset);
     }
 
@@ -1083,25 +1083,25 @@ private:
     return parent->m_displayScale;
   }
 
-    StatisticsServicePtr statisticsService() const override {
+    std::shared_ptr<StatisticsService> statisticsService() const override {
       if (parent->m_platformServices)
         return parent->m_platformServices->statisticsService();
       return {};
     }
 
-    P2PNetworkingServicePtr p2pNetworkingService() const override {
+    std::shared_ptr<P2PNetworkingService> p2pNetworkingService() const override {
       if (parent->m_platformServices)
         return parent->m_platformServices->p2pNetworkingService();
       return {};
     }
 
-    UserGeneratedContentServicePtr userGeneratedContentService() const override {
+    std::shared_ptr<UserGeneratedContentService> userGeneratedContentService() const override {
       if (parent->m_platformServices)
         return parent->m_platformServices->userGeneratedContentService();
       return {};
     }
 
-    DesktopServicePtr desktopService() const override {
+    std::shared_ptr<DesktopService> desktopService() const override {
       if (parent->m_platformServices)
         return parent->m_platformServices->desktopService();
       return {};
@@ -1186,7 +1186,7 @@ private:
       } else if (event.type == SDL_EVENT_GAMEPAD_BUTTON_UP) {
         starEvent.set(ControllerButtonUpEvent{ (ControllerId)event.gbutton.which, controllerButtonFromSdlControllerButton(event.gbutton.button) });
       } else if (event.type == SDL_EVENT_GAMEPAD_ADDED) {
-        auto insertion = m_SdlControllers.insert_or_assign(event.gdevice.which, SDLGameControllerUPtr(SDL_OpenGamepad(event.gdevice.which), SDL_CloseGamepad));
+        auto insertion = m_SdlControllers.insert_or_assign(event.gdevice.which, std::unique_ptr<SDL_Gamepad, decltype(&SDL_CloseGamepad)>(SDL_OpenGamepad(event.gdevice.which), SDL_CloseGamepad));
         if (SDL_Gamepad* controller = insertion.first->second.get())
           Logger::info("Controller device '{}' added", SDL_GetGamepadName(controller));
       } else if (event.type == SDL_EVENT_GAMEPAD_REMOVED) {
@@ -1233,7 +1233,7 @@ private:
   }
 
   inline static const std::size_t MaxCursorSize = 128;
-  bool setCursorImage(const String& id, const ImageConstPtr& image, unsigned scale, const Vec2I& offset) {
+  bool setCursorImage(const String& id, const std::shared_ptr<Image const>& image, unsigned scale, const Vec2I& offset) {
     auto imageSize = image->size().piecewiseMultiply(Vec2U::filled(scale));
     if (!m_cursorHardware || !scale || imageSize.max() > MaxCursorSize || imageSize.product() > square(MaxCursorSize)) {
       if (auto defaultCursor = SDL_GetDefaultCursor()) {
@@ -1364,15 +1364,12 @@ private:
   std::vector<std::uint8_t> m_audioOutputData;
   Maybe<std::pair<RectI, int>> m_textInputArea;
 
-  typedef std::unique_ptr<SDL_Gamepad, decltype(&SDL_CloseGamepad)> SDLGameControllerUPtr;
-  StableHashMap<int, SDLGameControllerUPtr> m_SdlControllers;
+  StableHashMap<int, std::unique_ptr<SDL_Gamepad, decltype(&SDL_CloseGamepad)>> m_SdlControllers;
 
-  typedef std::unique_ptr<SDL_Surface, decltype(&SDL_DestroySurface)> SDLSurfaceUPtr;
-  typedef std::unique_ptr<SDL_Cursor, decltype(&SDL_DestroyCursor)> SDLCursorUPtr;
   struct CursorEntry {
-    ImageConstPtr image = nullptr;
-    SDLSurfaceUPtr sdlSurface;
-    SDLCursorUPtr sdlCursor;
+    std::shared_ptr<Image const> image = nullptr;
+    std::unique_ptr<SDL_Surface, decltype(&SDL_DestroySurface)> sdlSurface;
+    std::unique_ptr<SDL_Cursor, decltype(&SDL_DestroyCursor)> sdlCursor;
 
     CursorEntry() : image(nullptr), sdlSurface(nullptr, SDL_DestroySurface), sdlCursor(nullptr, SDL_DestroyCursor) {};
   };
@@ -1397,12 +1394,12 @@ private:
   const char* m_videoDriver;
   const char* m_audioDriver;
 
-  OpenGlRendererPtr m_renderer;
-  ApplicationUPtr m_application;
-  PcPlatformServicesUPtr m_platformServices;
+  std::shared_ptr<OpenGlRenderer> m_renderer;
+  std::unique_ptr<Application> m_application;
+  std::unique_ptr<PcPlatformServices> m_platformServices;
 };
 
-int runMainApplication(ApplicationUPtr application, StringList cmdLineArgs) {
+int runMainApplication(std::unique_ptr<Application> application, StringList cmdLineArgs) {
   try {
     {
       SdlPlatform platform(std::move(application), std::move(cmdLineArgs));

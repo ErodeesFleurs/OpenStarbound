@@ -40,13 +40,6 @@ import star.net_element_sync_group;
 
 namespace Star {
 
-class NetworkedAnimator;
-using NetworkedAnimatorPtr = std::shared_ptr<NetworkedAnimator>;
-using NetworkedAnimatorConstPtr = std::shared_ptr<const NetworkedAnimator>;
-using NetworkedAnimatorWeakPtr = std::weak_ptr<NetworkedAnimator>;
-using NetworkedAnimatorConstWeakPtr = std::weak_ptr<const NetworkedAnimator>;
-using NetworkedAnimatorUPtr = std::unique_ptr<NetworkedAnimator>;
-using NetworkedAnimatorConstUPtr = std::unique_ptr<const NetworkedAnimator>;
 struct NetworkedAnimatorExceptionTag {
   static constexpr char const* name() { return "NetworkedAnimatorException"; }
 };
@@ -64,7 +57,7 @@ public:
     // Calls stopAudio()
     ~DynamicTarget();
 
-    List<AudioInstancePtr> pullNewAudios();
+    List<std::shared_ptr<AudioInstance>> pullNewAudios();
     List<Particle> pullNewParticles();
 
     // Stops all looping audio immediately and lets non-looping audio finish
@@ -83,22 +76,22 @@ public:
 
     struct PersistentSound {
       Json sound;
-      AudioInstancePtr audio;
+      std::shared_ptr<AudioInstance> audio;
       float stopRampTime;
     };
 
     struct ImmediateSound {
       Json sound;
-      AudioInstancePtr audio;
+      std::shared_ptr<AudioInstance> audio;
     };
 
     Vec2F position;
-    List<AudioInstancePtr> pendingAudios;
+    List<std::shared_ptr<AudioInstance>> pendingAudios;
     List<Particle> pendingParticles;
     StringMap<PersistentSound> statePersistentSounds;
     StringMap<ImmediateSound> stateImmediateSounds;
-    StringMap<List<AudioInstancePtr>> independentSounds;
-    HashMap<AudioInstancePtr, Vec2F> currentAudioBasePositions;
+    StringMap<List<std::shared_ptr<AudioInstance>>> independentSounds;
+    HashMap<std::shared_ptr<AudioInstance>, Vec2F> currentAudioBasePositions;
   };
 
   NetworkedAnimator();
@@ -433,12 +426,6 @@ export module star.networked_animator;
 
 export namespace Star {
   using ::Star::NetworkedAnimator;
-  using ::Star::NetworkedAnimatorPtr;
-  using ::Star::NetworkedAnimatorConstPtr;
-  using ::Star::NetworkedAnimatorWeakPtr;
-  using ::Star::NetworkedAnimatorConstWeakPtr;
-  using ::Star::NetworkedAnimatorUPtr;
-  using ::Star::NetworkedAnimatorConstUPtr;
   using ::Star::NetworkedAnimatorExceptionTag;
   using ::Star::NetworkedAnimatorException;
 }

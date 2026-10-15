@@ -18,7 +18,7 @@ class JsonEditor : public QMainWindow {
   Q_OBJECT
 
 public:
-  explicit JsonEditor(JsonPath::PathPtr const& path, Options const& options, List<String> const& files);
+  explicit JsonEditor(std::shared_ptr<JsonPath::Path> const& path, Options const& options, List<String> const& files);
 
 private slots:
   void next();
@@ -43,14 +43,14 @@ private:
   QPushButton* m_backButton;
   QPushButton* m_nextButton;
 
-  JsonPath::PathPtr m_path;
-  JsonInputFormatPtr m_editFormat;
+  std::shared_ptr<JsonPath::Path> m_path;
+  std::shared_ptr<JsonInputFormat> m_editFormat;
   Options m_options;
   List<String> m_files;
   std::size_t m_fileIndex;
   FormattedJson m_currentJson;
 };
 
-int edit(int argc, char* argv[], JsonPath::PathPtr const& path, Options const& options, List<Input> const& inputs);
+int edit(int argc, char* argv[], std::shared_ptr<JsonPath::Path> const& path, Options const& options, List<Input> const& inputs);
 
 }

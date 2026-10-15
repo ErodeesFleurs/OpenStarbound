@@ -96,7 +96,7 @@ class ConsumableItem : public Item, public SwingableItem {
 public:
   ConsumableItem(Json const& config, String const& directory, Json const& data);
 
-  ItemPtr clone() const override;
+  std::shared_ptr<Item> clone() const override;
 
   List<Drawable> drawables() const override;
 
@@ -140,7 +140,7 @@ ConsumableItem::ConsumableItem(Json const& config, String const& directory, Json
   m_consuming = false;
 }
 
-ItemPtr ConsumableItem::clone() const {
+std::shared_ptr<Item> ConsumableItem::clone() const {
   return std::make_shared<ConsumableItem>(*this);
 }
 

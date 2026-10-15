@@ -33,14 +33,6 @@ import star.collision_block;
 
 namespace Star {
 
-class TileEntity;
-using TileEntityPtr = std::shared_ptr<TileEntity>;
-using TileEntityConstPtr = std::shared_ptr<const TileEntity>;
-using TileEntityWeakPtr = std::weak_ptr<TileEntity>;
-using TileEntityConstWeakPtr = std::weak_ptr<const TileEntity>;
-using TileEntityUPtr = std::unique_ptr<TileEntity>;
-using TileEntityConstUPtr = std::unique_ptr<const TileEntity>;
-
 struct MaterialSpace {
   friend DataStream& operator<<(DataStream& ds, MaterialSpace const& materialSpace);
   friend DataStream& operator>>(DataStream& ds, MaterialSpace& materialSpace);
@@ -134,11 +126,5 @@ export module star.tile_entity;
 
 export namespace Star {
   using ::Star::TileEntity;
-  using ::Star::TileEntityPtr;
-  using ::Star::TileEntityConstPtr;
-  using ::Star::TileEntityWeakPtr;
-  using ::Star::TileEntityConstWeakPtr;
-  using ::Star::TileEntityUPtr;
-  using ::Star::TileEntityConstUPtr;
   using ::Star::MaterialSpace;
 }

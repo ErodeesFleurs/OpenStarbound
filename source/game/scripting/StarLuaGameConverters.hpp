@@ -76,19 +76,7 @@ namespace Star {
 struct Collection;
 struct Collectable;
 class BehaviorState;
-using BehaviorStatePtr = std::shared_ptr<BehaviorState>;
-using BehaviorStateConstPtr = std::shared_ptr<const BehaviorState>;
-using BehaviorStateWeakPtr = std::weak_ptr<BehaviorState>;
-using BehaviorStateConstWeakPtr = std::weak_ptr<const BehaviorState>;
-using BehaviorStateUPtr = std::unique_ptr<BehaviorState>;
-using BehaviorStateConstUPtr = std::unique_ptr<const BehaviorState>;
 class Blackboard;
-using BlackboardPtr = std::shared_ptr<Blackboard>;
-using BlackboardConstPtr = std::shared_ptr<const Blackboard>;
-using BlackboardWeakPtr = std::weak_ptr<Blackboard>;
-using BlackboardConstWeakPtr = std::weak_ptr<const Blackboard>;
-using BlackboardUPtr = std::unique_ptr<Blackboard>;
-using BlackboardConstUPtr = std::unique_ptr<const Blackboard>;
 enum class NodeStatus;
 
 template <>
@@ -197,11 +185,11 @@ struct LuaConverter<Collectable> {
 // the "don't put lua references in userdata, just don't" rule. We get around it by keeping
 // a weak pointer to the behavior state, forcing it to be destroyed elsewhere.
 template <>
-struct LuaConverter<BehaviorStateWeakPtr> : LuaUserDataConverter<BehaviorStateWeakPtr> {};
+struct LuaConverter<std::weak_ptr<BehaviorState>> : LuaUserDataConverter<std::weak_ptr<BehaviorState>> {};
 
 template <>
-struct LuaUserDataMethods<BehaviorStateWeakPtr> {
-  static LuaMethods<BehaviorStateWeakPtr> make();
+struct LuaUserDataMethods<std::weak_ptr<BehaviorState>> {
+  static LuaMethods<std::weak_ptr<BehaviorState>> make();
 };
 
 template <>
@@ -217,27 +205,27 @@ struct LuaConverter<PhysicsMovingCollision> {
 
 // Weak pointer for the same reasons as BehaviorState.
 template <>
-struct LuaConverter<BlackboardWeakPtr> : LuaUserDataConverter<BlackboardWeakPtr> {};
+struct LuaConverter<std::weak_ptr<Blackboard>> : LuaUserDataConverter<std::weak_ptr<Blackboard>> {};
 
 template <>
-struct LuaUserDataMethods<BlackboardWeakPtr> {
-  static LuaMethods<BlackboardWeakPtr> make();
+struct LuaUserDataMethods<std::weak_ptr<Blackboard>> {
+  static LuaMethods<std::weak_ptr<Blackboard>> make();
 };
 
 template <>
-struct LuaConverter<EntityPtr> : LuaUserDataConverter<EntityPtr> {};
+struct LuaConverter<std::shared_ptr<Entity>> : LuaUserDataConverter<std::shared_ptr<Entity>> {};
 
 template <>
-struct LuaUserDataMethods<EntityPtr> {
-  static LuaMethods<EntityPtr> make();
+struct LuaUserDataMethods<std::shared_ptr<Entity>> {
+  static LuaMethods<std::shared_ptr<Entity>> make();
 };
 
 template <>
-struct LuaConverter<AudioInstancePtr> : LuaUserDataConverter<AudioInstancePtr> {};
+struct LuaConverter<std::shared_ptr<AudioInstance>> : LuaUserDataConverter<std::shared_ptr<AudioInstance>> {};
 
 template <>
-struct LuaUserDataMethods<AudioInstancePtr> {
-  static LuaMethods<AudioInstancePtr> make();
+struct LuaUserDataMethods<std::shared_ptr<AudioInstance>> {
+  static LuaMethods<std::shared_ptr<AudioInstance>> make();
 };
 
 }

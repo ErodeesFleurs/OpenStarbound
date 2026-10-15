@@ -22,14 +22,6 @@ import star.vector;
 import star.matrix3;
 namespace Star {
 
-class OpenGlRenderer;
-using OpenGlRendererPtr = std::shared_ptr<OpenGlRenderer>;
-using OpenGlRendererConstPtr = std::shared_ptr<OpenGlRenderer const>;
-using OpenGlRendererWeakPtr = std::weak_ptr<OpenGlRenderer>;
-using OpenGlRendererConstWeakPtr = std::weak_ptr<OpenGlRenderer const>;
-using OpenGlRendererUPtr = std::unique_ptr<OpenGlRenderer>;
-using OpenGlRendererConstUPtr = std::unique_ptr<OpenGlRenderer const>;
-
 inline constexpr std::size_t FrameBufferCount = 1;
 
 // TODO: Bott - This isn't really rendering-specific. Don't really like it either. It's nicer than having redundant bool options, though.
@@ -70,12 +62,12 @@ public:
   void setMultiTexturingEnabled(bool enabled) override;
   void setMultiSampling(unsigned multiSampling) override;
   void setMainHDR(bool enabled) override;
-  TextureGroupPtr createTextureGroup(TextureGroupSize size, TextureFiltering filtering) override;
-  RenderBufferPtr createRenderBuffer() override;
+  std::shared_ptr<TextureGroup> createTextureGroup(TextureGroupSize size, TextureFiltering filtering) override;
+  std::shared_ptr<RenderBuffer> createRenderBuffer() override;
 
   List<RenderPrimitive>& immediatePrimitives() override;
   void render(RenderPrimitive primitive) override;
-  void renderBuffer(RenderBufferPtr const& renderBuffer, Mat3F const& transformation) override;
+  void renderBuffer(std::shared_ptr<RenderBuffer> const& renderBuffer, Mat3F const& transformation) override;
 
   void flush(Mat3F const& transformation) override;
 
@@ -310,12 +302,6 @@ export module star.renderer_opengl;
 
 export namespace Star {
   using ::Star::OpenGlRenderer;
-  using ::Star::OpenGlRendererPtr;
-  using ::Star::OpenGlRendererConstPtr;
-  using ::Star::OpenGlRendererUPtr;
-  using ::Star::OpenGlRendererConstUPtr;
-  using ::Star::OpenGlRendererWeakPtr;
-  using ::Star::OpenGlRendererConstWeakPtr;
   using ::Star::FrameBufferCount;
   using ::Star::BoolSettingMode;
   using ::Star::BoolSettingModeNames;

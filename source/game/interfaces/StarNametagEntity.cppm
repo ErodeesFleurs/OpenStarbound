@@ -22,14 +22,6 @@ import star.entity;
 
 namespace Star {
 
-class NametagEntity;
-using NametagEntityPtr = std::shared_ptr<NametagEntity>;
-using NametagEntityConstPtr = std::shared_ptr<const NametagEntity>;
-using NametagEntityWeakPtr = std::weak_ptr<NametagEntity>;
-using NametagEntityConstWeakPtr = std::weak_ptr<const NametagEntity>;
-using NametagEntityUPtr = std::unique_ptr<NametagEntity>;
-using NametagEntityConstUPtr = std::unique_ptr<const NametagEntity>;
-
 class NametagEntity : public virtual Entity {
 public:
   virtual String nametag() const = 0;
@@ -45,10 +37,4 @@ export module star.nametag_entity;
 
 export namespace Star {
   using ::Star::NametagEntity;
-  using ::Star::NametagEntityPtr;
-  using ::Star::NametagEntityConstPtr;
-  using ::Star::NametagEntityWeakPtr;
-  using ::Star::NametagEntityConstWeakPtr;
-  using ::Star::NametagEntityUPtr;
-  using ::Star::NametagEntityConstUPtr;
 }

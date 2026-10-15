@@ -144,7 +144,7 @@ Spawner::Spawner() {
   m_debug = config.getBool("debug", false);
 }
 
-void Spawner::init(SpawnerFacadePtr facade) {
+void Spawner::init(std::shared_ptr<SpawnerFacade> facade) {
   m_facade = std::move(facade);
 }
 

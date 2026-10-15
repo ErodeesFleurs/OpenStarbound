@@ -75,17 +75,9 @@ namespace Star {
 
 class WorldCamera;
 
-class EnvironmentPainter;
-using EnvironmentPainterPtr = std::shared_ptr<EnvironmentPainter>;
-using EnvironmentPainterConstPtr = std::shared_ptr<EnvironmentPainter const>;
-using EnvironmentPainterWeakPtr = std::weak_ptr<EnvironmentPainter>;
-using EnvironmentPainterConstWeakPtr = std::weak_ptr<EnvironmentPainter const>;
-using EnvironmentPainterUPtr = std::unique_ptr<EnvironmentPainter>;
-using EnvironmentPainterConstUPtr = std::unique_ptr<EnvironmentPainter const>;
-
 class EnvironmentPainter {
 public:
-  EnvironmentPainter(RendererPtr renderer);
+  EnvironmentPainter(std::shared_ptr<Renderer> renderer);
 
   void update(float dt);
 
@@ -133,8 +125,8 @@ private:
   std::uint64_t starsHash(SkyRenderData const& sky, Vec2F const& viewSize) const;
   void setupStars(SkyRenderData const& sky);
 
-  RendererPtr m_renderer;
-  AssetTextureGroupPtr m_textureGroup;
+  std::shared_ptr<Renderer> m_renderer;
+  std::shared_ptr<AssetTextureGroup> m_textureGroup;
 
   double m_timer;
   PerlinF m_rayPerlin;
@@ -152,10 +144,4 @@ export module star.environment_painter;
 export namespace Star {
   using ::Star::WorldCamera;
   using ::Star::EnvironmentPainter;
-  using ::Star::EnvironmentPainterPtr;
-  using ::Star::EnvironmentPainterConstPtr;
-  using ::Star::EnvironmentPainterWeakPtr;
-  using ::Star::EnvironmentPainterConstWeakPtr;
-  using ::Star::EnvironmentPainterUPtr;
-  using ::Star::EnvironmentPainterConstUPtr;
 }

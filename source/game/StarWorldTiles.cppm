@@ -126,7 +126,6 @@ struct ServerTile : public WorldTile {
   CollisionKind objectCollision;
 };
 typedef TileSectorArray<ServerTile, WorldSectorSize> ServerTileSectorArray;
-typedef std::shared_ptr<ServerTileSectorArray> ServerTileSectorArrayPtr;
 
 struct ClientTile : public WorldTile {
   ClientTile();
@@ -142,7 +141,6 @@ struct ClientTile : public WorldTile {
   float gravity;
 };
 typedef TileSectorArray<ClientTile, WorldSectorSize> ClientTileSectorArray;
-typedef std::shared_ptr<ClientTileSectorArray> ClientTileSectorArrayPtr;
 
 // Tile structure to transfer all data from client to server
 struct NetTile {
@@ -420,10 +418,8 @@ export namespace Star {
   using ::Star::WorldTile;
   using ::Star::ServerTile;
   using ::Star::ServerTileSectorArray;
-  using ::Star::ServerTileSectorArrayPtr;
   using ::Star::ClientTile;
   using ::Star::ClientTileSectorArray;
-  using ::Star::ClientTileSectorArrayPtr;
   using ::Star::NetTile;
   using ::Star::PredictedTile;
   using ::Star::RenderTile;

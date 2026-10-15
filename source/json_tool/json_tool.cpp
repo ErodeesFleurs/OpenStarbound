@@ -87,7 +87,7 @@ void ArrayOutput::flush() {
 }
 
 FormattedJson Star::addOrSet(bool add,
-    JsonPath::PathPtr path,
+    std::shared_ptr<::Star::JsonPath::Path> path,
     FormattedJson const& input,
     InsertLocation insertLocation,
     FormattedJson const& value) {
@@ -229,13 +229,13 @@ bool process(
   return success;
 }
 
-JsonPath::PathPtr parsePath(String const& path) {
+std::shared_ptr<::Star::JsonPath::Path> parsePath(String const& path) {
   if (path.beginsWith("/"))
     return std::make_shared<JsonPath::Pointer>(path);
   return std::make_shared<JsonPath::QueryPath>(path);
 }
 
-std::pair<JsonPath::PathPtr, bool> parseGetPath(String path) {
+std::pair<std::shared_ptr<::Star::JsonPath::Path>, bool> parseGetPath(String path) {
   // --get and --opt have a special syntax for getting the child values of
   // the value at the given path. These end with *, e.g.:
   //    /foo/bar/*
@@ -266,7 +266,7 @@ Maybe<ParsedArgs> parseArgs(int argc, char** argv) {
       // Retrieve values at a given path in the Json document
       if (!parsed.command.empty() || args.empty())
         return {};
-      JsonPath::PathPtr path;
+      std::shared_ptr<::Star::JsonPath::Path> path;
       bool children = false;
       std::tie(path, children) = parseGetPath(args.takeFirst());
       parsed.command = GetCommand{path, arg == "--opt", children};
@@ -275,7 +275,7 @@ Maybe<ParsedArgs> parseArgs(int argc, char** argv) {
       // Set the value at the given path in the Json document
       if (!parsed.command.empty() || args.size() < 2)
         return {};
-      JsonPath::PathPtr path = parsePath(args.takeFirst());
+      std::shared_ptr<::Star::JsonPath::Path> path = parsePath(args.takeFirst());
       FormattedJson value = FormattedJson::parse(args.takeFirst());
       parsed.command = SetCommand{path, value};
 
@@ -283,7 +283,7 @@ Maybe<ParsedArgs> parseArgs(int argc, char** argv) {
       // Add (insert) a path to a Json document
       if (!parsed.command.empty() || args.size() < 2)
         return {};
-      JsonPath::PathPtr path = parsePath(args.takeFirst());
+      std::shared_ptr<::Star::JsonPath::Path> path = parsePath(args.takeFirst());
       FormattedJson value = FormattedJson::parse(args.takeFirst());
       parsed.command = AddCommand{path, value};
 
@@ -454,7 +454,7 @@ int main(int argc, char** argv) {
       return 1;
     }
 
-    OutputPtr output = parsedArgs->options.output;
+    std::shared_ptr<::Star::Output> output = parsedArgs->options.output;
     bool success = true;
 
     if (parsedArgs->command.is<EditCommand>()) {

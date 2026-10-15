@@ -46,27 +46,27 @@ bool World::isClient() const {
   return !isServer();
 }
 
-List<EntityPtr> World::entityQuery(RectF const& boundBox, EntityFilter selector) const {
-  List<EntityPtr> list;
-  forEachEntity(boundBox, [&](EntityPtr const& entity) {
+List<std::shared_ptr<Entity>> World::entityQuery(RectF const& boundBox, EntityFilter selector) const {
+  List<std::shared_ptr<Entity>> list;
+  forEachEntity(boundBox, [&](std::shared_ptr<Entity> const& entity) {
       if (!selector || selector(entity))
         list.append(entity);
     });
   return list;
 }
 
-List<EntityPtr> World::entityLineQuery(Vec2F const& begin, Vec2F const& end, EntityFilter selector) const {
-  List<EntityPtr> list;
-  forEachEntityLine(begin, end, [&](EntityPtr const& entity) {
+List<std::shared_ptr<Entity>> World::entityLineQuery(Vec2F const& begin, Vec2F const& end, EntityFilter selector) const {
+  List<std::shared_ptr<Entity>> list;
+  forEachEntityLine(begin, end, [&](std::shared_ptr<Entity> const& entity) {
       if (!selector || selector(entity))
         list.append(entity);
     });
   return list;
 }
 
-List<TileEntityPtr> World::entitiesAtTile(Vec2I const& pos, EntityFilter selector) const {
-  List<TileEntityPtr> list;
-  forEachEntityAtTile(pos, [&](TileEntityPtr entity) {
+List<std::shared_ptr<TileEntity>> World::entitiesAtTile(Vec2I const& pos, EntityFilter selector) const {
+  List<std::shared_ptr<TileEntity>> list;
+  forEachEntityAtTile(pos, [&](std::shared_ptr<TileEntity> entity) {
       if (!selector || selector(entity))
         list.append(std::move(entity));
     });
@@ -119,8 +119,8 @@ TileDamageResult World::damageTile(Vec2I const& tilePosition, TileLayer layer, V
   return damageTiles({tilePosition}, layer, sourcePosition, tileDamage, sourceEntity);
 }
 
-EntityPtr World::closestEntityInSight(Vec2F const& center, float radius, CollisionSet const& collisionSet, EntityFilter selector) const {
-  return closestEntity(center, radius, [=, this](EntityPtr const& entity) {
+std::shared_ptr<Entity> World::closestEntityInSight(Vec2F const& center, float radius, CollisionSet const& collisionSet, EntityFilter selector) const {
+  return closestEntity(center, radius, [=, this](std::shared_ptr<Entity> const& entity) {
       return selector(entity) && !lineTileCollision(center, entity->position(), collisionSet);
     });
 }

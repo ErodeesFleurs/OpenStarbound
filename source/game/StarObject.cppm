@@ -39,40 +39,10 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 class AudioInstance;
-using AudioInstancePtr = std::shared_ptr<AudioInstance>;
-using AudioInstanceConstPtr = std::shared_ptr<const AudioInstance>;
-using AudioInstanceWeakPtr = std::weak_ptr<AudioInstance>;
-using AudioInstanceConstWeakPtr = std::weak_ptr<const AudioInstance>;
-using AudioInstanceUPtr = std::unique_ptr<AudioInstance>;
-using AudioInstanceConstUPtr = std::unique_ptr<const AudioInstance>;
 class ObjectDatabase;
-using ObjectDatabasePtr = std::shared_ptr<ObjectDatabase>;
-using ObjectDatabaseConstPtr = std::shared_ptr<const ObjectDatabase>;
-using ObjectDatabaseWeakPtr = std::weak_ptr<ObjectDatabase>;
-using ObjectDatabaseConstWeakPtr = std::weak_ptr<const ObjectDatabase>;
-using ObjectDatabaseUPtr = std::unique_ptr<ObjectDatabase>;
-using ObjectDatabaseConstUPtr = std::unique_ptr<const ObjectDatabase>;
 struct ObjectConfig;
-using ObjectConfigPtr = std::shared_ptr<ObjectConfig>;
-using ObjectConfigConstPtr = std::shared_ptr<const ObjectConfig>;
-using ObjectConfigWeakPtr = std::weak_ptr<ObjectConfig>;
-using ObjectConfigConstWeakPtr = std::weak_ptr<const ObjectConfig>;
-using ObjectConfigUPtr = std::unique_ptr<ObjectConfig>;
-using ObjectConfigConstUPtr = std::unique_ptr<const ObjectConfig>;
 struct ObjectOrientation;
-using ObjectOrientationPtr = std::shared_ptr<ObjectOrientation>;
-using ObjectOrientationConstPtr = std::shared_ptr<const ObjectOrientation>;
-using ObjectOrientationWeakPtr = std::weak_ptr<ObjectOrientation>;
-using ObjectOrientationConstWeakPtr = std::weak_ptr<const ObjectOrientation>;
-using ObjectOrientationUPtr = std::unique_ptr<ObjectOrientation>;
-using ObjectOrientationConstUPtr = std::unique_ptr<const ObjectOrientation>;
 class Object;
-using ObjectPtr = std::shared_ptr<Object>;
-using ObjectConstPtr = std::shared_ptr<const Object>;
-using ObjectWeakPtr = std::weak_ptr<Object>;
-using ObjectConstWeakPtr = std::weak_ptr<const Object>;
-using ObjectUPtr = std::unique_ptr<Object>;
-using ObjectConstUPtr = std::unique_ptr<const Object>;
 }
 
 #include "StarLuaRoot.hpp"
@@ -120,7 +90,7 @@ class Object
     public virtual WireEntity {
 public:
 
-  Object(ObjectConfigConstPtr config, Json const& parameters = JsonObject());
+  Object(std::shared_ptr<ObjectConfig const> config, Json const& parameters = JsonObject());
 
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {});
@@ -178,7 +148,7 @@ public:
   String shortDescription() const;
   String category() const;
 
-  virtual ObjectOrientationPtr currentOrientation() const;
+  virtual std::shared_ptr<ObjectOrientation> currentOrientation() const;
 
   virtual List<PersistentStatusEffect> statusEffects() const override;
   virtual PolyF statusEffectArea() const override;
@@ -232,7 +202,7 @@ public:
   // no value is found.
   Json configValue(String const& name, Json const& def = Json()) const;
 
-  ObjectConfigConstPtr config() const;
+  std::shared_ptr<ObjectConfig const> config() const;
 
   float liquidFillLevel() const;
 
@@ -301,15 +271,15 @@ private:
   void renderParticles(RenderCallback* renderCallback);
   void renderSounds(RenderCallback* renderCallback);
 
-  List<ObjectOrientationPtr> const& getOrientations() const;
+  List<std::shared_ptr<ObjectOrientation>> const& getOrientations() const;
 
   Vec2F damageShake() const;
 
   void checkLiquidBroken();
   GameTimer m_liquidCheckTimer;
 
-  ObjectConfigConstPtr m_config;
-  Maybe<List<ObjectOrientationPtr>> m_orientations;
+  std::shared_ptr<ObjectConfig const> m_config;
+  Maybe<List<std::shared_ptr<ObjectOrientation>>> m_orientations;
   NetElementHashMap<String, Json> m_parameters;
 
   NetElementData<Maybe<String>> m_uniqueIdNetState;
@@ -326,7 +296,7 @@ private:
 
   Maybe<PeriodicFunction<float>> m_lightFlickering;
 
-  EntityTileDamageStatusPtr m_tileDamageStatus;
+  std::shared_ptr<EntityTileDamageStatus> m_tileDamageStatus;
 
   bool m_broken;
   bool m_unbreakable;
@@ -341,13 +311,13 @@ private:
   List<GameTimer> m_emissionTimers;
 
   NetElementBool m_soundEffectEnabled;
-  AudioInstancePtr m_soundEffect;
+  std::shared_ptr<AudioInstance> m_soundEffect;
 
   NetElementData<Color> m_lightSourceColor;
 
   Vec2F m_animationPosition;
   float m_animationCenterLine;
-  NetworkedAnimatorPtr m_networkedAnimator;
+  std::shared_ptr<NetworkedAnimator> m_networkedAnimator;
   NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
 
   List<ChatAction> m_pendingChatActions;
@@ -377,38 +347,8 @@ export module star.object;
 
 export namespace Star {
   using ::Star::AudioInstance;
-  using ::Star::AudioInstancePtr;
-  using ::Star::AudioInstanceConstPtr;
-  using ::Star::AudioInstanceWeakPtr;
-  using ::Star::AudioInstanceConstWeakPtr;
-  using ::Star::AudioInstanceUPtr;
-  using ::Star::AudioInstanceConstUPtr;
   using ::Star::ObjectDatabase;
-  using ::Star::ObjectDatabasePtr;
-  using ::Star::ObjectDatabaseConstPtr;
-  using ::Star::ObjectDatabaseWeakPtr;
-  using ::Star::ObjectDatabaseConstWeakPtr;
-  using ::Star::ObjectDatabaseUPtr;
-  using ::Star::ObjectDatabaseConstUPtr;
   using ::Star::ObjectConfig;
-  using ::Star::ObjectConfigPtr;
-  using ::Star::ObjectConfigConstPtr;
-  using ::Star::ObjectConfigWeakPtr;
-  using ::Star::ObjectConfigConstWeakPtr;
-  using ::Star::ObjectConfigUPtr;
-  using ::Star::ObjectConfigConstUPtr;
   using ::Star::ObjectOrientation;
-  using ::Star::ObjectOrientationPtr;
-  using ::Star::ObjectOrientationConstPtr;
-  using ::Star::ObjectOrientationWeakPtr;
-  using ::Star::ObjectOrientationConstWeakPtr;
-  using ::Star::ObjectOrientationUPtr;
-  using ::Star::ObjectOrientationConstUPtr;
   using ::Star::Object;
-  using ::Star::ObjectPtr;
-  using ::Star::ObjectConstPtr;
-  using ::Star::ObjectWeakPtr;
-  using ::Star::ObjectConstWeakPtr;
-  using ::Star::ObjectUPtr;
-  using ::Star::ObjectConstUPtr;
 }

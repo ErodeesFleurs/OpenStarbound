@@ -79,34 +79,8 @@ import star.tool_user_item;
 namespace Star {
 
 class Item;
-using ItemPtr = std::shared_ptr<Item>;
-using ItemConstPtr = std::shared_ptr<const Item>;
-using ItemWeakPtr = std::weak_ptr<Item>;
-using ItemConstWeakPtr = std::weak_ptr<const Item>;
-using ItemUPtr = std::unique_ptr<Item>;
-using ItemConstUPtr = std::unique_ptr<const Item>;
 class ToolUserEntity;
-using ToolUserEntityPtr = std::shared_ptr<ToolUserEntity>;
-using ToolUserEntityConstPtr = std::shared_ptr<const ToolUserEntity>;
-using ToolUserEntityWeakPtr = std::weak_ptr<ToolUserEntity>;
-using ToolUserEntityConstWeakPtr = std::weak_ptr<const ToolUserEntity>;
-using ToolUserEntityUPtr = std::unique_ptr<ToolUserEntity>;
-using ToolUserEntityConstUPtr = std::unique_ptr<const ToolUserEntity>;
 class World;
-using WorldPtr = std::shared_ptr<World>;
-using WorldConstPtr = std::shared_ptr<const World>;
-using WorldWeakPtr = std::weak_ptr<World>;
-using WorldConstWeakPtr = std::weak_ptr<const World>;
-using WorldUPtr = std::unique_ptr<World>;
-using WorldConstUPtr = std::unique_ptr<const World>;
-
-class BeamItem;
-using BeamItemPtr = std::shared_ptr<BeamItem>;
-using BeamItemConstPtr = std::shared_ptr<const BeamItem>;
-using BeamItemWeakPtr = std::weak_ptr<BeamItem>;
-using BeamItemConstWeakPtr = std::weak_ptr<const BeamItem>;
-using BeamItemUPtr = std::unique_ptr<BeamItem>;
-using BeamItemConstUPtr = std::unique_ptr<const BeamItem>;
 
 class BeamItem : public virtual NonRotatedDrawablesItem, public virtual ToolUserItem {
 public:
@@ -173,31 +147,7 @@ export module star.beam_item;
 
 export namespace Star {
   using ::Star::Item;
-  using ::Star::ItemPtr;
-  using ::Star::ItemConstPtr;
-  using ::Star::ItemWeakPtr;
-  using ::Star::ItemConstWeakPtr;
-  using ::Star::ItemUPtr;
-  using ::Star::ItemConstUPtr;
   using ::Star::ToolUserEntity;
-  using ::Star::ToolUserEntityPtr;
-  using ::Star::ToolUserEntityConstPtr;
-  using ::Star::ToolUserEntityWeakPtr;
-  using ::Star::ToolUserEntityConstWeakPtr;
-  using ::Star::ToolUserEntityUPtr;
-  using ::Star::ToolUserEntityConstUPtr;
   using ::Star::World;
-  using ::Star::WorldPtr;
-  using ::Star::WorldConstPtr;
-  using ::Star::WorldWeakPtr;
-  using ::Star::WorldConstWeakPtr;
-  using ::Star::WorldUPtr;
-  using ::Star::WorldConstUPtr;
   using ::Star::BeamItem;
-  using ::Star::BeamItemPtr;
-  using ::Star::BeamItemConstPtr;
-  using ::Star::BeamItemWeakPtr;
-  using ::Star::BeamItemConstWeakPtr;
-  using ::Star::BeamItemUPtr;
-  using ::Star::BeamItemConstUPtr;
 }

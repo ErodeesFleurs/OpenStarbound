@@ -186,7 +186,7 @@ bool isPreservedTileCollisionOverride(CollisionKind collision) {
       || collision == CollisionKind::Block;
 }
 
-CollisionKind biomeForegroundCollision(MaterialDatabaseConstPtr const& materialDatabase, MaterialId oldForeground, MaterialId newForeground, CollisionKind currentCollision) {
+CollisionKind biomeForegroundCollision(std::shared_ptr<MaterialDatabase const> const& materialDatabase, MaterialId oldForeground, MaterialId newForeground, CollisionKind currentCollision) {
   CollisionKind oldCollision = materialDatabase->materialCollisionKind(oldForeground);
   CollisionKind newCollision = materialDatabase->materialCollisionKind(newForeground);
 
@@ -461,7 +461,7 @@ void DungeonGeneratorWorld::placeBiomeTree(Vec2I const& pos) {
 }
 
 // yay, copy paste coding, kyren WILL kill me
-void DungeonGeneratorWorld::placePlant(PlantPtr const& plant, Vec2I const& position) {
+void DungeonGeneratorWorld::placePlant(std::shared_ptr<Plant> const& plant, Vec2I const& position) {
   if (!plant)
     return;
 
@@ -716,7 +716,7 @@ void DungeonGeneratorWorld::setDungeonIdAt(Vec2I const& position, DungeonId dung
 void DungeonGeneratorWorld::clearTileEntities(RectI const& bounds, Set<Vec2I> const& positions, bool clearAnchoredObjects) {
   auto entities = m_worldServer->entityQuery(RectF(bounds).padded(1), entityTypeFilter<TileEntity>());
   auto geometry = m_worldServer->geometry();
-  entities.filter([positions, geometry, clearAnchoredObjects](EntityPtr entity) {
+  entities.filter([positions, geometry, clearAnchoredObjects](std::shared_ptr<Entity> entity) {
       auto tileEntity = as<TileEntity>(entity);
       for (auto pos : tileEntity->spaces()) {
         if (positions.contains(geometry.xwrap(pos + tileEntity->tilePosition())))
@@ -817,7 +817,7 @@ float SpawnerWorld::threatLevel() const {
   return m_worldServer->threatLevel();
 }
 
-EntityId SpawnerWorld::spawnEntity(EntityPtr entity) const {
+EntityId SpawnerWorld::spawnEntity(std::shared_ptr<Entity> entity) const {
   m_worldServer->addEntity(entity);
   return entity->entityId();
 }
@@ -826,7 +826,7 @@ void SpawnerWorld::despawnEntity(EntityId entityId) {
   m_worldServer->removeEntity(entityId, false);
 }
 
-EntityPtr SpawnerWorld::getEntity(EntityId entityId) const {
+std::shared_ptr<Entity> SpawnerWorld::getEntity(EntityId entityId) const {
   return m_worldServer->entity(entityId);
 }
 
@@ -864,13 +864,13 @@ void WorldGenerator::terraformSector(WorldStorage* worldStorage, Sector const& s
   reapplyBiome(worldStorage, sector);
 }
 
-void WorldGenerator::initEntity(WorldStorage*, EntityId entityId, EntityPtr const& entity) {
+void WorldGenerator::initEntity(WorldStorage*, EntityId entityId, std::shared_ptr<Entity> const& entity) {
   entity->init(m_worldServer, entityId, EntityMode::Master);
   if (auto tileEntity = as<TileEntity>(entity))
     m_worldServer->updateTileEntityTiles(tileEntity, false, false);
 }
 
-void WorldGenerator::destructEntity(WorldStorage*, EntityPtr const& entity) {
+void WorldGenerator::destructEntity(WorldStorage*, std::shared_ptr<Entity> const& entity) {
   if (entity->isSlave())
     throw StarException("Cannot destruct slave entity in WorldStorage, something has gone wrong!");
   if (auto tileEntity = as<TileEntity>(entity))
@@ -878,11 +878,11 @@ void WorldGenerator::destructEntity(WorldStorage*, EntityPtr const& entity) {
   entity->uninit();
 }
 
-bool WorldGenerator::entityKeepAlive(WorldStorage*, EntityPtr const& entity) const {
+bool WorldGenerator::entityKeepAlive(WorldStorage*, std::shared_ptr<Entity> const& entity) const {
   return entity->isSlave() || (entity->isMaster() && entity->keepAlive());
 }
 
-bool WorldGenerator::entityPersistent(WorldStorage*, EntityPtr const& entity) const {
+bool WorldGenerator::entityPersistent(WorldStorage*, std::shared_ptr<Entity> const& entity) const {
   return entity->isMaster() && entity->persistent();
 }
 
@@ -1372,7 +1372,7 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
   // Logger::info("Reapplying biome in sector {}...", sectorTiles);
 
   auto entities = m_worldServer->entityQuery(RectF(sectorTiles.padded(1)));
-  List<TileEntityPtr> biomeTileEntities;
+  List<std::shared_ptr<TileEntity>> biomeTileEntities;
   for (auto entity : entities) {
     if (auto plant = as<Plant>(entity)) {
       biomeTileEntities.append(as<TileEntity>(entity));
@@ -1400,7 +1400,7 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
         auto oldBiome = planet->biome(tile->blockBiomeIndex);
         MaterialId oldForeground = tile->foreground;
 
-        biomeTileEntities.filter([&, position](TileEntityPtr tileEntity) {
+        biomeTileEntities.filter([&, position](std::shared_ptr<TileEntity> tileEntity) {
             if (tileEntity->tilePosition() == position) {
               m_worldServer->removeEntity(tileEntity->entityId(), false);
               return false;
@@ -1506,7 +1506,7 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
     }
   }
 
-  auto simplePlacePlant = [&](PlantPtr const& plant, Vec2I const& position) {
+  auto simplePlacePlant = [&](std::shared_ptr<Plant> const& plant, Vec2I const& position) {
       if (!plant)
         return false;
 
@@ -1710,7 +1710,7 @@ void WorldGenerator::levelCluster(Set<Vec2I>& cluster, Set<Vec2I> const& filled,
   }
 }
 
-bool WorldGenerator::placePlant(WorldStorage* worldStorage, PlantPtr const& plant, Vec2I const& position) {
+bool WorldGenerator::placePlant(WorldStorage* worldStorage, std::shared_ptr<Plant> const& plant, Vec2I const& position) {
   if (!plant)
     return false;
 

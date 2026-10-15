@@ -66,7 +66,7 @@ public:
   List<LightSource> const& lightSources();
 
   List<Particle> pullNewParticles();
-  List<AudioInstancePtr> pullNewAudios();
+  List<std::shared_ptr<AudioInstance>> pullNewAudios();
 
 protected:
   // Clears looping audio on context shutdown
@@ -74,8 +74,8 @@ protected:
 
 private:
   List<Particle> m_pendingParticles;
-  List<AudioInstancePtr> m_pendingAudios;
-  List<AudioInstancePtr> m_activeAudio;
+  List<std::shared_ptr<AudioInstance>> m_pendingAudios;
+  List<std::shared_ptr<AudioInstance>> m_activeAudio;
 
   List<std::pair<Drawable, Maybe<EntityRenderLayer>>> m_drawables;
   List<LightSource> m_lightSources;
@@ -84,7 +84,7 @@ private:
 template <typename Base>
 LuaAnimationComponent<Base>::LuaAnimationComponent() {
   LuaCallbacks animationCallbacks;
-  animationCallbacks.registerCallback("playAudio", [this](String const& sound, Maybe<int> loops, Maybe<float> volume) -> AudioInstancePtr {
+  animationCallbacks.registerCallback("playAudio", [this](String const& sound, Maybe<int> loops, Maybe<float> volume) -> std::shared_ptr<AudioInstance> {
       auto audio = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(sound));
       audio->setLoops(loops.value(0));
       audio->setVolume(volume.value(1.0f));
@@ -154,8 +154,8 @@ List<Particle> LuaAnimationComponent<Base>::pullNewParticles() {
 }
 
 template <typename Base>
-List<AudioInstancePtr> LuaAnimationComponent<Base>::pullNewAudios() {
-  eraseWhere(m_activeAudio, [](AudioInstancePtr const& audio) {
+List<std::shared_ptr<AudioInstance>> LuaAnimationComponent<Base>::pullNewAudios() {
+  eraseWhere(m_activeAudio, [](std::shared_ptr<AudioInstance> const& audio) {
       return audio->finished();
     });
   return take(m_pendingAudios);

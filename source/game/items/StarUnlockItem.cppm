@@ -107,22 +107,14 @@ export module star.unlock_item;
 
 export namespace Star {
 
-class UnlockItem;
-using UnlockItemPtr = std::shared_ptr<UnlockItem>;
-using UnlockItemConstPtr = std::shared_ptr<const UnlockItem>;
-using UnlockItemWeakPtr = std::weak_ptr<UnlockItem>;
-using UnlockItemConstWeakPtr = std::weak_ptr<const UnlockItem>;
-using UnlockItemUPtr = std::unique_ptr<UnlockItem>;
-using UnlockItemConstUPtr = std::unique_ptr<const UnlockItem>;
-
 class UnlockItem : public Item, public SwingableItem, public PreviewableItem {
 public:
   UnlockItem(Json const& config, String const& directory, Json const& itemParameters = JsonObject());
 
-  ItemPtr clone() const override;
+  std::shared_ptr<Item> clone() const override;
 
   List<Drawable> drawables() const override;
-  List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  List<Drawable> preview(std::shared_ptr<Player> const& viewer = {}) const override;
 
 protected:
   void fireTriggered() override;
@@ -148,7 +140,7 @@ UnlockItem::UnlockItem(Json const& config, String const& directory, Json const& 
   m_drawables = {Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F())};
 }
 
-ItemPtr UnlockItem::clone() const {
+std::shared_ptr<Item> UnlockItem::clone() const {
   return std::make_shared<UnlockItem>(*this);
 }
 
@@ -156,7 +148,7 @@ List<Drawable> UnlockItem::drawables() const {
   return m_drawables;
 }
 
-List<Drawable> UnlockItem::preview(PlayerPtr const&) const {
+List<Drawable> UnlockItem::preview(std::shared_ptr<Player> const&) const {
   return iconDrawables();
 }
 

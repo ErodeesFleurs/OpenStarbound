@@ -26,7 +26,7 @@ import star.vector;
 import star.matrix3;
 namespace Star {
 
-DrawablePainter::DrawablePainter(RendererPtr renderer, AssetTextureGroupPtr textureGroup) {
+DrawablePainter::DrawablePainter(std::shared_ptr<Renderer> renderer, std::shared_ptr<AssetTextureGroup> textureGroup) {
   m_renderer = std::move(renderer);
   m_textureGroup = std::move(textureGroup);
 }

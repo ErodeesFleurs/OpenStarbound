@@ -151,7 +151,7 @@ ActiveItem::ActiveItem(Json const& config, String const& directory, Json const& 
 
 ActiveItem::ActiveItem(ActiveItem const& rhs) : ActiveItem(rhs.config(), rhs.directory(), rhs.parameters()) {}
 
-ItemPtr ActiveItem::clone() const {
+std::shared_ptr<Item> ActiveItem::clone() const {
   return std::make_shared<ActiveItem>(*this);
 }
 
@@ -245,7 +245,7 @@ void ActiveItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Move
     m_itemAnimator.update(dt, nullptr);
   }
 
-  eraseWhere(m_activeAudio, [this](std::pair<AudioInstancePtr const, Vec2F> const& a) {
+  eraseWhere(m_activeAudio, [this](std::pair<std::shared_ptr<AudioInstance> const, Vec2F> const& a) {
       a.first->setPosition(owner()->position() + handPosition(a.second));
       return a.first->finished();
     });
@@ -382,7 +382,7 @@ List<LightSource> ActiveItem::lights() const {
   return result;
 }
 
-List<AudioInstancePtr> ActiveItem::pullNewAudios() {
+List<std::shared_ptr<AudioInstance>> ActiveItem::pullNewAudios() {
   // Because the item animator is in hand-space, and Humanoid does all the
   // translation *and flipping*, we cannot use NetworkedAnimator's built-in
   // functionality to rotate and flip, and instead must do it manually.  We do
@@ -390,7 +390,7 @@ List<AudioInstancePtr> ActiveItem::pullNewAudios() {
   // ourselves.  It would be easier if (0, 0) for the NetworkedAnimator was,
   // say, the shoulder and un-rotated, but it gets a bit weird with Humanoid
   // modifications.
-  List<AudioInstancePtr> result;
+  List<std::shared_ptr<AudioInstance>> result;
   for (auto& audio : m_itemAnimatorDynamicTarget.pullNewAudios()) {
     m_activeAudio[audio] = *audio->position();
     audio->setPosition(owner()->position() + handPosition(*audio->position()));

@@ -186,25 +186,12 @@ import star.swingable_item;
 import star.durability_item;
 import star.pointable_item;
 struct PreviewTile;
-using PreviewTilePtr = std::shared_ptr<PreviewTile>;
-using PreviewTileConstPtr = std::shared_ptr<PreviewTile const>;
-using PreviewTileWeakPtr = std::weak_ptr<PreviewTile>;
-using PreviewTileConstWeakPtr = std::weak_ptr<PreviewTile const>;
-using PreviewTileUPtr = std::unique_ptr<PreviewTile>;
-using PreviewTileConstUPtr = std::unique_ptr<PreviewTile const>;
-class PreviewTileTool;
-using PreviewTileToolPtr = std::shared_ptr<PreviewTileTool>;
-using PreviewTileToolConstPtr = std::shared_ptr<PreviewTileTool const>;
-using PreviewTileToolWeakPtr = std::weak_ptr<PreviewTileTool>;
-using PreviewTileToolConstWeakPtr = std::weak_ptr<PreviewTileTool const>;
-using PreviewTileToolUPtr = std::unique_ptr<PreviewTileTool>;
-using PreviewTileToolConstUPtr = std::unique_ptr<PreviewTileTool const>;
 import star.preview_tile_tool;
 import star.tools;
 
 namespace Star {
 
-WirePane::WirePane(WorldClientPtr worldClient, PlayerPtr player, WorldPainterPtr worldPainter) {
+WirePane::WirePane(std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, std::shared_ptr<WorldPainter> worldPainter) {
   m_worldClient = worldClient;
   m_player = player;
   m_worldPainter = worldPainter;

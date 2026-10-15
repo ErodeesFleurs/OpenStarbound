@@ -24,19 +24,7 @@ struct GuiExceptionTag {
 using GuiException = StarError<GuiExceptionTag, StarException>;
 
 class Widget;
-using WidgetPtr = std::shared_ptr<Widget>;
-using WidgetConstPtr = std::shared_ptr<Widget const>;
-using WidgetWeakPtr = std::weak_ptr<Widget>;
-using WidgetConstWeakPtr = std::weak_ptr<Widget const>;
-using WidgetUPtr = std::unique_ptr<Widget>;
-using WidgetConstUPtr = std::unique_ptr<Widget const>;
 class Pane;
-using PanePtr = std::shared_ptr<Pane>;
-using PaneConstPtr = std::shared_ptr<Pane const>;
-using PaneWeakPtr = std::weak_ptr<Pane>;
-using PaneConstWeakPtr = std::weak_ptr<Pane const>;
-using PaneUPtr = std::unique_ptr<Pane>;
-using PaneConstUPtr = std::unique_ptr<Pane const>;
 
 enum class KeyboardCaptureMode {
   None,
@@ -106,25 +94,25 @@ public:
   virtual Pane const* window() const;
   virtual Pane* window();
 
-  virtual void addChild(String const& name, WidgetPtr member);
-  virtual void addChildAt(String const& name, WidgetPtr member, std::size_t at);
+  virtual void addChild(String const& name, std::shared_ptr<Widget> member);
+  virtual void addChildAt(String const& name, std::shared_ptr<Widget> member, std::size_t at);
   virtual bool removeChild(Widget* member);
   virtual bool removeChild(String const& name);
   virtual bool removeChildAt(std::size_t at);
-  virtual WidgetPtr getChildAt(Vec2I const& pos);
+  virtual std::shared_ptr<Widget> getChildAt(Vec2I const& pos);
   virtual bool containsChild(String const& name);
-  virtual WidgetPtr fetchChild(String const& name);
+  virtual std::shared_ptr<Widget> fetchChild(String const& name);
   template <typename WidgetType>
   std::shared_ptr<WidgetType> fetchChild(String const& name);
 
-  virtual WidgetPtr findChild(String const& name);
+  virtual std::shared_ptr<Widget> findChild(String const& name);
   template <typename WidgetType>
   std::shared_ptr<WidgetType> findChild(String const& name);
 
-  WidgetPtr childPtr(Widget const* widget) const;
+  std::shared_ptr<Widget> childPtr(Widget const* widget) const;
 
   virtual std::size_t numChildren() const;
-  virtual WidgetPtr getChildNum(std::size_t num) const;
+  virtual std::shared_ptr<Widget> getChildNum(std::size_t num) const;
   template <typename WidgetType>
   std::shared_ptr<WidgetType> getChildNum(std::size_t num) const;
   virtual void removeAllChildren();
@@ -142,7 +130,7 @@ public:
   void determineSizeFromChildren();
   void markAsContainer();
 
-  virtual WidgetPtr keyboardCapturer() const;
+  virtual std::shared_ptr<Widget> keyboardCapturer() const;
   virtual KeyboardCaptureMode keyboardCaptureMode() const;
   virtual Maybe<std::pair<RectI, int>> keyboardCaptureArea() const;
 
@@ -173,8 +161,8 @@ protected:
   RectI m_drawingArea;
   Vec2I m_drawingOffset;
   String m_name;
-  List<WidgetPtr> m_members;
-  StringMap<WidgetPtr> m_memberHash;
+  List<std::shared_ptr<Widget>> m_members;
+  StringMap<std::shared_ptr<Widget>> m_memberHash;
   Vec2I m_memberSize;
   bool m_focus;
   bool m_doScissor;
@@ -211,19 +199,7 @@ export namespace Star {
   using ::Star::GuiExceptionTag;
   using ::Star::KeyboardCaptureMode;
   using ::Star::Widget;
-  using ::Star::WidgetPtr;
-  using ::Star::WidgetConstPtr;
-  using ::Star::WidgetWeakPtr;
-  using ::Star::WidgetConstWeakPtr;
-  using ::Star::WidgetUPtr;
-  using ::Star::WidgetConstUPtr;
   using ::Star::Pane;
-  using ::Star::PanePtr;
-  using ::Star::PaneConstPtr;
-  using ::Star::PaneWeakPtr;
-  using ::Star::PaneConstWeakPtr;
-  using ::Star::PaneUPtr;
-  using ::Star::PaneConstUPtr;
   using ::Star::GuiException;
   using ::Star::WidgetCallbackFunc;
   using ::Star::GuiContext;

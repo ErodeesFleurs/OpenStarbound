@@ -44,19 +44,6 @@ import star.gui_reader;
 namespace Star {
 
 class CanvasWidget;
-using CanvasWidgetPtr = std::shared_ptr<CanvasWidget>;
-using CanvasWidgetConstPtr = std::shared_ptr<CanvasWidget const>;
-using CanvasWidgetWeakPtr = std::weak_ptr<CanvasWidget>;
-using CanvasWidgetConstWeakPtr = std::weak_ptr<CanvasWidget const>;
-using CanvasWidgetUPtr = std::unique_ptr<CanvasWidget>;
-using CanvasWidgetConstUPtr = std::unique_ptr<CanvasWidget const>;
-class BaseScriptPane;
-using BaseScriptPanePtr = std::shared_ptr<BaseScriptPane>;
-using BaseScriptPaneConstPtr = std::shared_ptr<BaseScriptPane const>;
-using BaseScriptPaneWeakPtr = std::weak_ptr<BaseScriptPane>;
-using BaseScriptPaneConstWeakPtr = std::weak_ptr<BaseScriptPane const>;
-using BaseScriptPaneUPtr = std::unique_ptr<BaseScriptPane>;
-using BaseScriptPaneConstUPtr = std::unique_ptr<BaseScriptPane const>;
 
 // A more 'raw' script pane that doesn't depend on a world being present.
 // Requires a derived class to provide a Lua root.
@@ -79,21 +66,21 @@ public:
 
   bool interactive() const override;
 
-  PanePtr createTooltip(Vec2I const& screenPosition) override;
+  std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition) override;
   Maybe<String> cursorOverride(Vec2I const& screenPosition) override;
-  Maybe<ItemPtr> shiftItemFromInventory(ItemPtr const& input) override;
+  Maybe<std::shared_ptr<Item>> shiftItemFromInventory(std::shared_ptr<Item> const& input) override;
 
 protected:
-  virtual GuiReaderPtr reader() override;
+  virtual std::shared_ptr<GuiReader> reader() override;
   void construct(Json config);
 
   Json m_config;
   Json m_rawConfig;
 
-  GuiReaderPtr m_reader;
+  std::shared_ptr<GuiReader> m_reader;
 
-  Map<CanvasWidgetPtr, String> m_canvasClickCallbacks;
-  Map<CanvasWidgetPtr, String> m_canvasKeyCallbacks;
+  Map<std::shared_ptr<CanvasWidget>, String> m_canvasClickCallbacks;
+  Map<std::shared_ptr<CanvasWidget>, String> m_canvasKeyCallbacks;
 
   bool m_interactive;
 
@@ -107,17 +94,5 @@ export module star.base_script_pane;
 
 export namespace Star {
   using ::Star::CanvasWidget;
-  using ::Star::CanvasWidgetPtr;
-  using ::Star::CanvasWidgetConstPtr;
-  using ::Star::CanvasWidgetWeakPtr;
-  using ::Star::CanvasWidgetConstWeakPtr;
-  using ::Star::CanvasWidgetUPtr;
-  using ::Star::CanvasWidgetConstUPtr;
   using ::Star::BaseScriptPane;
-  using ::Star::BaseScriptPanePtr;
-  using ::Star::BaseScriptPaneConstPtr;
-  using ::Star::BaseScriptPaneWeakPtr;
-  using ::Star::BaseScriptPaneConstWeakPtr;
-  using ::Star::BaseScriptPaneUPtr;
-  using ::Star::BaseScriptPaneConstUPtr;
 }

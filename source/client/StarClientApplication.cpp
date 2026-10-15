@@ -164,9 +164,7 @@ import star.input;
 import star.lexical_cast;
 import star.bytes;
 struct OpusDecoder;
-typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
 struct OpusEncoder;
-typedef std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)> OpusEncoderPtr;
 import star.voice;
 
 
@@ -374,7 +372,7 @@ void ClientApplication::shutdown() {
   m_statistics.reset();
 }
 
-void ClientApplication::applicationInit(ApplicationControllerPtr appController) {
+void ClientApplication::applicationInit(std::shared_ptr<ApplicationController> appController) {
   Application::applicationInit(appController);
 
   appController->setCursorVisible(true);
@@ -454,7 +452,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   m_voice->setLocalSpeaker(0);
 }
 
-void ClientApplication::renderInit(RendererPtr renderer) {
+void ClientApplication::renderInit(std::shared_ptr<Renderer> renderer) {
   Application::renderInit(renderer);
   renderReload();
   m_root->registerReloadListener(m_reloadListener = std::make_shared<CallbackListener>([this]() { renderReload(); }));
@@ -636,7 +634,7 @@ void ClientApplication::render() {
     m_cinematicOverlay->render();
 
   } else if (m_state > MainAppState::Title) {
-    WorldClientPtr worldClient = m_universeClient->worldClient();
+    std::shared_ptr<WorldClient> worldClient = m_universeClient->worldClient();
     if (worldClient) {
       auto totalStart = Time::monotonicMicroseconds();
       renderer->switchEffectConfig("world");
@@ -939,7 +937,7 @@ void ClientApplication::changeState(MainAppState newState) {
     }
 
     if (m_state == MainAppState::MultiPlayer) {
-      PacketSocketUPtr packetSocket;
+      std::unique_ptr<PacketSocket> packetSocket;
 
       auto multiPlayerConnection = m_pendingMultiPlayerConnection.take();
 
@@ -1428,7 +1426,7 @@ void ClientApplication::updateRunning(float dt) {
       m_worldPainter->update(dt);
       auto& broadcastCallback = worldClient->broadcastCallback();
       if (!broadcastCallback) {
-        broadcastCallback = [&](PlayerPtr player, StringView broadcast) -> bool {
+        broadcastCallback = [&](std::shared_ptr<Player> player, StringView broadcast) -> bool {
           auto& view = broadcast.utf8();
           if (view.rfind(VoiceBroadcastPrefix.utf8(), 0) != NPos) {
             auto entityId = player->entityId();

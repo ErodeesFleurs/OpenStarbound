@@ -102,14 +102,14 @@ VehicleDatabase::VehicleDatabase() : m_rebuilder(std::make_shared<Rebuilder>("ve
   }
 }
 
-VehiclePtr VehicleDatabase::create(String const& vehicleName, Json const& extraConfig) const {
+std::shared_ptr<Vehicle> VehicleDatabase::create(String const& vehicleName, Json const& extraConfig) const {
   auto configPair = m_vehicles.ptr(vehicleName);
   if (!configPair)
     throw VehicleDatabaseException::format("No such vehicle named '{}'", vehicleName);
   return std::make_shared<Vehicle>(configPair->second, configPair->first, extraConfig);
 }
 
-ByteArray VehicleDatabase::netStore(VehiclePtr const& vehicle, NetCompatibilityRules rules) const {
+ByteArray VehicleDatabase::netStore(std::shared_ptr<Vehicle> const& vehicle, NetCompatibilityRules rules) const {
   DataStreamBuffer ds;
   ds.setStreamCompatibilityVersion(rules);
 
@@ -118,7 +118,7 @@ ByteArray VehicleDatabase::netStore(VehiclePtr const& vehicle, NetCompatibilityR
   return ds.takeData();
 }
 
-VehiclePtr VehicleDatabase::netLoad(ByteArray const& netStore, NetCompatibilityRules rules) const {
+std::shared_ptr<Vehicle> VehicleDatabase::netLoad(ByteArray const& netStore, NetCompatibilityRules rules) const {
   DataStreamBuffer ds(netStore);
   ds.setStreamCompatibilityVersion(rules);
 
@@ -129,7 +129,7 @@ VehiclePtr VehicleDatabase::netLoad(ByteArray const& netStore, NetCompatibilityR
   return vehicle;
 }
 
-Json VehicleDatabase::diskStore(VehiclePtr const& vehicle) const {
+Json VehicleDatabase::diskStore(std::shared_ptr<Vehicle> const& vehicle) const {
   return JsonObject{
     {"name", vehicle->baseConfig().getString("name")},
     {"dynamicConfig", vehicle->dynamicConfig()},
@@ -137,8 +137,8 @@ Json VehicleDatabase::diskStore(VehiclePtr const& vehicle) const {
   };
 }
 
-VehiclePtr VehicleDatabase::diskLoad(Json const& diskStore) const {
-  VehiclePtr vehicle;
+std::shared_ptr<Vehicle> VehicleDatabase::diskLoad(Json const& diskStore) const {
+  std::shared_ptr<Vehicle> vehicle;
   try {
     vehicle = create(diskStore.getString("name"), diskStore.get("dynamicConfig"));
     vehicle->diskLoad(diskStore.get("state"));

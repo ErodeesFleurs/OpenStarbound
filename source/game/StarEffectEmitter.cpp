@@ -80,7 +80,7 @@ void EffectEmitter::tick(float dt, EntityMode mode) {
       throw StarException("EffectEmitters can only be added to the master entity.");
   }
   if (m_renders) {
-    eraseWhere(m_sources, [](EffectSourcePtr const& source) { return source->expired(); });
+    eraseWhere(m_sources, [](std::shared_ptr<EffectSource> const& source) { return source->expired(); });
 
     for (auto& ps : m_sources)
       ps->tick(dt);

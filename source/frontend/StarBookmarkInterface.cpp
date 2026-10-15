@@ -86,7 +86,7 @@ import star.label_widget;
 
 namespace Star {
 
-EditBookmarkDialog::EditBookmarkDialog(PlayerUniverseMapPtr playerUniverseMap) {
+EditBookmarkDialog::EditBookmarkDialog(std::shared_ptr<PlayerUniverseMap> playerUniverseMap) {
   m_playerUniverseMap = playerUniverseMap;
 
   GuiReader reader;
@@ -149,7 +149,7 @@ void EditBookmarkDialog::close() {
   dismiss();
 }
 
-void setupBookmarkEntry(WidgetPtr const& entry, TeleportBookmark const& bookmark) {
+void setupBookmarkEntry(std::shared_ptr<Widget> const& entry, TeleportBookmark const& bookmark) {
   entry->fetchChild<LabelWidget>("name")->setText(bookmark.bookmarkName);
   entry->fetchChild<LabelWidget>("planetName")->setText(bookmark.targetName);
   entry->fetchChild<ImageWidget>("icon")->setImage(strf("/interface/bookmarks/icons/{}.png", bookmark.icon));

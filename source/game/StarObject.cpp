@@ -112,7 +112,7 @@ import star.byte_array;
 import star.algorithm;
 namespace Star {
 
-Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
+Object::Object(std::shared_ptr<ObjectConfig const> config, Json const& parameters) {
   m_config = config;
   if (!parameters.isNull())
     m_parameters.reset(parameters.toObject());
@@ -686,9 +686,9 @@ String Object::category() const {
   return m_config->category;
 }
 
-ObjectOrientationPtr Object::currentOrientation() const {
+std::shared_ptr<ObjectOrientation> Object::currentOrientation() const {
   if (m_orientationIndex != NPos)
-    return const_cast<ObjectOrientationPtr&>(getOrientations().at(m_orientationIndex));
+    return const_cast<std::shared_ptr<ObjectOrientation>&>(getOrientations().at(m_orientationIndex));
   else
     return {};
 }
@@ -783,7 +783,7 @@ Json Object::configValue(String const& name, Json const& def) const {
     return jsonMergeQueryDef(name, def, m_config->config, m_parameters.baseMap());
 }
 
-ObjectConfigConstPtr Object::config() const {
+std::shared_ptr<ObjectConfig const> Object::config() const {
   return m_config;
 }
 
@@ -1496,7 +1496,7 @@ void Object::renderSounds(RenderCallback* renderCallback) {
   }
 }
 
-List<ObjectOrientationPtr> const& Object::getOrientations() const {
+List<std::shared_ptr<ObjectOrientation>> const& Object::getOrientations() const {
   return m_orientations ? *m_orientations : m_config->orientations;
 }
 

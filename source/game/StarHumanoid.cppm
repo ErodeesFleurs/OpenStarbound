@@ -40,56 +40,12 @@ namespace Star {
 
 // Required for renderDummy
 class ArmorItem;
-using ArmorItemPtr = std::shared_ptr<ArmorItem>;
-using ArmorItemConstPtr = std::shared_ptr<const ArmorItem>;
-using ArmorItemWeakPtr = std::weak_ptr<ArmorItem>;
-using ArmorItemConstWeakPtr = std::weak_ptr<const ArmorItem>;
-using ArmorItemUPtr = std::unique_ptr<ArmorItem>;
-using ArmorItemConstUPtr = std::unique_ptr<const ArmorItem>;
 class HeadArmor;
-using HeadArmorPtr = std::shared_ptr<HeadArmor>;
-using HeadArmorConstPtr = std::shared_ptr<const HeadArmor>;
-using HeadArmorWeakPtr = std::weak_ptr<HeadArmor>;
-using HeadArmorConstWeakPtr = std::weak_ptr<const HeadArmor>;
-using HeadArmorUPtr = std::unique_ptr<HeadArmor>;
-using HeadArmorConstUPtr = std::unique_ptr<const HeadArmor>;
 class ChestArmor;
-using ChestArmorPtr = std::shared_ptr<ChestArmor>;
-using ChestArmorConstPtr = std::shared_ptr<const ChestArmor>;
-using ChestArmorWeakPtr = std::weak_ptr<ChestArmor>;
-using ChestArmorConstWeakPtr = std::weak_ptr<const ChestArmor>;
-using ChestArmorUPtr = std::unique_ptr<ChestArmor>;
-using ChestArmorConstUPtr = std::unique_ptr<const ChestArmor>;
 class LegsArmor;
-using LegsArmorPtr = std::shared_ptr<LegsArmor>;
-using LegsArmorConstPtr = std::shared_ptr<const LegsArmor>;
-using LegsArmorWeakPtr = std::weak_ptr<LegsArmor>;
-using LegsArmorConstWeakPtr = std::weak_ptr<const LegsArmor>;
-using LegsArmorUPtr = std::unique_ptr<LegsArmor>;
-using LegsArmorConstUPtr = std::unique_ptr<const LegsArmor>;
 class BackArmor;
-using BackArmorPtr = std::shared_ptr<BackArmor>;
-using BackArmorConstPtr = std::shared_ptr<const BackArmor>;
-using BackArmorWeakPtr = std::weak_ptr<BackArmor>;
-using BackArmorConstWeakPtr = std::weak_ptr<const BackArmor>;
-using BackArmorUPtr = std::unique_ptr<BackArmor>;
-using BackArmorConstUPtr = std::unique_ptr<const BackArmor>;
-
-class Humanoid;
-using HumanoidPtr = std::shared_ptr<Humanoid>;
-using HumanoidConstPtr = std::shared_ptr<const Humanoid>;
-using HumanoidWeakPtr = std::weak_ptr<Humanoid>;
-using HumanoidConstWeakPtr = std::weak_ptr<const Humanoid>;
-using HumanoidUPtr = std::unique_ptr<Humanoid>;
-using HumanoidConstUPtr = std::unique_ptr<const Humanoid>;
 
 struct Dance;
-using DancePtr = std::shared_ptr<Dance>;
-using DanceConstPtr = std::shared_ptr<const Dance>;
-using DanceWeakPtr = std::weak_ptr<Dance>;
-using DanceConstWeakPtr = std::weak_ptr<const Dance>;
-using DanceUPtr = std::unique_ptr<Dance>;
-using DanceConstUPtr = std::unique_ptr<const Dance>;
 
 enum class HumanoidEmote {
   Idle,
@@ -212,7 +168,7 @@ public:
 
     int stateSeq(float timer, State state) const;
     int emoteStateSeq(float timer, HumanoidEmote state) const;
-    int danceSeq(float timer, DancePtr dance) const;
+    int danceSeq(float timer, std::shared_ptr<Dance> dance) const;
     int genericSeq(float timer, float cycle, unsigned frames, bool cyclic) const;
 
     Array<float, STATESIZE> stateCycle;
@@ -341,7 +297,7 @@ public:
 
   List<Drawable> renderSkull() const;
 
-  static HumanoidPtr makeDummy(Gender gender);
+  static std::shared_ptr<Humanoid> makeDummy(Gender gender);
   // Renders to centered drawables (centered on the normal image center for the
   // player graphics), (in pixels, not world space)
   List<Drawable> renderDummy(Gender gender, HeadArmor const* head = {}, ChestArmor const* chest = {},
@@ -433,7 +389,7 @@ private:
   int getArmStateSequence() const;
   int getBodyStateSequence() const;
 
-  Maybe<DancePtr> getDance() const;
+  Maybe<std::shared_ptr<Dance>> getDance() const;
 
   void refreshAnimationState(bool startNew = false);
 
@@ -574,7 +530,7 @@ public:
   void netElementsNeedLoad(bool full) override;
   void netElementsNeedStore() override;
 
-  HumanoidPtr humanoid();
+  std::shared_ptr<Humanoid> humanoid();
   void setHumanoidParameters(JsonObject parameters);
   JsonObject humanoidParameters();
 
@@ -583,7 +539,7 @@ private:
 
   Json m_config;
   NetElementHashMap<String,Json> m_humanoidParameters;
-  HumanoidPtr m_humanoid;
+  std::shared_ptr<Humanoid> m_humanoid;
 };
 
 template <typename T>
@@ -601,54 +557,12 @@ export module star.humanoid;
 
 export namespace Star {
   using ::Star::ArmorItem;
-  using ::Star::ArmorItemPtr;
-  using ::Star::ArmorItemConstPtr;
-  using ::Star::ArmorItemWeakPtr;
-  using ::Star::ArmorItemConstWeakPtr;
-  using ::Star::ArmorItemUPtr;
-  using ::Star::ArmorItemConstUPtr;
   using ::Star::HeadArmor;
-  using ::Star::HeadArmorPtr;
-  using ::Star::HeadArmorConstPtr;
-  using ::Star::HeadArmorWeakPtr;
-  using ::Star::HeadArmorConstWeakPtr;
-  using ::Star::HeadArmorUPtr;
-  using ::Star::HeadArmorConstUPtr;
   using ::Star::ChestArmor;
-  using ::Star::ChestArmorPtr;
-  using ::Star::ChestArmorConstPtr;
-  using ::Star::ChestArmorWeakPtr;
-  using ::Star::ChestArmorConstWeakPtr;
-  using ::Star::ChestArmorUPtr;
-  using ::Star::ChestArmorConstUPtr;
   using ::Star::LegsArmor;
-  using ::Star::LegsArmorPtr;
-  using ::Star::LegsArmorConstPtr;
-  using ::Star::LegsArmorWeakPtr;
-  using ::Star::LegsArmorConstWeakPtr;
-  using ::Star::LegsArmorUPtr;
-  using ::Star::LegsArmorConstUPtr;
   using ::Star::BackArmor;
-  using ::Star::BackArmorPtr;
-  using ::Star::BackArmorConstPtr;
-  using ::Star::BackArmorWeakPtr;
-  using ::Star::BackArmorConstWeakPtr;
-  using ::Star::BackArmorUPtr;
-  using ::Star::BackArmorConstUPtr;
   using ::Star::Humanoid;
-  using ::Star::HumanoidPtr;
-  using ::Star::HumanoidConstPtr;
-  using ::Star::HumanoidWeakPtr;
-  using ::Star::HumanoidConstWeakPtr;
-  using ::Star::HumanoidUPtr;
-  using ::Star::HumanoidConstUPtr;
   using ::Star::Dance;
-  using ::Star::DancePtr;
-  using ::Star::DanceConstPtr;
-  using ::Star::DanceWeakPtr;
-  using ::Star::DanceConstWeakPtr;
-  using ::Star::DanceUPtr;
-  using ::Star::DanceConstUPtr;
   using ::Star::HumanoidEmote;
   using ::Star::HumanoidEmoteNames;
   using ::Star::EmoteSize;

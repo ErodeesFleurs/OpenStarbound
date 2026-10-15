@@ -214,7 +214,7 @@ extern EnumMap<WorldServerFidelity> const WorldServerFidelityNames{
   {WorldServerFidelity::High, "high"}
 };
 
-WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr storage) {
+WorldServer::WorldServer(std::shared_ptr<WorldTemplate> const& worldTemplate, std::shared_ptr<IODevice> storage) {
   m_worldTemplate = worldTemplate;
   m_worldStorage = std::make_shared<WorldStorage>(m_worldTemplate->size(), storage, std::make_shared<WorldGenerator>(this));
   m_adjustPlayerStart = true;
@@ -228,10 +228,10 @@ WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr stor
   writeMetadata();
 }
 
-WorldServer::WorldServer(Vec2U const& size, IODevicePtr storage)
+WorldServer::WorldServer(Vec2U const& size, std::shared_ptr<IODevice> storage)
   : WorldServer(std::make_shared<WorldTemplate>(size), storage) {}
 
-WorldServer::WorldServer(IODevicePtr const& storage) {
+WorldServer::WorldServer(std::shared_ptr<IODevice> const& storage) {
   m_worldStorage = std::make_shared<WorldStorage>(storage, std::make_shared<WorldGenerator>(this));
   m_tileProtectionEnabled = true;
   m_universeSettings = std::make_shared<UniverseSettings>();
@@ -269,15 +269,15 @@ String const& WorldServer::worldId() const {
   return m_worldId;
 }
 
-void WorldServer::setUniverseSettings(UniverseSettingsPtr universeSettings) {
+void WorldServer::setUniverseSettings(std::shared_ptr<UniverseSettings> universeSettings) {
   m_universeSettings = std::move(universeSettings);
 }
 
-UniverseSettingsPtr WorldServer::universeSettings() const {
+std::shared_ptr<UniverseSettings> WorldServer::universeSettings() const {
   return m_universeSettings;
 }
 
-void WorldServer::setReferenceClock(ClockPtr clock) {
+void WorldServer::setReferenceClock(std::shared_ptr<Clock> clock) {
   for (auto const& pair : m_weatherDomains)
     pair.second->setReferenceClock(clock);
   if (m_emptyWeather)
@@ -317,19 +317,19 @@ void WorldServer::setupWeatherDomains(bool preserveNonSurface) {
   }
 }
 
-ServerWeatherPtr WorldServer::weatherForDomain(Maybe<String> const& domain) const {
+std::shared_ptr<ServerWeather> WorldServer::weatherForDomain(Maybe<String> const& domain) const {
   if (domain && m_weatherDomains.contains(*domain))
     return m_weatherDomains.get(*domain);
   return m_emptyWeather;
 }
 
-ServerWeatherPtr WorldServer::weatherAt(Vec2F const& position) const {
+std::shared_ptr<ServerWeather> WorldServer::weatherAt(Vec2F const& position) const {
   if (auto layer = m_worldTemplate->weatherLayerAt(Vec2I::floor(position)))
     return weatherForDomain(layer->domain);
   return m_emptyWeather;
 }
 
-ServerWeatherPtr WorldServer::surfaceWeather() const {
+std::shared_ptr<ServerWeather> WorldServer::surfaceWeather() const {
   return weatherForDomain(String("surface"));
 }
 
@@ -528,7 +528,7 @@ bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarge
   return true;
 }
 
-List<PacketPtr> WorldServer::removeClient(ConnectionId clientId) {
+List<std::shared_ptr<Packet>> WorldServer::removeClient(ConnectionId clientId) {
   auto const& info = m_clientInfo.get(clientId);
 
   for (auto& p : m_scriptContexts)
@@ -583,7 +583,7 @@ RectF WorldServer::clientWindow(ConnectionId clientId) const {
     return RectF::null();
 }
 
-PlayerPtr WorldServer::clientPlayer(ConnectionId clientId) const {
+std::shared_ptr<Player> WorldServer::clientPlayer(ConnectionId clientId) const {
   auto i = m_clientInfo.find(clientId);
   if (i != m_clientInfo.end())
     return get<Player>(i->second->clientState.playerId());
@@ -607,7 +607,7 @@ List<EntityId> WorldServer::players() const {
 }
 
 
-void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> const& packets) {
+void WorldServer::handleIncomingPackets(ConnectionId clientId, List<std::shared_ptr<Packet>> const& packets) {
   std::shared_ptr<ClientInfo> clientInfo = m_clientInfo.get(clientId);
   auto& root = Root::singleton();
   auto entityFactory = root.entityFactory();
@@ -763,7 +763,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       }
     } else if (auto entityUpdateSet = as<EntityUpdateSetPacket>(packet)) {
       float interpolationLeadTime = clientInfo->interpolationTracker.interpolationLeadTime();
-      m_entityMap->forAllEntities([&](EntityPtr const& entity) {
+      m_entityMap->forAllEntities([&](std::shared_ptr<Entity> const& entity) {
           EntityId entityId = entity->entityId();
           if (connectionForEntity(entityId) == clientId) {
             if constexpr (Star::DebugEnabled) {
@@ -900,7 +900,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       if (messageRejected)
         continue;
 
-      EntityPtr entity;
+      std::shared_ptr<Entity> entity;
       if (entityMessagePacket->entityId.is<EntityId>())
         entity = m_entityMap->entity(entityMessagePacket->entityId.get<EntityId>());
       else
@@ -970,7 +970,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
   }
 }
 
-List<PacketPtr> WorldServer::getOutgoingPackets(ConnectionId clientId) {
+List<std::shared_ptr<Packet>> WorldServer::getOutgoingPackets(ConnectionId clientId) {
   auto const& clientInfo = m_clientInfo.get(clientId);
   if (clientInfo->subWorldId == MainClientWorldId) {
     return std::move(clientInfo->outgoingPackets);
@@ -979,7 +979,7 @@ List<PacketPtr> WorldServer::getOutgoingPackets(ConnectionId clientId) {
   }
 }
 
-bool WorldServer::sendPacket(ConnectionId clientId, PacketPtr const& packet) {
+bool WorldServer::sendPacket(ConnectionId clientId, std::shared_ptr<Packet> const& packet) {
   if (auto clientInfo = m_clientInfo.ptr(clientId)) {
     clientInfo->get()->outgoingPackets.append(packet);
     return true;
@@ -1051,7 +1051,7 @@ void WorldServer::update(float dt) {
     m_needsGlobalBreakCheck = false;
 
   List<EntityId> toRemove;
-  m_entityMap->updateAllEntities([&](EntityPtr const& entity) {
+  m_entityMap->updateAllEntities([&](std::shared_ptr<Entity> const& entity) {
       entity->update(dt, m_currentStep);
 
       if (auto tileEntity = as<TileEntity>(entity)) {
@@ -1065,7 +1065,7 @@ void WorldServer::update(float dt) {
 
       if (entity->shouldDestroy() && entity->entityMode() == EntityMode::Master)
         toRemove.append(entity->entityId());
-    }, [](EntityPtr const& a, EntityPtr const& b) {
+    }, [](std::shared_ptr<Entity> const& a, std::shared_ptr<Entity> const& b) {
       return a->entityType() < b->entityType();
     });
 
@@ -1202,11 +1202,11 @@ MaterialColorVariant WorldServer::colorVariant(Vec2I const& position, TileLayer 
   return layer == TileLayer::Foreground ? tile.foregroundColorVariant : tile.backgroundColorVariant;
 }
 
-EntityPtr WorldServer::entity(EntityId entityId) const {
+std::shared_ptr<Entity> WorldServer::entity(EntityId entityId) const {
   return m_entityMap->entity(entityId);
 }
 
-void WorldServer::addEntity(EntityPtr const& entity, EntityId entityId) {
+void WorldServer::addEntity(std::shared_ptr<Entity> const& entity, EntityId entityId) {
   if (!entity)
     return;
 
@@ -1217,7 +1217,7 @@ void WorldServer::addEntity(EntityPtr const& entity, EntityId entityId) {
     updateTileEntityTiles(tileEntity);
 }
 
-EntityPtr WorldServer::closestEntity(Vec2F const& center, float radius, EntityFilter selector) const {
+std::shared_ptr<Entity> WorldServer::closestEntity(Vec2F const& center, float radius, EntityFilter selector) const {
   return m_entityMap->closestEntity(center, radius, selector);
 }
 
@@ -1237,15 +1237,15 @@ void WorldServer::forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEnt
   m_entityMap->forEachEntityAtTile(pos, callback);
 }
 
-EntityPtr WorldServer::findEntity(RectF const& boundBox, EntityFilter entityFilter) const {
+std::shared_ptr<Entity> WorldServer::findEntity(RectF const& boundBox, EntityFilter entityFilter) const {
   return m_entityMap->findEntity(boundBox, entityFilter);
 }
 
-EntityPtr WorldServer::findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter entityFilter) const {
+std::shared_ptr<Entity> WorldServer::findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter entityFilter) const {
   return m_entityMap->findEntityLine(begin, end, entityFilter);
 }
 
-EntityPtr WorldServer::findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const {
+std::shared_ptr<Entity> WorldServer::findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const {
   return m_entityMap->findEntityAtTile(pos, entityFilter);
 }
 
@@ -1434,7 +1434,7 @@ TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLaye
   for (auto const& pos : positions)
     positionSet.add(m_geometry.xwrap(pos));
 
-  Set<EntityPtr> damagedEntities;
+  Set<std::shared_ptr<Entity>> damagedEntities;
   auto res = TileDamageResult::None;
 
   for (auto const& pos : positionSet) {
@@ -1773,7 +1773,7 @@ void WorldServer::setTileProtection(DungeonId dungeonId, bool isProtected) {
 }
 
 std::size_t WorldServer::setTileProtection(List<DungeonId> const& dungeonIds, bool isProtected) {
-  List<PacketPtr> updates;
+  List<std::shared_ptr<Packet>> updates;
   updates.reserve(dungeonIds.size());
   for (auto const& dungeonId : dungeonIds)
     if (isProtected ? m_protectedDungeonIds.add(dungeonId) : m_protectedDungeonIds.remove(dungeonId))
@@ -2092,7 +2092,7 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
   return unapplied;
 }
 
-void WorldServer::updateTileEntityTiles(TileEntityPtr const& entity, bool removing, bool checkBreaks) {
+void WorldServer::updateTileEntityTiles(std::shared_ptr<TileEntity> const& entity, bool removing, bool checkBreaks) {
   // This method of updating tile entity collision only works if each tile
   // entity's collision spaces are a subset of their normal spaces, and thus no
   // two tile entities can have collision spaces that overlap.
@@ -2225,7 +2225,7 @@ bool WorldServer::regionActive(RectI const& region) {
   return true;
 }
 
-WorldServer::ScriptComponentPtr WorldServer::scriptContext(String const& contextName) {
+std::shared_ptr<WorldServer::ScriptComponent> WorldServer::scriptContext(String const& contextName) {
   if (auto context = m_scriptContexts.ptr(contextName))
     return *context;
   else
@@ -2260,11 +2260,11 @@ EntityId WorldServer::loadUniqueEntity(String const& uniqueId) {
   return m_worldStorage->loadUniqueEntity(uniqueId);
 }
 
-WorldTemplatePtr WorldServer::worldTemplate() const {
+std::shared_ptr<WorldTemplate> WorldServer::worldTemplate() const {
   return m_worldTemplate;
 }
 
-SkyPtr WorldServer::sky() const {
+std::shared_ptr<Sky> WorldServer::sky() const {
   return m_sky;
 }
 
@@ -2446,7 +2446,7 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
   }
   clientInfo->pendingLiquidUpdates.clear();
 
-  HashSet<EntityPtr> monitoredEntities;
+  HashSet<std::shared_ptr<Entity>> monitoredEntities;
   for (auto const& monitoredRegion : clientInfo->monitoringRegions(m_entityMap))
     monitoredEntities.addAll(m_entityMap->entityQuery(RectF(monitoredRegion)));
 
@@ -2833,7 +2833,7 @@ float WorldServer::timeOfDay() const {
   return m_sky->timeOfDay();
 }
 
-LuaRootPtr WorldServer::luaRoot() {
+std::shared_ptr<LuaRoot> WorldServer::luaRoot() {
   return m_luaRoot;
 }
 
@@ -2849,7 +2849,7 @@ RpcPromise<Vec2F> WorldServer::findUniqueEntity(String const& uniqueId) {
 }
 
 RpcPromise<Json> WorldServer::sendEntityMessage(Variant<EntityId, String> const& entityId, String const& message, JsonArray const& args) {
-  EntityPtr entity;
+  std::shared_ptr<Entity> entity;
   if (entityId.is<EntityId>())
     entity = m_entityMap->entity(entityId.get<EntityId>());
   else
@@ -3019,7 +3019,7 @@ bool WorldServer::isVisibleToPlayer(RectF const& region) const {
 WorldServer::ClientInfo::ClientInfo(ConnectionId clientId, InterpolationTracker const trackerInit)
   : clientId(clientId), subWorldId(MainClientWorldId), skyNetVersion(0), weatherNetVersion(0), pendingForward(false), started(false), local(false), admin(false), interpolationTracker(trackerInit) {}
 
-List<RectI> WorldServer::ClientInfo::monitoringRegions(EntityMapPtr const& entityMap) const {
+List<RectI> WorldServer::ClientInfo::monitoringRegions(std::shared_ptr<EntityMap> const& entityMap) const {
   return clientState.monitoringRegions([entityMap](EntityId entityId) -> Maybe<RectI> {
     if (auto entity = entityMap->entity(entityId))
       return RectI::integral(entity->metaBoundBox().translated(entity->position()));
@@ -3040,7 +3040,7 @@ bool WorldServer::ClientInfo::needsDamageNotification(RemoteDamageNotification c
   return false;
 }
 
-InteractiveEntityPtr WorldServer::getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const {
+std::shared_ptr<InteractiveEntity> WorldServer::getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const {
   return WorldImpl::getInteractiveInRange(m_geometry, m_entityMap, targetPosition, sourcePosition, maxRange);
 }
 
@@ -3104,7 +3104,7 @@ void WorldServer::setupForceRegions() {
   }
 }
 
-void WorldServer::setTemplate(WorldTemplatePtr newTemplate) {
+void WorldServer::setTemplate(std::shared_ptr<WorldTemplate> newTemplate) {
   m_worldTemplate = std::move(newTemplate);
   for (auto& client : clientIds()) {
     auto& info = m_clientInfo.get(client);

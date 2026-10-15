@@ -202,19 +202,7 @@ import star.main_application;
 namespace Star {
 
 class Input;
-using InputPtr = std::shared_ptr<Input>;
-using InputConstPtr = std::shared_ptr<Input const>;
-using InputWeakPtr = std::weak_ptr<Input>;
-using InputConstWeakPtr = std::weak_ptr<Input const>;
-using InputUPtr = std::unique_ptr<Input>;
-using InputConstUPtr = std::unique_ptr<Input const>;
 class Voice;
-using VoicePtr = std::shared_ptr<Voice>;
-using VoiceConstPtr = std::shared_ptr<Voice const>;
-using VoiceWeakPtr = std::weak_ptr<Voice>;
-using VoiceConstWeakPtr = std::weak_ptr<Voice const>;
-using VoiceUPtr = std::unique_ptr<Voice>;
-using VoiceConstUPtr = std::unique_ptr<Voice const>;
 
 class ClientApplication : public Application {
 public:
@@ -228,8 +216,8 @@ protected:
   virtual void startup(StringList const& cmdLineArgs) override;
   virtual void shutdown() override;
 
-  virtual void applicationInit(ApplicationControllerPtr appController) override;
-  virtual void renderInit(RendererPtr renderer) override;
+  virtual void applicationInit(std::shared_ptr<ApplicationController> appController) override;
+  virtual void renderInit(std::shared_ptr<Renderer> renderer) override;
 
   virtual void windowChanged(WindowMode windowMode, Vec2U screenSize) override;
 
@@ -291,40 +279,40 @@ private:
 
   void updateCamera(float dt);
 
-  RootUPtr m_root;
+  std::unique_ptr<Root> m_root;
   ThreadFunction<void> m_rootLoader;
-  CallbackListenerPtr m_reloadListener;
+  std::shared_ptr<CallbackListener> m_reloadListener;
 
   MainAppState m_state = MainAppState::Startup;
 
   // Valid after applicationInit is called
-  MainMixerPtr m_mainMixer;
-  GuiContextPtr m_guiContext;
-  InputPtr m_input;
-  VoicePtr m_voice;
+  std::shared_ptr<MainMixer> m_mainMixer;
+  std::shared_ptr<GuiContext> m_guiContext;
+  std::shared_ptr<Input> m_input;
+  std::shared_ptr<Voice> m_voice;
 
   // Valid after renderInit is called the first time
-  CinematicPtr m_cinematicOverlay;
-  ErrorScreenPtr m_errorScreen;
+  std::shared_ptr<Cinematic> m_cinematicOverlay;
+  std::shared_ptr<ErrorScreen> m_errorScreen;
 
   // Valid if main app state >= Title
-  PlayerStoragePtr m_playerStorage;
-  StatisticsPtr m_statistics;
-  UniverseClientPtr m_universeClient;
-  TitleScreenPtr m_titleScreen;
+  std::shared_ptr<PlayerStorage> m_playerStorage;
+  std::shared_ptr<Statistics> m_statistics;
+  std::shared_ptr<UniverseClient> m_universeClient;
+  std::shared_ptr<TitleScreen> m_titleScreen;
 
   // Valid if main app state > Title
-  PlayerPtr m_player;
-  WorldPainterPtr m_worldPainter;
+  std::shared_ptr<Player> m_player;
+  std::shared_ptr<WorldPainter> m_worldPainter;
   WorldRenderData m_renderData;
-  MainInterfacePtr m_mainInterface;
+  std::shared_ptr<MainInterface> m_mainInterface;
   
   StringMap<PostProcessGroup> m_postProcessGroups;
   List<PostProcessLayer> m_postProcessLayers;
   StringMap<std::size_t> m_labelledPostProcessLayers;
 
   // Valid if main app state == SinglePlayer
-  UniverseServerPtr m_universeServer;
+  std::shared_ptr<UniverseServer> m_universeServer;
 
   float m_cameraXOffset = 0.0f;
   float m_cameraYOffset = 0.0f;

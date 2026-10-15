@@ -10,14 +10,6 @@ import star.vector;
 
 namespace Star {
 
-class CelestialCoordinate;
-using CelestialCoordinatePtr = std::shared_ptr<CelestialCoordinate>;
-using CelestialCoordinateConstPtr = std::shared_ptr<const CelestialCoordinate>;
-using CelestialCoordinateWeakPtr = std::weak_ptr<CelestialCoordinate>;
-using CelestialCoordinateConstWeakPtr = std::weak_ptr<const CelestialCoordinate>;
-using CelestialCoordinateUPtr = std::unique_ptr<CelestialCoordinate>;
-using CelestialCoordinateConstUPtr = std::unique_ptr<const CelestialCoordinate>;
-
 struct CelestialExceptionTag {
   static constexpr char const* name() { return "CelestialException"; }
 };
@@ -114,10 +106,4 @@ export namespace Star {
   using ::Star::CelestialExceptionTag;
   using ::Star::CelestialException;
   using ::Star::CelestialCoordinate;
-  using ::Star::CelestialCoordinatePtr;
-  using ::Star::CelestialCoordinateConstPtr;
-  using ::Star::CelestialCoordinateWeakPtr;
-  using ::Star::CelestialCoordinateConstWeakPtr;
-  using ::Star::CelestialCoordinateUPtr;
-  using ::Star::CelestialCoordinateConstUPtr;
 }

@@ -113,7 +113,7 @@ void DamageManager::update(float dt) {
       damageIt.remove();
   }
 
-  m_world->forAllEntities([&](EntityPtr const& causingEntity) {
+  m_world->forAllEntities([&](std::shared_ptr<Entity> const& causingEntity) {
     for (auto& damageSource : causingEntity->damageSources()) {
       if (damageSource.trackSourceEntity)
         damageSource.translate(causingEntity->position());
@@ -217,7 +217,7 @@ List<DamageNotification> DamageManager::pullPendingNotifications() {
 
 SmallList<std::pair<EntityId, HitType>, 4> DamageManager::queryHit(DamageSource const& source, EntityId causingId) const {
   SmallList<std::pair<EntityId, HitType>, 4> resultList;
-  auto doQueryHit = [&source, &resultList, causingId, this](EntityPtr const& targetEntity) {
+  auto doQueryHit = [&source, &resultList, causingId, this](std::shared_ptr<Entity> const& targetEntity) {
     if (targetEntity->entityId() == causingId)
       return;
 
@@ -255,7 +255,7 @@ SmallList<std::pair<EntityId, HitType>, 4> DamageManager::queryHit(DamageSource 
   return resultList;
 }
 
-bool DamageManager::isAuthoritative(EntityPtr const& causingEntity, EntityPtr const& targetEntity) {
+bool DamageManager::isAuthoritative(std::shared_ptr<Entity> const& causingEntity, std::shared_ptr<Entity> const& targetEntity) {
   // Damage manager is authoritative if either one of the entities is
   // masterOnly, OR the manager is server-side and both entities are
   // server-side master entities, OR the damage manager is server-side and both

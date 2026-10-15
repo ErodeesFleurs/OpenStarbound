@@ -62,13 +62,13 @@ import star.pane;
 export module star.simple_tooltip;
 
 export namespace Star::SimpleTooltipBuilder {
-  PanePtr buildTooltip(String const& text);
+  std::shared_ptr<Pane> buildTooltip(String const& text);
 }
 
 namespace Star {
 
-PanePtr SimpleTooltipBuilder::buildTooltip(String const& text) {
-  PanePtr tooltip = std::make_shared<Pane>();
+std::shared_ptr<Pane> SimpleTooltipBuilder::buildTooltip(String const& text) {
+  std::shared_ptr<Pane> tooltip = std::make_shared<Pane>();
   tooltip->removeAllChildren();
   GuiReader reader;
   reader.construct(Root::singleton().assets()->json("/interface/tooltips/simpletooltip.tooltip"), tooltip.get());

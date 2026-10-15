@@ -26,19 +26,6 @@ import star.desktop_service;
 namespace Star {
 
 class PcPlatformServices;
-using PcPlatformServicesPtr = std::shared_ptr<PcPlatformServices>;
-using PcPlatformServicesConstPtr = std::shared_ptr<PcPlatformServices const>;
-using PcPlatformServicesWeakPtr = std::weak_ptr<PcPlatformServices>;
-using PcPlatformServicesConstWeakPtr = std::weak_ptr<PcPlatformServices const>;
-using PcPlatformServicesUPtr = std::unique_ptr<PcPlatformServices>;
-using PcPlatformServicesConstUPtr = std::unique_ptr<PcPlatformServices const>;
-struct PcPlatformServicesState;
-using PcPlatformServicesStatePtr = std::shared_ptr<PcPlatformServicesState>;
-using PcPlatformServicesStateConstPtr = std::shared_ptr<PcPlatformServicesState const>;
-using PcPlatformServicesStateWeakPtr = std::weak_ptr<PcPlatformServicesState>;
-using PcPlatformServicesStateConstWeakPtr = std::weak_ptr<PcPlatformServicesState const>;
-using PcPlatformServicesStateUPtr = std::unique_ptr<PcPlatformServicesState>;
-using PcPlatformServicesStateConstUPtr = std::unique_ptr<PcPlatformServicesState const>;
 
 struct PcPlatformServicesState {
   PcPlatformServicesState();
@@ -74,12 +61,12 @@ class PcPlatformServices {
 public:
   // Any command line arguments that start with '+platform' will be stripped
   // out and passed here
-  static PcPlatformServicesUPtr create(String const& path, StringList platformArguments);
+  static std::unique_ptr<PcPlatformServices> create(String const& path, StringList platformArguments);
 
-  StatisticsServicePtr statisticsService() const;
-  P2PNetworkingServicePtr p2pNetworkingService() const;
-  UserGeneratedContentServicePtr userGeneratedContentService() const;
-  DesktopServicePtr desktopService() const;
+  std::shared_ptr<StatisticsService> statisticsService() const;
+  std::shared_ptr<P2PNetworkingService> p2pNetworkingService() const;
+  std::shared_ptr<UserGeneratedContentService> userGeneratedContentService() const;
+  std::shared_ptr<DesktopService> desktopService() const;
 
   // Will return true if there is an in-game overlay active.  This is important
   // because the cursor must be visible when such an overlay is active,
@@ -91,12 +78,12 @@ public:
 private:
   PcPlatformServices() = default;
 
-  PcPlatformServicesStatePtr m_state;
+  std::shared_ptr<PcPlatformServicesState> m_state;
 
-  StatisticsServicePtr m_statisticsService;
-  P2PNetworkingServicePtr m_p2pNetworkingService;
-  UserGeneratedContentServicePtr m_userGeneratedContentService;
-  DesktopServicePtr m_desktopService;
+  std::shared_ptr<StatisticsService> m_statisticsService;
+  std::shared_ptr<P2PNetworkingService> m_p2pNetworkingService;
+  std::shared_ptr<UserGeneratedContentService> m_userGeneratedContentService;
+  std::shared_ptr<DesktopService> m_desktopService;
 };
 
 }
@@ -105,17 +92,5 @@ export module star.platform_services_pc;
 
 export namespace Star {
   using ::Star::PcPlatformServices;
-  using ::Star::PcPlatformServicesPtr;
-  using ::Star::PcPlatformServicesConstPtr;
-  using ::Star::PcPlatformServicesUPtr;
-  using ::Star::PcPlatformServicesConstUPtr;
-  using ::Star::PcPlatformServicesWeakPtr;
-  using ::Star::PcPlatformServicesConstWeakPtr;
   using ::Star::PcPlatformServicesState;
-  using ::Star::PcPlatformServicesStatePtr;
-  using ::Star::PcPlatformServicesStateConstPtr;
-  using ::Star::PcPlatformServicesStateUPtr;
-  using ::Star::PcPlatformServicesStateConstUPtr;
-  using ::Star::PcPlatformServicesStateWeakPtr;
-  using ::Star::PcPlatformServicesStateConstWeakPtr;
 }

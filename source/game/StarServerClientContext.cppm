@@ -87,26 +87,7 @@ import star.net_element_system;
 namespace Star {
 
 class WorldServerThread;
-using WorldServerThreadPtr = std::shared_ptr<WorldServerThread>;
-using WorldServerThreadConstPtr = std::shared_ptr<const WorldServerThread>;
-using WorldServerThreadWeakPtr = std::weak_ptr<WorldServerThread>;
-using WorldServerThreadConstWeakPtr = std::weak_ptr<const WorldServerThread>;
-using WorldServerThreadUPtr = std::unique_ptr<WorldServerThread>;
-using WorldServerThreadConstUPtr = std::unique_ptr<const WorldServerThread>;
 class SystemWorldServerThread;
-using SystemWorldServerThreadPtr = std::shared_ptr<SystemWorldServerThread>;
-using SystemWorldServerThreadConstPtr = std::shared_ptr<const SystemWorldServerThread>;
-using SystemWorldServerThreadWeakPtr = std::weak_ptr<SystemWorldServerThread>;
-using SystemWorldServerThreadConstWeakPtr = std::weak_ptr<const SystemWorldServerThread>;
-using SystemWorldServerThreadUPtr = std::unique_ptr<SystemWorldServerThread>;
-using SystemWorldServerThreadConstUPtr = std::unique_ptr<const SystemWorldServerThread>;
-class ServerClientContext;
-using ServerClientContextPtr = std::shared_ptr<ServerClientContext>;
-using ServerClientContextConstPtr = std::shared_ptr<const ServerClientContext>;
-using ServerClientContextWeakPtr = std::weak_ptr<ServerClientContext>;
-using ServerClientContextConstWeakPtr = std::weak_ptr<const ServerClientContext>;
-using ServerClientContextUPtr = std::unique_ptr<ServerClientContext>;
-using ServerClientContextConstUPtr = std::unique_ptr<const ServerClientContext>;
 
 class ServerClientContext {
 public:
@@ -160,19 +141,19 @@ public:
   void readUpdate(ByteArray data);
   ByteArray writeUpdate();
 
-  void setPlayerWorld(WorldServerThreadPtr worldThread);
-  WorldServerThreadPtr playerWorld() const;
+  void setPlayerWorld(std::shared_ptr<WorldServerThread> worldThread);
+  std::shared_ptr<WorldServerThread> playerWorld() const;
   WorldId playerWorldId() const;
   void clearPlayerWorld();
 
-  void setSubWorld(ClientSubWorldId subWorldId, WorldServerThreadPtr worldThread);
-  WorldServerThreadPtr subWorld(ClientSubWorldId subWorldId) const;
+  void setSubWorld(ClientSubWorldId subWorldId, std::shared_ptr<WorldServerThread> worldThread);
+  std::shared_ptr<WorldServerThread> subWorld(ClientSubWorldId subWorldId) const;
   bool hasSubWorld(ClientSubWorldId subWorldId) const;
   void clearSubWorld(ClientSubWorldId subWorldId);
   List<ClientSubWorldId> subWorlds() const;
 
-  void setSystemWorld(SystemWorldServerThreadPtr systemWorldThread);
-  SystemWorldServerThreadPtr systemWorld() const;
+  void setSystemWorld(std::shared_ptr<SystemWorldServerThread> systemWorldThread);
+  std::shared_ptr<SystemWorldServerThread> systemWorld() const;
   void clearSystemWorld();
 
   WarpToWorld playerReturnWarp() const;
@@ -233,13 +214,13 @@ private:
 
   SystemLocation m_shipSystemLocation;
   JsonRpc m_rpc;
-  WorldServerThreadPtr m_worldThread;
+  std::shared_ptr<WorldServerThread> m_worldThread;
   WarpToWorld m_returnWarp;
   WarpToWorld m_reviveWarp;
   
-  HashMap<ClientSubWorldId, WorldServerThreadPtr> m_subWorldThreads;
+  HashMap<ClientSubWorldId, std::shared_ptr<WorldServerThread>> m_subWorldThreads;
 
-  SystemWorldServerThreadPtr m_systemWorldThread;
+  std::shared_ptr<SystemWorldServerThread> m_systemWorldThread;
 
   NetElementTopGroup m_netGroup;
   std::uint64_t m_netVersion = 0;
@@ -262,24 +243,6 @@ export module star.server_client_context;
 
 export namespace Star {
 using ::Star::WorldServerThread;
-using ::Star::WorldServerThreadPtr;
-using ::Star::WorldServerThreadConstPtr;
-using ::Star::WorldServerThreadWeakPtr;
-using ::Star::WorldServerThreadConstWeakPtr;
-using ::Star::WorldServerThreadUPtr;
-using ::Star::WorldServerThreadConstUPtr;
 using ::Star::SystemWorldServerThread;
-using ::Star::SystemWorldServerThreadPtr;
-using ::Star::SystemWorldServerThreadConstPtr;
-using ::Star::SystemWorldServerThreadWeakPtr;
-using ::Star::SystemWorldServerThreadConstWeakPtr;
-using ::Star::SystemWorldServerThreadUPtr;
-using ::Star::SystemWorldServerThreadConstUPtr;
 using ::Star::ServerClientContext;
-using ::Star::ServerClientContextPtr;
-using ::Star::ServerClientContextConstPtr;
-using ::Star::ServerClientContextWeakPtr;
-using ::Star::ServerClientContextConstWeakPtr;
-using ::Star::ServerClientContextUPtr;
-using ::Star::ServerClientContextConstUPtr;
 }

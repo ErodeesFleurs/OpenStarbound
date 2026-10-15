@@ -153,7 +153,7 @@ import star.tick_rate_monitor;
 import star.algorithm;
 namespace Star {
 
-WorldServerThread::WorldServerThread(WorldServerPtr server, WorldId worldId)
+WorldServerThread::WorldServerThread(std::shared_ptr<WorldServer> server, WorldId worldId)
   : Thread("WorldServerThread: " + printWorldId(worldId)),
     m_worldServer(std::move(server)),
     m_worldId(std::move(worldId)),
@@ -227,14 +227,14 @@ bool WorldServerThread::addClient(ConnectionId clientId, SpawnTarget const& spaw
   }
 }
 
-List<PacketPtr> WorldServerThread::removeClient(ConnectionId clientId) {
+List<std::shared_ptr<Packet>> WorldServerThread::removeClient(ConnectionId clientId) {
   RecursiveMutexLocker locker(m_mutex);
   if (!m_clients.contains(clientId))
     return {};
 
   RecursiveMutexLocker queueLocker(m_queueMutex);
 
-  List<PacketPtr> outgoingPackets;
+  List<std::shared_ptr<Packet>> outgoingPackets;
   try {
     auto incomingPackets = take(m_incomingPacketQueue[clientId]);
     if (m_worldServer->hasClient(clientId))
@@ -281,12 +281,12 @@ List<ConnectionId> WorldServerThread::erroredClients() const {
   return m_clients.difference(unerroredClients).values();
 }
 
-void WorldServerThread::pushIncomingPackets(ConnectionId clientId, List<PacketPtr> packets) {
+void WorldServerThread::pushIncomingPackets(ConnectionId clientId, List<std::shared_ptr<Packet>> packets) {
   RecursiveMutexLocker queueLocker(m_queueMutex);
   m_incomingPacketQueue[clientId].appendAll(std::move(packets));
 }
 
-List<PacketPtr> WorldServerThread::pullOutgoingPackets(ConnectionId clientId) {
+List<std::shared_ptr<Packet>> WorldServerThread::pullOutgoingPackets(ConnectionId clientId) {
   RecursiveMutexLocker queueLocker(m_queueMutex);
   return take(m_outgoingPacketQueue[clientId]);
 }

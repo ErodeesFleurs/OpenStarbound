@@ -32,34 +32,7 @@ import star.vector;
 namespace Star {
 
 class Clock;
-using ClockPtr = std::shared_ptr<Clock>;
-using ClockConstPtr = std::shared_ptr<const Clock>;
-using ClockWeakPtr = std::weak_ptr<Clock>;
-using ClockConstWeakPtr = std::weak_ptr<const Clock>;
-using ClockUPtr = std::unique_ptr<Clock>;
-using ClockConstUPtr = std::unique_ptr<const Clock>;
 class Projectile;
-using ProjectilePtr = std::shared_ptr<Projectile>;
-using ProjectileConstPtr = std::shared_ptr<const Projectile>;
-using ProjectileWeakPtr = std::weak_ptr<Projectile>;
-using ProjectileConstWeakPtr = std::weak_ptr<const Projectile>;
-using ProjectileUPtr = std::unique_ptr<Projectile>;
-using ProjectileConstUPtr = std::unique_ptr<const Projectile>;
-
-class ServerWeather;
-using ServerWeatherPtr = std::shared_ptr<ServerWeather>;
-using ServerWeatherConstPtr = std::shared_ptr<const ServerWeather>;
-using ServerWeatherWeakPtr = std::weak_ptr<ServerWeather>;
-using ServerWeatherConstWeakPtr = std::weak_ptr<const ServerWeather>;
-using ServerWeatherUPtr = std::unique_ptr<ServerWeather>;
-using ServerWeatherConstUPtr = std::unique_ptr<const ServerWeather>;
-class ClientWeather;
-using ClientWeatherPtr = std::shared_ptr<ClientWeather>;
-using ClientWeatherConstPtr = std::shared_ptr<const ClientWeather>;
-using ClientWeatherWeakPtr = std::weak_ptr<ClientWeather>;
-using ClientWeatherConstWeakPtr = std::weak_ptr<const ClientWeather>;
-using ClientWeatherUPtr = std::unique_ptr<ClientWeather>;
-using ClientWeatherConstUPtr = std::unique_ptr<const ClientWeather>;
 
 // Callback used to determine whether weather effects should be spawned in
 // the given tile location.  Other checks that enable / disable weather such as
@@ -74,7 +47,7 @@ public:
   void setup(WeatherPool weatherPool, float undergroundLevel, WorldGeometry worldGeometry,
       WeatherEffectsActiveQuery weatherEffectsActiveQuery);
 
-  void setReferenceClock(ClockConstPtr referenceClock = {});
+  void setReferenceClock(std::shared_ptr<Clock const> referenceClock = {});
 
   void setClientVisibleRegions(List<RectI> regions);
 
@@ -101,7 +74,7 @@ public:
 
   StringList statusEffects() const;
 
-  List<ProjectilePtr> pullNewProjectiles();
+  List<std::shared_ptr<Projectile>> pullNewProjectiles();
   
   Maybe<String> activeWeather() const;
 
@@ -124,14 +97,14 @@ private:
 
   bool m_forceWeather;
 
-  ClockConstPtr m_referenceClock;
+  std::shared_ptr<Clock const> m_referenceClock;
   Maybe<double> m_clockTrackingTime;
 
   double m_currentTime;
   double m_lastWeatherChangeTime;
   double m_nextWeatherChangeTime;
 
-  List<ProjectilePtr> m_newProjectiles;
+  List<std::shared_ptr<Projectile>> m_newProjectiles;
 
   NetElementTopGroup m_netGroup;
   NetElementBytes m_weatherPoolNetState;
@@ -201,32 +174,8 @@ export module star.weather;
 
 export namespace Star {
 using ::Star::Clock;
-using ::Star::ClockPtr;
-using ::Star::ClockConstPtr;
-using ::Star::ClockWeakPtr;
-using ::Star::ClockConstWeakPtr;
-using ::Star::ClockUPtr;
-using ::Star::ClockConstUPtr;
 using ::Star::Projectile;
-using ::Star::ProjectilePtr;
-using ::Star::ProjectileConstPtr;
-using ::Star::ProjectileWeakPtr;
-using ::Star::ProjectileConstWeakPtr;
-using ::Star::ProjectileUPtr;
-using ::Star::ProjectileConstUPtr;
 using ::Star::ServerWeather;
-using ::Star::ServerWeatherPtr;
-using ::Star::ServerWeatherConstPtr;
-using ::Star::ServerWeatherWeakPtr;
-using ::Star::ServerWeatherConstWeakPtr;
-using ::Star::ServerWeatherUPtr;
-using ::Star::ServerWeatherConstUPtr;
 using ::Star::ClientWeather;
-using ::Star::ClientWeatherPtr;
-using ::Star::ClientWeatherConstPtr;
-using ::Star::ClientWeatherWeakPtr;
-using ::Star::ClientWeatherConstWeakPtr;
-using ::Star::ClientWeatherUPtr;
-using ::Star::ClientWeatherConstUPtr;
 using ::Star::WeatherEffectsActiveQuery;
 }

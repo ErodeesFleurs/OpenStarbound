@@ -112,7 +112,7 @@ static String formatShortSize(std::uint64_t n) {
       return strf("{}.{:02d}{:c}", whole, frac / 10, suffix);
 }
 
-ItemSlotWidget::ItemSlotWidget(ItemPtr const& item, String const& backingImage)
+ItemSlotWidget::ItemSlotWidget(std::shared_ptr<Item> const& item, String const& backingImage)
   : m_item(item), m_backingImage(backingImage) {
   m_drawBackingImageWhenFull = false;
   m_drawBackingImageWhenEmpty = true;
@@ -199,11 +199,11 @@ void ItemSlotWidget::setMiddleClickCallback(WidgetCallbackFunc callback) {
   m_middleClickCallback = callback;
 }
 
-void ItemSlotWidget::setItem(ItemPtr const& item) {
+void ItemSlotWidget::setItem(std::shared_ptr<Item> const& item) {
   m_item = item;
 }
 
-ItemPtr ItemSlotWidget::item() const {
+std::shared_ptr<Item> ItemSlotWidget::item() const {
   return m_item;
 }
 

@@ -29,14 +29,6 @@ import star.entity_rendering;
 
 namespace Star {
 
-  class RenderableItem;
-  using RenderableItemPtr = std::shared_ptr<RenderableItem>;
-  using RenderableItemConstPtr = std::shared_ptr<const RenderableItem>;
-  using RenderableItemWeakPtr = std::weak_ptr<RenderableItem>;
-  using RenderableItemConstWeakPtr = std::weak_ptr<const RenderableItem>;
-  using RenderableItemUPtr = std::unique_ptr<RenderableItem>;
-  using RenderableItemConstUPtr = std::unique_ptr<const RenderableItem>;
-
   class RenderableItem {
   public:
     virtual ~RenderableItem() {}
@@ -50,10 +42,4 @@ export module star.renderable_item;
 
 export namespace Star {
   using ::Star::RenderableItem;
-  using ::Star::RenderableItemPtr;
-  using ::Star::RenderableItemConstPtr;
-  using ::Star::RenderableItemWeakPtr;
-  using ::Star::RenderableItemConstWeakPtr;
-  using ::Star::RenderableItemUPtr;
-  using ::Star::RenderableItemConstUPtr;
 }

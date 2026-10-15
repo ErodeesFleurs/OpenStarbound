@@ -13,14 +13,6 @@ struct NetworkExceptionTag {
 };
 using NetworkException = StarError<NetworkExceptionTag, IOException>;
 
-class HostAddress;
-using HostAddressPtr = std::shared_ptr<HostAddress>;
-using HostAddressConstPtr = std::shared_ptr<const HostAddress>;
-using HostAddressWeakPtr = std::weak_ptr<HostAddress>;
-using HostAddressConstWeakPtr = std::weak_ptr<const HostAddress>;
-using HostAddressUPtr = std::unique_ptr<HostAddress>;
-using HostAddressConstUPtr = std::unique_ptr<const HostAddress>;
-
 enum class NetworkMode {
   IPv4,
   IPv6
@@ -124,10 +116,4 @@ export namespace Star {
   using ::Star::NetworkMode;
   using ::Star::HostAddressWithPort;
   using ::Star::HostAddress;
-  using ::Star::HostAddressPtr;
-  using ::Star::HostAddressConstPtr;
-  using ::Star::HostAddressWeakPtr;
-  using ::Star::HostAddressConstWeakPtr;
-  using ::Star::HostAddressUPtr;
-  using ::Star::HostAddressConstUPtr;
 }

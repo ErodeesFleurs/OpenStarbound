@@ -194,7 +194,7 @@ Json Packet::writeJson() const  { return JsonObject{}; }
 PacketCompressionMode Packet::compressionMode() const { return m_compressionMode; }
 void Packet::setCompressionMode(PacketCompressionMode compressionMode) { m_compressionMode = compressionMode; }
 
-PacketPtr createPacket(PacketType type) {
+std::shared_ptr<Packet> createPacket(PacketType type) {
   switch (type) {
     case PacketType::ProtocolRequest: return std::make_shared<ProtocolRequestPacket>();
     case PacketType::ProtocolResponse: return std::make_shared<ProtocolResponsePacket>();
@@ -283,7 +283,7 @@ PacketPtr createPacket(PacketType type) {
   }
 }
 
-PacketPtr createPacket(PacketType type, Maybe<Json> const& args) {
+std::shared_ptr<Packet> createPacket(PacketType type, Maybe<Json> const& args) {
   auto packet = createPacket(type);
 
   if (args && !args->isNull())
@@ -1599,7 +1599,7 @@ void ClientCustomWorldCreate::write(DataStream& ds) const {
 
 ClientSubWorldPackets::ClientSubWorldPackets() {}
 
-ClientSubWorldPackets::ClientSubWorldPackets(ClientSubWorldId const& subWorldId, List<PacketPtr> packets) : subWorldId(subWorldId), packets(std::move(packets)) {}
+ClientSubWorldPackets::ClientSubWorldPackets(ClientSubWorldId const& subWorldId, List<std::shared_ptr<Packet>> packets) : subWorldId(subWorldId), packets(std::move(packets)) {}
 
 void ClientSubWorldPackets::read(DataStream& ds) {
   ds.read(subWorldId);
@@ -1607,7 +1607,7 @@ void ClientSubWorldPackets::read(DataStream& ds) {
   std::uint32_t count = ds.read<std::uint32_t>();
   for (std::uint32_t i = 0; i < count; i++) {
     auto packetType = ds.read<PacketType>();
-    PacketPtr packet = createPacket(packetType);
+    std::shared_ptr<Packet> packet = createPacket(packetType);
     packet->read(ds);
     packets.append(packet);
   }
@@ -1616,7 +1616,7 @@ void ClientSubWorldPackets::read(DataStream& ds) {
 void ClientSubWorldPackets::write(DataStream& ds) const {
   ds.write(subWorldId);
   ds.write<std::uint32_t>(packets.count());
-  for (PacketPtr const& packet : packets) {
+  for (std::shared_ptr<Packet> const& packet : packets) {
     auto packetType = packet->type();
     ds.write(packetType);
     packet->write(ds);

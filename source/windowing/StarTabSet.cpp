@@ -100,7 +100,7 @@ void TabSetWidget::setSize(Vec2I const& size) {
   m_stack->setSize({size.x(), size.y() - tabHeight});
 }
 
-void TabSetWidget::addTab(String const& widgetName, WidgetPtr widget, String const& title) {
+void TabSetWidget::addTab(String const& widgetName, std::shared_ptr<Widget> widget, String const& title) {
   auto newButton = std::make_shared<ButtonWidget>();
   newButton->setImages(
       m_tabSetConfig.tabButtonBaseImage, m_tabSetConfig.tabButtonHoverImage, m_tabSetConfig.tabButtonPressedImage);

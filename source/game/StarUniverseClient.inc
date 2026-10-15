@@ -127,142 +127,32 @@ import star.universe;
 namespace Star {
 
 class WorldTemplate;
-using WorldTemplatePtr = std::shared_ptr<WorldTemplate>;
-using WorldTemplateConstPtr = std::shared_ptr<const WorldTemplate>;
-using WorldTemplateWeakPtr = std::weak_ptr<WorldTemplate>;
-using WorldTemplateConstWeakPtr = std::weak_ptr<const WorldTemplate>;
-using WorldTemplateUPtr = std::unique_ptr<WorldTemplate>;
-using WorldTemplateConstUPtr = std::unique_ptr<const WorldTemplate>;
 class ClientContext;
-using ClientContextPtr = std::shared_ptr<ClientContext>;
-using ClientContextConstPtr = std::shared_ptr<const ClientContext>;
-using ClientContextWeakPtr = std::weak_ptr<ClientContext>;
-using ClientContextConstWeakPtr = std::weak_ptr<const ClientContext>;
-using ClientContextUPtr = std::unique_ptr<ClientContext>;
-using ClientContextConstUPtr = std::unique_ptr<const ClientContext>;
 class Sky;
-using SkyPtr = std::shared_ptr<Sky>;
-using SkyConstPtr = std::shared_ptr<const Sky>;
-using SkyWeakPtr = std::weak_ptr<Sky>;
-using SkyConstWeakPtr = std::weak_ptr<const Sky>;
-using SkyUPtr = std::unique_ptr<Sky>;
-using SkyConstUPtr = std::unique_ptr<const Sky>;
 struct Packet;
-using PacketPtr = std::shared_ptr<Packet>;
-using PacketConstPtr = std::shared_ptr<const Packet>;
-using PacketWeakPtr = std::weak_ptr<Packet>;
-using PacketConstWeakPtr = std::weak_ptr<const Packet>;
-using PacketUPtr = std::unique_ptr<Packet>;
-using PacketConstUPtr = std::unique_ptr<const Packet>;
 class WorldClient;
-using WorldClientPtr = std::shared_ptr<WorldClient>;
-using WorldClientConstPtr = std::shared_ptr<const WorldClient>;
-using WorldClientWeakPtr = std::weak_ptr<WorldClient>;
-using WorldClientConstWeakPtr = std::weak_ptr<const WorldClient>;
-using WorldClientUPtr = std::unique_ptr<WorldClient>;
-using WorldClientConstUPtr = std::unique_ptr<const WorldClient>;
 class SystemWorldClient;
-using SystemWorldClientPtr = std::shared_ptr<SystemWorldClient>;
-using SystemWorldClientConstPtr = std::shared_ptr<const SystemWorldClient>;
-using SystemWorldClientWeakPtr = std::weak_ptr<SystemWorldClient>;
-using SystemWorldClientConstWeakPtr = std::weak_ptr<const SystemWorldClient>;
-using SystemWorldClientUPtr = std::unique_ptr<SystemWorldClient>;
-using SystemWorldClientConstUPtr = std::unique_ptr<const SystemWorldClient>;
 class Player;
-using PlayerPtr = std::shared_ptr<Player>;
-using PlayerConstPtr = std::shared_ptr<const Player>;
-using PlayerWeakPtr = std::weak_ptr<Player>;
-using PlayerConstWeakPtr = std::weak_ptr<const Player>;
-using PlayerUPtr = std::unique_ptr<Player>;
-using PlayerConstUPtr = std::unique_ptr<const Player>;
 class PlayerStorage;
-using PlayerStoragePtr = std::shared_ptr<PlayerStorage>;
-using PlayerStorageConstPtr = std::shared_ptr<const PlayerStorage>;
-using PlayerStorageWeakPtr = std::weak_ptr<PlayerStorage>;
-using PlayerStorageConstWeakPtr = std::weak_ptr<const PlayerStorage>;
-using PlayerStorageUPtr = std::unique_ptr<PlayerStorage>;
-using PlayerStorageConstUPtr = std::unique_ptr<const PlayerStorage>;
 class Statistics;
-using StatisticsPtr = std::shared_ptr<Statistics>;
-using StatisticsConstPtr = std::shared_ptr<const Statistics>;
-using StatisticsWeakPtr = std::weak_ptr<Statistics>;
-using StatisticsConstWeakPtr = std::weak_ptr<const Statistics>;
-using StatisticsUPtr = std::unique_ptr<Statistics>;
-using StatisticsConstUPtr = std::unique_ptr<const Statistics>;
 class Clock;
-using ClockPtr = std::shared_ptr<Clock>;
-using ClockConstPtr = std::shared_ptr<const Clock>;
-using ClockWeakPtr = std::weak_ptr<Clock>;
-using ClockConstWeakPtr = std::weak_ptr<const Clock>;
-using ClockUPtr = std::unique_ptr<Clock>;
-using ClockConstUPtr = std::unique_ptr<const Clock>;
 class CelestialLog;
-using CelestialLogPtr = std::shared_ptr<CelestialLog>;
-using CelestialLogConstPtr = std::shared_ptr<const CelestialLog>;
-using CelestialLogWeakPtr = std::weak_ptr<CelestialLog>;
-using CelestialLogConstWeakPtr = std::weak_ptr<const CelestialLog>;
-using CelestialLogUPtr = std::unique_ptr<CelestialLog>;
-using CelestialLogConstUPtr = std::unique_ptr<const CelestialLog>;
 class CelestialSlaveDatabase;
-using CelestialSlaveDatabasePtr = std::shared_ptr<CelestialSlaveDatabase>;
-using CelestialSlaveDatabaseConstPtr = std::shared_ptr<const CelestialSlaveDatabase>;
-using CelestialSlaveDatabaseWeakPtr = std::weak_ptr<CelestialSlaveDatabase>;
-using CelestialSlaveDatabaseConstWeakPtr = std::weak_ptr<const CelestialSlaveDatabase>;
-using CelestialSlaveDatabaseUPtr = std::unique_ptr<CelestialSlaveDatabase>;
-using CelestialSlaveDatabaseConstUPtr = std::unique_ptr<const CelestialSlaveDatabase>;
 class CelestialDatabase;
-using CelestialDatabasePtr = std::shared_ptr<CelestialDatabase>;
-using CelestialDatabaseConstPtr = std::shared_ptr<const CelestialDatabase>;
-using CelestialDatabaseWeakPtr = std::weak_ptr<CelestialDatabase>;
-using CelestialDatabaseConstWeakPtr = std::weak_ptr<const CelestialDatabase>;
-using CelestialDatabaseUPtr = std::unique_ptr<CelestialDatabase>;
-using CelestialDatabaseConstUPtr = std::unique_ptr<const CelestialDatabase>;
 class JsonRpcInterface;
-using JsonRpcInterfacePtr = std::shared_ptr<JsonRpcInterface>;
-using JsonRpcInterfaceConstPtr = std::shared_ptr<const JsonRpcInterface>;
-using JsonRpcInterfaceWeakPtr = std::weak_ptr<JsonRpcInterface>;
-using JsonRpcInterfaceConstWeakPtr = std::weak_ptr<const JsonRpcInterface>;
-using JsonRpcInterfaceUPtr = std::unique_ptr<JsonRpcInterface>;
-using JsonRpcInterfaceConstUPtr = std::unique_ptr<const JsonRpcInterface>;
 class TeamClient;
-using TeamClientPtr = std::shared_ptr<TeamClient>;
-using TeamClientConstPtr = std::shared_ptr<const TeamClient>;
-using TeamClientWeakPtr = std::weak_ptr<TeamClient>;
-using TeamClientConstWeakPtr = std::weak_ptr<const TeamClient>;
-using TeamClientUPtr = std::unique_ptr<TeamClient>;
-using TeamClientConstUPtr = std::unique_ptr<const TeamClient>;
 class QuestManager;
-using QuestManagerPtr = std::shared_ptr<QuestManager>;
-using QuestManagerConstPtr = std::shared_ptr<const QuestManager>;
-using QuestManagerWeakPtr = std::weak_ptr<QuestManager>;
-using QuestManagerConstWeakPtr = std::weak_ptr<const QuestManager>;
-using QuestManagerUPtr = std::unique_ptr<QuestManager>;
-using QuestManagerConstUPtr = std::unique_ptr<const QuestManager>;
-class UniverseClient;
-using UniverseClientPtr = std::shared_ptr<UniverseClient>;
-using UniverseClientConstPtr = std::shared_ptr<const UniverseClient>;
-using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
-using UniverseClientConstWeakPtr = std::weak_ptr<const UniverseClient>;
-using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
-using UniverseClientConstUPtr = std::unique_ptr<const UniverseClient>;
 class LuaRoot;
-using LuaRootPtr = std::shared_ptr<LuaRoot>;
-using LuaRootConstPtr = std::shared_ptr<const LuaRoot>;
-using LuaRootWeakPtr = std::weak_ptr<LuaRoot>;
-using LuaRootConstWeakPtr = std::weak_ptr<const LuaRoot>;
-using LuaRootUPtr = std::unique_ptr<LuaRoot>;
-using LuaRootConstUPtr = std::unique_ptr<const LuaRoot>;
 
 class UniverseClient : public Universe {
 public:
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
-  typedef std::shared_ptr<ScriptComponent> ScriptComponentPtr;
   
-  UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, String const& customWorldStorageDir);
+  UniverseClient(std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Statistics> statistics, String const& customWorldStorageDir);
   ~UniverseClient() override;
 
-  void setMainPlayer(PlayerPtr player);
-  PlayerPtr mainPlayer() const;
+  void setMainPlayer(std::shared_ptr<Player> player);
+  std::shared_ptr<Player> mainPlayer() const;
 
   // Returns error if connection failed
   Maybe<String> connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account = "", String const& password = "", bool const& forceLegacy = false);
@@ -273,8 +163,8 @@ public:
   unsigned connectionVersion();
 
   // WorldClient may be null if the UniverseClient is not connected.
-  WorldClientPtr worldClient() const;
-  SystemWorldClientPtr systemWorldClient() const;
+  std::shared_ptr<WorldClient> worldClient() const;
+  std::shared_ptr<SystemWorldClient> systemWorldClient() const;
 
   // Updates internal world client in addition to handling universe level
   // commands.
@@ -289,7 +179,7 @@ public:
   void warpPlayer(WarpAction const& warpAction, bool animate = true, String const& animationType = "default", bool deploy = false);
   void flyShip(Vec3I const& system, SystemLocation const& destination, Json const& settings = {});
 
-  CelestialDatabasePtr celestialDatabase() override;
+  std::shared_ptr<CelestialDatabase> celestialDatabase() override;
 
   CelestialCoordinate shipCoordinate() const;
 
@@ -302,8 +192,8 @@ public:
   // player is by themselves returns the player uuid.
   Uuid teamUuid() const;
 
-  WorldTemplateConstPtr currentTemplate() const;
-  SkyConstPtr currentSky() const;
+  std::shared_ptr<WorldTemplate const> currentTemplate() const;
+  std::shared_ptr<Sky const> currentSky() const;
   bool flying() const;
 
   void sendChat(String const& text, ChatSendMode sendMode, Maybe<bool> speak = {}, Maybe<JsonObject> data = {});
@@ -316,7 +206,7 @@ public:
   void restartLua();
   void startLuaScripts();
   void stopLua();
-  LuaRootPtr luaRoot();
+  std::shared_ptr<LuaRoot> luaRoot();
 
   bool reloadPlayer(Json const& data, Uuid const& uuid, bool resetInterfaces = false, bool showIndicator = false);
   bool switchPlayer(Uuid const& uuid);
@@ -328,16 +218,16 @@ public:
   ReloadPlayerCallback& playerReloadPreCallback();
   ReloadPlayerCallback& playerReloadCallback();
 
-  ClockConstPtr universeClock() const;
-  CelestialLogConstPtr celestialLog() const;
-  JsonRpcInterfacePtr rpcInterface() const;
-  ClientContextPtr clientContext() const;
-  TeamClientPtr teamClient() const;
-  QuestManagerPtr questManager() const;
-  PlayerStoragePtr playerStorage() const;
-  StatisticsPtr statistics() const;
+  std::shared_ptr<Clock const> universeClock() const;
+  std::shared_ptr<CelestialLog const> celestialLog() const;
+  std::shared_ptr<JsonRpcInterface> rpcInterface() const;
+  std::shared_ptr<ClientContext> clientContext() const;
+  std::shared_ptr<TeamClient> teamClient() const;
+  std::shared_ptr<QuestManager> questManager() const;
+  std::shared_ptr<PlayerStorage> playerStorage() const;
+  std::shared_ptr<Statistics> statistics() const;
 
-  ScriptComponentPtr scriptContext(String const& contextName);
+  std::shared_ptr<UniverseClient::ScriptComponent> scriptContext(String const& contextName);
   
   void createCustomWorld(String const& name, Json templateData);
   
@@ -365,29 +255,29 @@ private:
 
   void setPause(bool pause);
 
-  void handlePackets(List<PacketPtr> const& packets);
+  void handlePackets(List<std::shared_ptr<Packet>> const& packets);
   void reset();
   
   mutable RecursiveMutex m_mutex;
 
-  PlayerStoragePtr m_playerStorage;
-  StatisticsPtr m_statistics;
-  PlayerPtr m_mainPlayer;
+  std::shared_ptr<PlayerStorage> m_playerStorage;
+  std::shared_ptr<Statistics> m_statistics;
+  std::shared_ptr<Player> m_mainPlayer;
   
   String m_customWorldStorageDirectory;
 
   std::shared_ptr<std::atomic<bool>> m_pause;
-  ClockPtr m_universeClock;
-  WorldClientPtr m_worldClient;
-  SystemWorldClientPtr m_systemWorldClient;
+  std::shared_ptr<Clock> m_universeClock;
+  std::shared_ptr<WorldClient> m_worldClient;
+  std::shared_ptr<SystemWorldClient> m_systemWorldClient;
   Maybe<UniverseConnection> m_connection;
   Maybe<ServerInfo> m_serverInfo;
 
-  CelestialSlaveDatabasePtr m_celestialDatabase;
-  ClientContextPtr m_clientContext;
-  TeamClientPtr m_teamClient;
+  std::shared_ptr<CelestialSlaveDatabase> m_celestialDatabase;
+  std::shared_ptr<ClientContext> m_clientContext;
+  std::shared_ptr<TeamClient> m_teamClient;
 
-  QuestManagerPtr m_questManager;
+  std::shared_ptr<QuestManager> m_questManager;
 
   WarpAction m_pendingWarp;
   GameTimer m_warpDelay;
@@ -404,12 +294,12 @@ private:
 
   Maybe<String> m_disconnectReason;
 
-  LuaRootPtr m_luaRoot;
+  std::shared_ptr<LuaRoot> m_luaRoot;
   
-  StringMap<ScriptComponentPtr> m_scriptContexts;
+  StringMap<std::shared_ptr<UniverseClient::ScriptComponent>> m_scriptContexts;
   
   BiMap<ClientSubWorldId, WorldId> m_subWorlds;
-  IdMap<ClientSubWorldId,WorldClientThreadPtr> m_subWorldThreads;
+  IdMap<ClientSubWorldId,std::shared_ptr<WorldClientThread>> m_subWorldThreads;
 
   ReloadPlayerCallback m_playerReloadPreCallback;
   ReloadPlayerCallback m_playerReloadCallback;

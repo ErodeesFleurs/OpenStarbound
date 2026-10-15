@@ -82,33 +82,9 @@ import star.falling_blocks_agent;
 
 namespace Star {
 class WorldServer;
-using WorldServerPtr = std::shared_ptr<WorldServer>;
-using WorldServerConstPtr = std::shared_ptr<const WorldServer>;
-using WorldServerWeakPtr = std::weak_ptr<WorldServer>;
-using WorldServerConstWeakPtr = std::weak_ptr<const WorldServer>;
-using WorldServerUPtr = std::unique_ptr<WorldServer>;
-using WorldServerConstUPtr = std::unique_ptr<const WorldServer>;
 class Plant;
-using PlantPtr = std::shared_ptr<Plant>;
-using PlantConstPtr = std::shared_ptr<const Plant>;
-using PlantWeakPtr = std::weak_ptr<Plant>;
-using PlantConstWeakPtr = std::weak_ptr<const Plant>;
-using PlantUPtr = std::unique_ptr<Plant>;
-using PlantConstUPtr = std::unique_ptr<const Plant>;
 class MaterialDatabase;
-using MaterialDatabasePtr = std::shared_ptr<MaterialDatabase>;
-using MaterialDatabaseConstPtr = std::shared_ptr<const MaterialDatabase>;
-using MaterialDatabaseWeakPtr = std::weak_ptr<MaterialDatabase>;
-using MaterialDatabaseConstWeakPtr = std::weak_ptr<const MaterialDatabase>;
-using MaterialDatabaseUPtr = std::unique_ptr<MaterialDatabase>;
-using MaterialDatabaseConstUPtr = std::unique_ptr<const MaterialDatabase>;
 class LiquidsDatabase;
-using LiquidsDatabasePtr = std::shared_ptr<LiquidsDatabase>;
-using LiquidsDatabaseConstPtr = std::shared_ptr<const LiquidsDatabase>;
-using LiquidsDatabaseWeakPtr = std::weak_ptr<LiquidsDatabase>;
-using LiquidsDatabaseConstWeakPtr = std::weak_ptr<const LiquidsDatabase>;
-using LiquidsDatabaseUPtr = std::unique_ptr<LiquidsDatabase>;
-using LiquidsDatabaseConstUPtr = std::unique_ptr<const LiquidsDatabase>;
 }
 
 import star.micro_dungeon;
@@ -116,35 +92,6 @@ import star.spawn_type_database;
 import star.spawner;
 
 namespace Star {
-
-class FallingBlocksWorld;
-using FallingBlocksWorldPtr = std::shared_ptr<FallingBlocksWorld>;
-using FallingBlocksWorldConstPtr = std::shared_ptr<const FallingBlocksWorld>;
-using FallingBlocksWorldWeakPtr = std::weak_ptr<FallingBlocksWorld>;
-using FallingBlocksWorldConstWeakPtr = std::weak_ptr<const FallingBlocksWorld>;
-using FallingBlocksWorldUPtr = std::unique_ptr<FallingBlocksWorld>;
-using FallingBlocksWorldConstUPtr = std::unique_ptr<const FallingBlocksWorld>;
-class DungeonGeneratorWorld;
-using DungeonGeneratorWorldPtr = std::shared_ptr<DungeonGeneratorWorld>;
-using DungeonGeneratorWorldConstPtr = std::shared_ptr<const DungeonGeneratorWorld>;
-using DungeonGeneratorWorldWeakPtr = std::weak_ptr<DungeonGeneratorWorld>;
-using DungeonGeneratorWorldConstWeakPtr = std::weak_ptr<const DungeonGeneratorWorld>;
-using DungeonGeneratorWorldUPtr = std::unique_ptr<DungeonGeneratorWorld>;
-using DungeonGeneratorWorldConstUPtr = std::unique_ptr<const DungeonGeneratorWorld>;
-class SpawnerWorld;
-using SpawnerWorldPtr = std::shared_ptr<SpawnerWorld>;
-using SpawnerWorldConstPtr = std::shared_ptr<const SpawnerWorld>;
-using SpawnerWorldWeakPtr = std::weak_ptr<SpawnerWorld>;
-using SpawnerWorldConstWeakPtr = std::weak_ptr<const SpawnerWorld>;
-using SpawnerWorldUPtr = std::unique_ptr<SpawnerWorld>;
-using SpawnerWorldConstUPtr = std::unique_ptr<const SpawnerWorld>;
-class WorldGenerator;
-using WorldGeneratorPtr = std::shared_ptr<WorldGenerator>;
-using WorldGeneratorConstPtr = std::shared_ptr<const WorldGenerator>;
-using WorldGeneratorWeakPtr = std::weak_ptr<WorldGenerator>;
-using WorldGeneratorConstWeakPtr = std::weak_ptr<const WorldGenerator>;
-using WorldGeneratorUPtr = std::unique_ptr<WorldGenerator>;
-using WorldGeneratorConstUPtr = std::unique_ptr<const WorldGenerator>;
 
 class LiquidWorld : public CellularLiquidWorld<LiquidId> {
 public:
@@ -159,8 +106,8 @@ public:
 
 private:
   WorldServer* m_worldServer;
-  LiquidsDatabaseConstPtr m_liquidsDatabase;
-  MaterialDatabaseConstPtr m_materialDatabase;
+  std::shared_ptr<LiquidsDatabase const> m_liquidsDatabase;
+  std::shared_ptr<MaterialDatabase const> m_materialDatabase;
 };
 
 class FallingBlocksWorld : public FallingBlocksFacade {
@@ -172,7 +119,7 @@ public:
 
 private:
   WorldServer* m_worldServer;
-  MaterialDatabaseConstPtr m_materialDatabase;
+  std::shared_ptr<MaterialDatabase const> m_materialDatabase;
 };
 
 class DungeonGeneratorWorld : public DungeonGeneratorWorldFacade {
@@ -209,7 +156,7 @@ public:
   WorldGeometry getWorldGeometry() const override;
 
 private:
-  void placePlant(PlantPtr const& plant, Vec2I const& position);
+  void placePlant(std::shared_ptr<Plant> const& plant, Vec2I const& position);
   void placeBiomeItems(Vec2I const& pos, List<BiomeItemPlacement>& potentialItems);
 
   WorldServer* m_worldServer;
@@ -232,9 +179,9 @@ public:
   SpawnProfile spawnProfile(Vec2F const& position) const override;
   float dayLevel() const override;
   float threatLevel() const override;
-  EntityId spawnEntity(EntityPtr entity) const override;
+  EntityId spawnEntity(std::shared_ptr<Entity> entity) const override;
   void despawnEntity(EntityId entityId) override;
-  EntityPtr getEntity(EntityId entityId) const override;
+  std::shared_ptr<Entity> getEntity(EntityId entityId) const override;
 
 private:
   WorldServer* m_worldServer;
@@ -247,10 +194,10 @@ public:
   void generateSectorLevel(WorldStorage* worldStorage, Sector const& sector, SectorGenerationLevel generationLevel) override;
   void sectorLoadLevelChanged(WorldStorage* worldStorage, Sector const& sector, SectorLoadLevel loadLevel) override;
   void terraformSector(WorldStorage* worldStorage, Sector const& sector) override;
-  void initEntity(WorldStorage* worldStorage, EntityId entityId, EntityPtr const& entity) override;
-  void destructEntity(WorldStorage* worldStorage, EntityPtr const& entity) override;
-  bool entityKeepAlive(WorldStorage* worldStorage, EntityPtr const& entity) const override;
-  bool entityPersistent(WorldStorage* worldStorage, EntityPtr const& entity) const override;
+  void initEntity(WorldStorage* worldStorage, EntityId entityId, std::shared_ptr<Entity> const& entity) override;
+  void destructEntity(WorldStorage* worldStorage, std::shared_ptr<Entity> const& entity) override;
+  bool entityKeepAlive(WorldStorage* worldStorage, std::shared_ptr<Entity> const& entity) const override;
+  bool entityPersistent(WorldStorage* worldStorage, std::shared_ptr<Entity> const& entity) const override;
   RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id) override;
 
   void replaceBiomeBlocks(ServerTile* tile);
@@ -279,10 +226,10 @@ private:
 
   // Special plant placement routine that does slight terrain adjustments to
   // fit plants.
-  bool placePlant(WorldStorage* worldStorage, PlantPtr const& plant, Vec2I const& position);
+  bool placePlant(WorldStorage* worldStorage, std::shared_ptr<Plant> const& plant, Vec2I const& position);
 
   WorldServer* m_worldServer;
-  MicroDungeonFactoryPtr m_microDungeonFactory;
+  std::shared_ptr<MicroDungeonFactory> m_microDungeonFactory;
   List<QueuedPlacement> m_queuedPlacements;
 };
 
@@ -296,28 +243,4 @@ export namespace Star {
   using ::Star::DungeonGeneratorWorld;
   using ::Star::SpawnerWorld;
   using ::Star::WorldGenerator;
-  using ::Star::FallingBlocksWorldPtr;
-  using ::Star::FallingBlocksWorldConstPtr;
-  using ::Star::FallingBlocksWorldWeakPtr;
-  using ::Star::FallingBlocksWorldConstWeakPtr;
-  using ::Star::FallingBlocksWorldUPtr;
-  using ::Star::FallingBlocksWorldConstUPtr;
-  using ::Star::DungeonGeneratorWorldPtr;
-  using ::Star::DungeonGeneratorWorldConstPtr;
-  using ::Star::DungeonGeneratorWorldWeakPtr;
-  using ::Star::DungeonGeneratorWorldConstWeakPtr;
-  using ::Star::DungeonGeneratorWorldUPtr;
-  using ::Star::DungeonGeneratorWorldConstUPtr;
-  using ::Star::SpawnerWorldPtr;
-  using ::Star::SpawnerWorldConstPtr;
-  using ::Star::SpawnerWorldWeakPtr;
-  using ::Star::SpawnerWorldConstWeakPtr;
-  using ::Star::SpawnerWorldUPtr;
-  using ::Star::SpawnerWorldConstUPtr;
-  using ::Star::WorldGeneratorPtr;
-  using ::Star::WorldGeneratorConstPtr;
-  using ::Star::WorldGeneratorWeakPtr;
-  using ::Star::WorldGeneratorConstWeakPtr;
-  using ::Star::WorldGeneratorUPtr;
-  using ::Star::WorldGeneratorConstUPtr;
 }

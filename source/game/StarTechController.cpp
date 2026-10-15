@@ -414,8 +414,8 @@ List<LightSource> TechController::lightSources() const {
   return lightSources;
 }
 
-List<AudioInstancePtr> TechController::pullNewAudios() {
-  List<AudioInstancePtr> newAudios;
+List<std::shared_ptr<AudioInstance>> TechController::pullNewAudios() {
+  List<std::shared_ptr<AudioInstance>> newAudios;
 
   for (auto const& animator : m_techAnimators.netElements()) {
     if (animator->isVisible())

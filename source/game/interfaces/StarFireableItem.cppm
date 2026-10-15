@@ -75,14 +75,6 @@ import star.status_effect_item;
 
 namespace Star {
 
-class FireableItem;
-using FireableItemPtr = std::shared_ptr<FireableItem>;
-using FireableItemConstPtr = std::shared_ptr<const FireableItem>;
-using FireableItemWeakPtr = std::weak_ptr<FireableItem>;
-using FireableItemConstWeakPtr = std::weak_ptr<const FireableItem>;
-using FireableItemUPtr = std::unique_ptr<FireableItem>;
-using FireableItemConstUPtr = std::unique_ptr<const FireableItem>;
-
 class FireableItem : public virtual ToolUserItem, public virtual StatusEffectItem {
 public:
   FireableItem();
@@ -166,10 +158,4 @@ export module star.fireable_item;
 
 export namespace Star {
   using ::Star::FireableItem;
-  using ::Star::FireableItemPtr;
-  using ::Star::FireableItemConstPtr;
-  using ::Star::FireableItemWeakPtr;
-  using ::Star::FireableItemConstWeakPtr;
-  using ::Star::FireableItemUPtr;
-  using ::Star::FireableItemConstUPtr;
 }

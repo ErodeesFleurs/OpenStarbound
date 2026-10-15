@@ -207,7 +207,7 @@ import star.team_client;
 
 namespace Star {
 
-TeamBar::TeamBar(MainInterface* mainInterface, UniverseClientPtr client) {
+TeamBar::TeamBar(MainInterface* mainInterface, std::shared_ptr<UniverseClient> client) {
   m_mainInterface = mainInterface;
   m_client = client;
 
@@ -352,7 +352,7 @@ void TeamBar::buildTeamBar() {
     }
 
     String cellName = toString(controlIndex);
-    WidgetPtr cell = list->fetchChild(cellName);
+    std::shared_ptr<Widget> cell = list->fetchChild(cellName);
 
     if (!cell) {
       GuiReader reader;
@@ -423,7 +423,7 @@ void TeamBar::buildTeamBar() {
 
   while (true) {
     String cellName = toString(controlIndex);
-    WidgetPtr cell = list->fetchChild(cellName);
+    std::shared_ptr<Widget> cell = list->fetchChild(cellName);
     if (!cell)
       break;
     cell->hide();

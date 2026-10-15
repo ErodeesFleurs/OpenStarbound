@@ -98,19 +98,6 @@ import star.particle;
 import star.light_source;
 import star.entity_rendering;
 struct PreviewTile;
-using PreviewTilePtr = std::shared_ptr<PreviewTile>;
-using PreviewTileConstPtr = std::shared_ptr<const PreviewTile>;
-using PreviewTileWeakPtr = std::weak_ptr<PreviewTile>;
-using PreviewTileConstWeakPtr = std::weak_ptr<const PreviewTile>;
-using PreviewTileUPtr = std::unique_ptr<PreviewTile>;
-using PreviewTileConstUPtr = std::unique_ptr<const PreviewTile>;
-class PreviewTileTool;
-using PreviewTileToolPtr = std::shared_ptr<PreviewTileTool>;
-using PreviewTileToolConstPtr = std::shared_ptr<const PreviewTileTool>;
-using PreviewTileToolWeakPtr = std::weak_ptr<PreviewTileTool>;
-using PreviewTileToolConstWeakPtr = std::weak_ptr<const PreviewTileTool>;
-using PreviewTileToolUPtr = std::unique_ptr<PreviewTileTool>;
-using PreviewTileToolConstUPtr = std::unique_ptr<const PreviewTileTool>;
 import star.preview_tile_tool;
 import star.renderable_item;
 import star.previewable_item;
@@ -183,27 +170,19 @@ import star.tile_drawer;
 
 export namespace Star {
 
-class MaterialItem;
-using MaterialItemPtr = std::shared_ptr<MaterialItem>;
-using MaterialItemConstPtr = std::shared_ptr<const MaterialItem>;
-using MaterialItemWeakPtr = std::weak_ptr<MaterialItem>;
-using MaterialItemConstWeakPtr = std::weak_ptr<const MaterialItem>;
-using MaterialItemUPtr = std::unique_ptr<MaterialItem>;
-using MaterialItemConstUPtr = std::unique_ptr<const MaterialItem>;
-
 class MaterialItem : public Item, public FireableItem, public PreviewTileTool, public RenderableItem, public PreviewableItem, public BeamItem {
 public:
   MaterialItem(Json const& config, String const& directory, Json const& settings);
   virtual ~MaterialItem() {}
 
-  ItemPtr clone() const override;
+  std::shared_ptr<Item> clone() const override;
 
   void init(ToolUserEntity* owner, ToolHand hand) override;
   void uninit() override;
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
   void render(RenderCallback* renderCallback, EntityRenderLayer renderLayer) override;
 
-  virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  virtual List<Drawable> preview(std::shared_ptr<Player> const& viewer = {}) const override;
   virtual List<Drawable> dropDrawables() const override;
   List<Drawable> nonRotatedDrawables() const override;
 
@@ -301,7 +280,7 @@ MaterialItem::MaterialItem(Json const& config, String const& directory, Json con
   m_lastTileAreaRadiusCache = 0.0f;
 }
 
-ItemPtr MaterialItem::clone() const {
+std::shared_ptr<Item> MaterialItem::clone() const {
   return std::make_shared<MaterialItem>(*this);
 }
 
@@ -405,7 +384,7 @@ void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer) {
   }
 }
 
-List<Drawable> MaterialItem::preview(PlayerPtr const&) const {
+List<Drawable> MaterialItem::preview(std::shared_ptr<Player> const&) const {
   return generatedPreview();
 }
 
@@ -492,7 +471,7 @@ std::size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
   if (!player)
     return 0;
   
-  ItemPtr beamAxePtr = player->essentialItem(EssentialItem::BeamAxe);
+  std::shared_ptr<Item> beamAxePtr = player->essentialItem(EssentialItem::BeamAxe);
   if (!beamAxePtr)
     return 0;
   

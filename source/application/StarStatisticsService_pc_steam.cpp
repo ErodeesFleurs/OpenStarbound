@@ -28,7 +28,7 @@ import star.logging;
 
 namespace Star {
 
-SteamStatisticsService::SteamStatisticsService(PcPlatformServicesStatePtr state)
+SteamStatisticsService::SteamStatisticsService(std::shared_ptr<PcPlatformServicesState> state)
 : m_state(std::move(state)),
   m_callbackUserStatsReceived(m_state->steamDispatch, this, &SteamStatisticsService::onUserStatsReceived),
   m_callbackUserStatsStored(m_state->steamDispatch, this, &SteamStatisticsService::onUserStatsStored),

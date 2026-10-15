@@ -131,7 +131,7 @@ bool ItemDescriptor::matches(ItemDescriptor const& other, bool exactMatch) const
   return other.name() == m_name && (!exactMatch || other.parameters() == m_parameters);
 }
 
-bool ItemDescriptor::matches(ItemConstPtr const& other, bool exactMatch) const {
+bool ItemDescriptor::matches(std::shared_ptr<Item const> const& other, bool exactMatch) const {
   return other->name() == m_name && (!exactMatch || other->parameters() == m_parameters);
 }
 

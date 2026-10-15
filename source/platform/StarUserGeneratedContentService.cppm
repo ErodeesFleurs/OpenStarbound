@@ -6,14 +6,6 @@ import star.string;
 
 namespace Star {
 
-class UserGeneratedContentService;
-using UserGeneratedContentServicePtr = std::shared_ptr<UserGeneratedContentService>;
-using UserGeneratedContentServiceConstPtr = std::shared_ptr<UserGeneratedContentService const>;
-using UserGeneratedContentServiceWeakPtr = std::weak_ptr<UserGeneratedContentService>;
-using UserGeneratedContentServiceConstWeakPtr = std::weak_ptr<UserGeneratedContentService const>;
-using UserGeneratedContentServiceUPtr = std::unique_ptr<UserGeneratedContentService>;
-using UserGeneratedContentServiceConstUPtr = std::unique_ptr<UserGeneratedContentService const>;
-
 class UserGeneratedContentService {
 public:
   enum class UGCState {
@@ -42,10 +34,4 @@ export module star.user_generated_content_service;
 
 export namespace Star {
   using ::Star::UserGeneratedContentService;
-  using ::Star::UserGeneratedContentServicePtr;
-  using ::Star::UserGeneratedContentServiceConstPtr;
-  using ::Star::UserGeneratedContentServiceWeakPtr;
-  using ::Star::UserGeneratedContentServiceConstWeakPtr;
-  using ::Star::UserGeneratedContentServiceUPtr;
-  using ::Star::UserGeneratedContentServiceConstUPtr;
 }

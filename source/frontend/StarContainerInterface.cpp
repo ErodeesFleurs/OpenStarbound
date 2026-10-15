@@ -205,7 +205,7 @@ import star.item_bag;
 
 namespace Star {
 
-ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, ContainerInteractorPtr containerInteractor) {
+ContainerPane::ContainerPane(std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor) {
   m_worldClient = worldClient;
   m_player = player;
   m_containerInteractor = std::move(containerInteractor);
@@ -251,7 +251,7 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
       return;
     }
 
-    if (ItemPtr slotItem = callbackContainer->itemBag()->at(index)) {
+    if (std::shared_ptr<Item> slotItem = callbackContainer->itemBag()->at(index)) {
       auto swapItem = m_player->inventory()->swapSlotItem();
       if (!swapItem || swapItem->empty() || swapItem->couldStack(slotItem)) {
         std::size_t count = swapItem ? swapItem->couldStack(slotItem) : slotItem->maxStack();
@@ -402,8 +402,8 @@ bool ContainerPane::giveContainerResult(ContainerResult result) {
   return true;
 }
 
-PanePtr ContainerPane::createTooltip(Vec2I const& screenPosition) {
-  ItemPtr item;
+std::shared_ptr<Pane> ContainerPane::createTooltip(Vec2I const& screenPosition) {
+  std::shared_ptr<Item> item;
   if (auto child = getChildAt(screenPosition)) {
     if (auto itemSlot = as<ItemSlotWidget>(child))
       item = itemSlot->item();

@@ -36,26 +36,12 @@ import star.net_element_basic_fields;
 namespace Star {
 
 class World;
+class PathController;
 
 struct ActorMovementControllerExceptionTag {
   static constexpr char const* name() { return "ActorMovementControllerException"; }
 };
 using ActorMovementControllerException = StarError<ActorMovementControllerExceptionTag, MovementControllerException>;
-
-class ActorMovementController;
-using ActorMovementControllerPtr = std::shared_ptr<ActorMovementController>;
-using ActorMovementControllerConstPtr = std::shared_ptr<const ActorMovementController>;
-using ActorMovementControllerWeakPtr = std::weak_ptr<ActorMovementController>;
-using ActorMovementControllerConstWeakPtr = std::weak_ptr<const ActorMovementController>;
-using ActorMovementControllerUPtr = std::unique_ptr<ActorMovementController>;
-using ActorMovementControllerConstUPtr = std::unique_ptr<const ActorMovementController>;
-class PathController;
-using PathControllerPtr = std::shared_ptr<PathController>;
-using PathControllerConstPtr = std::shared_ptr<const PathController>;
-using PathControllerWeakPtr = std::weak_ptr<PathController>;
-using PathControllerConstWeakPtr = std::weak_ptr<const PathController>;
-using PathControllerUPtr = std::unique_ptr<PathController>;
-using PathControllerConstUPtr = std::unique_ptr<const PathController>;
 
 struct ActorJumpProfile {
   friend DataStream& operator>>(DataStream& ds, ActorJumpProfile& movementParameters);
@@ -239,7 +225,7 @@ public:
   void setAnchorState(EntityAnchorState anchorState);
   void resetAnchorState();
   Maybe<EntityAnchorState> anchorState() const;
-  EntityAnchorConstPtr entityAnchor() const;
+  std::shared_ptr<EntityAnchor const> entityAnchor() const;
 
   // ActorMovementController position and rotation honor the entity anchor, if
   // an anchor is set.
@@ -336,7 +322,7 @@ private:
   NetElementBool m_groundMovement;
   NetElementBool m_liquidMovement;
   NetElementData<Maybe<EntityAnchorState>> m_anchorState;
-  EntityAnchorConstPtr m_entityAnchor;
+  std::shared_ptr<EntityAnchor const> m_entityAnchor;
 
   // Command data
 
@@ -358,7 +344,7 @@ private:
 
   Maybe<std::pair<Vec2F, bool>> m_controlPathMove;
   Maybe<std::pair<Vec2F, bool>> m_pathMoveResult;
-  PathControllerPtr m_pathController;
+  std::shared_ptr<PathController> m_pathController;
 
   ActorMovementParameters m_controlParameters;
   ActorMovementModifiers m_controlModifiers;
@@ -405,7 +391,7 @@ private:
 
   Maybe<Vec2F> m_startPosition;
   Maybe<Vec2F> m_targetPosition;
-  PlatformerAStar::PathFinderPtr m_pathFinder;
+  std::shared_ptr<PlatformerAStar::PathFinder> m_pathFinder;
 
   Maybe<Direction> m_controlFace;
 
@@ -425,17 +411,5 @@ export namespace Star {
   using ::Star::ActorMovementParameters;
   using ::Star::ActorMovementModifiers;
   using ::Star::ActorMovementController;
-  using ::Star::ActorMovementControllerPtr;
-  using ::Star::ActorMovementControllerConstPtr;
-  using ::Star::ActorMovementControllerWeakPtr;
-  using ::Star::ActorMovementControllerConstWeakPtr;
-  using ::Star::ActorMovementControllerUPtr;
-  using ::Star::ActorMovementControllerConstUPtr;
   using ::Star::PathController;
-  using ::Star::PathControllerPtr;
-  using ::Star::PathControllerConstPtr;
-  using ::Star::PathControllerWeakPtr;
-  using ::Star::PathControllerConstWeakPtr;
-  using ::Star::PathControllerUPtr;
-  using ::Star::PathControllerConstUPtr;
 }

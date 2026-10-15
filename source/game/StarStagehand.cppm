@@ -48,20 +48,7 @@ import star.net_element_system;
 
 namespace Star {
 
-class Stagehand;
-using StagehandPtr = std::shared_ptr<Stagehand>;
-using StagehandConstPtr = std::shared_ptr<const Stagehand>;
-using StagehandWeakPtr = std::weak_ptr<Stagehand>;
-using StagehandConstWeakPtr = std::weak_ptr<const Stagehand>;
-using StagehandUPtr = std::unique_ptr<Stagehand>;
-using StagehandConstUPtr = std::unique_ptr<const Stagehand>;
 class BehaviorState;
-using BehaviorStatePtr = std::shared_ptr<BehaviorState>;
-using BehaviorStateConstPtr = std::shared_ptr<const BehaviorState>;
-using BehaviorStateWeakPtr = std::weak_ptr<BehaviorState>;
-using BehaviorStateConstWeakPtr = std::weak_ptr<const BehaviorState>;
-using BehaviorStateUPtr = std::unique_ptr<BehaviorState>;
-using BehaviorStateConstUPtr = std::unique_ptr<const BehaviorState>;
 
 class Stagehand : public virtual ScriptedEntity {
 public:
@@ -127,7 +114,7 @@ private:
   NetElementData<Maybe<String>> m_uniqueIdNetState;
 
   bool m_scripted = false;
-  List<BehaviorStatePtr> m_behaviors;
+  List<std::shared_ptr<BehaviorState>> m_behaviors;
   LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>
       m_scriptComponent;
 };
@@ -138,17 +125,5 @@ export module star.stagehand;
 
 export namespace Star {
   using ::Star::Stagehand;
-  using ::Star::StagehandPtr;
-  using ::Star::StagehandConstPtr;
-  using ::Star::StagehandWeakPtr;
-  using ::Star::StagehandConstWeakPtr;
-  using ::Star::StagehandUPtr;
-  using ::Star::StagehandConstUPtr;
   using ::Star::BehaviorState;
-  using ::Star::BehaviorStatePtr;
-  using ::Star::BehaviorStateConstPtr;
-  using ::Star::BehaviorStateWeakPtr;
-  using ::Star::BehaviorStateConstWeakPtr;
-  using ::Star::BehaviorStateUPtr;
-  using ::Star::BehaviorStateConstUPtr;
 }

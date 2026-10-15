@@ -62,31 +62,31 @@ void TenantDatabase::cleanup() {
   m_tenantCache.cleanup();
 }
 
-TenantPtr TenantDatabase::getTenant(String const& name) const {
+std::shared_ptr<Tenant> TenantDatabase::getTenant(String const& name) const {
   MutexLocker locker(m_cacheMutex);
   return m_tenantCache.get(name,
-      [this](String const& name) -> TenantPtr {
+      [this](String const& name) -> std::shared_ptr<Tenant> {
         if (auto path = m_paths.maybe(name))
           return readTenant(*path);
         throw TenantException::format("No such tenant named '{}'", name);
       });
 }
 
-List<TenantPtr> TenantDatabase::getMatchingTenants(StringMap<unsigned> const& colonyTags) const {
+List<std::shared_ptr<Tenant>> TenantDatabase::getMatchingTenants(StringMap<unsigned> const& colonyTags) const {
   // This implementation loops over every tenant. Smarter implementations could
   // be written if it becomes a bottleneck, depending on how colonyTags end up
   // being
   // used, how many there are, how many tenants have similar criteria, etc.
-  List<TenantPtr> matchingTenants;
+  List<std::shared_ptr<Tenant>> matchingTenants;
   for (String const& name : m_paths.keys()) {
-    TenantPtr tenant = getTenant(name);
+    std::shared_ptr<Tenant> tenant = getTenant(name);
     if (tenant->criteriaSatisfied(colonyTags))
       matchingTenants.append(tenant);
   }
   return matchingTenants;
 }
 
-TenantPtr TenantDatabase::readTenant(String const& path) {
+std::shared_ptr<Tenant> TenantDatabase::readTenant(String const& path) {
   try {
     auto assets = Root::singleton().assets();
     Json config = assets->json(path);

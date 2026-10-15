@@ -41,14 +41,6 @@ struct MovementControllerExceptionTag {
 };
 using MovementControllerException = StarError<MovementControllerExceptionTag, StarException>;
 
-class MovementController;
-using MovementControllerPtr = std::shared_ptr<MovementController>;
-using MovementControllerConstPtr = std::shared_ptr<const MovementController>;
-using MovementControllerWeakPtr = std::weak_ptr<MovementController>;
-using MovementControllerConstWeakPtr = std::weak_ptr<const MovementController>;
-using MovementControllerUPtr = std::unique_ptr<MovementController>;
-using MovementControllerConstUPtr = std::unique_ptr<const MovementController>;
-
 // List of all movement parameters that define a specific sort of movable
 // object.  Each parameter is optional so that this structure can be used to
 // selectively merge a specific set of parameters on top of another.
@@ -346,10 +338,4 @@ export namespace Star {
   using ::Star::MovementControllerException;
   using ::Star::MovementParameters;
   using ::Star::MovementController;
-  using ::Star::MovementControllerPtr;
-  using ::Star::MovementControllerConstPtr;
-  using ::Star::MovementControllerWeakPtr;
-  using ::Star::MovementControllerConstWeakPtr;
-  using ::Star::MovementControllerUPtr;
-  using ::Star::MovementControllerConstUPtr;
 }

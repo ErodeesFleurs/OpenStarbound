@@ -48,7 +48,7 @@ import star.particle_manager;
 import star.line;
 namespace Star {
 
-ParticleManager::ParticleManager(WorldGeometry const& worldGeometry, ClientTileSectorArrayPtr const& tileSectorArray)
+ParticleManager::ParticleManager(WorldGeometry const& worldGeometry, std::shared_ptr<ClientTileSectorArray> const& tileSectorArray)
   : m_worldGeometry(worldGeometry), m_undergroundLevel(0.0f), m_tileSectorArray(tileSectorArray) {}
 
 void ParticleManager::add(Particle particle) {

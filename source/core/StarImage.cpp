@@ -25,12 +25,12 @@ void readPngData(png_structp pngPtr, png_bytep data, png_size_t length) {
   ((IODevice*)png_get_io_ptr(pngPtr))->readFull((char*)data, length);
 };
 
-bool Image::isPng(IODevicePtr device) {
+bool Image::isPng(std::shared_ptr<IODevice> device) {
   png_byte header[8]{};
   return !png_sig_cmp(header, 0, device->readAbsolute(0, (char*)header, sizeof(header)));
 }
 
-Image Image::readPng(IODevicePtr device) {
+Image Image::readPng(std::shared_ptr<IODevice> device) {
   png_byte header[8]{};
   device->readFull((char*)header, sizeof(header));
 
@@ -126,7 +126,7 @@ Image Image::readPng(IODevicePtr device) {
   return image;
 }
 
-std::tuple<Vec2U, PixelFormat> Image::readPngMetadata(IODevicePtr device) {
+std::tuple<Vec2U, PixelFormat> Image::readPngMetadata(std::shared_ptr<IODevice> device) {
   png_byte header[8];
   device->readFull((char*)header, sizeof(header));
 
@@ -479,7 +479,7 @@ Image Image::convert(PixelFormat pixelFormat) const {
   return converted;
 }
 
-void Image::writePng(IODevicePtr device) const {
+void Image::writePng(std::shared_ptr<IODevice> device) const {
   auto writePngData = [](png_structp pngPtr, png_bytep data, png_size_t length) {
     IODevice* device = (IODevice*)png_get_io_ptr(pngPtr);
     device->writeFull((char*)data, length);

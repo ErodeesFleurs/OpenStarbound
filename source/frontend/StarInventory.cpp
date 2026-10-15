@@ -219,7 +219,7 @@ import star.statistics;
 
 namespace Star {
 
-InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerInteractorPtr containerInteractor) {
+InventoryPane::InventoryPane(MainInterface* parent, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor) {
   m_parent = parent;
   m_player = std::move(player);
   m_containerInteractor = std::move(containerInteractor);
@@ -244,7 +244,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
           m_containerSource = inventorySlot;
           m_expectingSwap = true;
         } else {
-          for (PanePtr& pane : m_parent->paneManager()->getAllPanes()) {
+          for (std::shared_ptr<Pane>& pane : m_parent->paneManager()->getAllPanes()) {
             auto remainder = pane->shiftItemFromInventory(inventory->itemsAt(inventorySlot));
             if (remainder.isValid()) {
               inventory->setItem(inventorySlot, remainder.value());
@@ -260,7 +260,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
 
   auto rightClickCallback = [this](InventorySlot slot) {
     auto inventory = m_player->inventory();
-    if (ItemPtr slotItem = inventory->itemsAt(slot)) {
+    if (std::shared_ptr<Item> slotItem = inventory->itemsAt(slot)) {
       auto swapItem = inventory->swapSlotItem();
       if (!swapItem || swapItem->empty() || swapItem->couldStack(slotItem)) {
         std::uint64_t count = swapItem ? swapItem->couldStack(slotItem) : slotItem->maxStack();
@@ -436,8 +436,8 @@ void InventoryPane::displayed() {
   m_itemGrids[m_selectedTab]->indicateChangedSlots();
 }
 
-PanePtr InventoryPane::createTooltip(Vec2I const& screenPosition) {
-  ItemPtr item;
+std::shared_ptr<Pane> InventoryPane::createTooltip(Vec2I const& screenPosition) {
+  std::shared_ptr<Item> item;
   if (auto child = getChildAt(screenPosition)) {
     if (auto itemSlot = as<ItemSlotWidget>(child)) {
       item = itemSlot->item();
@@ -539,7 +539,7 @@ void InventoryPane::update(float dt) {
   auto inventory = m_player->inventory();
   auto context = Widget::context();
 
-  HashSet<ItemPtr> customBarItems;
+  HashSet<std::shared_ptr<Item>> customBarItems;
   for (std::uint8_t i = 0; i < inventory->customBarIndexes(); ++i) {
     if (auto primarySlot = inventory->customBarPrimarySlot(i)) {
       if (auto primaryItem = inventory->itemsAt(*primarySlot))
@@ -589,7 +589,7 @@ void InventoryPane::update(float dt) {
     }
   }
 
-  if (ItemPtr swapSlot = inventory->swapSlotItem()) {
+  if (std::shared_ptr<Item> swapSlot = inventory->swapSlotItem()) {
     if (!PlayerInventory::itemAllowedInBag(swapSlot, m_selectedTab)) {
       for (auto& pair : m_itemGrids) {
         if (pair.first != m_selectedTab && PlayerInventory::itemAllowedInBag(swapSlot, pair.first)) {

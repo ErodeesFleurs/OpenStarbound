@@ -22,9 +22,7 @@ import star.desktop_service;
 import star.image;
 import star.application_controller;
 struct OpusDecoder;
-typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
 struct OpusEncoder;
-typedef std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)> OpusEncoderPtr;
 import star.voice;
 
 module star.voice_lua_bindings;

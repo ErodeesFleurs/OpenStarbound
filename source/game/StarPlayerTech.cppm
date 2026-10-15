@@ -17,14 +17,6 @@ struct PlayerTechExceptionTag {
 };
 using PlayerTechException = StarError<PlayerTechExceptionTag, StarException>;
 
-class PlayerTech;
-using PlayerTechPtr = std::shared_ptr<PlayerTech>;
-using PlayerTechConstPtr = std::shared_ptr<const PlayerTech>;
-using PlayerTechWeakPtr = std::weak_ptr<PlayerTech>;
-using PlayerTechConstWeakPtr = std::weak_ptr<const PlayerTech>;
-using PlayerTechUPtr = std::unique_ptr<PlayerTech>;
-using PlayerTechConstUPtr = std::unique_ptr<const PlayerTech>;
-
 // Set of player techs, techs can be either unavailable, available but not
 // enabled, enabled but not equipped, or equipped.
 class PlayerTech {
@@ -63,12 +55,6 @@ export module star.player_tech;
 
 export namespace Star {
 using ::Star::PlayerTech;
-using ::Star::PlayerTechPtr;
-using ::Star::PlayerTechConstPtr;
-using ::Star::PlayerTechWeakPtr;
-using ::Star::PlayerTechConstWeakPtr;
-using ::Star::PlayerTechUPtr;
-using ::Star::PlayerTechConstUPtr;
 using ::Star::PlayerTechExceptionTag;
 using ::Star::PlayerTechException;
 }

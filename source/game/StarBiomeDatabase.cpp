@@ -203,7 +203,7 @@ WeatherType BiomeDatabase::weatherType(String const& name) const {
   }
 }
 
-BiomePtr BiomeDatabase::createBiome(String const& biomeName, std::uint64_t seed, float verticalMidPoint, float threatLevel) const {
+std::shared_ptr<Biome> BiomeDatabase::createBiome(String const& biomeName, std::uint64_t seed, float verticalMidPoint, float threatLevel) const {
   if (!m_biomes.contains(biomeName))
     throw BiomeException(strf("No such biome '{}'", biomeName));
 

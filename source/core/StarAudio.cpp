@@ -48,26 +48,26 @@ float amplitudeToPerceptual(float amp, float normalizedMax, float range, float b
 namespace {
   struct WaveData {
 #ifdef STAR_STREAM_AUDIO
-    IODevicePtr device;
+    std::shared_ptr<IODevice> device;
     unsigned channels;
     unsigned sampleRate;
     std::size_t dataSize; // get the data size from the header to avoid id3 tag
 #else
-    ByteArrayPtr byteArray;
+    std::shared_ptr<ByteArray> byteArray;
     unsigned channels;
     unsigned sampleRate;
 #endif
   };
 
   template <typename T>
-  T readLEType(IODevicePtr const& device) {
+  T readLEType(std::shared_ptr<IODevice> const& device) {
     T t;
     device->readFull((char*)&t, sizeof(t));
     fromByteOrder(ByteOrder::LittleEndian, (char*)&t, sizeof(t));
     return t;
   }
 
-  bool isUncompressed(IODevicePtr device) {
+  bool isUncompressed(std::shared_ptr<IODevice> device) {
     const std::size_t sigLength = 4;
     std::unique_ptr<char[]> riffSig(new char[sigLength + 1]()); // RIFF\0
     std::unique_ptr<char[]> waveSig(new char[sigLength + 1]()); // WAVE\0
@@ -84,7 +84,7 @@ namespace {
     return false;
   }
 
-  WaveData parseWav(IODevicePtr device) {
+  WaveData parseWav(std::shared_ptr<IODevice> device) {
     const std::size_t sigLength = 4;
     std::unique_ptr<char[]> riffSig(new char[sigLength + 1]()); // RIFF\0
     std::unique_ptr<char[]> waveSig(new char[sigLength + 1]()); // WAVE\0
@@ -167,7 +167,7 @@ namespace {
     
     return WaveData{device, wavChannels, wavSampleRate, wavDataSize};
     #else
-    ByteArrayPtr pcmData = std::make_shared<ByteArray>();
+    std::shared_ptr<ByteArray> pcmData = std::make_shared<ByteArray>();
     pcmData->resize(wavDataSize);
 
     // Copy across data and perform and endianess conversion if needed
@@ -205,7 +205,7 @@ public:
       throw AudioException("Cloned audio device has no data");
   }
 
-  CompressedAudioImpl(IODevicePtr audioData)
+  CompressedAudioImpl(std::shared_ptr<IODevice> audioData)
       : m_audioData(audioData->clone())// Clone instead of taking ownership
         ,
         m_deviceCallbacks(m_audioData)// Pass reference
@@ -235,7 +235,7 @@ public:
     m_vorbisInfo = nullptr;
   }
 
-  CompressedAudioImpl(IODevicePtr audioData) {
+  CompressedAudioImpl(std::shared_ptr<IODevice> audioData) {
     audioData->open(IOMode::Read);
     audioData->seek(0);
     m_audioData = std::make_shared<ByteArray>(audioData->readBytes((std::size_t)audioData->size()));
@@ -333,10 +333,10 @@ public:
   
 private:
   #ifdef STAR_STREAM_AUDIO
-  IODevicePtr m_audioData;  
+  std::shared_ptr<IODevice> m_audioData;  
   IODeviceCallbacks m_deviceCallbacks;
   #else
-  ByteArrayConstPtr m_audioData;
+  std::shared_ptr<ByteArray const> m_audioData;
   ExternalBuffer m_memoryFile;
   #endif
   ov_callbacks m_callbacks;
@@ -379,7 +379,7 @@ public:
     m_device = memDevice;
   }
 
-  UncompressedAudioImpl(IODevicePtr device, unsigned channels, unsigned sampleRate, std::size_t dataSize)
+  UncompressedAudioImpl(std::shared_ptr<IODevice> device, unsigned channels, unsigned sampleRate, std::size_t dataSize)
     : m_device(std::move(device))
     , m_channels(channels)
     , m_sampleRate(sampleRate)
@@ -418,7 +418,7 @@ public:
     m_memoryFile.reset(m_audioData->ptr(), m_audioData->size());
   }
 
-  UncompressedAudioImpl(ByteArrayConstPtr data, unsigned channels, unsigned sampleRate) {
+  UncompressedAudioImpl(std::shared_ptr<ByteArray const> data, unsigned channels, unsigned sampleRate) {
     m_channels = channels;
     m_sampleRate = sampleRate;
     m_audioData = std::move(data);
@@ -504,7 +504,7 @@ public:
 
 private:
   #ifdef STAR_STREAM_AUDIO
-  IODevicePtr m_device;
+  std::shared_ptr<IODevice> m_device;
   #endif
   unsigned m_channels;
   unsigned m_sampleRate;
@@ -512,12 +512,12 @@ private:
   std::size_t m_dataSize;
   std::size_t m_dataStart;
   #else
-  ByteArrayConstPtr m_audioData;
+  std::shared_ptr<ByteArray const> m_audioData;
   ExternalBuffer m_memoryFile;
   #endif
 };
 
-Audio::Audio(IODevicePtr device, String name) {
+Audio::Audio(std::shared_ptr<IODevice> device, String name) {
   m_name = name;
   if (!device->isOpen())
     device->open(IOMode::Read);

@@ -71,10 +71,10 @@ import star.item_bag;
 
 namespace Star {
 
-ItemGridWidget::ItemGridWidget(ItemBagConstPtr bag, Vec2I const& dimensions, Vec2I const& spacing, String const& backingImage, unsigned bagOffset)
+ItemGridWidget::ItemGridWidget(std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& spacing, String const& backingImage, unsigned bagOffset)
   : ItemGridWidget(bag, dimensions, {spacing[0], 0}, {0, spacing[1]}, backingImage, bagOffset) {}
 
-ItemGridWidget::ItemGridWidget(ItemBagConstPtr bag, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset)
+ItemGridWidget::ItemGridWidget(std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset)
   : m_bagOffset(bagOffset), m_dimensions(dimensions), m_rowSpacing(rowSpacing), m_columnSpacing(columnSpacing), m_backingImage(backingImage) {
   m_selectedIndex = 0;
   m_progress = 1;
@@ -98,11 +98,11 @@ ItemGridWidget::ItemGridWidget(ItemBagConstPtr bag, Vec2I const& dimensions, Vec
   markAsContainer();
 }
 
-ItemBagConstPtr ItemGridWidget::bag() const {
+std::shared_ptr<ItemBag const> ItemGridWidget::bag() const {
   return m_bag;
 }
 
-ItemPtr ItemGridWidget::itemAt(Vec2I const& position) const {
+std::shared_ptr<Item> ItemGridWidget::itemAt(Vec2I const& position) const {
   auto pos = bagLocationAt(position);
   if (pos != NPos && m_bag)
     return m_bag->at(pos);
@@ -110,24 +110,24 @@ ItemPtr ItemGridWidget::itemAt(Vec2I const& position) const {
   return {};
 }
 
-ItemPtr ItemGridWidget::itemAt(std::size_t index) const {
+std::shared_ptr<Item> ItemGridWidget::itemAt(std::size_t index) const {
   if (index < m_bag->size())
     return m_bag->at(index);
   return {};
 }
 
-ItemPtr ItemGridWidget::selectedItem() const {
+std::shared_ptr<Item> ItemGridWidget::selectedItem() const {
   return itemAt(selectedIndex());
 }
 
-ItemSlotWidgetPtr ItemGridWidget::itemWidgetAt(Vec2I const& position) const {
+std::shared_ptr<ItemSlotWidget> ItemGridWidget::itemWidgetAt(Vec2I const& position) const {
   auto pos = bagLocationAt(position);
   if (pos != NPos)
     return m_slots[pos];
   return {};
 }
 
-ItemSlotWidgetPtr ItemGridWidget::itemWidgetAt(std::size_t index) const {
+std::shared_ptr<ItemSlotWidget> ItemGridWidget::itemWidgetAt(std::size_t index) const {
   if (index < m_slots.size())
     return m_slots[index];
   return {};
@@ -219,7 +219,7 @@ void ItemGridWidget::setMiddleClickCallback(WidgetCallbackFunc callback) {
   m_middleClickCallback = callback;
 }
 
-void ItemGridWidget::setItemBag(ItemBagConstPtr bag) {
+void ItemGridWidget::setItemBag(std::shared_ptr<ItemBag const> bag) {
   m_bag = bag;
 
   if (!m_bag)

@@ -34,40 +34,9 @@ import star.world_camera;
 namespace Star {
 
 class GuiContext;
-using GuiContextPtr = std::shared_ptr<GuiContext>;
-using GuiContextConstPtr = std::shared_ptr<GuiContext const>;
-using GuiContextWeakPtr = std::weak_ptr<GuiContext>;
-using GuiContextConstWeakPtr = std::weak_ptr<GuiContext const>;
-using GuiContextUPtr = std::unique_ptr<GuiContext>;
-using GuiContextConstUPtr = std::unique_ptr<GuiContext const>;
 class AssetTextureGroup;
-using AssetTextureGroupPtr = std::shared_ptr<AssetTextureGroup>;
-using AssetTextureGroupConstPtr = std::shared_ptr<AssetTextureGroup const>;
-using AssetTextureGroupWeakPtr = std::weak_ptr<AssetTextureGroup>;
-using AssetTextureGroupConstWeakPtr = std::weak_ptr<AssetTextureGroup const>;
-using AssetTextureGroupUPtr = std::unique_ptr<AssetTextureGroup>;
-using AssetTextureGroupConstUPtr = std::unique_ptr<AssetTextureGroup const>;
 class WorldClient;
-using WorldClientPtr = std::shared_ptr<WorldClient>;
-using WorldClientConstPtr = std::shared_ptr<WorldClient const>;
-using WorldClientWeakPtr = std::weak_ptr<WorldClient>;
-using WorldClientConstWeakPtr = std::weak_ptr<WorldClient const>;
-using WorldClientUPtr = std::unique_ptr<WorldClient>;
-using WorldClientConstUPtr = std::unique_ptr<WorldClient const>;
-class ChatBubbleManager;
-using ChatBubbleManagerPtr = std::shared_ptr<ChatBubbleManager>;
-using ChatBubbleManagerConstPtr = std::shared_ptr<ChatBubbleManager const>;
-using ChatBubbleManagerWeakPtr = std::weak_ptr<ChatBubbleManager>;
-using ChatBubbleManagerConstWeakPtr = std::weak_ptr<ChatBubbleManager const>;
-using ChatBubbleManagerUPtr = std::unique_ptr<ChatBubbleManager>;
-using ChatBubbleManagerConstUPtr = std::unique_ptr<ChatBubbleManager const>;
 class StoredFunction;
-using StoredFunctionPtr = std::shared_ptr<StoredFunction>;
-using StoredFunctionConstPtr = std::shared_ptr<StoredFunction const>;
-using StoredFunctionWeakPtr = std::weak_ptr<StoredFunction>;
-using StoredFunctionConstWeakPtr = std::weak_ptr<StoredFunction const>;
-using StoredFunctionUPtr = std::unique_ptr<StoredFunction>;
-using StoredFunctionConstUPtr = std::unique_ptr<StoredFunction const>;
 
 class ChatBubbleManager {
 public:
@@ -77,7 +46,7 @@ public:
 
   void addChatActions(List<ChatAction> chatActions, bool silent = false);
 
-  void update(float dt, WorldClientPtr world);
+  void update(float dt, std::shared_ptr<WorldClient> world);
   void render();
 
 private:
@@ -108,7 +77,7 @@ private:
 
   // Calculate the alpha for a speech bubble based on distance from player to
   // edge of screen
-  std::uint8_t calcDistanceFadeAlpha(Vec2F bubbleScreenPosition, StoredFunctionPtr fadeFunction) const;
+  std::uint8_t calcDistanceFadeAlpha(Vec2F bubbleScreenPosition, std::shared_ptr<StoredFunction> fadeFunction) const;
 
   RectF bubbleImageRect(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio);
   void drawBubbleImage(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio, int alpha);
@@ -146,8 +115,8 @@ private:
 
   float m_furthestVisibleTextDistance; // 0.0 is directly over the player, 1.0
   // is the edge of the window
-  StoredFunctionPtr m_textFadeFunction;
-  StoredFunctionPtr m_bubbleFadeFunction;
+  std::shared_ptr<StoredFunction> m_textFadeFunction;
+  std::shared_ptr<StoredFunction> m_bubbleFadeFunction;
 };
 
 }
@@ -156,38 +125,8 @@ export module star.chat_bubble_manager;
 
 export namespace Star {
   using ::Star::GuiContext;
-  using ::Star::GuiContextPtr;
-  using ::Star::GuiContextConstPtr;
-  using ::Star::GuiContextWeakPtr;
-  using ::Star::GuiContextConstWeakPtr;
-  using ::Star::GuiContextUPtr;
-  using ::Star::GuiContextConstUPtr;
   using ::Star::AssetTextureGroup;
-  using ::Star::AssetTextureGroupPtr;
-  using ::Star::AssetTextureGroupConstPtr;
-  using ::Star::AssetTextureGroupWeakPtr;
-  using ::Star::AssetTextureGroupConstWeakPtr;
-  using ::Star::AssetTextureGroupUPtr;
-  using ::Star::AssetTextureGroupConstUPtr;
   using ::Star::WorldClient;
-  using ::Star::WorldClientPtr;
-  using ::Star::WorldClientConstPtr;
-  using ::Star::WorldClientWeakPtr;
-  using ::Star::WorldClientConstWeakPtr;
-  using ::Star::WorldClientUPtr;
-  using ::Star::WorldClientConstUPtr;
   using ::Star::ChatBubbleManager;
-  using ::Star::ChatBubbleManagerPtr;
-  using ::Star::ChatBubbleManagerConstPtr;
-  using ::Star::ChatBubbleManagerWeakPtr;
-  using ::Star::ChatBubbleManagerConstWeakPtr;
-  using ::Star::ChatBubbleManagerUPtr;
-  using ::Star::ChatBubbleManagerConstUPtr;
   using ::Star::StoredFunction;
-  using ::Star::StoredFunctionPtr;
-  using ::Star::StoredFunctionConstPtr;
-  using ::Star::StoredFunctionWeakPtr;
-  using ::Star::StoredFunctionConstWeakPtr;
-  using ::Star::StoredFunctionUPtr;
-  using ::Star::StoredFunctionConstUPtr;
 }

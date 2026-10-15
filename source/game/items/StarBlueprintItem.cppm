@@ -106,18 +106,10 @@ export module star.blueprint_item;
 
 export namespace Star {
 
-class BlueprintItem;
-using BlueprintItemPtr = std::shared_ptr<BlueprintItem>;
-using BlueprintItemConstPtr = std::shared_ptr<const BlueprintItem>;
-using BlueprintItemWeakPtr = std::weak_ptr<BlueprintItem>;
-using BlueprintItemConstWeakPtr = std::weak_ptr<const BlueprintItem>;
-using BlueprintItemUPtr = std::unique_ptr<BlueprintItem>;
-using BlueprintItemConstUPtr = std::unique_ptr<const BlueprintItem>;
-
 class BlueprintItem : public Item, public SwingableItem {
 public:
   BlueprintItem(Json const& config, String const& directory, Json const& data);
-  virtual ItemPtr clone() const override;
+  virtual std::shared_ptr<Item> clone() const override;
 
   virtual List<Drawable> drawables() const override;
 
@@ -153,7 +145,7 @@ BlueprintItem::BlueprintItem(Json const& config, String const& directory, Json c
   setPrice(int(price() * Root::singleton().assets()->json("/items/defaultParameters.config:blueprintPriceFactor").toFloat()));
 }
 
-ItemPtr BlueprintItem::clone() const {
+std::shared_ptr<Item> BlueprintItem::clone() const {
   return std::make_shared<BlueprintItem>(*this);
 }
 

@@ -110,14 +110,6 @@ import star.net_element_group;
 
 namespace Star {
 
-class ActiveItem;
-using ActiveItemPtr = std::shared_ptr<ActiveItem>;
-using ActiveItemConstPtr = std::shared_ptr<const ActiveItem>;
-using ActiveItemWeakPtr = std::weak_ptr<ActiveItem>;
-using ActiveItemConstWeakPtr = std::weak_ptr<const ActiveItem>;
-using ActiveItemUPtr = std::unique_ptr<ActiveItem>;
-using ActiveItemConstUPtr = std::unique_ptr<const ActiveItem>;
-
 class ActiveItem :
   public Item,
   public DurabilityItem,
@@ -127,7 +119,7 @@ public:
   ActiveItem(Json const& config, String const& directory, Json const& parameters = JsonObject());
   ActiveItem(ActiveItem const& rhs);
 
-  ItemPtr clone() const override;
+  std::shared_ptr<Item> clone() const override;
 
   void init(ToolUserEntity* owner, ToolHand hand) override;
   void uninit() override;
@@ -153,7 +145,7 @@ public:
   List<Drawable> handDrawables() const;
   List<std::pair<Drawable, Maybe<EntityRenderLayer>>> entityDrawables() const;
   List<LightSource> lights() const;
-  List<AudioInstancePtr> pullNewAudios();
+  List<std::shared_ptr<AudioInstance>> pullNewAudios();
   List<Particle> pullNewParticles();
 
   Maybe<String> cursor() const;
@@ -176,7 +168,7 @@ private:
 
   mutable LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
 
-  HashMap<AudioInstancePtr, Vec2F> m_activeAudio;
+  HashMap<std::shared_ptr<AudioInstance>, Vec2F> m_activeAudio;
 
   FireMode m_currentFireMode;
   Maybe<String> m_cursor;
@@ -204,11 +196,5 @@ export module star.active_item;
 
 export namespace Star {
   using ::Star::ActiveItem;
-  using ::Star::ActiveItemPtr;
-  using ::Star::ActiveItemConstPtr;
-  using ::Star::ActiveItemWeakPtr;
-  using ::Star::ActiveItemConstWeakPtr;
-  using ::Star::ActiveItemUPtr;
-  using ::Star::ActiveItemConstUPtr;
 }
 

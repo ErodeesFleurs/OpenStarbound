@@ -126,89 +126,16 @@ import star.universe_settings;
 namespace Star {
 
 class Clock;
-using ClockPtr = std::shared_ptr<Clock>;
-using ClockConstPtr = std::shared_ptr<const Clock>;
-using ClockWeakPtr = std::weak_ptr<Clock>;
-using ClockConstWeakPtr = std::weak_ptr<const Clock>;
-using ClockUPtr = std::unique_ptr<Clock>;
-using ClockConstUPtr = std::unique_ptr<const Clock>;
 class File;
-using FilePtr = std::shared_ptr<File>;
-using FileConstPtr = std::shared_ptr<const File>;
-using FileWeakPtr = std::weak_ptr<File>;
-using FileConstWeakPtr = std::weak_ptr<const File>;
-using FileUPtr = std::unique_ptr<File>;
-using FileConstUPtr = std::unique_ptr<const File>;
 class Player;
-using PlayerPtr = std::shared_ptr<Player>;
-using PlayerConstPtr = std::shared_ptr<const Player>;
-using PlayerWeakPtr = std::weak_ptr<Player>;
-using PlayerConstWeakPtr = std::weak_ptr<const Player>;
-using PlayerUPtr = std::unique_ptr<Player>;
-using PlayerConstUPtr = std::unique_ptr<const Player>;
 class ChatProcessor;
-using ChatProcessorPtr = std::shared_ptr<ChatProcessor>;
-using ChatProcessorConstPtr = std::shared_ptr<const ChatProcessor>;
-using ChatProcessorWeakPtr = std::weak_ptr<ChatProcessor>;
-using ChatProcessorConstWeakPtr = std::weak_ptr<const ChatProcessor>;
-using ChatProcessorUPtr = std::unique_ptr<ChatProcessor>;
-using ChatProcessorConstUPtr = std::unique_ptr<const ChatProcessor>;
 class CommandProcessor;
-using CommandProcessorPtr = std::shared_ptr<CommandProcessor>;
-using CommandProcessorConstPtr = std::shared_ptr<const CommandProcessor>;
-using CommandProcessorWeakPtr = std::weak_ptr<CommandProcessor>;
-using CommandProcessorConstWeakPtr = std::weak_ptr<const CommandProcessor>;
-using CommandProcessorUPtr = std::unique_ptr<CommandProcessor>;
-using CommandProcessorConstUPtr = std::unique_ptr<const CommandProcessor>;
 class TeamManager;
-using TeamManagerPtr = std::shared_ptr<TeamManager>;
-using TeamManagerConstPtr = std::shared_ptr<const TeamManager>;
-using TeamManagerWeakPtr = std::weak_ptr<TeamManager>;
-using TeamManagerConstWeakPtr = std::weak_ptr<const TeamManager>;
-using TeamManagerUPtr = std::unique_ptr<TeamManager>;
-using TeamManagerConstUPtr = std::unique_ptr<const TeamManager>;
-class UniverseServer;
-using UniverseServerPtr = std::shared_ptr<UniverseServer>;
-using UniverseServerConstPtr = std::shared_ptr<const UniverseServer>;
-using UniverseServerWeakPtr = std::weak_ptr<UniverseServer>;
-using UniverseServerConstWeakPtr = std::weak_ptr<const UniverseServer>;
-using UniverseServerUPtr = std::unique_ptr<UniverseServer>;
-using UniverseServerConstUPtr = std::unique_ptr<const UniverseServer>;
 class WorldTemplate;
-using WorldTemplatePtr = std::shared_ptr<WorldTemplate>;
-using WorldTemplateConstPtr = std::shared_ptr<const WorldTemplate>;
-using WorldTemplateWeakPtr = std::weak_ptr<WorldTemplate>;
-using WorldTemplateConstWeakPtr = std::weak_ptr<const WorldTemplate>;
-using WorldTemplateUPtr = std::unique_ptr<WorldTemplate>;
-using WorldTemplateConstUPtr = std::unique_ptr<const WorldTemplate>;
 class CelestialMasterDatabase;
-using CelestialMasterDatabasePtr = std::shared_ptr<CelestialMasterDatabase>;
-using CelestialMasterDatabaseConstPtr = std::shared_ptr<const CelestialMasterDatabase>;
-using CelestialMasterDatabaseWeakPtr = std::weak_ptr<CelestialMasterDatabase>;
-using CelestialMasterDatabaseConstWeakPtr = std::weak_ptr<const CelestialMasterDatabase>;
-using CelestialMasterDatabaseUPtr = std::unique_ptr<CelestialMasterDatabase>;
-using CelestialMasterDatabaseConstUPtr = std::unique_ptr<const CelestialMasterDatabase>;
 class WorldServer;
-using WorldServerPtr = std::shared_ptr<WorldServer>;
-using WorldServerConstPtr = std::shared_ptr<const WorldServer>;
-using WorldServerWeakPtr = std::weak_ptr<WorldServer>;
-using WorldServerConstWeakPtr = std::weak_ptr<const WorldServer>;
-using WorldServerUPtr = std::unique_ptr<WorldServer>;
-using WorldServerConstUPtr = std::unique_ptr<const WorldServer>;
 class UniverseSettings;
-using UniverseSettingsPtr = std::shared_ptr<UniverseSettings>;
-using UniverseSettingsConstPtr = std::shared_ptr<const UniverseSettings>;
-using UniverseSettingsWeakPtr = std::weak_ptr<UniverseSettings>;
-using UniverseSettingsConstWeakPtr = std::weak_ptr<const UniverseSettings>;
-using UniverseSettingsUPtr = std::unique_ptr<UniverseSettings>;
-using UniverseSettingsConstUPtr = std::unique_ptr<const UniverseSettings>;
 class ServerClientContext;
-using ServerClientContextPtr = std::shared_ptr<ServerClientContext>;
-using ServerClientContextConstPtr = std::shared_ptr<const ServerClientContext>;
-using ServerClientContextWeakPtr = std::weak_ptr<ServerClientContext>;
-using ServerClientContextConstWeakPtr = std::weak_ptr<const ServerClientContext>;
-using ServerClientContextUPtr = std::unique_ptr<ServerClientContext>;
-using ServerClientContextConstUPtr = std::unique_ptr<const ServerClientContext>;
 
 struct UniverseServerExceptionTag {
   static constexpr char const* name() { return "UniverseServerException"; }
@@ -283,16 +210,16 @@ public:
   WorldId clientWorld(ConnectionId clientId) const;
   CelestialCoordinate clientShipCoordinate(ConnectionId clientId) const;
 
-  ClockPtr universeClock() const;
-  UniverseSettingsPtr universeSettings() const;
+  std::shared_ptr<Clock> universeClock() const;
+  std::shared_ptr<UniverseSettings> universeSettings() const;
 
-  CelestialDatabasePtr celestialDatabase() override;
+  std::shared_ptr<CelestialDatabase> celestialDatabase() override;
 
   // If the client exists and is in a valid connection state, executes the
   // given function on the client world and player object in a thread safe way.
   // Returns true if function was called, false if client was not found or in
   // an invalid connection state.
-  bool executeForClient(ConnectionId clientId, std::function<void(WorldServer*, PlayerPtr)> action);
+  bool executeForClient(ConnectionId clientId, std::function<void(WorldServer*, std::shared_ptr<Player>)> action);
   void disconnectClient(ConnectionId clientId, String const& reason);
   void banUser(ConnectionId clientId, String const& reason, std::pair<bool, bool> banType, Maybe<int> timeout);
   bool unbanIp(String const& addressString);
@@ -304,9 +231,9 @@ public:
 
   StringList weatherList(CelestialCoordinate const& coordinate);
   
-  void createCustomWorld(CustomWorldId const& customWorld, WorldTemplatePtr worldTemplate);
+  void createCustomWorld(CustomWorldId const& customWorld, std::shared_ptr<WorldTemplate> worldTemplate);
 
-  bool sendPacket(ConnectionId clientId, PacketPtr packet);
+  bool sendPacket(ConnectionId clientId, std::shared_ptr<Packet> packet);
   
   void passMessage(Universe::Message&& message) override;
   
@@ -326,18 +253,18 @@ private:
   };
   
   struct WorldServerPromise {
-    Variant<WorkerPoolPromise<WorldServerThreadPtr>,RpcPromise<WorldChunks>> currentPromise;
-    Maybe<std::function<WorkerPoolPromise<WorldServerThreadPtr>(WorldChunks)>> producer;
+    Variant<WorkerPoolPromise<std::shared_ptr<WorldServerThread>>,RpcPromise<WorldChunks>> currentPromise;
+    Maybe<std::function<WorkerPoolPromise<std::shared_ptr<WorldServerThread>>(WorldChunks)>> producer;
     
     double startTime;
     
-    WorldServerPromise(std::function<WorkerPoolPromise<WorldServerThreadPtr>(WorldChunks)> producer, RpcPromise<WorldChunks> promise);
-    WorldServerPromise(WorkerPoolPromise<WorldServerThreadPtr> promise);
+    WorldServerPromise(std::function<WorkerPoolPromise<std::shared_ptr<WorldServerThread>>(WorldChunks)> producer, RpcPromise<WorldChunks> promise);
+    WorldServerPromise(WorkerPoolPromise<std::shared_ptr<WorldServerThread>> promise);
     
     bool done() const;
     bool poll();
     
-    WorldServerThreadPtr get();
+    std::shared_ptr<WorldServerThread> get();
   };
 
   enum class TcpState : std::uint8_t { No, Yes, Fuck };
@@ -347,7 +274,7 @@ private:
   void updateTeams();
   void updateShips();
   void sendClockUpdates();
-  void sendClientContextUpdate(ServerClientContextPtr clientContext);
+  void sendClientContextUpdate(std::shared_ptr<ServerClientContext> clientContext);
   void sendClientContextUpdates();
   void kickErroredPlayers();
   void reapConnections();
@@ -388,7 +315,7 @@ private:
 
   void worldUpdated(WorldServerThread* worldServer);
   void systemWorldUpdated(SystemWorldServerThread* systemWorldServer);
-  void packetsReceived(UniverseConnectionServer* connectionServer, ConnectionId clientId, List<PacketPtr> packets);
+  void packetsReceived(UniverseConnectionServer* connectionServer, ConnectionId clientId, List<std::shared_ptr<Packet>> packets);
 
   void acceptConnection(UniverseConnection connection, Maybe<HostAddress> remoteAddress);
 
@@ -403,16 +330,16 @@ private:
 
   // Get the world only if it is already loaded, Main lock must be held when
   // calling.
-  WorldServerThreadPtr getWorld(WorldId const& worldId);
+  std::shared_ptr<WorldServerThread> getWorld(WorldId const& worldId);
 
   // If the world is not created, block and load it, otherwise just return the
   // loaded world.  Main lock and Clients read lock must be held when calling.
-  WorldServerThreadPtr createWorld(WorldId const& worldId);
+  std::shared_ptr<WorldServerThread> createWorld(WorldId const& worldId);
 
   // Trigger off-thread world creation, returns a value when the creation is
   // finished, either successfully or with an error.  Main lock and Clients
   // read lock must be held when calling.
-  Maybe<WorldServerThreadPtr> triggerWorldCreation(WorldId const& worldId);
+  Maybe<std::shared_ptr<WorldServerThread>> triggerWorldCreation(WorldId const& worldId);
 
   // Main lock and clients read lock must be held when calling world promise
   // generators
@@ -420,14 +347,14 @@ private:
   Maybe<WorldServerPromise> shipWorldPromise(ClientShipWorldId const& uuid);
   Maybe<WorldServerPromise> celestialWorldPromise(CelestialWorldId const& coordinate);
   Maybe<WorldServerPromise> instanceWorldPromise(InstanceWorldId const& instanceWorld);
-  Maybe<WorldServerPromise> customWorldPromise(CustomWorldId const& customWorld, Maybe<WorldTemplatePtr> worldTemplate = {});
-  Maybe<WorldServerPromise> clientCustomWorldPromise(ClientCustomWorldId const& clientCustomWorld, Maybe<WorldTemplatePtr> worldTemplate = {});
+  Maybe<WorldServerPromise> customWorldPromise(CustomWorldId const& customWorld, Maybe<std::shared_ptr<WorldTemplate>> worldTemplate = {});
+  Maybe<WorldServerPromise> clientCustomWorldPromise(ClientCustomWorldId const& clientCustomWorld, Maybe<std::shared_ptr<WorldTemplate>> worldTemplate = {});
   
   void notifyWorldCreated(WorldId const& worldId);
 
   // If the system world is not created, initialize it, otherwise return the
   // already initialized one
-  SystemWorldServerThreadPtr createSystemWorld(Vec3I const& location);
+  std::shared_ptr<SystemWorldServerThread> createSystemWorld(Vec3I const& location);
 
   bool instanceWorldStoredOrActive(InstanceWorldId const& worldId) const;
 
@@ -448,9 +375,9 @@ private:
   ByteArray m_assetsDigest;
   Maybe<LockFile> m_storageDirectoryLock;
   StringMap<StringList> m_speciesShips;
-  CelestialMasterDatabasePtr m_celestialDatabase;
-  ClockPtr m_universeClock;
-  UniverseSettingsPtr m_universeSettings;
+  std::shared_ptr<CelestialMasterDatabase> m_celestialDatabase;
+  std::shared_ptr<Clock> m_universeClock;
+  std::shared_ptr<UniverseSettings> m_universeSettings;
   WorkerPool m_workerPool;
 
   std::int64_t m_storageTriggerDeadline;
@@ -461,22 +388,22 @@ private:
 
   mutable ReadersWriterMutex m_clientsLock;
   unsigned m_maxPlayers;
-  IdMap<ConnectionId, ServerClientContextPtr> m_clients;
+  IdMap<ConnectionId, std::shared_ptr<ServerClientContext>> m_clients;
 
   std::shared_ptr<std::atomic<bool>> m_pause;
   bool m_secureWarps;
   Map<WorldId, Maybe<WorldServerPromise>> m_worlds;
   Map<InstanceWorldId, std::pair<std::int64_t, std::int64_t>> m_tempWorldIndex;
-  Map<Vec3I, SystemWorldServerThreadPtr> m_systemWorlds;
-  UniverseConnectionServerPtr m_connectionServer;
+  Map<Vec3I, std::shared_ptr<SystemWorldServerThread>> m_systemWorlds;
+  std::shared_ptr<UniverseConnectionServer> m_connectionServer;
 
   RecursiveMutex m_connectionAcceptThreadsMutex;
   List<ThreadFunction<void>> m_connectionAcceptThreads;
   LinkedList<std::pair<UniverseConnection, std::int64_t>> m_deadConnections;
 
-  ChatProcessorPtr m_chatProcessor;
-  CommandProcessorPtr m_commandProcessor;
-  TeamManagerPtr m_teamManager;
+  std::shared_ptr<ChatProcessor> m_chatProcessor;
+  std::shared_ptr<CommandProcessor> m_commandProcessor;
+  std::shared_ptr<TeamManager> m_teamManager;
 
   HashMap<ConnectionId, std::pair<WarpAction, bool>> m_pendingPlayerWarps;
   HashMap<ConnectionId, HashMap<ClientSubWorldId, WorldId>> m_pendingSubWorlds;
@@ -492,11 +419,10 @@ private:
 
   List<TimeoutBan> m_tempBans;
 
-  LuaRootPtr m_luaRoot;
+  std::shared_ptr<LuaRoot> m_luaRoot;
 
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
-  typedef std::shared_ptr<ScriptComponent> ScriptComponentPtr;
-  StringMap<ScriptComponentPtr> m_scriptContexts;
+  StringMap<std::shared_ptr<UniverseServer::ScriptComponent>> m_scriptContexts;
 
   mutable RecursiveMutex m_messageLock;
   List<Universe::Message> m_universeMessages;

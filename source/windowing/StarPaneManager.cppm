@@ -51,14 +51,6 @@ import star.game_timers;
 
 namespace Star {
 
-class PaneManager;
-using PaneManagerPtr = std::shared_ptr<PaneManager>;
-using PaneManagerConstPtr = std::shared_ptr<PaneManager const>;
-using PaneManagerWeakPtr = std::weak_ptr<PaneManager>;
-using PaneManagerConstWeakPtr = std::weak_ptr<PaneManager const>;
-using PaneManagerUPtr = std::unique_ptr<PaneManager>;
-using PaneManagerConstUPtr = std::unique_ptr<PaneManager const>;
-
 enum class PaneLayer {
   // A special class of window only meant to be used by PaneManager to display
   // tooltips given by Pane::createTooltip
@@ -84,44 +76,44 @@ extern EnumMap<PaneLayer> const PaneLayerNames;
 // layer contains a z-ordered list of panes to display.
 class PaneManager {
 public:
-  typedef std::function<void(PanePtr const&)> DismissCallback;
+  typedef std::function<void(std::shared_ptr<Pane> const&)> DismissCallback;
 
   PaneManager();
 
   // Display a pane on any given layer.  The pane lifetime in this class is
   // only during display, once dismissed, the pane is forgotten completely.
-  void displayPane(PaneLayer paneLayer, PanePtr const& pane, DismissCallback onDismiss = {});
+  void displayPane(PaneLayer paneLayer, std::shared_ptr<Pane> const& pane, DismissCallback onDismiss = {});
 
-  bool isDisplayed(PanePtr const& pane) const;
+  bool isDisplayed(std::shared_ptr<Pane> const& pane) const;
 
   // Dismiss a given displayed pane.  Pane must already be displayed.
-  void dismissPane(PanePtr const& pane);
+  void dismissPane(std::shared_ptr<Pane> const& pane);
 
   // Dismisses all panes in the given layers.
   void dismissAllPanes(Set<PaneLayer> const& paneLayers);
   void dismissAllPanes();
 
-  PanePtr topPane(Set<PaneLayer> const& paneLayers) const;
-  PanePtr topPane() const;
+  std::shared_ptr<Pane> topPane(Set<PaneLayer> const& paneLayers) const;
+  std::shared_ptr<Pane> topPane() const;
 
   // Brign an already displayed pane to the top of its layer.
-  void bringToTop(PanePtr const& pane);
+  void bringToTop(std::shared_ptr<Pane> const& pane);
 
   // Position a pane adjacent to an anchor pane in a direction where
   // it will fit on the screen
-  void bringPaneAdjacent(PanePtr const& anchor, PanePtr const& adjacent, int gap);
+  void bringPaneAdjacent(std::shared_ptr<Pane> const& anchor, std::shared_ptr<Pane> const& adjacent, int gap);
 
-  PanePtr getPaneAt(Set<PaneLayer> const& paneLayers, Vec2I const& position) const;
-  PanePtr getPaneAt(Vec2I const& position) const;
-  List<PanePtr> getAllPanes();
+  std::shared_ptr<Pane> getPaneAt(Set<PaneLayer> const& paneLayers, Vec2I const& position) const;
+  std::shared_ptr<Pane> getPaneAt(Vec2I const& position) const;
+  List<std::shared_ptr<Pane>> getAllPanes();
 
-  void setBackgroundWidget(WidgetPtr bg);
+  void setBackgroundWidget(std::shared_ptr<Widget> bg);
 
-  void dismissWhere(std::function<bool(PanePtr const&)> func);
+  void dismissWhere(std::function<bool(std::shared_ptr<Pane> const&)> func);
 
   // Returns the pane/widget that has captured the keyboard, if any.
-  PanePtr keyboardCapturedPane() const;
-  WidgetPtr keyboardCapturedWidget() const;
+  std::shared_ptr<Pane> keyboardCapturedPane() const;
+  std::shared_ptr<Widget> keyboardCapturedWidget() const;
   // Returns true if the current widget that has captured the keyboard is
   // accepting text input.
   bool keyboardCapturedForTextInput() const;
@@ -133,25 +125,25 @@ public:
 
 private:
   Vec2I windowSize() const;
-  Vec2I calculatePaneOffset(PanePtr const& pane) const;
-  Vec2I calculateNewInterfacePosition(PanePtr const& pane, float interfaceScaleRatio) const;
-  bool dismiss(PanePtr const& pane);
+  Vec2I calculatePaneOffset(std::shared_ptr<Pane> const& pane) const;
+  Vec2I calculateNewInterfacePosition(std::shared_ptr<Pane> const& pane, float interfaceScaleRatio) const;
+  bool dismiss(std::shared_ptr<Pane> const& pane);
 
   GuiContext* m_context;
   float m_prevInterfaceScale;
 
   // Map of each pane layer, where the 0th pane is the topmost pane in each layer.
-  Map<PaneLayer, OrderedMap<PanePtr, DismissCallback>> m_displayedPanes;
+  Map<PaneLayer, OrderedMap<std::shared_ptr<Pane>, DismissCallback>> m_displayedPanes;
 
-  WidgetPtr m_backgroundWidget;
+  std::shared_ptr<Widget> m_backgroundWidget;
 
   float m_tooltipMouseoverRadius;
   Vec2I m_tooltipMouseOffset;
   GameTimer m_tooltipShowTimer;
   Vec2I m_tooltipLastMousePos;
   Vec2I m_tooltipInitialPosition;
-  PanePtr m_activeTooltip;
-  PanePtr m_tooltipParentPane;
+  std::shared_ptr<Pane> m_activeTooltip;
+  std::shared_ptr<Pane> m_tooltipParentPane;
 };
 
 }
@@ -161,11 +153,5 @@ export module star.pane_manager;
 export namespace Star {
   using ::Star::PaneLayer;
   using ::Star::PaneManager;
-  using ::Star::PaneManagerPtr;
-  using ::Star::PaneManagerConstPtr;
-  using ::Star::PaneManagerWeakPtr;
-  using ::Star::PaneManagerConstWeakPtr;
-  using ::Star::PaneManagerUPtr;
-  using ::Star::PaneManagerConstUPtr;
   using ::Star::PaneLayerNames;
 }

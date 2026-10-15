@@ -13,27 +13,27 @@ import star.json_path;
 namespace Star {
 
 struct GetCommand {
-  JsonPath::PathPtr path;
+  std::shared_ptr<JsonPath::Path> path;
   bool opt;
   bool children;
 };
 
 struct SetCommand {
-  JsonPath::PathPtr path;
+  std::shared_ptr<JsonPath::Path> path;
   FormattedJson value;
 };
 
 struct AddCommand {
-  JsonPath::PathPtr path;
+  std::shared_ptr<JsonPath::Path> path;
   FormattedJson value;
 };
 
 struct RemoveCommand {
-  JsonPath::PathPtr path;
+  std::shared_ptr<JsonPath::Path> path;
 };
 
 struct EditCommand {
-  JsonPath::PathPtr path;
+  std::shared_ptr<JsonPath::Path> path;
 };
 
 typedef MVariant<GetCommand, SetCommand, AddCommand, RemoveCommand, EditCommand> Command;
@@ -51,14 +51,6 @@ struct AfterKey {
 };
 
 typedef MVariant<AtBeginning, AtEnd, BeforeKey, AfterKey> InsertLocation;
-
-class JsonInputFormat;
-using JsonInputFormatPtr = std::shared_ptr<JsonInputFormat>;
-using JsonInputFormatConstPtr = std::shared_ptr<const JsonInputFormat>;
-using JsonInputFormatWeakPtr = std::weak_ptr<JsonInputFormat>;
-using JsonInputFormatConstWeakPtr = std::weak_ptr<const JsonInputFormat>;
-using JsonInputFormatUPtr = std::unique_ptr<JsonInputFormat>;
-using JsonInputFormatConstUPtr = std::unique_ptr<const JsonInputFormat>;
 
 class JsonInputFormat {
 public:
@@ -88,14 +80,6 @@ public:
   virtual String fromJson(FormattedJson const& json) const override;
   virtual FormattedJson getDefault() const override;
 };
-
-class Output;
-using OutputPtr = std::shared_ptr<Output>;
-using OutputConstPtr = std::shared_ptr<const Output>;
-using OutputWeakPtr = std::weak_ptr<Output>;
-using OutputConstWeakPtr = std::weak_ptr<const Output>;
-using OutputUPtr = std::unique_ptr<Output>;
-using OutputConstUPtr = std::unique_ptr<const Output>;
 
 class Output {
 public:
@@ -131,9 +115,9 @@ struct Options {
 
   bool inPlace;
   InsertLocation insertLocation;
-  JsonInputFormatPtr editFormat;
-  List<JsonPath::PathPtr> editorImages;
-  OutputPtr output;
+  std::shared_ptr<JsonInputFormat> editFormat;
+  List<std::shared_ptr<JsonPath::Path>> editorImages;
+  std::shared_ptr<Output> output;
 };
 
 struct JsonLiteralInput {
@@ -159,7 +143,7 @@ struct ParsedArgs {
   Options options;
 };
 
-FormattedJson addOrSet(bool add, JsonPath::PathPtr path, FormattedJson const& input, InsertLocation insertLocation, FormattedJson const& value);
+FormattedJson addOrSet(bool add, std::shared_ptr<JsonPath::Path> path, FormattedJson const& input, InsertLocation insertLocation, FormattedJson const& value);
 String reprWithLineEnding(FormattedJson const& json);
 StringList findFiles(FindInput const& findArgs);
 

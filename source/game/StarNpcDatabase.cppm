@@ -45,33 +45,8 @@ import star.byte_array;
 namespace Star {
 
 class Rebuilder;
-using RebuilderPtr = std::shared_ptr<Rebuilder>;
-using RebuilderConstPtr = std::shared_ptr<const Rebuilder>;
-using RebuilderWeakPtr = std::weak_ptr<Rebuilder>;
-using RebuilderConstWeakPtr = std::weak_ptr<const Rebuilder>;
-using RebuilderUPtr = std::unique_ptr<Rebuilder>;
-using RebuilderConstUPtr = std::unique_ptr<const Rebuilder>;
 class Item;
-using ItemPtr = std::shared_ptr<Item>;
-using ItemConstPtr = std::shared_ptr<const Item>;
-using ItemWeakPtr = std::weak_ptr<Item>;
-using ItemConstWeakPtr = std::weak_ptr<const Item>;
-using ItemUPtr = std::unique_ptr<Item>;
-using ItemConstUPtr = std::unique_ptr<const Item>;
 class Npc;
-using NpcPtr = std::shared_ptr<Npc>;
-using NpcConstPtr = std::shared_ptr<const Npc>;
-using NpcWeakPtr = std::weak_ptr<Npc>;
-using NpcConstWeakPtr = std::weak_ptr<const Npc>;
-using NpcUPtr = std::unique_ptr<Npc>;
-using NpcConstUPtr = std::unique_ptr<const Npc>;
-class NpcDatabase;
-using NpcDatabasePtr = std::shared_ptr<NpcDatabase>;
-using NpcDatabaseConstPtr = std::shared_ptr<const NpcDatabase>;
-using NpcDatabaseWeakPtr = std::weak_ptr<NpcDatabase>;
-using NpcDatabaseConstWeakPtr = std::weak_ptr<const NpcDatabase>;
-using NpcDatabaseUPtr = std::unique_ptr<NpcDatabase>;
-using NpcDatabaseConstUPtr = std::unique_ptr<const NpcDatabase>;
 
 struct NpcExceptionTag {
   static constexpr char const* name() { return "NpcException"; }
@@ -131,9 +106,9 @@ public:
   Json writeNpcVariantToJson(NpcVariant const& variant) const;
   NpcVariant readNpcVariantFromJson(Json const& data) const;
 
-  NpcPtr createNpc(NpcVariant const& npcVariant) const;
-  NpcPtr diskLoadNpc(Json const& diskStore) const;
-  NpcPtr netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  std::shared_ptr<Npc> createNpc(NpcVariant const& npcVariant) const;
+  std::shared_ptr<Npc> diskLoadNpc(Json const& diskStore) const;
+  std::shared_ptr<Npc> netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
   List<Drawable> npcPortrait(NpcVariant const& npcVariant, PortraitMode mode) const;
 
@@ -144,7 +119,7 @@ private:
   // override any base value
   Json mergeConfigValues(Json const& base, Json const& merger) const;
 
-  RebuilderPtr m_rebuilder;
+  std::shared_ptr<Rebuilder> m_rebuilder;
 
   StringMap<Json> m_npcTypes;
 };
@@ -158,31 +133,7 @@ export namespace Star {
   using ::Star::NpcException;
   using ::Star::NpcVariant;
   using ::Star::Rebuilder;
-  using ::Star::RebuilderPtr;
-  using ::Star::RebuilderConstPtr;
-  using ::Star::RebuilderWeakPtr;
-  using ::Star::RebuilderConstWeakPtr;
-  using ::Star::RebuilderUPtr;
-  using ::Star::RebuilderConstUPtr;
   using ::Star::Item;
-  using ::Star::ItemPtr;
-  using ::Star::ItemConstPtr;
-  using ::Star::ItemWeakPtr;
-  using ::Star::ItemConstWeakPtr;
-  using ::Star::ItemUPtr;
-  using ::Star::ItemConstUPtr;
   using ::Star::Npc;
-  using ::Star::NpcPtr;
-  using ::Star::NpcConstPtr;
-  using ::Star::NpcWeakPtr;
-  using ::Star::NpcConstWeakPtr;
-  using ::Star::NpcUPtr;
-  using ::Star::NpcConstUPtr;
   using ::Star::NpcDatabase;
-  using ::Star::NpcDatabasePtr;
-  using ::Star::NpcDatabaseConstPtr;
-  using ::Star::NpcDatabaseWeakPtr;
-  using ::Star::NpcDatabaseConstWeakPtr;
-  using ::Star::NpcDatabaseUPtr;
-  using ::Star::NpcDatabaseConstUPtr;
 }

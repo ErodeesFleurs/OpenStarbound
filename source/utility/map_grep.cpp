@@ -77,7 +77,7 @@ Maybe<String> matchTile(SearchParameters const& search, Tiled::Tile const& tile)
   return {};
 }
 
-void grepTileLayer(SearchParameters const& search, TMXMapPtr map, TMXTileLayerPtr tileLayer, MatchReporter callback) {
+void grepTileLayer(SearchParameters const& search, std::shared_ptr<::Star::Dungeon::TMXMap> map, std::shared_ptr<::Star::Dungeon::TMXTileLayer> tileLayer, MatchReporter callback) {
   tileLayer->forEachTile(map.get(),
       [&](Vec2I pos, Tile const& tile) {
         if (auto tileName = matchTile(search, static_cast<Tiled::Tile const&>(tile)))
@@ -86,7 +86,7 @@ void grepTileLayer(SearchParameters const& search, TMXMapPtr map, TMXTileLayerPt
       });
 }
 
-void grepObjectGroup(SearchParameters const& search, TMXObjectGroupPtr objectGroup, MatchReporter callback) {
+void grepObjectGroup(SearchParameters const& search, std::shared_ptr<::Star::Dungeon::TMXObjectGroup> objectGroup, MatchReporter callback) {
   for (auto object : objectGroup->objects()) {
     if (auto tileName = matchTile(search, object->tile()))
       callback(*tileName, object->pos());
@@ -147,7 +147,7 @@ int main(int argc, char* argv[]) {
     rootLoader.addArgument("MaterialId|ObjectName|Property=Value", OptionParser::Required);
     rootLoader.addArgument("JsonMapFile", OptionParser::Multiple);
 
-    RootUPtr root;
+    std::unique_ptr<::Star::Root> root;
     OptionParser::Options options;
     std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 

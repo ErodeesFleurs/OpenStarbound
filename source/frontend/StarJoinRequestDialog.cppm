@@ -42,14 +42,6 @@ namespace Star {
 
 enum class P2PJoinRequestReply;
 
-class JoinRequestDialog;
-using JoinRequestDialogPtr = std::shared_ptr<JoinRequestDialog>;
-using JoinRequestDialogConstPtr = std::shared_ptr<JoinRequestDialog const>;
-using JoinRequestDialogWeakPtr = std::weak_ptr<JoinRequestDialog>;
-using JoinRequestDialogConstWeakPtr = std::weak_ptr<JoinRequestDialog const>;
-using JoinRequestDialogUPtr = std::unique_ptr<JoinRequestDialog>;
-using JoinRequestDialogConstUPtr = std::unique_ptr<JoinRequestDialog const>;
-
 class JoinRequestDialog : public Pane {
 public:
   JoinRequestDialog();
@@ -73,10 +65,4 @@ export module star.join_request_dialog;
 
 export namespace Star {
   using ::Star::JoinRequestDialog;
-  using ::Star::JoinRequestDialogPtr;
-  using ::Star::JoinRequestDialogConstPtr;
-  using ::Star::JoinRequestDialogWeakPtr;
-  using ::Star::JoinRequestDialogConstWeakPtr;
-  using ::Star::JoinRequestDialogUPtr;
-  using ::Star::JoinRequestDialogConstUPtr;
 }

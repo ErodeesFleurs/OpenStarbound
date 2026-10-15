@@ -74,7 +74,7 @@ namespace Star {
 
 class PhysicsObject : public Object, public virtual PhysicsEntity {
 public:
-  PhysicsObject(ObjectConfigConstPtr config, Json const& parameters = Json());
+  PhysicsObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters = Json());
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
   void disableInterpolation() override;

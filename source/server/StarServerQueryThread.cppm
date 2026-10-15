@@ -143,14 +143,6 @@ import star.udp;
 
 export namespace Star {
 
-class ServerQueryThread;
-using ServerQueryThreadPtr = std::shared_ptr<ServerQueryThread>;
-using ServerQueryThreadConstPtr = std::shared_ptr<const ServerQueryThread>;
-using ServerQueryThreadWeakPtr = std::weak_ptr<ServerQueryThread>;
-using ServerQueryThreadConstWeakPtr = std::weak_ptr<const ServerQueryThread>;
-using ServerQueryThreadUPtr = std::unique_ptr<ServerQueryThread>;
-using ServerQueryThreadConstUPtr = std::unique_ptr<const ServerQueryThread>;
-
 class ServerQueryThread : public Thread {
 public:
   ServerQueryThread(UniverseServer* universe, HostAddressWithPort const& bindAddress);

@@ -53,27 +53,14 @@ import star.label_widget;
 namespace Star {
 
 class Player;
-using PlayerPtr = std::shared_ptr<Player>;
-using PlayerConstPtr = std::shared_ptr<Player const>;
-using PlayerWeakPtr = std::weak_ptr<Player>;
-using PlayerConstWeakPtr = std::weak_ptr<Player const>;
-using PlayerUPtr = std::unique_ptr<Player>;
-using PlayerConstUPtr = std::unique_ptr<Player const>;
 
-class LargeCharPlateWidget;
-using LargeCharPlateWidgetPtr = std::shared_ptr<LargeCharPlateWidget>;
-using LargeCharPlateWidgetConstPtr = std::shared_ptr<LargeCharPlateWidget const>;
-using LargeCharPlateWidgetWeakPtr = std::weak_ptr<LargeCharPlateWidget>;
-using LargeCharPlateWidgetConstWeakPtr = std::weak_ptr<LargeCharPlateWidget const>;
-using LargeCharPlateWidgetUPtr = std::unique_ptr<LargeCharPlateWidget>;
-using LargeCharPlateWidgetConstUPtr = std::unique_ptr<LargeCharPlateWidget const>;
 class LargeCharPlateWidget : public ButtonWidget {
 public:
-  LargeCharPlateWidget(WidgetCallbackFunc mainCallback, PlayerPtr player = PlayerPtr());
+  LargeCharPlateWidget(WidgetCallbackFunc mainCallback, std::shared_ptr<Player> player = std::shared_ptr<Player>());
 
   void mouseOut() override;
 
-  void setPlayer(PlayerPtr player = PlayerPtr());
+  void setPlayer(std::shared_ptr<Player> player = std::shared_ptr<Player>());
 
   void enableDelete(WidgetCallbackFunc const& callback);
   void disableDelete();
@@ -86,10 +73,10 @@ protected:
   virtual void renderImpl() override;
 
 private:
-  PlayerPtr m_player;
+  std::shared_ptr<Player> m_player;
   Json m_config;
 
-  PortraitWidgetPtr m_portrait;
+  std::shared_ptr<PortraitWidget> m_portrait;
   Vec2I m_portraitOffset;
   float m_portraitScale;
 
@@ -98,12 +85,12 @@ private:
   String m_noPlayerPlateHover;
   String m_playerPlate;
 
-  LabelWidgetPtr m_playerName;
-  LabelWidgetPtr m_playerPhrase;
-  LabelWidgetPtr m_modeName;
-  LabelWidgetPtr m_mode;
+  std::shared_ptr<LabelWidget> m_playerName;
+  std::shared_ptr<LabelWidget> m_playerPhrase;
+  std::shared_ptr<LabelWidget> m_modeName;
+  std::shared_ptr<LabelWidget> m_mode;
 
-  ButtonWidgetPtr m_delete;
+  std::shared_ptr<ButtonWidget> m_delete;
 
   Vec2I m_playerNameOffset;
   Vec2I m_playerPhraseOffset;
@@ -125,16 +112,4 @@ export module star.large_char_plate_widget;
 export namespace Star {
   using ::Star::LargeCharPlateWidget;
   using ::Star::Player;
-  using ::Star::PlayerPtr;
-  using ::Star::PlayerConstPtr;
-  using ::Star::PlayerWeakPtr;
-  using ::Star::PlayerConstWeakPtr;
-  using ::Star::PlayerUPtr;
-  using ::Star::PlayerConstUPtr;
-  using ::Star::LargeCharPlateWidgetPtr;
-  using ::Star::LargeCharPlateWidgetConstPtr;
-  using ::Star::LargeCharPlateWidgetWeakPtr;
-  using ::Star::LargeCharPlateWidgetConstWeakPtr;
-  using ::Star::LargeCharPlateWidgetUPtr;
-  using ::Star::LargeCharPlateWidgetConstUPtr;
 }

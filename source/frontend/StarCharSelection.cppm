@@ -41,27 +41,15 @@ import star.uuid;
 namespace Star {
 
 class PlayerStorage;
-using PlayerStoragePtr = std::shared_ptr<PlayerStorage>;
-using PlayerStorageConstPtr = std::shared_ptr<PlayerStorage const>;
-using PlayerStorageWeakPtr = std::weak_ptr<PlayerStorage>;
-using PlayerStorageConstWeakPtr = std::weak_ptr<PlayerStorage const>;
-using PlayerStorageUPtr = std::unique_ptr<PlayerStorage>;
-using PlayerStorageConstUPtr = std::unique_ptr<PlayerStorage const>;
 class Player;
-using PlayerPtr = std::shared_ptr<Player>;
-using PlayerConstPtr = std::shared_ptr<Player const>;
-using PlayerWeakPtr = std::weak_ptr<Player>;
-using PlayerConstWeakPtr = std::weak_ptr<Player const>;
-using PlayerUPtr = std::unique_ptr<Player>;
-using PlayerConstUPtr = std::unique_ptr<Player const>;
 
 class CharSelectionPane : public Pane {
 public:
   typedef std::function<void()> CreateCharCallback;
-  typedef std::function<void(PlayerPtr const&)> SelectCharacterCallback;
+  typedef std::function<void(std::shared_ptr<Player> const&)> SelectCharacterCallback;
   typedef std::function<void(Uuid)> DeleteCharacterCallback;
 
-  CharSelectionPane(PlayerStoragePtr playerStorage, CreateCharCallback createCallback,
+  CharSelectionPane(std::shared_ptr<PlayerStorage> playerStorage, CreateCharCallback createCallback,
       SelectCharacterCallback selectCallback, DeleteCharacterCallback deleteCallback);
 
   bool sendEvent(InputEvent const& event) override;
@@ -73,7 +61,7 @@ private:
   void shiftCharacters(int movement);
   void selectCharacter(unsigned buttonIndex);
 
-  PlayerStoragePtr m_playerStorage;
+  std::shared_ptr<PlayerStorage> m_playerStorage;
   unsigned m_downScroll;
   String m_search;
   List<Uuid> m_filteredList;
@@ -83,26 +71,12 @@ private:
   SelectCharacterCallback m_selectCallback;
   DeleteCharacterCallback m_deleteCallback;
 };
-typedef std::shared_ptr<CharSelectionPane> CharSelectionPanePtr;
 }
 
 export module star.char_selection;
 
 export namespace Star {
   using ::Star::PlayerStorage;
-  using ::Star::PlayerStoragePtr;
-  using ::Star::PlayerStorageConstPtr;
-  using ::Star::PlayerStorageWeakPtr;
-  using ::Star::PlayerStorageConstWeakPtr;
-  using ::Star::PlayerStorageUPtr;
-  using ::Star::PlayerStorageConstUPtr;
   using ::Star::Player;
-  using ::Star::PlayerPtr;
-  using ::Star::PlayerConstPtr;
-  using ::Star::PlayerWeakPtr;
-  using ::Star::PlayerConstWeakPtr;
-  using ::Star::PlayerUPtr;
-  using ::Star::PlayerConstUPtr;
   using ::Star::CharSelectionPane;
-  using ::Star::CharSelectionPanePtr;
 }

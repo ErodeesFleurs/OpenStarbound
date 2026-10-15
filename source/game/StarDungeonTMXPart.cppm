@@ -29,41 +29,7 @@ import star.tileset_database;
 export namespace Star {
 
 namespace Dungeon {
-  class TMXTilesets;
-  using TMXTilesetsPtr = std::shared_ptr<TMXTilesets>;
-  using TMXTilesetsConstPtr = std::shared_ptr<const TMXTilesets>;
-  using TMXTilesetsWeakPtr = std::weak_ptr<TMXTilesets>;
-  using TMXTilesetsConstWeakPtr = std::weak_ptr<const TMXTilesets>;
-  using TMXTilesetsUPtr = std::unique_ptr<TMXTilesets>;
-  using TMXTilesetsConstUPtr = std::unique_ptr<const TMXTilesets>;
-  class TMXTileLayer;
-  using TMXTileLayerPtr = std::shared_ptr<TMXTileLayer>;
-  using TMXTileLayerConstPtr = std::shared_ptr<const TMXTileLayer>;
-  using TMXTileLayerWeakPtr = std::weak_ptr<TMXTileLayer>;
-  using TMXTileLayerConstWeakPtr = std::weak_ptr<const TMXTileLayer>;
-  using TMXTileLayerUPtr = std::unique_ptr<TMXTileLayer>;
-  using TMXTileLayerConstUPtr = std::unique_ptr<const TMXTileLayer>;
-  class TMXObject;
-  using TMXObjectPtr = std::shared_ptr<TMXObject>;
-  using TMXObjectConstPtr = std::shared_ptr<const TMXObject>;
-  using TMXObjectWeakPtr = std::weak_ptr<TMXObject>;
-  using TMXObjectConstWeakPtr = std::weak_ptr<const TMXObject>;
-  using TMXObjectUPtr = std::unique_ptr<TMXObject>;
-  using TMXObjectConstUPtr = std::unique_ptr<const TMXObject>;
-  class TMXObjectGroup;
-  using TMXObjectGroupPtr = std::shared_ptr<TMXObjectGroup>;
-  using TMXObjectGroupConstPtr = std::shared_ptr<const TMXObjectGroup>;
-  using TMXObjectGroupWeakPtr = std::weak_ptr<TMXObjectGroup>;
-  using TMXObjectGroupConstWeakPtr = std::weak_ptr<const TMXObjectGroup>;
-  using TMXObjectGroupUPtr = std::unique_ptr<TMXObjectGroup>;
-  using TMXObjectGroupConstUPtr = std::unique_ptr<const TMXObjectGroup>;
   class TMXMap;
-  using TMXMapPtr = std::shared_ptr<TMXMap>;
-  using TMXMapConstPtr = std::shared_ptr<const TMXMap>;
-  using TMXMapWeakPtr = std::weak_ptr<TMXMap>;
-  using TMXMapConstWeakPtr = std::weak_ptr<const TMXMap>;
-  using TMXMapUPtr = std::unique_ptr<TMXMap>;
-  using TMXMapConstUPtr = std::unique_ptr<const TMXMap>;
 
   class TMXTilesets {
   public:
@@ -87,14 +53,14 @@ namespace Dungeon {
     // The default empty background tile has clear=true.  (If you use the pink
     // tile in the background, clear will be false instead.) Analogous to
     // EmptyMaterialId.
-    Tiled::TileConstPtr m_emptyBackTile;
+    std::shared_ptr<Tiled::Tile const> m_emptyBackTile;
     // The default foreground tile doesn't have a 'clear' property.  Also
     // returned by tile layers when given coordinates outside the bounds of the
     // layer.  Analogous to the NullMaterialId that mission maps are initially
     // filled with.
-    Tiled::TileConstPtr m_nullTile;
+    std::shared_ptr<Tiled::Tile const> m_nullTile;
 
-    List<Tiled::TilesetConstPtr> m_tilesets;
+    List<std::shared_ptr<Tiled::Tileset const>> m_tilesets;
     List<Tiled::Tile const*> m_foregroundTilesByGid;
     List<Tiled::Tile const*> m_backgroundTilesByGid;
   };
@@ -103,7 +69,7 @@ namespace Dungeon {
   public:
     TMXTileLayer(Json const& tmx);
 
-    Tiled::Tile const& getTile(TMXTilesetsPtr const& tilesets, Vec2I pos) const;
+    Tiled::Tile const& getTile(std::shared_ptr<TMXTilesets> const& tilesets, Vec2I pos) const;
 
     unsigned width() const {
       return m_rect.xMax() - m_rect.xMin() + 1;
@@ -151,7 +117,7 @@ namespace Dungeon {
 
   class TMXObject {
   public:
-    TMXObject(Maybe<Json> const& groupProperties, Json const& tmx, TMXTilesetsPtr tilesets);
+    TMXObject(Maybe<Json> const& groupProperties, Json const& tmx, std::shared_ptr<TMXTilesets> tilesets);
 
     Vec2I const& pos() const {
       return m_rect.min();
@@ -180,14 +146,14 @@ namespace Dungeon {
     static Vec2I getSize(Json const& tmx);
     static Vec2I getImagePosition(Tiled::Properties const& properties);
     static ObjectKind getObjectKind(Json const& tmx, Maybe<Json >const& objectProperties);
-    static Maybe<TileObjectInfo> getTileObjectInfo(Json const& tmx, TMXTilesetsPtr tilesets, TileLayer layer);
+    static Maybe<TileObjectInfo> getTileObjectInfo(Json const& tmx, std::shared_ptr<TMXTilesets> tilesets, TileLayer layer);
     static TileLayer getLayer(Maybe<Json> const& groupProperties, Maybe<Json> const& objectProperties);
 
     static Vec2I getPos(Json const& tmx);
     static StarException tmxObjectError(Json const& tmx, String const& msg);
 
     RectI m_rect;
-    Tiled::TileConstPtr m_tile;
+    std::shared_ptr<Tiled::Tile const> m_tile;
     TileLayer m_layer;
     ObjectKind m_kind;
     unsigned m_objectId;
@@ -196,9 +162,9 @@ namespace Dungeon {
 
   class TMXObjectGroup {
   public:
-    TMXObjectGroup(Json const& tmx, TMXTilesetsPtr tilesets);
+    TMXObjectGroup(Json const& tmx, std::shared_ptr<TMXTilesets> tilesets);
 
-    List<TMXObjectPtr> const& objects() const {
+    List<std::shared_ptr<TMXObject>> const& objects() const {
       return m_objects;
     }
 
@@ -209,20 +175,20 @@ namespace Dungeon {
 
   private:
     String m_name;
-    List<TMXObjectPtr> m_objects;
+    List<std::shared_ptr<TMXObject>> m_objects;
   };
 
   class TMXMap {
   public:
     TMXMap(Json const& tmx);
 
-    List<TMXTileLayerPtr> const& tileLayers() const {
+    List<std::shared_ptr<TMXTileLayer>> const& tileLayers() const {
       return m_tileLayers;
     }
-    List<TMXObjectGroupPtr> const& objectGroups() const {
+    List<std::shared_ptr<TMXObjectGroup>> const& objectGroups() const {
       return m_objectGroups;
     }
-    TMXTilesetsPtr const& tilesets() const {
+    std::shared_ptr<TMXTilesets> const& tilesets() const {
       return m_tilesets;
     }
     unsigned width() const {
@@ -236,10 +202,10 @@ namespace Dungeon {
     bool forEachTileAt(Vec2I pos, TileCallback const& callback) const;
 
   private:
-    List<TMXTileLayerPtr> m_tileLayers;
-    List<TMXObjectGroupPtr> m_objectGroups;
+    List<std::shared_ptr<TMXTileLayer>> m_tileLayers;
+    List<std::shared_ptr<TMXObjectGroup>> m_objectGroups;
 
-    TMXTilesetsPtr m_tilesets;
+    std::shared_ptr<TMXTilesets> m_tilesets;
     unsigned m_width, m_height;
   };
 
@@ -254,9 +220,9 @@ namespace Dungeon {
 
   private:
     // Return true in the callback to exit early without processing later maps
-    void forEachMap(std::function<bool(TMXMapConstPtr const&)> func) const;
+    void forEachMap(std::function<bool(std::shared_ptr<TMXMap const> const&)> func) const;
 
-    List<std::pair<String, TMXMapConstPtr>> m_maps;
+    List<std::pair<String, std::shared_ptr<TMXMap const>>> m_maps;
   };
 }
 

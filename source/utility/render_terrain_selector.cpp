@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
     rootLoader.addParameter("scale", "scale", OptionParser::Optional, "maximum distance from 0 for color range");
     rootLoader.addParameter("mode", "mode", OptionParser::Optional, "color mode: heatmap, terrain");
 
-    RootUPtr root;
+    std::unique_ptr<::Star::Root> root;
     OptionParser::Options options;
     std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 

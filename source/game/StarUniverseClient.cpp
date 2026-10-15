@@ -188,14 +188,14 @@ import star.net_element;
 import star.algorithm;
 namespace Star {
 
-UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, String const& customWorldStorageDir) {
+UniverseClient::UniverseClient(std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Statistics> statistics, String const& customWorldStorageDir) {
   m_storageTriggerDeadline = 0;
   m_playerStorage = std::move(playerStorage);
   m_statistics = std::move(statistics);
   m_customWorldStorageDirectory = customWorldStorageDir;
   m_pause = std::make_shared<std::atomic<bool>>(false);
   m_luaRoot = std::make_shared<LuaRoot>();
-  m_subWorldThreads = IdMap<ClientSubWorldId,WorldClientThreadPtr>(MinClientSubWorldId,MaxClientSubWorldId);
+  m_subWorldThreads = IdMap<ClientSubWorldId,std::shared_ptr<WorldClientThread>>(MinClientSubWorldId,MaxClientSubWorldId);
   reset();
 }
 
@@ -203,7 +203,7 @@ UniverseClient::~UniverseClient() {
   disconnect();
 }
 
-void UniverseClient::setMainPlayer(PlayerPtr player) {
+void UniverseClient::setMainPlayer(std::shared_ptr<Player> player) {
   if (isConnected())
     throw StarException("Cannot call UniverseClient::setMainPlayer while connected");
 
@@ -225,7 +225,7 @@ void UniverseClient::setMainPlayer(PlayerPtr player) {
   }
 }
 
-PlayerPtr UniverseClient::mainPlayer() const {
+std::shared_ptr<Player> UniverseClient::mainPlayer() const {
   return m_mainPlayer;
 }
 
@@ -377,11 +377,11 @@ unsigned UniverseClient::connectionVersion() {
   return m_connection->packetSocket().netRules().version();
 }
 
-WorldClientPtr UniverseClient::worldClient() const {
+std::shared_ptr<WorldClient> UniverseClient::worldClient() const {
   return m_worldClient;
 }
 
-SystemWorldClientPtr UniverseClient::systemWorldClient() const {
+std::shared_ptr<SystemWorldClient> UniverseClient::systemWorldClient() const {
   return m_systemWorldClient;
 }
 
@@ -696,7 +696,7 @@ void UniverseClient::flyShip(Vec3I const& system, SystemLocation const& destinat
   m_connection->pushSingle(std::make_shared<FlyShipPacket>(system, destination, settings));
 }
 
-CelestialDatabasePtr UniverseClient::celestialDatabase() {
+std::shared_ptr<CelestialDatabase> UniverseClient::celestialDatabase() {
   return m_celestialDatabase;
 }
 
@@ -732,11 +732,11 @@ Uuid UniverseClient::teamUuid() const {
   return m_clientContext->playerUuid();
 }
 
-WorldTemplateConstPtr UniverseClient::currentTemplate() const {
+std::shared_ptr<WorldTemplate const> UniverseClient::currentTemplate() const {
   return m_worldClient->currentTemplate();
 }
 
-SkyConstPtr UniverseClient::currentSky() const {
+std::shared_ptr<Sky const> UniverseClient::currentSky() const {
   return m_worldClient->currentSky();
 }
 
@@ -801,7 +801,7 @@ void UniverseClient::stopLua() {
   m_scriptContexts.clear();
 }
 
-LuaRootPtr UniverseClient::luaRoot() {
+std::shared_ptr<LuaRoot> UniverseClient::luaRoot() {
   return m_luaRoot;
 }
 
@@ -817,7 +817,7 @@ bool UniverseClient::reloadPlayer(Json const& data, Uuid const&, bool resetInter
   if (m_playerReloadPreCallback)
     m_playerReloadPreCallback(resetInterfaces);
 
-  ProjectilePtr indicator;
+  std::shared_ptr<Projectile> indicator;
 
   if (playerInWorld) {
     if (showIndicator) {
@@ -905,35 +905,35 @@ UniverseClient::ReloadPlayerCallback& UniverseClient::playerReloadCallback() {
   return m_playerReloadCallback;
 }
 
-ClockConstPtr UniverseClient::universeClock() const {
+std::shared_ptr<Clock const> UniverseClient::universeClock() const {
   return m_universeClock;
 }
 
-JsonRpcInterfacePtr UniverseClient::rpcInterface() const {
+std::shared_ptr<JsonRpcInterface> UniverseClient::rpcInterface() const {
   return m_clientContext->rpcInterface();
 }
 
-ClientContextPtr UniverseClient::clientContext() const {
+std::shared_ptr<ClientContext> UniverseClient::clientContext() const {
   return m_clientContext;
 }
 
-TeamClientPtr UniverseClient::teamClient() const {
+std::shared_ptr<TeamClient> UniverseClient::teamClient() const {
   return m_teamClient;
 }
 
-QuestManagerPtr UniverseClient::questManager() const {
+std::shared_ptr<QuestManager> UniverseClient::questManager() const {
   return m_mainPlayer->questManager();
 }
 
-PlayerStoragePtr UniverseClient::playerStorage() const {
+std::shared_ptr<PlayerStorage> UniverseClient::playerStorage() const {
   return m_playerStorage;
 }
 
-StatisticsPtr UniverseClient::statistics() const {
+std::shared_ptr<Statistics> UniverseClient::statistics() const {
   return m_statistics;
 }
 
-UniverseClient::ScriptComponentPtr UniverseClient::scriptContext(String const& contextName) {
+std::shared_ptr<UniverseClient::ScriptComponent> UniverseClient::scriptContext(String const& contextName) {
   if (auto context = m_scriptContexts.ptr(contextName))
     return *context;
   else
@@ -1056,7 +1056,7 @@ void UniverseClient::setPause(bool pause) {
     m_universeClock->start();
 }
 
-void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
+void UniverseClient::handlePackets(List<std::shared_ptr<Packet>> const& packets) {
   for (auto const& packet : packets) {
     try {
       bool skip = false;

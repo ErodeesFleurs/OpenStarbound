@@ -151,7 +151,7 @@ namespace Star {
 // update this in the rare case that backwards compat code has to be set up in TeamManager
 extern VersionNumber const TeamClientVersion = 1;
   
-TeamClient::TeamClient(PlayerPtr mainPlayer, ClientContextPtr clientContext) {
+TeamClient::TeamClient(std::shared_ptr<Player> mainPlayer, std::shared_ptr<ClientContext> clientContext) {
   m_mainPlayer = mainPlayer;
   m_clientContext = clientContext;
 
@@ -373,7 +373,7 @@ void TeamClient::handleRpcResponses() {
   m_pendingResponses = stillPendingResponses;
 }
 
-void TeamClient::writePlayerData(JsonObject& request, PlayerPtr player, bool fullWrite) const {
+void TeamClient::writePlayerData(JsonObject& request, std::shared_ptr<Player> player, bool fullWrite) const {
   request["version"] = TeamClientVersion;
   request["playerUuid"] = m_clientContext->playerUuid().hex();
   request["entity"] = player->entityId();

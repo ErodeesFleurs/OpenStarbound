@@ -83,26 +83,7 @@ struct WorldStorageExceptionTag {
 using WorldStorageException = StarError<WorldStorageExceptionTag, StarException>;
 
 class EntityMap;
-using EntityMapPtr = std::shared_ptr<EntityMap>;
-using EntityMapConstPtr = std::shared_ptr<const EntityMap>;
-using EntityMapWeakPtr = std::weak_ptr<EntityMap>;
-using EntityMapConstWeakPtr = std::weak_ptr<const EntityMap>;
-using EntityMapUPtr = std::unique_ptr<EntityMap>;
-using EntityMapConstUPtr = std::unique_ptr<const EntityMap>;
-struct WorldGeneratorFacade;
-using WorldGeneratorFacadePtr = std::shared_ptr<WorldGeneratorFacade>;
-using WorldGeneratorFacadeConstPtr = std::shared_ptr<const WorldGeneratorFacade>;
-using WorldGeneratorFacadeWeakPtr = std::weak_ptr<WorldGeneratorFacade>;
-using WorldGeneratorFacadeConstWeakPtr = std::weak_ptr<const WorldGeneratorFacade>;
-using WorldGeneratorFacadeUPtr = std::unique_ptr<WorldGeneratorFacade>;
-using WorldGeneratorFacadeConstUPtr = std::unique_ptr<const WorldGeneratorFacade>;
 class WorldStorage;
-using WorldStoragePtr = std::shared_ptr<WorldStorage>;
-using WorldStorageConstPtr = std::shared_ptr<const WorldStorage>;
-using WorldStorageWeakPtr = std::weak_ptr<WorldStorage>;
-using WorldStorageConstWeakPtr = std::weak_ptr<const WorldStorage>;
-using WorldStorageUPtr = std::unique_ptr<WorldStorage>;
-using WorldStorageConstUPtr = std::unique_ptr<const WorldStorage>;
 
 typedef HashMap<ByteArray, Maybe<ByteArray>> WorldChunks;
 
@@ -142,19 +123,19 @@ struct WorldGeneratorFacade {
 
   // Called after an entity is loaded, but before the entity is added to the
   // EntityMap.
-  virtual void initEntity(WorldStorage* storage, EntityId newEntityId, EntityPtr const& entity) = 0;
+  virtual void initEntity(WorldStorage* storage, EntityId newEntityId, std::shared_ptr<Entity> const& entity) = 0;
 
   // Called after the entity is removed from the entity map but before it is
   // stored.
-  virtual void destructEntity(WorldStorage* storage, EntityPtr const& entity) = 0;
+  virtual void destructEntity(WorldStorage* storage, std::shared_ptr<Entity> const& entity) = 0;
 
   // Should return true if this entity should maintain the sector, false
   // otherwise.
-  virtual bool entityKeepAlive(WorldStorage* storage, EntityPtr const& entity) const = 0;
+  virtual bool entityKeepAlive(WorldStorage* storage, std::shared_ptr<Entity> const& entity) const = 0;
 
   // Should return true if this entity should be stored along with the world,
   // false otherwise.
-  virtual bool entityPersistent(WorldStorage* storage, EntityPtr const& entity) const = 0;
+  virtual bool entityPersistent(WorldStorage* storage, std::shared_ptr<Entity> const& entity) const = 0;
 
   // Queues up a microdungeon. Fulfills the rpc promise with the position the
   // microdungeon was placed at
@@ -176,25 +157,24 @@ class WorldStorage {
 public:
   typedef ServerTileSectorArray::Sector Sector;
   typedef ServerTileSectorArray::Array TileArray;
-  typedef ServerTileSectorArray::ArrayPtr TileArrayPtr;
 
   static WorldChunks getWorldChunksUpdate(WorldChunks const& oldChunks, WorldChunks const& newChunks);
   static void applyWorldChunksUpdateToFile(String const& file, WorldChunks const& update);
   static WorldChunks getWorldChunksFromFile(String const& file);
 
   // Create a new world of the given size.
-  WorldStorage(Vec2U const& worldSize, IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade);
+  WorldStorage(Vec2U const& worldSize, std::shared_ptr<IODevice> const& device, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade);
   // Read an existing world.
-  WorldStorage(IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade);
+  WorldStorage(std::shared_ptr<IODevice> const& device, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade);
   // Read an in-memory world.
-  WorldStorage(WorldChunks const& chunks, WorldGeneratorFacadePtr const& generatorFacade);
+  WorldStorage(WorldChunks const& chunks, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade);
   ~WorldStorage();
 
   VersionedJson worldMetadata();
   void setWorldMetadata(VersionedJson const& metadata);
 
-  ServerTileSectorArrayPtr const& tileArray() const;
-  EntityMapPtr const& entityMap() const;
+  std::shared_ptr<ServerTileSectorArray> const& tileArray() const;
+  std::shared_ptr<EntityMap> const& entityMap() const;
 
   Maybe<Sector> sectorForPosition(Vec2I const& position) const;
   List<Sector> sectorsForRegion(RectI const& region) const;
@@ -298,7 +278,7 @@ private:
     SectorGenerationLevel generationLevel;
 
     VersionNumber tileSerializationVersion;
-    TileArrayPtr tiles;
+    std::unique_ptr<TileArray> tiles;
   };
 
   struct SectorMetadata {
@@ -329,7 +309,7 @@ private:
   static SectorUniqueStore readSectorUniqueStore(ByteArray const& data);
   static ByteArray writeSectorUniqueStore(SectorUniqueStore const& store);
 
-  static void openDatabase(BTreeDatabase& db, IODevicePtr device);
+  static void openDatabase(BTreeDatabase& db, std::shared_ptr<IODevice> device);
 
   WorldStorage();
 
@@ -379,9 +359,9 @@ private:
   Vec2F m_sectorTimeToLive;
   float m_generationQueueTimeToLive;
 
-  ServerTileSectorArrayPtr m_tileArray;
-  EntityMapPtr m_entityMap;
-  WorldGeneratorFacadePtr m_generatorFacade;
+  std::shared_ptr<ServerTileSectorArray> m_tileArray;
+  std::shared_ptr<EntityMap> m_entityMap;
+  std::shared_ptr<WorldGeneratorFacade> m_generatorFacade;
 
   bool m_floatingDungeonWorld;
 
@@ -398,26 +378,8 @@ export namespace Star {
   using ::Star::WorldStorageExceptionTag;
   using ::Star::WorldStorageException;
   using ::Star::EntityMap;
-  using ::Star::EntityMapPtr;
-  using ::Star::EntityMapConstPtr;
-  using ::Star::EntityMapWeakPtr;
-  using ::Star::EntityMapConstWeakPtr;
-  using ::Star::EntityMapUPtr;
-  using ::Star::EntityMapConstUPtr;
   using ::Star::WorldGeneratorFacade;
-  using ::Star::WorldGeneratorFacadePtr;
-  using ::Star::WorldGeneratorFacadeConstPtr;
-  using ::Star::WorldGeneratorFacadeWeakPtr;
-  using ::Star::WorldGeneratorFacadeConstWeakPtr;
-  using ::Star::WorldGeneratorFacadeUPtr;
-  using ::Star::WorldGeneratorFacadeConstUPtr;
   using ::Star::WorldStorage;
-  using ::Star::WorldStoragePtr;
-  using ::Star::WorldStorageConstPtr;
-  using ::Star::WorldStorageWeakPtr;
-  using ::Star::WorldStorageConstWeakPtr;
-  using ::Star::WorldStorageUPtr;
-  using ::Star::WorldStorageConstUPtr;
   using ::Star::WorldChunks;
   using ::Star::SectorLoadLevel;
   using ::Star::SectorGenerationLevel;

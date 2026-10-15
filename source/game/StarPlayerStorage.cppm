@@ -74,12 +74,6 @@ import star.world_storage;
 namespace Star {
 
 class Player;
-using PlayerPtr = std::shared_ptr<Player>;
-using PlayerConstPtr = std::shared_ptr<const Player>;
-using PlayerWeakPtr = std::weak_ptr<Player>;
-using PlayerConstWeakPtr = std::weak_ptr<const Player>;
-using PlayerUPtr = std::unique_ptr<Player>;
-using PlayerConstUPtr = std::unique_ptr<const Player>;
 
 class PlayerStorage {
 public:
@@ -95,11 +89,11 @@ public:
   List<Uuid> playerUuidListByName(String const& name, Maybe<Uuid> except = {});
 
   // Also returns the diskStore Json if needed.
-  Json savePlayer(PlayerPtr const& player);
+  Json savePlayer(std::shared_ptr<Player> const& player);
 
   Maybe<Json> maybeGetPlayerData(Uuid const& uuid);
   Json getPlayerData(Uuid const& uuid);
-  PlayerPtr loadPlayer(Uuid const& uuid);
+  std::shared_ptr<Player> loadPlayer(Uuid const& uuid);
   void deletePlayer(Uuid const& uuid);
 
   WorldChunks loadShipData(Uuid const& uuid);

@@ -209,7 +209,7 @@ import star.player_inventory;
 import star.algorithm;
 namespace Star {
 
-ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player) {
+ActionBar::ActionBar(MainInterfacePaneManager* paneManager, std::shared_ptr<Player> player) {
   m_paneManager = paneManager;
   m_player = std::move(player);
 
@@ -285,9 +285,9 @@ ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player) {
   m_essentialSelectedWidget = fetchChild<ImageWidget>("essentialSelect");
 }
 
-PanePtr ActionBar::createTooltip(Vec2I const& screenPosition) {
-  ItemPtr item;
-  auto tryItemWidget = [&](ItemSlotWidgetPtr const& isw) {
+std::shared_ptr<Pane> ActionBar::createTooltip(Vec2I const& screenPosition) {
+  std::shared_ptr<Item> item;
+  auto tryItemWidget = [&](std::shared_ptr<ItemSlotWidget> const& isw) {
     if (isw->screenBoundRect().contains(screenPosition))
       item = isw->item();
   };
@@ -419,8 +419,8 @@ void ActionBar::update(float) {
     // widgets are always shown with no count and always dimmed to indicate
     // that it is just a preview.
 
-    ItemPtr primaryItem;
-    ItemPtr secondaryItem;
+    std::shared_ptr<Item> primaryItem;
+    std::shared_ptr<Item> secondaryItem;
 
     if (auto slot = inventory->customBarPrimarySlot(i))
       primaryItem = inventory->itemsAt(*slot);
@@ -431,7 +431,7 @@ void ActionBar::update(float) {
     bool primaryPreview = false;
     bool secondaryPreview = false;
 
-    ItemPtr swapSlotItem = inventory->swapSlotItem();
+    std::shared_ptr<Item> swapSlotItem = inventory->swapSlotItem();
     if (swapSlotItem && m_customBarHover && m_customBarHover->first == i) {
       if (!m_customBarHover->second || swapSlotItem->twoHanded()) {
         if (!primaryItem && swapSlotItem == secondaryItem)

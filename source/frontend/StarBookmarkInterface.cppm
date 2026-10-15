@@ -59,17 +59,9 @@ import star.player_universe_map;
 
 namespace Star {
 
-class EditBookmarkDialog;
-using EditBookmarkDialogPtr = std::shared_ptr<EditBookmarkDialog>;
-using EditBookmarkDialogConstPtr = std::shared_ptr<EditBookmarkDialog const>;
-using EditBookmarkDialogWeakPtr = std::weak_ptr<EditBookmarkDialog>;
-using EditBookmarkDialogConstWeakPtr = std::weak_ptr<EditBookmarkDialog const>;
-using EditBookmarkDialogUPtr = std::unique_ptr<EditBookmarkDialog>;
-using EditBookmarkDialogConstUPtr = std::unique_ptr<EditBookmarkDialog const>;
-
 class EditBookmarkDialog : public Pane {
 public:
-  EditBookmarkDialog(PlayerUniverseMapPtr playerUniverseMap);
+  EditBookmarkDialog(std::shared_ptr<PlayerUniverseMap> playerUniverseMap);
 
   virtual void show() override;
 
@@ -80,24 +72,18 @@ public:
   void close();
 
 private:
-  PlayerUniverseMapPtr m_playerUniverseMap;
+  std::shared_ptr<PlayerUniverseMap> m_playerUniverseMap;
   TeleportBookmark m_bookmark;
 
   bool m_isNew;
 };
 
-void setupBookmarkEntry(WidgetPtr const& entry, TeleportBookmark const& bookmark);
+void setupBookmarkEntry(std::shared_ptr<Widget> const& entry, TeleportBookmark const& bookmark);
 }
 
 export module star.bookmark_interface;
 
 export namespace Star {
   using ::Star::EditBookmarkDialog;
-  using ::Star::EditBookmarkDialogPtr;
-  using ::Star::EditBookmarkDialogConstPtr;
-  using ::Star::EditBookmarkDialogWeakPtr;
-  using ::Star::EditBookmarkDialogConstWeakPtr;
-  using ::Star::EditBookmarkDialogUPtr;
-  using ::Star::EditBookmarkDialogConstUPtr;
   using ::Star::setupBookmarkEntry;
 }

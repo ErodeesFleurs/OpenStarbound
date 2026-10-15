@@ -586,24 +586,24 @@ LuaValue LuaConverter<PhysicsMovingCollision>::from(LuaEngine& engine, PhysicsMo
   return table;
 }
 
-LuaMethods<BehaviorStateWeakPtr> LuaUserDataMethods<BehaviorStateWeakPtr>::make() {
-  LuaMethods<BehaviorStateWeakPtr> methods;
-  methods.registerMethodWithSignature<NodeStatus, BehaviorStateWeakPtr, float>(
-    "run", [](BehaviorStateWeakPtr const& behavior, float dt) -> NodeStatus {
+LuaMethods<std::weak_ptr<BehaviorState>> LuaUserDataMethods<std::weak_ptr<BehaviorState>>::make() {
+  LuaMethods<std::weak_ptr<BehaviorState>> methods;
+  methods.registerMethodWithSignature<NodeStatus, std::weak_ptr<BehaviorState>, float>(
+    "run", [](std::weak_ptr<BehaviorState> const& behavior, float dt) -> NodeStatus {
       if (behavior.expired())
         throw StarException("Use of expired blackboard");
 
       return behavior.lock()->run(dt);
     });
-  methods.registerMethodWithSignature<void, BehaviorStateWeakPtr>(
-    "clear", [](BehaviorStateWeakPtr const& behavior) {
+  methods.registerMethodWithSignature<void, std::weak_ptr<BehaviorState>>(
+    "clear", [](std::weak_ptr<BehaviorState> const& behavior) {
       if (behavior.expired())
         throw StarException("Use of expired blackboard");
 
       behavior.lock()->clear();
     });
-  methods.registerMethodWithSignature<BlackboardWeakPtr, BehaviorStateWeakPtr>(
-    "blackboard", [](BehaviorStateWeakPtr const& behavior) -> BlackboardWeakPtr {
+  methods.registerMethodWithSignature<std::weak_ptr<Blackboard>, std::weak_ptr<BehaviorState>>(
+    "blackboard", [](std::weak_ptr<BehaviorState> const& behavior) -> std::weak_ptr<Blackboard> {
       if (behavior.expired())
         throw StarException("Use of expired blackboard");
 
@@ -628,190 +628,190 @@ NodeStatus LuaConverter<NodeStatus>::to(LuaEngine&, LuaValue const& v) {
     return NodeStatus::Running;
 }
 
-LuaMethods<BlackboardWeakPtr> LuaUserDataMethods<BlackboardWeakPtr>::make() {
-  LuaMethods<BlackboardWeakPtr> methods;
+LuaMethods<std::weak_ptr<Blackboard>> LuaUserDataMethods<std::weak_ptr<Blackboard>>::make() {
+  LuaMethods<std::weak_ptr<Blackboard>> methods;
 
-  auto get =[](BlackboardWeakPtr const& board, NodeParameterType const& type, String const& key) -> LuaValue {
+  auto get =[](std::weak_ptr<Blackboard> const& board, NodeParameterType const& type, String const& key) -> LuaValue {
     if (board.expired())
       throw StarException("Use of expired blackboard");
 
     return board.lock()->get(type, key);
   };
-  auto set = [](BlackboardWeakPtr const& board, NodeParameterType const& type, String const& key, LuaValue const& value) {
+  auto set = [](std::weak_ptr<Blackboard> const& board, NodeParameterType const& type, String const& key, LuaValue const& value) {
     if (board.expired())
       throw StarException("Use of expired blackboard");
 
     board.lock()->set(type, key, value);
   };
 
-  methods.registerMethodWithSignature<LuaValue, BlackboardWeakPtr, String, String>("get",
-    [&](BlackboardWeakPtr const& board, String const& type, String const& key) -> LuaValue {
+  methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String, String>("get",
+    [&](std::weak_ptr<Blackboard> const& board, String const& type, String const& key) -> LuaValue {
       return get(board, NodeParameterTypeNames.getLeft(type), key);
     });
-  methods.registerMethodWithSignature<void, BlackboardWeakPtr, String, String, LuaValue>("set",
-    [&](BlackboardWeakPtr const& board, String const& type, String const& key, LuaValue const& value) {
+  methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, String, LuaValue>("set",
+    [&](std::weak_ptr<Blackboard> const& board, String const& type, String const& key, LuaValue const& value) {
       set(board, NodeParameterTypeNames.getLeft(type), key, value);
     });
 
-  methods.registerMethodWithSignature<LuaValue, BlackboardWeakPtr, String>(
-    "getEntity", [&](BlackboardWeakPtr const& board, String const& key) -> LuaValue {
+  methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String>(
+    "getEntity", [&](std::weak_ptr<Blackboard> const& board, String const& key) -> LuaValue {
       return get(board, NodeParameterType::Entity, key);
     });
-  methods.registerMethodWithSignature<LuaValue, BlackboardWeakPtr, String>(
-    "getPosition", [&](BlackboardWeakPtr const& board, String const& key) -> LuaValue {
+  methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String>(
+    "getPosition", [&](std::weak_ptr<Blackboard> const& board, String const& key) -> LuaValue {
       return get(board, NodeParameterType::Position, key);
     });
-  methods.registerMethodWithSignature<LuaValue, BlackboardWeakPtr, String>(
-    "getVec2", [&](BlackboardWeakPtr const& board, String const& key) -> LuaValue {
+  methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String>(
+    "getVec2", [&](std::weak_ptr<Blackboard> const& board, String const& key) -> LuaValue {
       return get(board, NodeParameterType::Vec2, key);
     });
-  methods.registerMethodWithSignature<LuaValue, BlackboardWeakPtr, String>(
-    "getNumber", [&](BlackboardWeakPtr const& board, String const& key) -> LuaValue {
+  methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String>(
+    "getNumber", [&](std::weak_ptr<Blackboard> const& board, String const& key) -> LuaValue {
       return get(board, NodeParameterType::Number, key);
     });
-  methods.registerMethodWithSignature<LuaValue, BlackboardWeakPtr, String>(
-    "getBool", [&](BlackboardWeakPtr const& board, String const& key) -> LuaValue {
+  methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String>(
+    "getBool", [&](std::weak_ptr<Blackboard> const& board, String const& key) -> LuaValue {
       return get(board, NodeParameterType::Bool, key);
     });
-  methods.registerMethodWithSignature<LuaValue, BlackboardWeakPtr, String>(
-    "getList", [&](BlackboardWeakPtr const& board, String const& key) -> LuaValue {
+  methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String>(
+    "getList", [&](std::weak_ptr<Blackboard> const& board, String const& key) -> LuaValue {
       return get(board, NodeParameterType::List, key);
     });
-  methods.registerMethodWithSignature<LuaValue, BlackboardWeakPtr, String>(
-    "getTable", [&](BlackboardWeakPtr const& board, String const& key) -> LuaValue {
+  methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String>(
+    "getTable", [&](std::weak_ptr<Blackboard> const& board, String const& key) -> LuaValue {
       return get(board, NodeParameterType::Table, key);
     });
-  methods.registerMethodWithSignature<LuaValue, BlackboardWeakPtr, String>(
-    "getString", [&](BlackboardWeakPtr const& board, String const& key) -> LuaValue {
+  methods.registerMethodWithSignature<LuaValue, std::weak_ptr<Blackboard>, String>(
+    "getString", [&](std::weak_ptr<Blackboard> const& board, String const& key) -> LuaValue {
       return get(board, NodeParameterType::String, key);
     });
 
 
-  methods.registerMethodWithSignature<void, BlackboardWeakPtr, String, LuaValue>(
-    "setEntity", [&](BlackboardWeakPtr const& board, String const& key, LuaValue const& value) {
+  methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, LuaValue>(
+    "setEntity", [&](std::weak_ptr<Blackboard> const& board, String const& key, LuaValue const& value) {
       set(board, NodeParameterType::Entity, key, value);
     });
-  methods.registerMethodWithSignature<void, BlackboardWeakPtr, String, LuaValue>(
-    "setPosition", [&](BlackboardWeakPtr const& board, String const& key, LuaValue const& value) {
+  methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, LuaValue>(
+    "setPosition", [&](std::weak_ptr<Blackboard> const& board, String const& key, LuaValue const& value) {
       set(board, NodeParameterType::Position, key, value);
     });
-  methods.registerMethodWithSignature<void, BlackboardWeakPtr, String, LuaValue>(
-    "setVec2", [&](BlackboardWeakPtr const& board, String const& key, LuaValue const& value) {
+  methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, LuaValue>(
+    "setVec2", [&](std::weak_ptr<Blackboard> const& board, String const& key, LuaValue const& value) {
       set(board, NodeParameterType::Vec2, key, value);
     });
-  methods.registerMethodWithSignature<void, BlackboardWeakPtr, String, LuaValue>(
-    "setNumber", [&](BlackboardWeakPtr const& board, String const& key, LuaValue const& value) {
+  methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, LuaValue>(
+    "setNumber", [&](std::weak_ptr<Blackboard> const& board, String const& key, LuaValue const& value) {
       set(board, NodeParameterType::Number, key, value);
     });
-  methods.registerMethodWithSignature<void, BlackboardWeakPtr, String, LuaValue>(
-    "setBool", [&](BlackboardWeakPtr const& board, String const& key, LuaValue const& value) {
+  methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, LuaValue>(
+    "setBool", [&](std::weak_ptr<Blackboard> const& board, String const& key, LuaValue const& value) {
       set(board, NodeParameterType::Bool, key, value);
     });
-  methods.registerMethodWithSignature<void, BlackboardWeakPtr, String, LuaValue>(
-    "setList", [&](BlackboardWeakPtr const& board, String const& key, LuaValue const& value) {
+  methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, LuaValue>(
+    "setList", [&](std::weak_ptr<Blackboard> const& board, String const& key, LuaValue const& value) {
       set(board, NodeParameterType::List, key, value);
     });
-  methods.registerMethodWithSignature<void, BlackboardWeakPtr, String, LuaValue>(
-    "setTable", [&](BlackboardWeakPtr const& board, String const& key, LuaValue const& value) {
+  methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, LuaValue>(
+    "setTable", [&](std::weak_ptr<Blackboard> const& board, String const& key, LuaValue const& value) {
       set(board, NodeParameterType::Table, key, value);
     });
-  methods.registerMethodWithSignature<void, BlackboardWeakPtr, String, LuaValue>(
-    "setString", [&](BlackboardWeakPtr const& board, String const& key, LuaValue const& value) {
+  methods.registerMethodWithSignature<void, std::weak_ptr<Blackboard>, String, LuaValue>(
+    "setString", [&](std::weak_ptr<Blackboard> const& board, String const& key, LuaValue const& value) {
       set(board, NodeParameterType::String, key, value);
     });
   return methods;
 }
 
-LuaMethods<AudioInstancePtr> LuaUserDataMethods<AudioInstancePtr>::make() {
-    LuaMethods<AudioInstancePtr> methods;
+LuaMethods<std::shared_ptr<AudioInstance>> LuaUserDataMethods<std::shared_ptr<AudioInstance>>::make() {
+    LuaMethods<std::shared_ptr<AudioInstance>> methods;
 
     methods.registerMethod("position",
-    [&](AudioInstancePtr const& audio) -> Maybe<Vec2F> {
+    [&](std::shared_ptr<AudioInstance> const& audio) -> Maybe<Vec2F> {
         return audio->position();
     });
     
     methods.registerMethod("setPosition",
-    [&](AudioInstancePtr const& audio, Maybe<Vec2F> const& pos) {
+    [&](std::shared_ptr<AudioInstance> const& audio, Maybe<Vec2F> const& pos) {
         audio->setPosition(pos);
     });
     
     methods.registerMethod("translate",
-    [&](AudioInstancePtr const& audio, Vec2F const& distance) {
+    [&](std::shared_ptr<AudioInstance> const& audio, Vec2F const& distance) {
         audio->translate(distance);
     });
     
     methods.registerMethod("rangeMultiplier",
-    [&](AudioInstancePtr const& audio) -> float {
+    [&](std::shared_ptr<AudioInstance> const& audio) -> float {
         return audio->rangeMultiplier();
     });
     
     methods.registerMethod("setRangeMultiplier",
-    [&](AudioInstancePtr const& audio, float const& rm) {
+    [&](std::shared_ptr<AudioInstance> const& audio, float const& rm) {
         audio->setRangeMultiplier(rm);
     });
     
     methods.registerMethod("setVolume",
-    [&](AudioInstancePtr const& audio, float const& targetValue, Maybe<float> const& rampTime) {
+    [&](std::shared_ptr<AudioInstance> const& audio, float const& targetValue, Maybe<float> const& rampTime) {
         audio->setVolume(targetValue, rampTime.value(0.0f));
     });
     
     methods.registerMethod("setPitchMultiplier",
-    [&](AudioInstancePtr const& audio, float const& targetValue, Maybe<float> const& rampTime) {
+    [&](std::shared_ptr<AudioInstance> const& audio, float const& targetValue, Maybe<float> const& rampTime) {
         audio->setPitchMultiplier(targetValue, rampTime.value(0.0f));
     });
     
     methods.registerMethod("loops",
-    [&](AudioInstancePtr const& audio) -> int {
+    [&](std::shared_ptr<AudioInstance> const& audio) -> int {
         return audio->loops();
     });
     
     methods.registerMethod("setLoops",
-    [&](AudioInstancePtr const& audio, int const& loops) {
+    [&](std::shared_ptr<AudioInstance> const& audio, int const& loops) {
         audio->setLoops(loops);
     });
     
     methods.registerMethod("currentTime",
-    [&](AudioInstancePtr const& audio) -> double {
+    [&](std::shared_ptr<AudioInstance> const& audio) -> double {
         return audio->currentTime();
     });
     
     methods.registerMethod("totalTime",
-    [&](AudioInstancePtr const& audio) -> double {
+    [&](std::shared_ptr<AudioInstance> const& audio) -> double {
         return audio->totalTime();
     });
     
     methods.registerMethod("seekTime",
-    [&](AudioInstancePtr const& audio, double const& time) {
+    [&](std::shared_ptr<AudioInstance> const& audio, double const& time) {
         audio->seekTime(time);
     });
     
     methods.registerMethod("mixerGroup",
-    [&](AudioInstancePtr const& audio) -> String {
+    [&](std::shared_ptr<AudioInstance> const& audio) -> String {
         return MixerGroupNames.getRight(audio->mixerGroup());
     });
     
     methods.registerMethod("setMixerGroup",
-    [&](AudioInstancePtr const& audio, String const& group) {
+    [&](std::shared_ptr<AudioInstance> const& audio, String const& group) {
         audio->setMixerGroup(MixerGroupNames.getLeft(group));
     });
     
     methods.registerMethod("setClockStart",
-    [&](AudioInstancePtr const& audio, Maybe<std::int64_t> const& time) {
+    [&](std::shared_ptr<AudioInstance> const& audio, Maybe<std::int64_t> const& time) {
         audio->setClockStart(time);
     });
     
     methods.registerMethod("setClockStop",
-    [&](AudioInstancePtr const& audio, Maybe<std::int64_t> const& time, Maybe<std::int64_t> const& fadeOutTime) {
+    [&](std::shared_ptr<AudioInstance> const& audio, Maybe<std::int64_t> const& time, Maybe<std::int64_t> const& fadeOutTime) {
         audio->setClockStop(time,fadeOutTime.value(0));
     });
     
     methods.registerMethod("stop",
-    [&](AudioInstancePtr const& audio, Maybe<float> const& rampTime) {
+    [&](std::shared_ptr<AudioInstance> const& audio, Maybe<float> const& rampTime) {
         audio->stop(rampTime.value(0.0f));
     });
     
     methods.registerMethod("finished",
-    [&](AudioInstancePtr const& audio) -> bool {
+    [&](std::shared_ptr<AudioInstance> const& audio) -> bool {
         return audio->finished();
     });
 

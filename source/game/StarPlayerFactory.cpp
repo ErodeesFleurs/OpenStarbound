@@ -151,12 +151,12 @@ PlayerFactory::PlayerFactory() : m_rebuilder(std::make_shared<Rebuilder>("player
   m_config = std::make_shared<PlayerConfig>(assets->json("/player.config").toObject());
 }
 
-PlayerPtr PlayerFactory::create() const {
+std::shared_ptr<Player> PlayerFactory::create() const {
   return std::make_shared<Player>(m_config);
 }
 
-PlayerPtr PlayerFactory::diskLoadPlayer(Json const& diskStore) const {
-  PlayerPtr player;
+std::shared_ptr<Player> PlayerFactory::diskLoadPlayer(Json const& diskStore) const {
+  std::shared_ptr<Player> player;
   try {
     player = std::make_shared<Player>(m_config, diskStore);
   } catch (std::exception const& e) {
@@ -177,7 +177,7 @@ PlayerPtr PlayerFactory::diskLoadPlayer(Json const& diskStore) const {
   return player;
 }
 
-PlayerPtr PlayerFactory::netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules) const {
+std::shared_ptr<Player> PlayerFactory::netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules) const {
   return std::make_shared<Player>(m_config, netStore, rules);
 }
 

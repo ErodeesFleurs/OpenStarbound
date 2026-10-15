@@ -10,14 +10,6 @@ import star.item_descriptor;
 
 namespace Star {
 
-class PlayerBlueprints;
-using PlayerBlueprintsPtr = std::shared_ptr<PlayerBlueprints>;
-using PlayerBlueprintsConstPtr = std::shared_ptr<const PlayerBlueprints>;
-using PlayerBlueprintsWeakPtr = std::weak_ptr<PlayerBlueprints>;
-using PlayerBlueprintsConstWeakPtr = std::weak_ptr<const PlayerBlueprints>;
-using PlayerBlueprintsUPtr = std::unique_ptr<PlayerBlueprints>;
-using PlayerBlueprintsConstUPtr = std::unique_ptr<const PlayerBlueprints>;
-
 class PlayerBlueprints {
 public:
   PlayerBlueprints();
@@ -41,10 +33,4 @@ export module star.player_blueprints;
 
 export namespace Star {
   using ::Star::PlayerBlueprints;
-  using ::Star::PlayerBlueprintsPtr;
-  using ::Star::PlayerBlueprintsConstPtr;
-  using ::Star::PlayerBlueprintsWeakPtr;
-  using ::Star::PlayerBlueprintsConstWeakPtr;
-  using ::Star::PlayerBlueprintsUPtr;
-  using ::Star::PlayerBlueprintsConstUPtr;
 }

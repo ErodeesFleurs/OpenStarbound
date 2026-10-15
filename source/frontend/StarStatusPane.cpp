@@ -196,7 +196,7 @@ import star.image_metadata_database;
 
 namespace Star {
 
-StatusPane::StatusPane(MainInterfacePaneManager* paneManager, UniverseClientPtr client) {
+StatusPane::StatusPane(MainInterfacePaneManager* paneManager, std::shared_ptr<UniverseClient> client) {
   m_paneManager = paneManager;
   m_client = client;
   m_player = m_client->mainPlayer();
@@ -209,7 +209,7 @@ StatusPane::StatusPane(MainInterfacePaneManager* paneManager, UniverseClientPtr 
   disableScissoring();
 }
 
-PanePtr StatusPane::createTooltip(Vec2I const& screenPosition) {
+std::shared_ptr<Pane> StatusPane::createTooltip(Vec2I const& screenPosition) {
   auto interfaceScale = m_guiContext->interfaceScale();
   for (auto const& indicator : m_statusIndicators) {
     if (indicator.screenRect.contains(Vec2F(screenPosition * interfaceScale))) {

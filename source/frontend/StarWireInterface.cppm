@@ -43,37 +43,12 @@ import star.wiring;
 namespace Star {
 
 class WorldClient;
-using WorldClientPtr = std::shared_ptr<WorldClient>;
-using WorldClientConstPtr = std::shared_ptr<WorldClient const>;
-using WorldClientWeakPtr = std::weak_ptr<WorldClient>;
-using WorldClientConstWeakPtr = std::weak_ptr<WorldClient const>;
-using WorldClientUPtr = std::unique_ptr<WorldClient>;
-using WorldClientConstUPtr = std::unique_ptr<WorldClient const>;
 class WorldPainter;
-using WorldPainterPtr = std::shared_ptr<WorldPainter>;
-using WorldPainterConstPtr = std::shared_ptr<WorldPainter const>;
-using WorldPainterWeakPtr = std::weak_ptr<WorldPainter>;
-using WorldPainterConstWeakPtr = std::weak_ptr<WorldPainter const>;
-using WorldPainterUPtr = std::unique_ptr<WorldPainter>;
-using WorldPainterConstUPtr = std::unique_ptr<WorldPainter const>;
 class Player;
-using PlayerPtr = std::shared_ptr<Player>;
-using PlayerConstPtr = std::shared_ptr<Player const>;
-using PlayerWeakPtr = std::weak_ptr<Player>;
-using PlayerConstWeakPtr = std::weak_ptr<Player const>;
-using PlayerUPtr = std::unique_ptr<Player>;
-using PlayerConstUPtr = std::unique_ptr<Player const>;
-class WirePane;
-using WirePanePtr = std::shared_ptr<WirePane>;
-using WirePaneConstPtr = std::shared_ptr<WirePane const>;
-using WirePaneWeakPtr = std::weak_ptr<WirePane>;
-using WirePaneConstWeakPtr = std::weak_ptr<WirePane const>;
-using WirePaneUPtr = std::unique_ptr<WirePane>;
-using WirePaneConstUPtr = std::unique_ptr<WirePane const>;
 
 class WirePane : public Pane, public WireConnector {
 public:
-  WirePane(WorldClientPtr worldClient, PlayerPtr player, WorldPainterPtr worldPainter);
+  WirePane(std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, std::shared_ptr<WorldPainter> worldPainter);
   virtual ~WirePane() {}
 
   virtual void update(float dt) override;
@@ -90,9 +65,9 @@ protected:
 private:
   void renderWire(Vec2F from, Vec2F to, Color baseColor);
 
-  WorldClientPtr m_worldClient;
-  PlayerPtr m_player;
-  WorldPainterPtr m_worldPainter;
+  std::shared_ptr<WorldClient> m_worldClient;
+  std::shared_ptr<Player> m_player;
+  std::shared_ptr<WorldPainter> m_worldPainter;
   Vec2I m_mousePos;
   bool m_connecting;
   WireDirection m_sourceDirection;
@@ -119,31 +94,7 @@ export module star.wire_interface;
 
 export namespace Star {
   using ::Star::WorldClient;
-  using ::Star::WorldClientPtr;
-  using ::Star::WorldClientConstPtr;
-  using ::Star::WorldClientWeakPtr;
-  using ::Star::WorldClientConstWeakPtr;
-  using ::Star::WorldClientUPtr;
-  using ::Star::WorldClientConstUPtr;
   using ::Star::WorldPainter;
-  using ::Star::WorldPainterPtr;
-  using ::Star::WorldPainterConstPtr;
-  using ::Star::WorldPainterWeakPtr;
-  using ::Star::WorldPainterConstWeakPtr;
-  using ::Star::WorldPainterUPtr;
-  using ::Star::WorldPainterConstUPtr;
   using ::Star::Player;
-  using ::Star::PlayerPtr;
-  using ::Star::PlayerConstPtr;
-  using ::Star::PlayerWeakPtr;
-  using ::Star::PlayerConstWeakPtr;
-  using ::Star::PlayerUPtr;
-  using ::Star::PlayerConstUPtr;
   using ::Star::WirePane;
-  using ::Star::WirePanePtr;
-  using ::Star::WirePaneConstPtr;
-  using ::Star::WirePaneWeakPtr;
-  using ::Star::WirePaneConstWeakPtr;
-  using ::Star::WirePaneUPtr;
-  using ::Star::WirePaneConstUPtr;
 }

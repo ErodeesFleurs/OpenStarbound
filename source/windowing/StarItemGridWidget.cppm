@@ -53,34 +53,21 @@ import star.item_descriptor;
 
 namespace Star {
 
-class ItemGridWidget;
-using ItemGridWidgetPtr = std::shared_ptr<ItemGridWidget>;
-using ItemGridWidgetConstPtr = std::shared_ptr<ItemGridWidget const>;
-using ItemGridWidgetWeakPtr = std::weak_ptr<ItemGridWidget>;
-using ItemGridWidgetConstWeakPtr = std::weak_ptr<ItemGridWidget const>;
-using ItemGridWidgetUPtr = std::unique_ptr<ItemGridWidget>;
-using ItemGridWidgetConstUPtr = std::unique_ptr<ItemGridWidget const>;
 class ItemBag;
-using ItemBagPtr = std::shared_ptr<ItemBag>;
-using ItemBagConstPtr = std::shared_ptr<ItemBag const>;
-using ItemBagWeakPtr = std::weak_ptr<ItemBag>;
-using ItemBagConstWeakPtr = std::weak_ptr<ItemBag const>;
-using ItemBagUPtr = std::unique_ptr<ItemBag>;
-using ItemBagConstUPtr = std::unique_ptr<ItemBag const>;
 
 class ItemGridWidget : public Widget {
 public:
-  ItemGridWidget(ItemBagConstPtr bag, Vec2I const& dimensions, Vec2I const& spacing, String const& backingImage, unsigned bagOffset);
-  ItemGridWidget(ItemBagConstPtr bag, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset);
+  ItemGridWidget(std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& spacing, String const& backingImage, unsigned bagOffset);
+  ItemGridWidget(std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset);
 
-  ItemBagConstPtr bag() const;
+  std::shared_ptr<ItemBag const> bag() const;
 
-  ItemPtr itemAt(Vec2I const& position) const;
-  ItemPtr itemAt(std::size_t index) const;
-  ItemPtr selectedItem() const;
+  std::shared_ptr<Item> itemAt(Vec2I const& position) const;
+  std::shared_ptr<Item> itemAt(std::size_t index) const;
+  std::shared_ptr<Item> selectedItem() const;
 
-  ItemSlotWidgetPtr itemWidgetAt(Vec2I const& position) const;
-  ItemSlotWidgetPtr itemWidgetAt(std::size_t index) const;
+  std::shared_ptr<ItemSlotWidget> itemWidgetAt(Vec2I const& position) const;
+  std::shared_ptr<ItemSlotWidget> itemWidgetAt(std::size_t index) const;
 
   // Returns the dimensions of the item grid
   Vec2I dimensions() const;
@@ -101,7 +88,7 @@ public:
   void setCallback(WidgetCallbackFunc callback);
   void setRightClickCallback(WidgetCallbackFunc callback);
   void setMiddleClickCallback(WidgetCallbackFunc callback);
-  void setItemBag(ItemBagConstPtr bag);
+  void setItemBag(std::shared_ptr<ItemBag const> bag);
   void setProgress(float progress);
 
   std::size_t selectedIndex() const;
@@ -129,8 +116,8 @@ protected:
 private:
   Vec2I locOfItemSlot(unsigned slot) const;
 
-  ItemBagConstPtr m_bag;
-  List<ItemSlotWidgetPtr> m_slots;
+  std::shared_ptr<ItemBag const> m_bag;
+  List<std::shared_ptr<ItemSlotWidget>> m_slots;
   unsigned m_bagOffset;
   Vec2I m_dimensions;
   Vec2I m_rowSpacing;
@@ -162,17 +149,5 @@ export module star.item_grid_widget;
 
 export namespace Star {
   using ::Star::ItemGridWidget;
-  using ::Star::ItemGridWidgetPtr;
-  using ::Star::ItemGridWidgetConstPtr;
-  using ::Star::ItemGridWidgetWeakPtr;
-  using ::Star::ItemGridWidgetConstWeakPtr;
-  using ::Star::ItemGridWidgetUPtr;
-  using ::Star::ItemGridWidgetConstUPtr;
   using ::Star::ItemBag;
-  using ::Star::ItemBagPtr;
-  using ::Star::ItemBagConstPtr;
-  using ::Star::ItemBagWeakPtr;
-  using ::Star::ItemBagConstWeakPtr;
-  using ::Star::ItemBagUPtr;
-  using ::Star::ItemBagConstUPtr;
 }

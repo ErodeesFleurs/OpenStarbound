@@ -29,14 +29,6 @@ namespace Star {
   
 extern VersionNumber const TeamManagerVersion;
 
-class TeamManager;
-using TeamManagerPtr = std::shared_ptr<TeamManager>;
-using TeamManagerConstPtr = std::shared_ptr<const TeamManager>;
-using TeamManagerWeakPtr = std::weak_ptr<TeamManager>;
-using TeamManagerConstWeakPtr = std::weak_ptr<const TeamManager>;
-using TeamManagerUPtr = std::unique_ptr<TeamManager>;
-using TeamManagerConstUPtr = std::unique_ptr<const TeamManager>;
-
 class TeamManager {
 public:
   TeamManager();
@@ -122,10 +114,4 @@ export module star.team_manager;
 export namespace Star {
 using ::Star::TeamManagerVersion;
 using ::Star::TeamManager;
-using ::Star::TeamManagerPtr;
-using ::Star::TeamManagerConstPtr;
-using ::Star::TeamManagerWeakPtr;
-using ::Star::TeamManagerConstWeakPtr;
-using ::Star::TeamManagerUPtr;
-using ::Star::TeamManagerConstUPtr;
 }

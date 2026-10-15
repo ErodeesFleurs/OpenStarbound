@@ -51,30 +51,18 @@ import star.gui_reader;
 namespace Star {
 
 class Widget;
-using WidgetPtr = std::shared_ptr<Widget>;
-using WidgetConstPtr = std::shared_ptr<Widget const>;
-using WidgetWeakPtr = std::weak_ptr<Widget>;
-using WidgetConstWeakPtr = std::weak_ptr<Widget const>;
-using WidgetUPtr = std::unique_ptr<Widget>;
-using WidgetConstUPtr = std::unique_ptr<Widget const>;
 class CanvasWidget;
-using CanvasWidgetPtr = std::shared_ptr<CanvasWidget>;
-using CanvasWidgetConstPtr = std::shared_ptr<CanvasWidget const>;
-using CanvasWidgetWeakPtr = std::weak_ptr<CanvasWidget>;
-using CanvasWidgetConstWeakPtr = std::weak_ptr<CanvasWidget const>;
-using CanvasWidgetUPtr = std::unique_ptr<CanvasWidget>;
-using CanvasWidgetConstUPtr = std::unique_ptr<CanvasWidget const>;
 
 template <>
-struct LuaConverter<CanvasWidgetPtr> : LuaUserDataConverter<CanvasWidgetPtr> {};
+struct LuaConverter<std::shared_ptr<CanvasWidget>> : LuaUserDataConverter<std::shared_ptr<CanvasWidget>> {};
 
 template <>
-struct LuaUserDataMethods<CanvasWidgetPtr> {
-  static LuaMethods<CanvasWidgetPtr> make();
+struct LuaUserDataMethods<std::shared_ptr<CanvasWidget>> {
+  static LuaMethods<std::shared_ptr<CanvasWidget>> make();
 };
 
 namespace LuaBindings {
-  LuaCallbacks makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr reader = {});
+  LuaCallbacks makeWidgetCallbacks(Widget* parentWidget, std::shared_ptr<GuiReader> reader = {});
 }
 
 }
@@ -83,27 +71,15 @@ export module star.widget_lua_bindings;
 
 export namespace Star {
   template <>
-  struct LuaConverter<CanvasWidgetPtr>;
+  struct LuaConverter<std::shared_ptr<CanvasWidget>>;
 
   template <>
-  struct LuaUserDataMethods<CanvasWidgetPtr>;
+  struct LuaUserDataMethods<std::shared_ptr<CanvasWidget>>;
 
   using ::Star::LuaConverter;
   using ::Star::LuaUserDataMethods;
   using ::Star::Widget;
-  using ::Star::WidgetPtr;
-  using ::Star::WidgetConstPtr;
-  using ::Star::WidgetWeakPtr;
-  using ::Star::WidgetConstWeakPtr;
-  using ::Star::WidgetUPtr;
-  using ::Star::WidgetConstUPtr;
   using ::Star::CanvasWidget;
-  using ::Star::CanvasWidgetPtr;
-  using ::Star::CanvasWidgetConstPtr;
-  using ::Star::CanvasWidgetWeakPtr;
-  using ::Star::CanvasWidgetConstWeakPtr;
-  using ::Star::CanvasWidgetUPtr;
-  using ::Star::CanvasWidgetConstUPtr;
 }
 
 export namespace Star::LuaBindings {

@@ -21,7 +21,7 @@ import star.desktop_service_pc_steam;
 
 namespace Star {
 
-SteamDesktopService::SteamDesktopService(PcPlatformServicesStatePtr state)
+SteamDesktopService::SteamDesktopService(std::shared_ptr<PcPlatformServicesState> state)
   : m_state(std::move(state)) {}
 
 void SteamDesktopService::openUrl(String const& url) {

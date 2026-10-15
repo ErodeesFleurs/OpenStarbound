@@ -11,25 +11,12 @@ import star.item_descriptor;
 namespace Star {
 
 class Item;
-using ItemPtr = std::shared_ptr<Item>;
-using ItemConstPtr = std::shared_ptr<const Item>;
-using ItemWeakPtr = std::weak_ptr<Item>;
-using ItemConstWeakPtr = std::weak_ptr<const Item>;
-using ItemUPtr = std::unique_ptr<Item>;
-using ItemConstUPtr = std::unique_ptr<const Item>;
-class ItemBag;
-using ItemBagPtr = std::shared_ptr<ItemBag>;
-using ItemBagConstPtr = std::shared_ptr<const ItemBag>;
-using ItemBagWeakPtr = std::weak_ptr<ItemBag>;
-using ItemBagConstWeakPtr = std::weak_ptr<const ItemBag>;
-using ItemBagUPtr = std::unique_ptr<ItemBag>;
-using ItemBagConstUPtr = std::unique_ptr<const ItemBag>;
 
 // Manages a collection of items with non-zero counts, and putting them in /
 // stacking them / consuming them.  As items are taken out of the ItemBag, any
-// Item with a zero count is set to null, so that no ItemPtr returned by this
+// Item with a zero count is set to null, so no shared item pointer returned by this
 // class should ever be empty.  They will either be null, or of count >= 1.
-// All methods are safe to call with null ItemPtrs.  Any non-const ItemPtr
+// All methods are safe to call with null item pointers. Any non-const item pointer
 // given to the ItemBag may be used internally depending on how the item
 // stacks, so should not be used after passing to the method.
 class ItemBag {
@@ -51,7 +38,7 @@ public:
   std::size_t size() const;
   // May reshape the container, but will try not to lose any container
   // contents.  Returns overflow.
-  List<ItemPtr> resize(std::size_t size);
+  List<std::shared_ptr<Item>> resize(std::size_t size);
   // Clears all item slots, does not change ItemBag size
   void clearItems();
 
@@ -62,25 +49,25 @@ public:
   bool cleanup() const;
 
   // Direct access to item list
-  List<ItemPtr>& items();
-  List<ItemPtr> const& items() const;
+  List<std::shared_ptr<Item>>& items();
+  List<std::shared_ptr<Item>> const& items() const;
 
-  ItemPtr const& at(std::size_t i) const;
-  ItemPtr& at(std::size_t i);
+  std::shared_ptr<Item> const& at(std::size_t i) const;
+  std::shared_ptr<Item>& at(std::size_t i);
 
   // Returns all non-empty items and clears container contents
-  List<ItemPtr> takeAll();
+  List<std::shared_ptr<Item>> takeAll();
 
   // Directly set the value of an item at a given slot
-  void setItem(std::size_t pos, ItemPtr item);
+  void setItem(std::size_t pos, std::shared_ptr<Item> item);
 
   // Put items into the given slot.  Returns number of items left over
-  ItemPtr putItems(std::size_t pos, ItemPtr items);
+  std::shared_ptr<Item> putItems(std::size_t pos, std::shared_ptr<Item> items);
   // Take a maximum number of items from the given position, defaults to all.
-  ItemPtr takeItems(std::size_t pos, std::uint64_t count = highest<std::uint64_t>());
+  std::shared_ptr<Item> takeItems(std::size_t pos, std::uint64_t count = highest<std::uint64_t>());
   // Put items in the slot by combining, or swap the current items with the
   // given items.
-  ItemPtr swapItems(std::size_t pos, ItemPtr items, bool tryCombine = true);
+  std::shared_ptr<Item> swapItems(std::size_t pos, std::shared_ptr<Item> items, bool tryCombine = true);
 
   // Destroys the given number of items, only if the entirety of count is
   // available, returns success.
@@ -96,21 +83,21 @@ public:
 
   // Returns the number of items that can fit anywhere in the bag, including
   // being split up.
-  std::uint64_t itemsCanFit(ItemConstPtr const& items) const;
+  std::uint64_t itemsCanFit(std::shared_ptr<Item const> const& items) const;
   // Returns the number of items that can be stacked with existing items
   // anywhere in the bag.
-  std::uint64_t itemsCanStack(ItemConstPtr const& items) const;
+  std::uint64_t itemsCanStack(std::shared_ptr<Item const> const& items) const;
 
   // Returns where the items would fit if inserted, including any splitting up
-  ItemsFitWhereResult itemsFitWhere(ItemConstPtr const& items, std::uint64_t max = highest<std::uint64_t>()) const;
+  ItemsFitWhereResult itemsFitWhere(std::shared_ptr<Item const> const& items, std::uint64_t max = highest<std::uint64_t>()) const;
 
   // Add items anywhere in the bag. Tries to stack items first.  If any items
   // are left over, addItems returns them, otherwise null.
-  ItemPtr addItems(ItemPtr items);
+  std::shared_ptr<Item> addItems(std::shared_ptr<Item> items);
 
   // Add items to the bag, but only if they stack with existing items in the
   // bag.
-  ItemPtr stackItems(ItemPtr items);
+  std::shared_ptr<Item> stackItems(std::shared_ptr<Item> items);
 
   // Attempt to condense all stacks in the given bag
   void condenseStacks();
@@ -122,14 +109,14 @@ public:
 private:
   // If the from item can stack into the given to item, returns the amount that
   // would be transfered.
-  static std::uint64_t stackTransfer(ItemConstPtr const& to, ItemConstPtr const& from);
+  static std::uint64_t stackTransfer(std::shared_ptr<Item const> const& to, std::shared_ptr<Item const> const& from);
 
   // Returns the slot that contains the item already and has the *highest*
   // stack count but not full, or an empty slot, or NPos for no room.
-  std::size_t bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std::function<bool(std::size_t)> test) const;
-  std::size_t bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly) const;
+  std::size_t bestSlotAvailable(std::shared_ptr<Item const> const& item, bool stacksOnly, std::function<bool(std::size_t)> test) const;
+  std::size_t bestSlotAvailable(std::shared_ptr<Item const> const& item, bool stacksOnly) const;
 
-  List<ItemPtr> m_items;
+  List<std::shared_ptr<Item>> m_items;
 };
 
 }
@@ -138,17 +125,5 @@ export module star.item_bag;
 
 export namespace Star {
 using ::Star::Item;
-using ::Star::ItemPtr;
-using ::Star::ItemConstPtr;
-using ::Star::ItemWeakPtr;
-using ::Star::ItemConstWeakPtr;
-using ::Star::ItemUPtr;
-using ::Star::ItemConstUPtr;
 using ::Star::ItemBag;
-using ::Star::ItemBagPtr;
-using ::Star::ItemBagConstPtr;
-using ::Star::ItemBagWeakPtr;
-using ::Star::ItemBagConstWeakPtr;
-using ::Star::ItemBagUPtr;
-using ::Star::ItemBagConstUPtr;
 }

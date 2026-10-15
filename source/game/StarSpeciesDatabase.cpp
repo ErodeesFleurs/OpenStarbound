@@ -94,14 +94,14 @@ SpeciesDatabase::SpeciesDatabase() : m_luaRoot(std::make_shared<LuaRoot>()) {
   }
 }
 
-SpeciesDefinitionPtr SpeciesDatabase::species(String const& kind) const {
+std::shared_ptr<SpeciesDefinition> SpeciesDatabase::species(String const& kind) const {
   auto k = kind.toLower();
   if (!m_species.contains(k))
     throw StarException(strf("Unknown species kind '{}'.", kind));
   return m_species.get(k);
 }
 
-StringMap<SpeciesDefinitionPtr> SpeciesDatabase::allSpecies() const {
+StringMap<std::shared_ptr<SpeciesDefinition>> SpeciesDatabase::allSpecies() const {
   return m_species;
 }
 

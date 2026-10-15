@@ -39,20 +39,6 @@ import star.world;
 namespace Star {
 
 class RenderCallback;
-using RenderCallbackPtr = std::shared_ptr<RenderCallback>;
-using RenderCallbackConstPtr = std::shared_ptr<const RenderCallback>;
-using RenderCallbackWeakPtr = std::weak_ptr<RenderCallback>;
-using RenderCallbackConstWeakPtr = std::weak_ptr<const RenderCallback>;
-using RenderCallbackUPtr = std::unique_ptr<RenderCallback>;
-using RenderCallbackConstUPtr = std::unique_ptr<const RenderCallback>;
-
-class PlayerDeployment;
-using PlayerDeploymentPtr = std::shared_ptr<PlayerDeployment>;
-using PlayerDeploymentConstPtr = std::shared_ptr<const PlayerDeployment>;
-using PlayerDeploymentWeakPtr = std::weak_ptr<PlayerDeployment>;
-using PlayerDeploymentConstWeakPtr = std::weak_ptr<const PlayerDeployment>;
-using PlayerDeploymentUPtr = std::unique_ptr<PlayerDeployment>;
-using PlayerDeploymentConstUPtr = std::unique_ptr<const PlayerDeployment>;
 
 class PlayerDeployment {
 public:
@@ -91,17 +77,5 @@ export module star.player_deployment;
 
 export namespace Star {
 using ::Star::RenderCallback;
-using ::Star::RenderCallbackPtr;
-using ::Star::RenderCallbackConstPtr;
-using ::Star::RenderCallbackWeakPtr;
-using ::Star::RenderCallbackConstWeakPtr;
-using ::Star::RenderCallbackUPtr;
-using ::Star::RenderCallbackConstUPtr;
 using ::Star::PlayerDeployment;
-using ::Star::PlayerDeploymentPtr;
-using ::Star::PlayerDeploymentConstPtr;
-using ::Star::PlayerDeploymentWeakPtr;
-using ::Star::PlayerDeploymentConstWeakPtr;
-using ::Star::PlayerDeploymentUPtr;
-using ::Star::PlayerDeploymentConstUPtr;
 }

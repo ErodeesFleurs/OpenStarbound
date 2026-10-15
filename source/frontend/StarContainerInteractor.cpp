@@ -32,7 +32,7 @@ import star.container_interactor;
 import star.algorithm;
 namespace Star {
 
-void ContainerInteractor::openContainer(ContainerEntityPtr containerEntity) {
+void ContainerInteractor::openContainer(std::shared_ptr<ContainerEntity> containerEntity) {
   if (m_openContainer && m_openContainer->inWorld())
     m_openContainer->containerClose();
   m_openContainer = std::move(containerEntity);
@@ -63,7 +63,7 @@ EntityId ContainerInteractor::openContainerId() const {
 }
 
 // Make sure to check if this is valid when you use it!
-ContainerEntityPtr const& ContainerInteractor::openContainer() const {
+std::shared_ptr<ContainerEntity> const& ContainerInteractor::openContainer() const {
   if (m_openContainer && !m_openContainer->inWorld())
     m_openContainer = {};
 
@@ -71,7 +71,7 @@ ContainerEntityPtr const& ContainerInteractor::openContainer() const {
 }
 
 List<ContainerResult> ContainerInteractor::pullContainerResults() {
-  List<List<ItemPtr>> results;
+  List<List<std::shared_ptr<Item>>> results;
   eraseWhere(m_pendingResults, [&results](auto& promise) {
       if (auto res = promise.result())
         results.append(res.take());
@@ -80,12 +80,12 @@ List<ContainerResult> ContainerInteractor::pullContainerResults() {
   return results;
 }
 
-void ContainerInteractor::swapInContainer(std::size_t slot, ItemPtr const& items) {
+void ContainerInteractor::swapInContainer(std::size_t slot, std::shared_ptr<Item> const& items) {
   if (auto container = openContainer())
     m_pendingResults.append(container->swapItems(slot, items).wrap(resultFromItem));
 }
 
-void ContainerInteractor::addToContainer(ItemPtr const& items) {
+void ContainerInteractor::addToContainer(std::shared_ptr<Item> const& items) {
   if (auto container = openContainer())
     m_pendingResults.append(container->addItems(items).wrap(resultFromItem));
 }
@@ -95,7 +95,7 @@ void ContainerInteractor::takeFromContainerSlot(std::size_t slot, std::size_t co
     m_pendingResults.append(container->takeItems(slot, count).wrap(resultFromItem));
 }
 
-void ContainerInteractor::applyAugmentInContainer(std::size_t slot, ItemPtr const& augment) {
+void ContainerInteractor::applyAugmentInContainer(std::size_t slot, std::shared_ptr<Item> const& augment) {
   if (auto container = openContainer())
     m_pendingResults.append(container->applyAugment(slot, augment).wrap(resultFromItem));
 }
@@ -120,7 +120,7 @@ void ContainerInteractor::clearContainer() {
     m_pendingResults.append(container->clearContainer());
 }
 
-ContainerResult ContainerInteractor::resultFromItem(ItemPtr const& item) {
+ContainerResult ContainerInteractor::resultFromItem(std::shared_ptr<Item> const& item) {
   if (item)
     return {item};
   else

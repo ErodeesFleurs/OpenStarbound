@@ -393,11 +393,11 @@ WorldLayout::WorldLayout(Json const& store) : WorldLayout() {
   m_worldSize = jsonToVec2U(store.get("worldSize"));
 
   m_biomes = store.getArray("biomes").transformed([](Json const& json) {
-      return BiomeConstPtr(std::make_shared<Biome>(json));
+      return std::shared_ptr<Biome const>(std::make_shared<Biome>(json));
     });
 
   m_terrainSelectors = store.getArray("terrainSelectors").transformed([terrainDatabase](Json const& v) {
-      return TerrainSelectorConstPtr(terrainDatabase->loadSelector(v));
+      return std::shared_ptr<TerrainSelector const>(terrainDatabase->loadSelector(v));
     });
 
   m_layers = store.getArray("layers").transformed([](Json const& l) {
@@ -663,7 +663,7 @@ void WorldLayout::addBiomeRegion(
   newRegion.environmentBiomeIndex = targetRegion->environmentBiomeIndex;
   newRegion.blockBiomeIndex = registerBiome(newBiome);
 
-  WorldRegionPtr newRegionPtr = std::make_shared<WorldRegion>(newRegion);
+  std::shared_ptr<WorldRegion> newRegionPtr = std::make_shared<WorldRegion>(newRegion);
 
   // Logger::info("boundaries before region insertion are {}", targetLayer.boundaries);
 
@@ -720,7 +720,7 @@ std::pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer
   struct RegionCell {
     int lBound;
     int rBound;
-    WorldRegionPtr region;
+    std::shared_ptr<WorldRegion> region;
   };
 
   // auto printRegionCells = [](List<RegionCell> const& cells) {
@@ -865,7 +865,7 @@ std::pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer
   return {targetLayer, regionRects};
 }
 
-BiomeIndex WorldLayout::registerBiome(BiomeConstPtr biome) {
+BiomeIndex WorldLayout::registerBiome(std::shared_ptr<Biome const> biome) {
   std::size_t foundIndex = m_biomes.indexOf(biome);
   if (foundIndex != NPos)
     return foundIndex + 1;
@@ -874,7 +874,7 @@ BiomeIndex WorldLayout::registerBiome(BiomeConstPtr biome) {
   return m_biomes.size();
 }
 
-TerrainSelectorIndex WorldLayout::registerTerrainSelector(TerrainSelectorConstPtr terrainSelector) {
+TerrainSelectorIndex WorldLayout::registerTerrainSelector(std::shared_ptr<TerrainSelector const> terrainSelector) {
   std::size_t foundIndex = m_terrainSelectors.indexOf(terrainSelector);
   if (foundIndex != NPos)
     return foundIndex + 1;
@@ -941,7 +941,7 @@ void WorldLayout::addLayer(std::uint64_t seed, int yStart, RegionParams regionPa
   WorldLayer layer;
   layer.yStart = yStart;
 
-  WorldRegionPtr region = std::make_shared<WorldRegion>(buildRegion(seed, regionParams));
+  std::shared_ptr<WorldRegion> region = std::make_shared<WorldRegion>(buildRegion(seed, regionParams));
   layer.cells.append(region);
 
   m_layers.append(layer);
@@ -963,8 +963,8 @@ void WorldLayout::addLayer(std::uint64_t seed, int yStart, int yBase, String con
   Set<BiomeIndex> spawnBiomeIndexes;
 
   auto addRegion = [&](RegionParams const& regionParams, RegionParams const& subRegionParams, Vec2F const& regionSizeRange) {
-    WorldRegionPtr region = std::make_shared<WorldRegion>(buildRegion(seed, regionParams));
-    WorldRegionPtr subRegion = std::make_shared<WorldRegion>(buildRegion(seed, subRegionParams));
+    std::shared_ptr<WorldRegion> region = std::make_shared<WorldRegion>(buildRegion(seed, regionParams));
+    std::shared_ptr<WorldRegion> subRegion = std::make_shared<WorldRegion>(buildRegion(seed, subRegionParams));
     if (!Root::singleton().assets()->json("/terrestrial_worlds.config:useSecondaryEnvironmentBiomeIndex").toBool())
       region->environmentBiomeIndex = primaryEnvironmentBiomeIndex;
     subRegion->environmentBiomeIndex = region->environmentBiomeIndex;

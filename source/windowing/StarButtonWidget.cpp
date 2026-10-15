@@ -240,11 +240,11 @@ void ButtonWidget::setCallback(WidgetCallbackFunc callback) {
   m_callback = callback;
 }
 
-ButtonGroupPtr ButtonWidget::buttonGroup() const {
+std::shared_ptr<ButtonGroup> ButtonWidget::buttonGroup() const {
   return m_buttonGroup.lock();
 }
 
-void ButtonWidget::setButtonGroup(ButtonGroupPtr newGroup, int id) {
+void ButtonWidget::setButtonGroup(std::shared_ptr<ButtonGroup> newGroup, int id) {
   if (auto oldGroup = m_buttonGroup.lock()) {
     if (oldGroup == newGroup)
       return;
@@ -406,7 +406,7 @@ void ButtonWidget::setFontColorChecked(Color color) {
 }
 
 // Although ButtonWidget wraps other widgets from time to time.  These should never be "accessible"
-WidgetPtr ButtonWidget::getChildAt(Vec2I const&) {
+std::shared_ptr<Widget> ButtonWidget::getChildAt(Vec2I const&) {
   return {};
 }
 

@@ -25,7 +25,7 @@ struct RotateSelector : TerrainSelector {
   float rotation;
   Vec2F rotationCenter;
 
-  TerrainSelectorConstPtr m_source;
+  std::shared_ptr<TerrainSelector const> m_source;
 };
 
 
@@ -52,7 +52,7 @@ struct DisplacementSelector : TerrainSelector {
 
   float clampY(float v) const;
 
-  TerrainSelectorConstPtr m_source;
+  std::shared_ptr<TerrainSelector const> m_source;
 };
 
 }

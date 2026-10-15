@@ -7,14 +7,6 @@ import star.format;
 
 namespace Star {
 
-class ByteArray;
-using ByteArrayPtr = std::shared_ptr<ByteArray>;
-using ByteArrayConstPtr = std::shared_ptr<const ByteArray>;
-using ByteArrayWeakPtr = std::weak_ptr<ByteArray>;
-using ByteArrayConstWeakPtr = std::weak_ptr<const ByteArray>;
-using ByteArrayUPtr = std::unique_ptr<ByteArray>;
-using ByteArrayConstUPtr = std::unique_ptr<const ByteArray>;
-
 // Class to hold an array of bytes.  Contains an internal buffer that may be
 // larger than what is reported by size(), to avoid repeated allocations when a
 // ByteArray grows.
@@ -290,12 +282,6 @@ export template <> struct std::formatter<Star::ByteArray> : Star::StreamFormatte
 
 export namespace Star {
   using ::Star::ByteArray;
-  using ::Star::ByteArrayPtr;
-  using ::Star::ByteArrayConstPtr;
-  using ::Star::ByteArrayWeakPtr;
-  using ::Star::ByteArrayConstWeakPtr;
-  using ::Star::ByteArrayUPtr;
-  using ::Star::ByteArrayConstUPtr;
   using ::Star::hash;
   using ::Star::operator<<;
 }

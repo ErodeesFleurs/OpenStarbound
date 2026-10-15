@@ -27,54 +27,12 @@ struct TextStyle;
 struct TextPositioning;
 enum class FontMode : std::uint8_t;
 class ApplicationController;
-using ApplicationControllerPtr = std::shared_ptr<ApplicationController>;
-using ApplicationControllerConstPtr = std::shared_ptr<ApplicationController const>;
-using ApplicationControllerWeakPtr = std::weak_ptr<ApplicationController>;
-using ApplicationControllerConstWeakPtr = std::weak_ptr<ApplicationController const>;
-using ApplicationControllerUPtr = std::unique_ptr<ApplicationController>;
-using ApplicationControllerConstUPtr = std::unique_ptr<ApplicationController const>;
 class Renderer;
-using RendererPtr = std::shared_ptr<Renderer>;
-using RendererConstPtr = std::shared_ptr<Renderer const>;
-using RendererWeakPtr = std::weak_ptr<Renderer>;
-using RendererConstWeakPtr = std::weak_ptr<Renderer const>;
-using RendererUPtr = std::unique_ptr<Renderer>;
-using RendererConstUPtr = std::unique_ptr<Renderer const>;
 class Mixer;
-using MixerPtr = std::shared_ptr<Mixer>;
-using MixerConstPtr = std::shared_ptr<Mixer const>;
-using MixerWeakPtr = std::weak_ptr<Mixer>;
-using MixerConstWeakPtr = std::weak_ptr<Mixer const>;
-using MixerUPtr = std::unique_ptr<Mixer>;
-using MixerConstUPtr = std::unique_ptr<Mixer const>;
 class TextPainter;
-using TextPainterPtr = std::shared_ptr<TextPainter>;
-using TextPainterConstPtr = std::shared_ptr<TextPainter const>;
-using TextPainterWeakPtr = std::weak_ptr<TextPainter>;
-using TextPainterConstWeakPtr = std::weak_ptr<TextPainter const>;
-using TextPainterUPtr = std::unique_ptr<TextPainter>;
-using TextPainterConstUPtr = std::unique_ptr<TextPainter const>;
 class AssetTextureGroup;
-using AssetTextureGroupPtr = std::shared_ptr<AssetTextureGroup>;
-using AssetTextureGroupConstPtr = std::shared_ptr<AssetTextureGroup const>;
-using AssetTextureGroupWeakPtr = std::weak_ptr<AssetTextureGroup>;
-using AssetTextureGroupConstWeakPtr = std::weak_ptr<AssetTextureGroup const>;
-using AssetTextureGroupUPtr = std::unique_ptr<AssetTextureGroup>;
-using AssetTextureGroupConstUPtr = std::unique_ptr<AssetTextureGroup const>;
 class DrawablePainter;
-using DrawablePainterPtr = std::shared_ptr<DrawablePainter>;
-using DrawablePainterConstPtr = std::shared_ptr<DrawablePainter const>;
-using DrawablePainterWeakPtr = std::weak_ptr<DrawablePainter>;
-using DrawablePainterConstWeakPtr = std::weak_ptr<DrawablePainter const>;
-using DrawablePainterUPtr = std::unique_ptr<DrawablePainter>;
-using DrawablePainterConstUPtr = std::unique_ptr<DrawablePainter const>;
 class AudioInstance;
-using AudioInstancePtr = std::shared_ptr<AudioInstance>;
-using AudioInstanceConstPtr = std::shared_ptr<AudioInstance const>;
-using AudioInstanceWeakPtr = std::weak_ptr<AudioInstance>;
-using AudioInstanceConstWeakPtr = std::weak_ptr<AudioInstance const>;
-using AudioInstanceUPtr = std::unique_ptr<AudioInstance>;
-using AudioInstanceConstUPtr = std::unique_ptr<AudioInstance const>;
 }
 
 import star.gui_types;
@@ -97,19 +55,19 @@ public:
   // is not initialized.
   static GuiContext& singleton();
 
-  GuiContext(MixerPtr mixer, ApplicationControllerPtr appController);
+  GuiContext(std::shared_ptr<Mixer> mixer, std::shared_ptr<ApplicationController> appController);
   ~GuiContext();
 
   GuiContext(GuiContext const&) = delete;
   GuiContext& operator=(GuiContext const&) = delete;
 
-  void renderInit(RendererPtr renderer);
+  void renderInit(std::shared_ptr<Renderer> renderer);
 
-  MixerPtr const& mixer() const;
-  ApplicationControllerPtr const& applicationController() const;
-  RendererPtr const& renderer() const;
-  AssetTextureGroupPtr const& assetTextureGroup() const;
-  TextPainterPtr const& textPainter() const;
+  std::shared_ptr<Mixer> const& mixer() const;
+  std::shared_ptr<ApplicationController> const& applicationController() const;
+  std::shared_ptr<Renderer> const& renderer() const;
+  std::shared_ptr<AssetTextureGroup> const& assetTextureGroup() const;
+  std::shared_ptr<TextPainter> const& textPainter() const;
 
   unsigned windowWidth() const;
   unsigned windowHeight() const;
@@ -190,8 +148,8 @@ public:
   StringList wrapText(String const& s, Maybe<unsigned> wrapWidth);
   StringList wrapInterfaceText(String const& s, Maybe<unsigned> wrapWidth);
 
-  void playAudio(AudioInstancePtr audioInstance);
-  AudioInstancePtr playAudio(String const& audioAsset, int loops = 0, float volume = 1.0f, float pitch = 1.0f);
+  void playAudio(std::shared_ptr<AudioInstance> audioInstance);
+  std::shared_ptr<AudioInstance> playAudio(String const& audioAsset, int loops = 0, float volume = 1.0f, float pitch = 1.0f);
 
   bool shiftHeld() const;
   void setShiftHeld(bool held);
@@ -208,13 +166,13 @@ public:
 private:
   static GuiContext* s_singleton;
 
-  MixerPtr m_mixer;
-  ApplicationControllerPtr m_applicationController;
-  RendererPtr m_renderer;
+  std::shared_ptr<Mixer> m_mixer;
+  std::shared_ptr<ApplicationController> m_applicationController;
+  std::shared_ptr<Renderer> m_renderer;
 
-  AssetTextureGroupPtr m_textureCollection;
-  TextPainterPtr m_textPainter;
-  DrawablePainterPtr m_drawablePainter;
+  std::shared_ptr<AssetTextureGroup> m_textureCollection;
+  std::shared_ptr<TextPainter> m_textPainter;
+  std::shared_ptr<DrawablePainter> m_drawablePainter;
 
   KeyBindings m_keyBindings;
 
@@ -237,52 +195,10 @@ export namespace Star {
   using ::Star::TextPositioning;
   using ::Star::FontMode;
   using ::Star::ApplicationController;
-  using ::Star::ApplicationControllerPtr;
-  using ::Star::ApplicationControllerConstPtr;
-  using ::Star::ApplicationControllerWeakPtr;
-  using ::Star::ApplicationControllerConstWeakPtr;
-  using ::Star::ApplicationControllerUPtr;
-  using ::Star::ApplicationControllerConstUPtr;
   using ::Star::Renderer;
-  using ::Star::RendererPtr;
-  using ::Star::RendererConstPtr;
-  using ::Star::RendererWeakPtr;
-  using ::Star::RendererConstWeakPtr;
-  using ::Star::RendererUPtr;
-  using ::Star::RendererConstUPtr;
   using ::Star::Mixer;
-  using ::Star::MixerPtr;
-  using ::Star::MixerConstPtr;
-  using ::Star::MixerWeakPtr;
-  using ::Star::MixerConstWeakPtr;
-  using ::Star::MixerUPtr;
-  using ::Star::MixerConstUPtr;
   using ::Star::TextPainter;
-  using ::Star::TextPainterPtr;
-  using ::Star::TextPainterConstPtr;
-  using ::Star::TextPainterWeakPtr;
-  using ::Star::TextPainterConstWeakPtr;
-  using ::Star::TextPainterUPtr;
-  using ::Star::TextPainterConstUPtr;
   using ::Star::AssetTextureGroup;
-  using ::Star::AssetTextureGroupPtr;
-  using ::Star::AssetTextureGroupConstPtr;
-  using ::Star::AssetTextureGroupWeakPtr;
-  using ::Star::AssetTextureGroupConstWeakPtr;
-  using ::Star::AssetTextureGroupUPtr;
-  using ::Star::AssetTextureGroupConstUPtr;
   using ::Star::DrawablePainter;
-  using ::Star::DrawablePainterPtr;
-  using ::Star::DrawablePainterConstPtr;
-  using ::Star::DrawablePainterWeakPtr;
-  using ::Star::DrawablePainterConstWeakPtr;
-  using ::Star::DrawablePainterUPtr;
-  using ::Star::DrawablePainterConstUPtr;
   using ::Star::AudioInstance;
-  using ::Star::AudioInstancePtr;
-  using ::Star::AudioInstanceConstPtr;
-  using ::Star::AudioInstanceWeakPtr;
-  using ::Star::AudioInstanceConstWeakPtr;
-  using ::Star::AudioInstanceUPtr;
-  using ::Star::AudioInstanceConstUPtr;
 }

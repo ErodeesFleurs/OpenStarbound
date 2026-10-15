@@ -53,11 +53,11 @@ CodexDatabase::CodexDatabase() {
   }
 }
 
-StringMap<CodexConstPtr> CodexDatabase::codexes() const {
+StringMap<std::shared_ptr<Codex const>> CodexDatabase::codexes() const {
   return m_codexes;
 }
 
-CodexConstPtr CodexDatabase::codex(String const& codexId) const {
+std::shared_ptr<Codex const> CodexDatabase::codex(String const& codexId) const {
   if (auto codex = m_codexes.maybe(codexId))
     return codex.take();
   return {};

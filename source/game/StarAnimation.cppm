@@ -17,13 +17,6 @@ import star.vector;
 namespace Star {
 
 struct Drawable;
-class Animation;
-using AnimationPtr = std::shared_ptr<Animation>;
-using AnimationConstPtr = std::shared_ptr<const Animation>;
-using AnimationWeakPtr = std::weak_ptr<Animation>;
-using AnimationConstWeakPtr = std::weak_ptr<const Animation>;
-using AnimationUPtr = std::unique_ptr<Animation>;
-using AnimationConstUPtr = std::unique_ptr<const Animation>;
 
 class Animation {
 public:
@@ -79,10 +72,4 @@ export module star.animation;
 export namespace Star {
   using ::Star::Drawable;
   using ::Star::Animation;
-  using ::Star::AnimationPtr;
-  using ::Star::AnimationConstPtr;
-  using ::Star::AnimationWeakPtr;
-  using ::Star::AnimationConstWeakPtr;
-  using ::Star::AnimationUPtr;
-  using ::Star::AnimationConstUPtr;
 }

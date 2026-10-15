@@ -74,19 +74,11 @@ export module star.flashlight;
 
 export namespace Star {
 
-class Flashlight;
-using FlashlightPtr = std::shared_ptr<Flashlight>;
-using FlashlightConstPtr = std::shared_ptr<const Flashlight>;
-using FlashlightWeakPtr = std::weak_ptr<Flashlight>;
-using FlashlightConstWeakPtr = std::weak_ptr<const Flashlight>;
-using FlashlightUPtr = std::unique_ptr<Flashlight>;
-using FlashlightConstUPtr = std::unique_ptr<const Flashlight>;
-
 class Flashlight : public Item, public PointableItem, public ToolUserItem {
 public:
   Flashlight(Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  ItemPtr clone() const override;
+  std::shared_ptr<Item> clone() const override;
 
   List<Drawable> drawables() const override;
 
@@ -115,7 +107,7 @@ Flashlight::Flashlight(Json const& config, String const& directory, Json const& 
   m_ambientFactor = instanceValue("beamAmbience").toFloat();
 }
 
-ItemPtr Flashlight::clone() const {
+std::shared_ptr<Item> Flashlight::clone() const {
   return std::make_shared<Flashlight>(*this);
 }
 

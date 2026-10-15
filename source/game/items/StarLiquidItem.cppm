@@ -77,19 +77,6 @@ import star.particle;
 import star.light_source;
 import star.entity_rendering;
 struct PreviewTile;
-using PreviewTilePtr = std::shared_ptr<PreviewTile>;
-using PreviewTileConstPtr = std::shared_ptr<const PreviewTile>;
-using PreviewTileWeakPtr = std::weak_ptr<PreviewTile>;
-using PreviewTileConstWeakPtr = std::weak_ptr<const PreviewTile>;
-using PreviewTileUPtr = std::unique_ptr<PreviewTile>;
-using PreviewTileConstUPtr = std::unique_ptr<const PreviewTile>;
-class PreviewTileTool;
-using PreviewTileToolPtr = std::shared_ptr<PreviewTileTool>;
-using PreviewTileToolConstPtr = std::shared_ptr<const PreviewTileTool>;
-using PreviewTileToolWeakPtr = std::weak_ptr<PreviewTileTool>;
-using PreviewTileToolConstWeakPtr = std::weak_ptr<const PreviewTileTool>;
-using PreviewTileToolUPtr = std::unique_ptr<PreviewTileTool>;
-using PreviewTileToolConstUPtr = std::unique_ptr<const PreviewTileTool>;
 import star.preview_tile_tool;
 import star.asset_source;
 import star.assets;
@@ -102,20 +89,12 @@ import star.liquids_database;
 
 export namespace Star {
 
-class LiquidItem;
-using LiquidItemPtr = std::shared_ptr<LiquidItem>;
-using LiquidItemConstPtr = std::shared_ptr<const LiquidItem>;
-using LiquidItemWeakPtr = std::weak_ptr<LiquidItem>;
-using LiquidItemConstWeakPtr = std::weak_ptr<const LiquidItem>;
-using LiquidItemUPtr = std::unique_ptr<LiquidItem>;
-using LiquidItemConstUPtr = std::unique_ptr<const LiquidItem>;
-
 class LiquidItem : public Item, public FireableItem, public PreviewTileTool, public BeamItem {
 public:
   LiquidItem(Json const& config, String const& directory, Json const& settings);
   virtual ~LiquidItem() {}
 
-  ItemPtr clone() const override;
+  std::shared_ptr<Item> clone() const override;
 
   void init(ToolUserEntity* owner, ToolHand hand) override;
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
@@ -160,7 +139,7 @@ LiquidItem::LiquidItem(Json const& config, String const& directory, Json const& 
   m_shifting = false;
 }
 
-ItemPtr LiquidItem::clone() const {
+std::shared_ptr<Item> LiquidItem::clone() const {
   return std::make_shared<LiquidItem>(*this);
 }
 

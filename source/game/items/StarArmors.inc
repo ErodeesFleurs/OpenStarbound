@@ -24,40 +24,10 @@ import star.set;
 
 namespace Star {
 class ArmorItem;
-using ArmorItemPtr = std::shared_ptr<ArmorItem>;
-using ArmorItemConstPtr = std::shared_ptr<const ArmorItem>;
-using ArmorItemWeakPtr = std::weak_ptr<ArmorItem>;
-using ArmorItemConstWeakPtr = std::weak_ptr<const ArmorItem>;
-using ArmorItemUPtr = std::unique_ptr<ArmorItem>;
-using ArmorItemConstUPtr = std::unique_ptr<const ArmorItem>;
 class HeadArmor;
-using HeadArmorPtr = std::shared_ptr<HeadArmor>;
-using HeadArmorConstPtr = std::shared_ptr<const HeadArmor>;
-using HeadArmorWeakPtr = std::weak_ptr<HeadArmor>;
-using HeadArmorConstWeakPtr = std::weak_ptr<const HeadArmor>;
-using HeadArmorUPtr = std::unique_ptr<HeadArmor>;
-using HeadArmorConstUPtr = std::unique_ptr<const HeadArmor>;
 class ChestArmor;
-using ChestArmorPtr = std::shared_ptr<ChestArmor>;
-using ChestArmorConstPtr = std::shared_ptr<const ChestArmor>;
-using ChestArmorWeakPtr = std::weak_ptr<ChestArmor>;
-using ChestArmorConstWeakPtr = std::weak_ptr<const ChestArmor>;
-using ChestArmorUPtr = std::unique_ptr<ChestArmor>;
-using ChestArmorConstUPtr = std::unique_ptr<const ChestArmor>;
 class LegsArmor;
-using LegsArmorPtr = std::shared_ptr<LegsArmor>;
-using LegsArmorConstPtr = std::shared_ptr<const LegsArmor>;
-using LegsArmorWeakPtr = std::weak_ptr<LegsArmor>;
-using LegsArmorConstWeakPtr = std::weak_ptr<const LegsArmor>;
-using LegsArmorUPtr = std::unique_ptr<LegsArmor>;
-using LegsArmorConstUPtr = std::unique_ptr<const LegsArmor>;
 class BackArmor;
-using BackArmorPtr = std::shared_ptr<BackArmor>;
-using BackArmorConstPtr = std::shared_ptr<const BackArmor>;
-using BackArmorWeakPtr = std::weak_ptr<BackArmor>;
-using BackArmorConstWeakPtr = std::weak_ptr<const BackArmor>;
-using BackArmorUPtr = std::unique_ptr<BackArmor>;
-using BackArmorConstUPtr = std::unique_ptr<const BackArmor>;
 }
 
 import star.drawable;
@@ -166,14 +136,14 @@ public:
   HeadArmor(Json const& config, String const& directory, Json const& data);
   virtual ~HeadArmor() {}
 
-  virtual ItemPtr clone() const override;
+  virtual std::shared_ptr<Item> clone() const override;
 
   virtual ArmorType armorType() const override;
 
   String const& frameset(Gender gender) const;
   Directives const& maskDirectives() const;
 
-  virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  virtual List<Drawable> preview(std::shared_ptr<Player> const& viewer = {}) const override;
 
 private:
   String m_maleImage;
@@ -186,7 +156,7 @@ public:
   ChestArmor(Json const& config, String const& directory, Json const& data);
   virtual ~ChestArmor() {}
 
-  virtual ItemPtr clone() const override;
+  virtual std::shared_ptr<Item> clone() const override;
 
   virtual ArmorType armorType() const override;
 
@@ -198,7 +168,7 @@ public:
   // Same as FSleeve
   String const& backSleeveFrameset(Gender gender) const;
 
-  virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  virtual List<Drawable> preview(std::shared_ptr<Player> const& viewer = {}) const override;
 
 private:
   String m_maleBodyImage;
@@ -215,14 +185,14 @@ public:
   LegsArmor(Json const& config, String const& directory, Json const& data);
   virtual ~LegsArmor() {}
 
-  virtual ItemPtr clone() const override;
+  virtual std::shared_ptr<Item> clone() const override;
 
   virtual ArmorType armorType() const override;
 
   // Will have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
   String const& frameset(Gender gender) const;
 
-  virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  virtual List<Drawable> preview(std::shared_ptr<Player> const& viewer = {}) const override;
 
 private:
   String m_maleImage;
@@ -234,14 +204,14 @@ public:
   BackArmor(Json const& config, String const& directory, Json const& data);
   virtual ~BackArmor() {}
 
-  virtual ItemPtr clone() const override;
+  virtual std::shared_ptr<Item> clone() const override;
 
   virtual ArmorType armorType() const override;
 
   // Will have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
   String const& frameset(Gender gender) const;
 
-  virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  virtual List<Drawable> preview(std::shared_ptr<Player> const& viewer = {}) const override;
 
 private:
   String m_maleImage;

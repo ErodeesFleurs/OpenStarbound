@@ -129,7 +129,7 @@ import star.player_storage;
 
 namespace Star {
 
-CharSelectionPane::CharSelectionPane(PlayerStoragePtr playerStorage,
+CharSelectionPane::CharSelectionPane(std::shared_ptr<PlayerStorage> playerStorage,
     CreateCharCallback createCallback,
     SelectCharacterCallback selectCallback,
     DeleteCharacterCallback deleteCallback)
@@ -228,7 +228,7 @@ void CharSelectionPane::updateCharacterPlates() {
         return;
       }
     }
-    charSelector->setPlayer(PlayerPtr());
+    charSelector->setPlayer(std::shared_ptr<Player>());
     charSelector->disableDelete();
     if (m_readOnly)
       charSelector->hide();

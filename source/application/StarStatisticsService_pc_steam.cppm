@@ -27,17 +27,9 @@ import star.platform_services_pc;
 
 namespace Star {
 
-class SteamStatisticsService;
-using SteamStatisticsServicePtr = std::shared_ptr<SteamStatisticsService>;
-using SteamStatisticsServiceConstPtr = std::shared_ptr<SteamStatisticsService const>;
-using SteamStatisticsServiceWeakPtr = std::weak_ptr<SteamStatisticsService>;
-using SteamStatisticsServiceConstWeakPtr = std::weak_ptr<SteamStatisticsService const>;
-using SteamStatisticsServiceUPtr = std::unique_ptr<SteamStatisticsService>;
-using SteamStatisticsServiceConstUPtr = std::unique_ptr<SteamStatisticsService const>;
-
 class SteamStatisticsService : public StatisticsService {
 public:
-  SteamStatisticsService(PcPlatformServicesStatePtr state);
+  SteamStatisticsService(std::shared_ptr<PcPlatformServicesState> state);
 
   bool initialized() const override;
   Maybe<String> error() const override;
@@ -59,7 +51,7 @@ private:
   void onUserStatsStored(UserStatsStored_t* callback);
   void onAchievementStored(UserAchievementStored_t* callback);
 
-  PcPlatformServicesStatePtr m_state;
+  std::shared_ptr<PcPlatformServicesState> m_state;
   SteamCallback<SteamStatisticsService, UserStatsReceived_t> m_callbackUserStatsReceived;
   SteamCallback<SteamStatisticsService, UserStatsStored_t> m_callbackUserStatsStored;
   SteamCallback<SteamStatisticsService, UserAchievementStored_t> m_callbackAchievementStored;
@@ -75,10 +67,4 @@ export module star.statistics_service_pc_steam;
 
 export namespace Star {
   using ::Star::SteamStatisticsService;
-  using ::Star::SteamStatisticsServicePtr;
-  using ::Star::SteamStatisticsServiceConstPtr;
-  using ::Star::SteamStatisticsServiceUPtr;
-  using ::Star::SteamStatisticsServiceConstUPtr;
-  using ::Star::SteamStatisticsServiceWeakPtr;
-  using ::Star::SteamStatisticsServiceConstWeakPtr;
 }

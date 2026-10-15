@@ -31,7 +31,6 @@ public:
   typedef SectorArray2D<Tile, SectorSize> SectorArray;
   typedef typename SectorArray::Sector Sector;
   typedef typename SectorArray::Array Array;
-  typedef typename SectorArray::ArrayPtr ArrayPtr;
 
   TileSectorArray();
   TileSectorArray(Vec2U const& size, Tile defaultTile = Tile());
@@ -59,13 +58,13 @@ public:
   Sector adjacentSector(Sector const& sector, Vec2I const& sectorMovement);
 
   // Load a sector into the active sector array.
-  void loadSector(Sector const& sector, ArrayPtr array);
+  void loadSector(Sector const& sector, std::unique_ptr<Array> array);
   // Load with a sector full of the default tile.
   void loadDefaultSector(Sector const& sector);
   // Make a copy of a sector
-  ArrayPtr copySector(Sector const& sector);
+  std::unique_ptr<Array> copySector(Sector const& sector);
   // Take a sector out of the sector array.
-  ArrayPtr unloadSector(Sector const& sector);
+  std::unique_ptr<Array> unloadSector(Sector const& sector);
 
   bool sectorLoaded(Sector sector) const;
   List<Sector> loadedSectors() const;
@@ -220,7 +219,7 @@ auto TileSectorArray<Tile, SectorSize>::adjacentSector(Sector const& sector, Vec
 }
 
 template <typename Tile, unsigned SectorSize>
-void TileSectorArray<Tile, SectorSize>::loadSector(Sector const& sector, ArrayPtr tile) {
+void TileSectorArray<Tile, SectorSize>::loadSector(Sector const& sector, std::unique_ptr<Array> tile) {
   if (sectorValid(sector))
     m_tileSectors.loadSector(sector, std::move(tile));
 }
@@ -232,7 +231,7 @@ void TileSectorArray<Tile, SectorSize>::loadDefaultSector(Sector const& sector) 
 }
 
 template <typename Tile, unsigned SectorSize>
-auto TileSectorArray<Tile, SectorSize>::copySector(Sector const& sector) -> ArrayPtr {
+auto TileSectorArray<Tile, SectorSize>::copySector(Sector const& sector) -> std::unique_ptr<Array> {
   if (sectorValid(sector))
     return m_tileSectors.copySector(sector);
   else
@@ -240,7 +239,7 @@ auto TileSectorArray<Tile, SectorSize>::copySector(Sector const& sector) -> Arra
 }
 
 template <typename Tile, unsigned SectorSize>
-auto TileSectorArray<Tile, SectorSize>::unloadSector(Sector const& sector) -> ArrayPtr {
+auto TileSectorArray<Tile, SectorSize>::unloadSector(Sector const& sector) -> std::unique_ptr<Array> {
   if (sectorValid(sector))
     return m_tileSectors.takeSector(sector);
   else

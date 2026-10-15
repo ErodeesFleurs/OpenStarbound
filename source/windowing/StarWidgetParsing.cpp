@@ -148,7 +148,7 @@ namespace Star {
 
 WidgetConstructResult::WidgetConstructResult() : zlevel() {}
 
-WidgetConstructResult::WidgetConstructResult(WidgetPtr obj, String const& name, float zlevel)
+WidgetConstructResult::WidgetConstructResult(std::shared_ptr<Widget> obj, String const& name, float zlevel)
   : obj(obj), name(name), zlevel(zlevel) {}
 
 WidgetParser::WidgetParser() {
@@ -193,7 +193,7 @@ void WidgetParser::constructImpl(Json const& config, Widget* widget) {
   }
 }
 
-WidgetPtr WidgetParser::makeSingle(String const& name, Json const& config) {
+std::shared_ptr<Widget> WidgetParser::makeSingle(String const& name, Json const& config) {
   if (!m_constructors.contains(config.getString("type"))) {
     throw WidgetParserException(strf("Unknown type in gui json. {}", config.getString("type")));
   }
@@ -604,7 +604,7 @@ WidgetConstructResult WidgetParser::itemSlotHandler(String const& name, Json con
   String middleClickCallback = callback.equals("null") ? callback : callback + ".middle";
   middleClickCallback = config.getString("middleClickCallback", middleClickCallback);
 
-  auto itemSlot = std::make_shared<ItemSlotWidget>(ItemPtr(), backingImage);
+  auto itemSlot = std::make_shared<ItemSlotWidget>(std::shared_ptr<Item>(), backingImage);
 
   if (auto leftClickCallback = m_callbacks.ptr(callback))
     itemSlot->setCallback(*leftClickCallback);
@@ -656,7 +656,7 @@ WidgetConstructResult WidgetParser::itemGridHandler(String const& name, Json con
   unsigned slotOffset = config.getInt("slotOffset", 0);
   String backingImage = config.getString("backingImage", "");
 
-  auto itemGrid = std::make_shared<ItemGridWidget>(ItemBagConstPtr(), dimensions, rowSpacing, columnSpacing, backingImage, slotOffset);
+  auto itemGrid = std::make_shared<ItemGridWidget>(std::shared_ptr<ItemBag const>(), dimensions, rowSpacing, columnSpacing, backingImage, slotOffset);
 
   itemGrid->setBackingImageAffinity(
     config.getBool("showBackingImageWhenFull", false), config.getBool("showBackingImageWhenEmpty", true));
@@ -802,7 +802,7 @@ WidgetConstructResult WidgetParser::layoutHandler(String const& name, Json const
   } catch (JsonException const&) {
     throw WidgetParserException("Failed to find layout type.  Options are: \"basic\", \"flow\", \"vertical\".");
   }
-  WidgetPtr widget;
+  std::shared_ptr<Widget> widget;
   if (type == "flow") {
     widget = std::make_shared<FlowLayout>();
     auto flow = convert<FlowLayout>(widget);
@@ -910,7 +910,7 @@ WidgetConstructResult WidgetParser::scrollAreaHandler(String const& name, Json c
   return WidgetConstructResult(scrollArea, name, config.getFloat("zlevel", 0));
 }
 
-void WidgetParser::common(WidgetPtr widget, Json const& config, bool getChildren) {
+void WidgetParser::common(std::shared_ptr<Widget> widget, Json const& config, bool getChildren) {
   if (config.contains("rect")) {
     auto rect = jsonToRectI(config.get("rect"));
     widget->setPosition(rect.min());

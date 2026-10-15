@@ -147,11 +147,11 @@ bool Pane::sendEvent(InputEvent const& event) {
       if (event.is<MouseButtonUpEvent>())
         m_clickDown.reset();
 
-      WidgetPtr newClickDown;
-      WidgetPtr newMouseOver;
-      WidgetPtr newFocusWidget;
+      std::shared_ptr<Widget> newClickDown;
+      std::shared_ptr<Widget> newMouseOver;
+      std::shared_ptr<Widget> newFocusWidget;
 
-      List<WidgetPtr> validWidgets;
+      List<std::shared_ptr<Widget>> validWidgets;
       // gather valid widgets into our own list because any of them could mutate
       // m_members while processing the event and fuck everything up
       for (auto const& widget : reverseIterate(m_members)) {
@@ -162,8 +162,8 @@ bool Pane::sendEvent(InputEvent const& event) {
       // Then, go through widgets in highest to lowest z-order and handle mouse
       // over, focus, and capture events.
       for (auto const& widget : validWidgets) {
-        WidgetPtr topWidget = widget;
-        WidgetPtr child = getChildAt(mousePos);
+        std::shared_ptr<Widget> topWidget = widget;
+        std::shared_ptr<Widget> child = getChildAt(mousePos);
         if (child->active() && child->interactive()) {
           if (event.is<MouseButtonDownEvent>()
               && (event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Left
@@ -269,7 +269,7 @@ void Pane::update(float dt) {
 }
 
 void Pane::tick(float) {
-  m_playingSounds.filter([](std::pair<String, AudioInstancePtr> const& p) {
+  m_playingSounds.filter([](std::pair<String, std::shared_ptr<AudioInstance>> const& p) {
     return p.second->finished() == false;
   });
 }
@@ -350,7 +350,7 @@ void Pane::unlockPosition() {
   m_lockPosition = false;
 }
 
-void Pane::setTitle(WidgetPtr icon, String const& title, String const& subTitle) {
+void Pane::setTitle(std::shared_ptr<Widget> icon, String const& title, String const& subTitle) {
   m_icon = icon;
   m_title = title;
   m_subTitle = subTitle;
@@ -365,7 +365,7 @@ void Pane::setTitleString(String const& title, String const& subTitle) {
   m_subTitle = subTitle;
 }
 
-void Pane::setTitleIcon(WidgetPtr icon) {
+void Pane::setTitleIcon(std::shared_ptr<Widget> icon) {
   m_icon = icon;
   if (m_icon) {
     m_icon->setParent(this);
@@ -381,7 +381,7 @@ String Pane::subTitle() const {
   return m_subTitle;
 }
 
-WidgetPtr Pane::titleIcon() const {
+std::shared_ptr<Widget> Pane::titleIcon() const {
   return m_icon;
 }
 
@@ -405,7 +405,7 @@ bool Pane::hasDisplayed() const {
   return m_hasDisplayed;
 }
 
-PanePtr Pane::createTooltip(Vec2I const&) {
+std::shared_ptr<Pane> Pane::createTooltip(Vec2I const&) {
   return {};
 }
 
@@ -413,7 +413,7 @@ Maybe<String> Pane::cursorOverride(Vec2I const&) {
   return {};
 }
 
-Maybe<ItemPtr> Pane::shiftItemFromInventory(ItemPtr const&) {
+Maybe<std::shared_ptr<Item>> Pane::shiftItemFromInventory(std::shared_ptr<Item> const&) {
   return {};
 }
 
@@ -439,7 +439,7 @@ LuaCallbacks Pane::makePaneCallbacks() {
     });
 
   callbacks.registerCallback("stopAllSounds", [this](Maybe<String> const& audio) {
-      m_playingSounds.filter([audio](std::pair<String, AudioInstancePtr> const& p) {
+      m_playingSounds.filter([audio](std::pair<String, std::shared_ptr<AudioInstance>> const& p) {
         if (!audio || p.first == *audio) {
           p.second->stop();
           return false;
@@ -568,7 +568,7 @@ LuaCallbacks Pane::makePaneCallbacks() {
   return callbacks;
 }
 
-GuiReaderPtr Pane::reader() {
+std::shared_ptr<GuiReader> Pane::reader() {
   return std::make_shared<GuiReader>();
 }
 

@@ -14,14 +14,6 @@ import star.net_element_system;
 
 namespace Star {
 
-class WorldClientState;
-using WorldClientStatePtr = std::shared_ptr<WorldClientState>;
-using WorldClientStateConstPtr = std::shared_ptr<const WorldClientState>;
-using WorldClientStateWeakPtr = std::weak_ptr<WorldClientState>;
-using WorldClientStateConstWeakPtr = std::weak_ptr<const WorldClientState>;
-using WorldClientStateUPtr = std::unique_ptr<WorldClientState>;
-using WorldClientStateConstUPtr = std::unique_ptr<const WorldClientState>;
-
 // Class to aid in network syncronization of client state such as viewing area
 // and player entity id.
 class WorldClientState {
@@ -79,10 +71,4 @@ export module star.world_client_state;
 
 export namespace Star {
 using ::Star::WorldClientState;
-using ::Star::WorldClientStatePtr;
-using ::Star::WorldClientStateConstPtr;
-using ::Star::WorldClientStateWeakPtr;
-using ::Star::WorldClientStateConstWeakPtr;
-using ::Star::WorldClientStateUPtr;
-using ::Star::WorldClientStateConstUPtr;
 }

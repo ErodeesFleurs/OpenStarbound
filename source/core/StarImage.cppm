@@ -26,23 +26,15 @@ struct ImageExceptionTag {
 };
 using ImageException = StarError<ImageExceptionTag, StarException>;
 
-class Image;
-using ImagePtr = std::shared_ptr<Image>;
-using ImageConstPtr = std::shared_ptr<const Image>;
-using ImageWeakPtr = std::weak_ptr<Image>;
-using ImageConstWeakPtr = std::weak_ptr<const Image>;
-using ImageUPtr = std::unique_ptr<Image>;
-using ImageConstUPtr = std::unique_ptr<const Image>;
-
 // Holds an image of PixelFormat in row major order, with no padding, with (0,
 // 0) defined to be the *lower left* corner.
 class Image {
 public:
-  static Image readPng(IODevicePtr device);
-  static bool isPng(IODevicePtr device);
+  static Image readPng(std::shared_ptr<IODevice> device);
+  static bool isPng(std::shared_ptr<IODevice> device);
   // Returns the size and pixel format that would be constructed from the given
   // png file, without actually loading it.
-  static std::tuple<Vec2U, PixelFormat> readPngMetadata(IODevicePtr device);
+  static std::tuple<Vec2U, PixelFormat> readPngMetadata(std::shared_ptr<IODevice> device);
 
   static Image filled(Vec2U size, Vec4B color, PixelFormat pf = PixelFormat::RGBA32);
 
@@ -147,7 +139,7 @@ public:
   // Convert this image into the given pixel format
   Image convert(PixelFormat pixelFormat) const;
 
-  void writePng(IODevicePtr device) const;
+  void writePng(std::shared_ptr<IODevice> device) const;
 
 private:
   std::uint8_t* m_data;
@@ -369,10 +361,4 @@ export namespace Star {
   using ::Star::ImageException;
   using ::Star::ImageView;
   using ::Star::Image;
-  using ::Star::ImagePtr;
-  using ::Star::ImageConstPtr;
-  using ::Star::ImageWeakPtr;
-  using ::Star::ImageConstWeakPtr;
-  using ::Star::ImageUPtr;
-  using ::Star::ImageConstUPtr;
 }

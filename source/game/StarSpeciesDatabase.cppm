@@ -39,20 +39,7 @@ import star.status_types;
 
 namespace Star {
 
-class SpeciesDefinition;
-using SpeciesDefinitionPtr = std::shared_ptr<SpeciesDefinition>;
-using SpeciesDefinitionConstPtr = std::shared_ptr<const SpeciesDefinition>;
-using SpeciesDefinitionWeakPtr = std::weak_ptr<SpeciesDefinition>;
-using SpeciesDefinitionConstWeakPtr = std::weak_ptr<const SpeciesDefinition>;
-using SpeciesDefinitionUPtr = std::unique_ptr<SpeciesDefinition>;
-using SpeciesDefinitionConstUPtr = std::unique_ptr<const SpeciesDefinition>;
 class SpeciesDatabase;
-using SpeciesDatabasePtr = std::shared_ptr<SpeciesDatabase>;
-using SpeciesDatabaseConstPtr = std::shared_ptr<const SpeciesDatabase>;
-using SpeciesDatabaseWeakPtr = std::weak_ptr<SpeciesDatabase>;
-using SpeciesDatabaseConstWeakPtr = std::weak_ptr<const SpeciesDatabase>;
-using SpeciesDatabaseUPtr = std::unique_ptr<SpeciesDatabase>;
-using SpeciesDatabaseConstUPtr = std::unique_ptr<const SpeciesDatabase>;
 
 struct SpeciesCharCreationTooltip {
   String title;
@@ -148,8 +135,8 @@ class SpeciesDatabase {
 public:
   SpeciesDatabase();
 
-  SpeciesDefinitionPtr species(String const& kind) const;
-  StringMap<SpeciesDefinitionPtr> allSpecies() const;
+  std::shared_ptr<SpeciesDefinition> species(String const& kind) const;
+  StringMap<std::shared_ptr<SpeciesDefinition>> allSpecies() const;
 
   Json humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json()) const;
   CharacterCreationResult createHumanoid(String name, String speciesChoice, std::size_t genderChoice, std::size_t bodyColor, std::size_t alty, std::size_t hairChoice, std::size_t heady, std::size_t shirtChoice, std::size_t shirtColor, std::size_t pantsChoice, std::size_t pantsColor, std::size_t personality, LuaVariadic<LuaValue> ext = {}) const;
@@ -157,10 +144,10 @@ public:
   CharacterCreationResult generateHumanoid(String species, std::int64_t seed, Maybe<Gender> = {}) const;
 
 private:
-  StringMap<SpeciesDefinitionPtr> m_species;
+  StringMap<std::shared_ptr<SpeciesDefinition>> m_species;
 
   mutable RecursiveMutex m_luaMutex;
-  LuaRootPtr m_luaRoot;
+  std::shared_ptr<LuaRoot> m_luaRoot;
 };
 
 }
@@ -173,17 +160,5 @@ export namespace Star {
   using ::Star::SpeciesOption;
   using ::Star::CharacterCreationResult;
   using ::Star::SpeciesDefinition;
-  using ::Star::SpeciesDefinitionPtr;
-  using ::Star::SpeciesDefinitionConstPtr;
-  using ::Star::SpeciesDefinitionWeakPtr;
-  using ::Star::SpeciesDefinitionConstWeakPtr;
-  using ::Star::SpeciesDefinitionUPtr;
-  using ::Star::SpeciesDefinitionConstUPtr;
   using ::Star::SpeciesDatabase;
-  using ::Star::SpeciesDatabasePtr;
-  using ::Star::SpeciesDatabaseConstPtr;
-  using ::Star::SpeciesDatabaseWeakPtr;
-  using ::Star::SpeciesDatabaseConstWeakPtr;
-  using ::Star::SpeciesDatabaseUPtr;
-  using ::Star::SpeciesDatabaseConstUPtr;
 }

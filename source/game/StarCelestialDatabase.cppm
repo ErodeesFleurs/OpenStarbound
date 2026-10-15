@@ -43,28 +43,6 @@ import star.perlin;
 
 namespace Star {
 
-class CelestialDatabase;
-using CelestialDatabasePtr = std::shared_ptr<CelestialDatabase>;
-using CelestialDatabaseConstPtr = std::shared_ptr<const CelestialDatabase>;
-using CelestialDatabaseWeakPtr = std::weak_ptr<CelestialDatabase>;
-using CelestialDatabaseConstWeakPtr = std::weak_ptr<const CelestialDatabase>;
-using CelestialDatabaseUPtr = std::unique_ptr<CelestialDatabase>;
-using CelestialDatabaseConstUPtr = std::unique_ptr<const CelestialDatabase>;
-class CelestialMasterDatabase;
-using CelestialMasterDatabasePtr = std::shared_ptr<CelestialMasterDatabase>;
-using CelestialMasterDatabaseConstPtr = std::shared_ptr<const CelestialMasterDatabase>;
-using CelestialMasterDatabaseWeakPtr = std::weak_ptr<CelestialMasterDatabase>;
-using CelestialMasterDatabaseConstWeakPtr = std::weak_ptr<const CelestialMasterDatabase>;
-using CelestialMasterDatabaseUPtr = std::unique_ptr<CelestialMasterDatabase>;
-using CelestialMasterDatabaseConstUPtr = std::unique_ptr<const CelestialMasterDatabase>;
-class CelestialSlaveDatabase;
-using CelestialSlaveDatabasePtr = std::shared_ptr<CelestialSlaveDatabase>;
-using CelestialSlaveDatabaseConstPtr = std::shared_ptr<const CelestialSlaveDatabase>;
-using CelestialSlaveDatabaseWeakPtr = std::weak_ptr<CelestialSlaveDatabase>;
-using CelestialSlaveDatabaseConstWeakPtr = std::weak_ptr<const CelestialSlaveDatabase>;
-using CelestialSlaveDatabaseUPtr = std::unique_ptr<CelestialSlaveDatabase>;
-using CelestialSlaveDatabaseConstUPtr = std::unique_ptr<const CelestialSlaveDatabase>;
-
 class CelestialDatabase {
 public:
   virtual ~CelestialDatabase();
@@ -285,24 +263,6 @@ export module star.celestial_database;
 
 export namespace Star {
   using ::Star::CelestialDatabase;
-  using ::Star::CelestialDatabasePtr;
-  using ::Star::CelestialDatabaseConstPtr;
-  using ::Star::CelestialDatabaseWeakPtr;
-  using ::Star::CelestialDatabaseConstWeakPtr;
-  using ::Star::CelestialDatabaseUPtr;
-  using ::Star::CelestialDatabaseConstUPtr;
   using ::Star::CelestialMasterDatabase;
-  using ::Star::CelestialMasterDatabasePtr;
-  using ::Star::CelestialMasterDatabaseConstPtr;
-  using ::Star::CelestialMasterDatabaseWeakPtr;
-  using ::Star::CelestialMasterDatabaseConstWeakPtr;
-  using ::Star::CelestialMasterDatabaseUPtr;
-  using ::Star::CelestialMasterDatabaseConstUPtr;
   using ::Star::CelestialSlaveDatabase;
-  using ::Star::CelestialSlaveDatabasePtr;
-  using ::Star::CelestialSlaveDatabaseConstPtr;
-  using ::Star::CelestialSlaveDatabaseWeakPtr;
-  using ::Star::CelestialSlaveDatabaseConstWeakPtr;
-  using ::Star::CelestialSlaveDatabaseUPtr;
-  using ::Star::CelestialSlaveDatabaseConstUPtr;
 }

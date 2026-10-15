@@ -57,34 +57,21 @@ import star.byte_array;
 namespace Star {
 
 class Item;
-using ItemPtr = std::shared_ptr<Item>;
-using ItemConstPtr = std::shared_ptr<const Item>;
-using ItemWeakPtr = std::weak_ptr<Item>;
-using ItemConstWeakPtr = std::weak_ptr<const Item>;
-using ItemUPtr = std::unique_ptr<Item>;
-using ItemConstUPtr = std::unique_ptr<const Item>;
-class ItemDrop;
-using ItemDropPtr = std::shared_ptr<ItemDrop>;
-using ItemDropConstPtr = std::shared_ptr<const ItemDrop>;
-using ItemDropWeakPtr = std::weak_ptr<ItemDrop>;
-using ItemDropConstWeakPtr = std::weak_ptr<const ItemDrop>;
-using ItemDropUPtr = std::unique_ptr<ItemDrop>;
-using ItemDropConstUPtr = std::unique_ptr<const ItemDrop>;
 
 class ItemDrop : public virtual MobileEntity, public virtual ScriptedEntity {
 public:
   // Creates a drop at the given position and adds a hard-coded amount of
   // randomness to the drop position / velocity.
-  static ItemDropPtr createRandomizedDrop(ItemPtr const& item, Vec2F const& position, bool eternal = false);
-  static ItemDropPtr createRandomizedDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, bool eternal = false);
+  static std::shared_ptr<ItemDrop> createRandomizedDrop(std::shared_ptr<Item> const& item, Vec2F const& position, bool eternal = false);
+  static std::shared_ptr<ItemDrop> createRandomizedDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, bool eternal = false);
 
   // Create a drop and throw in the given direction with a hard-coded initial
   // throw velocity (unrelated to magnitude of direction, direction is
   // normalized first).  Initially intangible for 1 second.
-  static ItemDropPtr throwDrop(ItemPtr const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
-  static ItemDropPtr throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
+  static std::shared_ptr<ItemDrop> throwDrop(std::shared_ptr<Item> const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
+  static std::shared_ptr<ItemDrop> throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
 
-  ItemDrop(ItemPtr item);
+  ItemDrop(std::shared_ptr<Item> item);
   ItemDrop(Json const& diskStore);
   ItemDrop(ByteArray netStore, NetCompatibilityRules rules = {});
 
@@ -122,7 +109,7 @@ public:
   MovementController* movementController() override;
   
   // The item that this drop contains
-  ItemPtr item() const;
+  std::shared_ptr<Item> item() const;
 
   void setEternal(bool eternal);
 
@@ -132,11 +119,11 @@ public:
 
   // Mark this drop as taken by the given entity.  The drop will animate
   // towards them for a while and then disappear.
-  ItemPtr takeBy(EntityId entityId, float timeOffset = 0.0f);
+  std::shared_ptr<Item> takeBy(EntityId entityId, float timeOffset = 0.0f);
 
   // Mark this drop as taken, but do not animate it towards a player simply
   // disappear next step.
-  ItemPtr take();
+  std::shared_ptr<Item> take();
 
   // Item is not taken and is not intangible
   bool canTake() const;
@@ -169,7 +156,7 @@ private:
 
   Json m_config;
   Json m_parameters;
-  ItemPtr m_item;
+  std::shared_ptr<Item> m_item;
   RectF m_boundBox;
   float m_afterTakenLife;
   float m_overheadTime;
@@ -212,17 +199,5 @@ export module star.item_drop;
 
 export namespace Star {
   using ::Star::Item;
-  using ::Star::ItemPtr;
-  using ::Star::ItemConstPtr;
-  using ::Star::ItemWeakPtr;
-  using ::Star::ItemConstWeakPtr;
-  using ::Star::ItemUPtr;
-  using ::Star::ItemConstUPtr;
   using ::Star::ItemDrop;
-  using ::Star::ItemDropPtr;
-  using ::Star::ItemDropConstPtr;
-  using ::Star::ItemDropWeakPtr;
-  using ::Star::ItemDropConstWeakPtr;
-  using ::Star::ItemDropUPtr;
-  using ::Star::ItemDropConstUPtr;
 }

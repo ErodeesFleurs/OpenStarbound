@@ -57,8 +57,8 @@ NetworkedAnimator::DynamicTarget::~DynamicTarget() {
   stopAudio();
 }
 
-List<AudioInstancePtr> NetworkedAnimator::DynamicTarget::pullNewAudios() {
-  pendingAudios.exec([this](AudioInstancePtr const& ptr) {
+List<std::shared_ptr<AudioInstance>> NetworkedAnimator::DynamicTarget::pullNewAudios() {
+  pendingAudios.exec([this](std::shared_ptr<AudioInstance> const& ptr) {
     Vec2F audioBasePosition = ptr->position().value();
     currentAudioBasePositions[ptr] = audioBasePosition;
     ptr->setPosition(position + audioBasePosition);
@@ -100,9 +100,9 @@ void NetworkedAnimator::DynamicTarget::clearFinishedAudio() {
   }
 
   for (auto& p : independentSounds)
-    eraseWhere(p.second, [](AudioInstancePtr const& audio) { return audio->finished(); });
+    eraseWhere(p.second, [](std::shared_ptr<AudioInstance> const& audio) { return audio->finished(); });
 
-  eraseWhere(currentAudioBasePositions, [](std::pair<AudioInstancePtr, Vec2F> const& pair) {
+  eraseWhere(currentAudioBasePositions, [](std::pair<std::shared_ptr<AudioInstance>, Vec2F> const& pair) {
       return pair.first->finished();
     });
 }

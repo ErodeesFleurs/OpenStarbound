@@ -99,19 +99,6 @@ import star.durability_item;
 import star.pointable_item;
 import star.net_compatibility;
 struct PreviewTile;
-using PreviewTilePtr = std::shared_ptr<PreviewTile>;
-using PreviewTileConstPtr = std::shared_ptr<const PreviewTile>;
-using PreviewTileWeakPtr = std::weak_ptr<PreviewTile>;
-using PreviewTileConstWeakPtr = std::weak_ptr<const PreviewTile>;
-using PreviewTileUPtr = std::unique_ptr<PreviewTile>;
-using PreviewTileConstUPtr = std::unique_ptr<const PreviewTile>;
-class PreviewTileTool;
-using PreviewTileToolPtr = std::shared_ptr<PreviewTileTool>;
-using PreviewTileToolConstPtr = std::shared_ptr<const PreviewTileTool>;
-using PreviewTileToolWeakPtr = std::weak_ptr<PreviewTileTool>;
-using PreviewTileToolConstWeakPtr = std::weak_ptr<const PreviewTileTool>;
-using PreviewTileToolUPtr = std::unique_ptr<PreviewTileTool>;
-using PreviewTileToolConstUPtr = std::unique_ptr<const PreviewTileTool>;
 import star.preview_tile_tool;
 import star.tools;
 import star.activatable_item;
@@ -199,11 +186,11 @@ void ToolUser::diskLoad(Json const& diskStore) {
   m_altHandItem.set(itemDb->diskLoad(diskStore.get("altHandItem", {})));
 }
 
-ItemPtr ToolUser::primaryHandItem() const {
+std::shared_ptr<Item> ToolUser::primaryHandItem() const {
   return m_primaryHandItem.get();
 }
 
-ItemPtr ToolUser::altHandItem() const {
+std::shared_ptr<Item> ToolUser::altHandItem() const {
   return m_altHandItem.get();
 }
 
@@ -267,7 +254,7 @@ List<PersistentStatusEffect> ToolUser::statusEffects() const {
     return {};
 
   List<PersistentStatusEffect> statusEffects;
-  auto addStatusFromItem = [&](ItemPtr const& item) {
+  auto addStatusFromItem = [&](std::shared_ptr<Item> const& item) {
     if (auto effectItem = as<StatusEffectItem>(item))
       statusEffects.appendAll(effectItem->statusEffects());
   };
@@ -295,7 +282,7 @@ List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walki
   if (m_suppress.get() || !m_user)
     return {};
 
-  auto generate = [&](ObjectItemPtr item) -> List<Drawable> {
+  auto generate = [&](std::shared_ptr<ObjectItem> item) -> List<Drawable> {
     Vec2I aimPos(aimPosition.floor());
     if ((aimPos == m_cachedObjectPreviewPosition) && (item == m_cachedObjectItem))
       return m_cachedObjectPreview;
@@ -353,7 +340,7 @@ Maybe<Direction> ToolUser::setupHumanoidHandItems(Humanoid& humanoid, Vec2F posi
       humanoid.setHandParameters(hand, holdingItem, angle, itemAngle, twoHanded, recoil, outsideOfHand);
     };
 
-    ItemPtr handItem = primary ? m_primaryHandItem.get() : m_altHandItem.get();
+    std::shared_ptr<Item> handItem = primary ? m_primaryHandItem.get() : m_altHandItem.get();
 
     auto angleSide = getAngleSide(m_user->world()->geometry().diff(aimPosition, position).angle());
 
@@ -425,7 +412,7 @@ void ToolUser::setupHumanoidHandItemDrawables(Humanoid& humanoid) const {
         humanoid.setHandNonRotatedDrawables(ToolHand::Alt, std::move(drawables));
     };
 
-    ItemPtr handItem = primary ? m_primaryHandItem.get() : m_altHandItem.get();
+    std::shared_ptr<Item> handItem = primary ? m_primaryHandItem.get() : m_altHandItem.get();
 
     if (auto swingItem = as<SwingableItem>(handItem)) {
       setRotated(swingItem->getArmFrame(), swingItem->getArmFrame(), swingItem->drawables(), handItem->twoHanded());
@@ -529,7 +516,7 @@ void ToolUser::tick(float dt, bool shifting, HashSet<MoveControlType> const& mov
 
   if (!m_suppress.get()) {
     if (itemSafeTwoHanded(m_primaryHandItem.get()) && (m_fireMain || m_fireAlt)) {
-      FireableItemPtr fireableItem = as<FireableItem>(m_primaryHandItem.get());
+      std::shared_ptr<FireableItem> fireableItem = as<FireableItem>(m_primaryHandItem.get());
       if (fireableItem) {
         FireMode mode;
         if (m_fireMain)
@@ -538,55 +525,55 @@ void ToolUser::tick(float dt, bool shifting, HashSet<MoveControlType> const& mov
           mode = FireMode::Alt;
         fireableItem->fire(mode, shifting, edgeTriggeredMain || edgeTriggeredAlt);
       }
-      ActivatableItemPtr activatableItem = as<ActivatableItem>(m_primaryHandItem.get());
+      std::shared_ptr<ActivatableItem> activatableItem = as<ActivatableItem>(m_primaryHandItem.get());
       if (activatableItem && activatableItem->usable())
         activatableItem->activate();
     } else if (edgeSuppressedMain || (itemSafeTwoHanded(m_primaryHandItem.get()) && edgeSuppressedAlt)) {
-      FireableItemPtr fireableItem = as<FireableItem>(m_primaryHandItem.get());
+      std::shared_ptr<FireableItem> fireableItem = as<FireableItem>(m_primaryHandItem.get());
       if (fireableItem) {
         FireMode mode = FireMode::Primary;
         fireableItem->endFire(mode, shifting);
       }
 
       if (m_fireAlt) {
-        FireableItemPtr fireableItem = as<FireableItem>(m_altHandItem.get());
+        std::shared_ptr<FireableItem> fireableItem = as<FireableItem>(m_altHandItem.get());
         if (fireableItem)
           fireableItem->fire(FireMode::Alt, shifting, edgeTriggeredAlt);
-        ActivatableItemPtr activatableItem = as<ActivatableItem>(m_altHandItem.get());
+        std::shared_ptr<ActivatableItem> activatableItem = as<ActivatableItem>(m_altHandItem.get());
         if (activatableItem && activatableItem->usable())
           activatableItem->activate();
       }
 
     } else if (edgeSuppressedAlt) {
-      FireableItemPtr fireableItem = as<FireableItem>(m_altHandItem.get());
+      std::shared_ptr<FireableItem> fireableItem = as<FireableItem>(m_altHandItem.get());
       if (fireableItem) {
         FireMode mode = FireMode::Alt;
         fireableItem->endFire(mode, shifting);
       }
 
       if (m_fireMain) {
-        FireableItemPtr fireableItem = as<FireableItem>(m_primaryHandItem.get());
+        std::shared_ptr<FireableItem> fireableItem = as<FireableItem>(m_primaryHandItem.get());
         if (fireableItem)
           fireableItem->fire(FireMode::Primary, shifting, edgeTriggeredMain);
-        ActivatableItemPtr activatableItem = as<ActivatableItem>(m_primaryHandItem.get());
+        std::shared_ptr<ActivatableItem> activatableItem = as<ActivatableItem>(m_primaryHandItem.get());
         if (activatableItem && activatableItem->usable())
           activatableItem->activate();
       }
 
     } else {
       if (m_fireMain) {
-        FireableItemPtr fireableItem = as<FireableItem>(m_primaryHandItem.get());
+        std::shared_ptr<FireableItem> fireableItem = as<FireableItem>(m_primaryHandItem.get());
         if (fireableItem)
           fireableItem->fire(FireMode::Primary, shifting, edgeTriggeredMain);
-        ActivatableItemPtr activatableItem = as<ActivatableItem>(m_primaryHandItem.get());
+        std::shared_ptr<ActivatableItem> activatableItem = as<ActivatableItem>(m_primaryHandItem.get());
         if (activatableItem && activatableItem->usable())
           activatableItem->activate();
       }
       if (m_fireAlt) {
-        FireableItemPtr fireableItem = as<FireableItem>(m_altHandItem.get());
+        std::shared_ptr<FireableItem> fireableItem = as<FireableItem>(m_altHandItem.get());
         if (fireableItem)
           fireableItem->fire(FireMode::Alt, shifting, edgeTriggeredAlt);
-        ActivatableItemPtr activatableItem = as<ActivatableItem>(m_altHandItem.get());
+        std::shared_ptr<ActivatableItem> activatableItem = as<ActivatableItem>(m_altHandItem.get());
         if (activatableItem && activatableItem->usable())
           activatableItem->activate();
       }
@@ -681,7 +668,7 @@ void ToolUser::render(RenderCallback* renderCallback, bool, bool shifting, Entit
   }
 }
 
-void ToolUser::setItems(ItemPtr newPrimaryHandItem, ItemPtr newAltHandItem) {
+void ToolUser::setItems(std::shared_ptr<Item> newPrimaryHandItem, std::shared_ptr<Item> newAltHandItem) {
   if (itemSafeTwoHanded(newPrimaryHandItem))
     newAltHandItem = {};
 
@@ -861,11 +848,11 @@ void ToolUser::NetItem::blankNetDelta(float interpolationTime) {
   }
 }
 
-ItemPtr const& ToolUser::NetItem::get() const {
+std::shared_ptr<Item> const& ToolUser::NetItem::get() const {
   return m_item;
 }
 
-void ToolUser::NetItem::set(ItemPtr item) {
+void ToolUser::NetItem::set(std::shared_ptr<Item> item) {
   if (m_item != item) {
     m_item = std::move(item);
     m_newItem = true;
@@ -914,7 +901,7 @@ void ToolUser::initAltHandItem() {
   }
 }
 
-void ToolUser::uninitItem(ItemPtr const& item) {
+void ToolUser::uninitItem(std::shared_ptr<Item> const& item) {
   if (auto toolUserItem = as<ToolUserItem>(item))
     toolUserItem->uninit();
 }

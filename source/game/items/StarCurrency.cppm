@@ -30,19 +30,11 @@ export module star.currency_item;
 
 export namespace Star {
 
-class CurrencyItem;
-using CurrencyItemPtr = std::shared_ptr<CurrencyItem>;
-using CurrencyItemConstPtr = std::shared_ptr<const CurrencyItem>;
-using CurrencyItemWeakPtr = std::weak_ptr<CurrencyItem>;
-using CurrencyItemConstWeakPtr = std::weak_ptr<const CurrencyItem>;
-using CurrencyItemUPtr = std::unique_ptr<CurrencyItem>;
-using CurrencyItemConstUPtr = std::unique_ptr<const CurrencyItem>;
-
 class CurrencyItem : public Item {
 public:
   CurrencyItem(Json const& config, String const& directory);
 
-  virtual ItemPtr clone() const override;
+  virtual std::shared_ptr<Item> clone() const override;
 
   virtual String pickupSound() const override;
 
@@ -68,7 +60,7 @@ CurrencyItem::CurrencyItem(Json const& config, String const& directory) : Item(c
   m_value = config.getUInt("value");
 }
 
-ItemPtr CurrencyItem::clone() const {
+std::shared_ptr<Item> CurrencyItem::clone() const {
   return std::make_shared<CurrencyItem>(*this);
 }
 

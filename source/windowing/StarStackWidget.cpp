@@ -79,7 +79,7 @@ Either<std::size_t, String> StackWidget::currentPage() const {
   return m_page;
 }
 
-void StackWidget::addChild(String const& name, WidgetPtr member) {
+void StackWidget::addChild(String const& name, std::shared_ptr<Widget> member) {
   Widget::addChild(name, member);
   if (m_members.size() != 1)
     member->hide();

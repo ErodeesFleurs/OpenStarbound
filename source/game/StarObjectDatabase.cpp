@@ -201,10 +201,10 @@ Json ObjectDatabase::parseTouchDamage(String const& path, Json const& config) {
   return touchDamage;
 }
 
-List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path, Json const& configList, Json const& baseConfig) {
+List<std::shared_ptr<ObjectOrientation>> ObjectDatabase::parseOrientations(String const& path, Json const& configList, Json const& baseConfig) {
   auto& root = Root::singleton();
   auto materialDatabase = root.materialDatabase();
-  List<ObjectOrientationPtr> res;
+  List<std::shared_ptr<ObjectOrientation>> res;
   JsonArray configs = configList.toArray();
 
   // Preprocess the orientation list for config format backwards compatibility.
@@ -423,7 +423,7 @@ ObjectDatabase::ObjectDatabase() : m_rebuilder(std::make_shared<Rebuilder>("obje
 
 void ObjectDatabase::cleanup() {
   MutexLocker locker(m_cacheMutex);
-  m_configCache.cleanup([](String const&, ObjectConfigPtr const& config) {
+  m_configCache.cleanup([](String const&, std::shared_ptr<ObjectConfig> const& config) {
       return config.use_count() != 1;
     });
 }
@@ -436,21 +436,21 @@ bool ObjectDatabase::isObject(String const& objectName) const {
   return m_paths.contains(objectName);
 }
 
-ObjectConfigPtr ObjectDatabase::getConfig(String const& objectName) const {
+std::shared_ptr<ObjectConfig> ObjectDatabase::getConfig(String const& objectName) const {
   MutexLocker locker(m_cacheMutex);
   return m_configCache.get(objectName,
-      [this](String const& objectName) -> ObjectConfigPtr {
+      [this](String const& objectName) -> std::shared_ptr<ObjectConfig> {
         if (auto path = m_paths.maybe(objectName))
           return readConfig(*path);
         throw ObjectException(strf("No such object named '{}'", objectName));
       });
 }
 
-List<ObjectOrientationPtr> const& ObjectDatabase::getOrientations(String const& objectName) const {
+List<std::shared_ptr<ObjectOrientation>> const& ObjectDatabase::getOrientations(String const& objectName) const {
   return getConfig(objectName)->orientations;
 }
 
-ObjectPtr ObjectDatabase::createObject(String const& objectName, Json const& parameters) const {
+std::shared_ptr<Object> ObjectDatabase::createObject(String const& objectName, Json const& parameters) const {
   auto config = getConfig(objectName);
 
   if (config->type == "object") {
@@ -470,8 +470,8 @@ ObjectPtr ObjectDatabase::createObject(String const& objectName, Json const& par
   }
 }
 
-ObjectPtr ObjectDatabase::diskLoadObject(Json const& diskStore) const {
-  ObjectPtr object;
+std::shared_ptr<Object> ObjectDatabase::diskLoadObject(Json const& diskStore) const {
+  std::shared_ptr<Object> object;
   auto originalName = diskStore.getString("name");
   auto originalParams = diskStore.get("parameters");
   Json newStore = diskStore;
@@ -514,7 +514,7 @@ ObjectPtr ObjectDatabase::diskLoadObject(Json const& diskStore) const {
   return object;
 }
 
-ObjectPtr ObjectDatabase::netLoadObject(ByteArray const& netStore, NetCompatibilityRules rules) const {
+std::shared_ptr<Object> ObjectDatabase::netLoadObject(ByteArray const& netStore, NetCompatibilityRules rules) const {
   DataStreamBuffer ds(netStore);
   ds.setStreamCompatibilityVersion(rules);
   String name = ds.read<String>();
@@ -526,19 +526,19 @@ bool ObjectDatabase::canPlaceObject(World const* world, Vec2I const& position, S
   return getConfig(objectName)->findValidOrientation(world, position, Maybe<Direction>()) != NPos;
 }
 
-ObjectPtr ObjectDatabase::createForPlacement(World const* world, String const& objectName, Vec2I const& position,
+std::shared_ptr<Object> ObjectDatabase::createForPlacement(World const* world, String const& objectName, Vec2I const& position,
     Direction direction, Json const& parameters) const {
   if (!canPlaceObject(world, position, objectName))
     return {};
 
-  ObjectPtr object = createObject(objectName, parameters);
+  std::shared_ptr<Object> object = createObject(objectName, parameters);
   object->setTilePosition(world->geometry().xwrap(position));
   object->setDirection(direction);
 
   return object;
 }
 
-ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
+std::shared_ptr<ObjectConfig> ObjectDatabase::readConfig(String const& path) {
   try {
     auto assets = Root::singleton().assets();
 

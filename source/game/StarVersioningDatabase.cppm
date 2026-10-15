@@ -14,21 +14,6 @@ import star.version;
 
 namespace Star {
 
-struct VersionedJson;
-using VersionedJsonPtr = std::shared_ptr<VersionedJson>;
-using VersionedJsonConstPtr = std::shared_ptr<const VersionedJson>;
-using VersionedJsonWeakPtr = std::weak_ptr<VersionedJson>;
-using VersionedJsonConstWeakPtr = std::weak_ptr<const VersionedJson>;
-using VersionedJsonUPtr = std::unique_ptr<VersionedJson>;
-using VersionedJsonConstUPtr = std::unique_ptr<const VersionedJson>;
-class VersioningDatabase;
-using VersioningDatabasePtr = std::shared_ptr<VersioningDatabase>;
-using VersioningDatabaseConstPtr = std::shared_ptr<const VersioningDatabase>;
-using VersioningDatabaseWeakPtr = std::weak_ptr<VersioningDatabase>;
-using VersioningDatabaseConstWeakPtr = std::weak_ptr<const VersioningDatabase>;
-using VersioningDatabaseUPtr = std::unique_ptr<VersioningDatabase>;
-using VersioningDatabaseConstUPtr = std::unique_ptr<const VersioningDatabase>;
-
 struct VersionedJsonExceptionTag {
   static constexpr char const* name() { return "VersionedJsonException"; }
 };
@@ -119,15 +104,11 @@ export module star.versioning_database;
 export namespace Star {
   using ::Star::VersionNumber;
   using ::Star::VersionedJson;
-  using ::Star::VersionedJsonPtr;
-  using ::Star::VersionedJsonConstPtr;
   using ::Star::VersionedJsonExceptionTag;
   using ::Star::VersionedJsonException;
   using ::Star::VersioningDatabaseExceptionTag;
   using ::Star::VersioningDatabaseException;
   using ::Star::VersioningDatabase;
-  using ::Star::VersioningDatabasePtr;
-  using ::Star::VersioningDatabaseConstPtr;
   using ::Star::operator>>;
   using ::Star::operator<<;
 }

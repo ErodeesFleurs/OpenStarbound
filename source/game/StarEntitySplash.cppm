@@ -19,26 +19,7 @@ import star.vector;
 namespace Star {
 
 class World;
-using WorldPtr = std::shared_ptr<World>;
-using WorldConstPtr = std::shared_ptr<const World>;
-using WorldWeakPtr = std::weak_ptr<World>;
-using WorldConstWeakPtr = std::weak_ptr<const World>;
-using WorldUPtr = std::unique_ptr<World>;
-using WorldConstUPtr = std::unique_ptr<const World>;
-struct EntitySplashConfig;
-using EntitySplashConfigPtr = std::shared_ptr<EntitySplashConfig>;
-using EntitySplashConfigConstPtr = std::shared_ptr<const EntitySplashConfig>;
-using EntitySplashConfigWeakPtr = std::weak_ptr<EntitySplashConfig>;
-using EntitySplashConfigConstWeakPtr = std::weak_ptr<const EntitySplashConfig>;
-using EntitySplashConfigUPtr = std::unique_ptr<EntitySplashConfig>;
-using EntitySplashConfigConstUPtr = std::unique_ptr<const EntitySplashConfig>;
 class EntitySplashHelper;
-using EntitySplashHelperPtr = std::shared_ptr<EntitySplashHelper>;
-using EntitySplashHelperConstPtr = std::shared_ptr<const EntitySplashHelper>;
-using EntitySplashHelperWeakPtr = std::weak_ptr<EntitySplashHelper>;
-using EntitySplashHelperConstWeakPtr = std::weak_ptr<const EntitySplashHelper>;
-using EntitySplashHelperUPtr = std::unique_ptr<EntitySplashHelper>;
-using EntitySplashHelperConstUPtr = std::unique_ptr<const EntitySplashHelper>;
 
 struct EntitySplashConfig {
   EntitySplashConfig();
@@ -61,24 +42,6 @@ export module star.entity_splash;
 
 export namespace Star {
   using ::Star::World;
-  using ::Star::WorldPtr;
-  using ::Star::WorldConstPtr;
-  using ::Star::WorldWeakPtr;
-  using ::Star::WorldConstWeakPtr;
-  using ::Star::WorldUPtr;
-  using ::Star::WorldConstUPtr;
   using ::Star::EntitySplashConfig;
-  using ::Star::EntitySplashConfigPtr;
-  using ::Star::EntitySplashConfigConstPtr;
-  using ::Star::EntitySplashConfigWeakPtr;
-  using ::Star::EntitySplashConfigConstWeakPtr;
-  using ::Star::EntitySplashConfigUPtr;
-  using ::Star::EntitySplashConfigConstUPtr;
   using ::Star::EntitySplashHelper;
-  using ::Star::EntitySplashHelperPtr;
-  using ::Star::EntitySplashHelperConstPtr;
-  using ::Star::EntitySplashHelperWeakPtr;
-  using ::Star::EntitySplashHelperConstWeakPtr;
-  using ::Star::EntitySplashHelperUPtr;
-  using ::Star::EntitySplashHelperConstUPtr;
 }

@@ -113,7 +113,7 @@ import star.item_bag;
 import star.algorithm;
 namespace Star {
 
-ContainerObject::ContainerObject(ObjectConfigConstPtr config, Json const& parameters) : Object(config, parameters) {
+ContainerObject::ContainerObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters) : Object(config, parameters) {
   m_opened.set(0);
   m_count = 0;
   m_currentState = 0;
@@ -321,7 +321,7 @@ ItemDescriptor ContainerObject::iconItem() const {
   return {};
 }
 
-ItemBagConstPtr ContainerObject::itemBag() const {
+std::shared_ptr<ItemBag const> ContainerObject::itemBag() const {
   return m_items;
 }
 
@@ -339,53 +339,53 @@ void ContainerObject::containerClose() {
   }
 }
 
-RpcPromise<ItemPtr> ContainerObject::addItems(ItemPtr const& items) {
+RpcPromise<std::shared_ptr<Item>> ContainerObject::addItems(std::shared_ptr<Item> const& items) {
   if (isSlave()) {
     return world()->sendEntityMessage(entityId(), "addItems", {itemSafeDescriptor(items).toJson()}).wrap([](Json res) {
         return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
       });
   } else {
-    return RpcPromise<ItemPtr>::createFulfilled(doAddItems(items));
+    return RpcPromise<std::shared_ptr<Item>>::createFulfilled(doAddItems(items));
   }
 }
 
-RpcPromise<ItemPtr> ContainerObject::putItems(std::size_t pos, ItemPtr const& items) {
+RpcPromise<std::shared_ptr<Item>> ContainerObject::putItems(std::size_t pos, std::shared_ptr<Item> const& items) {
   if (isSlave()) {
     return world()->sendEntityMessage(entityId(), "putItems", {itemSafeDescriptor(items).toJson()}).wrap([](Json res) {
         return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
       });
   } else {
-    return RpcPromise<ItemPtr>::createFulfilled(doPutItems(pos, items));
+    return RpcPromise<std::shared_ptr<Item>>::createFulfilled(doPutItems(pos, items));
   }
 }
 
-RpcPromise<ItemPtr> ContainerObject::takeItems(std::size_t slot, std::size_t count) {
+RpcPromise<std::shared_ptr<Item>> ContainerObject::takeItems(std::size_t slot, std::size_t count) {
   if (isSlave()) {
     return world()->sendEntityMessage(entityId(), "takeItems", {slot, count}).wrap([](Json res) {
         return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
       });
   } else {
-    return RpcPromise<ItemPtr>::createFulfilled(doTakeItems(slot, count));
+    return RpcPromise<std::shared_ptr<Item>>::createFulfilled(doTakeItems(slot, count));
   }
 }
 
-RpcPromise<ItemPtr> ContainerObject::swapItems(std::size_t slot, ItemPtr const& items, bool tryCombine) {
+RpcPromise<std::shared_ptr<Item>> ContainerObject::swapItems(std::size_t slot, std::shared_ptr<Item> const& items, bool tryCombine) {
   if (isSlave()) {
     return world()->sendEntityMessage(entityId(), "swapItems", {slot, itemSafeDescriptor(items).toJson(), tryCombine}).wrap([](Json res) {
         return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
       });
   } else {
-    return RpcPromise<ItemPtr>::createFulfilled(doSwapItems(slot, items, tryCombine));
+    return RpcPromise<std::shared_ptr<Item>>::createFulfilled(doSwapItems(slot, items, tryCombine));
   }
 }
 
-RpcPromise<ItemPtr> ContainerObject::applyAugment(std::size_t slot, ItemPtr const& augment) {
+RpcPromise<std::shared_ptr<Item>> ContainerObject::applyAugment(std::size_t slot, std::shared_ptr<Item> const& augment) {
   if (isSlave()) {
     return world()->sendEntityMessage(entityId(), "applyAugment", {slot, itemSafeDescriptor(augment).toJson()}).wrap([](Json res) {
         return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
       });
   } else {
-    return RpcPromise<ItemPtr>::createFulfilled(doApplyAugment(slot, augment));
+    return RpcPromise<std::shared_ptr<Item>>::createFulfilled(doApplyAugment(slot, augment));
   }
 }
 
@@ -409,7 +409,7 @@ RpcPromise<bool> ContainerObject::consumeItems(std::size_t pos, std::size_t coun
   }
 }
 
-RpcPromise<List<ItemPtr>> ContainerObject::clearContainer() {
+RpcPromise<List<std::shared_ptr<Item>>> ContainerObject::clearContainer() {
   if (isSlave()) {
     return world()->sendEntityMessage(entityId(), "clearContainer", {}).wrap([](Json res) {
         auto itemDb = Root::singleton().itemDatabase();
@@ -418,7 +418,7 @@ RpcPromise<List<ItemPtr>> ContainerObject::clearContainer() {
           });
       });
   } else {
-    return RpcPromise<List<ItemPtr>>::createFulfilled(doClearContainer());
+    return RpcPromise<List<std::shared_ptr<Item>>>::createFulfilled(doClearContainer());
   }
 }
 
@@ -536,7 +536,7 @@ Json ContainerObject::writeStoredData() const {
     });
 }
 
-ItemRecipe ContainerObject::recipeForMaterials(List<ItemPtr> const& inputItems) {
+ItemRecipe ContainerObject::recipeForMaterials(List<std::shared_ptr<Item>> const& inputItems) {
   auto& root = Root::singleton();
   auto itemDatabase = root.itemDatabase();
 
@@ -544,9 +544,9 @@ ItemRecipe ContainerObject::recipeForMaterials(List<ItemPtr> const& inputItems) 
   if (!recipeGroup.isNull())
     return itemDatabase->getPreciseRecipeForMaterials(recipeGroup.toString(), inputItems, {});
 
-  Maybe<Json> result = m_scriptComponent.invoke<Json>("craftingRecipe", inputItems.filtered([](ItemPtr const& item) {
+  Maybe<Json> result = m_scriptComponent.invoke<Json>("craftingRecipe", inputItems.filtered([](std::shared_ptr<Item> const& item) {
       return (bool)item;
-    }).transformed([](ItemPtr const& item) {
+    }).transformed([](std::shared_ptr<Item> const& item) {
       return item->descriptor().toJson();
     }));
   if (!result || result->isNull())
@@ -564,7 +564,7 @@ void ContainerObject::tickCrafting(float dt) {
   bool craftingFail = false;
   if (recipe.isNull() || m_goalRecipe != recipe)
     craftingFail = true;
-  ItemPtr targetItem = m_items->at(m_items->size() - 1);
+  std::shared_ptr<Item> targetItem = m_items->at(m_items->size() - 1);
   if (targetItem) {
     if (!targetItem->matches(m_goalRecipe.output, true))
       craftingFail = true;
@@ -590,7 +590,7 @@ void ContainerObject::tickCrafting(float dt) {
         Star::starAssertFailed((consumed));
       }
     }
-    ItemPtr overflow =
+    std::shared_ptr<Item> overflow =
         m_items->putItems(m_items->size() - 1, Root::singleton().itemDatabase()->item(m_goalRecipe.output));
     if (overflow)
       world()->addEntity(ItemDrop::createRandomizedDrop(overflow, position()));
@@ -598,27 +598,27 @@ void ContainerObject::tickCrafting(float dt) {
   }
 }
 
-ItemPtr ContainerObject::doAddItems(ItemPtr const& items) {
+std::shared_ptr<Item> ContainerObject::doAddItems(std::shared_ptr<Item> const& items) {
   itemsUpdated();
   return m_items->addItems(items);
 }
 
-ItemPtr ContainerObject::doPutItems(std::size_t slot, ItemPtr const& items) {
+std::shared_ptr<Item> ContainerObject::doPutItems(std::size_t slot, std::shared_ptr<Item> const& items) {
   itemsUpdated();
   return m_items->putItems(slot, items);
 }
 
-ItemPtr ContainerObject::doTakeItems(std::size_t slot, std::size_t count) {
+std::shared_ptr<Item> ContainerObject::doTakeItems(std::size_t slot, std::size_t count) {
   itemsUpdated();
   return m_items->takeItems(slot, count);
 }
 
-ItemPtr ContainerObject::doSwapItems(std::size_t slot, ItemPtr const& items, bool tryCombine) {
+std::shared_ptr<Item> ContainerObject::doSwapItems(std::size_t slot, std::shared_ptr<Item> const& items, bool tryCombine) {
   itemsUpdated();
   return m_items->swapItems(slot, items, tryCombine);
 }
 
-ItemPtr ContainerObject::doApplyAugment(std::size_t slot, ItemPtr const& item) {
+std::shared_ptr<Item> ContainerObject::doApplyAugment(std::size_t slot, std::shared_ptr<Item> const& item) {
   itemsUpdated();
   if (auto augment = as<AugmentItem>(item))
     if (auto slotItem = m_items->at(slot))
@@ -644,9 +644,9 @@ bool ContainerObject::doConsumeItems(std::size_t slot, std::size_t count) {
   return false;
 }
 
-List<ItemPtr> ContainerObject::doClearContainer() {
+List<std::shared_ptr<Item>> ContainerObject::doClearContainer() {
   stopCrafting();
-  List<ItemPtr> result = m_items->takeAll();
+  List<std::shared_ptr<Item>> result = m_items->takeAll();
   m_items->clearItems();
   itemsUpdated();
   return result;

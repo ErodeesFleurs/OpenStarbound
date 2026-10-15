@@ -37,7 +37,7 @@ import star.statistics;
 
 namespace Star {
 
-Statistics::Statistics(String const& storageDirectory, StatisticsServicePtr service) {
+Statistics::Statistics(String const& storageDirectory, std::shared_ptr<StatisticsService> service) {
   m_service = std::move(service);
   m_initialized = !m_service;
   m_storageDirectory = storageDirectory;

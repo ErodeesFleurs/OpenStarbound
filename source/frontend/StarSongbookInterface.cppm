@@ -40,32 +40,18 @@ import star.pane;
 namespace Star {
 
 class Player;
-using PlayerPtr = std::shared_ptr<Player>;
-using PlayerConstPtr = std::shared_ptr<Player const>;
-using PlayerWeakPtr = std::weak_ptr<Player>;
-using PlayerConstWeakPtr = std::weak_ptr<Player const>;
-using PlayerUPtr = std::unique_ptr<Player>;
-using PlayerConstUPtr = std::unique_ptr<Player const>;
-
-class SongbookInterface;
-using SongbookInterfacePtr = std::shared_ptr<SongbookInterface>;
-using SongbookInterfaceConstPtr = std::shared_ptr<SongbookInterface const>;
-using SongbookInterfaceWeakPtr = std::weak_ptr<SongbookInterface>;
-using SongbookInterfaceConstWeakPtr = std::weak_ptr<SongbookInterface const>;
-using SongbookInterfaceUPtr = std::unique_ptr<SongbookInterface>;
-using SongbookInterfaceConstUPtr = std::unique_ptr<SongbookInterface const>;
 
 class SongbookInterface : public Pane {
 public:
-  SongbookInterface(PlayerPtr player);
+  SongbookInterface(std::shared_ptr<Player> player);
 
   void update(float dt) override;
 
 private:
-  PlayerPtr m_player;
+  std::shared_ptr<Player> m_player;
   StringList m_files;
   String m_lastSearch;
-  CallbackListenerPtr m_reloadListener;
+  std::shared_ptr<CallbackListener> m_reloadListener;
   bool play();
   void refresh(bool reloadFiles = false);
 };
@@ -76,17 +62,5 @@ export module star.songbook_interface;
 
 export namespace Star {
   using ::Star::Player;
-  using ::Star::PlayerPtr;
-  using ::Star::PlayerConstPtr;
-  using ::Star::PlayerWeakPtr;
-  using ::Star::PlayerConstWeakPtr;
-  using ::Star::PlayerUPtr;
-  using ::Star::PlayerConstUPtr;
   using ::Star::SongbookInterface;
-  using ::Star::SongbookInterfacePtr;
-  using ::Star::SongbookInterfaceConstPtr;
-  using ::Star::SongbookInterfaceWeakPtr;
-  using ::Star::SongbookInterfaceConstWeakPtr;
-  using ::Star::SongbookInterfaceUPtr;
-  using ::Star::SongbookInterfaceConstUPtr;
 }

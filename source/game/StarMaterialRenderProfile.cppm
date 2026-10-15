@@ -31,14 +31,6 @@ using MaterialRenderProfileException = StarError<MaterialRenderProfileExceptionT
 enum class MaterialJoinType : std::uint8_t { All, Any };
 extern EnumMap<MaterialJoinType> const MaterialJoinTypeNames;
 
-struct MaterialRule;
-using MaterialRulePtr = std::shared_ptr<MaterialRule>;
-using MaterialRuleConstPtr = std::shared_ptr<const MaterialRule>;
-using MaterialRuleWeakPtr = std::weak_ptr<MaterialRule>;
-using MaterialRuleConstWeakPtr = std::weak_ptr<const MaterialRule>;
-using MaterialRuleUPtr = std::unique_ptr<MaterialRule>;
-using MaterialRuleConstUPtr = std::unique_ptr<const MaterialRule>;
-
 struct MaterialRule {
   struct RuleEmpty {};
   struct RuleConnects {};
@@ -64,20 +56,12 @@ struct MaterialRule {
   MaterialJoinType join;
   List<RuleEntry> entries;
 };
-typedef StringMap<MaterialRuleConstPtr> RuleMap;
+typedef StringMap<std::shared_ptr<MaterialRule const>> RuleMap;
 
 struct MaterialMatchPoint {
   Vec2I position;
-  MaterialRuleConstPtr rule;
+  std::shared_ptr<MaterialRule const> rule;
 };
-
-struct MaterialRenderPiece;
-using MaterialRenderPiecePtr = std::shared_ptr<MaterialRenderPiece>;
-using MaterialRenderPieceConstPtr = std::shared_ptr<const MaterialRenderPiece>;
-using MaterialRenderPieceWeakPtr = std::weak_ptr<MaterialRenderPiece>;
-using MaterialRenderPieceConstWeakPtr = std::weak_ptr<const MaterialRenderPiece>;
-using MaterialRenderPieceUPtr = std::unique_ptr<MaterialRenderPiece>;
-using MaterialRenderPieceConstUPtr = std::unique_ptr<const MaterialRenderPiece>;
 
 struct MaterialRenderPiece {
   std::size_t pieceId;
@@ -88,20 +72,15 @@ struct MaterialRenderPiece {
 };
 
 struct MaterialRenderMatch;
-using MaterialRenderMatchPtr = std::shared_ptr<MaterialRenderMatch>;
-using MaterialRenderMatchConstPtr = std::shared_ptr<const MaterialRenderMatch>;
-using MaterialRenderMatchWeakPtr = std::weak_ptr<MaterialRenderMatch>;
-using MaterialRenderMatchConstWeakPtr = std::weak_ptr<const MaterialRenderMatch>;
-using MaterialRenderMatchUPtr = std::unique_ptr<MaterialRenderMatch>;
-using MaterialRenderMatchConstUPtr = std::unique_ptr<const MaterialRenderMatch>;
-typedef List<MaterialRenderMatchConstPtr> MaterialRenderMatchList;
+
+typedef List<std::shared_ptr<MaterialRenderMatch const>> MaterialRenderMatchList;
 
 struct MaterialRenderMatch {
   List<MaterialMatchPoint> matchPoints;
   MaterialJoinType matchJoin;
 
   // Positions here are in TilePixels
-  List<std::pair<MaterialRenderPieceConstPtr, Vec2F>> resultingPieces;
+  List<std::pair<std::shared_ptr<MaterialRenderPiece const>, Vec2F>> resultingPieces;
   MaterialRenderMatchList subMatches;
   Maybe<TileLayer> requiredLayer;
   Maybe<bool> occlude;
@@ -109,7 +88,7 @@ struct MaterialRenderMatch {
   bool haltOnSubMatch;
 };
 
-typedef StringMap<MaterialRenderPieceConstPtr> PieceMap;
+typedef StringMap<std::shared_ptr<MaterialRenderPiece const>> PieceMap;
 typedef StringMap<MaterialRenderMatchList> MatchMap;
 
 // This is the maximum distance in either X or Y that material neighbor rules
@@ -118,14 +97,6 @@ typedef StringMap<MaterialRenderMatchList> MatchMap;
 // here means "1 away", so would be interpreted as a 3x3 block with the
 // rendered tile in the center.
 inline constexpr int MaterialRenderProfileMaxNeighborDistance = 2;
-
-struct MaterialRenderProfile;
-using MaterialRenderProfilePtr = std::shared_ptr<MaterialRenderProfile>;
-using MaterialRenderProfileConstPtr = std::shared_ptr<const MaterialRenderProfile>;
-using MaterialRenderProfileWeakPtr = std::weak_ptr<MaterialRenderProfile>;
-using MaterialRenderProfileConstWeakPtr = std::weak_ptr<const MaterialRenderProfile>;
-using MaterialRenderProfileUPtr = std::unique_ptr<MaterialRenderProfile>;
-using MaterialRenderProfileConstUPtr = std::unique_ptr<const MaterialRenderProfile>;
 
 struct MaterialRenderProfile {
   RuleMap rules;
@@ -171,38 +142,14 @@ export namespace Star {
   using ::Star::MaterialJoinType;
   using ::Star::MaterialJoinTypeNames;
   using ::Star::MaterialRule;
-  using ::Star::MaterialRulePtr;
-  using ::Star::MaterialRuleConstPtr;
-  using ::Star::MaterialRuleWeakPtr;
-  using ::Star::MaterialRuleConstWeakPtr;
-  using ::Star::MaterialRuleUPtr;
-  using ::Star::MaterialRuleConstUPtr;
   using ::Star::RuleMap;
   using ::Star::MaterialMatchPoint;
   using ::Star::MaterialRenderPiece;
-  using ::Star::MaterialRenderPiecePtr;
-  using ::Star::MaterialRenderPieceConstPtr;
-  using ::Star::MaterialRenderPieceWeakPtr;
-  using ::Star::MaterialRenderPieceConstWeakPtr;
-  using ::Star::MaterialRenderPieceUPtr;
-  using ::Star::MaterialRenderPieceConstUPtr;
   using ::Star::MaterialRenderMatch;
-  using ::Star::MaterialRenderMatchPtr;
-  using ::Star::MaterialRenderMatchConstPtr;
-  using ::Star::MaterialRenderMatchWeakPtr;
-  using ::Star::MaterialRenderMatchConstWeakPtr;
-  using ::Star::MaterialRenderMatchUPtr;
-  using ::Star::MaterialRenderMatchConstUPtr;
   using ::Star::MaterialRenderMatchList;
   using ::Star::PieceMap;
   using ::Star::MatchMap;
   using ::Star::MaterialRenderProfileMaxNeighborDistance;
   using ::Star::MaterialRenderProfile;
-  using ::Star::MaterialRenderProfilePtr;
-  using ::Star::MaterialRenderProfileConstPtr;
-  using ::Star::MaterialRenderProfileWeakPtr;
-  using ::Star::MaterialRenderProfileConstWeakPtr;
-  using ::Star::MaterialRenderProfileUPtr;
-  using ::Star::MaterialRenderProfileConstUPtr;
   using ::Star::parseMaterialRenderProfile;
 }

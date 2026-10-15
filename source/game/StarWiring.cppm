@@ -9,21 +9,6 @@ import star.data_stream;
 
 namespace Star {
 
-class WireCoordinator;
-using WireCoordinatorPtr = std::shared_ptr<WireCoordinator>;
-using WireCoordinatorConstPtr = std::shared_ptr<const WireCoordinator>;
-using WireCoordinatorWeakPtr = std::weak_ptr<WireCoordinator>;
-using WireCoordinatorConstWeakPtr = std::weak_ptr<const WireCoordinator>;
-using WireCoordinatorUPtr = std::unique_ptr<WireCoordinator>;
-using WireCoordinatorConstUPtr = std::unique_ptr<const WireCoordinator>;
-class WireConnector;
-using WireConnectorPtr = std::shared_ptr<WireConnector>;
-using WireConnectorConstPtr = std::shared_ptr<const WireConnector>;
-using WireConnectorWeakPtr = std::weak_ptr<WireConnector>;
-using WireConnectorConstWeakPtr = std::weak_ptr<const WireConnector>;
-using WireConnectorUPtr = std::unique_ptr<WireConnector>;
-using WireConnectorConstUPtr = std::unique_ptr<const WireConnector>;
-
 enum class WireDirection {
   Input,
   Output
@@ -102,16 +87,4 @@ export namespace Star {
   using ::Star::WireNode;
   using ::Star::WireConnection;
   using ::Star::hash;
-  using ::Star::WireCoordinatorPtr;
-  using ::Star::WireCoordinatorConstPtr;
-  using ::Star::WireCoordinatorWeakPtr;
-  using ::Star::WireCoordinatorConstWeakPtr;
-  using ::Star::WireCoordinatorUPtr;
-  using ::Star::WireCoordinatorConstUPtr;
-  using ::Star::WireConnectorPtr;
-  using ::Star::WireConnectorConstPtr;
-  using ::Star::WireConnectorWeakPtr;
-  using ::Star::WireConnectorConstWeakPtr;
-  using ::Star::WireConnectorUPtr;
-  using ::Star::WireConnectorConstUPtr;
 }

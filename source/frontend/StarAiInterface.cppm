@@ -35,96 +35,18 @@ import star.ordered_map;
 
 namespace Star {
 class UniverseClient;
-using UniverseClientPtr = std::shared_ptr<UniverseClient>;
-using UniverseClientConstPtr = std::shared_ptr<UniverseClient const>;
-using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
-using UniverseClientConstWeakPtr = std::weak_ptr<UniverseClient const>;
-using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
-using UniverseClientConstUPtr = std::unique_ptr<UniverseClient const>;
 class AiDatabase;
-using AiDatabasePtr = std::shared_ptr<AiDatabase>;
-using AiDatabaseConstPtr = std::shared_ptr<AiDatabase const>;
-using AiDatabaseWeakPtr = std::weak_ptr<AiDatabase>;
-using AiDatabaseConstWeakPtr = std::weak_ptr<AiDatabase const>;
-using AiDatabaseUPtr = std::unique_ptr<AiDatabase>;
-using AiDatabaseConstUPtr = std::unique_ptr<AiDatabase const>;
 class Cinematic;
-using CinematicPtr = std::shared_ptr<Cinematic>;
-using CinematicConstPtr = std::shared_ptr<Cinematic const>;
-using CinematicWeakPtr = std::weak_ptr<Cinematic>;
-using CinematicConstWeakPtr = std::weak_ptr<Cinematic const>;
-using CinematicUPtr = std::unique_ptr<Cinematic>;
-using CinematicConstUPtr = std::unique_ptr<Cinematic const>;
 class LabelWidget;
-using LabelWidgetPtr = std::shared_ptr<LabelWidget>;
-using LabelWidgetConstPtr = std::shared_ptr<LabelWidget const>;
-using LabelWidgetWeakPtr = std::weak_ptr<LabelWidget>;
-using LabelWidgetConstWeakPtr = std::weak_ptr<LabelWidget const>;
-using LabelWidgetUPtr = std::unique_ptr<LabelWidget>;
-using LabelWidgetConstUPtr = std::unique_ptr<LabelWidget const>;
 class ImageWidget;
-using ImageWidgetPtr = std::shared_ptr<ImageWidget>;
-using ImageWidgetConstPtr = std::shared_ptr<ImageWidget const>;
-using ImageWidgetWeakPtr = std::weak_ptr<ImageWidget>;
-using ImageWidgetConstWeakPtr = std::weak_ptr<ImageWidget const>;
-using ImageWidgetUPtr = std::unique_ptr<ImageWidget>;
-using ImageWidgetConstUPtr = std::unique_ptr<ImageWidget const>;
 class ImageStretchWidget;
-using ImageStretchWidgetPtr = std::shared_ptr<ImageStretchWidget>;
-using ImageStretchWidgetConstPtr = std::shared_ptr<ImageStretchWidget const>;
-using ImageStretchWidgetWeakPtr = std::weak_ptr<ImageStretchWidget>;
-using ImageStretchWidgetConstWeakPtr = std::weak_ptr<ImageStretchWidget const>;
-using ImageStretchWidgetUPtr = std::unique_ptr<ImageStretchWidget>;
-using ImageStretchWidgetConstUPtr = std::unique_ptr<ImageStretchWidget const>;
 class CanvasWidget;
-using CanvasWidgetPtr = std::shared_ptr<CanvasWidget>;
-using CanvasWidgetConstPtr = std::shared_ptr<CanvasWidget const>;
-using CanvasWidgetWeakPtr = std::weak_ptr<CanvasWidget>;
-using CanvasWidgetConstWeakPtr = std::weak_ptr<CanvasWidget const>;
-using CanvasWidgetUPtr = std::unique_ptr<CanvasWidget>;
-using CanvasWidgetConstUPtr = std::unique_ptr<CanvasWidget const>;
 class ListWidget;
-using ListWidgetPtr = std::shared_ptr<ListWidget>;
-using ListWidgetConstPtr = std::shared_ptr<ListWidget const>;
-using ListWidgetWeakPtr = std::weak_ptr<ListWidget>;
-using ListWidgetConstWeakPtr = std::weak_ptr<ListWidget const>;
-using ListWidgetUPtr = std::unique_ptr<ListWidget>;
-using ListWidgetConstUPtr = std::unique_ptr<ListWidget const>;
 class ButtonWidget;
-using ButtonWidgetPtr = std::shared_ptr<ButtonWidget>;
-using ButtonWidgetConstPtr = std::shared_ptr<ButtonWidget const>;
-using ButtonWidgetWeakPtr = std::weak_ptr<ButtonWidget>;
-using ButtonWidgetConstWeakPtr = std::weak_ptr<ButtonWidget const>;
-using ButtonWidgetUPtr = std::unique_ptr<ButtonWidget>;
-using ButtonWidgetConstUPtr = std::unique_ptr<ButtonWidget const>;
 class QuestManager;
-using QuestManagerPtr = std::shared_ptr<QuestManager>;
-using QuestManagerConstPtr = std::shared_ptr<QuestManager const>;
-using QuestManagerWeakPtr = std::weak_ptr<QuestManager>;
-using QuestManagerConstWeakPtr = std::weak_ptr<QuestManager const>;
-using QuestManagerUPtr = std::unique_ptr<QuestManager>;
-using QuestManagerConstUPtr = std::unique_ptr<QuestManager const>;
 class StackWidget;
-using StackWidgetPtr = std::shared_ptr<StackWidget>;
-using StackWidgetConstPtr = std::shared_ptr<StackWidget const>;
-using StackWidgetWeakPtr = std::weak_ptr<StackWidget>;
-using StackWidgetConstWeakPtr = std::weak_ptr<StackWidget const>;
-using StackWidgetUPtr = std::unique_ptr<StackWidget>;
-using StackWidgetConstUPtr = std::unique_ptr<StackWidget const>;
 class TabSetWidget;
-using TabSetWidgetPtr = std::shared_ptr<TabSetWidget>;
-using TabSetWidgetConstPtr = std::shared_ptr<TabSetWidget const>;
-using TabSetWidgetWeakPtr = std::weak_ptr<TabSetWidget>;
-using TabSetWidgetConstWeakPtr = std::weak_ptr<TabSetWidget const>;
-using TabSetWidgetUPtr = std::unique_ptr<TabSetWidget>;
-using TabSetWidgetConstUPtr = std::unique_ptr<TabSetWidget const>;
 class Companion;
-using CompanionPtr = std::shared_ptr<Companion>;
-using CompanionConstPtr = std::shared_ptr<Companion const>;
-using CompanionWeakPtr = std::weak_ptr<Companion>;
-using CompanionConstWeakPtr = std::weak_ptr<Companion const>;
-using CompanionUPtr = std::unique_ptr<Companion>;
-using CompanionConstUPtr = std::unique_ptr<Companion const>;
 }
 
 import star.item_descriptor;
@@ -155,14 +77,6 @@ import star.tech_database;
 namespace Star {
 
 
-class AiInterface;
-using AiInterfacePtr = std::shared_ptr<AiInterface>;
-using AiInterfaceConstPtr = std::shared_ptr<AiInterface const>;
-using AiInterfaceWeakPtr = std::weak_ptr<AiInterface>;
-using AiInterfaceConstWeakPtr = std::weak_ptr<AiInterface const>;
-using AiInterfaceUPtr = std::unique_ptr<AiInterface>;
-using AiInterfaceConstUPtr = std::unique_ptr<AiInterface const>;
-
 struct AiInterfaceExceptionTag {
   static constexpr char const* name() { return "AiInterfaceException"; }
 };
@@ -170,7 +84,7 @@ using AiInterfaceException = StarError<AiInterfaceExceptionTag, StarException>;
 
 class AiInterface : public Pane {
 public:
-  AiInterface(UniverseClientPtr client, CinematicPtr cinematic, MainInterfacePaneManager* paneManager);
+  AiInterface(std::shared_ptr<UniverseClient> client, std::shared_ptr<Cinematic> cinematic, MainInterfacePaneManager* paneManager);
 
   void update(float dt) override;
 
@@ -210,50 +124,50 @@ private:
 
   AiPages m_currentPage;
 
-  UniverseClientPtr m_client;
-  CinematicPtr m_cinematic;
+  std::shared_ptr<UniverseClient> m_client;
+  std::shared_ptr<Cinematic> m_cinematic;
   MainInterfacePaneManager* m_paneManager;
-  QuestManagerPtr m_questManager;
+  std::shared_ptr<QuestManager> m_questManager;
 
   EntityId m_sourceEntityId;
 
-  AiDatabaseConstPtr m_aiDatabase;
+  std::shared_ptr<AiDatabase const> m_aiDatabase;
 
   Animation m_staticAnimation;
   Animation m_scanlineAnimation;
   std::pair<String, Animation> m_faceAnimation;
 
-  AudioInstancePtr m_chatterSound;
+  std::shared_ptr<AudioInstance> m_chatterSound;
 
-  StackWidgetPtr m_mainStack;
-  StackWidgetPtr m_missionStack;
-  StackWidgetPtr m_crewStack;
+  std::shared_ptr<StackWidget> m_mainStack;
+  std::shared_ptr<StackWidget> m_missionStack;
+  std::shared_ptr<StackWidget> m_crewStack;
 
-  ButtonWidgetPtr m_showMissionsButton;
-  ButtonWidgetPtr m_showCrewButton;
-  ButtonWidgetPtr m_backButton;
+  std::shared_ptr<ButtonWidget> m_showMissionsButton;
+  std::shared_ptr<ButtonWidget> m_showCrewButton;
+  std::shared_ptr<ButtonWidget> m_backButton;
 
   int m_breadcrumbLeftPadding;
   int m_breadcrumbRightPadding;
-  ImageStretchWidgetPtr m_homeBreadcrumbBackground;
-  ImageStretchWidgetPtr m_pageBreadcrumbBackground;
-  ImageStretchWidgetPtr m_itemBreadcrumbBackground;
-  LabelWidgetPtr m_homeBreadcrumbWidget;
-  LabelWidgetPtr m_pageBreadcrumbWidget;
-  LabelWidgetPtr m_itemBreadcrumbWidget;
+  std::shared_ptr<ImageStretchWidget> m_homeBreadcrumbBackground;
+  std::shared_ptr<ImageStretchWidget> m_pageBreadcrumbBackground;
+  std::shared_ptr<ImageStretchWidget> m_itemBreadcrumbBackground;
+  std::shared_ptr<LabelWidget> m_homeBreadcrumbWidget;
+  std::shared_ptr<LabelWidget> m_pageBreadcrumbWidget;
+  std::shared_ptr<LabelWidget> m_itemBreadcrumbWidget;
 
-  LabelWidgetPtr m_currentTextWidget;
+  std::shared_ptr<LabelWidget> m_currentTextWidget;
 
-  CanvasWidgetPtr m_aiFaceCanvasWidget;
-  LabelWidgetPtr m_shipStatusTextWidget;
+  std::shared_ptr<CanvasWidget> m_aiFaceCanvasWidget;
+  std::shared_ptr<LabelWidget> m_shipStatusTextWidget;
 
-  ListWidgetPtr m_missionListWidget;
-  LabelWidgetPtr m_missionNameLabel;
-  ImageWidgetPtr m_missionIcon;
+  std::shared_ptr<ListWidget> m_missionListWidget;
+  std::shared_ptr<LabelWidget> m_missionNameLabel;
+  std::shared_ptr<ImageWidget> m_missionIcon;
 
-  ListWidgetPtr m_crewListWidget;
-  LabelWidgetPtr m_recruitNameLabel;
-  ImageWidgetPtr m_recruitIcon;
+  std::shared_ptr<ListWidget> m_crewListWidget;
+  std::shared_ptr<LabelWidget> m_recruitNameLabel;
+  std::shared_ptr<ImageWidget> m_recruitIcon;
 
   String m_species;
 
@@ -267,15 +181,15 @@ private:
   StringList m_completedMissions;
   Maybe<String> m_selectedMission;
 
-  List<CompanionPtr> m_crew;
-  CompanionPtr m_selectedRecruit;
+  List<std::shared_ptr<Companion>> m_crew;
+  std::shared_ptr<Companion> m_selectedRecruit;
 
   Maybe<AiSpeech> m_currentSpeech;
   float m_textLength;
   float m_textMaxLength;
 
-  ButtonWidgetPtr m_startMissionButton;
-  ButtonWidgetPtr m_dismissRecruitButton;
+  std::shared_ptr<ButtonWidget> m_startMissionButton;
+  std::shared_ptr<ButtonWidget> m_dismissRecruitButton;
 };
 
 }
@@ -284,103 +198,19 @@ export module star.ai_interface;
 
 export namespace Star {
   using ::Star::UniverseClient;
-  using ::Star::UniverseClientPtr;
-  using ::Star::UniverseClientConstPtr;
-  using ::Star::UniverseClientWeakPtr;
-  using ::Star::UniverseClientConstWeakPtr;
-  using ::Star::UniverseClientUPtr;
-  using ::Star::UniverseClientConstUPtr;
   using ::Star::AiDatabase;
-  using ::Star::AiDatabasePtr;
-  using ::Star::AiDatabaseConstPtr;
-  using ::Star::AiDatabaseWeakPtr;
-  using ::Star::AiDatabaseConstWeakPtr;
-  using ::Star::AiDatabaseUPtr;
-  using ::Star::AiDatabaseConstUPtr;
   using ::Star::Cinematic;
-  using ::Star::CinematicPtr;
-  using ::Star::CinematicConstPtr;
-  using ::Star::CinematicWeakPtr;
-  using ::Star::CinematicConstWeakPtr;
-  using ::Star::CinematicUPtr;
-  using ::Star::CinematicConstUPtr;
   using ::Star::LabelWidget;
-  using ::Star::LabelWidgetPtr;
-  using ::Star::LabelWidgetConstPtr;
-  using ::Star::LabelWidgetWeakPtr;
-  using ::Star::LabelWidgetConstWeakPtr;
-  using ::Star::LabelWidgetUPtr;
-  using ::Star::LabelWidgetConstUPtr;
   using ::Star::ImageWidget;
-  using ::Star::ImageWidgetPtr;
-  using ::Star::ImageWidgetConstPtr;
-  using ::Star::ImageWidgetWeakPtr;
-  using ::Star::ImageWidgetConstWeakPtr;
-  using ::Star::ImageWidgetUPtr;
-  using ::Star::ImageWidgetConstUPtr;
   using ::Star::ImageStretchWidget;
-  using ::Star::ImageStretchWidgetPtr;
-  using ::Star::ImageStretchWidgetConstPtr;
-  using ::Star::ImageStretchWidgetWeakPtr;
-  using ::Star::ImageStretchWidgetConstWeakPtr;
-  using ::Star::ImageStretchWidgetUPtr;
-  using ::Star::ImageStretchWidgetConstUPtr;
   using ::Star::CanvasWidget;
-  using ::Star::CanvasWidgetPtr;
-  using ::Star::CanvasWidgetConstPtr;
-  using ::Star::CanvasWidgetWeakPtr;
-  using ::Star::CanvasWidgetConstWeakPtr;
-  using ::Star::CanvasWidgetUPtr;
-  using ::Star::CanvasWidgetConstUPtr;
   using ::Star::ListWidget;
-  using ::Star::ListWidgetPtr;
-  using ::Star::ListWidgetConstPtr;
-  using ::Star::ListWidgetWeakPtr;
-  using ::Star::ListWidgetConstWeakPtr;
-  using ::Star::ListWidgetUPtr;
-  using ::Star::ListWidgetConstUPtr;
   using ::Star::ButtonWidget;
-  using ::Star::ButtonWidgetPtr;
-  using ::Star::ButtonWidgetConstPtr;
-  using ::Star::ButtonWidgetWeakPtr;
-  using ::Star::ButtonWidgetConstWeakPtr;
-  using ::Star::ButtonWidgetUPtr;
-  using ::Star::ButtonWidgetConstUPtr;
   using ::Star::QuestManager;
-  using ::Star::QuestManagerPtr;
-  using ::Star::QuestManagerConstPtr;
-  using ::Star::QuestManagerWeakPtr;
-  using ::Star::QuestManagerConstWeakPtr;
-  using ::Star::QuestManagerUPtr;
-  using ::Star::QuestManagerConstUPtr;
   using ::Star::StackWidget;
-  using ::Star::StackWidgetPtr;
-  using ::Star::StackWidgetConstPtr;
-  using ::Star::StackWidgetWeakPtr;
-  using ::Star::StackWidgetConstWeakPtr;
-  using ::Star::StackWidgetUPtr;
-  using ::Star::StackWidgetConstUPtr;
   using ::Star::TabSetWidget;
-  using ::Star::TabSetWidgetPtr;
-  using ::Star::TabSetWidgetConstPtr;
-  using ::Star::TabSetWidgetWeakPtr;
-  using ::Star::TabSetWidgetConstWeakPtr;
-  using ::Star::TabSetWidgetUPtr;
-  using ::Star::TabSetWidgetConstUPtr;
   using ::Star::Companion;
-  using ::Star::CompanionPtr;
-  using ::Star::CompanionConstPtr;
-  using ::Star::CompanionWeakPtr;
-  using ::Star::CompanionConstWeakPtr;
-  using ::Star::CompanionUPtr;
-  using ::Star::CompanionConstUPtr;
   using ::Star::AiInterface;
-  using ::Star::AiInterfacePtr;
-  using ::Star::AiInterfaceConstPtr;
-  using ::Star::AiInterfaceWeakPtr;
-  using ::Star::AiInterfaceConstWeakPtr;
-  using ::Star::AiInterfaceUPtr;
-  using ::Star::AiInterfaceConstUPtr;
   using ::Star::AiInterfaceExceptionTag;
   using ::Star::AiInterfaceException;
 }

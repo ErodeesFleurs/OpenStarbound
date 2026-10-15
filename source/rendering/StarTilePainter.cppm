@@ -82,26 +82,7 @@ namespace Star {
 class WorldCamera;
 
 class Assets;
-using AssetsPtr = std::shared_ptr<Assets>;
-using AssetsConstPtr = std::shared_ptr<Assets const>;
-using AssetsWeakPtr = std::weak_ptr<Assets>;
-using AssetsConstWeakPtr = std::weak_ptr<Assets const>;
-using AssetsUPtr = std::unique_ptr<Assets>;
-using AssetsConstUPtr = std::unique_ptr<Assets const>;
 class MaterialDatabase;
-using MaterialDatabasePtr = std::shared_ptr<MaterialDatabase>;
-using MaterialDatabaseConstPtr = std::shared_ptr<MaterialDatabase const>;
-using MaterialDatabaseWeakPtr = std::weak_ptr<MaterialDatabase>;
-using MaterialDatabaseConstWeakPtr = std::weak_ptr<MaterialDatabase const>;
-using MaterialDatabaseUPtr = std::unique_ptr<MaterialDatabase>;
-using MaterialDatabaseConstUPtr = std::unique_ptr<MaterialDatabase const>;
-class TilePainter;
-using TilePainterPtr = std::shared_ptr<TilePainter>;
-using TilePainterConstPtr = std::shared_ptr<TilePainter const>;
-using TilePainterWeakPtr = std::weak_ptr<TilePainter>;
-using TilePainterConstWeakPtr = std::weak_ptr<TilePainter const>;
-using TilePainterUPtr = std::unique_ptr<TilePainter>;
-using TilePainterConstUPtr = std::unique_ptr<TilePainter const>;
 
 class TilePainter : public TileDrawer {
 public:
@@ -117,7 +98,7 @@ public:
   static unsigned const RenderChunkSize = 16;
   static unsigned const BorderTileSize = RenderChunkSize + MaterialRenderProfileMaxNeighborDistance - 1;
 
-  TilePainter(RendererPtr renderer);
+  TilePainter(std::shared_ptr<Renderer> renderer);
 
   // Adjusts lighting levels for liquids.
   void adjustLighting(WorldRenderData& renderData) const;
@@ -149,8 +130,8 @@ private:
     float textureMovementFactor;
   };
 
-  typedef HashMap<TerrainLayer, HashMap<QuadZLevel, RenderBufferPtr>> TerrainChunk;
-  typedef HashMap<LiquidId, RenderBufferPtr> LiquidChunk;
+  typedef HashMap<TerrainLayer, HashMap<QuadZLevel, std::shared_ptr<RenderBuffer>>> TerrainChunk;
+  typedef HashMap<LiquidId, std::shared_ptr<RenderBuffer>> LiquidChunk;
 
   typedef std::tuple<MaterialId, MaterialRenderPieceIndex, MaterialHue, bool> MaterialPieceTextureKey;
   typedef String AssetTextureKey;
@@ -180,8 +161,8 @@ private:
 
   List<LiquidInfo> m_liquids;
 
-  RendererPtr m_renderer;
-  TextureGroupPtr m_textureGroup;
+  std::shared_ptr<Renderer> m_renderer;
+  std::shared_ptr<TextureGroup> m_textureGroup;
 
   HashTtlCache<TextureKey, TexturePtr, TextureKeyHash> m_textureCache;
   HashTtlCache<std::pair<Vec2I, ChunkHash>, std::shared_ptr<TerrainChunk const>> m_terrainChunkCache;
@@ -201,24 +182,6 @@ export module star.tile_painter;
 export namespace Star {
   using ::Star::WorldCamera;
   using ::Star::Assets;
-  using ::Star::AssetsPtr;
-  using ::Star::AssetsConstPtr;
-  using ::Star::AssetsWeakPtr;
-  using ::Star::AssetsConstWeakPtr;
-  using ::Star::AssetsUPtr;
-  using ::Star::AssetsConstUPtr;
   using ::Star::MaterialDatabase;
-  using ::Star::MaterialDatabasePtr;
-  using ::Star::MaterialDatabaseConstPtr;
-  using ::Star::MaterialDatabaseWeakPtr;
-  using ::Star::MaterialDatabaseConstWeakPtr;
-  using ::Star::MaterialDatabaseUPtr;
-  using ::Star::MaterialDatabaseConstUPtr;
   using ::Star::TilePainter;
-  using ::Star::TilePainterPtr;
-  using ::Star::TilePainterConstPtr;
-  using ::Star::TilePainterWeakPtr;
-  using ::Star::TilePainterConstWeakPtr;
-  using ::Star::TilePainterUPtr;
-  using ::Star::TilePainterConstUPtr;
 }

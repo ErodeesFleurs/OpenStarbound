@@ -24,27 +24,19 @@ import star.item;
 
 namespace Star {
 
-class AugmentItem;
-using AugmentItemPtr = std::shared_ptr<AugmentItem>;
-using AugmentItemConstPtr = std::shared_ptr<const AugmentItem>;
-using AugmentItemWeakPtr = std::weak_ptr<AugmentItem>;
-using AugmentItemConstWeakPtr = std::weak_ptr<const AugmentItem>;
-using AugmentItemUPtr = std::unique_ptr<AugmentItem>;
-using AugmentItemConstUPtr = std::unique_ptr<const AugmentItem>;
-
 class AugmentItem : public Item {
 public:
   AugmentItem(Json const& config, String const& directory, Json const& parameters = JsonObject());
   AugmentItem(AugmentItem const& rhs);
 
-  ItemPtr clone() const override;
+  std::shared_ptr<Item> clone() const override;
 
   StringList augmentScripts() const;
 
   // Makes no change to the given item if the augment can't be applied.
   // Consumes itself and returns true if the augment is applied.
   // Has no effect if augmentation fails.
-  ItemPtr applyTo(ItemPtr const item);
+  std::shared_ptr<Item> applyTo(std::shared_ptr<Item> const item);
 };
 
 }
@@ -53,10 +45,4 @@ export module star.augment_item;
 
 export namespace Star {
   using ::Star::AugmentItem;
-  using ::Star::AugmentItemPtr;
-  using ::Star::AugmentItemConstPtr;
-  using ::Star::AugmentItemWeakPtr;
-  using ::Star::AugmentItemConstWeakPtr;
-  using ::Star::AugmentItemUPtr;
-  using ::Star::AugmentItemConstUPtr;
 }

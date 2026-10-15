@@ -60,14 +60,6 @@ export module star.http_trust_dialog;
 
 export namespace Star {
 
-class HttpTrustDialog;
-using HttpTrustDialogPtr = std::shared_ptr<HttpTrustDialog>;
-using HttpTrustDialogConstPtr = std::shared_ptr<HttpTrustDialog const>;
-using HttpTrustDialogWeakPtr = std::weak_ptr<HttpTrustDialog>;
-using HttpTrustDialogConstWeakPtr = std::weak_ptr<HttpTrustDialog const>;
-using HttpTrustDialogUPtr = std::unique_ptr<HttpTrustDialog>;
-using HttpTrustDialogConstUPtr = std::unique_ptr<HttpTrustDialog const>;
-
 enum class HttpTrustReply {
   Allow,
   Deny

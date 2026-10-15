@@ -66,40 +66,9 @@ import star.byte_array;
 namespace Star {
 
 class LuaRoot;
-using LuaRootPtr = std::shared_ptr<LuaRoot>;
-using LuaRootConstPtr = std::shared_ptr<const LuaRoot>;
-using LuaRootWeakPtr = std::weak_ptr<LuaRoot>;
-using LuaRootConstWeakPtr = std::weak_ptr<const LuaRoot>;
-using LuaRootUPtr = std::unique_ptr<LuaRoot>;
-using LuaRootConstUPtr = std::unique_ptr<const LuaRoot>;
 class Rebuilder;
-using RebuilderPtr = std::shared_ptr<Rebuilder>;
-using RebuilderConstPtr = std::shared_ptr<const Rebuilder>;
-using RebuilderWeakPtr = std::weak_ptr<Rebuilder>;
-using RebuilderConstWeakPtr = std::weak_ptr<const Rebuilder>;
-using RebuilderUPtr = std::unique_ptr<Rebuilder>;
-using RebuilderConstUPtr = std::unique_ptr<const Rebuilder>;
 class RandomSource;
-using RandomSourcePtr = std::shared_ptr<RandomSource>;
-using RandomSourceConstPtr = std::shared_ptr<const RandomSource>;
-using RandomSourceWeakPtr = std::weak_ptr<RandomSource>;
-using RandomSourceConstWeakPtr = std::weak_ptr<const RandomSource>;
-using RandomSourceUPtr = std::unique_ptr<RandomSource>;
-using RandomSourceConstUPtr = std::unique_ptr<const RandomSource>;
 class Monster;
-using MonsterPtr = std::shared_ptr<Monster>;
-using MonsterConstPtr = std::shared_ptr<const Monster>;
-using MonsterWeakPtr = std::weak_ptr<Monster>;
-using MonsterConstWeakPtr = std::weak_ptr<const Monster>;
-using MonsterUPtr = std::unique_ptr<Monster>;
-using MonsterConstUPtr = std::unique_ptr<const Monster>;
-class MonsterDatabase;
-using MonsterDatabasePtr = std::shared_ptr<MonsterDatabase>;
-using MonsterDatabaseConstPtr = std::shared_ptr<const MonsterDatabase>;
-using MonsterDatabaseWeakPtr = std::weak_ptr<MonsterDatabase>;
-using MonsterDatabaseConstWeakPtr = std::weak_ptr<const MonsterDatabase>;
-using MonsterDatabaseUPtr = std::unique_ptr<MonsterDatabase>;
-using MonsterDatabaseConstUPtr = std::unique_ptr<const MonsterDatabase>;
 
 struct MonsterExceptionTag {
   static constexpr char const* name() { return "MonsterException"; }
@@ -194,9 +163,9 @@ public:
 
   // If level is 0, then the monster will start with the threat level of
   // whatever world they're spawned in.
-  MonsterPtr createMonster(MonsterVariant monsterVariant, Maybe<float> level = {}, Json uniqueParameters = {}) const;
-  MonsterPtr diskLoadMonster(Json const& diskStore) const;
-  MonsterPtr netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  std::shared_ptr<Monster> createMonster(MonsterVariant monsterVariant, Maybe<float> level = {}, Json uniqueParameters = {}) const;
+  std::shared_ptr<Monster> diskLoadMonster(Json const& diskStore) const;
+  std::shared_ptr<Monster> netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
   List<Drawable> monsterPortrait(MonsterVariant const& variant) const;
 
@@ -285,7 +254,7 @@ private:
 
   mutable Mutex m_cacheMutex;
 
-  RebuilderPtr m_rebuilder;
+  std::shared_ptr<Rebuilder> m_rebuilder;
 
   // Key here is the type name, seed, and the serialized unique parameters JSON
   mutable HashTtlCache<std::tuple<String, std::uint64_t, Json>, MonsterVariant> m_monsterCache;
@@ -300,38 +269,8 @@ export namespace Star {
   using ::Star::MonsterException;
   using ::Star::MonsterVariant;
   using ::Star::LuaRoot;
-  using ::Star::LuaRootPtr;
-  using ::Star::LuaRootConstPtr;
-  using ::Star::LuaRootWeakPtr;
-  using ::Star::LuaRootConstWeakPtr;
-  using ::Star::LuaRootUPtr;
-  using ::Star::LuaRootConstUPtr;
   using ::Star::Rebuilder;
-  using ::Star::RebuilderPtr;
-  using ::Star::RebuilderConstPtr;
-  using ::Star::RebuilderWeakPtr;
-  using ::Star::RebuilderConstWeakPtr;
-  using ::Star::RebuilderUPtr;
-  using ::Star::RebuilderConstUPtr;
   using ::Star::RandomSource;
-  using ::Star::RandomSourcePtr;
-  using ::Star::RandomSourceConstPtr;
-  using ::Star::RandomSourceWeakPtr;
-  using ::Star::RandomSourceConstWeakPtr;
-  using ::Star::RandomSourceUPtr;
-  using ::Star::RandomSourceConstUPtr;
   using ::Star::Monster;
-  using ::Star::MonsterPtr;
-  using ::Star::MonsterConstPtr;
-  using ::Star::MonsterWeakPtr;
-  using ::Star::MonsterConstWeakPtr;
-  using ::Star::MonsterUPtr;
-  using ::Star::MonsterConstUPtr;
   using ::Star::MonsterDatabase;
-  using ::Star::MonsterDatabasePtr;
-  using ::Star::MonsterDatabaseConstPtr;
-  using ::Star::MonsterDatabaseWeakPtr;
-  using ::Star::MonsterDatabaseConstWeakPtr;
-  using ::Star::MonsterDatabaseUPtr;
-  using ::Star::MonsterDatabaseConstUPtr;
 }

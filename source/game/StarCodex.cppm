@@ -7,14 +7,6 @@ import star.json;
 
 namespace Star {
 
-class Codex;
-using CodexPtr = std::shared_ptr<Codex>;
-using CodexConstPtr = std::shared_ptr<const Codex>;
-using CodexWeakPtr = std::weak_ptr<Codex>;
-using CodexConstWeakPtr = std::weak_ptr<const Codex>;
-using CodexUPtr = std::unique_ptr<Codex>;
-using CodexConstUPtr = std::unique_ptr<const Codex>;
-
 class Codex {
 public:
   Codex(Json const& config, String const& path);
@@ -50,10 +42,4 @@ export module star.codex;
 
 export namespace Star {
   using ::Star::Codex;
-  using ::Star::CodexPtr;
-  using ::Star::CodexConstPtr;
-  using ::Star::CodexWeakPtr;
-  using ::Star::CodexConstWeakPtr;
-  using ::Star::CodexUPtr;
-  using ::Star::CodexConstUPtr;
 }

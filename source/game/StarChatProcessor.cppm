@@ -16,14 +16,6 @@ import star.uuid;
 
 namespace Star {
 
-class ChatProcessor;
-using ChatProcessorPtr = std::shared_ptr<ChatProcessor>;
-using ChatProcessorConstPtr = std::shared_ptr<const ChatProcessor>;
-using ChatProcessorWeakPtr = std::weak_ptr<ChatProcessor>;
-using ChatProcessorConstWeakPtr = std::weak_ptr<const ChatProcessor>;
-using ChatProcessorUPtr = std::unique_ptr<ChatProcessor>;
-using ChatProcessorConstUPtr = std::unique_ptr<const ChatProcessor>;
-
 // Handles all chat routing and command parsing for client / server chat.
 // Thread safe.
 class ChatProcessor {
@@ -106,10 +98,4 @@ export module star.chat_processor;
 
 export namespace Star {
   using ::Star::ChatProcessor;
-  using ::Star::ChatProcessorPtr;
-  using ::Star::ChatProcessorConstPtr;
-  using ::Star::ChatProcessorWeakPtr;
-  using ::Star::ChatProcessorConstWeakPtr;
-  using ::Star::ChatProcessorUPtr;
-  using ::Star::ChatProcessorConstUPtr;
 }

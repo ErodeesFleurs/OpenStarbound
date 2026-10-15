@@ -393,7 +393,7 @@ GuiMessage::GuiMessage() : message(), cooldown(), springState() {}
 GuiMessage::GuiMessage(String const& message, float cooldown, float spring)
   : message(message), cooldown(cooldown), springState(spring) {}
 
-MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, CinematicPtr cinematicOverlay)
+MainInterface::MainInterface(std::shared_ptr<UniverseClient> client, std::shared_ptr<WorldPainter> painter, std::shared_ptr<Cinematic> cinematicOverlay)
   : m_guiContext(GuiContext::singletonPtr())
   , m_config(MainInterfaceConfig::loadFromAssets())
   , m_client(std::move(client))
@@ -412,7 +412,7 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
   m_stickyTargetingTimer = GameTimer(m_config->monsterHealthBarTime);
 
   m_inventoryWindow = std::make_shared<InventoryPane>(this, m_client->mainPlayer(), m_containerInteractor);
-  m_paneManager.registerPane(MainInterfacePanes::Inventory, PaneLayer::Window, m_inventoryWindow, [this](PanePtr const&) {
+  m_paneManager.registerPane(MainInterfacePanes::Inventory, PaneLayer::Window, m_inventoryWindow, [this](std::shared_ptr<Pane> const&) {
       if (auto player = m_client->mainPlayer())
           player->clearSwap();
       if (m_containerPane) {
@@ -499,7 +499,7 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
   m_paneManager.registerPane(MainInterfacePanes::PlanetText, PaneLayer::Hud, planetName);
 
   auto charSelectionMenu = std::make_shared<CharSelectionPane>(m_client->playerStorage(), [=]() {},
-    [this](PlayerPtr mainPlayer) {
+    [this](std::shared_ptr<Player> mainPlayer) {
       m_client->switchPlayer(mainPlayer->uuid());
       auto configuration = Root::singleton().configuration();
       if (configuration->get("characterSwapMovesToFront", false).toBool())
@@ -552,7 +552,7 @@ void MainInterface::openCraftingWindow(Json const& config, EntityId sourceEntity
   }
 
   m_craftingWindow = std::make_shared<CraftingPane>(m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId);
-  m_paneManager.displayPane(PaneLayer::Window, m_craftingWindow, [this](PanePtr const&) {
+  m_paneManager.displayPane(PaneLayer::Window, m_craftingWindow, [this](std::shared_ptr<Pane> const&) {
     if (auto player = m_client->mainPlayer())
       player->clearSwap();
     });
@@ -570,7 +570,7 @@ void MainInterface::openMerchantWindow(Json const& config, EntityId sourceEntity
   bool openWithInventory = config.getBool("openWithInventory", true);
   bool closeWithInventory = config.getBool("closeWithInventory", !m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Inventory));
   m_merchantWindow = std::make_shared<MerchantPane>(m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId);
-  m_paneManager.displayPane(PaneLayer::Window, m_merchantWindow, [this, closeWithInventory](PanePtr const&) {
+  m_paneManager.displayPane(PaneLayer::Window, m_merchantWindow, [this, closeWithInventory](std::shared_ptr<Pane> const&) {
     if (closeWithInventory)
       m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
    });
@@ -595,7 +595,7 @@ bool MainInterface::windowsOpen() const {
   return (bool)m_paneManager.topPane({PaneLayer::Window});
 }
 
-MerchantPanePtr MainInterface::activeMerchantPane() const {
+std::shared_ptr<MerchantPane> MainInterface::activeMerchantPane() const {
   if (m_paneManager.isDisplayed(m_merchantWindow))
     return m_merchantWindow;
   else
@@ -753,7 +753,7 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
     m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
 
     m_containerPane = std::make_shared<ContainerPane>(world, m_client->mainPlayer(), m_containerInteractor);
-    m_paneManager.displayPane(PaneLayer::Window, m_containerPane, [this, closeWithInventory](PanePtr const&) {
+    m_paneManager.displayPane(PaneLayer::Window, m_containerPane, [this, closeWithInventory](std::shared_ptr<Pane> const&) {
       if (closeWithInventory)
         m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
       else {
@@ -852,7 +852,7 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
     if (sourceEntity != NullEntityId && m_interactionScriptPanes.contains(sourceEntity) && m_paneManager.isDisplayed(m_interactionScriptPanes[sourceEntity]))
       m_paneManager.dismissPane(m_interactionScriptPanes[sourceEntity]);
 
-    ScriptPanePtr scriptPane = std::make_shared<ScriptPane>(m_client, interactAction.data, sourceEntity);
+    std::shared_ptr<ScriptPane> scriptPane = std::make_shared<ScriptPane>(m_client, interactAction.data, sourceEntity);
     displayScriptPane(scriptPane, sourceEntity);
 
   } else if (interactAction.type == InteractActionType::Message) {
@@ -904,7 +904,7 @@ void MainInterface::update(float dt) {
         && (entity->getTeam().type == TeamType::Enemy || entity->getTeam().type == TeamType::PVP)
         && m_client->worldClient()->lightLevel(entity->position()) > 0;
     });
-  sortByComputedValue(mouseoverEntities, [&](DamageBarEntityPtr const& a) {
+  sortByComputedValue(mouseoverEntities, [&](std::shared_ptr<DamageBarEntity> const& a) {
       return m_client->worldClient()->geometry().diff(a->position(), cursorWorldPos).magnitude();
     });
   if (mouseoverEntities.size() > 0) {
@@ -947,13 +947,13 @@ void MainInterface::update(float dt) {
   }
 
   if (m_specialDamageBars.size() < maxBars && m_client->mainPlayer()->inWorld()) {
-    List<DamageBarEntityPtr> specialDamageTargets;
-    m_client->worldClient()->forAllEntities([&specialDamageTargets](EntityPtr const& entity) {
+    List<std::shared_ptr<DamageBarEntity>> specialDamageTargets;
+    m_client->worldClient()->forAllEntities([&specialDamageTargets](std::shared_ptr<Entity> const& entity) {
         if (auto damageBarEntity = as<DamageBarEntity>(entity))
           if (damageBarEntity->damageBar() == DamageBarType::Special)
             specialDamageTargets.append(damageBarEntity);
       });
-    sortByComputedValue(specialDamageTargets, [&](DamageBarEntityPtr entity) {
+    sortByComputedValue(specialDamageTargets, [&](std::shared_ptr<DamageBarEntity> entity) {
         return m_client->worldClient()->geometry().diff(entity->position(), m_client->mainPlayer()->position());
       });
 
@@ -1069,10 +1069,10 @@ void MainInterface::update(float dt) {
     m_messageOverflow++;
     m_overflowMessage->message = m_config->overflowMessageText.replace("<count>", toString(m_messageOverflow));
     m_overflowMessage->cooldown = m_config->messageTime;
-    if (auto oldest = m_messages.sorted([](GuiMessagePtr a, GuiMessagePtr b) { return a->cooldown < b->cooldown; }).maybeFirst())
+    if (auto oldest = m_messages.sorted([](std::shared_ptr<GuiMessage> a, std::shared_ptr<GuiMessage> b) { return a->cooldown < b->cooldown; }).maybeFirst())
       m_overflowMessage->cooldown = oldest.value()->cooldown;
 
-    if (auto bottom = m_messages.filtered([this](GuiMessagePtr m) { return m != m_overflowMessage; }).maybeFirst())
+    if (auto bottom = m_messages.filtered([this](std::shared_ptr<GuiMessage> m) { return m != m_overflowMessage; }).maybeFirst())
       bottom.value()->cooldown = 0;
   }
 
@@ -1265,7 +1265,7 @@ void MainInterface::queueJoinRequest(std::pair<String, RpcPromiseKeeper<P2PJoinR
   m_queuedJoinRequests.push_back(request);
 }
 
-void MainInterface::queueItemPickupText(ItemPtr const& item) {
+void MainInterface::queueItemPickupText(std::shared_ptr<Item> const& item) {
   auto descriptor = item->descriptor();
   if (m_itemDropMessages.contains(descriptor.singular())) {
     auto countMessPair = m_itemDropMessages.get(descriptor.singular());
@@ -1326,8 +1326,8 @@ void MainInterface::warpTo(WarpAction const& warpAction) {
   }
 }
 
-CanvasWidgetPtr MainInterface::fetchCanvas(String const& canvasName, bool ignoreInterfaceScale) {
-  CanvasWidgetPtr canvas;
+std::shared_ptr<CanvasWidget> MainInterface::fetchCanvas(String const& canvasName, bool ignoreInterfaceScale) {
+  std::shared_ptr<CanvasWidget> canvas;
 
   if (auto canvasPtr = m_canvases.ptr(canvasName))
     canvas = *canvasPtr;
@@ -1344,14 +1344,14 @@ CanvasWidgetPtr MainInterface::fetchCanvas(String const& canvasName, bool ignore
   return canvas;
 }
 
-ClientCommandProcessorPtr MainInterface::commandProcessor() const {
+std::shared_ptr<ClientCommandProcessor> MainInterface::commandProcessor() const {
   return m_clientCommandProcessor;
 }
 
 // For when the player swaps characters. We need to completely reload ScriptPanes,
 // because a lot of ScriptPanes do not expect the character to suddenly change and may break or spill data over.
 void MainInterface::takeScriptPanes(List<ScriptPaneInfo>& out) {
-  m_paneManager.dismissWhere([&](PanePtr const& pane) {
+  m_paneManager.dismissWhere([&](std::shared_ptr<Pane> const& pane) {
     if (auto scriptPane = as<ScriptPane>(pane)) {
       if (scriptPane->isDismissed())
         return false;
@@ -1387,7 +1387,7 @@ void MainInterface::displayDefaultPanes() {
   m_paneManager.displayRegisteredPane(MainInterfacePanes::StatusPane);
 }
 
-PanePtr MainInterface::createEscapeDialog() {
+std::shared_ptr<Pane> MainInterface::createEscapeDialog() {
   auto assets = Root::singleton().assets();
 
   auto escapeDialog = std::make_shared<Pane>();
@@ -2002,7 +2002,7 @@ void MainInterface::initHttpTrustDialog() {
   m_paneManager.registerPane(MainInterfacePanes::HttpTrustDialog, PaneLayer::ModalWindow, httpTrustDialog);
 }
 
-void MainInterface::displayScriptPane(ScriptPanePtr& scriptPane, EntityId sourceEntity) {
+void MainInterface::displayScriptPane(std::shared_ptr<ScriptPane>& scriptPane, EntityId sourceEntity) {
  // keep any number of script panes open with null source entities
   if (sourceEntity != NullEntityId)
     m_interactionScriptPanes[sourceEntity] = scriptPane;
@@ -2013,7 +2013,7 @@ void MainInterface::displayScriptPane(ScriptPanePtr& scriptPane, EntityId source
 
   if (scriptPane->openWithInventory()) {
     bool closeWithInventory = scriptPane->closeWithInventory();
-    m_paneManager.displayPane(layer, scriptPane, [this, closeWithInventory](PanePtr const&) {
+    m_paneManager.displayPane(layer, scriptPane, [this, closeWithInventory](std::shared_ptr<Pane> const&) {
       if (closeWithInventory)
         m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
     });

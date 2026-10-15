@@ -48,13 +48,6 @@ import star.widget;
 
 namespace Star {
 
-class StackWidget;
-using StackWidgetPtr = std::shared_ptr<StackWidget>;
-using StackWidgetConstPtr = std::shared_ptr<StackWidget const>;
-using StackWidgetWeakPtr = std::weak_ptr<StackWidget>;
-using StackWidgetConstWeakPtr = std::weak_ptr<StackWidget const>;
-using StackWidgetUPtr = std::unique_ptr<StackWidget>;
-using StackWidgetConstUPtr = std::unique_ptr<StackWidget const>;
 class StackWidget : public Widget {
 public:
   void showPage(std::size_t page);
@@ -62,10 +55,10 @@ public:
 
   Either<std::size_t, String> currentPage() const;
 
-  virtual void addChild(String const& name, WidgetPtr member) override;
+  virtual void addChild(String const& name, std::shared_ptr<Widget> member) override;
 
 private:
-  WidgetPtr m_shownPage;
+  std::shared_ptr<Widget> m_shownPage;
   Either<std::size_t, String> m_page;
 };
 
@@ -75,10 +68,4 @@ export module star.stack_widget;
 
 export namespace Star {
   using ::Star::StackWidget;
-  using ::Star::StackWidgetPtr;
-  using ::Star::StackWidgetConstPtr;
-  using ::Star::StackWidgetWeakPtr;
-  using ::Star::StackWidgetConstWeakPtr;
-  using ::Star::StackWidgetUPtr;
-  using ::Star::StackWidgetConstUPtr;
 }

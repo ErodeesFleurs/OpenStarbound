@@ -28,19 +28,6 @@ enum class CollisionKind : std::uint8_t;
 class ItemDescriptor;
 
 class ParticleConfig;
-using ParticleConfigPtr = std::shared_ptr<ParticleConfig>;
-using ParticleConfigConstPtr = std::shared_ptr<const ParticleConfig>;
-using ParticleConfigWeakPtr = std::weak_ptr<ParticleConfig>;
-using ParticleConfigConstWeakPtr = std::weak_ptr<const ParticleConfig>;
-using ParticleConfigUPtr = std::unique_ptr<ParticleConfig>;
-using ParticleConfigConstUPtr = std::unique_ptr<const ParticleConfig>;
-class MaterialDatabase;
-using MaterialDatabasePtr = std::shared_ptr<MaterialDatabase>;
-using MaterialDatabaseConstPtr = std::shared_ptr<const MaterialDatabase>;
-using MaterialDatabaseWeakPtr = std::weak_ptr<MaterialDatabase>;
-using MaterialDatabaseConstWeakPtr = std::weak_ptr<const MaterialDatabase>;
-using MaterialDatabaseUPtr = std::unique_ptr<MaterialDatabase>;
-using MaterialDatabaseConstUPtr = std::unique_ptr<const MaterialDatabase>;
 
 struct MaterialExceptionTag {
   static constexpr char const* name() { return "MaterialException"; }
@@ -88,8 +75,8 @@ public:
   String modShortDescription(ModId modId) const;
 
   // Will return nullptr if no rendering profile is available
-  MaterialRenderProfileConstPtr materialRenderProfile(MaterialId modId) const;
-  MaterialRenderProfileConstPtr modRenderProfile(ModId modId) const;
+  std::shared_ptr<MaterialRenderProfile const> materialRenderProfile(MaterialId modId) const;
+  std::shared_ptr<MaterialRenderProfile const> modRenderProfile(ModId modId) const;
 
   TileDamageParameters materialDamageParameters(MaterialId materialId) const;
   TileDamageParameters modDamageParameters(ModId modId) const;
@@ -110,7 +97,7 @@ public:
   bool backgroundLightTransparent(MaterialId materialId) const;
   bool occludesBehind(MaterialId materialId) const;
 
-  ParticleConfigPtr miningParticle(MaterialId materialId, ModId modId = NoModId) const;
+  std::shared_ptr<ParticleConfig> miningParticle(MaterialId materialId, ModId modId = NoModId) const;
   String miningSound(MaterialId materialId, ModId modId = NoModId) const;
   String footstepSound(MaterialId materialId, ModId modId = NoModId) const;
   String defaultFootstepSound() const;
@@ -154,7 +141,7 @@ private:
     Json descriptions;
     String category;
     Color particleColor;
-    ParticleConfigPtr miningParticle;
+    std::shared_ptr<ParticleConfig> miningParticle;
     StringList miningSounds;
     String footstepSound;
     ModId tillableMod;
@@ -182,7 +169,7 @@ private:
     String itemDrop;
     Json descriptions;
     Color particleColor;
-    ParticleConfigPtr miningParticle;
+    std::shared_ptr<ParticleConfig> miningParticle;
     StringList miningSounds;
     String footstepSound;
     bool tilled;
@@ -223,7 +210,7 @@ private:
   HashMap<std::pair<LiquidId, ModId>, LiquidModInteraction> m_liquidModInteractions;
 };
 
-inline MaterialRenderProfileConstPtr MaterialDatabase::materialRenderProfile(MaterialId materialId) const {
+inline std::shared_ptr<MaterialRenderProfile const> MaterialDatabase::materialRenderProfile(MaterialId materialId) const {
   if (materialId < m_materials.size()) {
     if (auto const& mat = m_materials[materialId])
       return mat->materialRenderProfile;
@@ -232,7 +219,7 @@ inline MaterialRenderProfileConstPtr MaterialDatabase::materialRenderProfile(Mat
   return {};
 }
 
-inline MaterialRenderProfileConstPtr MaterialDatabase::modRenderProfile(ModId modId) const {
+inline std::shared_ptr<MaterialRenderProfile const> MaterialDatabase::modRenderProfile(ModId modId) const {
   if (modId < m_mods.size()) {
     if (auto const& mod = m_mods[modId])
       return mod->modRenderProfile;
@@ -318,17 +305,5 @@ export namespace Star {
   using ::Star::LiquidMaterialInteraction;
   using ::Star::LiquidModInteraction;
   using ::Star::ParticleConfig;
-  using ::Star::ParticleConfigPtr;
-  using ::Star::ParticleConfigConstPtr;
-  using ::Star::ParticleConfigWeakPtr;
-  using ::Star::ParticleConfigConstWeakPtr;
-  using ::Star::ParticleConfigUPtr;
-  using ::Star::ParticleConfigConstUPtr;
   using ::Star::MaterialDatabase;
-  using ::Star::MaterialDatabasePtr;
-  using ::Star::MaterialDatabaseConstPtr;
-  using ::Star::MaterialDatabaseWeakPtr;
-  using ::Star::MaterialDatabaseConstWeakPtr;
-  using ::Star::MaterialDatabaseUPtr;
-  using ::Star::MaterialDatabaseConstUPtr;
 }

@@ -15,14 +15,6 @@ export module star.compression;
 
 export namespace Star {
 
-class CompressedFile;
-using CompressedFilePtr = std::shared_ptr<CompressedFile>;
-using CompressedFileConstPtr = std::shared_ptr<const CompressedFile>;
-using CompressedFileWeakPtr = std::weak_ptr<CompressedFile>;
-using CompressedFileConstWeakPtr = std::weak_ptr<const CompressedFile>;
-using CompressedFileUPtr = std::unique_ptr<CompressedFile>;
-using CompressedFileConstUPtr = std::unique_ptr<const CompressedFile>;
-
 // Zlib compression level, ranges from 0 to 9
 typedef int CompressionLevel;
 
@@ -51,7 +43,7 @@ ByteArray uncompressDataGzip(ByteArray const& in, std::size_t limit = 0);
 // Random access to a (potentially) compressed file.
 class CompressedFile : public IODevice {
 public:
-  static CompressedFilePtr open(String const& filename, IOMode mode, CompressionLevel comp = MediumCompression);
+  static std::shared_ptr<CompressedFile> open(String const& filename, IOMode mode, CompressionLevel comp = MediumCompression);
 
   CompressedFile();
   CompressedFile(String filename);
@@ -75,7 +67,7 @@ public:
   void sync() override;
   void close() override;
 
-  IODevicePtr clone() override;
+  std::shared_ptr<IODevice> clone() override;
 
 private:
   String m_filename;
@@ -247,8 +239,8 @@ ByteArray uncompressDataGzip(ByteArray const& in, std::size_t limit) {
   return uncompressDataGzip(in.ptr(), in.size(), limit);
 }
 
-CompressedFilePtr CompressedFile::open(String const& filename, IOMode mode, CompressionLevel comp) {
-  CompressedFilePtr f = std::make_shared<CompressedFile>(filename);
+std::shared_ptr<CompressedFile> CompressedFile::open(String const& filename, IOMode mode, CompressionLevel comp) {
+  std::shared_ptr<CompressedFile> f = std::make_shared<CompressedFile>(filename);
   f->open(mode, comp);
   return f;
 }
@@ -370,7 +362,7 @@ void CompressedFile::close() {
   setMode(IOMode::Closed);
 }
 
-IODevicePtr CompressedFile::clone() {
+std::shared_ptr<IODevice> CompressedFile::clone() {
   auto cloned = std::make_shared<CompressedFile>(m_filename);
   cloned->setCompression(m_compression);
   if (isOpen()) {

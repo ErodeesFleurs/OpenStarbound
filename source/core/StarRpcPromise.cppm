@@ -52,9 +52,6 @@ private:
   bool m_done = false;
 };
 
-template <typename Result, typename Error = String>
-using AutoFailRpcPromiseKeeperPtr = std::shared_ptr<AutoFailRpcPromiseKeeper<Result,Error>>;
-
 // A generic promise for the result of a remote procedure call.  It has
 // reference semantics and is implicitly shared. Thread safe via mutexes. Can be chained.
 template <typename Result, typename Error = String>
@@ -269,6 +266,5 @@ using ::Star::RpcPromiseExceptionTag;
 using ::Star::RpcPromiseException;
 using ::Star::RpcPromiseKeeper;
 using ::Star::AutoFailRpcPromiseKeeper;
-using ::Star::AutoFailRpcPromiseKeeperPtr;
 using ::Star::RpcPromise;
 }

@@ -51,13 +51,6 @@ namespace Star {
 
 // Super simple, only supports left to right, top to bottom flow layouts
 // currently
-class FlowLayout;
-using FlowLayoutPtr = std::shared_ptr<FlowLayout>;
-using FlowLayoutConstPtr = std::shared_ptr<FlowLayout const>;
-using FlowLayoutWeakPtr = std::weak_ptr<FlowLayout>;
-using FlowLayoutConstWeakPtr = std::weak_ptr<FlowLayout const>;
-using FlowLayoutUPtr = std::unique_ptr<FlowLayout>;
-using FlowLayoutConstUPtr = std::unique_ptr<FlowLayout const>;
 class FlowLayout : public Layout {
 public:
   FlowLayout();
@@ -76,10 +69,4 @@ export module star.flow_layout;
 
 export namespace Star {
   using ::Star::FlowLayout;
-  using ::Star::FlowLayoutPtr;
-  using ::Star::FlowLayoutConstPtr;
-  using ::Star::FlowLayoutWeakPtr;
-  using ::Star::FlowLayoutConstWeakPtr;
-  using ::Star::FlowLayoutUPtr;
-  using ::Star::FlowLayoutConstUPtr;
 }

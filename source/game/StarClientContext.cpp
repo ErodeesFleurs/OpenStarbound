@@ -143,7 +143,7 @@ EntityDamageTeam ClientContext::team() const {
   return m_teamNetState.get();
 }
 
-JsonRpcInterfacePtr ClientContext::rpcInterface() const {
+std::shared_ptr<JsonRpcInterface> ClientContext::rpcInterface() const {
   return m_rpc;
 }
 

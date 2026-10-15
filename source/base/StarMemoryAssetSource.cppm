@@ -18,14 +18,6 @@ export module star.memory_asset_source;
 
 export namespace Star {
 
-class MemoryAssetSource;
-using MemoryAssetSourcePtr = std::shared_ptr<MemoryAssetSource>;
-using MemoryAssetSourceConstPtr = std::shared_ptr<MemoryAssetSource const>;
-using MemoryAssetSourceWeakPtr = std::weak_ptr<MemoryAssetSource>;
-using MemoryAssetSourceConstWeakPtr = std::weak_ptr<MemoryAssetSource const>;
-using MemoryAssetSourceUPtr = std::unique_ptr<MemoryAssetSource>;
-using MemoryAssetSourceConstUPtr = std::unique_ptr<MemoryAssetSource const>;
-
 class MemoryAssetSource : public AssetSource {
 public:
   MemoryAssetSource(String const& name, JsonObject metadata = JsonObject());
@@ -35,7 +27,7 @@ public:
   StringList assetPaths() const override;
 
   // do not use the returned IODevice after the file is gone or bad things will happen
-  IODevicePtr open(String const& path) override;
+  std::shared_ptr<IODevice> open(String const& path) override;
 
   bool empty() const;
   bool contains(String const& path) const;
@@ -44,9 +36,9 @@ public:
   void set(String const& path, Image const& image);
   void set(String const& path, Image&& image);
   ByteArray read(String const& path) override;
-  ImageConstPtr image(String const& path);
+  std::shared_ptr<Image const> image(String const& path);
 private:
-  typedef Variant<ByteArray, ImagePtr> FileEntry;
+  typedef Variant<ByteArray, std::shared_ptr<Image>> FileEntry;
 
   String m_name;
   JsonObject m_metadata;
@@ -71,7 +63,7 @@ StringList MemoryAssetSource::assetPaths() const {
   return m_files.keys();
 }
 
-IODevicePtr MemoryAssetSource::open(String const& path) {
+std::shared_ptr<IODevice> MemoryAssetSource::open(String const& path) {
   struct AssetReader : public IODevice {
     AssetReader(char* assetData, std::size_t assetSize, String name) {
       this->assetData = assetData;
@@ -109,7 +101,7 @@ IODevicePtr MemoryAssetSource::open(String const& path) {
         assetPos = clamp<StreamOffset>(assetPos - p, 0, assetSize);
     }
 
-    IODevicePtr clone() override {
+    std::shared_ptr<IODevice> clone() override {
       auto cloned = std::make_shared<AssetReader>(assetData, assetSize, name);
       cloned->assetPos = assetPos;
       return cloned;
@@ -127,7 +119,7 @@ IODevicePtr MemoryAssetSource::open(String const& path) {
   else if (auto byteArray = p->ptr<ByteArray>())
     return std::make_shared<AssetReader>(byteArray->ptr(), byteArray->size(), path);
   else {
-    auto image = p->get<ImagePtr>().get();
+    auto image = p->get<std::shared_ptr<Image>>().get();
     return std::make_shared<AssetReader>((char*)image->data(), image->width() * image->height() * image->bytesPerPixel(), path);
   }
 }
@@ -163,16 +155,16 @@ ByteArray MemoryAssetSource::read(String const& path) {
   else if (auto bytes = p->ptr<ByteArray>())
     return *bytes;
   else {
-    Image const* image = p->get<ImagePtr>().get();
+    Image const* image = p->get<std::shared_ptr<Image>>().get();
     return ByteArray((char const*)image->data(), image->width() * image->height() * image->bytesPerPixel());
   }
 }
 
-ImageConstPtr MemoryAssetSource::image(String const& path) {
+std::shared_ptr<Image const> MemoryAssetSource::image(String const& path) {
   auto p = m_files.ptr(path);
   if (!p)
     throw AssetSourceException::format("Requested file '{}' does not exist in memory", path);
-  else if (auto imagePtr = p->ptr<ImagePtr>())
+  else if (auto imagePtr = p->ptr<std::shared_ptr<Image>>())
     return *imagePtr;
   else
     return nullptr;

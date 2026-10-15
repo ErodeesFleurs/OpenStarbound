@@ -51,13 +51,6 @@ import star.button_group;
 
 import star.either;
 namespace Star {
-class ButtonWidget;
-using ButtonWidgetPtr = std::shared_ptr<ButtonWidget>;
-using ButtonWidgetConstPtr = std::shared_ptr<ButtonWidget const>;
-using ButtonWidgetWeakPtr = std::weak_ptr<ButtonWidget>;
-using ButtonWidgetConstWeakPtr = std::weak_ptr<ButtonWidget const>;
-using ButtonWidgetUPtr = std::unique_ptr<ButtonWidget>;
-using ButtonWidgetConstUPtr = std::unique_ptr<ButtonWidget const>;
 
 class ButtonWidget : public Widget {
 public:
@@ -78,10 +71,10 @@ public:
   // Callback is called when the checked / pressed state is changed.
   void setCallback(WidgetCallbackFunc callback);
 
-  ButtonGroupPtr buttonGroup() const;
+  std::shared_ptr<ButtonGroup> buttonGroup() const;
   // Sets the button group for this widget, and adds it to the button group if
   // it is not already added.  Additionally, sets the button as checkable.
-  void setButtonGroup(ButtonGroupPtr buttonGroup, int id = ButtonGroup::NoButton);
+  void setButtonGroup(std::shared_ptr<ButtonGroup> buttonGroup, int id = ButtonGroup::NoButton);
   // If a button group is set, returns this button's id in the button group.
   int buttonGroupId();
 
@@ -130,7 +123,7 @@ public:
   void setFontColorDisabled(Color color);
   void setFontColorChecked(Color color);
 
-  virtual WidgetPtr getChildAt(Vec2I const& pos) override;
+  virtual std::shared_ptr<Widget> getChildAt(Vec2I const& pos) override;
 
   void disable();
   void enable();
@@ -146,7 +139,7 @@ protected:
   void updateSize();
 
   WidgetCallbackFunc m_callback;
-  ButtonGroupWeakPtr m_buttonGroup;
+  std::weak_ptr<ButtonGroup> m_buttonGroup;
 
   bool m_hovered;
   bool m_pressed;
@@ -204,10 +197,4 @@ export module star.button_widget;
 
 export namespace Star {
   using ::Star::ButtonWidget;
-  using ::Star::ButtonWidgetPtr;
-  using ::Star::ButtonWidgetConstPtr;
-  using ::Star::ButtonWidgetWeakPtr;
-  using ::Star::ButtonWidgetConstWeakPtr;
-  using ::Star::ButtonWidgetUPtr;
-  using ::Star::ButtonWidgetConstUPtr;
 }

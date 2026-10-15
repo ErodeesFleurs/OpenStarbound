@@ -192,13 +192,13 @@ private:
 };
 
 TEST(UniverseConnections, All) {
-  UniverseConnectionServer server([](UniverseConnectionServer* server, ConnectionId clientId, List<PacketPtr> packets) {
+  UniverseConnectionServer server([](UniverseConnectionServer* server, ConnectionId clientId, List<std::shared_ptr<::Star::Packet>> packets) {
       server->sendPackets(clientId, packets);
     });
 
   ConnectionId clientId = ServerConnectionId;
   TcpServer tcpServer(HostAddressWithPort(HostAddress::localhost(), ServerPort));
-  tcpServer.setAcceptCallback([&server, &clientId](TcpSocketPtr socket) {
+  tcpServer.setAcceptCallback([&server, &clientId](std::shared_ptr<::Star::TcpSocket> socket) {
       socket->setNonBlocking(true);
       auto conn = UniverseConnection(TcpPacketSocket::open(std::move(socket)));
       server.addConnection(++clientId, std::move(conn));

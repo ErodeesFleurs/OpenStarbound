@@ -57,7 +57,7 @@ import star.falling_blocks_agent;
 import star.algorithm;
 namespace Star {
 
-FallingBlocksAgent::FallingBlocksAgent(FallingBlocksFacadePtr worldFacade)
+FallingBlocksAgent::FallingBlocksAgent(std::shared_ptr<FallingBlocksFacade> worldFacade)
   : m_facade(std::move(worldFacade)) {
   m_immediateUpwardPropagateProbability = Root::singleton().assets()->json("/worldserver.config:fallingBlocksImmediateUpwardPropogateProbability").toFloat();
 }

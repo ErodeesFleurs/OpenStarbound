@@ -45,21 +45,6 @@ import star.world;
 
 namespace Star {
 
-class Companion;
-using CompanionPtr = std::shared_ptr<Companion>;
-using CompanionConstPtr = std::shared_ptr<const Companion>;
-using CompanionWeakPtr = std::weak_ptr<Companion>;
-using CompanionConstWeakPtr = std::weak_ptr<const Companion>;
-using CompanionUPtr = std::unique_ptr<Companion>;
-using CompanionConstUPtr = std::unique_ptr<const Companion>;
-class PlayerCompanions;
-using PlayerCompanionsPtr = std::shared_ptr<PlayerCompanions>;
-using PlayerCompanionsConstPtr = std::shared_ptr<const PlayerCompanions>;
-using PlayerCompanionsWeakPtr = std::weak_ptr<PlayerCompanions>;
-using PlayerCompanionsConstWeakPtr = std::weak_ptr<const PlayerCompanions>;
-using PlayerCompanionsUPtr = std::unique_ptr<PlayerCompanions>;
-using PlayerCompanionsConstUPtr = std::unique_ptr<const PlayerCompanions>;
-
 class Companion {
 public:
   Companion(Json const& json);
@@ -88,7 +73,7 @@ public:
   void diskLoad(Json const& diskStore);
   Json diskStore() const;
 
-  List<CompanionPtr> getCompanions(String const& category) const;
+  List<std::shared_ptr<Companion>> getCompanions(String const& category) const;
 
   void init(Entity* player, World* world);
   void uninit();
@@ -103,7 +88,7 @@ private:
 
   World* m_world;
   Json m_config;
-  StringMap<List<CompanionPtr>> m_companions;
+  StringMap<List<std::shared_ptr<Companion>>> m_companions;
 
   LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>
       m_scriptComponent;
@@ -115,17 +100,5 @@ export module star.player_companions;
 
 export namespace Star {
 using ::Star::Companion;
-using ::Star::CompanionPtr;
-using ::Star::CompanionConstPtr;
-using ::Star::CompanionWeakPtr;
-using ::Star::CompanionConstWeakPtr;
-using ::Star::CompanionUPtr;
-using ::Star::CompanionConstUPtr;
 using ::Star::PlayerCompanions;
-using ::Star::PlayerCompanionsPtr;
-using ::Star::PlayerCompanionsConstPtr;
-using ::Star::PlayerCompanionsWeakPtr;
-using ::Star::PlayerCompanionsConstWeakPtr;
-using ::Star::PlayerCompanionsUPtr;
-using ::Star::PlayerCompanionsConstUPtr;
 }

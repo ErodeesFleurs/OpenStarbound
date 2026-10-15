@@ -79,13 +79,13 @@ import star.entity_map;
 
 namespace Star {
 
-WireProcessor::WireProcessor(WorldStoragePtr worldStorage) {
+WireProcessor::WireProcessor(std::shared_ptr<WorldStorage> worldStorage) {
   m_worldStorage = worldStorage;
 }
 
 void WireProcessor::process() {
   // First, populate all the working entities that are already live
-  m_worldStorage->entityMap()->forAllEntities([&](EntityPtr const& entity) {
+  m_worldStorage->entityMap()->forAllEntities([&](std::shared_ptr<Entity> const& entity) {
     if (auto wireEntity = as<WireEntity>(entity.get()))
       populateWorking(wireEntity);
   });
@@ -156,7 +156,7 @@ void WireProcessor::loadNetwork(Vec2I tilePosition) {
         highestTtl = ttl;
     } else {
       m_worldStorage->loadSector(*sector);
-      m_worldStorage->entityMap()->forEachEntity(RectF(*m_worldStorage->regionForSector(*sector)), [&](EntityPtr const& entity) {
+      m_worldStorage->entityMap()->forEachEntity(RectF(*m_worldStorage->regionForSector(*sector)), [&](std::shared_ptr<Entity> const& entity) {
           if (auto wireEntity = as<WireEntity>(entity.get()))
             populateWorking(wireEntity);
         });

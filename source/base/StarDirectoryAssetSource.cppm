@@ -11,14 +11,6 @@ import star.string;
 
 namespace Star {
 
-class DirectoryAssetSource;
-using DirectoryAssetSourcePtr = std::shared_ptr<DirectoryAssetSource>;
-using DirectoryAssetSourceConstPtr = std::shared_ptr<DirectoryAssetSource const>;
-using DirectoryAssetSourceWeakPtr = std::weak_ptr<DirectoryAssetSource>;
-using DirectoryAssetSourceConstWeakPtr = std::weak_ptr<DirectoryAssetSource const>;
-using DirectoryAssetSourceUPtr = std::unique_ptr<DirectoryAssetSource>;
-using DirectoryAssetSourceConstUPtr = std::unique_ptr<DirectoryAssetSource const>;
-
 class DirectoryAssetSource : public AssetSource {
 public:
   // Any file that forms an asset path that matches any of the patterns in
@@ -28,7 +20,7 @@ public:
   JsonObject metadata() const override;
   StringList assetPaths() const override;
 
-  IODevicePtr open(String const& path) override;
+  std::shared_ptr<IODevice> open(String const& path) override;
   ByteArray read(String const& path) override;
 
   // Converts an asset path to the path on the filesystem
@@ -56,10 +48,4 @@ export module star.directory_asset_source;
 
 export namespace Star {
   using ::Star::DirectoryAssetSource;
-  using ::Star::DirectoryAssetSourcePtr;
-  using ::Star::DirectoryAssetSourceConstPtr;
-  using ::Star::DirectoryAssetSourceWeakPtr;
-  using ::Star::DirectoryAssetSourceConstWeakPtr;
-  using ::Star::DirectoryAssetSourceUPtr;
-  using ::Star::DirectoryAssetSourceConstUPtr;
 }

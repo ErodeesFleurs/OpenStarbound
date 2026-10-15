@@ -146,7 +146,7 @@ public:
   static const std::uint32_t SERVERDATA_RESPONSE_VALUE = 0x00;
   static const std::uint32_t SERVERDATA_AUTH_RESPONSE = 0x02;
   static const std::uint32_t SERVERDATA_AUTH_FAILURE = 0xffffffff;
-  ServerRconClient(UniverseServer* universe, TcpSocketPtr socket);
+  ServerRconClient(UniverseServer* universe, std::shared_ptr<TcpSocket> socket);
   ~ServerRconClient();
 
   void start();
@@ -178,7 +178,7 @@ private:
   ServerCommandResult handleCommand(String commandLine);
 
   UniverseServer* m_universe;
-  TcpSocketPtr m_socket;
+  std::shared_ptr<TcpSocket> m_socket;
   DataStreamBuffer m_packetBuffer;
   bool m_stop;
   bool m_authed;
@@ -186,15 +186,6 @@ private:
 
   HashMap<std::uint32_t,RpcPromise<String>> m_commandPromises;
 };
-typedef std::shared_ptr<ServerRconClient> ServerRconClientPtr;
-
-class ServerRconThread;
-using ServerRconThreadPtr = std::shared_ptr<ServerRconThread>;
-using ServerRconThreadConstPtr = std::shared_ptr<const ServerRconThread>;
-using ServerRconThreadWeakPtr = std::weak_ptr<ServerRconThread>;
-using ServerRconThreadConstWeakPtr = std::weak_ptr<const ServerRconThread>;
-using ServerRconThreadUPtr = std::unique_ptr<ServerRconThread>;
-using ServerRconThreadConstUPtr = std::unique_ptr<const ServerRconThread>;
 
 class ServerRconThread : public Thread {
 public:
@@ -213,14 +204,14 @@ private:
   UniverseServer* m_universe;
   TcpServer m_rconServer;
   bool m_stop;
-  HashMap<HostAddress, ServerRconClientPtr> m_clients;
+  HashMap<HostAddress, std::shared_ptr<ServerRconClient>> m_clients;
 };
 
 }
 
 namespace Star {
 
-ServerRconClient::ServerRconClient(UniverseServer* universe, TcpSocketPtr socket)
+ServerRconClient::ServerRconClient(UniverseServer* universe, std::shared_ptr<TcpSocket> socket)
   : Thread("RconClient"),
     m_universe(universe),
     m_socket(socket),

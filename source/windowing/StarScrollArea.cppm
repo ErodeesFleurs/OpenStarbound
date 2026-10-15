@@ -89,7 +89,6 @@ private:
   bool m_hovered;
   bool m_pressed;
 };
-typedef std::shared_ptr<ScrollThumb> ScrollThumbPtr;
 
 class ScrollBar : public Widget {
 public:
@@ -103,9 +102,9 @@ public:
   float scrollRatio() const;
   Vec2I offsetFromThumbPosition(Vec2I const& thumbPosition) const;
 
-  ButtonWidgetPtr forwardButton() const;
-  ButtonWidgetPtr backwardButton() const;
-  ScrollThumbPtr thumb() const;
+  std::shared_ptr<ButtonWidget> forwardButton() const;
+  std::shared_ptr<ButtonWidget> backwardButton() const;
+  std::shared_ptr<ScrollThumb> thumb() const;
 
 protected:
   void drawChildren() override;
@@ -113,13 +112,12 @@ protected:
 private:
   GuiDirection m_direction;
 
-  ButtonWidgetPtr m_forward; // up or right, makes the offset higher
-  ButtonWidgetPtr m_backward; // down or left, makes the offset lower
-  ScrollThumbPtr m_thumb;
+  std::shared_ptr<ButtonWidget> m_forward; // up or right, makes the offset higher
+  std::shared_ptr<ButtonWidget> m_backward; // down or left, makes the offset lower
+  std::shared_ptr<ScrollThumb> m_thumb;
 
   ImageStretchSet m_track;
 };
-typedef std::shared_ptr<ScrollBar> ScrollBarPtr;
 
 class ScrollArea : public Widget {
 public:
@@ -166,16 +164,15 @@ private:
   GuiDirection m_dragDirection;
   Vec2I m_dragOffset;
 
-  ScrollBarPtr m_vBar;
-  ScrollBarPtr m_hBar;
-  ImageWidgetPtr m_cornerBlock;
+  std::shared_ptr<ScrollBar> m_vBar;
+  std::shared_ptr<ScrollBar> m_hBar;
+  std::shared_ptr<ImageWidget> m_cornerBlock;
 
   bool m_horizontalScroll;
   bool m_verticalScroll;
 
   bool m_updatesChildren;
 };
-typedef std::shared_ptr<ScrollArea> ScrollAreaPtr;
 }
 
 export module star.scroll_area;
@@ -184,7 +181,4 @@ export namespace Star {
   using ::Star::ScrollThumb;
   using ::Star::ScrollBar;
   using ::Star::ScrollArea;
-  using ::Star::ScrollThumbPtr;
-  using ::Star::ScrollBarPtr;
-  using ::Star::ScrollAreaPtr;
 }

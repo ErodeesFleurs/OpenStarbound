@@ -43,24 +43,11 @@ export module star.dungeon_image_part;
 
 export namespace Star::Dungeon {
 
-class ImagePartReader;
-using ImagePartReaderPtr = std::shared_ptr<ImagePartReader>;
-using ImagePartReaderConstPtr = std::shared_ptr<const ImagePartReader>;
-using ImagePartReaderWeakPtr = std::weak_ptr<ImagePartReader>;
-using ImagePartReaderConstWeakPtr = std::weak_ptr<const ImagePartReader>;
-using ImagePartReaderUPtr = std::unique_ptr<ImagePartReader>;
-using ImagePartReaderConstUPtr = std::unique_ptr<const ImagePartReader>;
 class ImageTileset;
-using ImageTilesetPtr = std::shared_ptr<ImageTileset>;
-using ImageTilesetConstPtr = std::shared_ptr<const ImageTileset>;
-using ImageTilesetWeakPtr = std::weak_ptr<ImageTileset>;
-using ImageTilesetConstWeakPtr = std::weak_ptr<const ImageTileset>;
-using ImageTilesetUPtr = std::unique_ptr<ImageTileset>;
-using ImageTilesetConstUPtr = std::unique_ptr<const ImageTileset>;
 
 class ImagePartReader : public PartReader {
 public:
-  ImagePartReader(ImageTilesetConstPtr tileset) : m_tileset(tileset) {}
+  ImagePartReader(std::shared_ptr<ImageTileset const> tileset) : m_tileset(tileset) {}
 
   virtual void readAsset(String const& asset) override;
   virtual Vec2U size() const override;
@@ -69,8 +56,8 @@ public:
   virtual void forEachTileAt(Vec2I pos, TileCallback const& callback) const override;
 
 private:
-  List<std::pair<String, ImageConstPtr>> m_images;
-  ImageTilesetConstPtr m_tileset;
+  List<std::pair<String, std::shared_ptr<Image const>>> m_images;
+  std::shared_ptr<ImageTileset const> m_tileset;
 };
 
 class ImageTileset {
@@ -105,7 +92,7 @@ namespace Dungeon {
   void ImagePartReader::forEachTile(TileCallback const& callback) const {
     for (auto const& entry : m_images) {
       String const& file = entry.first;
-      ImageConstPtr const& image = entry.second;
+      std::shared_ptr<Image const> const& image = entry.second;
       for (std::size_t y = 0; y < image->height(); y++) {
         for (std::size_t x = 0; x < image->width(); x++) {
 
@@ -132,7 +119,7 @@ namespace Dungeon {
   void ImagePartReader::forEachTileAt(Vec2I pos, TileCallback const& callback) const {
     for (auto const& entry : m_images) {
       String const& file = entry.first;
-      ImageConstPtr const& image = entry.second;
+      std::shared_ptr<Image const> const& image = entry.second;
       Vec4B tileColor = image->get(pos.x(), pos.y());
 
       if (auto const& tile = m_tileset->getTile(tileColor)) {

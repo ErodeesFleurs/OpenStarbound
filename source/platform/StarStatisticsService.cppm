@@ -7,14 +7,6 @@ import star.string;
 
 namespace Star {
 
-class StatisticsService;
-using StatisticsServicePtr = std::shared_ptr<StatisticsService>;
-using StatisticsServiceConstPtr = std::shared_ptr<StatisticsService const>;
-using StatisticsServiceWeakPtr = std::weak_ptr<StatisticsService>;
-using StatisticsServiceConstWeakPtr = std::weak_ptr<StatisticsService const>;
-using StatisticsServiceUPtr = std::unique_ptr<StatisticsService>;
-using StatisticsServiceConstUPtr = std::unique_ptr<StatisticsService const>;
-
 class StatisticsService {
 public:
   virtual ~StatisticsService() = default;
@@ -49,10 +41,4 @@ export module star.statistics_service;
 
 export namespace Star {
   using ::Star::StatisticsService;
-  using ::Star::StatisticsServicePtr;
-  using ::Star::StatisticsServiceConstPtr;
-  using ::Star::StatisticsServiceWeakPtr;
-  using ::Star::StatisticsServiceConstWeakPtr;
-  using ::Star::StatisticsServiceUPtr;
-  using ::Star::StatisticsServiceConstUPtr;
 }

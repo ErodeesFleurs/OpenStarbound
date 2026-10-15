@@ -648,7 +648,7 @@ Json LuaBindings::RootCallbacks::tenantConfig(Root* root, String const& tenantNa
 JsonArray LuaBindings::RootCallbacks::getMatchingTenants(Root* root, StringMap<unsigned> const& colonyTags) {
   return root->tenantDatabase()
       ->getMatchingTenants(colonyTags)
-      .transformed([](TenantPtr const& tenant) { return tenant->config; });
+      .transformed([](std::shared_ptr<Tenant> const& tenant) { return tenant->config; });
 }
 
 Json LuaBindings::RootCallbacks::liquidStatusEffects(Root* root, LiquidId arg1) {
@@ -703,7 +703,7 @@ bool LuaBindings::RootCallbacks::isTreasurePool(Root* root, String const& pool) 
 JsonArray LuaBindings::RootCallbacks::createTreasure(
     Root* root, String const& pool, float level, Maybe<std::uint64_t> seed) {
   auto treasure = root->treasureDatabase()->createTreasure(pool, level, seed.value(Random::randu64()));
-  return treasure.transformed([](ItemPtr const& item) { return item->descriptor().toJson(); });
+  return treasure.transformed([](std::shared_ptr<Item> const& item) { return item->descriptor().toJson(); });
 }
 
 Maybe<String> LuaBindings::RootCallbacks::materialMiningSound(

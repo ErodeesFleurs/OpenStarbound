@@ -167,7 +167,7 @@ void KeybindingsMenu::buildListsFromConfig() {
 
   m_childToAction.clear();
 
-  auto doKeybindingsFor = [&](ListWidgetPtr const& list, Json const& keybinds) {
+  auto doKeybindingsFor = [&](std::shared_ptr<ListWidget> const& list, Json const& keybinds) {
     list->clear();
 
     list->registerMemberCallback("activateBinding", [this](Widget* widget) { activateBinding(widget); });

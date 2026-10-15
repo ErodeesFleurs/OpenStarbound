@@ -203,7 +203,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
   pushGlobalContext("sb", LuaBindings::makeUtilityCallbacks());
   pushGlobalContext("assets", makeBaseAssetCallbacks());
 
-  auto decorateLuaContext = [&](LuaContext& context, MemoryAssetSourcePtr newFiles) {
+  auto decorateLuaContext = [&](LuaContext& context, std::shared_ptr<MemoryAssetSource> newFiles) {
     if (newFiles) {
       // re-add the assets callbacks with more functions
       context.remove("assets");
@@ -274,7 +274,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
     }
   };
 
-  auto addSource = [&](String const& sourcePath, AssetSourcePtr source) {
+  auto addSource = [&](String const& sourcePath, std::shared_ptr<AssetSource> source) {
     m_assetSourcePaths.add(sourcePath, source);
 
     for (auto const& filename : source->assetPaths()) {
@@ -324,7 +324,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
     }
   };
 
-  auto runLoadScripts = [&](String const& groupName, String const& sourcePath, AssetSourcePtr source) {
+  auto runLoadScripts = [&](String const& groupName, String const& sourcePath, std::shared_ptr<AssetSource> source) {
     auto metadata = source->metadata();
     if (auto scripts = metadata.ptr("scripts")) {
       if (auto scriptGroup = scripts->optArray(groupName)) {
@@ -354,11 +354,11 @@ Assets::Assets(Settings settings, StringList assetSources) {
     m_assetsCache.clear();
   };
 
-  List<std::pair<String, AssetSourcePtr>> sources;
+  List<std::pair<String, std::shared_ptr<AssetSource>>> sources;
 
   for (auto& sourcePath : m_assetSources) {
     Logger::info("Loading assets from: '{}'", sourcePath);
-    AssetSourcePtr source;
+    std::shared_ptr<AssetSource> source;
     if (File::isDirectory(sourcePath))
       source = std::make_shared<DirectoryAssetSource>(sourcePath, m_settings.pathIgnore);
     else
@@ -470,7 +470,7 @@ String Assets::assetSource(String const& path) const {
   throw AssetException(strf("No such asset '{}'", path));
 }
 
-Maybe<String> Assets::assetSourcePath(AssetSourcePtr const& source) const {
+Maybe<String> Assets::assetSourcePath(std::shared_ptr<AssetSource> const& source) const {
   MutexLocker assetsLocker(m_assetsMutex);
   return m_assetSourcePaths.maybeLeft(source);
 }
@@ -550,7 +550,7 @@ void Assets::queueJsons(CaseInsensitiveStringSet const& paths) const {
   };
 }
 
-ImageConstPtr Assets::image(AssetPath const& path) const {
+std::shared_ptr<Image const> Assets::image(AssetPath const& path) const {
   return as<ImageData>(getAsset(AssetId{AssetType::Image, path}))->image;
 }
 
@@ -573,14 +573,14 @@ void Assets::queueImages(CaseInsensitiveStringSet const& paths) const {
   };
 }
 
-ImageConstPtr Assets::tryImage(AssetPath const& path) const {
+std::shared_ptr<Image const> Assets::tryImage(AssetPath const& path) const {
   if (auto imageData = as<ImageData>(tryAsset(AssetId{AssetType::Image, path})))
     return imageData->image;
   else
     return {};
 }
 
-FramesSpecificationConstPtr Assets::imageFrames(String const& path) const {
+std::shared_ptr<FramesSpecification const> Assets::imageFrames(String const& path) const {
   auto components = AssetPath::split(path);
   validatePath(components, false, false);
 
@@ -588,7 +588,7 @@ FramesSpecificationConstPtr Assets::imageFrames(String const& path) const {
   return bestFramesSpecification(path);
 }
 
-AudioConstPtr Assets::audio(String const& path) const {
+std::shared_ptr<Audio const> Assets::audio(String const& path) const {
   auto components = AssetPath::split(path);
   validatePath(components, false, false);
 
@@ -614,7 +614,7 @@ void Assets::queueAudios(CaseInsensitiveStringSet const& paths) const {
   };
 }
 
-AudioConstPtr Assets::tryAudio(String const& path) const {
+std::shared_ptr<Audio const> Assets::tryAudio(String const& path) const {
   auto components = AssetPath::split(path);
   validatePath(components, false, false);
 
@@ -624,21 +624,21 @@ AudioConstPtr Assets::tryAudio(String const& path) const {
     return {};
 }
 
-FontConstPtr Assets::font(String const& path) const {
+std::shared_ptr<Font const> Assets::font(String const& path) const {
   auto components = AssetPath::split(path);
   validatePath(components, false, false);
 
   return as<FontData>(getAsset(AssetId{AssetType::Font, std::move(components)}))->font;
 }
 
-ByteArrayConstPtr Assets::bytes(String const& path) const {
+std::shared_ptr<ByteArray const> Assets::bytes(String const& path) const {
   auto components = AssetPath::split(path);
   validatePath(components, false, false);
 
   return as<BytesData>(getAsset(AssetId{AssetType::Bytes, std::move(components)}))->bytes;
 }
 
-IODevicePtr Assets::openFile(String const& path) const {
+std::shared_ptr<IODevice> Assets::openFile(String const& path) const {
   return open(path);
 }
 
@@ -926,7 +926,7 @@ decltype(auto) Assets::unlockDuring(Function f) const {
   }
 }
 
-FramesSpecificationConstPtr Assets::bestFramesSpecification(String const& image) const {
+std::shared_ptr<FramesSpecification const> Assets::bestFramesSpecification(String const& image) const {
   if (auto framesSpecification = m_framesSpecifications.maybe(image)) {
     return *framesSpecification;
   }
@@ -985,7 +985,7 @@ FramesSpecificationConstPtr Assets::bestFramesSpecification(String const& image)
   return framesSpecification;
 }
 
-IODevicePtr Assets::open(String const& path) const {
+std::shared_ptr<IODevice> Assets::open(String const& path) const {
   if (auto p = m_files.ptr(path))
     return p->source->open(p->sourceName);
   throw AssetException(strf("No such asset '{}'", path));
@@ -997,9 +997,9 @@ ByteArray Assets::read(String const& path) const {
   throw AssetException(strf("No such asset '{}'", path));
 }
 
-ImageConstPtr Assets::readImage(String const& path) const {
+std::shared_ptr<Image const> Assets::readImage(String const& path) const {
   if (auto p = m_files.ptr(path)) {
-    ImageConstPtr image;
+    std::shared_ptr<Image const> image;
     if (auto memorySource = as<MemoryAssetSource>(p->source))
       image = memorySource->image(p->sourceName);
     if (!image)
@@ -1013,7 +1013,7 @@ ImageConstPtr Assets::readImage(String const& path) const {
   throw AssetException(strf("No such asset '{}'", path));
 }
 
-ImageConstPtr Assets::applyImagePatches(ImageConstPtr image, String const& path, List<std::pair<String, AssetSourcePtr>> patches) const {
+std::shared_ptr<Image const> Assets::applyImagePatches(std::shared_ptr<Image const> image, String const& path, List<std::pair<String, std::shared_ptr<AssetSource>>> patches) const {
   RecursiveMutexLocker luaLocker(m_luaMutex);
   LuaEngine* luaEngine = as<LuaEngine>(m_luaEngine.get());
   LuaValue result = luaEngine->createUserData(*image);
@@ -1025,7 +1025,7 @@ ImageConstPtr Assets::applyImagePatches(ImageConstPtr image, String const& path,
     if (patchPath.endsWith(".lua")) {
       std::pair<AssetSource*, String> contextKey = std::make_pair(patchSource.get(), patchPath);
       luaLocker.lock();
-      LuaContextPtr& context = m_patchContexts[contextKey];
+      std::shared_ptr<LuaContext>& context = m_patchContexts[contextKey];
       if (!context) {
         context = std::make_shared<LuaContext>(luaEngine->createContext());
         context->load(patchStream, patchPath);
@@ -1049,7 +1049,7 @@ ImageConstPtr Assets::applyImagePatches(ImageConstPtr image, String const& path,
   return std::make_shared<Image>(std::move(result.get<LuaUserData>().get<Image>()));
 }
 
-Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const {
+Json Assets::checkPatchArray(String const& path, std::shared_ptr<AssetSource> const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const {
   auto externalRef = external.value();
   auto newResult = result;
   for (auto const& patch : patchData) {
@@ -1090,7 +1090,7 @@ Json Assets::readJson(String const& path) const {
   }
 }
 
-Json Assets::applyJsonPatches(Json const& input, String const& path, List<std::pair<String, AssetSourcePtr>> patches) const {
+Json Assets::applyJsonPatches(Json const& input, String const& path, List<std::pair<String, std::shared_ptr<AssetSource>>> patches) const {
   Json result = input;
   for (auto const& pair : patches) {
     auto patchAssetPath = AssetPath::split(pair.first);
@@ -1101,7 +1101,7 @@ Json Assets::applyJsonPatches(Json const& input, String const& path, List<std::p
       std::pair<AssetSource*, String> contextKey = std::make_pair(patchSource.get(), patchBasePath);
       RecursiveMutexLocker luaLocker(m_luaMutex);
       // Kae: i don't like that lock. perhaps have a LuaEngine and patch context cache per worker thread later on?
-      LuaContextPtr& context = m_patchContexts[contextKey];
+      std::shared_ptr<LuaContext>& context = m_patchContexts[contextKey];
       if (!context) {
         context = std::make_shared<LuaContext>(as<LuaEngine>(m_luaEngine.get())->createContext());
         context->load(patchStream, patchBasePath);
@@ -1276,7 +1276,7 @@ std::shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) cons
         as<ImageData>(loadAsset(AssetId{AssetType::Image, {path.basePath, path.subPath, {}}}));
     if (!source)
       return {};
-    StringMap<ImageConstPtr> references;
+    StringMap<std::shared_ptr<Image const>> references;
     StringList referencePaths;
 
     for (auto& directives : path.directives.list())

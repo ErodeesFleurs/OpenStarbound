@@ -88,19 +88,11 @@ import star.material_database;
 
 export namespace Star {
 
-class TillingTool;
-using TillingToolPtr = std::shared_ptr<TillingTool>;
-using TillingToolConstPtr = std::shared_ptr<const TillingTool>;
-using TillingToolWeakPtr = std::weak_ptr<TillingTool>;
-using TillingToolConstWeakPtr = std::weak_ptr<const TillingTool>;
-using TillingToolUPtr = std::unique_ptr<TillingTool>;
-using TillingToolConstUPtr = std::unique_ptr<const TillingTool>;
-
 class TillingTool : public Item, public SwingableItem {
 public:
   TillingTool(Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  ItemPtr clone() const override;
+  std::shared_ptr<Item> clone() const override;
 
   List<Drawable> drawables() const override;
   // In pixels, offset from image center
@@ -145,7 +137,7 @@ TillingTool::TillingTool(Json const& config, String const& directory, Json const
   m_frameTiming = 0;
 }
 
-ItemPtr TillingTool::clone() const {
+std::shared_ptr<Item> TillingTool::clone() const {
   return std::make_shared<TillingTool>(*this);
 }
 

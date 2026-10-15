@@ -93,7 +93,7 @@ WorldTemplate::WorldTemplate(Vec2U const& size) : WorldTemplate() {
   m_geometry = size;
 }
 
-WorldTemplate::WorldTemplate(CelestialCoordinate const& celestialCoordinate, CelestialDatabasePtr const& celestialDatabase)
+WorldTemplate::WorldTemplate(CelestialCoordinate const& celestialCoordinate, std::shared_ptr<CelestialDatabase> const& celestialDatabase)
   : WorldTemplate() {
   auto celestialParameters = celestialDatabase->parameters(celestialCoordinate);
   if (!celestialParameters)
@@ -119,7 +119,7 @@ WorldTemplate::WorldTemplate(CelestialCoordinate const& celestialCoordinate, Cel
   setupWeatherDomains();
 }
 
-WorldTemplate::WorldTemplate(VisitableWorldParametersConstPtr const& worldParameters, SkyParameters const& skyParameters, std::uint64_t seed)
+WorldTemplate::WorldTemplate(std::shared_ptr<VisitableWorldParameters const> const& worldParameters, SkyParameters const& skyParameters, std::uint64_t seed)
   : WorldTemplate() {
   if (!worldParameters)
     throw StarException("Cannot create WorldTemplate from non-visitable world");
@@ -178,7 +178,7 @@ Maybe<CelestialParameters> const& WorldTemplate::celestialParameters() const {
   return m_celestialParameters;
 }
 
-VisitableWorldParametersConstPtr WorldTemplate::worldParameters() const {
+std::shared_ptr<VisitableWorldParameters const> WorldTemplate::worldParameters() const {
   return m_worldParameters;
 }
 
@@ -186,16 +186,16 @@ SkyParameters WorldTemplate::skyParameters() const {
   return m_skyParameters;
 }
 
-WorldLayoutPtr WorldTemplate::worldLayout() const {
+std::shared_ptr<WorldLayout> WorldTemplate::worldLayout() const {
   return m_layout;
 }
 
-void WorldTemplate::setWorldParameters(VisitableWorldParametersPtr newParameters) {
+void WorldTemplate::setWorldParameters(std::shared_ptr<VisitableWorldParameters> newParameters) {
   m_worldParameters = take(newParameters);
   setupWeatherDomains();
 }
 
-void WorldTemplate::setWorldLayout(WorldLayoutPtr newLayout) {
+void WorldTemplate::setWorldLayout(std::shared_ptr<WorldLayout> newLayout) {
   m_layout = take(newLayout);
   m_blockCache.clear();
 }
@@ -449,7 +449,7 @@ BiomeIndex WorldTemplate::environmentBiomeIndex(int x, int y) const {
   return getBlockInfo(m_geometry.xwrap(x), y).environmentBiomeIndex;
 }
 
-BiomeConstPtr WorldTemplate::biome(BiomeIndex biomeIndex) const {
+std::shared_ptr<Biome const> WorldTemplate::biome(BiomeIndex biomeIndex) const {
   if (!m_layout)
     return {};
   if (biomeIndex == NullBiomeIndex)
@@ -457,11 +457,11 @@ BiomeConstPtr WorldTemplate::biome(BiomeIndex biomeIndex) const {
   return m_layout->getBiome(biomeIndex);
 }
 
-BiomeConstPtr WorldTemplate::blockBiome(int x, int y) const {
+std::shared_ptr<Biome const> WorldTemplate::blockBiome(int x, int y) const {
   return biome(blockBiomeIndex(m_geometry.xwrap(x), y));
 }
 
-BiomeConstPtr WorldTemplate::environmentBiome(int x, int y) const {
+std::shared_ptr<Biome const> WorldTemplate::environmentBiome(int x, int y) const {
   return biome(environmentBiomeIndex(m_geometry.xwrap(x), y));
 }
 
@@ -512,7 +512,7 @@ WorldTemplate::WeatherLayer const* WorldTemplate::weatherLayerAt(Vec2I const& po
   return nullptr;
 }
 
-AmbientNoisesDescriptionPtr WorldTemplate::ambientNoises(int x, int y) const {
+std::shared_ptr<AmbientNoisesDescription> WorldTemplate::ambientNoises(int x, int y) const {
   if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters)) {
     if (floatingDungeonParameters->dayAmbientNoises || floatingDungeonParameters->nightAmbientNoises) {
       auto dayTracks = floatingDungeonParameters->dayAmbientNoises
@@ -529,7 +529,7 @@ AmbientNoisesDescriptionPtr WorldTemplate::ambientNoises(int x, int y) const {
   return {};
 }
 
-AmbientNoisesDescriptionPtr WorldTemplate::musicTrack(int x, int y) const {
+std::shared_ptr<AmbientNoisesDescription> WorldTemplate::musicTrack(int x, int y) const {
   if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters)) {
     if (floatingDungeonParameters->dayMusicTrack || floatingDungeonParameters->nightMusicTrack) {
       auto dayTracks = floatingDungeonParameters->dayMusicTrack

@@ -102,20 +102,12 @@ import star.object_database;
 
 export namespace Star {
 
-class ObjectItem;
-using ObjectItemPtr = std::shared_ptr<ObjectItem>;
-using ObjectItemConstPtr = std::shared_ptr<const ObjectItem>;
-using ObjectItemWeakPtr = std::weak_ptr<ObjectItem>;
-using ObjectItemConstWeakPtr = std::weak_ptr<const ObjectItem>;
-using ObjectItemUPtr = std::unique_ptr<ObjectItem>;
-using ObjectItemConstUPtr = std::unique_ptr<const ObjectItem>;
-
 class ObjectItem : public Item, public FireableItem, public BeamItem {
 public:
   ObjectItem(Json const& config, String const& directory, Json const& objectParameters);
   virtual ~ObjectItem() {}
 
-  ItemPtr clone() const override;
+  std::shared_ptr<Item> clone() const override;
 
   void init(ToolUserEntity* owner, ToolHand hand) override;
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
@@ -150,7 +142,7 @@ ObjectItem::ObjectItem(Json const& config, String const& directory, Json const& 
   m_shifting = false;
 }
 
-ItemPtr ObjectItem::clone() const {
+std::shared_ptr<Item> ObjectItem::clone() const {
   return std::make_shared<ObjectItem>(*this);
 }
 

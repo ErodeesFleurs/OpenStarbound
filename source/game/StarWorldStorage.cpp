@@ -132,7 +132,7 @@ WorldChunks WorldStorage::getWorldChunksFromFile(String const& file) {
   return chunks;
 }
 
-WorldStorage::WorldStorage(Vec2U const& worldSize, IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade)
+WorldStorage::WorldStorage(Vec2U const& worldSize, std::shared_ptr<IODevice> const& device, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade)
   : WorldStorage() {
   m_tileArray = std::make_shared<ServerTileSectorArray>(worldSize);
   m_entityMap = std::make_shared<EntityMap>(worldSize, MinServerEntityId, MaxServerEntityId);
@@ -148,7 +148,7 @@ WorldStorage::WorldStorage(Vec2U const& worldSize, IODevicePtr const& device, Wo
   m_db.commit();
 }
 
-WorldStorage::WorldStorage(IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade) : WorldStorage() {
+WorldStorage::WorldStorage(std::shared_ptr<IODevice> const& device, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade) : WorldStorage() {
   m_generatorFacade = generatorFacade;
   m_floatingDungeonWorld = false;
 
@@ -159,7 +159,7 @@ WorldStorage::WorldStorage(IODevicePtr const& device, WorldGeneratorFacadePtr co
   m_entityMap = std::make_shared<EntityMap>(worldSize, MinServerEntityId, MaxServerEntityId);
 }
 
-WorldStorage::WorldStorage(WorldChunks const& chunks, WorldGeneratorFacadePtr const& generatorFacade) : WorldStorage() {
+WorldStorage::WorldStorage(WorldChunks const& chunks, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade) : WorldStorage() {
   m_generatorFacade = generatorFacade;
   m_floatingDungeonWorld = false;
 
@@ -190,11 +190,11 @@ void WorldStorage::setWorldMetadata(VersionedJson const& metadata) {
   m_db.insert(metadataKey(), writeWorldMetadata({Vec2U(m_tileArray->size()), metadata}));
 }
 
-ServerTileSectorArrayPtr const& WorldStorage::tileArray() const {
+std::shared_ptr<ServerTileSectorArray> const& WorldStorage::tileArray() const {
   return m_tileArray;
 }
 
-EntityMapPtr const& WorldStorage::entityMap() const {
+std::shared_ptr<EntityMap> const& WorldStorage::entityMap() const {
   return m_entityMap;
 }
 
@@ -386,8 +386,8 @@ void WorldStorage::tick(float dt, String const* worldId) {
         continue;
 
       bool keepAlive = false;
-      List<EntityPtr> zombieEntities;
-      m_entityMap->forEachEntity(RectF(m_tileArray->sectorRegion(sector)), [&](EntityPtr const& entity) {
+      List<std::shared_ptr<Entity>> zombieEntities;
+      m_entityMap->forEachEntity(RectF(m_tileArray->sectorRegion(sector)), [&](std::shared_ptr<Entity> const& entity) {
           if (belongsInSector(sector, entity->position())) {
             if (!keepAlive && m_generatorFacade->entityKeepAlive(this, entity))
               keepAlive = true;
@@ -401,8 +401,8 @@ void WorldStorage::tick(float dt, String const* worldId) {
       } else if (needsUnload) {
         (unloadSectorToLevel(sector, SectorLoadLevel::None) ? unloaded : skipped)++;
       } else if (!zombieEntities.empty()) {
-        List<EntityPtr> zombiesToStore;
-        List<EntityPtr> zombiesToRemove;
+        List<std::shared_ptr<Entity>> zombiesToStore;
+        List<std::shared_ptr<Entity>> zombiesToRemove;
         for (auto const& entity : zombieEntities) {
           if (m_generatorFacade->entityPersistent(this, entity))
             zombiesToStore.append(entity);
@@ -675,7 +675,7 @@ ByteArray WorldStorage::writeSectorUniqueStore(SectorUniqueStore const& store) {
   return compressData(DataStreamBuffer::serialize(store));
 }
 
-void WorldStorage::openDatabase(BTreeDatabase& db, IODevicePtr device) {
+void WorldStorage::openDatabase(BTreeDatabase& db, std::shared_ptr<IODevice> device) {
   db.setContentIdentifier("World4");
   db.setKeySize(5);
   db.setIODevice(std::move(device));
@@ -784,7 +784,7 @@ void WorldStorage::loadSectorToLevel(Sector const& sector, SectorLoadLevel targe
       m_generatorFacade->sectorLoadLevelChanged(this, sector, currentLoad);
 
     } else if (currentLoad == SectorLoadLevel::Entities) {
-      List<EntityPtr> addedEntities;
+      List<std::shared_ptr<Entity>> addedEntities;
       if (auto res = m_db.find(entitySectorKey(sector))) {
         EntitySectorStore sectorStore = readEntitySector(*res);
         for (auto const& entityStore : sectorStore) {
@@ -822,8 +822,8 @@ bool WorldStorage::unloadSectorToLevel(Sector const& sector, SectorLoadLevel tar
   bool entitiesOverlap = false;
   if (m_entityMap) {
     auto entityFactory = Root::singleton().entityFactory();
-    List<EntityPtr> entitiesToStore;
-    List<EntityPtr> entitiesToRemove;
+    List<std::shared_ptr<Entity>> entitiesToStore;
+    List<std::shared_ptr<Entity>> entitiesToRemove;
 
     for (auto& entity : m_entityMap->entityQuery(RectF(m_tileArray->sectorRegion(sector)))) {
       // Only store / remove entities who belong to this sector.  If an entity

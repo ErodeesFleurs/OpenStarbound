@@ -30,20 +30,7 @@ import star.mixer;
 
 namespace Star {
 
-class Cinematic;
-using CinematicPtr = std::shared_ptr<Cinematic>;
-using CinematicConstPtr = std::shared_ptr<Cinematic const>;
-using CinematicWeakPtr = std::weak_ptr<Cinematic>;
-using CinematicConstWeakPtr = std::weak_ptr<Cinematic const>;
-using CinematicUPtr = std::unique_ptr<Cinematic>;
-using CinematicConstUPtr = std::unique_ptr<Cinematic const>;
 class Player;
-using PlayerPtr = std::shared_ptr<Player>;
-using PlayerConstPtr = std::shared_ptr<Player const>;
-using PlayerWeakPtr = std::weak_ptr<Player>;
-using PlayerConstWeakPtr = std::weak_ptr<Player const>;
-using PlayerUPtr = std::unique_ptr<Player>;
-using PlayerConstUPtr = std::unique_ptr<Player const>;
 
 class Cinematic {
 public:
@@ -51,7 +38,7 @@ public:
 
   void load(Json const& definition);
 
-  void setPlayer(PlayerPtr player);
+  void setPlayer(std::shared_ptr<Player> player);
 
   void update(float dt);
   void render();
@@ -100,7 +87,6 @@ private:
     float endTime;
     float loopTime;
   };
-  typedef std::shared_ptr<Panel> PanelPtr;
 
   struct PanelValues {
     float zoom;
@@ -127,15 +113,15 @@ private:
   // timecode to use for events within the cinematic
   float currentTimecode() const;
 
-  PanelValues determinePanelValues(PanelPtr panel, float timecode);
+  PanelValues determinePanelValues(std::shared_ptr<Panel> panel, float timecode);
 
   List<TimeSkip> m_timeSkips;
   Maybe<TimeSkip> m_currentTimeSkip;
 
   List<CameraKeyFrame> m_cameraKeyFrames;
-  List<PanelPtr> m_panels;
+  List<std::shared_ptr<Panel>> m_panels;
   List<AudioCue> m_audioCues;
-  std::vector<AudioInstancePtr> m_activeAudio;
+  std::vector<std::shared_ptr<AudioInstance>> m_activeAudio;
 
   // these include the time for background fades so they may not reflect the completion timecode
   Clock m_timer;
@@ -155,7 +141,7 @@ private:
   bool m_scissor{true};
   bool m_letterbox{true};
 
-  PlayerPtr m_player;
+  std::shared_ptr<Player> m_player;
 
   Vec2F m_offset{};
 
@@ -174,17 +160,5 @@ export module star.cinematic;
 
 export namespace Star {
   using ::Star::Cinematic;
-  using ::Star::CinematicPtr;
-  using ::Star::CinematicConstPtr;
-  using ::Star::CinematicWeakPtr;
-  using ::Star::CinematicConstWeakPtr;
-  using ::Star::CinematicUPtr;
-  using ::Star::CinematicConstUPtr;
   using ::Star::Player;
-  using ::Star::PlayerPtr;
-  using ::Star::PlayerConstPtr;
-  using ::Star::PlayerWeakPtr;
-  using ::Star::PlayerConstWeakPtr;
-  using ::Star::PlayerUPtr;
-  using ::Star::PlayerConstUPtr;
 }

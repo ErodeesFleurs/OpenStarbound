@@ -211,7 +211,7 @@ import star.item_bag;
 
 namespace Star {
 
-QuestLogInterface::QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, CinematicPtr cinematic, UniverseClientPtr client) {
+QuestLogInterface::QuestLogInterface(std::shared_ptr<QuestManager> manager, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic, std::shared_ptr<UniverseClient> client) {
   m_manager = manager;
   m_player = player;
   m_cinematic = cinematic;
@@ -362,8 +362,8 @@ void QuestLogInterface::tick(float dt) {
   }
 }
 
-PanePtr QuestLogInterface::createTooltip(Vec2I const& screenPosition) {
-  ItemPtr item;
+std::shared_ptr<Pane> QuestLogInterface::createTooltip(Vec2I const& screenPosition) {
+  std::shared_ptr<Item> item;
   if (auto child = getChildAt(screenPosition)) {
     if (auto itemSlot = as<ItemSlotWidget>(child))
       item = itemSlot->item();
@@ -375,7 +375,7 @@ PanePtr QuestLogInterface::createTooltip(Vec2I const& screenPosition) {
   return {};
 }
 
-WidgetPtr QuestLogInterface::getSelected() {
+std::shared_ptr<Widget> QuestLogInterface::getSelected() {
   auto mainQuestList = fetchChild<ListWidget>("scrollArea.verticalLayout.mainQuestList");
   if (auto selected = mainQuestList->selectedWidget())
     return selected;
@@ -387,7 +387,7 @@ WidgetPtr QuestLogInterface::getSelected() {
   return {};
 }
 
-void QuestLogInterface::setSelected(WidgetPtr selected) {
+void QuestLogInterface::setSelected(std::shared_ptr<Widget> selected) {
   auto mainQuestList = fetchChild<ListWidget>("scrollArea.verticalLayout.mainQuestList");
   auto mainQuestListPos = mainQuestList->itemPosition(selected);
   if (mainQuestListPos != NPos) {
@@ -429,7 +429,7 @@ void QuestLogInterface::fetchData() {
     throw StarException(strf("Unknown quest filter '{}'", filter));
 }
 
-void QuestLogInterface::showQuests(List<QuestPtr> quests) {
+void QuestLogInterface::showQuests(List<std::shared_ptr<Quest>> quests) {
   auto mainQuestList = fetchChild<ListWidget>("scrollArea.verticalLayout.mainQuestList");
   auto sideQuestList = fetchChild<ListWidget>("scrollArea.verticalLayout.sideQuestList");
 
@@ -447,7 +447,7 @@ void QuestLogInterface::showQuests(List<QuestPtr> quests) {
   sideQuestList->clear();
   sideQuestHeader->hide();
   for (auto const& quest : quests) {
-    WidgetPtr entry;
+    std::shared_ptr<Widget> entry;
     if (quest->mainQuest()) {
       entry = mainQuestList->addItem();
       mainQuestHeader->show();
@@ -477,7 +477,7 @@ void QuestLogInterface::showQuests(List<QuestPtr> quests) {
   verticalLayout->update(0);
 }
 
-QuestPane::QuestPane(QuestPtr const& quest, PlayerPtr player) : Pane(), m_quest(quest), m_player(std::move(player)) {}
+QuestPane::QuestPane(std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player) : Pane(), m_quest(quest), m_player(std::move(player)) {}
 
 void QuestPane::commonSetup(Json config, String bodyText, String const& portraitName) {
   GuiReader reader;
@@ -528,8 +528,8 @@ void QuestPane::accept() {
   close();
 }
 
-PanePtr QuestPane::createTooltip(Vec2I const& screenPosition) {
-  ItemPtr item;
+std::shared_ptr<Pane> QuestPane::createTooltip(Vec2I const& screenPosition) {
+  std::shared_ptr<Item> item;
   if (auto child = getChildAt(screenPosition)) {
     if (auto itemSlot = as<ItemSlotWidget>(child))
       item = itemSlot->item();
@@ -541,7 +541,7 @@ PanePtr QuestPane::createTooltip(Vec2I const& screenPosition) {
   return {};
 }
 
-NewQuestInterface::NewQuestInterface(QuestManagerPtr const& manager, QuestPtr const& quest, PlayerPtr player)
+NewQuestInterface::NewQuestInterface(std::shared_ptr<QuestManager> const& manager, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player)
   : QuestPane(quest, std::move(player)), m_manager(manager), m_decision(QuestDecision::Cancelled) {
   auto assets = Root::singleton().assets();
 
@@ -610,7 +610,7 @@ void NewQuestInterface::dismissed() {
   }
 }
 
-QuestCompleteInterface::QuestCompleteInterface(QuestPtr const& quest, PlayerPtr player, CinematicPtr cinematic)
+QuestCompleteInterface::QuestCompleteInterface(std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic)
   : QuestPane(quest, player) {
   auto assets = Root::singleton().assets();
   String configFile = m_quest->getTemplate()->questCompleteGuiConfig.value(assets->json("/quests/quests.config:defaultGuiConfigs.questComplete").toString());
@@ -636,7 +636,7 @@ void QuestCompleteInterface::close() {
   dismiss();
 }
 
-QuestFailedInterface::QuestFailedInterface(QuestPtr const& quest, PlayerPtr player) : QuestPane(quest, std::move(player)) {
+QuestFailedInterface::QuestFailedInterface(std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player) : QuestPane(quest, std::move(player)) {
   auto assets = Root::singleton().assets();
   String configFile = m_quest->getTemplate()->questFailedGuiConfig.value(assets->json("/quests/quests.config:defaultGuiConfigs.questFailed").toString());
   Json config = assets->json(configFile);

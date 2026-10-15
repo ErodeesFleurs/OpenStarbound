@@ -6,21 +6,6 @@ import star.string;
 
 namespace Star {
 
-class Buffer;
-using BufferPtr = std::shared_ptr<Buffer>;
-using BufferConstPtr = std::shared_ptr<const Buffer>;
-using BufferWeakPtr = std::weak_ptr<Buffer>;
-using BufferConstWeakPtr = std::weak_ptr<const Buffer>;
-using BufferUPtr = std::unique_ptr<Buffer>;
-using BufferConstUPtr = std::unique_ptr<const Buffer>;
-class ExternalBuffer;
-using ExternalBufferPtr = std::shared_ptr<ExternalBuffer>;
-using ExternalBufferConstPtr = std::shared_ptr<const ExternalBuffer>;
-using ExternalBufferWeakPtr = std::weak_ptr<ExternalBuffer>;
-using ExternalBufferConstWeakPtr = std::weak_ptr<const ExternalBuffer>;
-using ExternalBufferUPtr = std::unique_ptr<ExternalBuffer>;
-using ExternalBufferConstUPtr = std::unique_ptr<const ExternalBuffer>;
-
 // Wraps a ByteArray to an IODevice
 class Buffer : public IODevice {
 public:
@@ -48,7 +33,7 @@ public:
 
   StreamOffset size() override;
   
-  IODevicePtr clone() override;
+  std::shared_ptr<IODevice> clone() override;
 
   ByteArray& data();
   ByteArray const& data() const;
@@ -111,7 +96,7 @@ public:
 
   StreamOffset size() override;
   
-  IODevicePtr clone() override;
+  std::shared_ptr<IODevice> clone() override;
 
   // Returns a pointer to the beginning of the Buffer.
   char const* ptr() const;
@@ -141,17 +126,5 @@ export module star.buffer;
 
 export namespace Star {
   using ::Star::Buffer;
-  using ::Star::BufferPtr;
-  using ::Star::BufferConstPtr;
-  using ::Star::BufferUPtr;
-  using ::Star::BufferConstUPtr;
-  using ::Star::BufferWeakPtr;
-  using ::Star::BufferConstWeakPtr;
   using ::Star::ExternalBuffer;
-  using ::Star::ExternalBufferPtr;
-  using ::Star::ExternalBufferConstPtr;
-  using ::Star::ExternalBufferUPtr;
-  using ::Star::ExternalBufferConstUPtr;
-  using ::Star::ExternalBufferWeakPtr;
-  using ::Star::ExternalBufferConstWeakPtr;
 }

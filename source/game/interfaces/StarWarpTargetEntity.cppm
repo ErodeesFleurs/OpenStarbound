@@ -36,14 +36,6 @@ import star.tile_entity;
 
 namespace Star {
 
-class WarpTargetEntity;
-using WarpTargetEntityPtr = std::shared_ptr<WarpTargetEntity>;
-using WarpTargetEntityConstPtr = std::shared_ptr<const WarpTargetEntity>;
-using WarpTargetEntityWeakPtr = std::weak_ptr<WarpTargetEntity>;
-using WarpTargetEntityConstWeakPtr = std::weak_ptr<const WarpTargetEntity>;
-using WarpTargetEntityUPtr = std::unique_ptr<WarpTargetEntity>;
-using WarpTargetEntityConstUPtr = std::unique_ptr<const WarpTargetEntity>;
-
 class WarpTargetEntity : public virtual TileEntity {
 public:
   // Foot position for things teleporting onto this entity, relative to root
@@ -57,10 +49,4 @@ export module star.warp_target_entity;
 
 export namespace Star {
   using ::Star::WarpTargetEntity;
-  using ::Star::WarpTargetEntityPtr;
-  using ::Star::WarpTargetEntityConstPtr;
-  using ::Star::WarpTargetEntityWeakPtr;
-  using ::Star::WarpTargetEntityConstWeakPtr;
-  using ::Star::WarpTargetEntityUPtr;
-  using ::Star::WarpTargetEntityConstUPtr;
 }

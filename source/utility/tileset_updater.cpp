@@ -23,11 +23,11 @@ String unixFileJoin(String const& dirname, String const& filename) {
 
 TileDatabase::TileDatabase(String const& name) : m_name(name) {}
 
-void TileDatabase::defineTile(TilePtr const& tile) {
+void TileDatabase::defineTile(std::shared_ptr<::Star::Tile> const& tile) {
   m_tiles[tile->name] = tile;
 }
 
-TilePtr TileDatabase::getTile(String const& tileName) const {
+std::shared_ptr<::Star::Tile> TileDatabase::getTile(String const& tileName) const {
   return m_tiles.maybe(tileName).value({});
 }
 
@@ -39,10 +39,10 @@ StringSet TileDatabase::tileNames() const {
   return StringSet::from(m_tiles.keys());
 }
 
-Tileset::Tileset(String const& source, String const& name, TileDatabasePtr const& database)
+Tileset::Tileset(String const& source, String const& name, std::shared_ptr<::Star::TileDatabase> const& database)
   : m_source(source), m_name(name), m_tiles(), m_database(database) {}
 
-void Tileset::defineTile(TilePtr const& tile) {
+void Tileset::defineTile(std::shared_ptr<::Star::Tile> const& tile) {
   // Each tileset must be exported from a single database. When a tile switches
   // to another tileset (e.g. because an object has changed category), we allow
   // it to stay in the previous tileset to avoid breaking maps.
@@ -126,7 +126,7 @@ String Tileset::name() const {
   return m_name;
 }
 
-TileDatabasePtr Tileset::database() const {
+std::shared_ptr<::Star::TileDatabase> Tileset::database() const {
   return m_database;
 }
 
@@ -214,7 +214,7 @@ StringSet Tileset::updateTiles(JsonObject& tileProperties,
     std::size_t& nextId,
     String const& tilesetPath) const {
   StringSet updatedTiles;
-  for (TilePtr const& tile : m_tiles) {
+  for (std::shared_ptr<::Star::Tile> const& tile : m_tiles) {
     Tiled::Properties properties = tile->properties;
     std::size_t id = 0;
 
@@ -241,7 +241,7 @@ void Tileset::invalidateTiles(StringSet const& invalidTiles,
   for (String tileName : invalidTiles) {
     std::size_t id = existingTiles.get(tileName);
 
-    if (TilePtr const& tile = m_database->getTile(tileName)) {
+    if (std::shared_ptr<::Star::Tile> const& tile = m_database->getTile(tileName)) {
       // Tile has moved category, but we're leaving it in this tileset to avoid
       // breaking existing maps.
       tileProperties[toString(id)] = tile->properties.toJson();
@@ -297,7 +297,7 @@ void TilesetUpdater::defineAssetSource(String const& source) {
   }
 }
 
-void TilesetUpdater::defineTile(TilePtr const& tile) {
+void TilesetUpdater::defineTile(std::shared_ptr<::Star::Tile> const& tile) {
   getDatabase(tile)->defineTile(tile);
   getTileset(tile)->defineTile(tile);
 }
@@ -336,15 +336,15 @@ void TilesetUpdater::exportTilesets() {
   }
 }
 
-TileDatabasePtr const& TilesetUpdater::getDatabase(TilePtr const& tile) {
+std::shared_ptr<::Star::TileDatabase> const& TilesetUpdater::getDatabase(std::shared_ptr<::Star::Tile> const& tile) {
   auto& databases = m_databases[tile->source];
   if (!databases.contains(tile->database))
     databases[tile->database] = std::make_shared<TileDatabase>(tile->database);
   return databases[tile->database];
 }
 
-TilesetPtr const& TilesetUpdater::getTileset(TilePtr const& tile) {
-  TileDatabasePtr database = getDatabase(tile);
+std::shared_ptr<::Star::Tileset> const& TilesetUpdater::getTileset(std::shared_ptr<::Star::Tile> const& tile) {
+  std::shared_ptr<::Star::TileDatabase> database = getDatabase(tile);
   auto& tilesets = m_tilesets[tile->source];
   if (!tilesets.contains(tile->tileset))
     tilesets[tile->tileset] = std::make_shared<Tileset>(tile->source, tile->tileset, database);

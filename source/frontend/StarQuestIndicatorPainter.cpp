@@ -158,16 +158,16 @@ import star.quest_manager;
 
 namespace Star {
 
-QuestIndicatorPainter::QuestIndicatorPainter(UniverseClientPtr const& client) {
+QuestIndicatorPainter::QuestIndicatorPainter(std::shared_ptr<UniverseClient> const& client) {
   m_client = client;
 }
 
-AnimationPtr indicatorAnimation(String indicatorPath) {
+std::shared_ptr<Animation> indicatorAnimation(String indicatorPath) {
   auto assets = Root::singleton().assets();
   return std::make_shared<Animation>(assets->json(indicatorPath), indicatorPath);
 }
 
-void QuestIndicatorPainter::update(float dt, WorldClientPtr const& world, WorldCamera const& camera) {
+void QuestIndicatorPainter::update(float dt, std::shared_ptr<WorldClient> const& world, WorldCamera const& camera) {
   m_camera = camera;
 
   Set<EntityId> foundIndicators;

@@ -90,14 +90,6 @@ import star.material_database;
 
 export namespace Star {
 
-class InspectionTool;
-using InspectionToolPtr = std::shared_ptr<InspectionTool>;
-using InspectionToolConstPtr = std::shared_ptr<const InspectionTool>;
-using InspectionToolWeakPtr = std::weak_ptr<InspectionTool>;
-using InspectionToolConstWeakPtr = std::weak_ptr<const InspectionTool>;
-using InspectionToolUPtr = std::unique_ptr<InspectionTool>;
-using InspectionToolConstUPtr = std::unique_ptr<const InspectionTool>;
-
 class InspectionTool
   : public Item,
     public PointableItem,
@@ -112,7 +104,7 @@ public:
 
   InspectionTool(Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  ItemPtr clone() const override;
+  std::shared_ptr<Item> clone() const override;
 
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
@@ -120,14 +112,14 @@ public:
 
   List<LightSource> lightSources() const;
 
-  float inspectionHighlightLevel(InspectableEntityPtr const& inspectableEntity) const;
+  float inspectionHighlightLevel(std::shared_ptr<InspectableEntity> const& inspectableEntity) const;
 
   List<InspectionResult> pullInspectionResults();
 
 private:
   InspectionResult inspect(Vec2F const& position);
 
-  float inspectionLevel(InspectableEntityPtr const& inspectableEntity) const;
+  float inspectionLevel(std::shared_ptr<InspectableEntity> const& inspectableEntity) const;
   float pointInspectionLevel(Vec2F const& position) const;
   bool hasLineOfSight(Vec2I const& targetPosition, Set<Vec2I> const& targetSpaces = {}) const;
 
@@ -192,7 +184,7 @@ InspectionTool::InspectionTool(Json const& config, String const& directory, Json
   m_lastFireMode = FireMode::None;
 }
 
-ItemPtr InspectionTool::clone() const {
+std::shared_ptr<Item> InspectionTool::clone() const {
   return std::make_shared<InspectionTool>(*this);
 }
 
@@ -228,7 +220,7 @@ List<LightSource> InspectionTool::lightSources() const {
   return {std::move(lightSource)};
 }
 
-float InspectionTool::inspectionHighlightLevel(InspectableEntityPtr const& inspectable) const {
+float InspectionTool::inspectionHighlightLevel(std::shared_ptr<InspectableEntity> const& inspectable) const {
   if (m_showHighlights)
     return inspectionLevel(inspectable);
   return 0;
@@ -238,7 +230,7 @@ List<InspectionTool::InspectionResult> InspectionTool::pullInspectionResults() {
   return Star::take(m_inspectionResults);
 }
 
-float InspectionTool::inspectionLevel(InspectableEntityPtr const& inspectable) const {
+float InspectionTool::inspectionLevel(std::shared_ptr<InspectableEntity> const& inspectable) const {
   if (!initialized() || !inspectable->inspectable())
     return 0;
 
@@ -290,7 +282,7 @@ InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) 
 
   // if there's a candidate InspectableEntity at the position, make sure that entity's total inspection level
   // is above the minimum threshold
-  auto check = [&](InspectableEntityPtr entity) -> Maybe<InspectionTool::InspectionResult> {
+  auto check = [&](std::shared_ptr<InspectableEntity> entity) -> Maybe<InspectionTool::InspectionResult> {
     if (m_inspectableTypeFilter && !m_inspectableTypeFilter->contains(entity->entityType()))
       return {};
     if (entity->inspectable() && inspectionLevel(entity) >= m_minimumInspectionLevel) {
@@ -304,7 +296,7 @@ InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) 
 
 
   WorldGeometry geometry = world()->geometry();
-  for (auto& entity : world()->query<InspectableEntity>(RectF::withCenter(position, Vec2F()), [&](InspectableEntityPtr const& entity) {
+  for (auto& entity : world()->query<InspectableEntity>(RectF::withCenter(position, Vec2F()), [&](std::shared_ptr<InspectableEntity> const& entity) {
     if (entity->entityType() == EntityType::Object)
       return false;
     else if (!geometry.rectContains(entity->metaBoundBox().translated(entity->position()), position))

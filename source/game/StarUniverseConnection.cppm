@@ -50,32 +50,13 @@ import star.net_compatibility;
 
 namespace Star {
 struct Packet;
-using PacketPtr = std::shared_ptr<Packet>;
-using PacketConstPtr = std::shared_ptr<const Packet>;
-using PacketWeakPtr = std::weak_ptr<Packet>;
-using PacketConstWeakPtr = std::weak_ptr<const Packet>;
-using PacketUPtr = std::unique_ptr<Packet>;
-using PacketConstUPtr = std::unique_ptr<const Packet>;
 }
 
 import star.net_packet_socket;
 
 namespace Star {
 
-class UniverseConnection;
-using UniverseConnectionPtr = std::shared_ptr<UniverseConnection>;
-using UniverseConnectionConstPtr = std::shared_ptr<const UniverseConnection>;
-using UniverseConnectionWeakPtr = std::weak_ptr<UniverseConnection>;
-using UniverseConnectionConstWeakPtr = std::weak_ptr<const UniverseConnection>;
-using UniverseConnectionUPtr = std::unique_ptr<UniverseConnection>;
-using UniverseConnectionConstUPtr = std::unique_ptr<const UniverseConnection>;
 class UniverseConnectionServer;
-using UniverseConnectionServerPtr = std::shared_ptr<UniverseConnectionServer>;
-using UniverseConnectionServerConstPtr = std::shared_ptr<const UniverseConnectionServer>;
-using UniverseConnectionServerWeakPtr = std::weak_ptr<UniverseConnectionServer>;
-using UniverseConnectionServerConstWeakPtr = std::weak_ptr<const UniverseConnectionServer>;
-using UniverseConnectionServerUPtr = std::unique_ptr<UniverseConnectionServer>;
-using UniverseConnectionServerConstUPtr = std::unique_ptr<const UniverseConnectionServer>;
 
 struct UniverseConnectionExceptionTag {
   static constexpr char const* name() { return "UniverseConnectionException"; }
@@ -86,7 +67,7 @@ using UniverseConnectionException = StarError<UniverseConnectionExceptionTag, St
 // UniverseClient.
 class UniverseConnection {
 public:
-  explicit UniverseConnection(PacketSocketUPtr packetSocket);
+  explicit UniverseConnection(std::unique_ptr<PacketSocket> packetSocket);
   UniverseConnection(UniverseConnection&& rhs);
   ~UniverseConnection();
 
@@ -96,12 +77,12 @@ public:
   void close();
 
   // Push packets onto the send queue.
-  void push(List<PacketPtr> packets);
-  void pushSingle(PacketPtr packet);
+  void push(List<std::shared_ptr<Packet>> packets);
+  void pushSingle(std::shared_ptr<Packet> packet);
 
   // Pull packets from the receive queue.
-  List<PacketPtr> pull();
-  PacketPtr pullSingle();
+  List<std::shared_ptr<Packet>> pull();
+  std::shared_ptr<Packet> pullSingle();
 
   // Send all data that we can without blocking, returns true if any data was
   // sent.
@@ -136,9 +117,9 @@ private:
   UniverseConnection() = default;
 
   mutable Mutex m_mutex;
-  PacketSocketUPtr m_packetSocket;
-  List<PacketPtr> m_sendQueue;
-  Deque<PacketPtr> m_receiveQueue;
+  std::unique_ptr<PacketSocket> m_packetSocket;
+  List<std::shared_ptr<Packet>> m_sendQueue;
+  Deque<std::shared_ptr<Packet>> m_receiveQueue;
 };
 
 // Manage a set of UniverseConnections cheaply and in an asynchronous way.
@@ -150,7 +131,7 @@ public:
   // method on the UniverseConnectionServer without deadlocking.  The receive
   // callback will not be called for any client until the previous callback for
   // that client is complete.
-  typedef std::function<void(UniverseConnectionServer*, ConnectionId, List<PacketPtr>)> PacketReceiveCallback;
+  typedef std::function<void(UniverseConnectionServer*, ConnectionId, List<std::shared_ptr<Packet>>)> PacketReceiveCallback;
 
   UniverseConnectionServer(PacketReceiveCallback packetReceiver, std::size_t numWorkerThreads = 0);
   ~UniverseConnectionServer();
@@ -164,7 +145,7 @@ public:
   UniverseConnection removeConnection(ConnectionId clientId);
   List<UniverseConnection> removeAllConnections();
 
-  void sendPackets(ConnectionId clientId, List<PacketPtr> packets);
+  void sendPackets(ConnectionId clientId, List<std::shared_ptr<Packet>> packets);
 
   // Get total packets processed across all worker threads
   std::uint64_t totalPacketsProcessed() const;
@@ -174,9 +155,9 @@ public:
 private:
   struct Connection {
     Mutex mutex;
-    PacketSocketUPtr packetSocket;
-    List<PacketPtr> sendQueue;
-    Deque<PacketPtr> receiveQueue;
+    std::unique_ptr<PacketSocket> packetSocket;
+    List<std::shared_ptr<Packet>> sendQueue;
+    Deque<std::shared_ptr<Packet>> receiveQueue;
     std::int64_t lastActivityTime;
     std::size_t workerIndex;
   };
@@ -222,17 +203,5 @@ export namespace Star {
   using ::Star::UniverseConnectionExceptionTag;
   using ::Star::UniverseConnectionException;
   using ::Star::UniverseConnection;
-  using ::Star::UniverseConnectionPtr;
-  using ::Star::UniverseConnectionConstPtr;
-  using ::Star::UniverseConnectionWeakPtr;
-  using ::Star::UniverseConnectionConstWeakPtr;
-  using ::Star::UniverseConnectionUPtr;
-  using ::Star::UniverseConnectionConstUPtr;
   using ::Star::UniverseConnectionServer;
-  using ::Star::UniverseConnectionServerPtr;
-  using ::Star::UniverseConnectionServerConstPtr;
-  using ::Star::UniverseConnectionServerWeakPtr;
-  using ::Star::UniverseConnectionServerConstWeakPtr;
-  using ::Star::UniverseConnectionServerUPtr;
-  using ::Star::UniverseConnectionServerConstUPtr;
 }

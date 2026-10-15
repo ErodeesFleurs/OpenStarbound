@@ -50,35 +50,16 @@ import star.widget;
 namespace Star {
 
 class PortraitEntity;
-using PortraitEntityPtr = std::shared_ptr<PortraitEntity>;
-using PortraitEntityConstPtr = std::shared_ptr<PortraitEntity const>;
-using PortraitEntityWeakPtr = std::weak_ptr<PortraitEntity>;
-using PortraitEntityConstWeakPtr = std::weak_ptr<PortraitEntity const>;
-using PortraitEntityUPtr = std::unique_ptr<PortraitEntity>;
-using PortraitEntityConstUPtr = std::unique_ptr<PortraitEntity const>;
 
 class Player;
-using PlayerPtr = std::shared_ptr<Player>;
-using PlayerConstPtr = std::shared_ptr<Player const>;
-using PlayerWeakPtr = std::weak_ptr<Player>;
-using PlayerConstWeakPtr = std::weak_ptr<Player const>;
-using PlayerUPtr = std::unique_ptr<Player>;
-using PlayerConstUPtr = std::unique_ptr<Player const>;
-class PortraitWidget;
-using PortraitWidgetPtr = std::shared_ptr<PortraitWidget>;
-using PortraitWidgetConstPtr = std::shared_ptr<PortraitWidget const>;
-using PortraitWidgetWeakPtr = std::weak_ptr<PortraitWidget>;
-using PortraitWidgetConstWeakPtr = std::weak_ptr<PortraitWidget const>;
-using PortraitWidgetUPtr = std::unique_ptr<PortraitWidget>;
-using PortraitWidgetConstUPtr = std::unique_ptr<PortraitWidget const>;
 
 class PortraitWidget : public Widget {
 public:
-  PortraitWidget(PortraitEntityPtr entity, PortraitMode mode = PortraitMode::Full);
+  PortraitWidget(std::shared_ptr<PortraitEntity> entity, PortraitMode mode = PortraitMode::Full);
   PortraitWidget();
   virtual ~PortraitWidget() {}
 
-  void setEntity(PortraitEntityPtr entity);
+  void setEntity(std::shared_ptr<PortraitEntity> entity);
   void setMode(PortraitMode mode);
   void setScale(float scale);
   void setIconMode();
@@ -93,7 +74,7 @@ private:
   void init();
   void updateSize();
 
-  PortraitEntityPtr m_entity;
+  std::shared_ptr<PortraitEntity> m_entity;
   PortraitMode m_portraitMode;
   AssetPath m_noEntityImageFull;
   AssetPath m_noEntityImagePart;
@@ -112,23 +93,5 @@ export module star.portrait_widget;
 export namespace Star {
   using ::Star::PortraitWidget;
   using ::Star::Player;
-  using ::Star::PlayerPtr;
-  using ::Star::PlayerConstPtr;
-  using ::Star::PlayerWeakPtr;
-  using ::Star::PlayerConstWeakPtr;
-  using ::Star::PlayerUPtr;
-  using ::Star::PlayerConstUPtr;
-  using ::Star::PortraitWidgetPtr;
-  using ::Star::PortraitWidgetConstPtr;
-  using ::Star::PortraitWidgetWeakPtr;
-  using ::Star::PortraitWidgetConstWeakPtr;
-  using ::Star::PortraitWidgetUPtr;
-  using ::Star::PortraitWidgetConstUPtr;
   using ::Star::PortraitEntity;
-  using ::Star::PortraitEntityPtr;
-  using ::Star::PortraitEntityConstPtr;
-  using ::Star::PortraitEntityWeakPtr;
-  using ::Star::PortraitEntityConstWeakPtr;
-  using ::Star::PortraitEntityUPtr;
-  using ::Star::PortraitEntityConstUPtr;
 }

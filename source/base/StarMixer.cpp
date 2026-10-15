@@ -241,7 +241,7 @@ void Mixer::setVolume(float volume, float rampTime) {
   m_volume.velocity = rateOfChangeFromRampTime(rampTime);
 }
 
-void Mixer::play(AudioInstancePtr sample) {
+void Mixer::play(std::shared_ptr<AudioInstance> sample) {
   MutexLocker locker(m_queueMutex);
   m_audios.add(std::move(sample), AudioState{List<float>(m_channels, 1.0f)});
 }

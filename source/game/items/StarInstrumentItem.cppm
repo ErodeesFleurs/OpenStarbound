@@ -78,14 +78,6 @@ export module star.instrument_item;
 
 export namespace Star {
 
-class InstrumentItem;
-using InstrumentItemPtr = std::shared_ptr<InstrumentItem>;
-using InstrumentItemConstPtr = std::shared_ptr<const InstrumentItem>;
-using InstrumentItemWeakPtr = std::weak_ptr<InstrumentItem>;
-using InstrumentItemConstWeakPtr = std::weak_ptr<const InstrumentItem>;
-using InstrumentItemUPtr = std::unique_ptr<InstrumentItem>;
-using InstrumentItemConstUPtr = std::unique_ptr<const InstrumentItem>;
-
 class InstrumentItem : public Item,
                        public StatusEffectItem,
                        public EffectSourceItem,
@@ -95,7 +87,7 @@ class InstrumentItem : public Item,
 public:
   InstrumentItem(Json const& config, String const& directory, Json const& data);
 
-  ItemPtr clone() const override;
+  std::shared_ptr<Item> clone() const override;
 
   List<PersistentStatusEffect> statusEffects() const override;
   StringSet effectSources() const override;
@@ -148,7 +140,7 @@ InstrumentItem::InstrumentItem(Json const& config, String const& directory, Json
   m_kind = instanceValue("kind").toString();
 }
 
-ItemPtr InstrumentItem::clone() const {
+std::shared_ptr<Item> InstrumentItem::clone() const {
   return std::make_shared<InstrumentItem>(*this);
 }
 

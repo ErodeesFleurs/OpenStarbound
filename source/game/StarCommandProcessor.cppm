@@ -18,19 +18,6 @@ import star.shell_parser;
 namespace Star {
 
 class UniverseServer;
-using UniverseServerPtr = std::shared_ptr<UniverseServer>;
-using UniverseServerConstPtr = std::shared_ptr<const UniverseServer>;
-using UniverseServerWeakPtr = std::weak_ptr<UniverseServer>;
-using UniverseServerConstWeakPtr = std::weak_ptr<const UniverseServer>;
-using UniverseServerUPtr = std::unique_ptr<UniverseServer>;
-using UniverseServerConstUPtr = std::unique_ptr<const UniverseServer>;
-class CommandProcessor;
-using CommandProcessorPtr = std::shared_ptr<CommandProcessor>;
-using CommandProcessorConstPtr = std::shared_ptr<const CommandProcessor>;
-using CommandProcessorWeakPtr = std::weak_ptr<CommandProcessor>;
-using CommandProcessorConstWeakPtr = std::weak_ptr<const CommandProcessor>;
-using CommandProcessorUPtr = std::unique_ptr<CommandProcessor>;
-using CommandProcessorConstUPtr = std::unique_ptr<const CommandProcessor>;
 
 class CommandProcessor {
 public:
@@ -98,7 +85,7 @@ private:
 
   // CommandProcessor can be accessed from multiple threads.
   // To avoid issues of thread unsafe accesses where an rcon command might be handled while a universe server script context is running, CommandProcessor instances have their own lua root instead.
-  LuaRootPtr m_luaRoot;
+  std::shared_ptr<LuaRoot> m_luaRoot;
   LuaBaseComponent m_scriptComponent;
 };
 
@@ -108,17 +95,5 @@ export module star.command_processor;
 
 export namespace Star {
   using ::Star::UniverseServer;
-  using ::Star::UniverseServerPtr;
-  using ::Star::UniverseServerConstPtr;
-  using ::Star::UniverseServerWeakPtr;
-  using ::Star::UniverseServerConstWeakPtr;
-  using ::Star::UniverseServerUPtr;
-  using ::Star::UniverseServerConstUPtr;
   using ::Star::CommandProcessor;
-  using ::Star::CommandProcessorPtr;
-  using ::Star::CommandProcessorConstPtr;
-  using ::Star::CommandProcessorWeakPtr;
-  using ::Star::CommandProcessorConstWeakPtr;
-  using ::Star::CommandProcessorUPtr;
-  using ::Star::CommandProcessorConstUPtr;
 }

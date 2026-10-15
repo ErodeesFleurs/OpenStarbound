@@ -24,14 +24,6 @@ import star.sha256;
 
 export namespace Star {
 
-class PackedAssetSource;
-using PackedAssetSourcePtr = std::shared_ptr<PackedAssetSource>;
-using PackedAssetSourceConstPtr = std::shared_ptr<PackedAssetSource const>;
-using PackedAssetSourceWeakPtr = std::weak_ptr<PackedAssetSource>;
-using PackedAssetSourceConstWeakPtr = std::weak_ptr<PackedAssetSource const>;
-using PackedAssetSourceUPtr = std::unique_ptr<PackedAssetSource>;
-using PackedAssetSourceConstUPtr = std::unique_ptr<PackedAssetSource const>;
-
 class PackedAssetSource : public AssetSource {
 public:
   typedef std::function<void(std::size_t, std::size_t, String, String)> BuildProgressCallback;
@@ -54,11 +46,11 @@ public:
   JsonObject metadata() const override;
   StringList assetPaths() const override;
 
-  IODevicePtr open(String const& path) override;
+  std::shared_ptr<IODevice> open(String const& path) override;
   ByteArray read(String const& path) override;
 
 private:
-  FilePtr m_packedFile;
+  std::shared_ptr<File> m_packedFile;
   JsonObject m_metadata;
   OrderedHashMap<String, std::pair<std::uint64_t, std::uint64_t>> m_index;
 };
@@ -69,7 +61,7 @@ namespace Star {
 
 void PackedAssetSource::build(DirectoryAssetSource& directorySource, String const& targetPackedFile,
     StringList const& extensionSorting, BuildProgressCallback progressCallback) {
-  FilePtr file = File::open(targetPackedFile, IOMode::ReadWrite | IOMode::Truncate);
+  std::shared_ptr<File> file = File::open(targetPackedFile, IOMode::ReadWrite | IOMode::Truncate);
 
   DataStreamIODevice ds(file);
 
@@ -152,9 +144,9 @@ StringList PackedAssetSource::assetPaths() const {
   return m_index.keys();
 }
 
-IODevicePtr PackedAssetSource::open(String const& path) {
+std::shared_ptr<IODevice> PackedAssetSource::open(String const& path) {
   struct AssetReader : public IODevice {
-    AssetReader(FilePtr file, String path, StreamOffset offset, StreamOffset size)
+    AssetReader(std::shared_ptr<File> file, String path, StreamOffset offset, StreamOffset size)
       : file(file), path(path), fileOffset(offset), assetSize(size), assetPos(0) {
       setMode(IOMode::Read);
     }
@@ -195,13 +187,13 @@ IODevicePtr PackedAssetSource::open(String const& path) {
         assetPos = clamp<StreamOffset>(assetSize - p, 0, assetSize);
     }
 
-    IODevicePtr clone() override {
+    std::shared_ptr<IODevice> clone() override {
       auto cloned = std::make_shared<AssetReader>(file, path, fileOffset, assetSize);
       cloned->assetPos = assetPos;
       return cloned;
     }
 
-    FilePtr file;
+    std::shared_ptr<File> file;
     String path;
     StreamOffset fileOffset;
     StreamOffset assetSize;

@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
     rootLoader.addParameter("repetitions", "repetitions", OptionParser::Optional, strf("number of times to generate, default {}", repetitions));
     rootLoader.addParameter("reportevery", "report repetitions", OptionParser::Optional, strf("number of repetitions before each progress report, default {}", reportEvery));
 
-    RootUPtr root;
+    std::unique_ptr<::Star::Root> root;
     OptionParser::Options options;
     std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
@@ -161,7 +161,7 @@ int main(int argc, char** argv) {
         coutf("[{}] {}s | Generations Per Second: {}\n", i, Time::monotonicTime() - start, gps);
       }
 
-      VisitableWorldParametersPtr worldParameters = generateFloatingDungeonWorldParameters(dungeonWorldName);
+      std::shared_ptr<::Star::VisitableWorldParameters> worldParameters = generateFloatingDungeonWorldParameters(dungeonWorldName);
       auto worldTemplate = std::make_shared<WorldTemplate>(worldParameters, SkyParameters(), 1234);
       WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile());
     }

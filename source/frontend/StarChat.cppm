@@ -48,58 +48,15 @@ import star.chat_types;
 namespace Star {
 
 class UniverseClient;
-using UniverseClientPtr = std::shared_ptr<UniverseClient>;
-using UniverseClientConstPtr = std::shared_ptr<UniverseClient const>;
-using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
-using UniverseClientConstWeakPtr = std::weak_ptr<UniverseClient const>;
-using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
-using UniverseClientConstUPtr = std::unique_ptr<UniverseClient const>;
 class TextBoxWidget;
-using TextBoxWidgetPtr = std::shared_ptr<TextBoxWidget>;
-using TextBoxWidgetConstPtr = std::shared_ptr<TextBoxWidget const>;
-using TextBoxWidgetWeakPtr = std::weak_ptr<TextBoxWidget>;
-using TextBoxWidgetConstWeakPtr = std::weak_ptr<TextBoxWidget const>;
-using TextBoxWidgetUPtr = std::unique_ptr<TextBoxWidget>;
-using TextBoxWidgetConstUPtr = std::unique_ptr<TextBoxWidget const>;
 class LabelWidget;
-using LabelWidgetPtr = std::shared_ptr<LabelWidget>;
-using LabelWidgetConstPtr = std::shared_ptr<LabelWidget const>;
-using LabelWidgetWeakPtr = std::weak_ptr<LabelWidget>;
-using LabelWidgetConstWeakPtr = std::weak_ptr<LabelWidget const>;
-using LabelWidgetUPtr = std::unique_ptr<LabelWidget>;
-using LabelWidgetConstUPtr = std::unique_ptr<LabelWidget const>;
 class ButtonWidget;
-using ButtonWidgetPtr = std::shared_ptr<ButtonWidget>;
-using ButtonWidgetConstPtr = std::shared_ptr<ButtonWidget const>;
-using ButtonWidgetWeakPtr = std::weak_ptr<ButtonWidget>;
-using ButtonWidgetConstWeakPtr = std::weak_ptr<ButtonWidget const>;
-using ButtonWidgetUPtr = std::unique_ptr<ButtonWidget>;
-using ButtonWidgetConstUPtr = std::unique_ptr<ButtonWidget const>;
 class ImageStretchWidget;
-using ImageStretchWidgetPtr = std::shared_ptr<ImageStretchWidget>;
-using ImageStretchWidgetConstPtr = std::shared_ptr<ImageStretchWidget const>;
-using ImageStretchWidgetWeakPtr = std::weak_ptr<ImageStretchWidget>;
-using ImageStretchWidgetConstWeakPtr = std::weak_ptr<ImageStretchWidget const>;
-using ImageStretchWidgetUPtr = std::unique_ptr<ImageStretchWidget>;
-using ImageStretchWidgetConstUPtr = std::unique_ptr<ImageStretchWidget const>;
 class CanvasWidget;
-using CanvasWidgetPtr = std::shared_ptr<CanvasWidget>;
-using CanvasWidgetConstPtr = std::shared_ptr<CanvasWidget const>;
-using CanvasWidgetWeakPtr = std::weak_ptr<CanvasWidget>;
-using CanvasWidgetConstWeakPtr = std::weak_ptr<CanvasWidget const>;
-using CanvasWidgetUPtr = std::unique_ptr<CanvasWidget>;
-using CanvasWidgetConstUPtr = std::unique_ptr<CanvasWidget const>;
-class Chat;
-using ChatPtr = std::shared_ptr<Chat>;
-using ChatConstPtr = std::shared_ptr<Chat const>;
-using ChatWeakPtr = std::weak_ptr<Chat>;
-using ChatConstWeakPtr = std::weak_ptr<Chat const>;
-using ChatUPtr = std::unique_ptr<Chat>;
-using ChatConstUPtr = std::unique_ptr<Chat const>;
 
 class Chat : public BaseScriptPane {
 public:
-  Chat(UniverseClientPtr client, Json const&);
+  Chat(std::shared_ptr<UniverseClient> client, Json const&);
 
   void startChat();
   void startCommand();
@@ -140,13 +97,13 @@ private:
 
   void updateBottomButton();
 
-  UniverseClientPtr m_client;
+  std::shared_ptr<UniverseClient> m_client;
   bool m_scripted;
 
-  TextBoxWidgetPtr m_textBox;
-  LabelWidgetPtr m_say;
-  ButtonWidgetPtr m_bottomButton;
-  ButtonWidgetPtr m_upButton;
+  std::shared_ptr<TextBoxWidget> m_textBox;
+  std::shared_ptr<LabelWidget> m_say;
+  std::shared_ptr<ButtonWidget> m_bottomButton;
+  std::shared_ptr<ButtonWidget> m_upButton;
   Deque<String> m_chatHistory;
   unsigned m_chatPrevIndex;
   std::int64_t m_timeChatLastActive;
@@ -157,10 +114,10 @@ private:
   int m_historyOffset;
   String m_chatFormatString;
 
-  CanvasWidgetPtr m_chatLog;
+  std::shared_ptr<CanvasWidget> m_chatLog;
   Vec2I m_chatLogPadding;
 
-  ImageStretchWidgetPtr m_background;
+  std::shared_ptr<ImageStretchWidget> m_background;
   int m_defaultHeight;
   int m_bodyHeight;
   int m_expandedBodyHeight;
@@ -187,52 +144,10 @@ export module star.chat;
 
 export namespace Star {
   using ::Star::UniverseClient;
-  using ::Star::UniverseClientPtr;
-  using ::Star::UniverseClientConstPtr;
-  using ::Star::UniverseClientWeakPtr;
-  using ::Star::UniverseClientConstWeakPtr;
-  using ::Star::UniverseClientUPtr;
-  using ::Star::UniverseClientConstUPtr;
   using ::Star::TextBoxWidget;
-  using ::Star::TextBoxWidgetPtr;
-  using ::Star::TextBoxWidgetConstPtr;
-  using ::Star::TextBoxWidgetWeakPtr;
-  using ::Star::TextBoxWidgetConstWeakPtr;
-  using ::Star::TextBoxWidgetUPtr;
-  using ::Star::TextBoxWidgetConstUPtr;
   using ::Star::LabelWidget;
-  using ::Star::LabelWidgetPtr;
-  using ::Star::LabelWidgetConstPtr;
-  using ::Star::LabelWidgetWeakPtr;
-  using ::Star::LabelWidgetConstWeakPtr;
-  using ::Star::LabelWidgetUPtr;
-  using ::Star::LabelWidgetConstUPtr;
   using ::Star::ButtonWidget;
-  using ::Star::ButtonWidgetPtr;
-  using ::Star::ButtonWidgetConstPtr;
-  using ::Star::ButtonWidgetWeakPtr;
-  using ::Star::ButtonWidgetConstWeakPtr;
-  using ::Star::ButtonWidgetUPtr;
-  using ::Star::ButtonWidgetConstUPtr;
   using ::Star::ImageStretchWidget;
-  using ::Star::ImageStretchWidgetPtr;
-  using ::Star::ImageStretchWidgetConstPtr;
-  using ::Star::ImageStretchWidgetWeakPtr;
-  using ::Star::ImageStretchWidgetConstWeakPtr;
-  using ::Star::ImageStretchWidgetUPtr;
-  using ::Star::ImageStretchWidgetConstUPtr;
   using ::Star::CanvasWidget;
-  using ::Star::CanvasWidgetPtr;
-  using ::Star::CanvasWidgetConstPtr;
-  using ::Star::CanvasWidgetWeakPtr;
-  using ::Star::CanvasWidgetConstWeakPtr;
-  using ::Star::CanvasWidgetUPtr;
-  using ::Star::CanvasWidgetConstUPtr;
   using ::Star::Chat;
-  using ::Star::ChatPtr;
-  using ::Star::ChatConstPtr;
-  using ::Star::ChatWeakPtr;
-  using ::Star::ChatConstWeakPtr;
-  using ::Star::ChatUPtr;
-  using ::Star::ChatConstUPtr;
 }

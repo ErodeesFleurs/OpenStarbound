@@ -205,43 +205,13 @@ import star.pythonic;
 namespace Star {
 
 class World;
-using WorldPtr = std::shared_ptr<World>;
-using WorldConstPtr = std::shared_ptr<const World>;
-using WorldWeakPtr = std::weak_ptr<World>;
-using WorldConstWeakPtr = std::weak_ptr<const World>;
-using WorldUPtr = std::unique_ptr<World>;
-using WorldConstUPtr = std::unique_ptr<const World>;
 class WorldServer;
-using WorldServerPtr = std::shared_ptr<WorldServer>;
-using WorldServerConstPtr = std::shared_ptr<const WorldServer>;
-using WorldServerWeakPtr = std::weak_ptr<WorldServer>;
-using WorldServerConstWeakPtr = std::weak_ptr<const WorldServer>;
-using WorldServerUPtr = std::unique_ptr<WorldServer>;
-using WorldServerConstUPtr = std::unique_ptr<const WorldServer>;
 class WorldClient;
-using WorldClientPtr = std::shared_ptr<WorldClient>;
-using WorldClientConstPtr = std::shared_ptr<const WorldClient>;
-using WorldClientWeakPtr = std::weak_ptr<WorldClient>;
-using WorldClientConstWeakPtr = std::weak_ptr<const WorldClient>;
-using WorldClientUPtr = std::unique_ptr<WorldClient>;
-using WorldClientConstUPtr = std::unique_ptr<const WorldClient>;
 class Item;
-using ItemPtr = std::shared_ptr<Item>;
-using ItemConstPtr = std::shared_ptr<const Item>;
-using ItemWeakPtr = std::weak_ptr<Item>;
-using ItemConstWeakPtr = std::weak_ptr<const Item>;
-using ItemUPtr = std::unique_ptr<Item>;
-using ItemConstUPtr = std::unique_ptr<const Item>;
 class ScriptedEntity;
-using ScriptedEntityPtr = std::shared_ptr<ScriptedEntity>;
-using ScriptedEntityConstPtr = std::shared_ptr<const ScriptedEntity>;
-using ScriptedEntityWeakPtr = std::weak_ptr<ScriptedEntity>;
-using ScriptedEntityConstWeakPtr = std::weak_ptr<const ScriptedEntity>;
-using ScriptedEntityUPtr = std::unique_ptr<ScriptedEntity>;
-using ScriptedEntityConstUPtr = std::unique_ptr<const ScriptedEntity>;
 
 namespace LuaBindings {
-  typedef std::function<Json(ScriptedEntityPtr const& entity, String const& functionName, JsonArray const& args)> CallEntityScriptFunction;
+  typedef std::function<Json(std::shared_ptr<ScriptedEntity> const& entity, String const& functionName, JsonArray const& args)> CallEntityScriptFunction;
 
 
   void addWorldDebugCallbacks(LuaCallbacks& callbacks);
@@ -547,7 +517,7 @@ namespace LuaBindings {
       entities = world->query<EntityT>(region, innerSelector);
     } else {
       // global query
-      world->forAllEntities([&](EntityPtr const& entity) {
+      world->forAllEntities([&](std::shared_ptr<Entity> const& entity) {
           if (auto ofType = as<EntityT>(entity)) {
             if (innerSelector(ofType))
               entities.emplace_back(ofType);
@@ -694,7 +664,7 @@ namespace LuaBindings {
       });
 
     callbacks.registerCallback("biomeBlocksAt", [world](Vec2I position) -> Maybe<List<MaterialId>> {
-        WorldTemplateConstPtr worldTemplate;
+        std::shared_ptr<WorldTemplate const> worldTemplate;
         if (auto worldClient = as<WorldClient>(world))
           worldTemplate = worldClient->currentTemplate();
         else if (auto worldServer = as<WorldServer>(world))
@@ -722,7 +692,7 @@ namespace LuaBindings {
       });
 
     callbacks.registerCallback("biomeAt", [world](Vec2I position) -> Json {
-        WorldTemplateConstPtr worldTemplate;
+        std::shared_ptr<WorldTemplate const> worldTemplate;
         if (auto worldClient = as<WorldClient>(world))
           worldTemplate = worldClient->currentTemplate();
         else if (auto worldServer = as<WorldServer>(world))
@@ -737,7 +707,7 @@ namespace LuaBindings {
         return {};
       });
     callbacks.registerCallback("blockInfoAt", [world](Vec2I position) -> Json {
-        WorldTemplateConstPtr worldTemplate;
+        std::shared_ptr<WorldTemplate const> worldTemplate;
         if (auto worldClient = as<WorldClient>(world))
           worldTemplate = worldClient->currentTemplate();
         else if (auto worldServer = as<WorldServer>(world))
@@ -768,7 +738,7 @@ namespace LuaBindings {
       callbacks.registerCallback("players", [clientWorld]() {
         List<EntityId> playerIds;
 
-        clientWorld->forAllEntities([&](EntityPtr const& entity) {
+        clientWorld->forAllEntities([&](std::shared_ptr<Entity> const& entity) {
           if (entity->entityType() == EntityType::Player)
             playerIds.emplace_back(entity->entityId());
         });
@@ -916,13 +886,13 @@ namespace LuaBindings {
     callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, Maybe<LuaTable>>("npcLineQuery", std::bind(WorldEntityCallbacks::npcLineQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
     callbacks.registerCallback("objectAt",
         [world](Vec2I const& tilePosition) -> Maybe<int> {
-          if (auto object = world->findEntityAtTile(tilePosition, [](TileEntityPtr const& entity) { return is<Object>(entity); }))
+          if (auto object = world->findEntityAtTile(tilePosition, [](std::shared_ptr<TileEntity> const& entity) { return is<Object>(entity); }))
             return object->entityId();
           else
             return {};
         });
 
-    callbacks.registerCallbackWithSignature<Maybe<EntityPtr>, EntityId>("entity", [world](EntityId entityId) -> Maybe<EntityPtr> {
+    callbacks.registerCallbackWithSignature<Maybe<std::shared_ptr<Entity>>, EntityId>("entity", [world](EntityId entityId) -> Maybe<std::shared_ptr<Entity>> {
       if (auto entity = world->entity(entityId)) {
         return entity;
       } else {
@@ -1409,7 +1379,7 @@ namespace LuaBindings {
     auto treasureDatabase = Root::singleton().treasureDatabase();
     try {
       for (auto const& treasureItem : treasureDatabase->createTreasure(pool, level, seed.value(Random::randu64()))) {
-        ItemDropPtr entity = ItemDrop::createRandomizedDrop(treasureItem, position);
+        std::shared_ptr<ItemDrop> entity = ItemDrop::createRandomizedDrop(treasureItem, position);
         entities.append(entity->entityId());
         world->addEntity(entity);
       }
@@ -1675,7 +1645,7 @@ namespace LuaBindings {
   Json ServerWorldCallbacks::takeItemDrop(World* world, EntityId entityId, Maybe<EntityId> const& takenBy) {
     auto itemDrop = world->get<ItemDrop>(entityId);
     if (itemDrop && itemDrop->canTake() && itemDrop->isMaster()) {
-      ItemPtr item;
+      std::shared_ptr<Item> item;
       if (takenBy)
         item = itemDrop->takeBy(*takenBy);
       else

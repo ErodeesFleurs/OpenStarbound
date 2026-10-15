@@ -53,7 +53,7 @@ namespace Star {
 
 SkyParameters::SkyParameters() : seed(), skyType(SkyType::Barren), skyColoring(makeRight(Color::Black)), settings(JsonObject()) {}
 
-SkyParameters::SkyParameters(CelestialCoordinate const& coordinate, CelestialDatabasePtr const& celestialDatabase)
+SkyParameters::SkyParameters(CelestialCoordinate const& coordinate, std::shared_ptr<CelestialDatabase> const& celestialDatabase)
   : SkyParameters() {
   if (!coordinate || coordinate.isSystem())
     return;
@@ -99,7 +99,7 @@ SkyParameters::SkyParameters(CelestialCoordinate const& coordinate, CelestialDat
   sunType = systemParams->getParameter("typeName").toString();
 }
 
-SkyParameters::SkyParameters(SkyParameters const& oldSkyParameters, VisitableWorldParametersConstPtr newVisitableParameters) : SkyParameters() {
+SkyParameters::SkyParameters(SkyParameters const& oldSkyParameters, std::shared_ptr<VisitableWorldParameters const> newVisitableParameters) : SkyParameters() {
   *this = oldSkyParameters;
   readVisitableParameters(newVisitableParameters);
 }
@@ -239,7 +239,7 @@ void SkyParameters::write(DataStream& ds) const {
     ds << settings;
 }
 
-void SkyParameters::readVisitableParameters(VisitableWorldParametersConstPtr visitableParameters) {
+void SkyParameters::readVisitableParameters(std::shared_ptr<VisitableWorldParameters const> visitableParameters) {
   if (auto terrestrialParameters = as<TerrestrialWorldParameters>(visitableParameters)) {
     dayLength = terrestrialParameters->dayLength;
     if (terrestrialParameters->airless) {

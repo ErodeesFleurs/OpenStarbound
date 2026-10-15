@@ -24,18 +24,10 @@ struct JsonParsingExceptionTag {
 using JsonParsingException = StarError<JsonParsingExceptionTag, StarException>;
 
 class Json;
-using JsonPtr = std::shared_ptr<Json>;
-using JsonConstPtr = std::shared_ptr<const Json>;
-using JsonWeakPtr = std::weak_ptr<Json>;
-using JsonConstWeakPtr = std::weak_ptr<const Json>;
-using JsonUPtr = std::unique_ptr<Json>;
-using JsonConstUPtr = std::unique_ptr<const Json>;
 
 typedef List<Json> JsonArray;
-typedef std::shared_ptr<JsonArray const> JsonArrayConstPtr;
 
 typedef StringMap<Json> JsonObject;
-typedef std::shared_ptr<JsonObject const> JsonObjectConstPtr;
 
 // Class for holding representation of JSON data.  Immutable and implicitly
 // shared.
@@ -116,9 +108,9 @@ public:
   // Internally, String, JsonArray, and JsonObject are shared via shared_ptr
   // since this class is immutable.  Use these methods to get at this pointer
   // without causing a copy.
-  StringConstPtr stringPtr() const;
-  JsonArrayConstPtr arrayPtr() const;
-  JsonObjectConstPtr objectPtr() const;
+  std::shared_ptr<String const> stringPtr() const;
+  std::shared_ptr<JsonArray const> arrayPtr() const;
+  std::shared_ptr<JsonObject const> objectPtr() const;
 
   // As a convenience, make it easy to safely and quickly iterate over a
   // JsonArray or JsonObject contents by holding the container pointer.
@@ -289,7 +281,7 @@ private:
   Json const* ptr(std::size_t index) const;
   Json const* ptr(String const& key) const;
 
-  Variant<Empty, double, bool, std::int64_t, StringConstPtr, JsonArrayConstPtr, JsonObjectConstPtr> m_data;
+  Variant<Empty, double, bool, std::int64_t, std::shared_ptr<String const>, std::shared_ptr<JsonArray const>, std::shared_ptr<JsonObject const>> m_data;
 };
 
 std::ostream& operator<<(std::ostream& os, Json const& v);
@@ -405,16 +397,8 @@ export namespace Star {
   using ::Star::JsonParsingExceptionTag;
   using ::Star::JsonParsingException;
   using ::Star::Json;
-  using ::Star::JsonPtr;
-  using ::Star::JsonConstPtr;
-  using ::Star::JsonWeakPtr;
-  using ::Star::JsonConstWeakPtr;
-  using ::Star::JsonUPtr;
-  using ::Star::JsonConstUPtr;
   using ::Star::JsonArray;
-  using ::Star::JsonArrayConstPtr;
   using ::Star::JsonObject;
-  using ::Star::JsonObjectConstPtr;
   using ::Star::jsonMerge;
   using ::Star::jsonMergeNulling;
   using ::Star::jsonMergeQuery;

@@ -57,8 +57,8 @@ public:
   bool autoCommit() const;
   void setAutoCommit(bool autoCommit);
 
-  IODevicePtr ioDevice() const;
-  void setIODevice(IODevicePtr device);
+  std::shared_ptr<IODevice> ioDevice() const;
+  void setIODevice(std::shared_ptr<IODevice> device);
 
   // If an existing database is opened, this will update the key size, block
   // size, and content identifier with those from the opened database.
@@ -275,7 +275,7 @@ private:
 
   BTreeMixin<BTreeImpl> m_impl;
 
-  IODevicePtr m_device;
+  std::shared_ptr<IODevice> m_device;
   bool m_open;
 
   std::uint32_t m_blockSize;

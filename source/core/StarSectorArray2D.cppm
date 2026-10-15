@@ -37,7 +37,6 @@ public:
 
     Element elements[SectorSize * SectorSize];
   };
-  typedef std::unique_ptr<Array> ArrayPtr;
 
   typedef MultiArray<Element, 2> DynamicArray;
 
@@ -69,9 +68,9 @@ public:
   Array* sector(Sector const& id);
   Array const* sector(Sector const& id) const;
 
-  void loadSector(Sector const& id, ArrayPtr array);
-  ArrayPtr copySector(Sector const& id);
-  ArrayPtr takeSector(Sector const& id);
+  void loadSector(Sector const& id, std::unique_ptr<Array> array);
+  std::unique_ptr<Array> copySector(Sector const& id);
+  std::unique_ptr<Array> takeSector(Sector const& id);
   void discardSector(Sector const& id);
 
   // Will return nullptr if sector is not loaded.
@@ -107,7 +106,7 @@ public:
   bool evalColumnsParallel(std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty = false);
 
 private:
-  typedef MultiArray<ArrayPtr, 2> SectorArray;
+  typedef MultiArray<std::unique_ptr<Array>, 2> SectorArray;
 
   template <typename Function>
   bool evalPriv(std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty);
@@ -230,7 +229,7 @@ auto SectorArray2D<ElementT, SectorSize>::sector(Sector const& id) const -> Arra
 }
 
 template <typename ElementT, std::size_t SectorSize>
-void SectorArray2D<ElementT, SectorSize>::loadSector(Sector const& id, ArrayPtr array) {
+void SectorArray2D<ElementT, SectorSize>::loadSector(Sector const& id, std::unique_ptr<Array> array) {
   auto& data = m_sectors(id[0], id[1]);
   data = std::move(array);
   if (data)
@@ -240,7 +239,7 @@ void SectorArray2D<ElementT, SectorSize>::loadSector(Sector const& id, ArrayPtr 
 }
 
 template <typename ElementT, std::size_t SectorSize>
-typename SectorArray2D<ElementT, SectorSize>::ArrayPtr SectorArray2D<ElementT, SectorSize>::copySector(
+std::unique_ptr<typename SectorArray2D<ElementT, SectorSize>::Array> SectorArray2D<ElementT, SectorSize>::copySector(
     Sector const& id) {
   if (auto const& array = m_sectors(id))
     return std::make_unique<Array>(*array);
@@ -249,9 +248,9 @@ typename SectorArray2D<ElementT, SectorSize>::ArrayPtr SectorArray2D<ElementT, S
 }
 
 template <typename ElementT, std::size_t SectorSize>
-typename SectorArray2D<ElementT, SectorSize>::ArrayPtr SectorArray2D<ElementT, SectorSize>::takeSector(
+std::unique_ptr<typename SectorArray2D<ElementT, SectorSize>::Array> SectorArray2D<ElementT, SectorSize>::takeSector(
     Sector const& id) {
-  ArrayPtr ret;
+  std::unique_ptr<Array> ret;
   m_loadedSectors.remove(id);
   std::swap(m_sectors(id[0], id[1]), ret);
   return ret;

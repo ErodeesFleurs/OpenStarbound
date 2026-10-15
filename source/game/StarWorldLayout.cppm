@@ -35,33 +35,7 @@ import star.celestial_parameters;
 namespace Star {
 
 struct Biome;
-using BiomePtr = std::shared_ptr<Biome>;
-using BiomeConstPtr = std::shared_ptr<const Biome>;
-using BiomeWeakPtr = std::weak_ptr<Biome>;
-using BiomeConstWeakPtr = std::weak_ptr<const Biome>;
-using BiomeUPtr = std::unique_ptr<Biome>;
-using BiomeConstUPtr = std::unique_ptr<const Biome>;
 struct TerrainSelector;
-using TerrainSelectorPtr = std::shared_ptr<TerrainSelector>;
-using TerrainSelectorConstPtr = std::shared_ptr<const TerrainSelector>;
-using TerrainSelectorWeakPtr = std::weak_ptr<TerrainSelector>;
-using TerrainSelectorConstWeakPtr = std::weak_ptr<const TerrainSelector>;
-using TerrainSelectorUPtr = std::unique_ptr<TerrainSelector>;
-using TerrainSelectorConstUPtr = std::unique_ptr<const TerrainSelector>;
-struct WorldRegion;
-using WorldRegionPtr = std::shared_ptr<WorldRegion>;
-using WorldRegionConstPtr = std::shared_ptr<const WorldRegion>;
-using WorldRegionWeakPtr = std::weak_ptr<WorldRegion>;
-using WorldRegionConstWeakPtr = std::weak_ptr<const WorldRegion>;
-using WorldRegionUPtr = std::unique_ptr<WorldRegion>;
-using WorldRegionConstUPtr = std::unique_ptr<const WorldRegion>;
-class WorldLayout;
-using WorldLayoutPtr = std::shared_ptr<WorldLayout>;
-using WorldLayoutConstPtr = std::shared_ptr<const WorldLayout>;
-using WorldLayoutWeakPtr = std::weak_ptr<WorldLayout>;
-using WorldLayoutConstWeakPtr = std::weak_ptr<const WorldLayout>;
-using WorldLayoutUPtr = std::unique_ptr<WorldLayout>;
-using WorldLayoutConstUPtr = std::unique_ptr<const WorldLayout>;
 
 typedef std::uint8_t BiomeIndex;
 inline constexpr BiomeIndex NullBiomeIndex = 0;
@@ -143,8 +117,8 @@ public:
 
   List<RectI> playerStartSearchRegions() const;
 
-  BiomeConstPtr const& getBiome(BiomeIndex index) const;
-  TerrainSelectorConstPtr const& getTerrainSelector(TerrainSelectorIndex index) const;
+  std::shared_ptr<Biome const> const& getBiome(BiomeIndex index) const;
+  std::shared_ptr<TerrainSelector const> const& getTerrainSelector(TerrainSelectorIndex index) const;
 
   // Will return region weighting in order of greatest to least weighting.
   List<RegionWeighting> getWeighting(int x, int y) const;
@@ -167,7 +141,7 @@ private:
 
     int yStart;
     Deque<int> boundaries;
-    Deque<WorldRegionPtr> cells;
+    Deque<std::shared_ptr<WorldRegion>> cells;
   };
 
   struct RegionParams {
@@ -185,8 +159,8 @@ private:
 
   std::pair<WorldLayer, List<RectI>> expandRegionInLayer(WorldLayer targetLayer, std::size_t cellIndex, int newWidth) const;
 
-  BiomeIndex registerBiome(BiomeConstPtr biome);
-  TerrainSelectorIndex registerTerrainSelector(TerrainSelectorConstPtr terrainSelector);
+  BiomeIndex registerBiome(std::shared_ptr<Biome const> biome);
+  TerrainSelectorIndex registerTerrainSelector(std::shared_ptr<TerrainSelector const> terrainSelector);
 
   WorldRegion buildRegion(std::uint64_t seed, RegionParams const& regionParams);
   void addLayer(std::uint64_t seed, int yStart, RegionParams regionParams);
@@ -202,8 +176,8 @@ private:
 
   Vec2U m_worldSize;
 
-  List<BiomeConstPtr> m_biomes;
-  List<TerrainSelectorConstPtr> m_terrainSelectors;
+  List<std::shared_ptr<Biome const>> m_biomes;
+  List<std::shared_ptr<TerrainSelector const>> m_terrainSelectors;
 
   List<WorldLayer> m_layers;
 
@@ -216,13 +190,13 @@ private:
 DataStream& operator>>(DataStream& ds, WorldLayout& worldTemplateDescriptor);
 DataStream& operator<<(DataStream& ds, WorldLayout& worldTemplateDescriptor);
 
-inline BiomeConstPtr const& WorldLayout::getBiome(BiomeIndex index) const {
+inline std::shared_ptr<Biome const> const& WorldLayout::getBiome(BiomeIndex index) const {
   if (index == NullBiomeIndex || index > m_biomes.size())
     throw StarException("WorldLayout::getTerrainSelector called with null or out of range BiomeIndex");
   return m_biomes[index - 1];
 }
 
-inline TerrainSelectorConstPtr const& WorldLayout::getTerrainSelector(TerrainSelectorIndex index) const {
+inline std::shared_ptr<TerrainSelector const> const& WorldLayout::getTerrainSelector(TerrainSelectorIndex index) const {
   if (index == NullBiomeIndex || index > m_terrainSelectors.size())
     throw StarException("WorldLayout::getTerrainSelector called with null or out of range TerrainSelectorIndex");
   return m_terrainSelectors[index - 1];
@@ -234,33 +208,9 @@ export module star.world_layout;
 
 export namespace Star {
   using ::Star::Biome;
-  using ::Star::BiomePtr;
-  using ::Star::BiomeConstPtr;
-  using ::Star::BiomeWeakPtr;
-  using ::Star::BiomeConstWeakPtr;
-  using ::Star::BiomeUPtr;
-  using ::Star::BiomeConstUPtr;
   using ::Star::TerrainSelector;
-  using ::Star::TerrainSelectorPtr;
-  using ::Star::TerrainSelectorConstPtr;
-  using ::Star::TerrainSelectorWeakPtr;
-  using ::Star::TerrainSelectorConstWeakPtr;
-  using ::Star::TerrainSelectorUPtr;
-  using ::Star::TerrainSelectorConstUPtr;
   using ::Star::WorldRegion;
-  using ::Star::WorldRegionPtr;
-  using ::Star::WorldRegionConstPtr;
-  using ::Star::WorldRegionWeakPtr;
-  using ::Star::WorldRegionConstWeakPtr;
-  using ::Star::WorldRegionUPtr;
-  using ::Star::WorldRegionConstUPtr;
   using ::Star::WorldLayout;
-  using ::Star::WorldLayoutPtr;
-  using ::Star::WorldLayoutConstPtr;
-  using ::Star::WorldLayoutWeakPtr;
-  using ::Star::WorldLayoutConstWeakPtr;
-  using ::Star::WorldLayoutUPtr;
-  using ::Star::WorldLayoutConstUPtr;
   using ::Star::BiomeIndex;
   using ::Star::NullBiomeIndex;
   using ::Star::TerrainSelectorIndex;

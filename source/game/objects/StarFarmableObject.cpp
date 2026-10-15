@@ -144,7 +144,7 @@ import star.material_database;
 
 namespace Star {
 
-FarmableObject::FarmableObject(ObjectConfigConstPtr config, Json const& parameters) : Object(config, parameters) {
+FarmableObject::FarmableObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters) : Object(config, parameters) {
   m_stages = configValue("stages", JsonArray({JsonObject()})).toArray();
   m_stage = configValue("startingStage", 0).toInt();
 

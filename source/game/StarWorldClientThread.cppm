@@ -106,20 +106,7 @@ import star.world_client;
 
 namespace Star {
 
-class WorldClientThread;
-using WorldClientThreadPtr = std::shared_ptr<WorldClientThread>;
-using WorldClientThreadConstPtr = std::shared_ptr<const WorldClientThread>;
-using WorldClientThreadWeakPtr = std::weak_ptr<WorldClientThread>;
-using WorldClientThreadConstWeakPtr = std::weak_ptr<const WorldClientThread>;
-using WorldClientThreadUPtr = std::unique_ptr<WorldClientThread>;
-using WorldClientThreadConstUPtr = std::unique_ptr<const WorldClientThread>;
 class UniverseClient;
-using UniverseClientPtr = std::shared_ptr<UniverseClient>;
-using UniverseClientConstPtr = std::shared_ptr<const UniverseClient>;
-using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
-using UniverseClientConstWeakPtr = std::weak_ptr<const UniverseClient>;
-using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
-using UniverseClientConstUPtr = std::unique_ptr<const UniverseClient>;
 
 // Runs a WorldThreadedClient in a separate thread.
 class WorldClientThread : public Thread {
@@ -152,8 +139,8 @@ public:
   // added to this WorldClientThread, and must be removed and the final
   // outgoing packets should be sent to them.
 
-  void pushIncomingPackets(List<PacketPtr> packets);
-  List<PacketPtr> pullOutgoingPackets();
+  void pushIncomingPackets(List<std::shared_ptr<Packet>> packets);
+  List<std::shared_ptr<Packet>> pullOutgoingPackets();
 
   // Executes the given action on the world in a thread safe context.  This
   // does *not* catch exceptions thrown by the action or set the error
@@ -177,13 +164,13 @@ private:
 
   mutable RecursiveMutex m_mutex;
 
-  WorldClientPtr m_worldClient;
+  std::shared_ptr<WorldClient> m_worldClient;
   ClientSubWorldId m_subWorldId;
   WorldClientAction m_updateAction;
 
   mutable RecursiveMutex m_queueMutex;
-  List<PacketPtr> m_incomingPacketQueue;
-  List<PacketPtr> m_outgoingPacketQueue;
+  List<std::shared_ptr<Packet>> m_incomingPacketQueue;
+  List<std::shared_ptr<Packet>> m_outgoingPacketQueue;
 
   mutable RecursiveMutex m_messageMutex;
   List<Message> m_messages;
@@ -200,17 +187,5 @@ export module star.world_client_thread;
 
 export namespace Star {
   using ::Star::WorldClientThread;
-  using ::Star::WorldClientThreadPtr;
-  using ::Star::WorldClientThreadConstPtr;
-  using ::Star::WorldClientThreadWeakPtr;
-  using ::Star::WorldClientThreadConstWeakPtr;
-  using ::Star::WorldClientThreadUPtr;
-  using ::Star::WorldClientThreadConstUPtr;
   using ::Star::UniverseClient;
-  using ::Star::UniverseClientPtr;
-  using ::Star::UniverseClientConstPtr;
-  using ::Star::UniverseClientWeakPtr;
-  using ::Star::UniverseClientConstWeakPtr;
-  using ::Star::UniverseClientUPtr;
-  using ::Star::UniverseClientConstUPtr;
 }

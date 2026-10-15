@@ -181,7 +181,7 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
   if ((isBlock && terrainLayer == TerrainLayer::Midground) || (!isBlock && terrainLayer == TerrainLayer::Foreground))
     return false;
 
-  auto getPieceImage = [](MaterialRenderPieceConstPtr const& piece, Box<float, 2> const& box, MaterialHue hue, Directives const* directives) -> AssetPath {
+  auto getPieceImage = [](std::shared_ptr<MaterialRenderPiece const> const& piece, Box<float, 2> const& box, MaterialHue hue, Directives const* directives) -> AssetPath {
     String path = (hue == 0)
       ? strf("{}?crop={};{};{};{}", piece->texture, box.xMin(), box.yMin(), box.xMax(), box.yMax())
       : strf("{}?crop={};{};{};{}?hueshift={}", piece->texture, box.xMin(), box.yMin(), box.xMax(), box.yMax(), materialHueToDegrees(hue));
@@ -290,11 +290,11 @@ TileDrawer::QuadZLevel TileDrawer::damageZLevel() {
   return (std::uint64_t)(-1);
 }
 
-bool TileDrawer::determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, MaterialDatabaseConstPtr const& materialDb, MaterialRenderMatchList const& matchList,
+bool TileDrawer::determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, std::shared_ptr<MaterialDatabase const> const& materialDb, MaterialRenderMatchList const& matchList,
     WorldRenderData const& renderData, Vec2I const& basePos, TileLayer layer, bool isMod) {
   RenderTile const& tile = getRenderTile(renderData, basePos);
 
-  auto matchSetMatches = [&](MaterialRenderMatchConstPtr const& match) -> bool {
+  auto matchSetMatches = [&](std::shared_ptr<MaterialRenderMatch const> const& match) -> bool {
     if (match->requiredLayer && *match->requiredLayer != layer)
       return false;
 

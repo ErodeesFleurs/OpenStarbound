@@ -75,26 +75,7 @@ import star.array;
 namespace Star {
 
 class Assets;
-using AssetsPtr = std::shared_ptr<Assets>;
-using AssetsConstPtr = std::shared_ptr<const Assets>;
-using AssetsWeakPtr = std::weak_ptr<Assets>;
-using AssetsConstWeakPtr = std::weak_ptr<const Assets>;
-using AssetsUPtr = std::unique_ptr<Assets>;
-using AssetsConstUPtr = std::unique_ptr<const Assets>;
 class MaterialDatabase;
-using MaterialDatabasePtr = std::shared_ptr<MaterialDatabase>;
-using MaterialDatabaseConstPtr = std::shared_ptr<const MaterialDatabase>;
-using MaterialDatabaseWeakPtr = std::weak_ptr<MaterialDatabase>;
-using MaterialDatabaseConstWeakPtr = std::weak_ptr<const MaterialDatabase>;
-using MaterialDatabaseUPtr = std::unique_ptr<MaterialDatabase>;
-using MaterialDatabaseConstUPtr = std::unique_ptr<const MaterialDatabase>;
-class TileDrawer;
-using TileDrawerPtr = std::shared_ptr<TileDrawer>;
-using TileDrawerConstPtr = std::shared_ptr<const TileDrawer>;
-using TileDrawerWeakPtr = std::weak_ptr<TileDrawer>;
-using TileDrawerConstWeakPtr = std::weak_ptr<const TileDrawer>;
-using TileDrawerUPtr = std::unique_ptr<TileDrawer>;
-using TileDrawerConstUPtr = std::unique_ptr<const TileDrawer>;
 class TilePainter;
 
 class TileDrawer {
@@ -103,7 +84,7 @@ public:
   typedef HashMap<QuadZLevel, List<Drawable>> Drawables;
 
   typedef std::size_t MaterialRenderPieceIndex;
-  typedef List<std::pair<MaterialRenderPieceConstPtr, Vec2F>> MaterialPieceResultList;
+  typedef List<std::pair<std::shared_ptr<MaterialRenderPiece const>, Vec2F>> MaterialPieceResultList;
 
   enum class TerrainLayer { Background, Midground, Foreground };
 
@@ -134,7 +115,7 @@ private:
   static QuadZLevel modZLevel(std::uint32_t zLevel, ModId mod, MaterialHue hue, MaterialColorVariant colorVariant);
   static QuadZLevel damageZLevel();
 
-  static bool determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, MaterialDatabaseConstPtr const& materialDb, MaterialRenderMatchList const& matchList,
+  static bool determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, std::shared_ptr<MaterialDatabase const> const& materialDb, MaterialRenderMatchList const& matchList,
     WorldRenderData const& renderData, Vec2I const& basePos, TileLayer layer, bool isMod);
 
   Vec4B m_backgroundLayerColor;
@@ -163,25 +144,7 @@ export module star.tile_drawer;
 
 export namespace Star {
   using ::Star::Assets;
-  using ::Star::AssetsPtr;
-  using ::Star::AssetsConstPtr;
-  using ::Star::AssetsWeakPtr;
-  using ::Star::AssetsConstWeakPtr;
-  using ::Star::AssetsUPtr;
-  using ::Star::AssetsConstUPtr;
   using ::Star::MaterialDatabase;
-  using ::Star::MaterialDatabasePtr;
-  using ::Star::MaterialDatabaseConstPtr;
-  using ::Star::MaterialDatabaseWeakPtr;
-  using ::Star::MaterialDatabaseConstWeakPtr;
-  using ::Star::MaterialDatabaseUPtr;
-  using ::Star::MaterialDatabaseConstUPtr;
   using ::Star::TilePainter;
   using ::Star::TileDrawer;
-  using ::Star::TileDrawerPtr;
-  using ::Star::TileDrawerConstPtr;
-  using ::Star::TileDrawerWeakPtr;
-  using ::Star::TileDrawerConstWeakPtr;
-  using ::Star::TileDrawerUPtr;
-  using ::Star::TileDrawerConstUPtr;
 }

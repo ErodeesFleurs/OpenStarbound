@@ -35,25 +35,12 @@ import star.world_camera;
 namespace Star {
 
 class WorldClient;
-using WorldClientPtr = std::shared_ptr<WorldClient>;
-using WorldClientConstPtr = std::shared_ptr<WorldClient const>;
-using WorldClientWeakPtr = std::weak_ptr<WorldClient>;
-using WorldClientConstWeakPtr = std::weak_ptr<WorldClient const>;
-using WorldClientUPtr = std::unique_ptr<WorldClient>;
-using WorldClientConstUPtr = std::unique_ptr<WorldClient const>;
-class NameplatePainter;
-using NameplatePainterPtr = std::shared_ptr<NameplatePainter>;
-using NameplatePainterConstPtr = std::shared_ptr<NameplatePainter const>;
-using NameplatePainterWeakPtr = std::weak_ptr<NameplatePainter>;
-using NameplatePainterConstWeakPtr = std::weak_ptr<NameplatePainter const>;
-using NameplatePainterUPtr = std::unique_ptr<NameplatePainter>;
-using NameplatePainterConstUPtr = std::unique_ptr<NameplatePainter const>;
 
 class NameplatePainter {
 public:
   NameplatePainter();
 
-  void update(float dt, WorldClientPtr const& world, WorldCamera const& camera, bool inspectionMode);
+  void update(float dt, std::shared_ptr<WorldClient> const& world, WorldCamera const& camera, bool inspectionMode);
   void render();
 
 private:
@@ -90,17 +77,5 @@ export module star.nameplate_painter;
 
 export namespace Star {
   using ::Star::WorldClient;
-  using ::Star::WorldClientPtr;
-  using ::Star::WorldClientConstPtr;
-  using ::Star::WorldClientWeakPtr;
-  using ::Star::WorldClientConstWeakPtr;
-  using ::Star::WorldClientUPtr;
-  using ::Star::WorldClientConstUPtr;
   using ::Star::NameplatePainter;
-  using ::Star::NameplatePainterPtr;
-  using ::Star::NameplatePainterConstPtr;
-  using ::Star::NameplatePainterWeakPtr;
-  using ::Star::NameplatePainterConstWeakPtr;
-  using ::Star::NameplatePainterUPtr;
-  using ::Star::NameplatePainterConstUPtr;
 }

@@ -9,14 +9,6 @@ import star.list;
 import star.byte_array;
 namespace Star {
 
-class File;
-using FilePtr = std::shared_ptr<File>;
-using FileConstPtr = std::shared_ptr<const File>;
-using FileWeakPtr = std::weak_ptr<File>;
-using FileConstWeakPtr = std::weak_ptr<const File>;
-using FileUPtr = std::unique_ptr<File>;
-using FileConstUPtr = std::unique_ptr<const File>;
-
 // All file methods are thread safe.
 class File : public IODevice {
 public:
@@ -54,11 +46,11 @@ public:
 
   // Creates and opens a new ReadWrite temporary file with a real path that can
   // be closed and re-opened.  Will not be removed automatically.
-  static FilePtr temporaryFile();
+  static std::shared_ptr<File> temporaryFile();
 
   // Creates and opens new ReadWrite temporary file and opens it.  This file
   // has no filename and will be removed on close.
-  static FilePtr ephemeralFile();
+  static std::shared_ptr<File> ephemeralFile();
 
   // Creates a new temporary directory and reutrns the path.  Will not be
   // removed automatically.
@@ -107,7 +99,7 @@ public:
   static void backupFileInSequence(String const& initialFile, String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix = ".");
   static void backupFileInSequence(String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix = ".");
 
-  static FilePtr open(String const& filename, IOMode mode);
+  static std::shared_ptr<File> open(String const& filename, IOMode mode);
 
   File();
   File(String filename);
@@ -141,7 +133,7 @@ public:
 
   String deviceName() const override;
 
-  IODevicePtr clone() override;
+  std::shared_ptr<IODevice> clone() override;
 
 private:
   static void* fopen(char const* filename, IOMode mode);
@@ -166,10 +158,4 @@ export module star.file;
 
 export namespace Star {
   using ::Star::File;
-  using ::Star::FilePtr;
-  using ::Star::FileConstPtr;
-  using ::Star::FileWeakPtr;
-  using ::Star::FileConstWeakPtr;
-  using ::Star::FileUPtr;
-  using ::Star::FileConstUPtr;
 }

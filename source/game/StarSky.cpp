@@ -308,13 +308,13 @@ void Sky::setAltitude(float altitude) {
   m_altitude = altitude;
 }
 
-void Sky::setReferenceClock(ClockConstPtr const& referenceClock) {
+void Sky::setReferenceClock(std::shared_ptr<Clock const> const& referenceClock) {
   m_referenceClock = referenceClock;
   m_time = m_referenceClock->time();
   m_clockTrackingTime = {};
 }
 
-ClockConstPtr Sky::referenceClock() const {
+std::shared_ptr<Clock const> Sky::referenceClock() const {
   return m_referenceClock;
 }
 
@@ -330,8 +330,8 @@ String Sky::ambientNoise() const {
   return "";
 }
 
-List<AudioInstancePtr> Sky::pullSounds() {
-  List<AudioInstancePtr> res;
+List<std::shared_ptr<AudioInstance>> Sky::pullSounds() {
+  List<std::shared_ptr<AudioInstance>> res;
   if (m_flyingType == FlyingType::Warp) {
     if (m_warpPhase == WarpPhase::SpeedingUp && !m_sentSFX) {
       float triggerTime = speedupTime() - m_settings.queryFloat("enterHyperspaceAudioLeadIn");

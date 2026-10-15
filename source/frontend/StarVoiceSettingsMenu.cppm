@@ -45,14 +45,6 @@ import star.base_script_pane;
 
 namespace Star {
 
-class VoiceSettingsMenu;
-using VoiceSettingsMenuPtr = std::shared_ptr<VoiceSettingsMenu>;
-using VoiceSettingsMenuConstPtr = std::shared_ptr<VoiceSettingsMenu const>;
-using VoiceSettingsMenuWeakPtr = std::weak_ptr<VoiceSettingsMenu>;
-using VoiceSettingsMenuConstWeakPtr = std::weak_ptr<VoiceSettingsMenu const>;
-using VoiceSettingsMenuUPtr = std::unique_ptr<VoiceSettingsMenu>;
-using VoiceSettingsMenuConstUPtr = std::unique_ptr<VoiceSettingsMenu const>;
-
 class VoiceSettingsMenu : public BaseScriptPane {
 public:
   VoiceSettingsMenu(Json const& config);
@@ -71,10 +63,4 @@ export module star.voice_settings_menu;
 
 export namespace Star {
   using ::Star::VoiceSettingsMenu;
-  using ::Star::VoiceSettingsMenuPtr;
-  using ::Star::VoiceSettingsMenuConstPtr;
-  using ::Star::VoiceSettingsMenuWeakPtr;
-  using ::Star::VoiceSettingsMenuConstWeakPtr;
-  using ::Star::VoiceSettingsMenuUPtr;
-  using ::Star::VoiceSettingsMenuConstUPtr;
 }

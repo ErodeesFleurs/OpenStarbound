@@ -195,15 +195,15 @@ TreasureDatabase::ItemPool::ItemPool() : allowDuplication() {}
 
 TreasureDatabase::TreasureChest::TreasureChest() : minimumLevel() {}
 
-List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float level) const {
+List<std::shared_ptr<Item>> TreasureDatabase::createTreasure(String const& treasurePool, float level) const {
   return createTreasure(treasurePool, level, Random::randu64());
 }
 
-List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float level, std::uint64_t seed) const {
+List<std::shared_ptr<Item>> TreasureDatabase::createTreasure(String const& treasurePool, float level, std::uint64_t seed) const {
   return createTreasure(treasurePool, level, seed, StringSet());
 }
 
-List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float level, std::uint64_t seed, StringSet visitedPools) const {
+List<std::shared_ptr<Item>> TreasureDatabase::createTreasure(String const& treasurePool, float level, std::uint64_t seed, StringSet visitedPools) const {
   if (!m_treasurePools.contains(treasurePool))
     throw TreasureException(strf("Unknown treasure pool '{}'", treasurePool));
 
@@ -212,7 +212,7 @@ List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float
 
   auto itemDatabase = Root::singleton().itemDatabase();
 
-  List<ItemPtr> treasureItems;
+  List<std::shared_ptr<Item>> treasureItems;
   HashSet<ItemDescriptor> previousDescriptors;
   auto itemPool = m_treasurePools.get(treasurePool).get(level);
 
@@ -256,14 +256,14 @@ List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float
   return treasureItems;
 }
 
-List<ItemPtr> TreasureDatabase::fillWithTreasure(
-    ItemBagPtr const& itemBag, String const& treasurePool, float level) const {
+List<std::shared_ptr<Item>> TreasureDatabase::fillWithTreasure(
+    std::shared_ptr<ItemBag> const& itemBag, String const& treasurePool, float level) const {
   return fillWithTreasure(itemBag, treasurePool, level, Random::randu64());
 }
 
-List<ItemPtr> TreasureDatabase::fillWithTreasure(
-    ItemBagPtr const& itemBag, String const& treasurePool, float level, std::uint64_t seed) const {
-  List<ItemPtr> overflowItems;
+List<std::shared_ptr<Item>> TreasureDatabase::fillWithTreasure(
+    std::shared_ptr<ItemBag> const& itemBag, String const& treasurePool, float level, std::uint64_t seed) const {
+  List<std::shared_ptr<Item>> overflowItems;
   for (auto const& treasureItem : createTreasure(treasurePool, level, seed)) {
     if (auto overflow = itemBag->addItems(treasureItem))
       overflowItems.append(overflow);
@@ -272,11 +272,11 @@ List<ItemPtr> TreasureDatabase::fillWithTreasure(
   return overflowItems;
 }
 
-ContainerObjectPtr TreasureDatabase::createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction) const {
+std::shared_ptr<ContainerObject> TreasureDatabase::createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction) const {
   return createTreasureChest(world, treasureChestSet, position, direction, Random::randu64());
 }
 
-ContainerObjectPtr TreasureDatabase::createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction, std::uint64_t seed) const {
+std::shared_ptr<ContainerObject> TreasureDatabase::createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction, std::uint64_t seed) const {
   auto objectDatabase = Root::singleton().objectDatabase();
 
   if (!m_treasureChestSets.contains(treasureChestSet))
@@ -291,7 +291,7 @@ ContainerObjectPtr TreasureDatabase::createTreasureChest(World* world, String co
 
   auto const& treasureChest = staticRandomFrom(boxSet, seed, "TreasureChest");
   auto const& containerName = staticRandomFrom(treasureChest.containers, seed, "ContainerName");
-  ContainerObjectPtr containerObject;
+  std::shared_ptr<ContainerObject> containerObject;
   auto parameters = JsonObject{{"treasurePools", JsonArray{treasureChest.treasurePool}}, {"treasureSeed", seed}};
   if (auto object = objectDatabase->createForPlacement(world, containerName, position, direction, parameters))
     containerObject = convert<ContainerObject>(object);

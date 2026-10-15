@@ -50,14 +50,6 @@ import star.layout;
 
 namespace Star {
 
-class VerticalLayout;
-using VerticalLayoutPtr = std::shared_ptr<VerticalLayout>;
-using VerticalLayoutConstPtr = std::shared_ptr<VerticalLayout const>;
-using VerticalLayoutWeakPtr = std::weak_ptr<VerticalLayout>;
-using VerticalLayoutConstWeakPtr = std::weak_ptr<VerticalLayout const>;
-using VerticalLayoutUPtr = std::unique_ptr<VerticalLayout>;
-using VerticalLayoutConstUPtr = std::unique_ptr<VerticalLayout const>;
-
 class VerticalLayout : public Layout {
 public:
   VerticalLayout();
@@ -88,10 +80,4 @@ export module star.vertical_layout;
 
 export namespace Star {
   using ::Star::VerticalLayout;
-  using ::Star::VerticalLayoutPtr;
-  using ::Star::VerticalLayoutConstPtr;
-  using ::Star::VerticalLayoutWeakPtr;
-  using ::Star::VerticalLayoutConstWeakPtr;
-  using ::Star::VerticalLayoutUPtr;
-  using ::Star::VerticalLayoutConstUPtr;
 }

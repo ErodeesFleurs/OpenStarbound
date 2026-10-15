@@ -15,24 +15,11 @@ struct FontExceptionTag {
 using FontException = StarError<FontExceptionTag, StarException>;
 
 struct FontImpl;
-using FontImplPtr = std::shared_ptr<FontImpl>;
-using FontImplConstPtr = std::shared_ptr<const FontImpl>;
-using FontImplWeakPtr = std::weak_ptr<FontImpl>;
-using FontImplConstWeakPtr = std::weak_ptr<const FontImpl>;
-using FontImplUPtr = std::unique_ptr<FontImpl>;
-using FontImplConstUPtr = std::unique_ptr<const FontImpl>;
-class Font;
-using FontPtr = std::shared_ptr<Font>;
-using FontConstPtr = std::shared_ptr<const Font>;
-using FontWeakPtr = std::weak_ptr<Font>;
-using FontConstWeakPtr = std::weak_ptr<const Font>;
-using FontUPtr = std::unique_ptr<Font>;
-using FontConstUPtr = std::unique_ptr<const Font>;
 
 class Font {
 public:
-  static FontPtr loadFont(String const& fileName, unsigned pixelSize = 12);
-  static FontPtr loadFont(ByteArrayConstPtr const& bytes, unsigned pixelSize = 12);
+  static std::shared_ptr<Font> loadFont(String const& fileName, unsigned pixelSize = 12);
+  static std::shared_ptr<Font> loadFont(std::shared_ptr<ByteArray const> const& bytes, unsigned pixelSize = 12);
 
   Font();
   ~Font();
@@ -41,7 +28,7 @@ public:
   Font const& operator=(Font const&) = delete;
 
   // Create a new font from the same data
-  FontPtr clone() const;
+  std::shared_ptr<Font> clone() const;
 
   void setPixelSize(unsigned pixelSize);
   void setAlphaThreshold(std::uint8_t alphaThreshold = 0);
@@ -56,8 +43,8 @@ public:
   bool exists(String::Char c);
 
 private:
-  FontImplPtr m_fontImpl;
-  ByteArrayConstPtr m_fontBuffer;
+  std::shared_ptr<FontImpl> m_fontImpl;
+  std::shared_ptr<ByteArray const> m_fontBuffer;
   unsigned m_pixelSize;
   std::uint8_t m_alphaThreshold;
 
@@ -73,17 +60,5 @@ export namespace Star {
   using ::Star::FontExceptionTag;
   using ::Star::FontException;
   using ::Star::FontImpl;
-  using ::Star::FontImplPtr;
-  using ::Star::FontImplConstPtr;
-  using ::Star::FontImplWeakPtr;
-  using ::Star::FontImplConstWeakPtr;
-  using ::Star::FontImplUPtr;
-  using ::Star::FontImplConstUPtr;
   using ::Star::Font;
-  using ::Star::FontPtr;
-  using ::Star::FontConstPtr;
-  using ::Star::FontWeakPtr;
-  using ::Star::FontConstWeakPtr;
-  using ::Star::FontUPtr;
-  using ::Star::FontConstUPtr;
 }

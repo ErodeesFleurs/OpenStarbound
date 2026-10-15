@@ -67,20 +67,20 @@ ItemBag ItemBag::loadStore(Json const& store) {
 
 Json ItemBag::toJson() const {
   auto itemDatabase = Root::singleton().itemDatabase();
-  return m_items.transformed([itemDatabase](ItemConstPtr const& item) { return itemDatabase->toJson(item); });
+  return m_items.transformed([itemDatabase](std::shared_ptr<Item const> const& item) { return itemDatabase->toJson(item); });
 }
 
 Json ItemBag::diskStore() const {
   auto itemDatabase = Root::singleton().itemDatabase();
-  return m_items.transformed([itemDatabase](ItemConstPtr const& item) { return itemDatabase->diskStore(item); });
+  return m_items.transformed([itemDatabase](std::shared_ptr<Item const> const& item) { return itemDatabase->diskStore(item); });
 }
 
 std::size_t ItemBag::size() const {
   return m_items.size();
 }
 
-List<ItemPtr> ItemBag::resize(std::size_t size) {
-  List<ItemPtr> lost;
+List<std::shared_ptr<Item>> ItemBag::resize(std::size_t size) {
+  List<std::shared_ptr<Item>> lost;
   while (m_items.size() > size) {
     auto lastItem = m_items.takeLast();
     lastItem = addItems(lastItem);
@@ -111,7 +111,7 @@ bool ItemBag::cleanup() const {
   return cleanupDone;
 }
 
-List<ItemPtr>& ItemBag::items() {
+List<std::shared_ptr<Item>>& ItemBag::items() {
   // When returning the entire item collection, need to make sure that there
   // are no empty items before returning.
   cleanup();
@@ -119,23 +119,23 @@ List<ItemPtr>& ItemBag::items() {
   return m_items;
 }
 
-List<ItemPtr> const& ItemBag::items() const {
+List<std::shared_ptr<Item>> const& ItemBag::items() const {
   return const_cast<ItemBag*>(this)->items();
 }
 
-ItemPtr const& ItemBag::at(std::size_t i) const {
+std::shared_ptr<Item> const& ItemBag::at(std::size_t i) const {
   return const_cast<ItemBag*>(this)->at(i);
 }
 
-ItemPtr& ItemBag::at(std::size_t i) {
+std::shared_ptr<Item>& ItemBag::at(std::size_t i) {
   auto& item = m_items.at(i);
   if (item && item->empty())
     item = {};
   return item;
 }
 
-List<ItemPtr> ItemBag::takeAll() {
-  List<ItemPtr> taken;
+List<std::shared_ptr<Item>> ItemBag::takeAll() {
+  List<std::shared_ptr<Item>> taken;
   for (std::size_t i = 0; i < size(); ++i) {
     if (auto& item = at(i))
       taken.append(std::move(item));
@@ -143,13 +143,13 @@ List<ItemPtr> ItemBag::takeAll() {
   return taken;
 }
 
-void ItemBag::setItem(std::size_t pos, ItemPtr item) {
+void ItemBag::setItem(std::size_t pos, std::shared_ptr<Item> item) {
   auto& storedItem = at(pos);
 
   storedItem = item;
 }
 
-ItemPtr ItemBag::putItems(std::size_t pos, ItemPtr items) {
+std::shared_ptr<Item> ItemBag::putItems(std::size_t pos, std::shared_ptr<Item> items) {
   if (!items || items->empty())
     return {};
 
@@ -170,7 +170,7 @@ ItemPtr ItemBag::putItems(std::size_t pos, ItemPtr items) {
   }
 }
 
-ItemPtr ItemBag::takeItems(std::size_t pos, std::uint64_t count) {
+std::shared_ptr<Item> ItemBag::takeItems(std::size_t pos, std::uint64_t count) {
   if (auto& storedItem = at(pos)) {
     auto taken = storedItem->take(count);
     if (storedItem->empty())
@@ -182,7 +182,7 @@ ItemPtr ItemBag::takeItems(std::size_t pos, std::uint64_t count) {
   }
 }
 
-ItemPtr ItemBag::swapItems(std::size_t pos, ItemPtr items, bool tryCombine) {
+std::shared_ptr<Item> ItemBag::swapItems(std::size_t pos, std::shared_ptr<Item> items, bool tryCombine) {
   auto& storedItem = at(pos);
 
   auto swapItems = items;
@@ -255,12 +255,12 @@ std::uint64_t ItemBag::available(ItemDescriptor const& descriptor, bool exactMat
   return count / descriptor.count();
 }
 
-std::uint64_t ItemBag::itemsCanFit(ItemConstPtr const& items) const {
+std::uint64_t ItemBag::itemsCanFit(std::shared_ptr<Item const> const& items) const {
   auto itemsFit = itemsFitWhere(items);
   return items->count() - itemsFit.leftover;
 }
 
-std::uint64_t ItemBag::itemsCanStack(ItemConstPtr const& items) const {
+std::uint64_t ItemBag::itemsCanStack(std::shared_ptr<Item const> const& items) const {
   auto itemsFit = itemsFitWhere(items);
   std::uint64_t stackable = 0;
   for (auto slot : itemsFit.slots)
@@ -269,7 +269,7 @@ std::uint64_t ItemBag::itemsCanStack(ItemConstPtr const& items) const {
   return stackable;
 }
 
-auto ItemBag::itemsFitWhere(ItemConstPtr const& items, std::uint64_t max) const -> ItemsFitWhereResult {
+auto ItemBag::itemsFitWhere(std::shared_ptr<Item const> const& items, std::uint64_t max) const -> ItemsFitWhereResult {
   if (!items || items->empty())
     return ItemsFitWhereResult();
 
@@ -301,7 +301,7 @@ auto ItemBag::itemsFitWhere(ItemConstPtr const& items, std::uint64_t max) const 
   return ItemsFitWhereResult{count, slots};
 }
 
-ItemPtr ItemBag::addItems(ItemPtr items) {
+std::shared_ptr<Item> ItemBag::addItems(std::shared_ptr<Item> items) {
   if (!items || items->empty())
     return {};
 
@@ -322,7 +322,7 @@ ItemPtr ItemBag::addItems(ItemPtr items) {
   }
 }
 
-ItemPtr ItemBag::stackItems(ItemPtr items) {
+std::shared_ptr<Item> ItemBag::stackItems(std::shared_ptr<Item> items) {
   if (!items || items->empty())
     return {};
 
@@ -384,7 +384,7 @@ void ItemBag::write(DataStream& ds) const {
     ds.write(itemSafeDescriptor(at(i)));
 }
 
-std::uint64_t ItemBag::stackTransfer(ItemConstPtr const& to, ItemConstPtr const& from) {
+std::uint64_t ItemBag::stackTransfer(std::shared_ptr<Item const> const& to, std::shared_ptr<Item const> const& from) {
   if (!from)
     return 0;
   else if (!to)
@@ -395,7 +395,7 @@ std::uint64_t ItemBag::stackTransfer(ItemConstPtr const& to, ItemConstPtr const&
     return std::min(to->maxStack() - to->count(), from->count());
 }
 
-std::size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std::function<bool(std::size_t)> test) const {
+std::size_t ItemBag::bestSlotAvailable(std::shared_ptr<Item const> const& item, bool stacksOnly, std::function<bool(std::size_t)> test) const {
   // First look for any slots that can stack, before empty slots.
   for (std::size_t i = 0; i < m_items.size(); ++i) {
     if (!test(i))
@@ -416,7 +416,7 @@ std::size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly
   return NPos;
 }
 
-std::size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly) const {
+std::size_t ItemBag::bestSlotAvailable(std::shared_ptr<Item const> const& item, bool stacksOnly) const {
   return bestSlotAvailable(item, stacksOnly, [](std::size_t) { return true; });
 }
 

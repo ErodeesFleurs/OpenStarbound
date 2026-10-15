@@ -81,7 +81,7 @@ void AmbientManager::setTrackFadeInTime(float fadeInTime) {
   m_trackFadeInTime = fadeInTime;
 }
 
-AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr current, bool dayTime) {
+std::shared_ptr<AudioInstance> AmbientManager::updateAmbient(std::shared_ptr<AmbientNoisesDescription> current, bool dayTime) {
   auto assets = Root::singleton().assets();
 
   if (m_currentTrack) {
@@ -143,7 +143,7 @@ AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr curre
   return {};
 }
 
-AudioInstancePtr AmbientManager::updateWeather(WeatherNoisesDescriptionPtr current) {
+std::shared_ptr<AudioInstance> AmbientManager::updateWeather(std::shared_ptr<WeatherNoisesDescription> current) {
   auto assets = Root::singleton().assets();
 
   if (m_weatherTrack) {

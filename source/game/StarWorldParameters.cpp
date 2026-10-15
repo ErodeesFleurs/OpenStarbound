@@ -448,14 +448,14 @@ void FloatingDungeonWorldParameters::write(DataStream& ds) const {
   ds << nightAmbientNoises;
 }
 
-Json diskStoreVisitableWorldParameters(VisitableWorldParametersConstPtr const& parameters) {
+Json diskStoreVisitableWorldParameters(std::shared_ptr<VisitableWorldParameters const> const& parameters) {
   if (!parameters)
     return {};
 
   return parameters->store().setAll({{"type", WorldParametersTypeNames.getRight(parameters->type())}});
 }
 
-VisitableWorldParametersPtr diskLoadVisitableWorldParameters(Json const& store) {
+std::shared_ptr<VisitableWorldParameters> diskLoadVisitableWorldParameters(Json const& store) {
   if (store.isNull())
     return {};
 
@@ -469,7 +469,7 @@ VisitableWorldParametersPtr diskLoadVisitableWorldParameters(Json const& store) 
   throw StarException("No such WorldParametersType");
 }
 
-ByteArray netStoreVisitableWorldParameters(VisitableWorldParametersConstPtr const& parameters) {
+ByteArray netStoreVisitableWorldParameters(std::shared_ptr<VisitableWorldParameters const> const& parameters) {
   if (!parameters)
     return {};
 
@@ -479,14 +479,14 @@ ByteArray netStoreVisitableWorldParameters(VisitableWorldParametersConstPtr cons
   return ds.takeData();
 }
 
-VisitableWorldParametersPtr netLoadVisitableWorldParameters(ByteArray data) {
+std::shared_ptr<VisitableWorldParameters> netLoadVisitableWorldParameters(ByteArray data) {
   if (data.empty())
     return {};
 
   DataStreamBuffer ds(std::move(data));
   auto type = ds.read<WorldParametersType>();
 
-  VisitableWorldParametersPtr parameters;
+  std::shared_ptr<VisitableWorldParameters> parameters;
   if (type == WorldParametersType::TerrestrialWorldParameters)
     parameters = std::make_shared<TerrestrialWorldParameters>();
   else if (type == WorldParametersType::AsteroidsWorldParameters)
@@ -501,7 +501,7 @@ VisitableWorldParametersPtr netLoadVisitableWorldParameters(ByteArray data) {
   return parameters;
 }
 
-TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& typeName, String const& sizeName, std::uint64_t seed) {
+std::shared_ptr<TerrestrialWorldParameters> generateTerrestrialWorldParameters(String const& typeName, String const& sizeName, std::uint64_t seed) {
   auto& root = Root::singleton();
   auto assets = root.assets();
   auto liquidsDatabase = root.liquidsDatabase();
@@ -677,7 +677,7 @@ TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& t
   return parameters;
 }
 
-AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(std::uint64_t seed) {
+std::shared_ptr<AsteroidsWorldParameters> generateAsteroidsWorldParameters(std::uint64_t seed) {
   auto& root = Root::singleton();
   auto assets = root.assets();
 
@@ -708,7 +708,7 @@ AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(std::uint64_t seed)
   return parameters;
 }
 
-FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(String const& dungeonWorldName) {
+std::shared_ptr<FloatingDungeonWorldParameters> generateFloatingDungeonWorldParameters(String const& dungeonWorldName) {
   auto& root = Root::singleton();
   auto assets = root.assets();
 

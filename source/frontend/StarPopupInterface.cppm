@@ -39,13 +39,6 @@ import star.pane;
 
 namespace Star {
 
-class PopupInterface;
-using PopupInterfacePtr = std::shared_ptr<PopupInterface>;
-using PopupInterfaceConstPtr = std::shared_ptr<PopupInterface const>;
-using PopupInterfaceWeakPtr = std::weak_ptr<PopupInterface>;
-using PopupInterfaceConstWeakPtr = std::weak_ptr<PopupInterface const>;
-using PopupInterfaceUPtr = std::unique_ptr<PopupInterface>;
-using PopupInterfaceConstUPtr = std::unique_ptr<PopupInterface const>;
 class PopupInterface : public Pane {
 public:
   PopupInterface();
@@ -63,10 +56,4 @@ export module star.popup_interface;
 
 export namespace Star {
   using ::Star::PopupInterface;
-  using ::Star::PopupInterfacePtr;
-  using ::Star::PopupInterfaceConstPtr;
-  using ::Star::PopupInterfaceWeakPtr;
-  using ::Star::PopupInterfaceConstWeakPtr;
-  using ::Star::PopupInterfaceUPtr;
-  using ::Star::PopupInterfaceConstUPtr;
 }

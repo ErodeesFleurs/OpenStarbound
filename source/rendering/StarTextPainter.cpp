@@ -71,7 +71,7 @@ TextPositioning TextPositioning::translated(Vec2F translation) const {
   return {pos + translation, hAnchor, vAnchor, wrapWidth, charLimit};
 }
 
-TextPainter::TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup)
+TextPainter::TextPainter(std::shared_ptr<Renderer> renderer, std::shared_ptr<TextureGroup> textureGroup)
   : m_renderer(renderer),
     m_fontTextureGroup(textureGroup),
     m_defaultRenderSettings(),
@@ -347,7 +347,7 @@ void TextPainter::clearTextStyle() {
   m_fontTextureGroup.switchFont(m_renderSettings.font);
 }
 
-void TextPainter::addFont(FontPtr const& font, String const& name) {
+void TextPainter::addFont(std::shared_ptr<Font> const& font, String const& name) {
   m_fontTextureGroup.addFont(font, name);
 }
 
@@ -561,7 +561,7 @@ void TextPainter::renderGlyph(String::Char c, Vec2F const& screenPos, List<Rende
     glyphTexture.texture, Vec2F::round(screenPos + glyphTexture.offset * scale), scale, color, 0.0f);
 }
 
-FontPtr TextPainter::loadFont(String const& fontPath, Maybe<String> fontName) {
+std::shared_ptr<Font> TextPainter::loadFont(String const& fontPath, Maybe<String> fontName) {
   if (!fontName) {
     auto name = AssetPath::filename(fontPath);
     fontName.emplace(name.substr(0, name.findLast(".")));

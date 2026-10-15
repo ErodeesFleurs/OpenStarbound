@@ -221,7 +221,7 @@ import star.client_context;
 
 namespace Star {
 
-AiInterface::AiInterface(UniverseClientPtr client, CinematicPtr cinematic, MainInterfacePaneManager* paneManager) {
+AiInterface::AiInterface(std::shared_ptr<UniverseClient> client, std::shared_ptr<Cinematic> cinematic, MainInterfacePaneManager* paneManager) {
   m_client = client;
   m_cinematic = cinematic;
   m_paneManager = paneManager;
@@ -475,7 +475,7 @@ void AiInterface::showCrew() {
 }
 
 void AiInterface::selectRecruit() {
-  CompanionPtr recruit = {};
+  std::shared_ptr<Companion> recruit = {};
   std::size_t selectedItem = m_crewListWidget->selectedItem();
   if (selectedItem < m_crew.size())
     recruit = m_crew.at(selectedItem);

@@ -26,7 +26,7 @@ namespace {
     void seek(StreamOffset, IOSeek) override {}
     std::size_t readAbsolute(StreamOffset, char*, std::size_t) override { return std::numeric_limits<std::size_t>::max(); }
     std::size_t writeAbsolute(StreamOffset, char const*, std::size_t) override { return std::numeric_limits<std::size_t>::max(); }
-    IODevicePtr clone() override { return std::make_shared<OverlongReadDevice>(); }
+    std::shared_ptr<::Star::IODevice> clone() override { return std::make_shared<OverlongReadDevice>(); }
   };
 }
 

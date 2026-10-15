@@ -8,20 +8,7 @@ import star.unicode;
 import star.byte_array;
 namespace Star {
 
-class StringView;
-using StringViewPtr = std::shared_ptr<StringView>;
-using StringViewConstPtr = std::shared_ptr<const StringView>;
-using StringViewWeakPtr = std::weak_ptr<StringView>;
-using StringViewConstWeakPtr = std::weak_ptr<const StringView>;
-using StringViewUPtr = std::unique_ptr<StringView>;
-using StringViewConstUPtr = std::unique_ptr<const StringView>;
 class String;
-using StringPtr = std::shared_ptr<String>;
-using StringConstPtr = std::shared_ptr<const String>;
-using StringWeakPtr = std::weak_ptr<String>;
-using StringConstWeakPtr = std::weak_ptr<const String>;
-using StringUPtr = std::unique_ptr<String>;
-using StringConstUPtr = std::unique_ptr<const String>;
 
 // This is a StringView version of Star::String
 // I literally just copy-pasted it all from there
@@ -136,12 +123,6 @@ export module star.string_view;
 
 export namespace Star {
   using ::Star::StringView;
-  using ::Star::StringViewPtr;
-  using ::Star::StringViewConstPtr;
-  using ::Star::StringViewWeakPtr;
-  using ::Star::StringViewConstWeakPtr;
-  using ::Star::StringViewUPtr;
-  using ::Star::StringViewConstUPtr;
 }
 
 export template <> struct std::formatter<Star::StringView> : std::formatter<std::string_view> {

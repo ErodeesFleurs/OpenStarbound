@@ -16,28 +16,6 @@ import star.net_element_group;
 
 namespace Star {
 
-class TileDamageParameters;
-using TileDamageParametersPtr = std::shared_ptr<TileDamageParameters>;
-using TileDamageParametersConstPtr = std::shared_ptr<const TileDamageParameters>;
-using TileDamageParametersWeakPtr = std::weak_ptr<TileDamageParameters>;
-using TileDamageParametersConstWeakPtr = std::weak_ptr<const TileDamageParameters>;
-using TileDamageParametersUPtr = std::unique_ptr<TileDamageParameters>;
-using TileDamageParametersConstUPtr = std::unique_ptr<const TileDamageParameters>;
-class TileDamageStatus;
-using TileDamageStatusPtr = std::shared_ptr<TileDamageStatus>;
-using TileDamageStatusConstPtr = std::shared_ptr<const TileDamageStatus>;
-using TileDamageStatusWeakPtr = std::weak_ptr<TileDamageStatus>;
-using TileDamageStatusConstWeakPtr = std::weak_ptr<const TileDamageStatus>;
-using TileDamageStatusUPtr = std::unique_ptr<TileDamageStatus>;
-using TileDamageStatusConstUPtr = std::unique_ptr<const TileDamageStatus>;
-class EntityTileDamageStatus;
-using EntityTileDamageStatusPtr = std::shared_ptr<EntityTileDamageStatus>;
-using EntityTileDamageStatusConstPtr = std::shared_ptr<const EntityTileDamageStatus>;
-using EntityTileDamageStatusWeakPtr = std::weak_ptr<EntityTileDamageStatus>;
-using EntityTileDamageStatusConstWeakPtr = std::weak_ptr<const EntityTileDamageStatus>;
-using EntityTileDamageStatusUPtr = std::unique_ptr<EntityTileDamageStatus>;
-using EntityTileDamageStatusConstUPtr = std::unique_ptr<const EntityTileDamageStatus>;
-
 struct TileDamageExceptionTag {
   static constexpr char const* name() { return "TileDamageException"; }
 };
@@ -197,22 +175,4 @@ export namespace Star {
   using ::Star::TileDamageTypeNames;
   using ::Star::tileDamageIsPenetrating;
   using ::Star::TileDamage;
-  using ::Star::TileDamageParametersPtr;
-  using ::Star::TileDamageParametersConstPtr;
-  using ::Star::TileDamageParametersWeakPtr;
-  using ::Star::TileDamageParametersConstWeakPtr;
-  using ::Star::TileDamageParametersUPtr;
-  using ::Star::TileDamageParametersConstUPtr;
-  using ::Star::TileDamageStatusPtr;
-  using ::Star::TileDamageStatusConstPtr;
-  using ::Star::TileDamageStatusWeakPtr;
-  using ::Star::TileDamageStatusConstWeakPtr;
-  using ::Star::TileDamageStatusUPtr;
-  using ::Star::TileDamageStatusConstUPtr;
-  using ::Star::EntityTileDamageStatusPtr;
-  using ::Star::EntityTileDamageStatusConstPtr;
-  using ::Star::EntityTileDamageStatusWeakPtr;
-  using ::Star::EntityTileDamageStatusConstWeakPtr;
-  using ::Star::EntityTileDamageStatusUPtr;
-  using ::Star::EntityTileDamageStatusConstUPtr;
 }

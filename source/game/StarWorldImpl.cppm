@@ -99,11 +99,11 @@ namespace Star {
 
 namespace WorldImpl {
   template <typename TileSectorArray>
-  bool tileIsOccupied(std::shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap,
+  bool tileIsOccupied(std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<EntityMap> const& entityMap,
       Vec2I const& pos, TileLayer layer, bool includeEphemeral, bool checkCollision = false);
 
   template <typename TileSectorArray>
-  CollisionKind tileCollisionKind(std::shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap,
+  CollisionKind tileCollisionKind(std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<EntityMap> const& entityMap,
     Vec2I const& pos);
 
   template <typename TileSectorArray>
@@ -124,50 +124,50 @@ namespace WorldImpl {
   bool damageWouldDestroy(std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage);
   
   template <typename GetTileFunction>
-  bool canPlaceMaterial(EntityMapPtr const& entityMap,
+  bool canPlaceMaterial(std::shared_ptr<EntityMap> const& entityMap,
       Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile);
   // returns true if this material could be placed if in the same batch other
   // tiles can be placed
   // that connect to it
   template <typename GetTileFunction>
-  bool perhapsCanPlaceMaterial(EntityMapPtr const& entityMap,
+  bool perhapsCanPlaceMaterial(std::shared_ptr<EntityMap> const& entityMap,
       Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile);
   template <typename GetTileFunction>
   bool canPlaceMaterialColorVariant(Vec2I const& pos, TileLayer layer, MaterialColorVariant color, GetTileFunction& getTile);
   template <typename GetTileFunction>
   bool canPlaceMod(Vec2I const& pos, TileLayer layer, ModId mod, GetTileFunction& getTile);
   template <typename GetTileFunction>
-  std::pair<bool, bool> validateTileModification(EntityMapPtr const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile);
+  std::pair<bool, bool> validateTileModification(std::shared_ptr<EntityMap> const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile);
   bool validateTileReplacement(TileModification const& modification);
   // Split modification list into good and bad
   template <typename GetTileFunction>
-  std::pair<TileModificationList, TileModificationList> splitTileModifications(EntityMapPtr const& entityMap, TileModificationList const& modificationList,
+  std::pair<TileModificationList, TileModificationList> splitTileModifications(std::shared_ptr<EntityMap> const& entityMap, TileModificationList const& modificationList,
     bool allowEntityOverlap, GetTileFunction& getTile, std::function<bool(Vec2I pos, TileModification modification)> extraCheck = {});
 
   template <typename TileSectorArray>
   float windLevel(std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& position, float weatherWindLevel);
 
   template <typename TileSectorArray>
-  float temperature(std::shared_ptr<TileSectorArray> const& tileSectorArray, WorldTemplateConstPtr const& worldTemplate,
-      SkyConstPtr const& sky, Vec2F const& pos);
+  float temperature(std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<WorldTemplate const> const& worldTemplate,
+      std::shared_ptr<Sky const> const& sky, Vec2F const& pos);
 
   template <typename TileSectorArray>
-  bool breathable(World const* world, std::shared_ptr<TileSectorArray> const& tileSectorArray, WorldTemplateConstPtr const& worldTemplate, Vec2F const& pos);
+  bool breathable(World const* world, std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<WorldTemplate const> const& worldTemplate, Vec2F const& pos);
 
   template <typename TileSectorArray>
-  float lightLevel(std::shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap, WorldGeometry const& worldGeometry,
-      WorldTemplateConstPtr const& worldTemplate, SkyConstPtr const& sky, CellularLightIntensityCalculator& lighting, Vec2F pos);
+  float lightLevel(std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<EntityMap> const& entityMap, WorldGeometry const& worldGeometry,
+      std::shared_ptr<WorldTemplate const> const& worldTemplate, std::shared_ptr<Sky const> const& sky, CellularLightIntensityCalculator& lighting, Vec2F pos);
 
-  InteractiveEntityPtr getInteractiveInRange(WorldGeometry const& geometry, EntityMapPtr const& entityMap,
+  std::shared_ptr<InteractiveEntity> getInteractiveInRange(WorldGeometry const& geometry, std::shared_ptr<EntityMap> const& entityMap,
       Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange);
-  bool isTileEntityInRange(WorldGeometry const& geometry, EntityMapPtr const& entityMap,
+  bool isTileEntityInRange(WorldGeometry const& geometry, std::shared_ptr<EntityMap> const& entityMap,
       EntityId targetEntity, Vec2F const& sourcePosition, float maxRange);
   template <typename TileSectorArray>
   bool canReachEntity(WorldGeometry const& geometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
-      EntityMapPtr const& entityMap, Vec2F const& sourcePosition, float maxRange, EntityId targetEntity, bool preferInteractive = true);
+      std::shared_ptr<EntityMap> const& entityMap, Vec2F const& sourcePosition, float maxRange, EntityId targetEntity, bool preferInteractive = true);
 
   template <typename TileSectorArray>
-  bool tileIsOccupied(std::shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap,
+  bool tileIsOccupied(std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<EntityMap> const& entityMap,
       Vec2I const& pos, TileLayer layer, bool includeEphemeral, bool checkCollision) {
     auto& tile = tileSectorArray->tile(pos);
     if (layer == TileLayer::Foreground)
@@ -177,7 +177,7 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  CollisionKind tileCollisionKind(std::shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const&,
+  CollisionKind tileCollisionKind(std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<EntityMap> const&,
     Vec2I const& pos) {
     return tileSectorArray->tile(pos).getCollision();
   }
@@ -334,7 +334,7 @@ namespace WorldImpl {
   }
 
   template <typename GetTileFunction>
-  bool canPlaceMaterial(EntityMapPtr const& entityMap,
+  bool canPlaceMaterial(std::shared_ptr<EntityMap> const& entityMap,
       Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile) {
     auto materialDatabase = Root::singleton().materialDatabase();
 
@@ -391,7 +391,7 @@ namespace WorldImpl {
   }
 
   template <typename GetTileFunction>
-  bool perhapsCanPlaceMaterial(EntityMapPtr const& entityMap,
+  bool perhapsCanPlaceMaterial(std::shared_ptr<EntityMap> const& entityMap,
       Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile) {
     auto materialDatabase = Root::singleton().materialDatabase();
 
@@ -442,7 +442,7 @@ namespace WorldImpl {
   }
 
   template <typename GetTileFunction>
-  std::pair<bool, bool> validateTileModification(EntityMapPtr const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile) {
+  std::pair<bool, bool> validateTileModification(std::shared_ptr<EntityMap> const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile) {
     bool good = false;
     bool perhaps = false;
     
@@ -480,7 +480,7 @@ namespace WorldImpl {
   }
 
   template <typename GetTileFunction>
-  std::pair<TileModificationList, TileModificationList> splitTileModifications(EntityMapPtr const& entityMap, TileModificationList const& modificationList,
+  std::pair<TileModificationList, TileModificationList> splitTileModifications(std::shared_ptr<EntityMap> const& entityMap, TileModificationList const& modificationList,
     bool allowEntityOverlap, GetTileFunction& getTile, std::function<bool(Vec2I pos, TileModification modification)> extraCheck) {
     TileModificationList success;
     TileModificationList unknown;
@@ -519,7 +519,7 @@ namespace WorldImpl {
 
   template <typename TileSectorArray>
   bool breathable(World const* world, std::shared_ptr<TileSectorArray> const& tileSectorArray, HashMap<DungeonId, bool> const& breathableMap,
-      WorldTemplateConstPtr const& worldTemplate, Vec2F const& pos) {
+      std::shared_ptr<WorldTemplate const> const& worldTemplate, Vec2F const& pos) {
     Vec2I ipos = Vec2I::floor(pos);
     float remainder = pos[1] - ipos[1];
     auto materialDatabase = Root::singleton().materialDatabase();
@@ -534,8 +534,8 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  float lightLevel(std::shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap, WorldGeometry const& worldGeometry,
-      WorldTemplateConstPtr const& worldTemplate, SkyConstPtr const& sky, CellularLightIntensityCalculator& lighting, Vec2F pos) {
+  float lightLevel(std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<EntityMap> const& entityMap, WorldGeometry const& worldGeometry,
+      std::shared_ptr<WorldTemplate const> const& worldTemplate, std::shared_ptr<Sky const> const& sky, CellularLightIntensityCalculator& lighting, Vec2F pos) {
     if (pos[1] < 0 || pos[1] >= worldGeometry.height())
       return 0;
 
@@ -585,7 +585,7 @@ namespace WorldImpl {
     return lighting.calculate();
   }
 
-  inline InteractiveEntityPtr getInteractiveInRange(WorldGeometry const& geometry, EntityMapPtr const& entityMap,
+  inline std::shared_ptr<InteractiveEntity> getInteractiveInRange(WorldGeometry const& geometry, std::shared_ptr<EntityMap> const& entityMap,
       Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) {
     if (auto entity = entityMap->interactiveEntityNear(targetPosition, maxRange)) {
       if (auto tileEntity = as<TileEntity>(entity)) {
@@ -600,7 +600,7 @@ namespace WorldImpl {
     return {};
   }
 
-  inline bool isTileEntityInRange(WorldGeometry const& geometry, EntityMapPtr const& entityMap, EntityId targetEntity,
+  inline bool isTileEntityInRange(WorldGeometry const& geometry, std::shared_ptr<EntityMap> const& entityMap, EntityId targetEntity,
       Vec2F const& sourcePosition, float maxRange) {
     if (auto entity = entityMap->get<TileEntity>(targetEntity)) {
       // If any of the entity spaces is within interaction range, then assume the
@@ -616,7 +616,7 @@ namespace WorldImpl {
 
   template <typename TileSectorArray>
   bool canReachEntity(WorldGeometry const& geometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
-      EntityMapPtr const& entityMap, Vec2F const& sourcePosition, float maxRange, EntityId targetEntity, bool preferInteractive) {
+      std::shared_ptr<EntityMap> const& entityMap, Vec2F const& sourcePosition, float maxRange, EntityId targetEntity, bool preferInteractive) {
     auto entity = entityMap->entity(targetEntity);
     if (!entity)
       return false;

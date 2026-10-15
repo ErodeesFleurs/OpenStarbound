@@ -22,69 +22,13 @@ import star.net_compatibility;
 namespace Star {
 
 class Item;
-using ItemPtr = std::shared_ptr<Item>;
-using ItemConstPtr = std::shared_ptr<const Item>;
-using ItemWeakPtr = std::weak_ptr<Item>;
-using ItemConstWeakPtr = std::weak_ptr<const Item>;
-using ItemUPtr = std::unique_ptr<Item>;
-using ItemConstUPtr = std::unique_ptr<const Item>;
 class ItemBag;
-using ItemBagPtr = std::shared_ptr<ItemBag>;
-using ItemBagConstPtr = std::shared_ptr<const ItemBag>;
-using ItemBagWeakPtr = std::weak_ptr<ItemBag>;
-using ItemBagConstWeakPtr = std::weak_ptr<const ItemBag>;
-using ItemBagUPtr = std::unique_ptr<ItemBag>;
-using ItemBagConstUPtr = std::unique_ptr<const ItemBag>;
 class ArmorItem;
-using ArmorItemPtr = std::shared_ptr<ArmorItem>;
-using ArmorItemConstPtr = std::shared_ptr<const ArmorItem>;
-using ArmorItemWeakPtr = std::weak_ptr<ArmorItem>;
-using ArmorItemConstWeakPtr = std::weak_ptr<const ArmorItem>;
-using ArmorItemUPtr = std::unique_ptr<ArmorItem>;
-using ArmorItemConstUPtr = std::unique_ptr<const ArmorItem>;
 class HeadArmor;
-using HeadArmorPtr = std::shared_ptr<HeadArmor>;
-using HeadArmorConstPtr = std::shared_ptr<const HeadArmor>;
-using HeadArmorWeakPtr = std::weak_ptr<HeadArmor>;
-using HeadArmorConstWeakPtr = std::weak_ptr<const HeadArmor>;
-using HeadArmorUPtr = std::unique_ptr<HeadArmor>;
-using HeadArmorConstUPtr = std::unique_ptr<const HeadArmor>;
 class ChestArmor;
-using ChestArmorPtr = std::shared_ptr<ChestArmor>;
-using ChestArmorConstPtr = std::shared_ptr<const ChestArmor>;
-using ChestArmorWeakPtr = std::weak_ptr<ChestArmor>;
-using ChestArmorConstWeakPtr = std::weak_ptr<const ChestArmor>;
-using ChestArmorUPtr = std::unique_ptr<ChestArmor>;
-using ChestArmorConstUPtr = std::unique_ptr<const ChestArmor>;
 class LegsArmor;
-using LegsArmorPtr = std::shared_ptr<LegsArmor>;
-using LegsArmorConstPtr = std::shared_ptr<const LegsArmor>;
-using LegsArmorWeakPtr = std::weak_ptr<LegsArmor>;
-using LegsArmorConstWeakPtr = std::weak_ptr<const LegsArmor>;
-using LegsArmorUPtr = std::unique_ptr<LegsArmor>;
-using LegsArmorConstUPtr = std::unique_ptr<const LegsArmor>;
 class BackArmor;
-using BackArmorPtr = std::shared_ptr<BackArmor>;
-using BackArmorConstPtr = std::shared_ptr<const BackArmor>;
-using BackArmorWeakPtr = std::weak_ptr<BackArmor>;
-using BackArmorConstWeakPtr = std::weak_ptr<const BackArmor>;
-using BackArmorUPtr = std::unique_ptr<BackArmor>;
-using BackArmorConstUPtr = std::unique_ptr<const BackArmor>;
 class Player;
-using PlayerPtr = std::shared_ptr<Player>;
-using PlayerConstPtr = std::shared_ptr<const Player>;
-using PlayerWeakPtr = std::weak_ptr<Player>;
-using PlayerConstWeakPtr = std::weak_ptr<const Player>;
-using PlayerUPtr = std::unique_ptr<Player>;
-using PlayerConstUPtr = std::unique_ptr<const Player>;
-
-class PlayerInventory;
-using PlayerInventoryPtr = std::shared_ptr<PlayerInventory>;
-using PlayerInventoryConstPtr = std::shared_ptr<const PlayerInventory>;
-using PlayerInventoryWeakPtr = std::weak_ptr<PlayerInventory>;
-using PlayerInventoryConstWeakPtr = std::weak_ptr<const PlayerInventory>;
-using PlayerInventoryUPtr = std::unique_ptr<PlayerInventory>;
-using PlayerInventoryConstUPtr = std::unique_ptr<const PlayerInventory>;
 
 struct InventoryExceptionTag {
   static constexpr char const* name() { return "InventoryException"; }
@@ -112,19 +56,19 @@ using InventoryException = StarError<InventoryExceptionTag, StarException>;
 class PlayerInventory : public NetElementSyncGroup {
 public:
   // Whether the given item is allowed to go in the given slot type
-  static bool itemAllowedInBag(ItemPtr const& item, String const& bagType);
-  static bool itemAllowedAsEquipment(ItemPtr const& item, EquipmentSlot equipmentSlot);
+  static bool itemAllowedInBag(std::shared_ptr<Item> const& item, String const& bagType);
+  static bool itemAllowedAsEquipment(std::shared_ptr<Item> const& item, EquipmentSlot equipmentSlot);
 
   PlayerInventory();
 
-  ItemPtr itemsAt(InventorySlot const& slot) const;
+  std::shared_ptr<Item> itemsAt(InventorySlot const& slot) const;
 
   // Attempts to combine the items with the given slot, and returns the items
   // left over (if any).
-  ItemPtr stackWith(InventorySlot const& slot, ItemPtr const& items);
+  std::shared_ptr<Item> stackWith(InventorySlot const& slot, std::shared_ptr<Item> const& items);
 
   // Empty the slot and take what it contains, if any.
-  ItemPtr takeSlot(InventorySlot const& slot);
+  std::shared_ptr<Item> takeSlot(InventorySlot const& slot);
 
   // Try to exchange items between any two slots, returns true on success.
   bool exchangeItems(InventorySlot const& first, InventorySlot const& second);
@@ -132,7 +76,7 @@ public:
   // Forces the given item into the given slot, overriding what was already
   // there.  If the item is not allowed in the given location, does nothing and
   // returns false.
-  bool setItem(InventorySlot const& slot, ItemPtr const& item);
+  bool setItem(InventorySlot const& slot, std::shared_ptr<Item> const& item);
 
   bool consumeSlot(InventorySlot const& slot, std::uint64_t count = 1);
 
@@ -140,16 +84,16 @@ public:
 
   // Adds items to any slot except the trash or swap slots, returns stack left
   // over.
-  ItemPtr addItems(ItemPtr items);
+  std::shared_ptr<Item> addItems(std::shared_ptr<Item> items);
 
   // Adds items to the first matching item bag, avoiding the equipment, swap,
   // or trash slots
-  ItemPtr addToBags(ItemPtr items);
+  std::shared_ptr<Item> addToBags(std::shared_ptr<Item> items);
 
   // Returns number of items in the given set that can fit anywhere in any item
   // slot except the trash slot (the number of items that would be added by a
   // call to addItems).
-  std::uint64_t itemsCanFit(ItemPtr const& items) const;
+  std::uint64_t itemsCanFit(std::shared_ptr<Item> const& items) const;
 
   bool hasItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
   std::uint64_t hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
@@ -160,19 +104,19 @@ public:
   // Return a summary of every item that can be consumed by ItemDescriptor.
   HashMap<ItemDescriptor, std::uint64_t> availableItems() const;
 
-  HeadArmorPtr headArmor() const;
-  ChestArmorPtr chestArmor() const;
-  LegsArmorPtr legsArmor() const;
-  BackArmorPtr backArmor() const;
+  std::shared_ptr<HeadArmor> headArmor() const;
+  std::shared_ptr<ChestArmor> chestArmor() const;
+  std::shared_ptr<LegsArmor> legsArmor() const;
+  std::shared_ptr<BackArmor> backArmor() const;
 
-  HeadArmorPtr headCosmetic() const;
-  ChestArmorPtr chestCosmetic() const;
-  LegsArmorPtr legsCosmetic() const;
-  BackArmorPtr backCosmetic() const;
+  std::shared_ptr<HeadArmor> headCosmetic() const;
+  std::shared_ptr<ChestArmor> chestCosmetic() const;
+  std::shared_ptr<LegsArmor> legsCosmetic() const;
+  std::shared_ptr<BackArmor> backCosmetic() const;
 
-  ArmorItemPtr equipment(EquipmentSlot slot, bool testMask = false) const;
+  std::shared_ptr<ArmorItem> equipment(EquipmentSlot slot, bool testMask = false) const;
 
-  ItemBagConstPtr bagContents(String const& bag) const;
+  std::shared_ptr<ItemBag const> bagContents(String const& bag) const;
 
   void condenseBagStacks(String const& bag);
 
@@ -191,13 +135,13 @@ public:
   // true if this was successful, and the swap slot is now empty.
   bool clearSwap();
 
-  ItemPtr swapSlotItem() const;
-  void setSwapSlotItem(ItemPtr const& items);
+  std::shared_ptr<Item> swapSlotItem() const;
+  void setSwapSlotItem(std::shared_ptr<Item> const& items);
 
   // Non-manageable essential items that are always available as action bar
   // entries.
-  ItemPtr essentialItem(EssentialItem essentialItem) const;
-  void setEssentialItem(EssentialItem essentialItem, ItemPtr item);
+  std::shared_ptr<Item> essentialItem(EssentialItem essentialItem) const;
+  void setEssentialItem(EssentialItem essentialItem, std::shared_ptr<Item> item);
 
   // Non-manageable currencies
   StringMap<std::uint64_t> availableCurrencies() const;
@@ -235,15 +179,15 @@ public:
   // Held items are either the items shortcutted to in the currently selected
   // ActionBar primary / secondary locations, or if the swap slot is non-empty
   // then the swap slot.
-  ItemPtr primaryHeldItem() const;
-  ItemPtr secondaryHeldItem() const;
+  std::shared_ptr<Item> primaryHeldItem() const;
+  std::shared_ptr<Item> secondaryHeldItem() const;
 
   // If the primary / secondary held items are valid manageable slots, returns
   // them.
   Maybe<InventorySlot> primaryHeldSlot() const;
   Maybe<InventorySlot> secondaryHeldSlot() const;
 
-  List<ItemPtr> pullOverflow();
+  List<std::shared_ptr<Item>> pullOverflow();
   void setEquipmentVisibility(EquipmentSlot slot, bool visible);
   bool equipmentVisibility(EquipmentSlot slot) const;
 
@@ -251,11 +195,11 @@ public:
   Json store() const;
 
   // Loop over every manageable item and potentially mutate it.
-  void forEveryItem(std::function<void(InventorySlot const&, ItemPtr&)> function);
+  void forEveryItem(std::function<void(InventorySlot const&, std::shared_ptr<Item>&)> function);
   // Loop over every manageable item.
-  void forEveryItem(std::function<void(InventorySlot const&, ItemPtr const&)> function) const;
+  void forEveryItem(std::function<void(InventorySlot const&, std::shared_ptr<Item> const&)> function) const;
   // Return every manageable item
-  List<ItemPtr> allItems() const;
+  List<std::shared_ptr<Item>> allItems() const;
   // Return summary of every manageable item name and the count of that item
   Map<String, std::uint64_t> itemSummary() const;
 
@@ -275,10 +219,10 @@ public:
 private:
   typedef std::pair<Maybe<InventorySlot>, Maybe<InventorySlot>> CustomBarLink;
 
-  static bool checkInventoryFilter(ItemPtr const& items, String const& filterName);
+  static bool checkInventoryFilter(std::shared_ptr<Item> const& items, String const& filterName);
 
-  ItemPtr const& retrieve(InventorySlot const& slot) const;
-  ItemPtr& retrieve(InventorySlot const& slot);
+  std::shared_ptr<Item> const& retrieve(InventorySlot const& slot) const;
+  std::shared_ptr<Item>& retrieve(InventorySlot const& slot);
 
   void swapCustomBarLinks(InventorySlot a, InventorySlot b);
   void autoAddToCustomBar(InventorySlot slot);
@@ -286,12 +230,12 @@ private:
   void netElementsNeedLoad(bool full) override;
   void netElementsNeedStore() override;
 
-  Map<EquipmentSlot, ItemPtr> m_equipment;
-  Map<String, ItemBagPtr> m_bags;
-  ItemPtr m_swapSlot;
+  Map<EquipmentSlot, std::shared_ptr<Item>> m_equipment;
+  Map<String, std::shared_ptr<ItemBag>> m_bags;
+  std::shared_ptr<Item> m_swapSlot;
   Maybe<InventorySlot> m_swapReturnSlot;
-  ItemPtr m_trashSlot;
-  Map<EssentialItem, ItemPtr> m_essential;
+  std::shared_ptr<Item> m_trashSlot;
+  Map<EssentialItem, std::shared_ptr<Item>> m_essential;
   StringMap<std::uint64_t> m_currencies;
   std::uint8_t m_customBarGroup;
   MultiArray<CustomBarLink, 2> m_customBar;
@@ -307,7 +251,7 @@ private:
   MultiArray<NetElementData<CustomBarLink>, 2> m_customBarNetState;
   NetElementData<SelectedActionBarLocation> m_selectedActionBarNetState;
 
-  List<ItemPtr> m_inventoryLoadOverflow;
+  List<std::shared_ptr<Item>> m_inventoryLoadOverflow;
   unsigned m_equipmentVisibilityMask;
 
   Player* m_player;
@@ -319,68 +263,14 @@ export module star.player_inventory;
 
 export namespace Star {
 using ::Star::Item;
-using ::Star::ItemPtr;
-using ::Star::ItemConstPtr;
-using ::Star::ItemWeakPtr;
-using ::Star::ItemConstWeakPtr;
-using ::Star::ItemUPtr;
-using ::Star::ItemConstUPtr;
 using ::Star::ItemBag;
-using ::Star::ItemBagPtr;
-using ::Star::ItemBagConstPtr;
-using ::Star::ItemBagWeakPtr;
-using ::Star::ItemBagConstWeakPtr;
-using ::Star::ItemBagUPtr;
-using ::Star::ItemBagConstUPtr;
 using ::Star::ArmorItem;
-using ::Star::ArmorItemPtr;
-using ::Star::ArmorItemConstPtr;
-using ::Star::ArmorItemWeakPtr;
-using ::Star::ArmorItemConstWeakPtr;
-using ::Star::ArmorItemUPtr;
-using ::Star::ArmorItemConstUPtr;
 using ::Star::HeadArmor;
-using ::Star::HeadArmorPtr;
-using ::Star::HeadArmorConstPtr;
-using ::Star::HeadArmorWeakPtr;
-using ::Star::HeadArmorConstWeakPtr;
-using ::Star::HeadArmorUPtr;
-using ::Star::HeadArmorConstUPtr;
 using ::Star::ChestArmor;
-using ::Star::ChestArmorPtr;
-using ::Star::ChestArmorConstPtr;
-using ::Star::ChestArmorWeakPtr;
-using ::Star::ChestArmorConstWeakPtr;
-using ::Star::ChestArmorUPtr;
-using ::Star::ChestArmorConstUPtr;
 using ::Star::LegsArmor;
-using ::Star::LegsArmorPtr;
-using ::Star::LegsArmorConstPtr;
-using ::Star::LegsArmorWeakPtr;
-using ::Star::LegsArmorConstWeakPtr;
-using ::Star::LegsArmorUPtr;
-using ::Star::LegsArmorConstUPtr;
 using ::Star::BackArmor;
-using ::Star::BackArmorPtr;
-using ::Star::BackArmorConstPtr;
-using ::Star::BackArmorWeakPtr;
-using ::Star::BackArmorConstWeakPtr;
-using ::Star::BackArmorUPtr;
-using ::Star::BackArmorConstUPtr;
 using ::Star::Player;
-using ::Star::PlayerPtr;
-using ::Star::PlayerConstPtr;
-using ::Star::PlayerWeakPtr;
-using ::Star::PlayerConstWeakPtr;
-using ::Star::PlayerUPtr;
-using ::Star::PlayerConstUPtr;
 using ::Star::PlayerInventory;
-using ::Star::PlayerInventoryPtr;
-using ::Star::PlayerInventoryConstPtr;
-using ::Star::PlayerInventoryWeakPtr;
-using ::Star::PlayerInventoryConstWeakPtr;
-using ::Star::PlayerInventoryUPtr;
-using ::Star::PlayerInventoryConstUPtr;
 using ::Star::InventoryExceptionTag;
 using ::Star::InventoryException;
 }

@@ -78,14 +78,14 @@ void File::copy(String const& source, String const& target) {
   }
 }
 
-FilePtr File::open(const String& filename, IOMode mode) {
+std::shared_ptr<File> File::open(const String& filename, IOMode mode) {
   auto file = std::make_shared<File>(filename);
   file->open(mode);
   return file;
 }
 
 ByteArray File::readFile(String const& filename) {
-  FilePtr file = File::open(filename, IOMode::Read);
+  std::shared_ptr<File> file = File::open(filename, IOMode::Read);
   ByteArray bytes;
   while (!file->atEnd()) {
     char buffer[1024];
@@ -97,7 +97,7 @@ ByteArray File::readFile(String const& filename) {
 }
 
 String File::readFileString(String const& filename) {
-  FilePtr file = File::open(filename, IOMode::Read);
+  std::shared_ptr<File> file = File::open(filename, IOMode::Read);
   std::string str;
   while (!file->atEnd()) {
     char buffer[1024];
@@ -114,7 +114,7 @@ StreamOffset File::fileSize(String const& filename) {
 }
 
 void File::writeFile(char const* data, std::size_t len, String const& filename) {
-  FilePtr file = File::open(filename, IOMode::Write | IOMode::Truncate);
+  std::shared_ptr<File> file = File::open(filename, IOMode::Write | IOMode::Truncate);
   file->writeFull(data, len);
 }
 
@@ -275,7 +275,7 @@ String File::deviceName() const {
     return m_filename;
 }
 
-IODevicePtr File::clone() {
+std::shared_ptr<IODevice> File::clone() {
   auto cloned = std::make_shared<File>(m_filename);
   if (isOpen()) {
     // Open with same mode

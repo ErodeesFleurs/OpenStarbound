@@ -143,7 +143,7 @@ PlayerCompanions::PlayerCompanions(Json const& config) : m_config(config) {}
 
 void PlayerCompanions::diskLoad(Json const& diskStore) {
   m_scriptComponent.setScriptStorage(diskStore.getObject("scriptStorage", JsonObject{}));
-  m_companions = jsonToMapV<StringMap<List<CompanionPtr>>>(diskStore.getObject("companions", JsonObject{}),
+  m_companions = jsonToMapV<StringMap<List<std::shared_ptr<Companion>>>>(diskStore.getObject("companions", JsonObject{}),
       [](Json const& companions) {
         return companions.toArray().transformed([](Json const& json) { return std::make_shared<Companion>(json); });
       });
@@ -153,11 +153,11 @@ Json PlayerCompanions::diskStore() const {
   JsonObject result;
   result["scriptStorage"] = m_scriptComponent.getScriptStorage();
   result["companions"] = jsonFromMapV(m_companions,
-      [](List<CompanionPtr> const& companions) { return companions.transformed(std::mem_fn(&Companion::toJson)); });
+      [](List<std::shared_ptr<Companion>> const& companions) { return companions.transformed(std::mem_fn(&Companion::toJson)); });
   return result;
 }
 
-List<CompanionPtr> PlayerCompanions::getCompanions(String const& category) const {
+List<std::shared_ptr<Companion>> PlayerCompanions::getCompanions(String const& category) const {
   if (m_companions.contains(category))
     return m_companions.get(category);
   return {};
@@ -209,7 +209,7 @@ LuaCallbacks PlayerCompanions::makeCompanionsCallbacks() {
 
   callbacks.registerCallback("getCompanions",
       [this](String const& category) {
-        return m_companions[category].transformed([](CompanionPtr const& companion) { return companion->toJson(); });
+        return m_companions[category].transformed([](std::shared_ptr<Companion> const& companion) { return companion->toJson(); });
       });
   callbacks.registerCallback("setCompanions",
       [this](String const& category, JsonArray const& companions) {

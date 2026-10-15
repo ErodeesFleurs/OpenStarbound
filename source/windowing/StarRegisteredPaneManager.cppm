@@ -61,8 +61,8 @@ class RegisteredPaneManager : public PaneManager {
 public:
   typedef KeyT Key;
 
-  void registerPane(KeyT paneId, PaneLayer paneLayer, PanePtr pane, DismissCallback onDismiss = {});
-  PanePtr deregisterPane(KeyT const& paneId);
+  void registerPane(KeyT paneId, PaneLayer paneLayer, std::shared_ptr<Pane> pane, DismissCallback onDismiss = {});
+  std::shared_ptr<Pane> deregisterPane(KeyT const& paneId);
   void deregisterAllPanes();
 
   template <typename T = Pane>
@@ -85,7 +85,7 @@ public:
 private:
   struct PaneInfo {
     PaneLayer layer;
-    PanePtr pane;
+    std::shared_ptr<Pane> pane;
     DismissCallback dismissCallback;
   };
 
@@ -113,7 +113,7 @@ std::shared_ptr<T> RegisteredPaneManager<KeyT>::maybeRegisteredPane(KeyT const& 
 
 template <typename KeyT>
 void RegisteredPaneManager<KeyT>::registerPane(
-    KeyT paneId, PaneLayer paneLayer, PanePtr pane, DismissCallback onDismiss) {
+    KeyT paneId, PaneLayer paneLayer, std::shared_ptr<Pane> pane, DismissCallback onDismiss) {
   if (!m_registeredPanes.insert(std::move(paneId), {std::move(paneLayer), std::move(pane), std::move(onDismiss)}).second)
     throw GuiException(
         strf("Registered pane with name '{}' registered a second time in RegisteredPaneManager::registerPane",
@@ -121,7 +121,7 @@ void RegisteredPaneManager<KeyT>::registerPane(
 }
 
 template <typename KeyT>
-PanePtr RegisteredPaneManager<KeyT>::deregisterPane(KeyT const& paneId) {
+std::shared_ptr<Pane> RegisteredPaneManager<KeyT>::deregisterPane(KeyT const& paneId) {
   if (auto v = m_registeredPanes.maybeTake(paneId)) {
     if (isDisplayed(v->pane))
       dismissPane(v->pane);

@@ -50,12 +50,6 @@ struct LuaComponentExceptionTag {
 using LuaComponentException = StarError<LuaComponentExceptionTag, LuaException>;
 
 class ScriptableThread;
-using ScriptableThreadPtr = std::shared_ptr<ScriptableThread>;
-using ScriptableThreadConstPtr = std::shared_ptr<const ScriptableThread>;
-using ScriptableThreadWeakPtr = std::weak_ptr<ScriptableThread>;
-using ScriptableThreadConstWeakPtr = std::weak_ptr<const ScriptableThread>;
-using ScriptableThreadUPtr = std::unique_ptr<ScriptableThread>;
-using ScriptableThreadConstUPtr = std::unique_ptr<const ScriptableThread>;
 
 // Basic lua component that can be initialized (takes and then owns a script
 // context, calls the script context's init function) and uninitialized
@@ -107,8 +101,8 @@ public:
 
   // Lua components require access to a LuaRoot object to initialize /
   // uninitialize.
-  void setLuaRoot(LuaRootPtr luaRoot);
-  LuaRootPtr const& luaRoot();
+  void setLuaRoot(std::shared_ptr<LuaRoot> luaRoot);
+  std::shared_ptr<LuaRoot> const& luaRoot();
 
   // init returns true on success, false if there has been an error
   // initializing the script.  LuaRoot must be set before calling or this will
@@ -154,12 +148,12 @@ private:
   StringList m_scripts;
   StringMap<LuaCallbacks> m_callbacks;
   StringMap<LuaCallbacks> m_threadCallbacks;
-  LuaRootPtr m_luaRoot;
-  TrackerListenerPtr m_reloadTracker;
+  std::shared_ptr<LuaRoot> m_luaRoot;
+  std::shared_ptr<TrackerListener> m_reloadTracker;
   Maybe<LuaContext> m_context;
   Maybe<String> m_error;
   
-  StringMap<ScriptableThreadPtr> m_threads;
+  StringMap<std::shared_ptr<ScriptableThread>> m_threads;
 };
 
 // Wraps a basic lua component to add a persistent storage table translated

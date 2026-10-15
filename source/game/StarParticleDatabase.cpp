@@ -60,7 +60,7 @@ ParticleDatabase::ParticleDatabase() {
   }
 }
 
-ParticleConfigPtr ParticleDatabase::config(String const& kind) const {
+std::shared_ptr<ParticleConfig> ParticleDatabase::config(String const& kind) const {
   auto k = kind.toLower();
   if (!m_configs.contains(k))
     throw StarException(strf("Unknown particle definition with kind {}.", kind));

@@ -13,12 +13,6 @@ namespace Star {
 namespace PlatformerAStar {
 
 class PathFinder;
-using PathFinderPtr = std::shared_ptr<PathFinder>;
-using PathFinderConstPtr = std::shared_ptr<const PathFinder>;
-using PathFinderWeakPtr = std::weak_ptr<PathFinder>;
-using PathFinderConstWeakPtr = std::weak_ptr<const PathFinder>;
-using PathFinderUPtr = std::unique_ptr<PathFinder>;
-using PathFinderConstUPtr = std::unique_ptr<const PathFinder>;
 
 struct Node {
   friend bool operator==(Node const& a, Node const& b);
@@ -189,12 +183,6 @@ export template <> struct std::formatter<Star::PlatformerAStar::Edge>;
 
 export namespace Star::PlatformerAStar {
   using ::Star::PlatformerAStar::PathFinder;
-  using ::Star::PlatformerAStar::PathFinderPtr;
-  using ::Star::PlatformerAStar::PathFinderConstPtr;
-  using ::Star::PlatformerAStar::PathFinderWeakPtr;
-  using ::Star::PlatformerAStar::PathFinderConstWeakPtr;
-  using ::Star::PlatformerAStar::PathFinderUPtr;
-  using ::Star::PlatformerAStar::PathFinderConstUPtr;
   using ::Star::PlatformerAStar::Node;
   using ::Star::PlatformerAStar::Action;
   using ::Star::PlatformerAStar::ActionNames;

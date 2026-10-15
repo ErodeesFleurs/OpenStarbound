@@ -25,28 +25,6 @@ using RendererException = StarError<RendererExceptionTag, StarException>;
 class Texture;
 typedef RefPtr<Texture> TexturePtr;
 
-class TextureGroup;
-using TextureGroupPtr = std::shared_ptr<TextureGroup>;
-using TextureGroupConstPtr = std::shared_ptr<TextureGroup const>;
-using TextureGroupWeakPtr = std::weak_ptr<TextureGroup>;
-using TextureGroupConstWeakPtr = std::weak_ptr<TextureGroup const>;
-using TextureGroupUPtr = std::unique_ptr<TextureGroup>;
-using TextureGroupConstUPtr = std::unique_ptr<TextureGroup const>;
-class RenderBuffer;
-using RenderBufferPtr = std::shared_ptr<RenderBuffer>;
-using RenderBufferConstPtr = std::shared_ptr<RenderBuffer const>;
-using RenderBufferWeakPtr = std::weak_ptr<RenderBuffer>;
-using RenderBufferConstWeakPtr = std::weak_ptr<RenderBuffer const>;
-using RenderBufferUPtr = std::unique_ptr<RenderBuffer>;
-using RenderBufferConstUPtr = std::unique_ptr<RenderBuffer const>;
-class Renderer;
-using RendererPtr = std::shared_ptr<Renderer>;
-using RendererConstPtr = std::shared_ptr<Renderer const>;
-using RendererWeakPtr = std::weak_ptr<Renderer>;
-using RendererConstWeakPtr = std::weak_ptr<Renderer const>;
-using RendererUPtr = std::unique_ptr<Renderer>;
-using RendererConstUPtr = std::unique_ptr<Renderer const>;
-
 enum class TextureAddressing {
   Clamp,
   Wrap
@@ -187,12 +165,12 @@ public:
   virtual void setMultiTexturingEnabled(bool enabled) = 0;
   virtual void setMultiSampling(unsigned multiSampling) = 0;
   virtual void setMainHDR(bool enabled) = 0;
-  virtual TextureGroupPtr createTextureGroup(TextureGroupSize size = TextureGroupSize::Medium, TextureFiltering filtering = TextureFiltering::Nearest) = 0;
-  virtual RenderBufferPtr createRenderBuffer() = 0;
+  virtual std::shared_ptr<TextureGroup> createTextureGroup(TextureGroupSize size = TextureGroupSize::Medium, TextureFiltering filtering = TextureFiltering::Nearest) = 0;
+  virtual std::shared_ptr<RenderBuffer> createRenderBuffer() = 0;
 
   virtual List<RenderPrimitive>& immediatePrimitives() = 0;
   virtual void render(RenderPrimitive primitive) = 0;
-  virtual void renderBuffer(RenderBufferPtr const& renderBuffer, Mat3F const& transformation = Mat3F::identity()) = 0;
+  virtual void renderBuffer(std::shared_ptr<RenderBuffer> const& renderBuffer, Mat3F const& transformation = Mat3F::identity()) = 0;
 
   virtual void flush(Mat3F const& transformation = Mat3F::identity()) = 0;
 };
@@ -207,26 +185,8 @@ export namespace Star {
   using ::Star::Texture;
   using ::Star::TexturePtr;
   using ::Star::TextureGroup;
-  using ::Star::TextureGroupPtr;
-  using ::Star::TextureGroupConstPtr;
-  using ::Star::TextureGroupUPtr;
-  using ::Star::TextureGroupConstUPtr;
-  using ::Star::TextureGroupWeakPtr;
-  using ::Star::TextureGroupConstWeakPtr;
   using ::Star::RenderBuffer;
-  using ::Star::RenderBufferPtr;
-  using ::Star::RenderBufferConstPtr;
-  using ::Star::RenderBufferUPtr;
-  using ::Star::RenderBufferConstUPtr;
-  using ::Star::RenderBufferWeakPtr;
-  using ::Star::RenderBufferConstWeakPtr;
   using ::Star::Renderer;
-  using ::Star::RendererPtr;
-  using ::Star::RendererConstPtr;
-  using ::Star::RendererUPtr;
-  using ::Star::RendererConstUPtr;
-  using ::Star::RendererWeakPtr;
-  using ::Star::RendererConstWeakPtr;
   using ::Star::TextureAddressing;
   using ::Star::TextureAddressingNames;
   using ::Star::TextureFiltering;

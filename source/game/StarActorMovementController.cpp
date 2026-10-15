@@ -600,7 +600,7 @@ Maybe<EntityAnchorState> ActorMovementController::anchorState() const {
   return m_anchorState.get();
 }
 
-EntityAnchorConstPtr ActorMovementController::entityAnchor() const {
+std::shared_ptr<EntityAnchor const> ActorMovementController::entityAnchor() const {
   return m_entityAnchor;
 }
 
@@ -789,7 +789,7 @@ void ActorMovementController::clearControls() {
 }
 
 void ActorMovementController::tickMaster(float dt) {
-  EntityAnchorConstPtr newAnchor;
+  std::shared_ptr<EntityAnchor const> newAnchor;
   if (auto anchorState = m_anchorState.get()) {
     if (auto anchorableEntity = as<AnchorableEntity>(world()->entity(anchorState->entityId)))
       newAnchor = anchorableEntity->anchor(anchorState->positionIndex);
@@ -1155,7 +1155,7 @@ void ActorMovementController::applyMCParameters(ActorMovementParameters const& p
 }
 
 void ActorMovementController::doSetAnchorState(Maybe<EntityAnchorState> anchorState) {
-  EntityAnchorConstPtr entityAnchor;
+  std::shared_ptr<EntityAnchor const> entityAnchor;
   if (anchorState) {
     auto anchorableEntity = as<AnchorableEntity>(world()->entity(anchorState->entityId));
     if (!anchorableEntity)
@@ -1456,7 +1456,7 @@ bool PathController::validateEdge(ActorMovementController& movementController, P
 
   auto const openDoors = [&](RectF const& bounds) {
   auto objects = m_world->entityQuery(bounds, entityTypeFilter<Object>());
-  auto opened = objects.filtered([&](EntityPtr const& e) -> bool {
+  auto opened = objects.filtered([&](std::shared_ptr<Entity> const& e) -> bool {
       if (auto object = as<Object>(e)) {
         if (object->isMaster()) {
           auto arg = m_world->luaRoot()->luaEngine().createString("closedDoor");

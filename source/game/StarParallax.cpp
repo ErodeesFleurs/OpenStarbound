@@ -230,7 +230,7 @@ void Parallax::fadeToSkyColor(Color const& skyColor) {
   }
 }
 
-ParallaxPtr Parallax::createOverlay(String const& assetFile) const {
+std::shared_ptr<Parallax> Parallax::createOverlay(String const& assetFile) const {
   return std::make_shared<Parallax>(assetFile, m_seed, m_verticalOrigin, m_hueShift, m_parallaxTreeVariant);
 }
 

@@ -80,7 +80,7 @@ PaneManager::PaneManager()
   m_tooltipShowTimer = GameTimer(assets->json("/panes.config:tooltipMouseoverTime").toFloat());
 }
 
-void PaneManager::displayPane(PaneLayer paneLayer, PanePtr const& pane, DismissCallback onDismiss) {
+void PaneManager::displayPane(PaneLayer paneLayer, std::shared_ptr<Pane> const& pane, DismissCallback onDismiss) {
   if (!m_displayedPanes[paneLayer].insertFront(pane, std::move(onDismiss)).second)
     throw GuiException("Pane displayed twice in PaneManager::displayPane");
 
@@ -90,7 +90,7 @@ void PaneManager::displayPane(PaneLayer paneLayer, PanePtr const& pane, DismissC
   pane->displayed();
 }
 
-bool PaneManager::isDisplayed(PanePtr const& pane) const {
+bool PaneManager::isDisplayed(std::shared_ptr<Pane> const& pane) const {
   for (auto const& layerPair : m_displayedPanes) {
     if (layerPair.second.contains(pane))
       return true;
@@ -99,7 +99,7 @@ bool PaneManager::isDisplayed(PanePtr const& pane) const {
   return false;
 }
 
-void PaneManager::dismissPane(PanePtr const& pane) {
+void PaneManager::dismissPane(std::shared_ptr<Pane> const& pane) {
   if (!dismiss(pane))
     throw GuiException("No such pane in PaneManager::dismissPane");
 }
@@ -118,7 +118,7 @@ void PaneManager::dismissAllPanes() {
   }
 }
 
-PanePtr PaneManager::topPane(Set<PaneLayer> const& paneLayers) const {
+std::shared_ptr<Pane> PaneManager::topPane(Set<PaneLayer> const& paneLayers) const {
   for (auto const& layerPair : m_displayedPanes) {
     if (paneLayers.contains(layerPair.first) && !layerPair.second.empty())
       return layerPair.second.firstKey();
@@ -126,7 +126,7 @@ PanePtr PaneManager::topPane(Set<PaneLayer> const& paneLayers) const {
   return {};
 }
 
-PanePtr PaneManager::topPane() const {
+std::shared_ptr<Pane> PaneManager::topPane() const {
   for (auto const& layerPair : m_displayedPanes) {
     if (!layerPair.second.empty())
       return layerPair.second.firstKey();
@@ -134,7 +134,7 @@ PanePtr PaneManager::topPane() const {
   return {};
 }
 
-void PaneManager::bringToTop(PanePtr const& pane) {
+void PaneManager::bringToTop(std::shared_ptr<Pane> const& pane) {
   for (auto& layerPair : m_displayedPanes) {
     if (layerPair.second.contains(pane)) {
       layerPair.second.toFront(pane);
@@ -145,7 +145,7 @@ void PaneManager::bringToTop(PanePtr const& pane) {
   throw GuiException("Pane was not displayed in PaneManager::bringToTop");
 }
 
-void PaneManager::bringPaneAdjacent(PanePtr const& anchor, PanePtr const& adjacent, int gap) {
+void PaneManager::bringPaneAdjacent(std::shared_ptr<Pane> const& anchor, std::shared_ptr<Pane> const& adjacent, int gap) {
   Vec2I centerAdjacent = anchor->position() + (anchor->size() / 2) - (adjacent->size() / 2);
   centerAdjacent = centerAdjacent.piecewiseClamp(Vec2I(), windowSize() - adjacent->size()); // keeps pane inside window
 
@@ -163,7 +163,7 @@ void PaneManager::bringPaneAdjacent(PanePtr const& anchor, PanePtr const& adjace
   bringToTop(adjacent);
 }
 
-PanePtr PaneManager::getPaneAt(Set<PaneLayer> const& paneLayers, Vec2I const& position) const {
+std::shared_ptr<Pane> PaneManager::getPaneAt(Set<PaneLayer> const& paneLayers, Vec2I const& position) const {
   for (auto const& layerPair : m_displayedPanes) {
     if (!paneLayers.contains(layerPair.first))
       continue;
@@ -177,7 +177,7 @@ PanePtr PaneManager::getPaneAt(Set<PaneLayer> const& paneLayers, Vec2I const& po
   return {};
 }
 
-PanePtr PaneManager::getPaneAt(Vec2I const& position) const {
+std::shared_ptr<Pane> PaneManager::getPaneAt(Vec2I const& position) const {
   for (auto const& layerPair : m_displayedPanes) {
     for (auto const& panePair : layerPair.second) {
       if (panePair.first != m_activeTooltip
@@ -190,8 +190,8 @@ PanePtr PaneManager::getPaneAt(Vec2I const& position) const {
   return {};
 }
 
-List<PanePtr> PaneManager::getAllPanes() {
-  List<PanePtr> list;
+List<std::shared_ptr<Pane>> PaneManager::getAllPanes() {
+  List<std::shared_ptr<Pane>> list;
   for (auto const& layerPair : m_displayedPanes) {
     for (auto const& panePair : layerPair.second) {
       if (panePair.first != m_activeTooltip && panePair.first->active())
@@ -201,11 +201,11 @@ List<PanePtr> PaneManager::getAllPanes() {
   return list;
 }
 
-void PaneManager::setBackgroundWidget(WidgetPtr bg) {
+void PaneManager::setBackgroundWidget(std::shared_ptr<Widget> bg) {
   m_backgroundWidget = bg;
 }
 
-void PaneManager::dismissWhere(std::function<bool(PanePtr const&)> func) {
+void PaneManager::dismissWhere(std::function<bool(std::shared_ptr<Pane> const&)> func) {
   if (!func)
     return;
 
@@ -222,7 +222,7 @@ void PaneManager::dismissWhere(std::function<bool(PanePtr const&)> func) {
   }
 }
 
-PanePtr PaneManager::keyboardCapturedPane() const {
+std::shared_ptr<Pane> PaneManager::keyboardCapturedPane() const {
   for (auto const& layerPair : m_displayedPanes) {
     for (auto const& panePair : layerPair.second) {
       if (panePair.first->keyboardCapturer())
@@ -233,7 +233,7 @@ PanePtr PaneManager::keyboardCapturedPane() const {
   return {};
 }
 
-WidgetPtr PaneManager::keyboardCapturedWidget() const {
+std::shared_ptr<Widget> PaneManager::keyboardCapturedWidget() const {
   for (auto const& layerPair : m_displayedPanes) {
     for (auto const& panePair : layerPair.second) {
       if (auto capturer = panePair.first->keyboardCapturer())
@@ -412,7 +412,7 @@ Vec2I PaneManager::windowSize() const {
   return Vec2I(m_context->windowInterfaceSize());
 }
 
-Vec2I PaneManager::calculatePaneOffset(PanePtr const& pane) const {
+Vec2I PaneManager::calculatePaneOffset(std::shared_ptr<Pane> const& pane) const {
   Vec2I size = pane->size();
   switch (pane->anchor()) {
     case PaneAnchor::None:
@@ -440,7 +440,7 @@ Vec2I PaneManager::calculatePaneOffset(PanePtr const& pane) const {
   }
 }
 
-Vec2I PaneManager::calculateNewInterfacePosition(PanePtr const& pane, float interfaceScaleRatio) const {
+Vec2I PaneManager::calculateNewInterfacePosition(std::shared_ptr<Pane> const& pane, float interfaceScaleRatio) const {
   Vec2F position(pane->relativePosition());
   Vec2F size(pane->size());
   Mat3F scale;
@@ -481,7 +481,7 @@ Vec2I PaneManager::calculateNewInterfacePosition(PanePtr const& pane, float inte
   return Vec2I::round((scale * Vec3F(position, 0)).vec2());
 }
 
-bool PaneManager::dismiss(PanePtr const& pane) {
+bool PaneManager::dismiss(std::shared_ptr<Pane> const& pane) {
   bool dismissed = false;
   for (auto& layerPair : m_displayedPanes) {
     if (auto panePair = layerPair.second.maybeTake(pane)) {

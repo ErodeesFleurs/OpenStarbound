@@ -9,31 +9,9 @@ import star.tileset_database;
 
 namespace Star {
 
-struct Tile;
-using TilePtr = std::shared_ptr<Tile>;
-using TileConstPtr = std::shared_ptr<const Tile>;
-using TileWeakPtr = std::weak_ptr<Tile>;
-using TileConstWeakPtr = std::weak_ptr<const Tile>;
-using TileUPtr = std::unique_ptr<Tile>;
-using TileConstUPtr = std::unique_ptr<const Tile>;
-class TileDatabase;
-using TileDatabasePtr = std::shared_ptr<TileDatabase>;
-using TileDatabaseConstPtr = std::shared_ptr<const TileDatabase>;
-using TileDatabaseWeakPtr = std::weak_ptr<TileDatabase>;
-using TileDatabaseConstWeakPtr = std::weak_ptr<const TileDatabase>;
-using TileDatabaseUPtr = std::unique_ptr<TileDatabase>;
-using TileDatabaseConstUPtr = std::unique_ptr<const TileDatabase>;
-class Tileset;
-using TilesetPtr = std::shared_ptr<Tileset>;
-using TilesetConstPtr = std::shared_ptr<const Tileset>;
-using TilesetWeakPtr = std::weak_ptr<Tileset>;
-using TilesetConstWeakPtr = std::weak_ptr<const Tileset>;
-using TilesetUPtr = std::unique_ptr<Tileset>;
-using TilesetConstUPtr = std::unique_ptr<const Tileset>;
-
 struct Tile {
   String source, database, tileset, name;
-  ImageConstPtr image;
+  std::shared_ptr<Image const> image;
   Tiled::Properties properties;
 };
 
@@ -41,25 +19,25 @@ class TileDatabase {
 public:
   TileDatabase(String const& name);
 
-  void defineTile(TilePtr const& tile);
-  TilePtr getTile(String const& tileName) const;
+  void defineTile(std::shared_ptr<Tile> const& tile);
+  std::shared_ptr<Tile> getTile(String const& tileName) const;
   String name() const;
   StringSet tileNames() const;
 
 private:
-  Map<String, TilePtr> m_tiles;
+  Map<String, std::shared_ptr<Tile>> m_tiles;
   String m_name;
 };
 
 class Tileset {
 public:
-  Tileset(String const& source, String const& name, TileDatabasePtr const& database);
+  Tileset(String const& source, String const& name, std::shared_ptr<TileDatabase> const& database);
 
-  void defineTile(TilePtr const& tile);
+  void defineTile(std::shared_ptr<Tile> const& tile);
   void exportTileset() const;
 
   String name() const;
-  TileDatabasePtr database() const;
+  std::shared_ptr<TileDatabase> database() const;
 
 private:
   String imageDirName(String const& baseExportDir) const;
@@ -99,24 +77,24 @@ private:
       String const& tilesetPath) const;
 
   String m_source, m_name;
-  List<TilePtr> m_tiles;
-  TileDatabasePtr m_database;
+  List<std::shared_ptr<Tile>> m_tiles;
+  std::shared_ptr<TileDatabase> m_database;
 };
 
 class TilesetUpdater {
 public:
   void defineAssetSource(String const& source);
-  void defineTile(TilePtr const& tile);
+  void defineTile(std::shared_ptr<Tile> const& tile);
   void exportTilesets();
 
 private:
-  TileDatabasePtr const& getDatabase(TilePtr const& tile);
-  TilesetPtr const& getTileset(TilePtr const& tile);
+  std::shared_ptr<TileDatabase> const& getDatabase(std::shared_ptr<Tile> const& tile);
+  std::shared_ptr<Tileset> const& getTileset(std::shared_ptr<Tile> const& tile);
 
   // Asset Source -> Tileset Name -> Tileset
-  StringMap<StringMap<TilesetPtr>> m_tilesets;
+  StringMap<StringMap<std::shared_ptr<Tileset>>> m_tilesets;
   // Asset Source -> Database Name -> Database
-  StringMap<StringMap<TileDatabasePtr>> m_databases;
+  StringMap<StringMap<std::shared_ptr<TileDatabase>>> m_databases;
 
   // Images that existed before running update_tilesets:
   // Asset Source -> Database Name -> Tile Name

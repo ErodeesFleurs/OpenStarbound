@@ -69,17 +69,9 @@ import star.net_element_float_fields;
 
 namespace Star {
 
-class ContainerObject;
-using ContainerObjectPtr = std::shared_ptr<ContainerObject>;
-using ContainerObjectConstPtr = std::shared_ptr<const ContainerObject>;
-using ContainerObjectWeakPtr = std::weak_ptr<ContainerObject>;
-using ContainerObjectConstWeakPtr = std::weak_ptr<const ContainerObject>;
-using ContainerObjectUPtr = std::unique_ptr<ContainerObject>;
-using ContainerObjectConstUPtr = std::unique_ptr<const ContainerObject>;
-
 class ContainerObject : public Object, public virtual ContainerEntity {
 public:
-  ContainerObject(ObjectConfigConstPtr config, Json const& parameters);
+  ContainerObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters);
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
 
@@ -96,7 +88,7 @@ public:
   String containerSubTitle() const override;
   ItemDescriptor iconItem() const override;
 
-  ItemBagConstPtr itemBag() const override;
+  std::shared_ptr<ItemBag const> itemBag() const override;
 
   void containerOpen() override;
   void containerClose() override;
@@ -108,14 +100,14 @@ public:
 
   void burnContainerContents() override;
 
-  RpcPromise<ItemPtr> addItems(ItemPtr const& items) override;
-  RpcPromise<ItemPtr> putItems(std::size_t slot, ItemPtr const& items) override;
-  RpcPromise<ItemPtr> takeItems(std::size_t slot, std::size_t count = NPos) override;
-  RpcPromise<ItemPtr> swapItems(std::size_t slot, ItemPtr const& items, bool tryCombine = true) override;
-  RpcPromise<ItemPtr> applyAugment(std::size_t slot, ItemPtr const& augment) override;
+  RpcPromise<std::shared_ptr<Item>> addItems(std::shared_ptr<Item> const& items) override;
+  RpcPromise<std::shared_ptr<Item>> putItems(std::size_t slot, std::shared_ptr<Item> const& items) override;
+  RpcPromise<std::shared_ptr<Item>> takeItems(std::size_t slot, std::size_t count = NPos) override;
+  RpcPromise<std::shared_ptr<Item>> swapItems(std::size_t slot, std::shared_ptr<Item> const& items, bool tryCombine = true) override;
+  RpcPromise<std::shared_ptr<Item>> applyAugment(std::size_t slot, std::shared_ptr<Item> const& augment) override;
   RpcPromise<bool> consumeItems(ItemDescriptor const& descriptor) override;
   RpcPromise<bool> consumeItems(std::size_t slot, std::size_t count) override;
-  RpcPromise<List<ItemPtr>> clearContainer() override;
+  RpcPromise<List<std::shared_ptr<Item>>> clearContainer() override;
 
 protected:
   void getNetStates(bool initial) override;
@@ -127,18 +119,18 @@ protected:
 private:
   typedef std::function<void(ContainerObject*)> ContainerCallback;
 
-  ItemRecipe recipeForMaterials(List<ItemPtr> const& inputItems);
+  ItemRecipe recipeForMaterials(List<std::shared_ptr<Item>> const& inputItems);
   void tickCrafting(float dt);
 
-  ItemPtr doAddItems(ItemPtr const& items);
-  ItemPtr doStackItems(ItemPtr const& items);
-  ItemPtr doPutItems(std::size_t slot, ItemPtr const& items);
-  ItemPtr doTakeItems(std::size_t slot, std::size_t count = NPos);
-  ItemPtr doSwapItems(std::size_t slot, ItemPtr const& items, bool tryCombine = true);
-  ItemPtr doApplyAugment(std::size_t slot, ItemPtr const& augment);
+  std::shared_ptr<Item> doAddItems(std::shared_ptr<Item> const& items);
+  std::shared_ptr<Item> doStackItems(std::shared_ptr<Item> const& items);
+  std::shared_ptr<Item> doPutItems(std::size_t slot, std::shared_ptr<Item> const& items);
+  std::shared_ptr<Item> doTakeItems(std::size_t slot, std::size_t count = NPos);
+  std::shared_ptr<Item> doSwapItems(std::size_t slot, std::shared_ptr<Item> const& items, bool tryCombine = true);
+  std::shared_ptr<Item> doApplyAugment(std::size_t slot, std::shared_ptr<Item> const& augment);
   bool doConsumeItems(ItemDescriptor const& descriptor);
   bool doConsumeItems(std::size_t slot, std::size_t count);
-  List<ItemPtr> doClearContainer();
+  List<std::shared_ptr<Item>> doClearContainer();
 
   template<typename T>
   RpcPromise<T> addSlavePromise(String const& message, JsonArray const& args, std::function<T(Json)> converter);
@@ -150,7 +142,7 @@ private:
   NetElementBool m_crafting;
   NetElementFloat m_craftingProgress;
 
-  ItemBagPtr m_items;
+  std::shared_ptr<ItemBag> m_items;
   NetElementBytes m_itemsNetState;
 
   // master only
@@ -170,7 +162,7 @@ private:
 
   EpochTimer m_ageItemsTimer;
 
-  List<ItemPtr> m_lostItems;
+  List<std::shared_ptr<Item>> m_lostItems;
 };
 
 }
@@ -179,10 +171,4 @@ export module star.container_object;
 
 export namespace Star {
   using ::Star::ContainerObject;
-  using ::Star::ContainerObjectPtr;
-  using ::Star::ContainerObjectConstPtr;
-  using ::Star::ContainerObjectWeakPtr;
-  using ::Star::ContainerObjectConstWeakPtr;
-  using ::Star::ContainerObjectUPtr;
-  using ::Star::ContainerObjectConstUPtr;
 }

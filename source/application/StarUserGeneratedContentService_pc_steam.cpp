@@ -29,7 +29,7 @@ import star.lexical_cast;
 
 namespace Star {
 
-SteamUserGeneratedContentService::SteamUserGeneratedContentService(PcPlatformServicesStatePtr state)
+SteamUserGeneratedContentService::SteamUserGeneratedContentService(std::shared_ptr<PcPlatformServicesState> state)
   : m_state(std::move(state)),
     m_callbackDownloadResult(m_state->steamDispatch, this, &SteamUserGeneratedContentService::onDownloadResult),
     m_checkedUGC(false) {};

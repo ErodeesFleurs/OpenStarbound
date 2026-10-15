@@ -234,7 +234,7 @@ Quest::Quest(QuestArcDescriptor const& questArc, std::size_t arcPos, Player* pla
 
   m_money = Random::randUInt(questTemplate->moneyRange[0], questTemplate->moneyRange[1]);
   m_rewards = Random::randValueFrom(questTemplate->rewards, {}).transformed(
-      [&itemDatabase](ItemDescriptor const& item) -> ItemConstPtr { return itemDatabase->item(item); });
+      [&itemDatabase](ItemDescriptor const& item) -> std::shared_ptr<Item const> { return itemDatabase->item(item); });
 
   for (String const& rewardParamName : questTemplate->rewardParameters) {
     if (!m_parameters.contains(rewardParamName))
@@ -284,7 +284,7 @@ Quest::Quest(Json const& spec) {
 
   auto itemDatabase = Root::singleton().itemDatabase();
   m_rewards = diskStore.getArray("rewards").transformed(
-      [&itemDatabase](Json const& json) -> ItemConstPtr { return itemDatabase->diskLoad(json); });
+      [&itemDatabase](Json const& json) -> std::shared_ptr<Item const> { return itemDatabase->diskLoad(json); });
 
   m_lastUpdatedOn = diskStore.getInt("lastUpdatedOn");
   m_unread = diskStore.getBool("unread", true);
@@ -338,7 +338,7 @@ Json Quest::diskStore() const {
 
   auto itemDatabase = Root::singleton().itemDatabase();
   result["rewards"] =
-      m_rewards.transformed([&itemDatabase](ItemConstPtr const& item) { return itemDatabase->diskStore(item); });
+      m_rewards.transformed([&itemDatabase](std::shared_ptr<Item const> const& item) { return itemDatabase->diskStore(item); });
 
   result["lastUpdatedOn"] = m_lastUpdatedOn;
   result["unread"] = m_unread;
@@ -360,7 +360,7 @@ Json Quest::diskStore() const {
   return versioningDatabase->makeCurrentVersionedJson("Quest", result).toJson();
 }
 
-QuestTemplatePtr Quest::getTemplate() const {
+std::shared_ptr<QuestTemplate> Quest::getTemplate() const {
   return Root::singleton().questTemplateDatabase()->questTemplate(templateId());
 }
 
@@ -511,7 +511,7 @@ void Quest::setDialogShown() {
   m_showDialog = false;
 }
 
-void Quest::setEntityParameter(String const& paramName, EntityConstPtr const& entity) {
+void Quest::setEntityParameter(String const& paramName, std::shared_ptr<Entity const> const& entity) {
   setEntityParameter(paramName, entity.get());
 }
 
@@ -583,7 +583,7 @@ std::size_t Quest::money() const {
   return m_money;
 }
 
-List<ItemConstPtr> Quest::rewards() const {
+List<std::shared_ptr<Item const>> Quest::rewards() const {
   return m_rewards;
 }
 
@@ -611,7 +611,7 @@ String Quest::questReceiverIndicator() const {
   return getTemplate()->questReceiverIndicator;
 }
 
-bool hasItemIndicator(EntityPtr const& entity, List<ItemDescriptor> indicatedItems) {
+bool hasItemIndicator(std::shared_ptr<Entity> const& entity, List<ItemDescriptor> indicatedItems) {
   if (auto itemDrop = as<ItemDrop>(entity)) {
     for (auto const& itemDesc : indicatedItems) {
       if (itemDrop->item()->matches(itemDesc, true)) {
@@ -619,7 +619,7 @@ bool hasItemIndicator(EntityPtr const& entity, List<ItemDescriptor> indicatedIte
       }
     }
   } else if (auto object = as<Object>(entity)) {
-    ObjectConfigPtr objectConfig = Root::singleton().objectDatabase()->getConfig(object->name());
+    std::shared_ptr<ObjectConfig> objectConfig = Root::singleton().objectDatabase()->getConfig(object->name());
     if (!objectConfig->hasObjectItem)
       return false;
     for (auto const& itemDesc : indicatedItems) {
@@ -630,7 +630,7 @@ bool hasItemIndicator(EntityPtr const& entity, List<ItemDescriptor> indicatedIte
   return false;
 }
 
-Maybe<String> Quest::customIndicator(EntityPtr const& entity) const {
+Maybe<String> Quest::customIndicator(std::shared_ptr<Entity> const& entity) const {
   if (!m_inited)
     return {};
 
@@ -918,7 +918,7 @@ String const& Quest::defaultCustomIndicator() const {
   return m_player->questManager()->isCurrent(questId()) ? m_trackedIndicator : m_untrackedIndicator;
 }
 
-QuestPtr createPreviewQuest(
+std::shared_ptr<Quest> createPreviewQuest(
     String const& templateId, String const& position, String const& questGiverSpecies, Player* player) {
   auto questTemplates = Root::singleton().questTemplateDatabase();
   auto questTemplate = questTemplates->questTemplate(templateId);

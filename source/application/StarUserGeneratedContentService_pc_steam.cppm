@@ -27,17 +27,9 @@ import star.platform_services_pc;
 
 namespace Star {
 
-class SteamUserGeneratedContentService;
-using SteamUserGeneratedContentServicePtr = std::shared_ptr<SteamUserGeneratedContentService>;
-using SteamUserGeneratedContentServiceConstPtr = std::shared_ptr<SteamUserGeneratedContentService const>;
-using SteamUserGeneratedContentServiceWeakPtr = std::weak_ptr<SteamUserGeneratedContentService>;
-using SteamUserGeneratedContentServiceConstWeakPtr = std::weak_ptr<SteamUserGeneratedContentService const>;
-using SteamUserGeneratedContentServiceUPtr = std::unique_ptr<SteamUserGeneratedContentService>;
-using SteamUserGeneratedContentServiceConstUPtr = std::unique_ptr<SteamUserGeneratedContentService const>;
-
 class SteamUserGeneratedContentService final : public UserGeneratedContentService {
 public:
-  SteamUserGeneratedContentService(PcPlatformServicesStatePtr state);
+  SteamUserGeneratedContentService(std::shared_ptr<PcPlatformServicesState> state);
 
   StringList subscribedContentIds() const override;
   Maybe<String> contentDownloadDirectory(String const& contentId) const override;
@@ -46,7 +38,7 @@ public:
 private:
   void onDownloadResult(DownloadItemResult_t* result);
 
-  PcPlatformServicesStatePtr m_state;
+  std::shared_ptr<PcPlatformServicesState> m_state;
   SteamCallback<SteamUserGeneratedContentService, DownloadItemResult_t> m_callbackDownloadResult;
 
   HashMap<PublishedFileId_t, bool> m_currentDownloadState;
@@ -60,10 +52,4 @@ export module star.user_generated_content_service_pc_steam;
 
 export namespace Star {
   using ::Star::SteamUserGeneratedContentService;
-  using ::Star::SteamUserGeneratedContentServicePtr;
-  using ::Star::SteamUserGeneratedContentServiceConstPtr;
-  using ::Star::SteamUserGeneratedContentServiceUPtr;
-  using ::Star::SteamUserGeneratedContentServiceConstUPtr;
-  using ::Star::SteamUserGeneratedContentServiceWeakPtr;
-  using ::Star::SteamUserGeneratedContentServiceConstWeakPtr;
 }

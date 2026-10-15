@@ -9,14 +9,6 @@ import star.version;
 
 namespace Star {
 
-class Configuration;
-using ConfigurationPtr = std::shared_ptr<Configuration>;
-using ConfigurationConstPtr = std::shared_ptr<Configuration const>;
-using ConfigurationWeakPtr = std::weak_ptr<Configuration>;
-using ConfigurationConstWeakPtr = std::weak_ptr<Configuration const>;
-using ConfigurationUPtr = std::unique_ptr<Configuration>;
-using ConfigurationConstUPtr = std::unique_ptr<Configuration const>;
-
 struct ConfigurationExceptionTag {
   static constexpr char const* name() { return "ConfigurationException"; }
 };
@@ -54,10 +46,4 @@ export namespace Star {
   using ::Star::ConfigurationExceptionTag;
   using ::Star::ConfigurationException;
   using ::Star::Configuration;
-  using ::Star::ConfigurationPtr;
-  using ::Star::ConfigurationConstPtr;
-  using ::Star::ConfigurationWeakPtr;
-  using ::Star::ConfigurationConstWeakPtr;
-  using ::Star::ConfigurationUPtr;
-  using ::Star::ConfigurationConstUPtr;
 }

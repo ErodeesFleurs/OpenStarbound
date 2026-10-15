@@ -32,7 +32,7 @@ std::size_t ContainerEntity::containerSize() const {
   return itemBag()->size();
 }
 
-List<ItemPtr> ContainerEntity::containerItems() const {
+List<std::shared_ptr<Item>> ContainerEntity::containerItems() const {
   return itemBag()->items();
 }
 

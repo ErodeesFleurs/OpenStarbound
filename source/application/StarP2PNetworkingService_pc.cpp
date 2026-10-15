@@ -48,7 +48,7 @@ discord::NetworkChannelId const DiscordMainNetworkChannel = 0;
 
 #endif
 
-PcP2PNetworkingService::PcP2PNetworkingService(PcPlatformServicesStatePtr state)
+PcP2PNetworkingService::PcP2PNetworkingService(std::shared_ptr<PcPlatformServicesState> state)
   : m_state(std::move(state))
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
   , m_callbackConnectionFailure(m_state->steamDispatch, this, &PcP2PNetworkingService::steamOnConnectionFailure),
@@ -207,7 +207,7 @@ void PcP2PNetworkingService::setAcceptingP2PConnections(bool acceptingP2PConnect
     m_pendingIncomingConnections.clear();
 }
 
-List<P2PSocketUPtr> PcP2PNetworkingService::acceptP2PConnections() {
+List<std::unique_ptr<P2PSocket>> PcP2PNetworkingService::acceptP2PConnections() {
   MutexLocker serviceLocker(m_mutex);
   return take(m_pendingIncomingConnections);
 }
@@ -246,7 +246,7 @@ void Star::PcP2PNetworkingService::update() {
 #endif
 }
 
-Either<String, P2PSocketUPtr> PcP2PNetworkingService::connectToPeer(P2PNetworkingPeerId peerId) {
+Either<String, std::unique_ptr<P2PSocket>> PcP2PNetworkingService::connectToPeer(P2PNetworkingPeerId peerId) {
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   MutexLocker discordLocker(m_state->discordMutex);
 #endif
@@ -472,7 +472,7 @@ void PcP2PNetworkingService::discordCloseSocket(DiscordP2PSocket* socket) {
   }
 }
 
-P2PSocketUPtr PcP2PNetworkingService::discordConnectRemote(discord::UserId remoteUserId, discord::LobbyId lobbyId, String const& lobbySecret) {
+std::unique_ptr<P2PSocket> PcP2PNetworkingService::discordConnectRemote(discord::UserId remoteUserId, discord::LobbyId lobbyId, String const& lobbySecret) {
   if (auto oldSocket = m_discordOpenSockets.value(remoteUserId)) {
     MutexLocker socketLocker(oldSocket->mutex);
     discordCloseSocket(oldSocket);

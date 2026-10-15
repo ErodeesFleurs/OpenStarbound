@@ -180,7 +180,7 @@ void PcPlatformServicesState::onGameOverlayActivated(GameOverlayActivated_t* cal
 }
 #endif
 
-PcPlatformServicesUPtr PcPlatformServices::create([[maybe_unused]] String const& path, StringList platformArguments) {
+std::unique_ptr<PcPlatformServices> PcPlatformServices::create([[maybe_unused]] String const& path, StringList platformArguments) {
   auto services = std::unique_ptr<PcPlatformServices>(new PcPlatformServices);
 
   services->m_state = std::make_shared<PcPlatformServicesState>();
@@ -228,19 +228,19 @@ PcPlatformServicesUPtr PcPlatformServices::create([[maybe_unused]] String const&
   return services;
 }
 
-StatisticsServicePtr PcPlatformServices::statisticsService() const {
+std::shared_ptr<StatisticsService> PcPlatformServices::statisticsService() const {
   return m_statisticsService;
 }
 
-P2PNetworkingServicePtr PcPlatformServices::p2pNetworkingService() const {
+std::shared_ptr<P2PNetworkingService> PcPlatformServices::p2pNetworkingService() const {
   return m_p2pNetworkingService;
 }
 
-UserGeneratedContentServicePtr PcPlatformServices::userGeneratedContentService() const {
+std::shared_ptr<UserGeneratedContentService> PcPlatformServices::userGeneratedContentService() const {
   return m_userGeneratedContentService;
 }
 
-DesktopServicePtr PcPlatformServices::desktopService() const {
+std::shared_ptr<DesktopService> PcPlatformServices::desktopService() const {
   return m_desktopService;
 }
 

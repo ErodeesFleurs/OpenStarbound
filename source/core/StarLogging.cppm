@@ -24,14 +24,6 @@ enum class LogLevel {
 };
 extern EnumMap<LogLevel> const LogLevelNames;
 
-class LogSink;
-using LogSinkPtr = std::shared_ptr<LogSink>;
-using LogSinkConstPtr = std::shared_ptr<const LogSink>;
-using LogSinkWeakPtr = std::weak_ptr<LogSink>;
-using LogSinkConstWeakPtr = std::weak_ptr<const LogSink>;
-using LogSinkUPtr = std::unique_ptr<LogSink>;
-using LogSinkConstUPtr = std::unique_ptr<const LogSink>;
-
 // A sink for Logger messages.
 class LogSink {
 public:
@@ -62,7 +54,7 @@ public:
   virtual void log(char const* msg, LogLevel level);
 
 private:
-  FilePtr m_output;
+  std::shared_ptr<File> m_output;
   Mutex m_logMutex;
 };
 
@@ -70,11 +62,11 @@ private:
 // Info, Warn, and Error logging levels.  By default logs to stdout.
 class Logger {
 public:
-  static void addSink(LogSinkPtr s);
-  static void removeSink(LogSinkPtr s);
+  static void addSink(std::shared_ptr<LogSink> s);
+  static void removeSink(std::shared_ptr<LogSink> s);
 
   // Default LogSink that outputs to stdout.
-  static LogSinkPtr stdoutSink();
+  static std::shared_ptr<LogSink> stdoutSink();
   // Don't use the stdout sink.
   static void removeStdoutSink();
 
@@ -112,7 +104,7 @@ public:
 private:
 
   static std::shared_ptr<StdoutLogSink> s_stdoutSink;
-  static HashSet<LogSinkPtr> s_sinks;
+  static HashSet<std::shared_ptr<LogSink>> s_sinks;
   static Array<bool, 4> s_loggable;
   static Mutex s_mutex;
 };
@@ -268,12 +260,6 @@ export namespace Star {
   using ::Star::LogLevel;
   using ::Star::LogLevelNames;
   using ::Star::LogSink;
-  using ::Star::LogSinkPtr;
-  using ::Star::LogSinkConstPtr;
-  using ::Star::LogSinkWeakPtr;
-  using ::Star::LogSinkConstWeakPtr;
-  using ::Star::LogSinkUPtr;
-  using ::Star::LogSinkConstUPtr;
   using ::Star::StdoutLogSink;
   using ::Star::FileLogSink;
   using ::Star::Logger;

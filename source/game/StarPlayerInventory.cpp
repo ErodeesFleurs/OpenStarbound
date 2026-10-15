@@ -131,7 +131,7 @@ import star.math_common;
 import star.algorithm;
 namespace Star {
 
-bool PlayerInventory::itemAllowedInBag(ItemPtr const& items, String const& bagType) {
+bool PlayerInventory::itemAllowedInBag(std::shared_ptr<Item> const& items, String const& bagType) {
   // any inventory type can have empty slots
   if (!items)
     return true;
@@ -139,7 +139,7 @@ bool PlayerInventory::itemAllowedInBag(ItemPtr const& items, String const& bagTy
   return checkInventoryFilter(items, bagType);
 }
 
-bool PlayerInventory::itemAllowedAsEquipment(ItemPtr const& item, EquipmentSlot equipmentSlot) {
+bool PlayerInventory::itemAllowedAsEquipment(std::shared_ptr<Item> const& item, EquipmentSlot equipmentSlot) {
   // any equipment slot can be empty
   if (!item)
     return true;
@@ -212,11 +212,11 @@ PlayerInventory::PlayerInventory() {
   m_player = nullptr;
 }
 
-ItemPtr PlayerInventory::itemsAt(InventorySlot const& slot) const {
+std::shared_ptr<Item> PlayerInventory::itemsAt(InventorySlot const& slot) const {
   return retrieve(slot);
 }
 
-ItemPtr PlayerInventory::stackWith(InventorySlot const& slot, ItemPtr const& items) {
+std::shared_ptr<Item> PlayerInventory::stackWith(InventorySlot const& slot, std::shared_ptr<Item> const& items) {
   if (!items || items->empty())
     return {};
 
@@ -238,7 +238,7 @@ ItemPtr PlayerInventory::stackWith(InventorySlot const& slot, ItemPtr const& ite
   return items;
 }
 
-ItemPtr PlayerInventory::takeSlot(InventorySlot const& slot) {
+std::shared_ptr<Item> PlayerInventory::takeSlot(InventorySlot const& slot) {
   if (slot.is<SwapSlot>())
     m_swapReturnSlot = {};
   return take(retrieve(slot));
@@ -263,7 +263,7 @@ bool PlayerInventory::exchangeItems(InventorySlot const& first, InventorySlot co
   return true;
 }
 
-bool PlayerInventory::setItem(InventorySlot const& slot, ItemPtr const& item) {
+bool PlayerInventory::setItem(InventorySlot const& slot, std::shared_ptr<Item> const& item) {
   if (auto currencyItem = as<CurrencyItem>(item)) {
     m_currencies[currencyItem->currencyType()] += currencyItem->totalValue();
     return true;
@@ -315,7 +315,7 @@ bool PlayerInventory::slotValid(InventorySlot const& slot) const {
   return true;
 }
 
-ItemPtr PlayerInventory::addItems(ItemPtr items) {
+std::shared_ptr<Item> PlayerInventory::addItems(std::shared_ptr<Item> items) {
   if (!items || items->empty())
     return {};
 
@@ -347,7 +347,7 @@ ItemPtr PlayerInventory::addItems(ItemPtr items) {
   return addToBags(std::move(items));
 }
 
-ItemPtr PlayerInventory::addToBags(ItemPtr items) {
+std::shared_ptr<Item> PlayerInventory::addToBags(std::shared_ptr<Item> items) {
   if (!items || items->empty())
     return {};
 
@@ -371,7 +371,7 @@ ItemPtr PlayerInventory::addToBags(ItemPtr items) {
   return items;
 }
 
-std::uint64_t PlayerInventory::itemsCanFit(ItemPtr const& items) const {
+std::uint64_t PlayerInventory::itemsCanFit(std::shared_ptr<Item> const& items) const {
   if (!items || items->empty())
     return 0;
 
@@ -407,7 +407,7 @@ std::uint64_t PlayerInventory::hasCountOfItem(ItemDescriptor const& descriptor, 
   auto one = descriptor.singular();
 
   std::uint64_t count = 0;
-  auto countItem = [&](ItemPtr const& ptr) {
+  auto countItem = [&](std::shared_ptr<Item> const& ptr) {
     if (ptr)
       count += ptr->matches(one, exactMatch) ? ptr->count() : 0;
   };
@@ -548,39 +548,39 @@ HashMap<ItemDescriptor, std::uint64_t> PlayerInventory::availableItems() const {
   return ItemDatabase::normalizeBag(allItems());
 }
 
-HeadArmorPtr PlayerInventory::headArmor() const {
+std::shared_ptr<HeadArmor> PlayerInventory::headArmor() const {
   return as<HeadArmor>(m_equipment.value(EquipmentSlot::Head));
 }
 
-ChestArmorPtr PlayerInventory::chestArmor() const {
+std::shared_ptr<ChestArmor> PlayerInventory::chestArmor() const {
   return as<ChestArmor>(m_equipment.value(EquipmentSlot::Chest));
 }
 
-LegsArmorPtr PlayerInventory::legsArmor() const {
+std::shared_ptr<LegsArmor> PlayerInventory::legsArmor() const {
   return as<LegsArmor>(m_equipment.value(EquipmentSlot::Legs));
 }
 
-BackArmorPtr PlayerInventory::backArmor() const {
+std::shared_ptr<BackArmor> PlayerInventory::backArmor() const {
   return as<BackArmor>(m_equipment.value(EquipmentSlot::Back));
 }
 
-HeadArmorPtr PlayerInventory::headCosmetic() const {
+std::shared_ptr<HeadArmor> PlayerInventory::headCosmetic() const {
   return as<HeadArmor>(m_equipment.value(EquipmentSlot::HeadCosmetic));
 }
 
-ChestArmorPtr PlayerInventory::chestCosmetic() const {
+std::shared_ptr<ChestArmor> PlayerInventory::chestCosmetic() const {
   return as<ChestArmor>(m_equipment.value(EquipmentSlot::ChestCosmetic));
 }
 
-LegsArmorPtr PlayerInventory::legsCosmetic() const {
+std::shared_ptr<LegsArmor> PlayerInventory::legsCosmetic() const {
   return as<LegsArmor>(m_equipment.value(EquipmentSlot::LegsCosmetic));
 }
 
-BackArmorPtr PlayerInventory::backCosmetic() const {
+std::shared_ptr<BackArmor> PlayerInventory::backCosmetic() const {
   return as<BackArmor>(m_equipment.value(EquipmentSlot::BackCosmetic));
 }
 
-ArmorItemPtr PlayerInventory::equipment(EquipmentSlot slot, bool testMask) const {
+std::shared_ptr<ArmorItem> PlayerInventory::equipment(EquipmentSlot slot, bool testMask) const {
   if (testMask && !equipmentVisibility(slot))
     return {};
 
@@ -591,7 +591,7 @@ ArmorItemPtr PlayerInventory::equipment(EquipmentSlot slot, bool testMask) const
   return {};
 }
 
-ItemBagConstPtr PlayerInventory::bagContents(String const& type) const {
+std::shared_ptr<ItemBag const> PlayerInventory::bagContents(String const& type) const {
   if (!m_bags.contains(type)) return nullptr;
   return m_bags.get(type);
 }
@@ -622,7 +622,7 @@ void PlayerInventory::sortBag(String const& bagType) {
 
   // When sorting bags, we need to record where all the action bar links were
   // pointing if any of them were pointing to the bag we are about to sort.
-  MultiArray<std::pair<ItemPtr, ItemPtr>, 2> savedCustomBar(m_customBar.size());
+  MultiArray<std::pair<std::shared_ptr<Item>, std::shared_ptr<Item>>, 2> savedCustomBar(m_customBar.size());
   m_customBar.forEach([&](auto const& index, CustomBarLink const& link) {
       if (link.first) {
         if (auto bs = link.first->ptr<BagSlot>()) {
@@ -639,7 +639,7 @@ void PlayerInventory::sortBag(String const& bagType) {
     });
 
   auto itemDatabase = Root::singletonPtr()->itemDatabase();
-  bag->items().sort([itemDatabase](ItemPtr const& a, ItemPtr const& b) {
+  bag->items().sort([itemDatabase](std::shared_ptr<Item> const& a, std::shared_ptr<Item> const& b) {
       if (a && !b)
         return true;
       if (!a)
@@ -665,7 +665,7 @@ void PlayerInventory::sortBag(String const& bagType) {
   // Once we are done sorting, we need to restore the potentially action bar
   // links to point to where the item with the same identity is now residing.
 
-  Map<ItemPtr, std::size_t> itemIndexes;
+  Map<std::shared_ptr<Item>, std::size_t> itemIndexes;
   for (std::size_t i = 0; i < bag->size(); ++i) {
     if (auto item = bag->at(i))
       itemIndexes[item] = i;
@@ -738,11 +738,11 @@ bool PlayerInventory::clearSwap() {
   return !m_swapSlot;
 }
 
-ItemPtr PlayerInventory::swapSlotItem() const {
+std::shared_ptr<Item> PlayerInventory::swapSlotItem() const {
   return m_swapSlot;
 }
 
-void PlayerInventory::setSwapSlotItem(ItemPtr const& items) {
+void PlayerInventory::setSwapSlotItem(std::shared_ptr<Item> const& items) {
   if (auto currencyItem = as<CurrencyItem>(items)) {
     addCurrency(currencyItem->currencyType(), currencyItem->totalValue());
     m_swapSlot = {};
@@ -752,11 +752,11 @@ void PlayerInventory::setSwapSlotItem(ItemPtr const& items) {
   }
 }
 
-ItemPtr PlayerInventory::essentialItem(EssentialItem essentialItem) const {
+std::shared_ptr<Item> PlayerInventory::essentialItem(EssentialItem essentialItem) const {
   return m_essential.value(essentialItem);
 }
 
-void PlayerInventory::setEssentialItem(EssentialItem essentialItem, ItemPtr item) {
+void PlayerInventory::setEssentialItem(EssentialItem essentialItem, std::shared_ptr<Item> item) {
   m_essential[essentialItem] = item;
 }
 
@@ -865,7 +865,7 @@ void PlayerInventory::selectActionBarLocation(SelectedActionBarLocation location
   m_selectedActionBar = location;
 }
 
-ItemPtr PlayerInventory::primaryHeldItem() const {
+std::shared_ptr<Item> PlayerInventory::primaryHeldItem() const {
   if (m_swapSlot)
     return m_swapSlot;
 
@@ -880,7 +880,7 @@ ItemPtr PlayerInventory::primaryHeldItem() const {
   return {};
 }
 
-ItemPtr PlayerInventory::secondaryHeldItem() const {
+std::shared_ptr<Item> PlayerInventory::secondaryHeldItem() const {
   auto pri = primaryHeldItem();
   if (itemSafeTwoHanded(pri) || m_swapSlot || !m_selectedActionBar || m_selectedActionBar.is<EssentialItem>())
     return {};
@@ -912,7 +912,7 @@ Maybe<InventorySlot> PlayerInventory::secondaryHeldSlot() const {
   return {};
 }
 
-List<ItemPtr> PlayerInventory::pullOverflow() {
+List<std::shared_ptr<Item>> PlayerInventory::pullOverflow() {
   return std::move(m_inventoryLoadOverflow);
 }
 
@@ -1029,8 +1029,8 @@ Json PlayerInventory::store() const {
   return data;
 }
 
-void PlayerInventory::forEveryItem(std::function<void(InventorySlot const&, ItemPtr&)> function) {
-  auto checkedFunction = [function = std::move(function)](InventorySlot const& slot, ItemPtr& item) {
+void PlayerInventory::forEveryItem(std::function<void(InventorySlot const&, std::shared_ptr<Item>&)> function) {
+  auto checkedFunction = [function = std::move(function)](InventorySlot const& slot, std::shared_ptr<Item>& item) {
     if (item)
       function(slot, item);
   };
@@ -1045,15 +1045,15 @@ void PlayerInventory::forEveryItem(std::function<void(InventorySlot const&, Item
   checkedFunction(TrashSlot(), m_trashSlot);
 }
 
-void PlayerInventory::forEveryItem(std::function<void(InventorySlot const&, ItemPtr const&)> function) const {
-  return const_cast<PlayerInventory*>(this)->forEveryItem([function = std::move(function)](InventorySlot const& slot, ItemPtr& item) {
+void PlayerInventory::forEveryItem(std::function<void(InventorySlot const&, std::shared_ptr<Item> const&)> function) const {
+  return const_cast<PlayerInventory*>(this)->forEveryItem([function = std::move(function)](InventorySlot const& slot, std::shared_ptr<Item>& item) {
       function(slot, item);
     });
 }
 
-List<ItemPtr> PlayerInventory::allItems() const {
-  List<ItemPtr> items;
-  forEveryItem([&items](InventorySlot const&, ItemPtr const& item) {
+List<std::shared_ptr<Item>> PlayerInventory::allItems() const {
+  List<std::shared_ptr<Item>> items;
+  forEveryItem([&items](InventorySlot const&, std::shared_ptr<Item> const& item) {
       items.append(item);
     });
   return items;
@@ -1073,17 +1073,17 @@ void PlayerInventory::cleanup() {
 
   for (auto& p : m_equipment)
     if (p.second && p.second->empty())
-      p.second = ItemPtr();
+      p.second = std::shared_ptr<Item>();
 
   if (m_swapSlot && m_swapSlot->empty())
-    m_swapSlot = ItemPtr();
+    m_swapSlot = std::shared_ptr<Item>();
 
   if (m_trashSlot && m_trashSlot->empty())
-    m_trashSlot = ItemPtr();
+    m_trashSlot = std::shared_ptr<Item>();
 
   m_customBar.forEach([this](Array2S const&, CustomBarLink& p) {
-      ItemPtr primary = p.first ? retrieve(*p.first) : ItemPtr();
-      ItemPtr secondary = p.second ? retrieve(*p.second) : ItemPtr();
+      std::shared_ptr<Item> primary = p.first ? retrieve(*p.first) : std::shared_ptr<Item>();
+      std::shared_ptr<Item> secondary = p.second ? retrieve(*p.second) : std::shared_ptr<Item>();
 
       // Reset the primary and secondary action bar link if the item is gone
       if (!primary)
@@ -1125,7 +1125,7 @@ bool PlayerInventory::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, N
     return NetElementSyncGroup::writeNetDelta(ds, fromVersion, rules);
 }
 
-bool PlayerInventory::checkInventoryFilter(ItemPtr const& items, String const& filterName) {
+bool PlayerInventory::checkInventoryFilter(std::shared_ptr<Item> const& items, String const& filterName) {
   Json filterConfig;
 
   auto itemFilters = items->instanceValue("inventoryFilters");
@@ -1186,12 +1186,12 @@ bool PlayerInventory::checkInventoryFilter(ItemPtr const& items, String const& f
   return true;
 }
 
-ItemPtr const& PlayerInventory::retrieve(InventorySlot const& slot) const {
+std::shared_ptr<Item> const& PlayerInventory::retrieve(InventorySlot const& slot) const {
   return const_cast<PlayerInventory*>(this)->retrieve(slot);
 }
 
-ItemPtr& PlayerInventory::retrieve(InventorySlot const& slot) {
-  auto guardEmpty = [](ItemPtr& item) -> ItemPtr& {
+std::shared_ptr<Item>& PlayerInventory::retrieve(InventorySlot const& slot) {
+  auto guardEmpty = [](std::shared_ptr<Item>& item) -> std::shared_ptr<Item>& {
     if (item && item->empty())
       item = {};
     return item;
@@ -1236,12 +1236,12 @@ void PlayerInventory::autoAddToCustomBar(InventorySlot slot) {
 void PlayerInventory::netElementsNeedLoad(bool) {
   auto itemDatabase = Root::singleton().itemDatabase();
 
-  auto deserializeItem = [&itemDatabase](NetElementData<ItemDescriptor>& netState, ItemPtr& item) {
+  auto deserializeItem = [&itemDatabase](NetElementData<ItemDescriptor>& netState, std::shared_ptr<Item>& item) {
     if (netState.pullUpdated())
       itemDatabase->loadItem(netState.get(), item);
   };
 
-  auto deserializeItemList = [&](List<NetElementData<ItemDescriptor>>& netStatesList, List<ItemPtr>& itemList) {
+  auto deserializeItemList = [&](List<NetElementData<ItemDescriptor>>& netStatesList, List<std::shared_ptr<Item>>& itemList) {
     for (std::size_t i = 0; i < netStatesList.size(); ++i)
       deserializeItem(netStatesList[i], itemList[i]);
   };
@@ -1276,11 +1276,11 @@ void PlayerInventory::netElementsNeedLoad(bool) {
 void PlayerInventory::netElementsNeedStore() {
   cleanup();
 
-  auto serializeItem = [](NetElementData<ItemDescriptor>& netState, ItemPtr& item) {
+  auto serializeItem = [](NetElementData<ItemDescriptor>& netState, std::shared_ptr<Item>& item) {
     netState.set(itemSafeDescriptor(item));
   };
 
-  auto serializeItemList = [&](List<NetElementData<ItemDescriptor>>& netStatesList, List<ItemPtr>& itemList) {
+  auto serializeItemList = [&](List<NetElementData<ItemDescriptor>>& netStatesList, List<std::shared_ptr<Item>>& itemList) {
     for (std::size_t i = 0; i < netStatesList.size(); ++i)
       serializeItem(netStatesList[i], itemList[i]);
   };

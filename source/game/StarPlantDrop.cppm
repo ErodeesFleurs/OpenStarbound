@@ -51,19 +51,6 @@ import star.byte_array;
 namespace Star {
 
 class RenderCallback;
-using RenderCallbackPtr = std::shared_ptr<RenderCallback>;
-using RenderCallbackConstPtr = std::shared_ptr<const RenderCallback>;
-using RenderCallbackWeakPtr = std::weak_ptr<RenderCallback>;
-using RenderCallbackConstWeakPtr = std::weak_ptr<const RenderCallback>;
-using RenderCallbackUPtr = std::unique_ptr<RenderCallback>;
-using RenderCallbackConstUPtr = std::unique_ptr<const RenderCallback>;
-class PlantDrop;
-using PlantDropPtr = std::shared_ptr<PlantDrop>;
-using PlantDropConstPtr = std::shared_ptr<const PlantDrop>;
-using PlantDropWeakPtr = std::weak_ptr<PlantDrop>;
-using PlantDropConstWeakPtr = std::weak_ptr<const PlantDrop>;
-using PlantDropUPtr = std::unique_ptr<PlantDrop>;
-using PlantDropConstUPtr = std::unique_ptr<const PlantDrop>;
 
 class PlantDrop : public virtual MobileEntity {
 public:
@@ -141,17 +128,5 @@ export module star.plant_drop;
 
 export namespace Star {
   using ::Star::RenderCallback;
-  using ::Star::RenderCallbackPtr;
-  using ::Star::RenderCallbackConstPtr;
-  using ::Star::RenderCallbackWeakPtr;
-  using ::Star::RenderCallbackConstWeakPtr;
-  using ::Star::RenderCallbackUPtr;
-  using ::Star::RenderCallbackConstUPtr;
   using ::Star::PlantDrop;
-  using ::Star::PlantDropPtr;
-  using ::Star::PlantDropConstPtr;
-  using ::Star::PlantDropWeakPtr;
-  using ::Star::PlantDropConstWeakPtr;
-  using ::Star::PlantDropUPtr;
-  using ::Star::PlantDropConstUPtr;
 }

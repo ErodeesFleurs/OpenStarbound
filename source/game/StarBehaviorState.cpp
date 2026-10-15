@@ -143,7 +143,7 @@ CompositeState::CompositeState(std::size_t childCount, std::size_t begin) : Comp
   index = begin;
 }
 
-BehaviorState::BehaviorState(BehaviorTreeConstPtr tree, LuaTable context, Maybe<BlackboardWeakPtr> blackboard) : m_tree(tree), m_luaContext(std::move(context)) {
+BehaviorState::BehaviorState(std::shared_ptr<BehaviorTree const> tree, LuaTable context, Maybe<std::weak_ptr<Blackboard>> blackboard) : m_tree(tree), m_luaContext(std::move(context)) {
   if (blackboard)
     m_board = *blackboard;
   else
@@ -161,12 +161,12 @@ NodeStatus BehaviorState::run(float dt) {
   m_lastDt = dt;
   NodeStatus status;
 
-  auto ephemeral = m_board.maybe<BlackboardPtr>().apply([](auto const& b) { return b->takeEphemerals(); });
+  auto ephemeral = m_board.maybe<std::shared_ptr<Blackboard>>().apply([](auto const& b) { return b->takeEphemerals(); });
 
   status = runNode(*m_tree->root, m_rootState);
 
   if (ephemeral)
-    m_board.get<BlackboardPtr>()->clearEphemerals(*ephemeral);
+    m_board.get<std::shared_ptr<Blackboard>>()->clearEphemerals(*ephemeral);
 
   return status;
 }
@@ -175,18 +175,18 @@ void BehaviorState::clear() {
   m_rootState.reset();
 }
 
-BlackboardWeakPtr BehaviorState::blackboardPtr() {
-  if (auto master = m_board.maybe<BlackboardPtr>())
+std::weak_ptr<Blackboard> BehaviorState::blackboardPtr() {
+  if (auto master = m_board.maybe<std::shared_ptr<Blackboard>>())
     return std::weak_ptr<Blackboard>(*master);
   else
-    return m_board.get<BlackboardWeakPtr>();
+    return m_board.get<std::weak_ptr<Blackboard>>();
 }
 
-BlackboardPtr BehaviorState::board() {
-  if (auto master = m_board.maybe<BlackboardPtr>())
+std::shared_ptr<Blackboard> BehaviorState::board() {
+  if (auto master = m_board.maybe<std::shared_ptr<Blackboard>>())
     return *master;
   else
-    return m_board.get<BlackboardWeakPtr>().lock();
+    return m_board.get<std::weak_ptr<Blackboard>>().lock();
 }
 
 LuaThread BehaviorState::nodeLuaThread(String const& funcName) {

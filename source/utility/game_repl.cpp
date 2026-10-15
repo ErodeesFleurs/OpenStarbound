@@ -37,7 +37,7 @@ using namespace Star;
 
 int main(int argc, char** argv) {
   RootLoader rootLoader({{}, {}, {}, LogLevel::Error, false, {}});
-  RootUPtr root;
+  std::unique_ptr<::Star::Root> root;
   OptionParser::Options options;
   std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 

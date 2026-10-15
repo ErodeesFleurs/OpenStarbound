@@ -215,7 +215,7 @@ const std::string SECRET_BROADCAST_PUBLIC_KEY = "SecretBroadcastPublicKey";
 const std::string SECRET_BROADCAST_PREFIX = std::string("\0Broadcast\0", sizeof("\0Broadcast\0") - 1);
 
 const float WorldClient::DropDist = 6.0f;
-WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot, UniverseClient* universe) {
+WorldClient::WorldClient(std::shared_ptr<Player> mainPlayer, std::shared_ptr<LuaRoot> luaRoot, UniverseClient* universe) {
   // main client world, set up to render
   auto& root = Root::singleton();
   auto assets = root.assets();
@@ -449,7 +449,7 @@ void WorldClient::removeEntity(EntityId entityId, bool andDie) {
   entity->uninit();
 }
 
-WorldTemplateConstPtr WorldClient::currentTemplate() const {
+std::shared_ptr<WorldTemplate const> WorldClient::currentTemplate() const {
   return m_worldTemplate;
 }
 
@@ -457,7 +457,7 @@ void WorldClient::setTemplate(Json newTemplate) {
   m_outgoingPackets.push_back(std::make_shared<UpdateWorldTemplatePacket>(newTemplate));
 }
 
-SkyConstPtr WorldClient::currentSky() const {
+std::shared_ptr<Sky const> WorldClient::currentSky() const {
   return m_sky;
 }
 
@@ -468,7 +468,7 @@ void WorldClient::timer(float delay, WorldAction worldAction) {
   m_timers.append({delay, worldAction});
 }
 
-EntityPtr WorldClient::closestEntity(Vec2F const& center, float radius, EntityFilter selector) const {
+std::shared_ptr<Entity> WorldClient::closestEntity(Vec2F const& center, float radius, EntityFilter selector) const {
   if (!inWorld())
     return {};
 
@@ -497,19 +497,19 @@ void WorldClient::forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEnt
   m_entityMap->forEachEntityAtTile(pos, callback);
 }
 
-EntityPtr WorldClient::findEntity(RectF const& boundBox, EntityFilter entityFilter) const {
+std::shared_ptr<Entity> WorldClient::findEntity(RectF const& boundBox, EntityFilter entityFilter) const {
   if (!inWorld())
     return {};
   return m_entityMap->findEntity(boundBox, entityFilter);
 }
 
-EntityPtr WorldClient::findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter entityFilter) const {
+std::shared_ptr<Entity> WorldClient::findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter entityFilter) const {
   if (!inWorld())
     return {};
   return m_entityMap->findEntityLine(begin, end, entityFilter);
 }
 
-EntityPtr WorldClient::findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const {
+std::shared_ptr<Entity> WorldClient::findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const {
   if (!inWorld())
     return {};
   return m_entityMap->findEntityAtTile(pos, entityFilter);
@@ -751,7 +751,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
   renderData.geometry = m_geometry;
 
   ClientRenderCallback lightingRenderCallback;
-  m_entityMap->forAllEntities([&](EntityPtr const& entity) {
+  m_entityMap->forAllEntities([&](std::shared_ptr<Entity> const& entity) {
     if (m_startupHiddenEntities.contains(entity->entityId()))
       return;
 
@@ -798,7 +798,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       if (auto& globalDirectives = parameters->globalDirectives)
         directives = &globalDirectives.get();
   }
-  m_entityMap->forAllEntities([&](EntityPtr const& entity) {
+  m_entityMap->forAllEntities([&](std::shared_ptr<Entity> const& entity) {
       if (m_startupHiddenEntities.contains(entity->entityId()))
         return;
 
@@ -865,7 +865,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       m_previewTiles.appendAll(std::move(renderCallback.previewTiles));
       renderData.overheadBars.appendAll(std::move(renderCallback.overheadBars));
 
-    }, [](EntityPtr const& a, EntityPtr const& b) {
+    }, [](std::shared_ptr<Entity> const& a, std::shared_ptr<Entity> const& b) {
       return a->entityId() < b->entityId();
     });
 
@@ -1055,11 +1055,11 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
   renderData.dimColor = m_worldDimColor;
 }
 
-List<AudioInstancePtr> WorldClient::pullPendingAudio() {
+List<std::shared_ptr<AudioInstance>> WorldClient::pullPendingAudio() {
   return take(m_samples);
 }
 
-List<AudioInstancePtr> WorldClient::pullPendingMusic() {
+List<std::shared_ptr<AudioInstance>> WorldClient::pullPendingMusic() {
   return take(m_music);
 }
 
@@ -1075,7 +1075,7 @@ void WorldClient::setInteractiveHighlightMode(bool enabled) {
   m_interactiveHighlightMode = enabled;
 }
 
-void WorldClient::setParallax(ParallaxPtr newParallax) {
+void WorldClient::setParallax(std::shared_ptr<Parallax> newParallax) {
   if (newParallax) {
     if (!m_currentParallax) {
       m_currentParallax = newParallax;
@@ -1122,7 +1122,7 @@ void WorldClient::setCollisionDebug(bool collisionDebug) {
   m_collisionDebug = collisionDebug;
 }
 
-void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
+void WorldClient::handleIncomingPackets(List<std::shared_ptr<Packet>> const& packets) {
   auto& root = Root::singleton();
   auto materialDatabase = root.materialDatabase();
   auto itemDatabase = root.itemDatabase();
@@ -1164,7 +1164,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
     } else if (auto entityUpdateSet = as<EntityUpdateSetPacket>(packet)) {
       float interpolationLeadTime = m_interpolationTracker.interpolationLeadTime();
-      m_entityMap->forAllEntities([&](EntityPtr const& entity) {
+      m_entityMap->forAllEntities([&](std::shared_ptr<Entity> const& entity) {
           EntityId entityId = entity->entityId();
           if (connectionForEntity(entityId) == entityUpdateSet->forConnection) {
             if constexpr (Star::DebugEnabled) {
@@ -1360,7 +1360,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       }
 
     } else if (auto entityMessagePacket = as<EntityMessagePacket>(packet)) {
-      EntityPtr entity;
+      std::shared_ptr<Entity> entity;
       if (entityMessagePacket->entityId.is<EntityId>())
         entity = m_entityMap->entity(entityMessagePacket->entityId.get<EntityId>());
       else
@@ -1464,7 +1464,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
   }
 }
 
-List<PacketPtr> WorldClient::getOutgoingPackets() {
+List<std::shared_ptr<Packet>> WorldClient::getOutgoingPackets() {
   return std::move(m_outgoingPackets);
 }
 
@@ -1483,7 +1483,7 @@ Maybe<ChainableJsonMessageResponse> WorldClient::receiveMessage(ConnectionId fro
   return result;
 }
 
-WorldClient::ScriptComponentPtr WorldClient::scriptContext(String const& contextName) {
+std::shared_ptr<WorldClient::ScriptComponent> WorldClient::scriptContext(String const& contextName) {
   if (auto context = m_scriptContexts.ptr(contextName))
     return *context;
   else
@@ -1542,7 +1542,7 @@ void WorldClient::update(float dt) {
 
   List<EntityId> toRemove;
   List<EntityId> clientPresenceEntities;
-  m_entityMap->updateAllEntities([&](EntityPtr const& entity) {
+  m_entityMap->updateAllEntities([&](std::shared_ptr<Entity> const& entity) {
       try { entity->update(dt, m_currentStep); }
       catch (StarException const& e) {
         if (entity->isMaster()) // this is YOUR problem!!
@@ -1563,7 +1563,7 @@ void WorldClient::update(float dt) {
         toRemove.append(entity->entityId());
       if (entity->isMaster() && entity->clientEntityMode() == ClientEntityMode::ClientPresenceMaster)
         clientPresenceEntities.append(entity->entityId());
-    }, [](EntityPtr const& a, EntityPtr const& b) {
+    }, [](std::shared_ptr<Entity> const& a, std::shared_ptr<Entity> const& b) {
       return a->entityType() < b->entityType();
     });
   
@@ -1782,14 +1782,14 @@ MaterialColorVariant WorldClient::colorVariant(Vec2I const& position, TileLayer 
   return layer == TileLayer::Foreground ? tile.foregroundColorVariant : tile.backgroundColorVariant;
 }
 
-EntityPtr WorldClient::entity(EntityId entityId) const {
+std::shared_ptr<Entity> WorldClient::entity(EntityId entityId) const {
   if (!inWorld())
     return {};
 
   return m_entityMap->entity(entityId);
 }
 
-void WorldClient::addEntity(EntityPtr const& entity, EntityId entityId) {
+void WorldClient::addEntity(std::shared_ptr<Entity> const& entity, EntityId entityId) {
   if (!entity)
     return;
 
@@ -1929,13 +1929,13 @@ void WorldClient::queueUpdatePackets(bool sendEntityUpdates) {
   if (m_currentStep % m_clientConfig.getInt("worldClientStateUpdateDelta") == 0)
     m_outgoingPackets.append(std::make_shared<WorldClientStateUpdatePacket>(m_clientState.writeDelta()));
 
-  m_entityMap->forAllEntities([&](EntityPtr const& entity) { notifyEntityCreate(entity); });
+  m_entityMap->forAllEntities([&](std::shared_ptr<Entity> const& entity) { notifyEntityCreate(entity); });
 
   if (sendEntityUpdates) {
     auto entityUpdateSet = std::make_shared<EntityUpdateSetPacket>();
     entityUpdateSet->forConnection = *m_clientId;
     auto netRules = m_clientState.netCompatibilityRules();
-    m_entityMap->forAllEntities([&](EntityPtr const& entity) {
+    m_entityMap->forAllEntities([&](std::shared_ptr<Entity> const& entity) {
         if (auto version = m_masterEntitiesNetVersion.ptr(entity->entityId())) {
           auto updateAndVersion = entity->writeNetState(*version, netRules);
           if (!updateAndVersion.first.empty())
@@ -2081,7 +2081,7 @@ void WorldClient::sparkDamagedBlocks() {
   }
 }
 
-InteractiveEntityPtr WorldClient::getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const {
+std::shared_ptr<InteractiveEntity> WorldClient::getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const {
   if (!inWorld())
     return {};
   return WorldImpl::getInteractiveInRange(m_geometry, m_entityMap, targetPosition, sourcePosition, maxRange);
@@ -2401,12 +2401,12 @@ void WorldClient::clearWorld() {
   m_requestedDestroy = false;
 }
 
-void WorldClient::tryGiveMainPlayerItem(ItemPtr item, bool silent) {
+void WorldClient::tryGiveMainPlayerItem(std::shared_ptr<Item> item, bool silent) {
   if (auto spill = m_mainPlayer->pickupItems(item, silent))
     addEntity(ItemDrop::createRandomizedDrop(spill->descriptor(), m_mainPlayer->position()), NullEntityId);
 }
 
-void WorldClient::notifyEntityCreate(EntityPtr const& entity) {
+void WorldClient::notifyEntityCreate(std::shared_ptr<Entity> const& entity) {
   if (entity->isMaster() && !m_masterEntitiesNetVersion.contains(entity->entityId())) {
     // Server was unaware of this entity until now
     auto netRules = m_clientState.netCompatibilityRules();
@@ -2441,7 +2441,7 @@ Maybe<String> WorldClient::currentWeatherDomain() const {
   return {};
 }
 
-AmbientNoisesDescriptionPtr WorldClient::currentAmbientNoises() const {
+std::shared_ptr<AmbientNoisesDescription> WorldClient::currentAmbientNoises() const {
   if (!inWorld())
     return {};
 
@@ -2449,7 +2449,7 @@ AmbientNoisesDescriptionPtr WorldClient::currentAmbientNoises() const {
   return m_worldTemplate->ambientNoises(pos[0], pos[1]);
 }
 
-WeatherNoisesDescriptionPtr WorldClient::currentWeatherNoises() const {
+std::shared_ptr<WeatherNoisesDescription> WorldClient::currentWeatherNoises() const {
   if (!inWorld())
     return {};
 
@@ -2463,7 +2463,7 @@ WeatherNoisesDescriptionPtr WorldClient::currentWeatherNoises() const {
     return std::make_shared<WeatherNoisesDescription>(std::move(trackOptions));
 }
 
-AmbientNoisesDescriptionPtr WorldClient::currentMusicTrack() const {
+std::shared_ptr<AmbientNoisesDescription> WorldClient::currentMusicTrack() const {
   if (!inWorld())
     return {};
 
@@ -2471,7 +2471,7 @@ AmbientNoisesDescriptionPtr WorldClient::currentMusicTrack() const {
   return m_worldTemplate->musicTrack(pos[0], pos[1]);
 }
 
-AmbientNoisesDescriptionPtr WorldClient::currentAltMusicTrack() const {
+std::shared_ptr<AmbientNoisesDescription> WorldClient::currentAltMusicTrack() const {
   if (!inWorld())
     return {};
 
@@ -2496,7 +2496,7 @@ void WorldClient::stopAltMusic(float fadeTime) {
   }
 }
 
-BiomeConstPtr WorldClient::mainEnvironmentBiome() const {
+std::shared_ptr<Biome const> WorldClient::mainEnvironmentBiome() const {
   if (!inWorld())
     return {};
 
@@ -2750,7 +2750,7 @@ bool WorldClient::sendSecretBroadcast(StringView broadcast, bool raw, bool compr
   return true;
 }
 
-bool WorldClient::handleSecretBroadcast(PlayerPtr player, StringView broadcast) {
+bool WorldClient::handleSecretBroadcast(std::shared_ptr<Player> player, StringView broadcast) {
   if (m_broadcastCallback)
     return m_broadcastCallback(player, broadcast);
   else
@@ -2770,7 +2770,7 @@ void WorldClient::ClientRenderCallback::addParticle(Particle particle) {
   particles.append(std::move(particle));
 }
 
-void WorldClient::ClientRenderCallback::addAudio(AudioInstancePtr audio) {
+void WorldClient::ClientRenderCallback::addAudio(std::shared_ptr<AudioInstance> audio) {
   audios.append(std::move(audio));
 }
 
@@ -2806,7 +2806,7 @@ float WorldClient::timeOfDay() const {
   return m_sky->timeOfDay();
 }
 
-LuaRootPtr WorldClient::luaRoot() {
+std::shared_ptr<LuaRoot> WorldClient::luaRoot() {
   return m_luaRoot;
 }
 
@@ -2845,7 +2845,7 @@ RpcPromise<Json> WorldClient::sendEntityMessage(Variant<EntityId, String> const&
   if (!inWorld())
     return RpcPromise<Json>::createFailed("Not currently in a world");
 
-  EntityPtr entity;
+  std::shared_ptr<Entity> entity;
   if (entityId.is<EntityId>())
     entity = m_entityMap->entity(entityId.get<EntityId>());
   else

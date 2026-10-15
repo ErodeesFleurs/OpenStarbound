@@ -160,11 +160,11 @@ bool CelestialParameters::isVisitable() const {
   return (bool)m_visitableParameters;
 }
 
-VisitableWorldParametersConstPtr CelestialParameters::visitableParameters() const {
+std::shared_ptr<VisitableWorldParameters const> CelestialParameters::visitableParameters() const {
   return m_visitableParameters;
 }
 
-void CelestialParameters::setVisitableParameters(VisitableWorldParametersPtr const& newVisitableParameters) {
+void CelestialParameters::setVisitableParameters(std::shared_ptr<VisitableWorldParameters> const& newVisitableParameters) {
   m_visitableParameters = newVisitableParameters;
 }
 

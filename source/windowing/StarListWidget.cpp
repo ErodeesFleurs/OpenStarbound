@@ -125,7 +125,7 @@ void ListWidget::setSchema(Json const& schema) {
   updateSizeAndPosition();
 }
 
-WidgetPtr ListWidget::addItem() {
+std::shared_ptr<Widget> ListWidget::addItem() {
   auto newItem = constructWidget();
   addChild(toString(Random::randu64()), newItem);
   updateSizeAndPosition();
@@ -133,7 +133,7 @@ WidgetPtr ListWidget::addItem() {
   return newItem;
 }
 
-WidgetPtr ListWidget::addItem(std::size_t at) {
+std::shared_ptr<Widget> ListWidget::addItem(std::size_t at) {
   auto newItem = constructWidget();
   addChildAt(toString(Random::randu64()), newItem, at);
   updateSizeAndPosition();
@@ -144,15 +144,15 @@ WidgetPtr ListWidget::addItem(std::size_t at) {
   return newItem;
 }
 
-WidgetPtr ListWidget::addItem(WidgetPtr existingItem) {
+std::shared_ptr<Widget> ListWidget::addItem(std::shared_ptr<Widget> existingItem) {
   addChild(toString(Random::randu64()), existingItem);
   updateSizeAndPosition();
 
   return existingItem;
 }
 
-WidgetPtr ListWidget::constructWidget() {
-  WidgetPtr newItem = std::make_shared<Widget>();
+std::shared_ptr<Widget> ListWidget::constructWidget() {
+  std::shared_ptr<Widget> newItem = std::make_shared<Widget>();
   m_reader.construct(m_schema.get("listTemplate"), newItem.get());
   newItem->setSize(m_memberSize);
   m_doScissor ? newItem->enableScissoring() : newItem->disableScissoring();
@@ -233,7 +233,7 @@ void ListWidget::clearSelected() {
   setSelected(NPos);
 }
 
-void ListWidget::setSelectedWidget(WidgetPtr selected) {
+void ListWidget::setSelectedWidget(std::shared_ptr<Widget> selected) {
   auto offset = itemPosition(selected);
 
   if (offset == NPos) {
@@ -265,7 +265,7 @@ void ListWidget::removeItem(std::size_t at) {
   updateSizeAndPosition();
 }
 
-void ListWidget::removeItem(WidgetPtr item) {
+void ListWidget::removeItem(std::shared_ptr<Widget> item) {
   auto offset = itemPosition(item);
 
   if (offset == NPos) {
@@ -285,7 +285,7 @@ std::size_t ListWidget::selectedItem() const {
   return m_selectedItem;
 }
 
-std::size_t ListWidget::itemPosition(WidgetPtr item) const {
+std::size_t ListWidget::itemPosition(std::shared_ptr<Widget> item) const {
   std::size_t offset = NPos;
   for (std::size_t i = 0; i < m_members.size(); ++i) {
     if (m_members[i] == item) {
@@ -296,7 +296,7 @@ std::size_t ListWidget::itemPosition(WidgetPtr item) const {
   return offset;
 }
 
-WidgetPtr ListWidget::itemAt(std::size_t n) const {
+std::shared_ptr<Widget> ListWidget::itemAt(std::size_t n) const {
   if (n < m_members.size()) {
     return m_members[n];
   } else {
@@ -304,11 +304,11 @@ WidgetPtr ListWidget::itemAt(std::size_t n) const {
   }
 }
 
-WidgetPtr ListWidget::selectedWidget() const {
+std::shared_ptr<Widget> ListWidget::selectedWidget() const {
   return itemAt(m_selectedItem);
 }
 
-List<WidgetPtr> const& ListWidget::list() const {
+List<std::shared_ptr<Widget>> const& ListWidget::list() const {
   return m_members;
 }
 

@@ -26,27 +26,7 @@ import star.spawn_type_database;
 import star.rect;
 namespace Star {
 
-class SpawnerFacade;
-using SpawnerFacadePtr = std::shared_ptr<SpawnerFacade>;
-using SpawnerFacadeConstPtr = std::shared_ptr<const SpawnerFacade>;
-using SpawnerFacadeWeakPtr = std::weak_ptr<SpawnerFacade>;
-using SpawnerFacadeConstWeakPtr = std::weak_ptr<const SpawnerFacade>;
-using SpawnerFacadeUPtr = std::unique_ptr<SpawnerFacade>;
-using SpawnerFacadeConstUPtr = std::unique_ptr<const SpawnerFacade>;
-class Spawner;
-using SpawnerPtr = std::shared_ptr<Spawner>;
-using SpawnerConstPtr = std::shared_ptr<const Spawner>;
-using SpawnerWeakPtr = std::weak_ptr<Spawner>;
-using SpawnerConstWeakPtr = std::weak_ptr<const Spawner>;
-using SpawnerUPtr = std::unique_ptr<Spawner>;
-using SpawnerConstUPtr = std::unique_ptr<const Spawner>;
 class Entity;
-using EntityPtr = std::shared_ptr<Entity>;
-using EntityConstPtr = std::shared_ptr<const Entity>;
-using EntityWeakPtr = std::weak_ptr<Entity>;
-using EntityConstWeakPtr = std::weak_ptr<const Entity>;
-using EntityUPtr = std::unique_ptr<Entity>;
-using EntityConstUPtr = std::unique_ptr<const Entity>;
 
 class SpawnerFacade {
 public:
@@ -69,8 +49,8 @@ public:
   virtual float threatLevel() const = 0;
 
   // May return NullEntityId if spawning fails for some reason.
-  virtual EntityId spawnEntity(EntityPtr entity) const = 0;
-  virtual EntityPtr getEntity(EntityId entityId) const = 0;
+  virtual EntityId spawnEntity(std::shared_ptr<Entity> entity) const = 0;
+  virtual std::shared_ptr<Entity> getEntity(EntityId entityId) const = 0;
   virtual void despawnEntity(EntityId entityId) = 0;
 };
 
@@ -78,7 +58,7 @@ class Spawner {
 public:
   Spawner();
 
-  void init(SpawnerFacadePtr facade);
+  void init(std::shared_ptr<SpawnerFacade> facade);
   // Despawns all spawned entities before shutting down
   void uninit();
 
@@ -139,7 +119,7 @@ private:
   unsigned m_windowActivationBorder;
 
   bool m_active;
-  SpawnerFacadePtr m_facade;
+  std::shared_ptr<SpawnerFacade> m_facade;
   HashSet<EntityId> m_spawnedEntities;
   HashMap<Vec2I, float> m_activeSpawnCells;
 
@@ -153,24 +133,6 @@ export module star.spawner;
 
 export namespace Star {
 using ::Star::SpawnerFacade;
-using ::Star::SpawnerFacadePtr;
-using ::Star::SpawnerFacadeConstPtr;
-using ::Star::SpawnerFacadeWeakPtr;
-using ::Star::SpawnerFacadeConstWeakPtr;
-using ::Star::SpawnerFacadeUPtr;
-using ::Star::SpawnerFacadeConstUPtr;
 using ::Star::Spawner;
-using ::Star::SpawnerPtr;
-using ::Star::SpawnerConstPtr;
-using ::Star::SpawnerWeakPtr;
-using ::Star::SpawnerConstWeakPtr;
-using ::Star::SpawnerUPtr;
-using ::Star::SpawnerConstUPtr;
 using ::Star::Entity;
-using ::Star::EntityPtr;
-using ::Star::EntityConstPtr;
-using ::Star::EntityWeakPtr;
-using ::Star::EntityConstWeakPtr;
-using ::Star::EntityUPtr;
-using ::Star::EntityConstUPtr;
 }

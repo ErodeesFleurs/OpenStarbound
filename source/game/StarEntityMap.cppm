@@ -27,27 +27,8 @@ import star.entity;
 import star.algorithm;
 namespace Star {
 
-class EntityMap;
-using EntityMapPtr = std::shared_ptr<EntityMap>;
-using EntityMapConstPtr = std::shared_ptr<const EntityMap>;
-using EntityMapWeakPtr = std::weak_ptr<EntityMap>;
-using EntityMapConstWeakPtr = std::weak_ptr<const EntityMap>;
-using EntityMapUPtr = std::unique_ptr<EntityMap>;
-using EntityMapConstUPtr = std::unique_ptr<const EntityMap>;
 class TileEntity;
-using TileEntityPtr = std::shared_ptr<TileEntity>;
-using TileEntityConstPtr = std::shared_ptr<const TileEntity>;
-using TileEntityWeakPtr = std::weak_ptr<TileEntity>;
-using TileEntityConstWeakPtr = std::weak_ptr<const TileEntity>;
-using TileEntityUPtr = std::unique_ptr<TileEntity>;
-using TileEntityConstUPtr = std::unique_ptr<const TileEntity>;
 class InteractiveEntity;
-using InteractiveEntityPtr = std::shared_ptr<InteractiveEntity>;
-using InteractiveEntityConstPtr = std::shared_ptr<const InteractiveEntity>;
-using InteractiveEntityWeakPtr = std::weak_ptr<InteractiveEntity>;
-using InteractiveEntityConstWeakPtr = std::weak_ptr<const InteractiveEntity>;
-using InteractiveEntityUPtr = std::unique_ptr<InteractiveEntity>;
-using InteractiveEntityConstUPtr = std::unique_ptr<const InteractiveEntity>;
 
 struct EntityMapExceptionTag {
   static constexpr char const* name() { return "EntityMapException"; }
@@ -79,33 +60,33 @@ public:
 
   // Add an entity to this EntityMap.  The entity must already be initialized
   // and have a unique EntityId returned by reserveEntityId.
-  void addEntity(EntityPtr entity);
-  EntityPtr removeEntity(EntityId entityId);
+  void addEntity(std::shared_ptr<Entity> entity);
+  std::shared_ptr<Entity> removeEntity(EntityId entityId);
 
   std::size_t size() const;
   List<EntityId> entityIds() const;
 
   // Iterates through the entity map optionally in the given order, updating
   // the spatial information for each entity along the way.
-  void updateAllEntities(EntityCallback const& callback = {}, std::function<bool(EntityPtr const&, EntityPtr const&)> sortOrder = {});
+  void updateAllEntities(EntityCallback const& callback = {}, std::function<bool(std::shared_ptr<Entity> const&, std::shared_ptr<Entity> const&)> sortOrder = {});
 
   // If the given unique entity is in this map, then return its entity id
   EntityId uniqueEntityId(String const& uniqueId) const;
 
-  EntityPtr entity(EntityId entityId) const;
-  EntityPtr uniqueEntity(String const& uniqueId) const;
+  std::shared_ptr<Entity> entity(EntityId entityId) const;
+  std::shared_ptr<Entity> uniqueEntity(String const& uniqueId) const;
 
   // Queries entities based on metaBoundBox
-  List<EntityPtr> entityQuery(RectF const& boundBox, EntityFilter const& filter = {}) const;
+  List<std::shared_ptr<Entity>> entityQuery(RectF const& boundBox, EntityFilter const& filter = {}) const;
 
   // A fuzzy query of the entities at this position, sorted by closeness.
-  List<EntityPtr> entitiesAt(Vec2F const& pos, EntityFilter const& filter = {}) const;
+  List<std::shared_ptr<Entity>> entitiesAt(Vec2F const& pos, EntityFilter const& filter = {}) const;
 
-  List<TileEntityPtr> entitiesAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> const& filter = {}) const;
+  List<std::shared_ptr<TileEntity>> entitiesAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> const& filter = {}) const;
 
   // Sort of a fuzzy line intersection test.  Tests if a given line intersects
   // the bounding box of any entities, and returns them.
-  List<EntityPtr> entityLineQuery(Vec2F const& begin, Vec2F const& end, EntityFilter const& filter = {}) const;
+  List<std::shared_ptr<Entity>> entityLineQuery(Vec2F const& begin, Vec2F const& end, EntityFilter const& filter = {}) const;
 
   // Callback versions of query functions.
   void forEachEntity(RectF const& boundBox, EntityCallback const& callback) const;
@@ -114,19 +95,19 @@ public:
   void forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEntity> const& callback) const;
 
   // Iterate through all the entities, optionally in the given sort order.
-  void forAllEntities(EntityCallback const& callback, std::function<bool(EntityPtr const&, EntityPtr const&)> sortOrder = {}) const;
+  void forAllEntities(EntityCallback const& callback, std::function<bool(std::shared_ptr<Entity> const&, std::shared_ptr<Entity> const&)> sortOrder = {}) const;
 
   // Stops searching when filter returns true, and returns the entity which
   // caused it.
-  EntityPtr findEntity(RectF const& boundBox, EntityFilter const& filter) const;
-  EntityPtr findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter const& filter) const;
-  EntityPtr findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> const& filter) const;
+  std::shared_ptr<Entity> findEntity(RectF const& boundBox, EntityFilter const& filter) const;
+  std::shared_ptr<Entity> findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter const& filter) const;
+  std::shared_ptr<Entity> findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> const& filter) const;
 
   // Closest entity that satisfies the given selector, if given.
-  EntityPtr closestEntity(Vec2F const& center, float radius, EntityFilter const& filter = {}) const;
+  std::shared_ptr<Entity> closestEntity(Vec2F const& center, float radius, EntityFilter const& filter = {}) const;
 
   // Returns interactive entity that is near the given world position
-  InteractiveEntityPtr interactiveEntityNear(Vec2F const& pos, float maxRadius = 1.5f) const;
+  std::shared_ptr<InteractiveEntity> interactiveEntityNear(Vec2F const& pos, float maxRadius = 1.5f) const;
 
   // Whether or not any tile entity occupies this tile
   bool tileIsOccupied(Vec2I const& pos, bool includeEphemeral = false) const;
@@ -159,7 +140,7 @@ public:
   List<std::shared_ptr<EntityT>> atTile(Vec2I const& pos) const;
 
 private:
-  typedef SpatialHash2D<EntityId, float, EntityPtr> SpatialMap;
+  typedef SpatialHash2D<EntityId, float, std::shared_ptr<Entity>> SpatialMap;
 
   WorldGeometry m_geometry;
 
@@ -195,7 +176,7 @@ List<std::shared_ptr<EntityT>> EntityMap::query(RectF const& boundBox, EntityFil
 template <typename EntityT>
 List<std::shared_ptr<EntityT>> EntityMap::all(EntityFilterOf<EntityT> const& filter) const {
   List<std::shared_ptr<EntityT>> entities;
-  forAllEntities([&](EntityPtr const& entity) {
+  forAllEntities([&](std::shared_ptr<Entity> const& entity) {
     if (auto e = as<EntityT>(entity)) {
       if (!filter || filter(e))
         entities.append(e);
@@ -222,7 +203,7 @@ std::shared_ptr<EntityT> EntityMap::closest(Vec2F const& center, float radius, E
 template <typename EntityT>
 List<std::shared_ptr<EntityT>> EntityMap::atTile(Vec2I const& pos) const {
   List<std::shared_ptr<EntityT>> list;
-  forEachEntityAtTile(pos, [&](TileEntityPtr const& entity) {
+  forEachEntityAtTile(pos, [&](std::shared_ptr<TileEntity> const& entity) {
       if (auto e = as<EntityT>(entity))
         list.append(std::move(e));
       return false;
@@ -238,24 +219,6 @@ export namespace Star {
   using ::Star::EntityMapExceptionTag;
   using ::Star::EntityMapException;
   using ::Star::EntityMap;
-  using ::Star::EntityMapPtr;
-  using ::Star::EntityMapConstPtr;
-  using ::Star::EntityMapWeakPtr;
-  using ::Star::EntityMapConstWeakPtr;
-  using ::Star::EntityMapUPtr;
-  using ::Star::EntityMapConstUPtr;
   using ::Star::TileEntity;
-  using ::Star::TileEntityPtr;
-  using ::Star::TileEntityConstPtr;
-  using ::Star::TileEntityWeakPtr;
-  using ::Star::TileEntityConstWeakPtr;
-  using ::Star::TileEntityUPtr;
-  using ::Star::TileEntityConstUPtr;
   using ::Star::InteractiveEntity;
-  using ::Star::InteractiveEntityPtr;
-  using ::Star::InteractiveEntityConstPtr;
-  using ::Star::InteractiveEntityWeakPtr;
-  using ::Star::InteractiveEntityConstWeakPtr;
-  using ::Star::InteractiveEntityUPtr;
-  using ::Star::InteractiveEntityConstUPtr;
 }

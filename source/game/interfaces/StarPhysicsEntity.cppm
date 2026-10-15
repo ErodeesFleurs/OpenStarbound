@@ -29,14 +29,6 @@ import star.force_regions;
 import star.rect;
 namespace Star {
 
-class PhysicsEntity;
-using PhysicsEntityPtr = std::shared_ptr<PhysicsEntity>;
-using PhysicsEntityConstPtr = std::shared_ptr<const PhysicsEntity>;
-using PhysicsEntityWeakPtr = std::weak_ptr<PhysicsEntity>;
-using PhysicsEntityConstWeakPtr = std::weak_ptr<const PhysicsEntity>;
-using PhysicsEntityUPtr = std::unique_ptr<PhysicsEntity>;
-using PhysicsEntityConstUPtr = std::unique_ptr<const PhysicsEntity>;
-
 struct PhysicsMovingCollision {
   friend DataStream& operator>>(DataStream& ds, PhysicsMovingCollision& pmc);
   friend DataStream& operator<<(DataStream& ds, PhysicsMovingCollision const& pmc);
@@ -91,12 +83,6 @@ export module star.physics_entity;
 
 export namespace Star {
   using ::Star::PhysicsEntity;
-  using ::Star::PhysicsEntityPtr;
-  using ::Star::PhysicsEntityConstPtr;
-  using ::Star::PhysicsEntityWeakPtr;
-  using ::Star::PhysicsEntityConstWeakPtr;
-  using ::Star::PhysicsEntityUPtr;
-  using ::Star::PhysicsEntityConstUPtr;
   using ::Star::PhysicsMovingCollision;
   using ::Star::MovingCollisionId;
 }

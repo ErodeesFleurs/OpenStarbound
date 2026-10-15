@@ -11,20 +11,6 @@ import star.image_processing;
 
 namespace Star {
 
-class Directives;
-using DirectivesPtr = std::shared_ptr<Directives>;
-using DirectivesConstPtr = std::shared_ptr<const Directives>;
-using DirectivesWeakPtr = std::weak_ptr<Directives>;
-using DirectivesConstWeakPtr = std::weak_ptr<const Directives>;
-using DirectivesUPtr = std::unique_ptr<Directives>;
-using DirectivesConstUPtr = std::unique_ptr<const Directives>;
-class DirectivesGroup;
-using DirectivesGroupPtr = std::shared_ptr<DirectivesGroup>;
-using DirectivesGroupConstPtr = std::shared_ptr<const DirectivesGroup>;
-using DirectivesGroupWeakPtr = std::weak_ptr<DirectivesGroup>;
-using DirectivesGroupConstWeakPtr = std::weak_ptr<const DirectivesGroup>;
-using DirectivesGroupUPtr = std::unique_ptr<DirectivesGroup>;
-using DirectivesGroupConstUPtr = std::unique_ptr<const DirectivesGroup>;
 struct DirectivesExceptionTag {
   static constexpr char const* name() { return "DirectivesException"; }
 };
@@ -174,19 +160,7 @@ export namespace Star {
 
 export namespace Star {
   using ::Star::Directives;
-  using ::Star::DirectivesPtr;
-  using ::Star::DirectivesConstPtr;
-  using ::Star::DirectivesUPtr;
-  using ::Star::DirectivesConstUPtr;
-  using ::Star::DirectivesWeakPtr;
-  using ::Star::DirectivesConstWeakPtr;
   using ::Star::DirectivesGroup;
-  using ::Star::DirectivesGroupPtr;
-  using ::Star::DirectivesGroupConstPtr;
-  using ::Star::DirectivesGroupUPtr;
-  using ::Star::DirectivesGroupConstUPtr;
-  using ::Star::DirectivesGroupWeakPtr;
-  using ::Star::DirectivesGroupConstWeakPtr;
   using ::Star::DirectivesExceptionTag;
   using ::Star::DirectivesException;
   using ::Star::ImageDirectives;

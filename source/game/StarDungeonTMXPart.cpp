@@ -257,11 +257,11 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
       String layerType = tmxLayer.getString("type");
 
       if (layerType == "tilelayer") {
-        TMXTileLayerPtr layer = std::make_shared<TMXTileLayer>(tmxLayer);
+        std::shared_ptr<TMXTileLayer> layer = std::make_shared<TMXTileLayer>(tmxLayer);
         m_tileLayers.append(layer);
 
       } else if (layerType == "objectgroup") {
-        TMXObjectGroupPtr group = std::make_shared<TMXObjectGroup>(tmxLayer, m_tilesets);
+        std::shared_ptr<TMXObjectGroup> group = std::make_shared<TMXObjectGroup>(tmxLayer, m_tilesets);
         m_objectGroups.append(group);
 
       } else {
@@ -270,7 +270,7 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
     }
   }
 
-  Tiled::Tile const& TMXTileLayer::getTile(TMXTilesetsPtr const& tilesets, Vec2I pos) const {
+  Tiled::Tile const& TMXTileLayer::getTile(std::shared_ptr<TMXTilesets> const& tilesets, Vec2I pos) const {
     if (!m_rect.contains(pos))
       return tilesets->nullTile();
 
@@ -304,7 +304,7 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
         throw StarException::format("Tiled map has embedded tileset {}", tilesetJson.optString("name"));
 
       String sourcePath = tilesetAssetPath(tilesetJson.getString("source"));
-      Tiled::TilesetConstPtr tileset = Root::singleton().tilesetDatabase()->get(sourcePath);
+      std::shared_ptr<Tiled::Tileset const> tileset = Root::singleton().tilesetDatabase()->get(sourcePath);
       m_tilesets.append(tileset);
 
       std::size_t firstGid = tilesetJson.getUInt("firstgid");
@@ -339,7 +339,7 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
     return a.firstGid > b.firstGid;
   }
 
-  TMXObject::TMXObject(Maybe<Json> const& groupProperties, Json const& tmx, TMXTilesetsPtr tilesets) {
+  TMXObject::TMXObject(Maybe<Json> const& groupProperties, Json const& tmx, std::shared_ptr<TMXTilesets> tilesets) {
     m_objectId = tmx.getUInt("id");
 
     // convert object properties in array format to object format
@@ -435,7 +435,7 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
   }
 
   Maybe<TMXObject::TileObjectInfo> TMXObject::getTileObjectInfo(
-      Json const& tmx, TMXTilesetsPtr tilesets, TileLayer layer) {
+      Json const& tmx, std::shared_ptr<TMXTilesets> tilesets, TileLayer layer) {
     Maybe<unsigned> optGid = tmx.optUInt("gid");
     if (optGid.isNothing())
       return {};
@@ -467,7 +467,7 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
     return StarException::format("At {},{}: {}", pos[0], pos[1], msg);
   }
 
-  TMXObjectGroup::TMXObjectGroup(Json const& tmx, TMXTilesetsPtr tilesets) {
+  TMXObjectGroup::TMXObjectGroup(Json const& tmx, std::shared_ptr<TMXTilesets> tilesets) {
     m_name = tmx.getString("name");
     
     // convert group properties in array format to object format
@@ -482,7 +482,7 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
         }
       });
     for (Json const& tmxObject : tmx.getArray("objects")) {
-      TMXObjectPtr object = std::make_shared<TMXObject>(groupProperties, tmxObject, tilesets);
+      std::shared_ptr<TMXObject> object = std::make_shared<TMXObject>(groupProperties, tmxObject, tilesets);
       m_objects.append(object);
     }
   }
@@ -494,7 +494,7 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
 
   Vec2U TMXPartReader::size() const {
     Vec2U size;
-    forEachMap([&size](TMXMapConstPtr const& map) {
+    forEachMap([&size](std::shared_ptr<TMXMap const> const& map) {
       size = Vec2U{map->width(), map->height()};
       return true;
     });
@@ -502,18 +502,18 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
   }
 
   void TMXPartReader::forEachTile(TileCallback const& callback) const {
-    forEachMap([callback](TMXMapConstPtr const& map) {
+    forEachMap([callback](std::shared_ptr<TMXMap const> const& map) {
         return map->forEachTile(callback);
       });
   }
 
   void TMXPartReader::forEachTileAt(Vec2I pos, TileCallback const& callback) const {
-    forEachMap([pos, callback](TMXMapConstPtr const& map) {
+    forEachMap([pos, callback](std::shared_ptr<TMXMap const> const& map) {
         return map->forEachTileAt(pos, callback);
       });
   }
 
-  void TMXPartReader::forEachMap(std::function<bool(TMXMapConstPtr const&)> func) const {
+  void TMXPartReader::forEachMap(std::function<bool(std::shared_ptr<TMXMap const> const&)> func) const {
     for (auto const& map : m_maps) {
       func(map.second);
     }

@@ -19,7 +19,7 @@ struct CacheSelector : TerrainSelector {
 
   float get(int x, int y) const override;
 
-  TerrainSelectorConstPtr m_source;
+  std::shared_ptr<TerrainSelector const> m_source;
   mutable HashLruCache<Vec2I, float> m_cache;
 };
 

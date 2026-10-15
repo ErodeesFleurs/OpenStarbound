@@ -39,14 +39,6 @@ import star.system_world;
 
 namespace Star {
 
-class PlayerUniverseMap;
-using PlayerUniverseMapPtr = std::shared_ptr<PlayerUniverseMap>;
-using PlayerUniverseMapConstPtr = std::shared_ptr<const PlayerUniverseMap>;
-using PlayerUniverseMapWeakPtr = std::weak_ptr<PlayerUniverseMap>;
-using PlayerUniverseMapConstWeakPtr = std::weak_ptr<const PlayerUniverseMap>;
-using PlayerUniverseMapUPtr = std::unique_ptr<PlayerUniverseMap>;
-using PlayerUniverseMapConstUPtr = std::unique_ptr<const PlayerUniverseMap>;
-
 template <typename T>
 Json jsonFromBookmarkTarget(T const& target);
 
@@ -166,10 +158,4 @@ export namespace Star {
   using ::Star::OrbitBookmark;
   using ::Star::TeleportBookmark;
   using ::Star::PlayerUniverseMap;
-  using ::Star::PlayerUniverseMapPtr;
-  using ::Star::PlayerUniverseMapConstPtr;
-  using ::Star::PlayerUniverseMapWeakPtr;
-  using ::Star::PlayerUniverseMapConstWeakPtr;
-  using ::Star::PlayerUniverseMapUPtr;
-  using ::Star::PlayerUniverseMapConstUPtr;
 }

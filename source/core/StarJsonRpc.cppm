@@ -10,21 +10,6 @@ import star.rpc_promise;
 
 namespace Star {
 
-class JsonRpcInterface;
-using JsonRpcInterfacePtr = std::shared_ptr<JsonRpcInterface>;
-using JsonRpcInterfaceConstPtr = std::shared_ptr<const JsonRpcInterface>;
-using JsonRpcInterfaceWeakPtr = std::weak_ptr<JsonRpcInterface>;
-using JsonRpcInterfaceConstWeakPtr = std::weak_ptr<const JsonRpcInterface>;
-using JsonRpcInterfaceUPtr = std::unique_ptr<JsonRpcInterface>;
-using JsonRpcInterfaceConstUPtr = std::unique_ptr<const JsonRpcInterface>;
-class JsonRpc;
-using JsonRpcPtr = std::shared_ptr<JsonRpc>;
-using JsonRpcConstPtr = std::shared_ptr<const JsonRpc>;
-using JsonRpcWeakPtr = std::weak_ptr<JsonRpc>;
-using JsonRpcConstWeakPtr = std::weak_ptr<const JsonRpc>;
-using JsonRpcUPtr = std::unique_ptr<JsonRpc>;
-using JsonRpcConstUPtr = std::unique_ptr<const JsonRpc>;
-
 struct JsonRpcExceptionTag {
   static constexpr char const* name() { return "JsonRpcException"; }
 };
@@ -78,16 +63,4 @@ using ::Star::JsonRpcExceptionTag;
 using ::Star::JsonRpcException;
 using ::Star::JsonRpcRemoteFunction;
 using ::Star::JsonRpcHandlers;
-using ::Star::JsonRpcInterfacePtr;
-using ::Star::JsonRpcInterfaceConstPtr;
-using ::Star::JsonRpcInterfaceWeakPtr;
-using ::Star::JsonRpcInterfaceConstWeakPtr;
-using ::Star::JsonRpcInterfaceUPtr;
-using ::Star::JsonRpcInterfaceConstUPtr;
-using ::Star::JsonRpcPtr;
-using ::Star::JsonRpcConstPtr;
-using ::Star::JsonRpcWeakPtr;
-using ::Star::JsonRpcConstWeakPtr;
-using ::Star::JsonRpcUPtr;
-using ::Star::JsonRpcConstUPtr;
 }

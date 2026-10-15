@@ -12,7 +12,7 @@ export namespace Star {
 // Provides callbacks for interfacing IODevice with ogg vorbis callbacks
 class IODeviceCallbacks {
 public:
-  explicit IODeviceCallbacks(IODevicePtr device);
+  explicit IODeviceCallbacks(std::shared_ptr<IODevice> device);
 
   // No copying
   IODeviceCallbacks(IODeviceCallbacks const&) = delete;
@@ -23,7 +23,7 @@ public:
   IODeviceCallbacks& operator=(IODeviceCallbacks&&) = default;
 
   // Get the underlying device
-  IODevicePtr const& device() const;
+  std::shared_ptr<IODevice> const& device() const;
 
   // Callback functions for Ogg Vorbis
   static std::size_t readFunc(void* ptr, std::size_t size, std::size_t nmemb, void* datasource);
@@ -34,20 +34,20 @@ public:
   void setupOggCallbacks(ov_callbacks& callbacks);
 
 private:
-  IODevicePtr m_device;
+  std::shared_ptr<IODevice> m_device;
 };
 
 }
 
 namespace Star {
 
-IODeviceCallbacks::IODeviceCallbacks(IODevicePtr device)
+IODeviceCallbacks::IODeviceCallbacks(std::shared_ptr<IODevice> device)
   : m_device(std::move(device)) {
   if (!m_device->isOpen())
     m_device->open(IOMode::Read);
 }
 
-IODevicePtr const& IODeviceCallbacks::device() const {
+std::shared_ptr<IODevice> const& IODeviceCallbacks::device() const {
   return m_device;
 }
 

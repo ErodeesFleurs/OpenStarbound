@@ -15,21 +15,6 @@ import star.host_address;
 
 namespace Star {
 
-class P2PSocket;
-using P2PSocketPtr = std::shared_ptr<P2PSocket>;
-using P2PSocketConstPtr = std::shared_ptr<P2PSocket const>;
-using P2PSocketWeakPtr = std::weak_ptr<P2PSocket>;
-using P2PSocketConstWeakPtr = std::weak_ptr<P2PSocket const>;
-using P2PSocketUPtr = std::unique_ptr<P2PSocket>;
-using P2PSocketConstUPtr = std::unique_ptr<P2PSocket const>;
-class P2PNetworkingService;
-using P2PNetworkingServicePtr = std::shared_ptr<P2PNetworkingService>;
-using P2PNetworkingServiceConstPtr = std::shared_ptr<P2PNetworkingService const>;
-using P2PNetworkingServiceWeakPtr = std::weak_ptr<P2PNetworkingService>;
-using P2PNetworkingServiceConstWeakPtr = std::weak_ptr<P2PNetworkingService const>;
-using P2PNetworkingServiceUPtr = std::unique_ptr<P2PNetworkingService>;
-using P2PNetworkingServiceConstUPtr = std::unique_ptr<P2PNetworkingService const>;
-  
 enum class P2PJoinRequestReply {
   No,
   Yes,
@@ -73,10 +58,10 @@ public:
   virtual Maybe<std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> pullJoinRequest() = 0;
 
   virtual void setAcceptingP2PConnections(bool acceptingP2PConnections) = 0;
-  virtual List<P2PSocketUPtr> acceptP2PConnections() = 0;
+  virtual List<std::unique_ptr<P2PSocket>> acceptP2PConnections() = 0;
   virtual void update() = 0;
 
-  virtual Either<String, P2PSocketUPtr> connectToPeer(P2PNetworkingPeerId peerId) = 0;
+  virtual Either<String, std::unique_ptr<P2PSocket>> connectToPeer(P2PNetworkingPeerId peerId) = 0;
 };
 
 };
@@ -85,19 +70,7 @@ export module star.p2p_networking_service;
 
 export namespace Star {
   using ::Star::P2PSocket;
-  using ::Star::P2PSocketPtr;
-  using ::Star::P2PSocketConstPtr;
-  using ::Star::P2PSocketWeakPtr;
-  using ::Star::P2PSocketConstWeakPtr;
-  using ::Star::P2PSocketUPtr;
-  using ::Star::P2PSocketConstUPtr;
   using ::Star::P2PNetworkingService;
-  using ::Star::P2PNetworkingServicePtr;
-  using ::Star::P2PNetworkingServiceConstPtr;
-  using ::Star::P2PNetworkingServiceWeakPtr;
-  using ::Star::P2PNetworkingServiceConstWeakPtr;
-  using ::Star::P2PNetworkingServiceUPtr;
-  using ::Star::P2PNetworkingServiceConstUPtr;
   using ::Star::P2PJoinRequestReply;
   using ::Star::P2PNetworkingPeerId;
   using ::Star::P2PNetworkingPeerIdWrapper;

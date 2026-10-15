@@ -21,22 +21,14 @@ import star.platform_services_pc;
 
 namespace Star {
 
-class SteamDesktopService;
-using SteamDesktopServicePtr = std::shared_ptr<SteamDesktopService>;
-using SteamDesktopServiceConstPtr = std::shared_ptr<SteamDesktopService const>;
-using SteamDesktopServiceWeakPtr = std::weak_ptr<SteamDesktopService>;
-using SteamDesktopServiceConstWeakPtr = std::weak_ptr<SteamDesktopService const>;
-using SteamDesktopServiceUPtr = std::unique_ptr<SteamDesktopService>;
-using SteamDesktopServiceConstUPtr = std::unique_ptr<SteamDesktopService const>;
-
 class SteamDesktopService final : public DesktopService {
 public:
-  SteamDesktopService(PcPlatformServicesStatePtr state);
+  SteamDesktopService(std::shared_ptr<PcPlatformServicesState> state);
 
   void openUrl(String const& url) override;
 
 private:
-  PcPlatformServicesStatePtr m_state;
+  std::shared_ptr<PcPlatformServicesState> m_state;
 };
 
 }
@@ -45,10 +37,4 @@ export module star.desktop_service_pc_steam;
 
 export namespace Star {
   using ::Star::SteamDesktopService;
-  using ::Star::SteamDesktopServicePtr;
-  using ::Star::SteamDesktopServiceConstPtr;
-  using ::Star::SteamDesktopServiceUPtr;
-  using ::Star::SteamDesktopServiceConstUPtr;
-  using ::Star::SteamDesktopServiceWeakPtr;
-  using ::Star::SteamDesktopServiceConstWeakPtr;
 }

@@ -17,14 +17,6 @@ import star.drawable;
 
 namespace Star {
 
-class PointableItem;
-using PointableItemPtr = std::shared_ptr<PointableItem>;
-using PointableItemConstPtr = std::shared_ptr<const PointableItem>;
-using PointableItemWeakPtr = std::weak_ptr<PointableItem>;
-using PointableItemConstWeakPtr = std::weak_ptr<const PointableItem>;
-using PointableItemUPtr = std::unique_ptr<PointableItem>;
-using PointableItemConstUPtr = std::unique_ptr<const PointableItem>;
-
 class PointableItem {
 public:
   virtual ~PointableItem() {}
@@ -40,10 +32,4 @@ export module star.pointable_item;
 
 export namespace Star {
   using ::Star::PointableItem;
-  using ::Star::PointableItemPtr;
-  using ::Star::PointableItemConstPtr;
-  using ::Star::PointableItemWeakPtr;
-  using ::Star::PointableItemConstWeakPtr;
-  using ::Star::PointableItemUPtr;
-  using ::Star::PointableItemConstUPtr;
 }

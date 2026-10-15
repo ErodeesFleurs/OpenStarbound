@@ -180,7 +180,7 @@ import star.shaders_menu;
 
 namespace Star {
 
-GraphicsMenu::GraphicsMenu(PaneManager* manager,UniverseClientPtr client)
+GraphicsMenu::GraphicsMenu(PaneManager* manager,std::shared_ptr<UniverseClient> client)
   : m_paneManager(manager) {
   GuiReader reader;
   reader.registerCallback("cancel",

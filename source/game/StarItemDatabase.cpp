@@ -92,19 +92,6 @@ import star.animation;
 import star.particle;
 import star.entity_rendering;
 struct PreviewTile;
-using PreviewTilePtr = std::shared_ptr<PreviewTile>;
-using PreviewTileConstPtr = std::shared_ptr<const PreviewTile>;
-using PreviewTileWeakPtr = std::weak_ptr<PreviewTile>;
-using PreviewTileConstWeakPtr = std::weak_ptr<const PreviewTile>;
-using PreviewTileUPtr = std::unique_ptr<PreviewTile>;
-using PreviewTileConstUPtr = std::unique_ptr<const PreviewTile>;
-class PreviewTileTool;
-using PreviewTileToolPtr = std::shared_ptr<PreviewTileTool>;
-using PreviewTileToolConstPtr = std::shared_ptr<const PreviewTileTool>;
-using PreviewTileToolWeakPtr = std::weak_ptr<PreviewTileTool>;
-using PreviewTileToolConstWeakPtr = std::weak_ptr<const PreviewTileTool>;
-using PreviewTileToolUPtr = std::unique_ptr<PreviewTileTool>;
-using PreviewTileToolConstUPtr = std::unique_ptr<const PreviewTileTool>;
 import star.preview_tile_tool;
 import star.tools;
 import star.effect_source_item;
@@ -166,7 +153,7 @@ EnumMap<ItemType> ItemTypeNames{
   {ItemType::AugmentItem, "augmentitem"}
 };
 
-std::uint64_t ItemDatabase::getCountOfItem(List<ItemPtr> const& bag, ItemDescriptor const& item, bool exactMatch) {
+std::uint64_t ItemDatabase::getCountOfItem(List<std::shared_ptr<Item>> const& bag, ItemDescriptor const& item, bool exactMatch) {
   auto normalizedBag = normalizeBag(bag);
   return getCountOfItem(normalizedBag, item, exactMatch);
 }
@@ -180,7 +167,7 @@ std::uint64_t ItemDatabase::getCountOfItem(HashMap<ItemDescriptor, std::uint64_t
   }
 }
 
-HashMap<ItemDescriptor, std::uint64_t> ItemDatabase::normalizeBag(List<ItemPtr> const& bag) {
+HashMap<ItemDescriptor, std::uint64_t> ItemDatabase::normalizeBag(List<std::shared_ptr<Item>> const& bag) {
   HashMap<ItemDescriptor, std::uint64_t> normalizedBag;
   for (auto const& item : bag) {
     if (!item)
@@ -222,7 +209,7 @@ HashSet<ItemRecipe> ItemDatabase::recipesFromSubset(HashMap<ItemDescriptor, std:
   return res;
 }
 
-String ItemDatabase::guiFilterString(ItemPtr const& item) {
+String ItemDatabase::guiFilterString(std::shared_ptr<Item> const& item) {
   return (item->name() + item->friendlyName() + item->description()).toLower().splitAny(" ,.?*\\+/|\t").join("");
 }
 
@@ -253,13 +240,13 @@ ItemDatabase::ItemDatabase()
 void ItemDatabase::cleanup() {
   {
     MutexLocker locker(m_cacheMutex);
-    m_itemCache.cleanup([](ItemCacheEntry const&, ItemPtr const& item) {
+    m_itemCache.cleanup([](ItemCacheEntry const&, std::shared_ptr<Item> const& item) {
       return item.use_count() != 1;
     });
   }
 }
 
-ItemPtr ItemDatabase::diskLoad(Json const& diskStore) const {
+std::shared_ptr<Item> ItemDatabase::diskLoad(Json const& diskStore) const {
   if (diskStore) {
     return item(ItemDescriptor::loadStore(diskStore));
   } else {
@@ -267,18 +254,18 @@ ItemPtr ItemDatabase::diskLoad(Json const& diskStore) const {
   }
 }
 
-ItemPtr ItemDatabase::fromJson(Json const& spec) const {
+std::shared_ptr<Item> ItemDatabase::fromJson(Json const& spec) const {
   return item(ItemDescriptor(spec));
 }
 
-Json ItemDatabase::diskStore(ItemConstPtr const& itemPtr) const {
+Json ItemDatabase::diskStore(std::shared_ptr<Item const> const& itemPtr) const {
   if (itemPtr)
     return itemPtr->descriptor().diskStore();
   else
     return Json();
 }
 
-Json ItemDatabase::toJson(ItemConstPtr const& itemPtr) const {
+Json ItemDatabase::toJson(std::shared_ptr<Item const> const& itemPtr) const {
   if (itemPtr)
     return itemPtr->descriptor().toJson();
   else
@@ -331,26 +318,26 @@ Maybe<String> ItemDatabase::itemFile(String const& itemName) const {
   return data.directory + data.filename;
 }
 
-ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, Maybe<std::uint64_t> seed) const {
+std::shared_ptr<Item> ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, Maybe<std::uint64_t> seed) const {
   if (!descriptor)
     return {};
 
   ItemCacheEntry entry{ descriptor, level, seed };
   MutexLocker locker(m_cacheMutex);
-  if (ItemPtr* cached = m_itemCache.ptr(entry))
+  if (std::shared_ptr<Item>* cached = m_itemCache.ptr(entry))
     return *cached;
   else {
     locker.unlock();
 
-    ItemPtr item = tryCreateItem(descriptor, level, seed);
+    std::shared_ptr<Item> item = tryCreateItem(descriptor, level, seed);
     std::get<2>(entry) = item->parameters().optUInt("seed"); // Seed could've been changed by the buildscript
 
     locker.lock();
-    return m_itemCache.get(entry, [&](ItemCacheEntry const&) -> ItemPtr { return std::move(item); });
+    return m_itemCache.get(entry, [&](ItemCacheEntry const&) -> std::shared_ptr<Item> { return std::move(item); });
   }
 }
 
-ItemPtr ItemDatabase::item(ItemDescriptor descriptor, Maybe<float> level, Maybe<std::uint64_t> seed, bool ignoreInvalid) const {
+std::shared_ptr<Item> ItemDatabase::item(ItemDescriptor descriptor, Maybe<float> level, Maybe<std::uint64_t> seed, bool ignoreInvalid) const {
   if (!descriptor)
     return {};
   else
@@ -383,7 +370,7 @@ HashSet<ItemRecipe> ItemDatabase::recipesForOutputItem(String itemName) const {
   return result;
 }
 
-HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(List<ItemPtr> const& bag, StringMap<std::uint64_t> const& availableCurrencies) const {
+HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(List<std::shared_ptr<Item>> const& bag, StringMap<std::uint64_t> const& availableCurrencies) const {
   auto normalizedBag = normalizeBag(bag);
   return recipesFromBagContents(normalizedBag, availableCurrencies);
 }
@@ -392,7 +379,7 @@ HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(HashMap<ItemDescriptor,
   return recipesFromSubset(bag, availableCurrencies, m_recipes);
 }
 
-HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(List<ItemPtr> const& bag, StringMap<std::uint64_t> const& availableCurrencies, StringSet const& allowedTypes) const {
+HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(List<std::shared_ptr<Item>> const& bag, StringMap<std::uint64_t> const& availableCurrencies, StringSet const& allowedTypes) const {
   auto normalizedBag = normalizeBag(bag);
   return recipesFromBagContents(normalizedBag, availableCurrencies, allowedTypes);
 }
@@ -401,7 +388,7 @@ HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(HashMap<ItemDescriptor,
   return recipesFromSubset(bag, availableCurrencies, m_recipes, allowedTypes);
 }
 
-std::uint64_t ItemDatabase::maxCraftableInBag(List<ItemPtr> const& bag, StringMap<std::uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const {
+std::uint64_t ItemDatabase::maxCraftableInBag(List<std::shared_ptr<Item>> const& bag, StringMap<std::uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const {
   auto normalizedBag = normalizeBag(bag);
 
   return maxCraftableInBag(normalizedBag, availableCurrencies, recipe);
@@ -428,7 +415,7 @@ std::uint64_t ItemDatabase::maxCraftableInBag(HashMap<ItemDescriptor, std::uint6
   return res;
 }
 
-ItemRecipe ItemDatabase::getPreciseRecipeForMaterials(String const& group, List<ItemPtr> const& bag, StringMap<std::uint64_t> const& availableCurrencies) const {
+ItemRecipe ItemDatabase::getPreciseRecipeForMaterials(String const& group, List<std::shared_ptr<Item>> const& bag, StringMap<std::uint64_t> const& availableCurrencies) const {
   // picks the recipe that:
   // * can be crafted (duh)
   // * uses all the input material types
@@ -506,7 +493,7 @@ HashSet<ItemRecipe> ItemDatabase::allRecipes(StringSet const& types) const {
   return res;
 }
 
-ItemPtr ItemDatabase::applyAugment(ItemPtr const item, AugmentItem* augment) const {
+std::shared_ptr<Item> ItemDatabase::applyAugment(std::shared_ptr<Item> const item, AugmentItem* augment) const {
   if (item) {
     RecursiveMutexLocker locker(m_luaMutex);
     LuaBaseComponent script;
@@ -530,7 +517,7 @@ ItemPtr ItemDatabase::applyAugment(ItemPtr const item, AugmentItem* augment) con
   return item;
 }
 
-bool ItemDatabase::ageItem(ItemPtr& item, double aging) const {
+bool ItemDatabase::ageItem(std::shared_ptr<Item>& item, double aging) const {
   if (!item)
     return false;
 
@@ -561,7 +548,7 @@ List<String> ItemDatabase::allItems() const {
   return m_items.keys();
 }
 
-ItemPtr ItemDatabase::createItem(ItemType type, ItemConfig const& config) {
+std::shared_ptr<Item> ItemDatabase::createItem(ItemType type, ItemConfig const& config) {
   if (type == ItemType::Generic) {
     return std::make_shared<GenericItem>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::LiquidItem) {
@@ -617,8 +604,8 @@ ItemPtr ItemDatabase::createItem(ItemType type, ItemConfig const& config) {
   }
 }
 
-ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level, Maybe<std::uint64_t> seed, bool ignoreInvalid) const {
-  ItemPtr result;
+std::shared_ptr<Item> ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level, Maybe<std::uint64_t> seed, bool ignoreInvalid) const {
+  std::shared_ptr<Item> result;
   ItemDescriptor newDescriptor = descriptor;
 
   try {

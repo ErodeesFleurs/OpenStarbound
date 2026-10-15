@@ -30,26 +30,7 @@ namespace Star {
 extern VersionNumber const TeamClientVersion;
   
 class Player;
-using PlayerPtr = std::shared_ptr<Player>;
-using PlayerConstPtr = std::shared_ptr<const Player>;
-using PlayerWeakPtr = std::weak_ptr<Player>;
-using PlayerConstWeakPtr = std::weak_ptr<const Player>;
-using PlayerUPtr = std::unique_ptr<Player>;
-using PlayerConstUPtr = std::unique_ptr<const Player>;
 class ClientContext;
-using ClientContextPtr = std::shared_ptr<ClientContext>;
-using ClientContextConstPtr = std::shared_ptr<const ClientContext>;
-using ClientContextWeakPtr = std::weak_ptr<ClientContext>;
-using ClientContextConstWeakPtr = std::weak_ptr<const ClientContext>;
-using ClientContextUPtr = std::unique_ptr<ClientContext>;
-using ClientContextConstUPtr = std::unique_ptr<const ClientContext>;
-class TeamClient;
-using TeamClientPtr = std::shared_ptr<TeamClient>;
-using TeamClientConstPtr = std::shared_ptr<const TeamClient>;
-using TeamClientWeakPtr = std::weak_ptr<TeamClient>;
-using TeamClientConstWeakPtr = std::weak_ptr<const TeamClient>;
-using TeamClientUPtr = std::unique_ptr<TeamClient>;
-using TeamClientConstUPtr = std::unique_ptr<const TeamClient>;
 
 class TeamClient {
 public:
@@ -65,7 +46,7 @@ public:
     List<Drawable> portrait;
   };
 
-  TeamClient(PlayerPtr mainPlayer, ClientContextPtr clientContext);
+  TeamClient(std::shared_ptr<Player> mainPlayer, std::shared_ptr<ClientContext> clientContext);
 
   void invitePlayer(String const& playerName);
   void acceptInvitation(Uuid const& inviterUuid);
@@ -98,12 +79,12 @@ private:
   void invokeRemote(String const& method, Json const& args, std::function<void(Json const&)> responseFunction = {});
   void handleRpcResponses();
 
-  void writePlayerData(JsonObject& request, PlayerPtr player, bool fullWrite = false) const;
+  void writePlayerData(JsonObject& request, std::shared_ptr<Player> player, bool fullWrite = false) const;
 
   void clearTeam();
 
-  PlayerPtr m_mainPlayer;
-  ClientContextPtr m_clientContext;
+  std::shared_ptr<Player> m_mainPlayer;
+  std::shared_ptr<ClientContext> m_clientContext;
   Maybe<Uuid> m_teamUuid;
 
   Uuid m_teamLeader;
@@ -133,24 +114,6 @@ export module star.team_client;
 export namespace Star {
 using ::Star::TeamClientVersion;
 using ::Star::Player;
-using ::Star::PlayerPtr;
-using ::Star::PlayerConstPtr;
-using ::Star::PlayerWeakPtr;
-using ::Star::PlayerConstWeakPtr;
-using ::Star::PlayerUPtr;
-using ::Star::PlayerConstUPtr;
 using ::Star::ClientContext;
-using ::Star::ClientContextPtr;
-using ::Star::ClientContextConstPtr;
-using ::Star::ClientContextWeakPtr;
-using ::Star::ClientContextConstWeakPtr;
-using ::Star::ClientContextUPtr;
-using ::Star::ClientContextConstUPtr;
 using ::Star::TeamClient;
-using ::Star::TeamClientPtr;
-using ::Star::TeamClientConstPtr;
-using ::Star::TeamClientWeakPtr;
-using ::Star::TeamClientConstWeakPtr;
-using ::Star::TeamClientUPtr;
-using ::Star::TeamClientConstUPtr;
 }

@@ -47,37 +47,18 @@ import star.base_script_pane;
 namespace Star {
 
 class CanvasWidget;
-using CanvasWidgetPtr = std::shared_ptr<CanvasWidget>;
-using CanvasWidgetConstPtr = std::shared_ptr<CanvasWidget const>;
-using CanvasWidgetWeakPtr = std::weak_ptr<CanvasWidget>;
-using CanvasWidgetConstWeakPtr = std::weak_ptr<CanvasWidget const>;
-using CanvasWidgetUPtr = std::unique_ptr<CanvasWidget>;
-using CanvasWidgetConstUPtr = std::unique_ptr<CanvasWidget const>;
-class ScriptPane;
-using ScriptPanePtr = std::shared_ptr<ScriptPane>;
-using ScriptPaneConstPtr = std::shared_ptr<ScriptPane const>;
-using ScriptPaneWeakPtr = std::weak_ptr<ScriptPane>;
-using ScriptPaneConstWeakPtr = std::weak_ptr<ScriptPane const>;
-using ScriptPaneUPtr = std::unique_ptr<ScriptPane>;
-using ScriptPaneConstUPtr = std::unique_ptr<ScriptPane const>;
 class UniverseClient;
-using UniverseClientPtr = std::shared_ptr<UniverseClient>;
-using UniverseClientConstPtr = std::shared_ptr<UniverseClient const>;
-using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
-using UniverseClientConstWeakPtr = std::weak_ptr<UniverseClient const>;
-using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
-using UniverseClientConstUPtr = std::unique_ptr<UniverseClient const>;
 
 class ScriptPane : public BaseScriptPane {
 public:
-  ScriptPane(UniverseClientPtr client, Json config, EntityId sourceEntityId = NullEntityId);
+  ScriptPane(std::shared_ptr<UniverseClient> client, Json config, EntityId sourceEntityId = NullEntityId);
 
   void displayed() override;
   void dismissed() override;
 
   void tick(float dt) override;
 
-  PanePtr createTooltip(Vec2I const& screenPosition) override;
+  std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition) override;
 
   bool openWithInventory() const;
   bool closeWithInventory() const;
@@ -86,7 +67,7 @@ public:
 
   LuaCallbacks makePaneCallbacks() override;
 private:
-  UniverseClientPtr m_client;
+  std::shared_ptr<UniverseClient> m_client;
   EntityId m_sourceEntityId;
 };
 
@@ -96,24 +77,6 @@ export module star.script_pane;
 
 export namespace Star {
   using ::Star::CanvasWidget;
-  using ::Star::CanvasWidgetPtr;
-  using ::Star::CanvasWidgetConstPtr;
-  using ::Star::CanvasWidgetWeakPtr;
-  using ::Star::CanvasWidgetConstWeakPtr;
-  using ::Star::CanvasWidgetUPtr;
-  using ::Star::CanvasWidgetConstUPtr;
   using ::Star::ScriptPane;
-  using ::Star::ScriptPanePtr;
-  using ::Star::ScriptPaneConstPtr;
-  using ::Star::ScriptPaneWeakPtr;
-  using ::Star::ScriptPaneConstWeakPtr;
-  using ::Star::ScriptPaneUPtr;
-  using ::Star::ScriptPaneConstUPtr;
   using ::Star::UniverseClient;
-  using ::Star::UniverseClientPtr;
-  using ::Star::UniverseClientConstPtr;
-  using ::Star::UniverseClientWeakPtr;
-  using ::Star::UniverseClientConstWeakPtr;
-  using ::Star::UniverseClientUPtr;
-  using ::Star::UniverseClientConstUPtr;
 }

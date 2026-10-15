@@ -203,7 +203,7 @@ import star.status_controller_lua_bindings;
 
 namespace Star {
 
-ScriptPane::ScriptPane(UniverseClientPtr client, Json config, EntityId sourceEntityId) : BaseScriptPane(config) {
+ScriptPane::ScriptPane(std::shared_ptr<UniverseClient> client, Json config, EntityId sourceEntityId) : BaseScriptPane(config) {
   auto& root = Root::singleton();
   auto assets = root.assets();
 
@@ -236,18 +236,18 @@ void ScriptPane::tick(float dt) {
   BaseScriptPane::tick(dt);
 }
 
-PanePtr ScriptPane::createTooltip(Vec2I const& screenPosition) {
+std::shared_ptr<Pane> ScriptPane::createTooltip(Vec2I const& screenPosition) {
   auto result = m_script.invoke<Json>("createTooltip", screenPosition);
   if (result && !result.value().isNull()) {
     if (result->type() == Json::Type::String) {
       return SimpleTooltipBuilder::buildTooltip(result->toString());
     } else {
-      PanePtr tooltip = std::make_shared<Pane>();
+      std::shared_ptr<Pane> tooltip = std::make_shared<Pane>();
       m_reader->construct(*result, tooltip.get());
       return tooltip;
     }
   } else {
-    ItemPtr item;
+    std::shared_ptr<Item> item;
     if (auto child = getChildAt(screenPosition)) {
       if (auto itemSlot = as<ItemSlotWidget>(child))
         item = itemSlot->item();

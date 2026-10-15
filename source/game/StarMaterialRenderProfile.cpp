@@ -47,7 +47,7 @@ MaterialRenderMatchList parseMaterialRenderMatchList(Json const& matchSpec, Rule
   MaterialRenderMatchList matchList;
 
   for (auto const& matchConfig : matchSpec.toArray()) {
-    MaterialRenderMatchPtr match = std::make_shared<MaterialRenderMatch>();
+    std::shared_ptr<MaterialRenderMatch> match = std::make_shared<MaterialRenderMatch>();
 
     Json matchPointList = JsonArray();
     if (auto matchAllPoints = matchConfig.opt("matchAllPoints")) {

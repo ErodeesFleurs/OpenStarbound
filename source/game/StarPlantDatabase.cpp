@@ -383,7 +383,7 @@ BushVariant PlantDatabase::buildBushVariant(String const& bushName, float baseHu
   return bushVariant;
 }
 
-PlantPtr PlantDatabase::createPlant(TreeVariant const& treeVariant, std::uint64_t seed) const {
+std::shared_ptr<Plant> PlantDatabase::createPlant(TreeVariant const& treeVariant, std::uint64_t seed) const {
   try {
     return std::make_shared<Plant>(treeVariant, seed);
   } catch (std::exception const& e) {
@@ -391,7 +391,7 @@ PlantPtr PlantDatabase::createPlant(TreeVariant const& treeVariant, std::uint64_
   }
 }
 
-PlantPtr PlantDatabase::createPlant(GrassVariant const& grassVariant, std::uint64_t seed) const {
+std::shared_ptr<Plant> PlantDatabase::createPlant(GrassVariant const& grassVariant, std::uint64_t seed) const {
   try {
     return std::make_shared<Plant>(grassVariant, seed);
   } catch (std::exception const& e) {
@@ -399,7 +399,7 @@ PlantPtr PlantDatabase::createPlant(GrassVariant const& grassVariant, std::uint6
   }
 }
 
-PlantPtr PlantDatabase::createPlant(BushVariant const& bushVariant, std::uint64_t seed) const {
+std::shared_ptr<Plant> PlantDatabase::createPlant(BushVariant const& bushVariant, std::uint64_t seed) const {
   try {
     return std::make_shared<Plant>(bushVariant, seed);
   } catch (std::exception const& e) {

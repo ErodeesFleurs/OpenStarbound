@@ -198,7 +198,7 @@ void Songbook::playback() {
         m_uncompressedSamples[note.file] = sample;
     }
 
-    AudioInstancePtr audioInstance = std::make_shared<AudioInstance>(*m_uncompressedSamples[note.file]);
+    std::shared_ptr<AudioInstance> audioInstance = std::make_shared<AudioInstance>(*m_uncompressedSamples[note.file]);
     audioInstance->setMixerGroup(MixerGroup::Instruments);
     audioInstance->setPitchMultiplier(note.velocity);
 

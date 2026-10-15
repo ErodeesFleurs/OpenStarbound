@@ -33,28 +33,6 @@ import star.celestial_parameters;
 
 namespace Star {
 
-struct CelestialSystemObjects;
-using CelestialSystemObjectsPtr = std::shared_ptr<CelestialSystemObjects>;
-using CelestialSystemObjectsConstPtr = std::shared_ptr<const CelestialSystemObjects>;
-using CelestialSystemObjectsWeakPtr = std::weak_ptr<CelestialSystemObjects>;
-using CelestialSystemObjectsConstWeakPtr = std::weak_ptr<const CelestialSystemObjects>;
-using CelestialSystemObjectsUPtr = std::unique_ptr<CelestialSystemObjects>;
-using CelestialSystemObjectsConstUPtr = std::unique_ptr<const CelestialSystemObjects>;
-struct CelestialChunk;
-using CelestialChunkPtr = std::shared_ptr<CelestialChunk>;
-using CelestialChunkConstPtr = std::shared_ptr<const CelestialChunk>;
-using CelestialChunkWeakPtr = std::weak_ptr<CelestialChunk>;
-using CelestialChunkConstWeakPtr = std::weak_ptr<const CelestialChunk>;
-using CelestialChunkUPtr = std::unique_ptr<CelestialChunk>;
-using CelestialChunkConstUPtr = std::unique_ptr<const CelestialChunk>;
-struct CelestialBaseInformation;
-using CelestialBaseInformationPtr = std::shared_ptr<CelestialBaseInformation>;
-using CelestialBaseInformationConstPtr = std::shared_ptr<const CelestialBaseInformation>;
-using CelestialBaseInformationWeakPtr = std::weak_ptr<CelestialBaseInformation>;
-using CelestialBaseInformationConstWeakPtr = std::weak_ptr<const CelestialBaseInformation>;
-using CelestialBaseInformationUPtr = std::unique_ptr<CelestialBaseInformation>;
-using CelestialBaseInformationConstUPtr = std::unique_ptr<const CelestialBaseInformation>;
-
 typedef List<std::pair<Vec2I, Vec2I>> CelestialConstellation;
 
 struct CelestialOrbitRegion {
@@ -134,22 +112,4 @@ export namespace Star {
   using ::Star::CelestialPlanet;
   using ::Star::CelestialRequest;
   using ::Star::CelestialResponse;
-  using ::Star::CelestialSystemObjectsPtr;
-  using ::Star::CelestialSystemObjectsConstPtr;
-  using ::Star::CelestialSystemObjectsWeakPtr;
-  using ::Star::CelestialSystemObjectsConstWeakPtr;
-  using ::Star::CelestialSystemObjectsUPtr;
-  using ::Star::CelestialSystemObjectsConstUPtr;
-  using ::Star::CelestialChunkPtr;
-  using ::Star::CelestialChunkConstPtr;
-  using ::Star::CelestialChunkWeakPtr;
-  using ::Star::CelestialChunkConstWeakPtr;
-  using ::Star::CelestialChunkUPtr;
-  using ::Star::CelestialChunkConstUPtr;
-  using ::Star::CelestialBaseInformationPtr;
-  using ::Star::CelestialBaseInformationConstPtr;
-  using ::Star::CelestialBaseInformationWeakPtr;
-  using ::Star::CelestialBaseInformationConstWeakPtr;
-  using ::Star::CelestialBaseInformationUPtr;
-  using ::Star::CelestialBaseInformationConstUPtr;
 }

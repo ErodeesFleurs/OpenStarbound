@@ -97,7 +97,7 @@ namespace Dungeon {
     return Biome5MaterialId;
   }
 
-  ConnectorConstPtr chooseOption(List<ConnectorConstPtr>& options, RandomSource& rnd) {
+  std::shared_ptr<Connector const> chooseOption(List<std::shared_ptr<Connector const>>& options, RandomSource& rnd) {
     float distribution = 0;
     for (std::size_t i = 0; i < options.size(); i++)
       distribution += options[i]->part()->chance();
@@ -121,24 +121,24 @@ namespace Dungeon {
       m_parts.add(part.toString());
   }
 
-  List<RuleConstPtr> Rule::readRules(Json const& rules) {
-    List<RuleConstPtr> result;
+  List<std::shared_ptr<Rule const>> Rule::readRules(Json const& rules) {
+    List<std::shared_ptr<Rule const>> result;
     for (auto const& list : rules.iterateArray()) {
-      Maybe<RuleConstPtr> rule = Rule::parse(list);
+      Maybe<std::shared_ptr<Rule const>> rule = Rule::parse(list);
       if (rule.isValid())
         result.push_back(*rule);
     }
     return result;
   }
 
-  List<BrushConstPtr> Brush::readBrushes(Json const& brushes) {
-    List<BrushConstPtr> result;
+  List<std::shared_ptr<Brush const>> Brush::readBrushes(Json const& brushes) {
+    List<std::shared_ptr<Brush const>> result;
     for (auto const& list : brushes.iterateArray())
       result.push_back(Brush::parse(list));
     return result;
   }
 
-  Maybe<RuleConstPtr> Rule::parse(Json const& rule) {
+  Maybe<std::shared_ptr<Rule const>> Rule::parse(Json const& rule) {
     String key = rule.getString(0);
     if (key == "worldGenMustContainLiquid")
       return as<Rule>(std::make_shared<const WorldGenMustContainLiquidRule>());
@@ -167,7 +167,7 @@ namespace Dungeon {
       return as<Rule>(std::make_shared<const DoNotCombineWithRule>(rule));
 
     Logger::error("Unknown dungeon rule: {}", key);
-    return Maybe<RuleConstPtr>();
+    return Maybe<std::shared_ptr<Rule const>>();
   }
 
   bool Rule::checkTileCanPlace(Vec2I, DungeonGeneratorWriter*) const {
@@ -206,7 +206,7 @@ namespace Dungeon {
     return false;
   }
 
-  BrushConstPtr parseFrontBrush(Json const& brush) {
+  std::shared_ptr<Brush const> parseFrontBrush(Json const& brush) {
     String material;
     Maybe<String> mod;
     Maybe<float> hueshift, modhueshift;
@@ -226,7 +226,7 @@ namespace Dungeon {
     return std::make_shared<const FrontBrush>(material, mod, hueshift, modhueshift, colorVariant);
   }
 
-  BrushConstPtr parseBackBrush(Json const& brush) {
+  std::shared_ptr<Brush const> parseBackBrush(Json const& brush) {
     String material;
     Maybe<String> mod;
     Maybe<float> hueshift, modhueshift;
@@ -246,7 +246,7 @@ namespace Dungeon {
     return std::make_shared<const BackBrush>(material, mod, hueshift, modhueshift, colorVariant);
   }
 
-  BrushConstPtr parseObjectBrush(Json const& brush) {
+  std::shared_ptr<Brush const> parseObjectBrush(Json const& brush) {
     String object;
     Star::Direction direction;
     Json parameters;
@@ -265,33 +265,33 @@ namespace Dungeon {
     return std::make_shared<const ObjectBrush>(object, direction, parameters);
   }
 
-  BrushConstPtr parseSurfaceBrush(Json const& brush) {
+  std::shared_ptr<Brush const> parseSurfaceBrush(Json const& brush) {
     Json settings = Json::ofType(Json::Type::Object);
     if (brush.size() > 1)
       settings = brush.get(1);
     return std::make_shared<const SurfaceBrush>(settings.optInt("variant"), settings.optString("mod"));
   }
 
-  BrushConstPtr parseSurfaceBackgroundBrush(Json const& brush) {
+  std::shared_ptr<Brush const> parseSurfaceBackgroundBrush(Json const& brush) {
     Json settings = Json::ofType(Json::Type::Object);
     if (brush.size() > 1)
       settings = brush.get(1);
     return std::make_shared<const SurfaceBackgroundBrush>(settings.optInt("variant"), settings.optString("mod"));
   }
 
-  BrushConstPtr parseWireBrush(Json const& brush) {
+  std::shared_ptr<Brush const> parseWireBrush(Json const& brush) {
     Json settings = brush.get(1);
     String group = settings.getString("group");
     bool local = settings.getBool("local", true);
     return std::make_shared<const WireBrush>(group, local);
   }
 
-  BrushConstPtr parseItemBrush(Json const& brush) {
+  std::shared_ptr<Brush const> parseItemBrush(Json const& brush) {
     ItemDescriptor item(brush.getString(1), 1);
     return std::make_shared<const ItemBrush>(item);
   }
 
-  BrushConstPtr Brush::parse(Json const& brush) {
+  std::shared_ptr<Brush const> Brush::parse(Json const& brush) {
     String key = brush.getString(0);
     if (key == "clear")
       return as<const Brush>(std::make_shared<ClearBrush>());
@@ -617,7 +617,7 @@ namespace Dungeon {
     return false;
   }
 
-  PartConstPtr parsePart(DungeonDefinition* dungeon, Json const& definition, Maybe<ImageTilesetConstPtr> tileset) {
+  std::shared_ptr<Part const> parsePart(DungeonDefinition* dungeon, Json const& definition, Maybe<std::shared_ptr<ImageTileset const>> tileset) {
     String kind = definition.get("def").getString(0);
     if (kind == "image") {
       if (tileset.isNothing())
@@ -628,7 +628,7 @@ namespace Dungeon {
     throw DungeonException::format("Unknown dungeon part kind: {}", kind);
   }
 
-  Part::Part(DungeonDefinition* dungeon, Json const& part, PartReaderPtr reader) {
+  Part::Part(DungeonDefinition* dungeon, Json const& part, std::shared_ptr<PartReader> reader) {
     m_dungeon = dungeon;
     m_name = part.getString("name");
     m_rules = Rule::readRules(part.get("rules"));
@@ -727,7 +727,7 @@ namespace Dungeon {
     return true;
   }
 
-  List<ConnectorConstPtr> const& Part::connections() const {
+  List<std::shared_ptr<Connector const>> const& Part::connections() const {
     return m_connections;
   }
 
@@ -972,7 +972,7 @@ namespace Dungeon {
   Connector::Connector(Part* part, String value, bool forwardOnly, Direction direction, Vec2I offset)
     : m_value(value), m_forwardOnly(forwardOnly), m_direction(direction), m_offset(offset), m_part(part) {}
 
-  bool Connector::connectsTo(ConnectorConstPtr connector) const {
+  bool Connector::connectsTo(std::shared_ptr<Connector const> connector) const {
     if (m_forwardOnly)
       return false;
     if (m_value != connector->m_value)
@@ -1011,7 +1011,7 @@ namespace Dungeon {
     return m_offset;
   }
 
-  DungeonGeneratorWriter::DungeonGeneratorWriter(DungeonGeneratorWorldFacadePtr facade, Maybe<int> terrainMarkingSurfaceLevel, Maybe<int> terrainSurfaceSpaceExtends)
+  DungeonGeneratorWriter::DungeonGeneratorWriter(std::shared_ptr<DungeonGeneratorWorldFacade> facade, Maybe<int> terrainMarkingSurfaceLevel, Maybe<int> terrainSurfaceSpaceExtends)
     : m_facade(facade), m_terrainMarkingSurfaceLevel(terrainMarkingSurfaceLevel), m_terrainSurfaceSpaceExtends(terrainSurfaceSpaceExtends) {
     m_currentBounds.setMin(Vec2I{std::numeric_limits<std::int32_t>::max(), std::numeric_limits<std::int32_t>::max()});
     m_currentBounds.setMax(Vec2I{std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::min()});
@@ -1367,10 +1367,10 @@ DungeonDefinitions::DungeonDefinitions() : m_paths(), m_cacheMutex(), m_definiti
   }
 }
 
-DungeonDefinitionConstPtr DungeonDefinitions::get(String const& name) const {
+std::shared_ptr<DungeonDefinition const> DungeonDefinitions::get(String const& name) const {
   MutexLocker locker(m_cacheMutex);
   return m_definitionCache.get(name,
-      [this](String const& name) -> DungeonDefinitionPtr {
+      [this](String const& name) -> std::shared_ptr<DungeonDefinition> {
         if (auto path = m_paths.maybe(name))
           return readDefinition(*path);
         throw DungeonException::format("Unknown dungeon: '{}'", name);
@@ -1382,7 +1382,7 @@ JsonObject DungeonDefinitions::getMetadata(String const& name) const {
   return definition->metadata();
 }
 
-DungeonDefinitionPtr DungeonDefinitions::readDefinition(String const& path) {
+std::shared_ptr<DungeonDefinition> DungeonDefinitions::readDefinition(String const& path) {
   try {
     auto assets = Root::singleton().assets();
     return std::make_shared<DungeonDefinition>(assets->json(path).toObject(), AssetPath::directory(path));
@@ -1412,7 +1412,7 @@ DungeonDefinition::DungeonDefinition(JsonObject const& definition, String const&
     });
 
   for (auto const& partsDefMap : definition.get("parts").iterateArray()) {
-    Dungeon::PartConstPtr part = parsePart(this, partsDefMap, tileset);
+    std::shared_ptr<Dungeon::Part const> part = parsePart(this, partsDefMap, tileset);
     if (m_parts.contains(part->name()))
       throw DungeonException::format("Duplicate dungeon part name: {}", part->name());
     m_parts.insert(part->name(), part);
@@ -1453,7 +1453,7 @@ Maybe<bool> DungeonDefinition::breathable() const {
   return m_breathable;
 }
 
-StringMap<Dungeon::PartConstPtr> const& DungeonDefinition::parts() const {
+StringMap<std::shared_ptr<Dungeon::Part const>> const& DungeonDefinition::parts() const {
   return m_parts;
 }
 
@@ -1482,14 +1482,14 @@ DungeonGenerator::DungeonGenerator(String const& dungeonName, std::uint64_t seed
   m_def = Root::singleton().dungeonDefinitions()->get(dungeonName);
 }
 
-Maybe<std::pair<List<RectI>, Set<Vec2I>>> DungeonGenerator::generate(DungeonGeneratorWorldFacadePtr facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement) {
+Maybe<std::pair<List<RectI>, Set<Vec2I>>> DungeonGenerator::generate(std::shared_ptr<DungeonGeneratorWorldFacade> facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement) {
   String name = m_def->name();
   try {
     Dungeon::DungeonGeneratorWriter writer(facade, markSurfaceAndTerrain ? position[1] : Maybe<int>(), m_def->extendSurfaceFreeSpace());
 
     Logger::debug(forcePlacement ? "Forcing generation of dungeon {}" : "Generating dungeon {}", name);
 
-    Dungeon::PartConstPtr anchor = pickAnchor();
+    std::shared_ptr<Dungeon::Part const> anchor = pickAnchor();
     if (!anchor) {
       Logger::error("No valid anchor piece found for dungeon {} at {}", name, position);
       return {};
@@ -1508,7 +1508,7 @@ Maybe<std::pair<List<RectI>, Set<Vec2I>>> DungeonGenerator::generate(DungeonGene
   }
 }
 
-std::pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(Dungeon::PartConstPtr anchor, Vec2I basePos, Dungeon::DungeonGeneratorWriter* writer, bool forcePlacement) {
+std::pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(std::shared_ptr<Dungeon::Part const> anchor, Vec2I basePos, Dungeon::DungeonGeneratorWriter* writer, bool forcePlacement) {
   writer->reset();
 
   Deque<std::pair<Dungeon::Part const*, Vec2I>> openSet;
@@ -1568,9 +1568,9 @@ std::pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(Dungeon::PartC
       Vec2I connectorPos = parentPos + connector->offset();
       if (closedConnectors.contains(connectorPos))
         continue;
-      List<Dungeon::ConnectorConstPtr> options = findConnectablePart(connector);
+      List<std::shared_ptr<Dungeon::Connector const>> options = findConnectablePart(connector);
       while (options.size()) {
-        Dungeon::ConnectorConstPtr option = chooseOption(options, m_rand);
+        std::shared_ptr<Dungeon::Connector const> option = chooseOption(options, m_rand);
         Logger::debug("Trying part {}", option->part()->name());
         Vec2I partPos = connectorPos - option->offset() + option->positionAdjustment();
         Vec2I optionPos = connectorPos + option->positionAdjustment();
@@ -1622,7 +1622,7 @@ std::pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(Dungeon::PartC
   return {writer->boundingBoxes(), modifiedTiles};
 }
 
-Dungeon::PartConstPtr DungeonGenerator::pickAnchor() {
+std::shared_ptr<Dungeon::Part const> DungeonGenerator::pickAnchor() {
   auto validAnchors = m_def->anchors().filtered([this](String const& anchorName) {
     auto anchorPart = m_def->parts().get(anchorName);
     return (!anchorPart->minimumThreatLevel() || m_threatLevel >= *anchorPart->minimumThreatLevel())
@@ -1635,8 +1635,8 @@ Dungeon::PartConstPtr DungeonGenerator::pickAnchor() {
   return m_def->parts().get(m_rand.randFrom(validAnchors));
 }
 
-List<Dungeon::ConnectorConstPtr> DungeonGenerator::findConnectablePart(Dungeon::ConnectorConstPtr connector) const {
-  List<Dungeon::ConnectorConstPtr> result;
+List<std::shared_ptr<Dungeon::Connector const>> DungeonGenerator::findConnectablePart(std::shared_ptr<Dungeon::Connector const> connector) const {
+  List<std::shared_ptr<Dungeon::Connector const>> result;
   for (auto const& partPair : m_def->parts()) {
     if (partPair.second->doesNotConnectTo(connector->part()))
       continue;
@@ -1648,7 +1648,7 @@ List<Dungeon::ConnectorConstPtr> DungeonGenerator::findConnectablePart(Dungeon::
   return result;
 }
 
-DungeonDefinitionConstPtr DungeonGenerator::definition() const {
+std::shared_ptr<DungeonDefinition const> DungeonGenerator::definition() const {
   return m_def;
 }
 

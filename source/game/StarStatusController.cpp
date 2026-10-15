@@ -575,7 +575,7 @@ void StatusController::tickMaster(float dt) {
     List<PersistentStatusEffect> entityEffects;
     if (!statusImmune) {
       m_parentEntity->world()->forEachEntity(collisionBody.boundBox(),
-          [this, collisionBody, &entityEffects](EntityPtr const& e) {
+          [this, collisionBody, &entityEffects](std::shared_ptr<Entity> const& e) {
             if (auto entity = as<StatusEffectEntity>(e)) {
               auto statusEffectArea = entity->statusEffectArea();
               statusEffectArea.translate(entity->position());
@@ -653,8 +653,8 @@ bool StatusController::toolUsageSuppressed() const {
   return m_toolUsageSuppressed.get();
 }
 
-List<AudioInstancePtr> StatusController::pullNewAudios() {
-  List<AudioInstancePtr> newAudios;
+List<std::shared_ptr<AudioInstance>> StatusController::pullNewAudios() {
+  List<std::shared_ptr<AudioInstance>> newAudios;
   for (auto const& animator : m_effectAnimators.netElements())
     newAudios.appendAll(animator->dynamicTarget.pullNewAudios());
   return newAudios;

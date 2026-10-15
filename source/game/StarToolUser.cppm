@@ -47,41 +47,9 @@ namespace Star {
 class Humanoid;
 
 class ToolUserEntity;
-using ToolUserEntityPtr = std::shared_ptr<ToolUserEntity>;
-using ToolUserEntityConstPtr = std::shared_ptr<const ToolUserEntity>;
-using ToolUserEntityWeakPtr = std::weak_ptr<ToolUserEntity>;
-using ToolUserEntityConstWeakPtr = std::weak_ptr<const ToolUserEntity>;
-using ToolUserEntityUPtr = std::unique_ptr<ToolUserEntity>;
-using ToolUserEntityConstUPtr = std::unique_ptr<const ToolUserEntity>;
 class Item;
-using ItemPtr = std::shared_ptr<Item>;
-using ItemConstPtr = std::shared_ptr<const Item>;
-using ItemWeakPtr = std::weak_ptr<Item>;
-using ItemConstWeakPtr = std::weak_ptr<const Item>;
-using ItemUPtr = std::unique_ptr<Item>;
-using ItemConstUPtr = std::unique_ptr<const Item>;
 class World;
-using WorldPtr = std::shared_ptr<World>;
-using WorldConstPtr = std::shared_ptr<const World>;
-using WorldWeakPtr = std::weak_ptr<World>;
-using WorldConstWeakPtr = std::weak_ptr<const World>;
-using WorldUPtr = std::unique_ptr<World>;
-using WorldConstUPtr = std::unique_ptr<const World>;
 class EffectEmitter;
-using EffectEmitterPtr = std::shared_ptr<EffectEmitter>;
-using EffectEmitterConstPtr = std::shared_ptr<const EffectEmitter>;
-using EffectEmitterWeakPtr = std::weak_ptr<EffectEmitter>;
-using EffectEmitterConstWeakPtr = std::weak_ptr<const EffectEmitter>;
-using EffectEmitterUPtr = std::unique_ptr<EffectEmitter>;
-using EffectEmitterConstUPtr = std::unique_ptr<const EffectEmitter>;
-
-class ToolUser;
-using ToolUserPtr = std::shared_ptr<ToolUser>;
-using ToolUserConstPtr = std::shared_ptr<const ToolUser>;
-using ToolUserWeakPtr = std::weak_ptr<ToolUser>;
-using ToolUserConstWeakPtr = std::weak_ptr<const ToolUser>;
-using ToolUserUPtr = std::unique_ptr<ToolUser>;
-using ToolUserConstUPtr = std::unique_ptr<const ToolUser>;
 
 class ToolUser : public NetElementSyncGroup {
 public:
@@ -93,8 +61,8 @@ public:
   void init(ToolUserEntity* user);
   void uninit();
 
-  ItemPtr primaryHandItem() const;
-  ItemPtr altHandItem() const;
+  std::shared_ptr<Item> primaryHandItem() const;
+  std::shared_ptr<Item> altHandItem() const;
   ItemDescriptor primaryHandItemDescriptor() const;
   ItemDescriptor altHandItemDescriptor() const;
 
@@ -132,7 +100,7 @@ public:
 
   void render(RenderCallback* renderCallback, bool inToolRange, bool shifting, EntityRenderLayer renderLayer);
 
-  void setItems(ItemPtr primaryHandItem, ItemPtr altHandItem);
+  void setItems(std::shared_ptr<Item> primaryHandItem, std::shared_ptr<Item> altHandItem);
 
   void suppressItems(bool suppress);
 
@@ -156,8 +124,8 @@ private:
     void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
     void blankNetDelta(float interpolationTime) override;
 
-    ItemPtr const& get() const;
-    void set(ItemPtr item);
+    std::shared_ptr<Item> const& get() const;
+    void set(std::shared_ptr<Item> item);
 
     bool pullNewItem();
 
@@ -165,7 +133,7 @@ private:
     void updateItemDescriptor();
 
     NetElementData<ItemDescriptor> m_itemDescriptor;
-    ItemPtr m_item;
+    std::shared_ptr<Item> m_item;
     NetElementVersion const* m_netVersion = nullptr;
     bool m_netInterpolationEnabled = false;
     float m_netExtrapolationHint = 0;
@@ -175,7 +143,7 @@ private:
 
   void initPrimaryHandItem();
   void initAltHandItem();
-  void uninitItem(ItemPtr const& item);
+  void uninitItem(std::shared_ptr<Item> const& item);
 
   void netElementsNeedLoad(bool full) override;
   void netElementsNeedStore() override;
@@ -208,7 +176,7 @@ private:
 
   List<Drawable> m_cachedObjectPreview;
   Vec2I m_cachedObjectPreviewPosition;
-  ItemPtr m_cachedObjectItem;
+  std::shared_ptr<Item> m_cachedObjectItem;
 };
 
 }
@@ -217,38 +185,8 @@ export module star.tool_user;
 
 export namespace Star {
   using ::Star::ToolUserEntity;
-  using ::Star::ToolUserEntityPtr;
-  using ::Star::ToolUserEntityConstPtr;
-  using ::Star::ToolUserEntityWeakPtr;
-  using ::Star::ToolUserEntityConstWeakPtr;
-  using ::Star::ToolUserEntityUPtr;
-  using ::Star::ToolUserEntityConstUPtr;
   using ::Star::Item;
-  using ::Star::ItemPtr;
-  using ::Star::ItemConstPtr;
-  using ::Star::ItemWeakPtr;
-  using ::Star::ItemConstWeakPtr;
-  using ::Star::ItemUPtr;
-  using ::Star::ItemConstUPtr;
   using ::Star::World;
-  using ::Star::WorldPtr;
-  using ::Star::WorldConstPtr;
-  using ::Star::WorldWeakPtr;
-  using ::Star::WorldConstWeakPtr;
-  using ::Star::WorldUPtr;
-  using ::Star::WorldConstUPtr;
   using ::Star::EffectEmitter;
-  using ::Star::EffectEmitterPtr;
-  using ::Star::EffectEmitterConstPtr;
-  using ::Star::EffectEmitterWeakPtr;
-  using ::Star::EffectEmitterConstWeakPtr;
-  using ::Star::EffectEmitterUPtr;
-  using ::Star::EffectEmitterConstUPtr;
   using ::Star::ToolUser;
-  using ::Star::ToolUserPtr;
-  using ::Star::ToolUserConstPtr;
-  using ::Star::ToolUserWeakPtr;
-  using ::Star::ToolUserConstWeakPtr;
-  using ::Star::ToolUserUPtr;
-  using ::Star::ToolUserConstUPtr;
 }

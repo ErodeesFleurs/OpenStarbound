@@ -122,14 +122,14 @@ import star.line;
 import star.math_common;
 namespace Star {
 
-Projectile::Projectile(ProjectileConfigPtr const& config, Json const& parameters) {
+Projectile::Projectile(std::shared_ptr<ProjectileConfig> const& config, Json const& parameters) {
   m_config = config;
   m_parameters = parameters;
 
   setup();
 }
 
-Projectile::Projectile(ProjectileConfigPtr const& config, DataStreamBuffer& data, NetCompatibilityRules) {
+Projectile::Projectile(std::shared_ptr<ProjectileConfig> const& config, DataStreamBuffer& data, NetCompatibilityRules) {
   m_config = config;
   data.read(m_parameters);
   setup();
@@ -934,7 +934,7 @@ void Projectile::processAction(Json const& action) {
     if (!world()->isClient())
       return;
 
-    AudioInstancePtr sound = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(Random::randValueFrom(parameters.getArray("options")).toString()));
+    std::shared_ptr<AudioInstance> sound = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(Random::randValueFrom(parameters.getArray("options")).toString()));
     sound->setPosition(position());
     sound->setVolume(parameters.getFloat("volume", 1.0f));
     sound->setPitchMultiplier(parameters.getFloat("pitch", 1.0f));
@@ -1125,8 +1125,8 @@ LuaCallbacks Projectile::makeProjectileCallbacks() {
 
 void Projectile::renderPendingRenderables(RenderCallback* renderCallback) {
   for (auto renderable : m_pendingRenderables) {
-    if (renderable.is<AudioInstancePtr>())
-      renderCallback->addAudio(renderable.get<AudioInstancePtr>());
+    if (renderable.is<std::shared_ptr<AudioInstance>>())
+      renderCallback->addAudio(renderable.get<std::shared_ptr<AudioInstance>>());
     else if (renderable.is<Particle>())
       renderCallback->addParticle(renderable.get<Particle>());
   }

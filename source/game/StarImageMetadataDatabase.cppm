@@ -20,14 +20,6 @@ import star.ttl_cache;
 import star.vector;
 namespace Star {
 
-class ImageMetadataDatabase;
-using ImageMetadataDatabasePtr = std::shared_ptr<ImageMetadataDatabase>;
-using ImageMetadataDatabaseConstPtr = std::shared_ptr<const ImageMetadataDatabase>;
-using ImageMetadataDatabaseWeakPtr = std::weak_ptr<ImageMetadataDatabase>;
-using ImageMetadataDatabaseConstWeakPtr = std::weak_ptr<const ImageMetadataDatabase>;
-using ImageMetadataDatabaseUPtr = std::unique_ptr<ImageMetadataDatabase>;
-using ImageMetadataDatabaseConstUPtr = std::unique_ptr<const ImageMetadataDatabase>;
-
 // Caches image size, image spaces, and nonEmptyRegion completely until a
 // reload, does not expire cached values in a TTL based way like Assets,
 // because they are expensive to compute and cheap to keep around.
@@ -61,10 +53,4 @@ export module star.image_metadata_database;
 
 export namespace Star {
   using ::Star::ImageMetadataDatabase;
-  using ::Star::ImageMetadataDatabasePtr;
-  using ::Star::ImageMetadataDatabaseConstPtr;
-  using ::Star::ImageMetadataDatabaseWeakPtr;
-  using ::Star::ImageMetadataDatabaseConstWeakPtr;
-  using ::Star::ImageMetadataDatabaseUPtr;
-  using ::Star::ImageMetadataDatabaseConstUPtr;
 }

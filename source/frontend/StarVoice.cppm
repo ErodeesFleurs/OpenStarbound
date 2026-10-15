@@ -19,9 +19,7 @@ import star.thread;
 
 
 struct OpusDecoder;
-typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
 struct OpusEncoder;
-typedef std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)> OpusEncoderPtr;
 
 namespace Star {
 
@@ -38,27 +36,8 @@ extern EnumMap<VoiceInputMode> const VoiceInputModeNames;
 enum class VoiceChannelMode: std::uint8_t { Mono = 1, Stereo = 2 };
 extern EnumMap<VoiceChannelMode> const VoiceChannelModeNames;
 
-class Voice;
-using VoicePtr = std::shared_ptr<Voice>;
-using VoiceConstPtr = std::shared_ptr<Voice const>;
-using VoiceWeakPtr = std::weak_ptr<Voice>;
-using VoiceConstWeakPtr = std::weak_ptr<Voice const>;
-using VoiceUPtr = std::unique_ptr<Voice>;
-using VoiceConstUPtr = std::unique_ptr<Voice const>;
 class VoiceAudioStream;
-using VoiceAudioStreamPtr = std::shared_ptr<VoiceAudioStream>;
-using VoiceAudioStreamConstPtr = std::shared_ptr<VoiceAudioStream const>;
-using VoiceAudioStreamWeakPtr = std::weak_ptr<VoiceAudioStream>;
-using VoiceAudioStreamConstWeakPtr = std::weak_ptr<VoiceAudioStream const>;
-using VoiceAudioStreamUPtr = std::unique_ptr<VoiceAudioStream>;
-using VoiceAudioStreamConstUPtr = std::unique_ptr<VoiceAudioStream const>;
 class ApplicationController;
-using ApplicationControllerPtr = std::shared_ptr<ApplicationController>;
-using ApplicationControllerConstPtr = std::shared_ptr<ApplicationController const>;
-using ApplicationControllerWeakPtr = std::weak_ptr<ApplicationController>;
-using ApplicationControllerConstWeakPtr = std::weak_ptr<ApplicationController const>;
-using ApplicationControllerUPtr = std::unique_ptr<ApplicationController>;
-using ApplicationControllerConstUPtr = std::unique_ptr<ApplicationController const>;
 
 struct VoiceAudioChunk {
   std::unique_ptr<std::int16_t[]> data;
@@ -103,9 +82,9 @@ public:
     Vec2F position = Vec2F();
     String name = "Unnamed";
 
-    OpusDecoderPtr decoderMono;
-    OpusDecoderPtr decoderStereo;
-    VoiceAudioStreamPtr audioStream;
+    std::unique_ptr<::OpusDecoder, void(*)(::OpusDecoder*)> decoderMono;
+    std::unique_ptr<::OpusDecoder, void(*)(::OpusDecoder*)> decoderStereo;
+    std::shared_ptr<VoiceAudioStream> audioStream;
     Mutex mutex;
 
     std::int64_t lastReceiveTime = 0;
@@ -125,8 +104,6 @@ public:
     Json toJson() const;
   };
 
-  typedef std::shared_ptr<Speaker> SpeakerPtr;
-
   // Get pointer to the singleton Voice instance, if it exists.  Otherwise,
   // returns nullptr.
   static Voice* singletonPtr();
@@ -135,7 +112,7 @@ public:
   // is not initialized.
   static Voice& singleton();
 
-  Voice(ApplicationControllerPtr appController);
+  Voice(std::shared_ptr<ApplicationController> appController);
   ~Voice();
 
   Voice(Voice const&) = delete;
@@ -150,11 +127,11 @@ public:
   void scheduleSave();
 
   // Sets the local speaker ID and returns the local speaker. Must be called upon loading into a world.
-  SpeakerPtr setLocalSpeaker(SpeakerId speakerId);
-  SpeakerPtr localSpeaker();
-  SpeakerPtr speaker(SpeakerId speakerId);
-  HashMap<SpeakerId, SpeakerPtr>& speakers();
-  List<Voice::SpeakerPtr> sortedSpeakers(bool onlyPlaying);
+  std::shared_ptr<Speaker> setLocalSpeaker(SpeakerId speakerId);
+  std::shared_ptr<Speaker> localSpeaker();
+  std::shared_ptr<Speaker> speaker(SpeakerId speakerId);
+  HashMap<SpeakerId, std::shared_ptr<Speaker>>& speakers();
+  List<std::shared_ptr<Voice::Speaker>> sortedSpeakers(bool onlyPlaying);
   void clearSpeakers();
 
   // Called when receiving input audio data from SDL, on its own thread.
@@ -170,7 +147,7 @@ public:
   StringList availableDevices();
 
   int send(DataStreamBuffer& out, std::size_t budget = 0);
-  bool receive(SpeakerPtr speaker, std::string_view view);
+  bool receive(std::shared_ptr<Speaker> speaker, std::string_view view);
 
   // Must be called every frame with input state, expires after 1s.
   void setInput(bool input = true);
@@ -187,20 +164,20 @@ private:
   void closeDevice();
   inline bool shouldEnableInput() const { return m_enabled && m_inputEnabled; }
 
-  bool playSpeaker(SpeakerPtr const& speaker, int channels);
+  bool playSpeaker(std::shared_ptr<Speaker> const& speaker, int channels);
 
   void thread();
 
   SpeakerId m_speakerId = 0;
-  SpeakerPtr m_clientSpeaker;
-  HashMap<SpeakerId, SpeakerPtr> m_speakers;
+  std::shared_ptr<Speaker> m_clientSpeaker;
+  HashMap<SpeakerId, std::shared_ptr<Speaker>> m_speakers;
 
   Mutex m_activeSpeakersMutex;
-  HashSet<SpeakerPtr> m_activeSpeakers;
+  HashSet<std::shared_ptr<Speaker>> m_activeSpeakers;
 
 
 
-  OpusEncoderPtr m_encoder;
+  std::unique_ptr<::OpusEncoder, void(*)(::OpusEncoder*)> m_encoder;
   
   float m_outputVolume = 1.0f;
   float m_inputVolume = 1.0f;
@@ -233,7 +210,7 @@ private:
   std::vector<std::int16_t> m_decodeBuffer;
   std::vector<std::int16_t> m_resampleBuffer;
 
-  ApplicationControllerPtr m_applicationController;
+  std::shared_ptr<ApplicationController> m_applicationController;
 
   struct EncodedChunk {
     std::unique_ptr<unsigned char[]> data;
@@ -266,31 +243,11 @@ export namespace Star {
   using ::Star::VoiceChannelMode;
   using ::Star::VoiceChannelModeNames;
   using ::Star::Voice;
-  using ::Star::VoicePtr;
-  using ::Star::VoiceConstPtr;
-  using ::Star::VoiceWeakPtr;
-  using ::Star::VoiceConstWeakPtr;
-  using ::Star::VoiceUPtr;
-  using ::Star::VoiceConstUPtr;
   using ::Star::VoiceAudioStream;
-  using ::Star::VoiceAudioStreamPtr;
-  using ::Star::VoiceAudioStreamConstPtr;
-  using ::Star::VoiceAudioStreamWeakPtr;
-  using ::Star::VoiceAudioStreamConstWeakPtr;
-  using ::Star::VoiceAudioStreamUPtr;
-  using ::Star::VoiceAudioStreamConstUPtr;
   using ::Star::ApplicationController;
-  using ::Star::ApplicationControllerPtr;
-  using ::Star::ApplicationControllerConstPtr;
-  using ::Star::ApplicationControllerWeakPtr;
-  using ::Star::ApplicationControllerConstWeakPtr;
-  using ::Star::ApplicationControllerUPtr;
-  using ::Star::ApplicationControllerConstUPtr;
   using ::Star::VoiceAudioChunk;
   using ::Star::VoiceBroadcastPrefix;
 }
 
 export using ::OpusDecoder;
-export using ::OpusDecoderPtr;
 export using ::OpusEncoder;
-export using ::OpusEncoderPtr;

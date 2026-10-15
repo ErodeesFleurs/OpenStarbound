@@ -132,11 +132,11 @@ String File::temporaryFileName() {
   return relativeTo(P_tmpdir, strf("starbound.tmpfile.{}", hexEncode(Random::randBytes(16))));
 }
 
-FilePtr File::temporaryFile() {
+std::shared_ptr<File> File::temporaryFile() {
   return open(temporaryFileName(), IOMode::ReadWrite);
 }
 
-FilePtr File::ephemeralFile() {
+std::shared_ptr<File> File::ephemeralFile() {
   auto file = std::make_shared<File>();
   ByteArray path = ByteArray::fromCStringWithNull(relativeTo(P_tmpdir, "starbound.tmpfile.XXXXXXXX").utf8Ptr());
   auto res = mkstemp(path.ptr());

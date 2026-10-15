@@ -68,7 +68,7 @@ bool PlayerCodexes::codexKnown(String const& codexId) const {
   return m_codexes.contains(codexId);
 }
 
-CodexConstPtr PlayerCodexes::learnCodex(String const& codexId, bool markRead) {
+std::shared_ptr<Codex const> PlayerCodexes::learnCodex(String const& codexId, bool markRead) {
   if (!codexKnown(codexId)) {
     if (auto codex = Root::singleton().codexDatabase()->codex(codexId)) {
       auto entry = CodexEntry{codex, markRead};
@@ -104,7 +104,7 @@ void PlayerCodexes::learnInitialCodexes(String const& playerSpecies) {
     learnCodex(codexId, true);
 }
 
-CodexConstPtr PlayerCodexes::firstNewCodex() const {
+std::shared_ptr<Codex const> PlayerCodexes::firstNewCodex() const {
   for (auto pair : m_codexes) {
     if (!pair.second.second)
       return pair.second.first;

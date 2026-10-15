@@ -229,7 +229,7 @@ void ChatBubbleManager::setCamera(WorldCamera const& camera) {
   }
 }
 
-void ChatBubbleManager::update(float dt, WorldClientPtr world) {
+void ChatBubbleManager::update(float dt, std::shared_ptr<WorldClient> world) {
   m_bubbles.forEach([this, dt, &world](BubbleState<Bubble>& bubbleState, Bubble& bubble) {
     bubble.age += dt;
     if (auto entity = world->get<ChattyEntity>(bubble.entity)) {
@@ -271,7 +271,7 @@ void ChatBubbleManager::update(float dt, WorldClientPtr world) {
   m_bubbles.update(dt);
 }
 
-std::uint8_t ChatBubbleManager::calcDistanceFadeAlpha(Vec2F bubbleScreenPosition, StoredFunctionPtr fadeFunction) const {
+std::uint8_t ChatBubbleManager::calcDistanceFadeAlpha(Vec2F bubbleScreenPosition, std::shared_ptr<StoredFunction> fadeFunction) const {
   // first calculate bubble position as a factor, distance from center to edge
   // of screen (0.0-1.0)
   float halfScreenwidth = m_camera.screenSize()[0] * 0.5f;
@@ -458,7 +458,7 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
     if (!silent) {
       if (auto sound = config.optString("sound")) {
         auto assets = Root::singleton().assets();
-        AudioInstancePtr audioInstance = std::make_shared<AudioInstance>(*assets->audio(*sound));
+        std::shared_ptr<AudioInstance> audioInstance = std::make_shared<AudioInstance>(*assets->audio(*sound));
         audioInstance->setPosition(position);
         audioInstance->setVolume(config.getFloat("volume", 1.0f));
         audioInstance->setPitchMultiplier(config.getFloat("pitch", 1.0f));

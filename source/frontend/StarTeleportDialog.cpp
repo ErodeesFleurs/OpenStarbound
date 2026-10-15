@@ -204,7 +204,7 @@ import star.quest_manager;
 import star.algorithm;
 namespace Star {
 
-TeleportDialog::TeleportDialog(UniverseClientPtr client,
+TeleportDialog::TeleportDialog(std::shared_ptr<UniverseClient> client,
     PaneManager* paneManager,
     Json config,
     EntityId sourceEntityId,

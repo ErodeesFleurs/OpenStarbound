@@ -124,13 +124,13 @@ import star.line;
 import star.math_common;
 namespace Star {
 
-ItemDropPtr ItemDrop::createRandomizedDrop(ItemPtr const& item, Vec2F const& position, bool eternal) {
+std::shared_ptr<ItemDrop> ItemDrop::createRandomizedDrop(std::shared_ptr<Item> const& item, Vec2F const& position, bool eternal) {
   if (!item)
     return {};
 
   auto idconfig = Root::singleton().assets()->json("/itemdrop.config");
 
-  ItemDropPtr itemDrop = std::make_shared<ItemDrop>(item);
+  std::shared_ptr<ItemDrop> itemDrop = std::make_shared<ItemDrop>(item);
   auto offset = Vec2F(idconfig.getFloat("randomizedDistance"), 0).rotate(Constants::pi * 2.0 * Random::randf());
   offset[1] = std::fabs(offset[1]);
   itemDrop->setPosition(position + offset / TilePixels);
@@ -140,7 +140,7 @@ ItemDropPtr ItemDrop::createRandomizedDrop(ItemPtr const& item, Vec2F const& pos
   return itemDrop;
 }
 
-ItemDropPtr ItemDrop::createRandomizedDrop(ItemDescriptor const& descriptor, Vec2F const& position, bool eternal) {
+std::shared_ptr<ItemDrop> ItemDrop::createRandomizedDrop(ItemDescriptor const& descriptor, Vec2F const& position, bool eternal) {
   if (!descriptor || descriptor.isEmpty())
     return {};
 
@@ -151,13 +151,13 @@ ItemDropPtr ItemDrop::createRandomizedDrop(ItemDescriptor const& descriptor, Vec
   return itemDrop;
 }
 
-ItemDropPtr ItemDrop::throwDrop(ItemPtr const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) {
+std::shared_ptr<ItemDrop> ItemDrop::throwDrop(std::shared_ptr<Item> const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) {
   if (!item)
     return {};
 
   auto idconfig = Root::singleton().assets()->json("/itemdrop.config");
 
-  ItemDropPtr itemDrop = std::make_shared<ItemDrop>(item);
+  std::shared_ptr<ItemDrop> itemDrop = std::make_shared<ItemDrop>(item);
   itemDrop->setPosition(position);
   if (direction != Vec2F())
     itemDrop->setVelocity(velocity + vnorm(direction) * idconfig.getFloat("throwSpeed"));
@@ -168,7 +168,7 @@ ItemDropPtr ItemDrop::throwDrop(ItemPtr const& item, Vec2F const& position, Vec2
   return itemDrop;
 }
 
-ItemDropPtr ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) {
+std::shared_ptr<ItemDrop> ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) {
   if (!itemDescriptor || itemDescriptor.isEmpty())
     return {};
 
@@ -179,7 +179,7 @@ ItemDropPtr ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F cons
   return itemDrop;
 }
 
-ItemDrop::ItemDrop(ItemPtr item)
+ItemDrop::ItemDrop(std::shared_ptr<Item> item)
   : ItemDrop() {
   m_item = std::move(item);
   
@@ -347,7 +347,7 @@ void ItemDrop::update(float dt, std::uint64_t) {
     } else {
       // Rarely, check for other drops near us and combine with them if possible.
       if (canTake() && m_mode.get() == Mode::Available && Random::randf() < m_combineChance) {
-        world()->findEntity(RectF::withCenter(position(), Vec2F::filled(m_combineRadius)), [&](EntityPtr const& entity) {
+        world()->findEntity(RectF::withCenter(position(), Vec2F::filled(m_combineRadius)), [&](std::shared_ptr<Entity> const& entity) {
             if (auto closeDrop = as<ItemDrop>(entity)) {
               // Make sure not to try to merge with ourselves here.
               if (closeDrop.get() != this && closeDrop->canTake()
@@ -498,7 +498,7 @@ MovementController* ItemDrop::movementController() {
   return &m_movementController;
 }
 
-ItemPtr ItemDrop::item() const {
+std::shared_ptr<Item> ItemDrop::item() const {
   return m_item;
 }
 
@@ -522,7 +522,7 @@ bool ItemDrop::canTake() const {
   return false;
 }
 
-ItemPtr ItemDrop::takeBy(EntityId entityId, float timeOffset) {
+std::shared_ptr<Item> ItemDrop::takeBy(EntityId entityId, float timeOffset) {
   if (canTake()) {
     m_owningEntity.set(entityId);
     m_dropAge.setElapsedTime(timeOffset);
@@ -535,7 +535,7 @@ ItemPtr ItemDrop::takeBy(EntityId entityId, float timeOffset) {
   }
 }
 
-ItemPtr ItemDrop::take() {
+std::shared_ptr<Item> ItemDrop::take() {
   if (canTake()) {
     m_mode.set(Mode::Taken);
     return m_item->take();

@@ -100,7 +100,7 @@ import star.tick_rate_monitor;
 import star.algorithm;
 namespace Star {
 
-SystemWorldServerThread::SystemWorldServerThread(Vec3I const& location, SystemWorldServerPtr systemWorld, String storageFile)
+SystemWorldServerThread::SystemWorldServerThread(Vec3I const& location, std::shared_ptr<SystemWorldServer> systemWorld, String storageFile)
   : Thread(strf("SystemWorldServer: {}", location))
   , m_systemLocation(location)
   , m_systemWorld(std::move(systemWorld))
@@ -124,7 +124,7 @@ List<ConnectionId> SystemWorldServerThread::clients() {
 void SystemWorldServerThread::addClient(ConnectionId clientId, Uuid const& uuid, float shipSpeed, SystemLocation const& location) {
   WriteLocker locker(m_mutex);
   m_clients.add(clientId);
-  m_outgoingPacketQueue.set(clientId, List<PacketPtr>());
+  m_outgoingPacketQueue.set(clientId, List<std::shared_ptr<Packet>>());
 
   m_systemWorld->addClientShip(clientId, uuid, shipSpeed, location);
 
@@ -253,12 +253,12 @@ void SystemWorldServerThread::setUpdateAction(std::function<void(SystemWorldServ
   m_updateAction = updateAction;
 }
 
-void SystemWorldServerThread::pushIncomingPacket(ConnectionId clientId, PacketPtr packet) {
+void SystemWorldServerThread::pushIncomingPacket(ConnectionId clientId, std::shared_ptr<Packet> packet) {
   WriteLocker locker(m_queueMutex);
   m_incomingPacketQueue.append({std::move(clientId), std::move(packet)});
 }
 
-List<PacketPtr> SystemWorldServerThread::pullOutgoingPackets(ConnectionId clientId) {
+List<std::shared_ptr<Packet>> SystemWorldServerThread::pullOutgoingPackets(ConnectionId clientId) {
   WriteLocker locker(m_queueMutex);
   return take(m_outgoingPacketQueue[clientId]);
 }

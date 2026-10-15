@@ -58,19 +58,19 @@ void FileLogSink::log(char const* msg, LogLevel level) {
   m_output->write(line.data(), line.size());
 }
 
-void Logger::addSink(LogSinkPtr s) {
+void Logger::addSink(std::shared_ptr<LogSink> s) {
   MutexLocker locker(s_mutex);
   s_sinks.insert(s);
   refreshLoggable();
 }
 
-void Logger::removeSink(LogSinkPtr s) {
+void Logger::removeSink(std::shared_ptr<LogSink> s) {
   MutexLocker locker(s_mutex);
   s_sinks.erase(s);
   refreshLoggable();
 }
 
-LogSinkPtr Logger::stdoutSink() {
+std::shared_ptr<LogSink> Logger::stdoutSink() {
   MutexLocker locker(s_mutex);
   return s_stdoutSink;
 }
@@ -104,7 +104,7 @@ void Logger::refreshLoggable() {
 }
 
 std::shared_ptr<StdoutLogSink> Logger::s_stdoutSink = std::make_shared<StdoutLogSink>();
-HashSet<LogSinkPtr> Logger::s_sinks{s_stdoutSink};
+HashSet<std::shared_ptr<LogSink>> Logger::s_sinks{s_stdoutSink};
 Array<bool, 4> Logger::s_loggable = Array<bool, 4>{false, true, true, true};
 Mutex Logger::s_mutex;
 

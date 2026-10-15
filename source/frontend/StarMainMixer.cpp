@@ -186,9 +186,7 @@ import star.user_generated_content_service;
 import star.desktop_service;
 import star.application_controller;
 struct OpusDecoder;
-typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
 struct OpusEncoder;
-typedef std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)> OpusEncoderPtr;
 import star.voice;
 
 namespace Star {
@@ -197,11 +195,11 @@ MainMixer::MainMixer(unsigned sampleRate, unsigned channels) {
   m_mixer = std::make_shared<Mixer>(sampleRate, channels);
 }
 
-void MainMixer::setUniverseClient(UniverseClientPtr universeClient) {
+void MainMixer::setUniverseClient(std::shared_ptr<UniverseClient> universeClient) {
   m_universeClient = std::move(universeClient);
 }
 
-void MainMixer::setWorldPainter(WorldPainterPtr worldPainter) {
+void MainMixer::setWorldPainter(std::shared_ptr<WorldPainter> worldPainter) {
   m_worldPainter = std::move(worldPainter);
 }
 
@@ -232,7 +230,7 @@ void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
   updateGroupVolume(MixerGroup::Cinematic, false, "sfxVol");
   updateGroupVolume(MixerGroup::Instruments, muteSfx, "instrumentVol");
 
-  WorldClientPtr currentWorld;
+  std::shared_ptr<WorldClient> currentWorld;
   if (m_universeClient)
     currentWorld = m_universeClient->worldClient();
 
@@ -311,7 +309,7 @@ void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
   }
 }
 
-MixerPtr MainMixer::mixer() const {
+std::shared_ptr<Mixer> MainMixer::mixer() const {
   return m_mixer;
 }
 

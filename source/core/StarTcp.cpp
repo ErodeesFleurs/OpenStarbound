@@ -12,20 +12,20 @@ import star.logging;
 
 namespace Star {
 
-TcpSocketPtr TcpSocket::connectTo(HostAddressWithPort const& addressWithPort) {
-  auto socket = TcpSocketPtr(new TcpSocket(addressWithPort.address().mode()));
+std::shared_ptr<TcpSocket> TcpSocket::connectTo(HostAddressWithPort const& addressWithPort) {
+  auto socket = std::shared_ptr<TcpSocket>(new TcpSocket(addressWithPort.address().mode()));
   socket->connect(addressWithPort);
   return socket;
 }
 
-TcpSocketPtr TcpSocket::listen(HostAddressWithPort const& addressWithPort) {
-  auto socket = TcpSocketPtr(new TcpSocket(addressWithPort.address().mode()));
+std::shared_ptr<TcpSocket> TcpSocket::listen(HostAddressWithPort const& addressWithPort) {
+  auto socket = std::shared_ptr<TcpSocket>(new TcpSocket(addressWithPort.address().mode()));
   socket->bind(addressWithPort);
   ((Socket&)(*socket)).listen(32);
   return socket;
 }
 
-TcpSocketPtr TcpSocket::accept() {
+std::shared_ptr<TcpSocket> TcpSocket::accept() {
   ReadLocker locker(m_mutex);
 
   if (m_socketMode != SocketMode::Bound)
@@ -51,7 +51,7 @@ TcpSocketPtr TcpSocket::accept() {
   socketImpl->setSockOpt(SOL_SOCKET, SO_NOSIGPIPE, (void*)&set, sizeof(int));
 #endif
 
-  TcpSocketPtr sockPtr(new TcpSocket(m_localAddress.address().mode(), socketImpl));
+  std::shared_ptr<TcpSocket> sockPtr(new TcpSocket(m_localAddress.address().mode(), socketImpl));
 
   sockPtr->m_localAddress = m_localAddress;
   setAddressFromNative(sockPtr->m_remoteAddress, m_localAddress.address().mode(), &sockAddr);
@@ -140,7 +140,7 @@ HostAddressWithPort TcpSocket::remoteAddress() const {
 
 TcpSocket::TcpSocket(NetworkMode networkMode) : Socket(SocketType::Tcp, networkMode) {}
 
-TcpSocket::TcpSocket(NetworkMode networkMode, SocketImplPtr impl) : Socket(networkMode, impl, SocketMode::Connected) {}
+TcpSocket::TcpSocket(NetworkMode networkMode, std::shared_ptr<SocketImpl> impl) : Socket(networkMode, impl, SocketMode::Connected) {}
 
 void TcpSocket::connect(HostAddressWithPort const& addressWithPort) {
   WriteLocker locker(m_mutex);
@@ -188,7 +188,7 @@ bool TcpServer::isListening() const {
   return m_listenSocket->isActive();
 }
 
-TcpSocketPtr TcpServer::accept(unsigned timeout) {
+std::shared_ptr<TcpSocket> TcpServer::accept(unsigned timeout) {
   MutexLocker locker(m_mutex);
   Socket::poll({{m_listenSocket, {true, false}}}, timeout);
   try {
@@ -205,7 +205,7 @@ void TcpServer::setAcceptCallback(AcceptCallback callback, unsigned timeout) {
     m_callbackThread = Thread::invoke("TcpServer::acceptCallback", [this, timeout]() {
         try {
           while (true) {
-            TcpSocketPtr conn;
+            std::shared_ptr<TcpSocket> conn;
             try {
               conn = accept(timeout);
             } catch (NetworkException const& e) {

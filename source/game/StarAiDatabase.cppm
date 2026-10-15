@@ -19,14 +19,6 @@ import star.animation;
 
 namespace Star {
 
-class AiDatabase;
-using AiDatabasePtr = std::shared_ptr<AiDatabase>;
-using AiDatabaseConstPtr = std::shared_ptr<const AiDatabase>;
-using AiDatabaseWeakPtr = std::weak_ptr<AiDatabase>;
-using AiDatabaseConstWeakPtr = std::weak_ptr<const AiDatabase>;
-using AiDatabaseUPtr = std::unique_ptr<AiDatabase>;
-using AiDatabaseConstUPtr = std::unique_ptr<const AiDatabase>;
-
 class AiDatabase {
 public:
   AiDatabase();
@@ -91,10 +83,4 @@ export namespace Star {
   using ::Star::AiSpeciesMissionText;
   using ::Star::AiMission;
   using ::Star::AiDatabase;
-  using ::Star::AiDatabasePtr;
-  using ::Star::AiDatabaseConstPtr;
-  using ::Star::AiDatabaseWeakPtr;
-  using ::Star::AiDatabaseConstWeakPtr;
-  using ::Star::AiDatabaseUPtr;
-  using ::Star::AiDatabaseConstUPtr;
 }

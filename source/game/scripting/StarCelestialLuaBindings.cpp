@@ -148,7 +148,7 @@ import star.sky;
 
 
 namespace Star {
-LuaCallbacks LuaBindings::makeCelestialCallbacks(CelestialDatabasePtr celestialDatabase) {
+LuaCallbacks LuaBindings::makeCelestialCallbacks(std::shared_ptr<CelestialDatabase> celestialDatabase) {
   LuaCallbacks callbacks;
   
   callbacks.registerCallback("planetParameters", [celestialDatabase](Json const& coords) -> Json {
@@ -311,7 +311,7 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(Universe* universe) {
       });
 
     callbacks.registerCallback("systemObjects", [systemWorld]() -> List<String> {
-        return systemWorld->objects().transformed([](SystemObjectPtr object) { return object->uuid().hex(); });
+        return systemWorld->objects().transformed([](std::shared_ptr<SystemObject> object) { return object->uuid().hex(); });
       });
     callbacks.registerCallback("objectType", [systemWorld](String const& uuid) -> Maybe<String> {
         if (auto object = systemWorld->getObject(Uuid(uuid)))
@@ -353,7 +353,7 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(Universe* universe) {
       });
 
     callbacks.registerCallback("playerShips", [systemWorld]() -> List<String> {
-        return systemWorld->ships().transformed([](SystemClientShipPtr ship) { return ship->uuid().hex(); });
+        return systemWorld->ships().transformed([](std::shared_ptr<SystemClientShip> ship) { return ship->uuid().hex(); });
       });
     callbacks.registerCallback("playerShipPosition", [systemWorld](String const& uuid) -> Maybe<Vec2F> {
         if (auto ship = systemWorld->getShip(Uuid(uuid)))

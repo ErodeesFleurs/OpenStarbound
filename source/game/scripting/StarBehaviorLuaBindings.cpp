@@ -36,16 +36,16 @@ import star.behavior_state;
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeBehaviorCallbacks(List<BehaviorStatePtr>* list) {
+LuaCallbacks LuaBindings::makeBehaviorCallbacks(List<std::shared_ptr<BehaviorState>>* list) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallback("behavior", [list](Json const& config, JsonObject const& parameters, LuaTable context, Maybe<LuaUserData> blackboard) -> BehaviorStateWeakPtr {
+  callbacks.registerCallback("behavior", [list](Json const& config, JsonObject const& parameters, LuaTable context, Maybe<LuaUserData> blackboard) -> std::weak_ptr<BehaviorState> {
     auto behaviorDatabase = Root::singleton().behaviorDatabase();
-    Maybe<BlackboardWeakPtr> board = {};
-    if (blackboard && blackboard->is<BlackboardWeakPtr>())
-      board = blackboard->get<BlackboardWeakPtr>();
+    Maybe<std::weak_ptr<Blackboard>> board = {};
+    if (blackboard && blackboard->is<std::weak_ptr<Blackboard>>())
+      board = blackboard->get<std::weak_ptr<Blackboard>>();
 
-    BehaviorTreeConstPtr tree;
+    std::shared_ptr<BehaviorTree const> tree;
     if (config.isType(Json::Type::String)) {
       if (parameters.empty()) {
         tree = behaviorDatabase->behaviorTree(config.toString());
@@ -58,7 +58,7 @@ LuaCallbacks LuaBindings::makeBehaviorCallbacks(List<BehaviorStatePtr>* list) {
       tree = behaviorDatabase->buildTree(config.set("parameters", jsonMerge(config.getObject("parameters", {}), parameters)));
     }
 
-    BehaviorStatePtr state = std::make_shared<BehaviorState>(tree, context, board);
+    std::shared_ptr<BehaviorState> state = std::make_shared<BehaviorState>(tree, context, board);
     list->append(state);
     return std::weak_ptr<BehaviorState>(state);
   });

@@ -15,26 +15,7 @@ extern bool g_steamIsFlatpak;
 #endif
 
 class ApplicationController;
-using ApplicationControllerPtr = std::shared_ptr<ApplicationController>;
-using ApplicationControllerConstPtr = std::shared_ptr<ApplicationController const>;
-using ApplicationControllerWeakPtr = std::weak_ptr<ApplicationController>;
-using ApplicationControllerConstWeakPtr = std::weak_ptr<ApplicationController const>;
-using ApplicationControllerUPtr = std::unique_ptr<ApplicationController>;
-using ApplicationControllerConstUPtr = std::unique_ptr<ApplicationController const>;
 class Renderer;
-using RendererPtr = std::shared_ptr<Renderer>;
-using RendererConstPtr = std::shared_ptr<Renderer const>;
-using RendererWeakPtr = std::weak_ptr<Renderer>;
-using RendererConstWeakPtr = std::weak_ptr<Renderer const>;
-using RendererUPtr = std::unique_ptr<Renderer>;
-using RendererConstUPtr = std::unique_ptr<Renderer const>;
-class Application;
-using ApplicationPtr = std::shared_ptr<Application>;
-using ApplicationConstPtr = std::shared_ptr<Application const>;
-using ApplicationWeakPtr = std::weak_ptr<Application>;
-using ApplicationConstWeakPtr = std::weak_ptr<Application const>;
-using ApplicationUPtr = std::unique_ptr<Application>;
-using ApplicationConstUPtr = std::unique_ptr<Application const>;
 
 struct ApplicationExceptionTag {
   static constexpr char const* name() { return "ApplicationException"; }
@@ -57,12 +38,12 @@ public:
 
   // Called on application initialization, before rendering initialization.  If
   // overriden, must call base class instance.
-  virtual void applicationInit(ApplicationControllerPtr appController);
+  virtual void applicationInit(std::shared_ptr<ApplicationController> appController);
 
   // Called immediately after application initialization on startup, and then
   // also whenever the renderer invalidated and recreated.  If overridden, must
   // call base class instance.
-  virtual void renderInit(RendererPtr renderer);
+  virtual void renderInit(std::shared_ptr<Renderer> renderer);
 
   // Called when the window mode or size is changed.
   virtual void windowChanged(WindowMode windowMode, Vec2U screenSize);
@@ -88,19 +69,19 @@ public:
   // due to an Application exception.
   virtual void shutdown();
 
-  ApplicationControllerPtr const& appController() const;
-  RendererPtr const& renderer() const;
+  std::shared_ptr<ApplicationController> const& appController() const;
+  std::shared_ptr<Renderer> const& renderer() const;
 
 private:
-  ApplicationControllerPtr m_appController;
-  RendererPtr m_renderer;
+  std::shared_ptr<ApplicationController> m_appController;
+  std::shared_ptr<Renderer> m_renderer;
 };
 
-inline ApplicationControllerPtr const& Application::appController() const {
+inline std::shared_ptr<ApplicationController> const& Application::appController() const {
   return m_appController;
 }
 
-inline RendererPtr const& Application::renderer() const {
+inline std::shared_ptr<Renderer> const& Application::renderer() const {
   return m_renderer;
 }
 
@@ -110,26 +91,8 @@ export module star.application;
 
 export namespace Star {
   using ::Star::ApplicationController;
-  using ::Star::ApplicationControllerPtr;
-  using ::Star::ApplicationControllerConstPtr;
-  using ::Star::ApplicationControllerUPtr;
-  using ::Star::ApplicationControllerConstUPtr;
-  using ::Star::ApplicationControllerWeakPtr;
-  using ::Star::ApplicationControllerConstWeakPtr;
   using ::Star::Renderer;
-  using ::Star::RendererPtr;
-  using ::Star::RendererConstPtr;
-  using ::Star::RendererUPtr;
-  using ::Star::RendererConstUPtr;
-  using ::Star::RendererWeakPtr;
-  using ::Star::RendererConstWeakPtr;
   using ::Star::Application;
-  using ::Star::ApplicationPtr;
-  using ::Star::ApplicationConstPtr;
-  using ::Star::ApplicationUPtr;
-  using ::Star::ApplicationConstUPtr;
-  using ::Star::ApplicationWeakPtr;
-  using ::Star::ApplicationConstWeakPtr;
   using ::Star::ApplicationExceptionTag;
   using ::Star::ApplicationException;
   using ::Star::WindowMode;

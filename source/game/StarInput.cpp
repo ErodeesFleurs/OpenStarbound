@@ -309,7 +309,7 @@ void Input::BindCategory::mergeJson(String const& categoryId, Json const& catego
   name = config.getString("name", id);
   entries.clear();
 
-  ConfigurationPtr userConfig = Root::singletonPtr()->configuration();
+  std::shared_ptr<Configuration> userConfig = Root::singletonPtr()->configuration();
   auto userBindings = userConfig->get(InputBindingConfigRoot);
 
   for (auto& pair : config.getObject("binds", {})) {

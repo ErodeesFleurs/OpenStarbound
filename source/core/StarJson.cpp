@@ -72,11 +72,11 @@ bool Json::operator==(const Json& v) const {
     else if (type() == Type::Int)
       return m_data.get<std::int64_t>() == v.m_data.get<std::int64_t>();
     else if (type() == Type::String)
-      return *m_data.get<StringConstPtr>() == *v.m_data.get<StringConstPtr>();
+      return *m_data.get<std::shared_ptr<String const>>() == *v.m_data.get<std::shared_ptr<String const>>();
     else if (type() == Type::Array)
-      return *m_data.get<JsonArrayConstPtr>() == *v.m_data.get<JsonArrayConstPtr>();
+      return *m_data.get<std::shared_ptr<JsonArray const>>() == *v.m_data.get<std::shared_ptr<JsonArray const>>();
     else if (type() == Type::Object)
-      return *m_data.get<JsonObjectConstPtr>() == *v.m_data.get<JsonObjectConstPtr>();
+      return *m_data.get<std::shared_ptr<JsonObject const>>() == *v.m_data.get<std::shared_ptr<JsonObject const>>();
   }
   return false;
 }
@@ -86,12 +86,12 @@ bool Json::operator!=(const Json& v) const {
 }
 
 bool Json::unique() const {
-  if (m_data.is<StringConstPtr>())
-    return m_data.get<StringConstPtr>().use_count() == 1;
-  else if (m_data.is<JsonArrayConstPtr>())
-    return m_data.get<JsonArrayConstPtr>().use_count() == 1;
-  else if (m_data.is<JsonObjectConstPtr>())
-    return m_data.get<JsonObjectConstPtr>().use_count() == 1;
+  if (m_data.is<std::shared_ptr<String const>>())
+    return m_data.get<std::shared_ptr<String const>>().use_count() == 1;
+  else if (m_data.is<std::shared_ptr<JsonArray const>>())
+    return m_data.get<std::shared_ptr<JsonArray const>>().use_count() == 1;
+  else if (m_data.is<std::shared_ptr<JsonObject const>>())
+    return m_data.get<std::shared_ptr<JsonObject const>>().use_count() == 1;
   else
     return true;
 }
@@ -231,37 +231,37 @@ std::uint64_t Json::toUInt() const {
 String Json::toString() const {
   if (type() != Type::String)
     throw JsonException(strf("Cannot convert from {} to string", typeName()));
-  return *m_data.get<StringConstPtr>();
+  return *m_data.get<std::shared_ptr<String const>>();
 }
 
 JsonArray Json::toArray() const {
   if (type() != Type::Array)
     throw JsonException::format("Improper conversion to JsonArray from {}", typeName());
-  return *m_data.get<JsonArrayConstPtr>();
+  return *m_data.get<std::shared_ptr<JsonArray const>>();
 }
 
 JsonObject Json::toObject() const {
   if (type() != Type::Object)
     throw JsonException::format("Improper conversion to JsonObject from {}", typeName());
-  return *m_data.get<JsonObjectConstPtr>();
+  return *m_data.get<std::shared_ptr<JsonObject const>>();
 }
 
-StringConstPtr Json::stringPtr() const {
+std::shared_ptr<String const> Json::stringPtr() const {
   if (type() != Type::String)
     throw JsonException(strf("Cannot convert from {} to string", typeName()));
-  return m_data.get<StringConstPtr>();
+  return m_data.get<std::shared_ptr<String const>>();
 }
 
-JsonArrayConstPtr Json::arrayPtr() const {
+std::shared_ptr<JsonArray const> Json::arrayPtr() const {
   if (type() != Type::Array)
     throw JsonException::format("Improper conversion to JsonArray from {}", typeName());
-  return m_data.get<JsonArrayConstPtr>();
+  return m_data.get<std::shared_ptr<JsonArray const>>();
 }
 
-JsonObjectConstPtr Json::objectPtr() const {
+std::shared_ptr<JsonObject const> Json::objectPtr() const {
   if (type() != Type::Object)
     throw JsonException::format("Improper conversion to JsonObject from {}", typeName());
-  return m_data.get<JsonObjectConstPtr>();
+  return m_data.get<std::shared_ptr<JsonObject const>>();
 }
 
 Json::IteratorWrapper<JsonArray> Json::iterateArray() const {
@@ -328,16 +328,16 @@ Maybe<JsonObject> Json::optObject() const {
 
 std::size_t Json::size() const {
   if (type() == Type::Array)
-    return m_data.get<JsonArrayConstPtr>()->size();
+    return m_data.get<std::shared_ptr<JsonArray const>>()->size();
   else if (type() == Type::Object)
-    return m_data.get<JsonObjectConstPtr>()->size();
+    return m_data.get<std::shared_ptr<JsonObject const>>()->size();
   else
     throw JsonException("size() called on improper json type");
 }
 
 bool Json::contains(String const& key) const {
   if (type() == Type::Object)
-    return m_data.get<JsonObjectConstPtr>()->contains(key);
+    return m_data.get<std::shared_ptr<JsonObject const>>()->contains(key);
   else
     throw JsonException("contains() called on improper json type");
 }
@@ -881,7 +881,7 @@ String Json::printJson(int pretty, bool sort) const {
 
 String Json::printString() const {
   if (type() == Type::String)
-    return *m_data.get<StringConstPtr>();
+    return *m_data.get<std::shared_ptr<String const>>();
   return repr(0, false);
 }
 
@@ -994,15 +994,15 @@ void Json::getHash(XXHash3& hasher) const {
     else if (type == Json::Type::Int)
       hasher.push((const char*)m_data.ptr<std::int64_t>(), sizeof(std::int64_t));
     else if (type == Json::Type::String) {
-      const String& str = *m_data.get<StringConstPtr>();
+      const String& str = *m_data.get<std::shared_ptr<String const>>();
       hasher.push(str.utf8Ptr(), str.utf8Size());
     }
     else if (type == Json::Type::Array) {
-      for (Json const& json : *m_data.get<JsonArrayConstPtr>())
+      for (Json const& json : *m_data.get<std::shared_ptr<JsonArray const>>())
         json.getHash(hasher);
     }
     else if (type == Json::Type::Object) {
-      auto& object = *m_data.get<JsonObjectConstPtr>();
+      auto& object = *m_data.get<std::shared_ptr<JsonObject const>>();
       List<JsonObject::const_iterator> iterators;
       iterators.reserve(object.size());
       for (auto i = object.begin(); i != object.end(); ++i)
@@ -1028,7 +1028,7 @@ Json const* Json::ptr(std::size_t index) const {
   if (type() != Type::Array)
     throw JsonException::format("Cannot call get with index on Json type {}, must be Array type", typeName());
 
-  auto const& list = *m_data.get<JsonArrayConstPtr>();
+  auto const& list = *m_data.get<std::shared_ptr<JsonArray const>>();
   if (index >= list.size())
     return nullptr;
   return &list[index];
@@ -1037,7 +1037,7 @@ Json const* Json::ptr(std::size_t index) const {
 Json const* Json::ptr(String const& key) const {
   if (type() != Type::Object)
     throw JsonException::format("Cannot call get with key on Json type {}, must be Object type", typeName());
-  auto const& map = m_data.get<JsonObjectConstPtr>();
+  auto const& map = m_data.get<std::shared_ptr<JsonObject const>>();
 
   auto i = map->find(key);
   if (i == map->end())

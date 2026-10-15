@@ -80,28 +80,6 @@ namespace JsonPath {
   template <typename Jsonlike>
   JsonOp<Jsonlike> genericObjectArrayOp(String path, EmptyPathOp<Jsonlike> emptyPathOp, ObjectOp<Jsonlike> objectOp, ArrayOp<Jsonlike> arrayOp);
 
-  class Path;
-  using PathPtr = std::shared_ptr<Path>;
-  using PathConstPtr = std::shared_ptr<const Path>;
-  using PathWeakPtr = std::weak_ptr<Path>;
-  using PathConstWeakPtr = std::weak_ptr<const Path>;
-  using PathUPtr = std::unique_ptr<Path>;
-  using PathConstUPtr = std::unique_ptr<const Path>;
-  class Pointer;
-  using PointerPtr = std::shared_ptr<Pointer>;
-  using PointerConstPtr = std::shared_ptr<const Pointer>;
-  using PointerWeakPtr = std::weak_ptr<Pointer>;
-  using PointerConstWeakPtr = std::weak_ptr<const Pointer>;
-  using PointerUPtr = std::unique_ptr<Pointer>;
-  using PointerConstUPtr = std::unique_ptr<const Pointer>;
-  class QueryPath;
-  using QueryPathPtr = std::shared_ptr<QueryPath>;
-  using QueryPathConstPtr = std::shared_ptr<const QueryPath>;
-  using QueryPathWeakPtr = std::weak_ptr<QueryPath>;
-  using QueryPathConstWeakPtr = std::weak_ptr<const QueryPath>;
-  using QueryPathUPtr = std::unique_ptr<QueryPath>;
-  using QueryPathConstUPtr = std::unique_ptr<const QueryPath>;
-
   class Path {
   public:
     Path(PathParser parser, String const& path) : m_parser(parser), m_path(path) {}
@@ -380,24 +358,6 @@ export namespace Star::JsonPath {
   using ::Star::JsonPath::ArrayOp;
   using ::Star::JsonPath::genericObjectArrayOp;
   using ::Star::JsonPath::Path;
-  using ::Star::JsonPath::PathPtr;
-  using ::Star::JsonPath::PathConstPtr;
-  using ::Star::JsonPath::PathWeakPtr;
-  using ::Star::JsonPath::PathConstWeakPtr;
-  using ::Star::JsonPath::PathUPtr;
-  using ::Star::JsonPath::PathConstUPtr;
   using ::Star::JsonPath::Pointer;
-  using ::Star::JsonPath::PointerPtr;
-  using ::Star::JsonPath::PointerConstPtr;
-  using ::Star::JsonPath::PointerWeakPtr;
-  using ::Star::JsonPath::PointerConstWeakPtr;
-  using ::Star::JsonPath::PointerUPtr;
-  using ::Star::JsonPath::PointerConstUPtr;
   using ::Star::JsonPath::QueryPath;
-  using ::Star::JsonPath::QueryPathPtr;
-  using ::Star::JsonPath::QueryPathConstPtr;
-  using ::Star::JsonPath::QueryPathWeakPtr;
-  using ::Star::JsonPath::QueryPathConstWeakPtr;
-  using ::Star::JsonPath::QueryPathUPtr;
-  using ::Star::JsonPath::QueryPathConstUPtr;
 }

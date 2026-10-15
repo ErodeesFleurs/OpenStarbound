@@ -168,18 +168,18 @@ Json const& BaseScriptPane::rawConfig() const { return m_rawConfig; }
 
 bool BaseScriptPane::interactive() const { return m_interactive; }
 
-PanePtr BaseScriptPane::createTooltip(Vec2I const& screenPosition) {
+std::shared_ptr<Pane> BaseScriptPane::createTooltip(Vec2I const& screenPosition) {
   auto result = m_script.invoke<Json>("createTooltip", screenPosition);
   if (result && !result.value().isNull()) {
     if (result->type() == Json::Type::String) {
       return SimpleTooltipBuilder::buildTooltip(result->toString());
     } else {
-      PanePtr tooltip = std::make_shared<Pane>();
+      std::shared_ptr<Pane> tooltip = std::make_shared<Pane>();
       m_reader->construct(*result, tooltip.get());
       return tooltip;
     }
   } else {
-    ItemPtr item;
+    std::shared_ptr<Item> item;
     if (auto child = getChildAt(screenPosition)) {
       if (auto itemSlot = as<ItemSlotWidget>(child))
         item = itemSlot->item();
@@ -200,7 +200,7 @@ Maybe<String> BaseScriptPane::cursorOverride(Vec2I const& screenPosition) {
     return {};
 }
 
-Maybe<ItemPtr> BaseScriptPane::shiftItemFromInventory(ItemPtr const& input) {
+Maybe<std::shared_ptr<Item>> BaseScriptPane::shiftItemFromInventory(std::shared_ptr<Item> const& input) {
   auto result = m_script.invoke<Json>("shiftItemFromInventory", input->descriptor().toJson());
   if (!result || result->isNull())
     return {};
@@ -216,7 +216,7 @@ Maybe<ItemPtr> BaseScriptPane::shiftItemFromInventory(ItemPtr const& input) {
   return itemDatabase->item(ItemDescriptor(result.value()));
 }
 
-GuiReaderPtr BaseScriptPane::reader() {
+std::shared_ptr<GuiReader> BaseScriptPane::reader() {
   return m_reader;
 }
 

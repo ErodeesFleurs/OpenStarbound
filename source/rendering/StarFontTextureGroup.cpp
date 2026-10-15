@@ -24,7 +24,7 @@ import star.vector;
 import star.algorithm;
 namespace Star {
 
-FontTextureGroup::FontTextureGroup(TextureGroupPtr textureGroup)
+FontTextureGroup::FontTextureGroup(std::shared_ptr<TextureGroup> textureGroup)
   : m_textureGroup(std::move(textureGroup)) {}
 
 void FontTextureGroup::cleanup(std::int64_t timeout) {
@@ -48,7 +48,7 @@ String const& FontTextureGroup::activeFont() {
   return m_fontName;
 }
 
-void FontTextureGroup::addFont(FontPtr const& font, String const& name) {
+void FontTextureGroup::addFont(std::shared_ptr<Font> const& font, String const& name) {
   m_fonts[name] = font;
 }
 

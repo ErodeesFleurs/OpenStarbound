@@ -45,14 +45,6 @@ import star.registered_pane_manager;
 
 namespace Star {
 
-struct MainInterfaceConfig;
-using MainInterfaceConfigPtr = std::shared_ptr<MainInterfaceConfig>;
-using MainInterfaceConfigConstPtr = std::shared_ptr<MainInterfaceConfig const>;
-using MainInterfaceConfigWeakPtr = std::weak_ptr<MainInterfaceConfig>;
-using MainInterfaceConfigConstWeakPtr = std::weak_ptr<MainInterfaceConfig const>;
-using MainInterfaceConfigUPtr = std::unique_ptr<MainInterfaceConfig>;
-using MainInterfaceConfigConstUPtr = std::unique_ptr<MainInterfaceConfig const>;
-
 enum class MainInterfacePanes {
   EscapeDialog,
   Inventory,
@@ -86,7 +78,7 @@ extern EnumMap<MainInterfacePanes> const MainInterfacePanesNames;
 typedef RegisteredPaneManager<MainInterfacePanes> MainInterfacePaneManager;
 
 struct MainInterfaceConfig {
-  static MainInterfaceConfigPtr loadFromAssets();
+  static std::shared_ptr<MainInterfaceConfig> loadFromAssets();
 
   TextStyle textStyle;
 
@@ -202,12 +194,6 @@ export module star.main_interface_types;
 
 export namespace Star {
   using ::Star::MainInterfaceConfig;
-  using ::Star::MainInterfaceConfigPtr;
-  using ::Star::MainInterfaceConfigConstPtr;
-  using ::Star::MainInterfaceConfigWeakPtr;
-  using ::Star::MainInterfaceConfigConstWeakPtr;
-  using ::Star::MainInterfaceConfigUPtr;
-  using ::Star::MainInterfaceConfigConstUPtr;
   using ::Star::MainInterfacePanes;
   using ::Star::MainInterfacePanesNames;
   using ::Star::MainInterfacePaneManager;

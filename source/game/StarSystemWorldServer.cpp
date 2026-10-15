@@ -106,7 +106,7 @@ import star.algorithm;
 import star.pythonic;
 namespace Star {
 
-SystemWorldServer::SystemWorldServer(Vec3I location, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase)
+SystemWorldServer::SystemWorldServer(Vec3I location, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase)
   : SystemWorld(std::move(universeClock), std::move(celestialDatabase)) {
   m_location = std::move(location);
 
@@ -117,7 +117,7 @@ SystemWorldServer::SystemWorldServer(Vec3I location, ClockConstPtr universeClock
   spawnObjects();
 }
 
-SystemWorldServer::SystemWorldServer(Json const& diskStore, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase)
+SystemWorldServer::SystemWorldServer(Json const& diskStore, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase)
   : SystemWorld(std::move(universeClock), std::move(celestialDatabase)) {
   m_location = jsonToVec3I(diskStore.get("location"));
 
@@ -136,7 +136,7 @@ void SystemWorldServer::setClientDestination(ConnectionId const& clientId, Syste
   m_ships[uuid]->setDestination(destination);
 }
 
-SystemClientShipPtr SystemWorldServer::clientShip(ConnectionId clientId) const {
+std::shared_ptr<SystemClientShip> SystemWorldServer::clientShip(ConnectionId clientId) const {
   if (m_clientShips.contains(clientId) && m_ships.contains(m_clientShips.get(clientId)))
     return m_ships.get(m_clientShips.get(clientId));
   else
@@ -192,16 +192,16 @@ void SystemWorldServer::addClientShip(ConnectionId clientId, Uuid const& uuid, f
   if (!location)
     location = randomArrivalPosition();
 
-  SystemClientShipPtr ship = std::make_shared<SystemClientShip>(this, uuid, shipSpeed, location);
+  std::shared_ptr<SystemClientShip> ship = std::make_shared<SystemClientShip>(this, uuid, shipSpeed, location);
   m_clientShips.set(clientId, ship->uuid());
   m_ships.set(ship->uuid(), ship);
   m_clientNetVersions.set(clientId, {{}, {} });
   m_outgoingPackets.set(clientId, {});
 
-  List<ByteArray> objectStores = m_objects.values().transformed([](SystemObjectPtr const& o) { return o->netStore(); });
-  List<ByteArray> shipStores = m_ships.values().filtered([uuid](SystemClientShipPtr const& s) {
+  List<ByteArray> objectStores = m_objects.values().transformed([](std::shared_ptr<SystemObject> const& o) { return o->netStore(); });
+  List<ByteArray> shipStores = m_ships.values().filtered([uuid](std::shared_ptr<SystemClientShip> const& s) {
     return s->uuid() != uuid;
-  }).transformed([](SystemClientShipPtr const& s) {
+  }).transformed([](std::shared_ptr<SystemClientShip> const& s) {
     return s->netStore();
   });
   std::pair<Uuid, SystemLocation> clientShip = {ship->uuid(), ship->systemLocation()};
@@ -220,7 +220,7 @@ void SystemWorldServer::removeClientShip(ConnectionId clientId) {
   m_outgoingPackets.remove(clientId);
 }
 
-List<SystemClientShipPtr> SystemWorldServer::shipsAtLocation(SystemLocation const& location) const {
+List<std::shared_ptr<SystemClientShip>> SystemWorldServer::shipsAtLocation(SystemLocation const& location) const {
   return m_ships.values().filtered([location](auto const& ship) { return ship->systemLocation() == location; });
 }
 
@@ -268,7 +268,7 @@ void SystemWorldServer::removeObject(Uuid objectUuid) {
   m_objectDestroyQueue.append(objectUuid);
 }
 
-bool SystemWorldServer::addObject(SystemObjectPtr object, bool doRangeCheck) {
+bool SystemWorldServer::addObject(std::shared_ptr<SystemObject> object, bool doRangeCheck) {
   if (doRangeCheck) {
     CelestialCoordinate system = CelestialCoordinate(m_location);
     CelestialCoordinate outer = system.child(m_celestialDatabase->childOrbits(system).sorted().last());
@@ -340,7 +340,7 @@ void SystemWorldServer::update(float dt) {
   }
 }
 
-List<SystemObjectPtr> SystemWorldServer::objects() const {
+List<std::shared_ptr<SystemObject>> SystemWorldServer::objects() const {
   return m_objects.values();
 }
 
@@ -348,7 +348,7 @@ List<Uuid> SystemWorldServer::objectKeys() const {
   return m_objects.keys();
 }
 
-SystemObjectPtr SystemWorldServer::getObject(Uuid const& uuid) const {
+std::shared_ptr<SystemObject> SystemWorldServer::getObject(Uuid const& uuid) const {
   return m_objects.maybe(uuid).value({});
 }
 
@@ -381,7 +381,7 @@ void SystemWorldServer::queueUpdatePackets() {
   }
 }
 
-void SystemWorldServer::handleIncomingPacket(ConnectionId, PacketPtr packet) {
+void SystemWorldServer::handleIncomingPacket(ConnectionId, std::shared_ptr<Packet> packet) {
   if (auto objectSpawn = as<SystemObjectSpawnPacket>(packet)) {
     RandomSource rand = RandomSource();
     Vec2F position = objectSpawn->position.value(randomObjectSpawnPosition(rand));
@@ -390,7 +390,7 @@ void SystemWorldServer::handleIncomingPacket(ConnectionId, PacketPtr packet) {
   }
 }
 
-List<PacketPtr> SystemWorldServer::pullOutgoingPackets(ConnectionId clientId) {
+List<std::shared_ptr<Packet>> SystemWorldServer::pullOutgoingPackets(ConnectionId clientId) {
   return take(m_outgoingPackets[clientId]);
 }
 
@@ -447,13 +447,13 @@ void SystemWorldServer::spawnObjects() {
     Uuid uuid = Uuid();
     auto objectConfig = systemObjectConfig(name, uuid);
 
-    SystemObjectPtr object;
+    std::shared_ptr<SystemObject> object;
     RandomSource rand = RandomSource(Random::randu64());
     Vec2F position = randomObjectSpawnPosition(rand);
     if (time() > m_lastSpawn + m_objectSpawnTime && objectConfig.moving) {
       // if this is not the last object we're spawning, and it's moving, immediately put it in orbit around a planet
       auto targets = planets().filtered([this](CelestialCoordinate const& p) {
-        auto objectsAtPlanet = objects().filtered([p](SystemObjectPtr const& o) { return o->orbitTarget() == p; });
+        auto objectsAtPlanet = objects().filtered([p](std::shared_ptr<SystemObject> const& o) { return o->orbitTarget() == p; });
         return objectsAtPlanet.size() == 0;
       });
       if (targets.size() > 0) {

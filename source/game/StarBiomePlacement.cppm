@@ -46,14 +46,6 @@ import star.plant_database;
 
 namespace Star {
 
-class BiomeItemDistribution;
-using BiomeItemDistributionPtr = std::shared_ptr<BiomeItemDistribution>;
-using BiomeItemDistributionConstPtr = std::shared_ptr<const BiomeItemDistribution>;
-using BiomeItemDistributionWeakPtr = std::weak_ptr<BiomeItemDistribution>;
-using BiomeItemDistributionConstWeakPtr = std::weak_ptr<const BiomeItemDistribution>;
-using BiomeItemDistributionUPtr = std::unique_ptr<BiomeItemDistribution>;
-using BiomeItemDistributionConstUPtr = std::unique_ptr<const BiomeItemDistribution>;
-
 struct BiomeExceptionTag {
   static constexpr char const* name() { return "BiomeException"; }
 };
@@ -148,12 +140,6 @@ export module star.biome_placement;
 
 export namespace Star {
   using ::Star::BiomeItemDistribution;
-  using ::Star::BiomeItemDistributionPtr;
-  using ::Star::BiomeItemDistributionConstPtr;
-  using ::Star::BiomeItemDistributionWeakPtr;
-  using ::Star::BiomeItemDistributionConstWeakPtr;
-  using ::Star::BiomeItemDistributionUPtr;
-  using ::Star::BiomeItemDistributionConstUPtr;
   using ::Star::BiomeExceptionTag;
   using ::Star::BiomeException;
   using ::Star::TreePair;

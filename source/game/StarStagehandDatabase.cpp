@@ -64,7 +64,7 @@ StagehandDatabase::StagehandDatabase() {
   }
 }
 
-StagehandPtr StagehandDatabase::createStagehand(String const& stagehandType, Json const& extraConfig) const {
+std::shared_ptr<Stagehand> StagehandDatabase::createStagehand(String const& stagehandType, Json const& extraConfig) const {
   auto finalConfig = jsonMerge(m_stagehandTypes.get(stagehandType), extraConfig);
   return std::make_shared<Stagehand>(finalConfig);
 }

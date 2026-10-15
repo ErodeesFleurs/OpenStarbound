@@ -273,7 +273,7 @@ List<Uuid> PlayerStorage::playerUuidListByName(String const& name, Maybe<Uuid> e
 }
 
 
-Json PlayerStorage::savePlayer(PlayerPtr const& player) {
+Json PlayerStorage::savePlayer(std::shared_ptr<Player> const& player) {
   auto entityFactory = Root::singleton().entityFactory();
   auto versioningDatabase = Root::singleton().versioningDatabase();
 
@@ -311,7 +311,7 @@ Json PlayerStorage::getPlayerData(Uuid const& uuid) {
     return *data;
 }
 
-PlayerPtr PlayerStorage::loadPlayer(Uuid const& uuid) {
+std::shared_ptr<Player> PlayerStorage::loadPlayer(Uuid const& uuid) {
   auto playerCacheData = getPlayerData(uuid);
   auto entityFactory = Root::singleton().entityFactory();
   try {

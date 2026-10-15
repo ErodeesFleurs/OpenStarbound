@@ -48,13 +48,6 @@ import star.widget;
 
 namespace Star {
 
-class LabelWidget;
-using LabelWidgetPtr = std::shared_ptr<LabelWidget>;
-using LabelWidgetConstPtr = std::shared_ptr<LabelWidget const>;
-using LabelWidgetWeakPtr = std::weak_ptr<LabelWidget>;
-using LabelWidgetConstWeakPtr = std::weak_ptr<LabelWidget const>;
-using LabelWidgetUPtr = std::unique_ptr<LabelWidget>;
-using LabelWidgetConstUPtr = std::unique_ptr<LabelWidget const>;
 class LabelWidget : public Widget {
 public:
   LabelWidget();
@@ -104,10 +97,4 @@ export module star.label_widget;
 
 export namespace Star {
   using ::Star::LabelWidget;
-  using ::Star::LabelWidgetPtr;
-  using ::Star::LabelWidgetConstPtr;
-  using ::Star::LabelWidgetWeakPtr;
-  using ::Star::LabelWidgetConstWeakPtr;
-  using ::Star::LabelWidgetUPtr;
-  using ::Star::LabelWidgetConstUPtr;
 }

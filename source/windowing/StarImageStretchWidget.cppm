@@ -47,14 +47,6 @@ import star.widget;
 
 namespace Star {
 
-class ImageStretchWidget;
-using ImageStretchWidgetPtr = std::shared_ptr<ImageStretchWidget>;
-using ImageStretchWidgetConstPtr = std::shared_ptr<ImageStretchWidget const>;
-using ImageStretchWidgetWeakPtr = std::weak_ptr<ImageStretchWidget>;
-using ImageStretchWidgetConstWeakPtr = std::weak_ptr<ImageStretchWidget const>;
-using ImageStretchWidgetUPtr = std::unique_ptr<ImageStretchWidget>;
-using ImageStretchWidgetConstUPtr = std::unique_ptr<ImageStretchWidget const>;
-
 class ImageStretchWidget : public Widget {
 public:
   ImageStretchWidget(ImageStretchSet const& imageStretchSet, GuiDirection direction);
@@ -76,10 +68,4 @@ export module star.image_stretch_widget;
 
 export namespace Star {
   using ::Star::ImageStretchWidget;
-  using ::Star::ImageStretchWidgetPtr;
-  using ::Star::ImageStretchWidgetConstPtr;
-  using ::Star::ImageStretchWidgetWeakPtr;
-  using ::Star::ImageStretchWidgetConstWeakPtr;
-  using ::Star::ImageStretchWidgetUPtr;
-  using ::Star::ImageStretchWidgetConstUPtr;
 }

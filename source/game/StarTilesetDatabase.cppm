@@ -23,29 +23,7 @@ import star.dungeon_generator;
 
 namespace Star {
 
-class TilesetDatabase;
-using TilesetDatabasePtr = std::shared_ptr<TilesetDatabase>;
-using TilesetDatabaseConstPtr = std::shared_ptr<const TilesetDatabase>;
-using TilesetDatabaseWeakPtr = std::weak_ptr<TilesetDatabase>;
-using TilesetDatabaseConstWeakPtr = std::weak_ptr<const TilesetDatabase>;
-using TilesetDatabaseUPtr = std::unique_ptr<TilesetDatabase>;
-using TilesetDatabaseConstUPtr = std::unique_ptr<const TilesetDatabase>;
-
 namespace Tiled {
-  class Tile;
-  using TilePtr = std::shared_ptr<Tile>;
-  using TileConstPtr = std::shared_ptr<const Tile>;
-  using TileWeakPtr = std::weak_ptr<Tile>;
-  using TileConstWeakPtr = std::weak_ptr<const Tile>;
-  using TileUPtr = std::unique_ptr<Tile>;
-  using TileConstUPtr = std::unique_ptr<const Tile>;
-  class Tileset;
-  using TilesetPtr = std::shared_ptr<Tileset>;
-  using TilesetConstPtr = std::shared_ptr<const Tileset>;
-  using TilesetWeakPtr = std::weak_ptr<Tileset>;
-  using TilesetConstWeakPtr = std::weak_ptr<const Tileset>;
-  using TilesetUPtr = std::unique_ptr<Tileset>;
-  using TilesetConstUPtr = std::unique_ptr<const Tileset>;
 
   extern EnumMap<TileLayer> const LayerNames;
 
@@ -90,13 +68,13 @@ namespace Tiled {
   public:
     Tileset(Json const& json);
 
-    TileConstPtr const& getTile(std::size_t id, TileLayer layer) const;
+    std::shared_ptr<Tile const> const& getTile(std::size_t id, TileLayer layer) const;
     std::size_t size() const;
 
   private:
-    List<TileConstPtr> const& tiles(TileLayer layer) const;
+    List<std::shared_ptr<Tile const>> const& tiles(TileLayer layer) const;
 
-    List<TileConstPtr> m_tilesBack, m_tilesFront;
+    List<std::shared_ptr<Tile const>> m_tilesBack, m_tilesFront;
   };
 }
 
@@ -104,13 +82,13 @@ class TilesetDatabase {
 public:
   TilesetDatabase();
 
-  Tiled::TilesetConstPtr get(String const& path) const;
+  std::shared_ptr<Tiled::Tileset const> get(String const& path) const;
 
 private:
-  static Tiled::TilesetConstPtr readTileset(String const& path);
+  static std::shared_ptr<Tiled::Tileset const> readTileset(String const& path);
 
   mutable Mutex m_cacheMutex;
-  mutable HashLruCache<String, Tiled::TilesetConstPtr> m_tilesetCache;
+  mutable HashLruCache<String, std::shared_ptr<Tiled::Tileset const>> m_tilesetCache;
 };
 
 namespace Tiled {
@@ -175,12 +153,6 @@ export module star.tileset_database;
 
 export namespace Star {
   using ::Star::TilesetDatabase;
-  using ::Star::TilesetDatabasePtr;
-  using ::Star::TilesetDatabaseConstPtr;
-  using ::Star::TilesetDatabaseWeakPtr;
-  using ::Star::TilesetDatabaseConstWeakPtr;
-  using ::Star::TilesetDatabaseUPtr;
-  using ::Star::TilesetDatabaseConstUPtr;
 }
 
 export namespace Star::Tiled {
@@ -192,16 +164,4 @@ export namespace Star::Tiled {
   using ::Star::Tiled::getProperty;
   using ::Star::Tiled::optProperty;
   using ::Star::Tiled::setProperty;
-  using ::Star::Tiled::TilePtr;
-  using ::Star::Tiled::TileConstPtr;
-  using ::Star::Tiled::TileWeakPtr;
-  using ::Star::Tiled::TileConstWeakPtr;
-  using ::Star::Tiled::TileUPtr;
-  using ::Star::Tiled::TileConstUPtr;
-  using ::Star::Tiled::TilesetPtr;
-  using ::Star::Tiled::TilesetConstPtr;
-  using ::Star::Tiled::TilesetWeakPtr;
-  using ::Star::Tiled::TilesetConstWeakPtr;
-  using ::Star::Tiled::TilesetUPtr;
-  using ::Star::Tiled::TilesetConstUPtr;
 }

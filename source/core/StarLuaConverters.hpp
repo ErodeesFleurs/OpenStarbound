@@ -307,23 +307,23 @@ LuaMethods<RpcPromise<T>> LuaUserDataMethods<RpcPromise<T>>::make() {
 
 // all RpcPromiseKeepers should be wrapped in this before being passed to Lua
 template <typename T>
-struct LuaConverter<AutoFailRpcPromiseKeeperPtr<T>> : LuaUserDataConverter<AutoFailRpcPromiseKeeperPtr<T>> {};
+struct LuaConverter<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>> : LuaUserDataConverter<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>> {};
 
 template <typename T>
-struct LuaUserDataMethods<AutoFailRpcPromiseKeeperPtr<T>> {
-  static LuaMethods<AutoFailRpcPromiseKeeperPtr<T>> make();
+struct LuaUserDataMethods<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>> {
+  static LuaMethods<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>> make();
 };
 
 template <typename T>
-LuaMethods<AutoFailRpcPromiseKeeperPtr<T>> LuaUserDataMethods<AutoFailRpcPromiseKeeperPtr<T>>::make() {
-  LuaMethods<AutoFailRpcPromiseKeeperPtr<T>> methods;
-  methods.template registerMethodWithSignature<void, AutoFailRpcPromiseKeeperPtr<T>, RpcPromise<T>>("chain",  [&](AutoFailRpcPromiseKeeperPtr<T> const& keeper, RpcPromise<T> const& promise) {
+LuaMethods<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>> LuaUserDataMethods<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>>::make() {
+  LuaMethods<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>> methods;
+  methods.template registerMethodWithSignature<void, std::shared_ptr<AutoFailRpcPromiseKeeper<T>>, RpcPromise<T>>("chain",  [&](std::shared_ptr<AutoFailRpcPromiseKeeper<T>> const& keeper, RpcPromise<T> const& promise) {
         keeper->chain(promise);
   });
-  methods.template registerMethodWithSignature<void, AutoFailRpcPromiseKeeperPtr<T>, T>("fulfill",            [&](AutoFailRpcPromiseKeeperPtr<T> const& keeper, T const& result) {
+  methods.template registerMethodWithSignature<void, std::shared_ptr<AutoFailRpcPromiseKeeper<T>>, T>("fulfill",            [&](std::shared_ptr<AutoFailRpcPromiseKeeper<T>> const& keeper, T const& result) {
         keeper->fulfill(result);
   });
-  methods.template registerMethodWithSignature<void, AutoFailRpcPromiseKeeperPtr<T>, String>("fail",          [&](AutoFailRpcPromiseKeeperPtr<T> const& keeper, String const& error) {
+  methods.template registerMethodWithSignature<void, std::shared_ptr<AutoFailRpcPromiseKeeper<T>>, String>("fail",          [&](std::shared_ptr<AutoFailRpcPromiseKeeper<T>> const& keeper, String const& error) {
         keeper->fail(error);
   });
   return methods;

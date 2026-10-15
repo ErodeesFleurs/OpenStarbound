@@ -22,14 +22,6 @@ import star.directives;
 import star.vector;
 namespace Star {
 
-class FontTextureGroup;
-using FontTextureGroupPtr = std::shared_ptr<FontTextureGroup>;
-using FontTextureGroupConstPtr = std::shared_ptr<FontTextureGroup const>;
-using FontTextureGroupWeakPtr = std::weak_ptr<FontTextureGroup>;
-using FontTextureGroupConstWeakPtr = std::weak_ptr<FontTextureGroup const>;
-using FontTextureGroupUPtr = std::unique_ptr<FontTextureGroup>;
-using FontTextureGroupConstUPtr = std::unique_ptr<FontTextureGroup const>;
-
 class FontTextureGroup {
 public:
   // Font* is only included for key uniqueness and should not be dereferenced
@@ -42,7 +34,7 @@ public:
     Vec2F offset;
   };
 
-  FontTextureGroup(TextureGroupPtr textureGroup);
+  FontTextureGroup(std::shared_ptr<TextureGroup> textureGroup);
 
   const GlyphTexture& glyphTexture(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr);
 
@@ -57,20 +49,20 @@ public:
   // Switches the current font
   void switchFont(String const& font);
   String const& activeFont();
-  void addFont(FontPtr const& font, String const& name);
+  void addFont(std::shared_ptr<Font> const& font, String const& name);
   void clearFonts();
   void setFixedFonts(String const& defaultFontName, String const& fallbackFontName, String const& emojiFontName);
 private:
   Font* getFontForCharacter(String::Char);
 
-  CaseInsensitiveStringMap<FontPtr> m_fonts;
+  CaseInsensitiveStringMap<std::shared_ptr<Font>> m_fonts;
   String m_fontName;
-  FontPtr m_activeFont;
-  FontPtr m_defaultFont;
-  FontPtr m_fallbackFont;
-  FontPtr m_emojiFont;
+  std::shared_ptr<Font> m_activeFont;
+  std::shared_ptr<Font> m_defaultFont;
+  std::shared_ptr<Font> m_fallbackFont;
+  std::shared_ptr<Font> m_emojiFont;
 
-  TextureGroupPtr m_textureGroup;
+  std::shared_ptr<TextureGroup> m_textureGroup;
   HashMap<GlyphDescriptor, GlyphTexture> m_glyphs;
 };
 
@@ -80,10 +72,4 @@ export module star.font_texture_group;
 
 export namespace Star {
   using ::Star::FontTextureGroup;
-  using ::Star::FontTextureGroupPtr;
-  using ::Star::FontTextureGroupConstPtr;
-  using ::Star::FontTextureGroupWeakPtr;
-  using ::Star::FontTextureGroupConstWeakPtr;
-  using ::Star::FontTextureGroupUPtr;
-  using ::Star::FontTextureGroupConstUPtr;
 }

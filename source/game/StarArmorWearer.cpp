@@ -94,19 +94,6 @@ import star.beam_item;
 import star.durability_item;
 import star.pointable_item;
 struct PreviewTile;
-using PreviewTilePtr = std::shared_ptr<PreviewTile>;
-using PreviewTileConstPtr = std::shared_ptr<const PreviewTile>;
-using PreviewTileWeakPtr = std::weak_ptr<PreviewTile>;
-using PreviewTileConstWeakPtr = std::weak_ptr<const PreviewTile>;
-using PreviewTileUPtr = std::unique_ptr<PreviewTile>;
-using PreviewTileConstUPtr = std::unique_ptr<const PreviewTile>;
-class PreviewTileTool;
-using PreviewTileToolPtr = std::shared_ptr<PreviewTileTool>;
-using PreviewTileToolConstPtr = std::shared_ptr<const PreviewTileTool>;
-using PreviewTileToolWeakPtr = std::weak_ptr<PreviewTileTool>;
-using PreviewTileToolConstWeakPtr = std::weak_ptr<const PreviewTileTool>;
-using PreviewTileToolUPtr = std::unique_ptr<PreviewTileTool>;
-using PreviewTileToolConstUPtr = std::unique_ptr<const PreviewTileTool>;
 import star.preview_tile_tool;
 import star.tools;
 import star.activatable_item;
@@ -326,7 +313,7 @@ List<PersistentStatusEffect> ArmorWearer::statusEffects(bool cosmeticOnly) const
   return statusEffects;
 }
 
-bool ArmorWearer::setItem(std::uint8_t slot, ArmorItemPtr item, bool visible) {
+bool ArmorWearer::setItem(std::uint8_t slot, std::shared_ptr<ArmorItem> item, bool visible) {
   if (slot >= m_armors.size())
     return false;
   auto& armor = m_armors[slot];
@@ -345,29 +332,29 @@ bool ArmorWearer::setItem(std::uint8_t slot, ArmorItemPtr item, bool visible) {
     return false;
 }
 
-void ArmorWearer::setHeadItem(HeadArmorPtr headItem) { setItem(0, headItem, true); }
-void ArmorWearer::setChestItem(ChestArmorPtr chestItem) { setItem(1, chestItem, true); }
-void ArmorWearer::setLegsItem(LegsArmorPtr legsItem) { setItem(2, legsItem, true); }
-void ArmorWearer::setBackItem(BackArmorPtr backItem) { setItem(3, backItem, true); }
-void ArmorWearer::setHeadCosmeticItem(HeadArmorPtr headCosmeticItem) { setItem(4, headCosmeticItem, true); }
-void ArmorWearer::setChestCosmeticItem(ChestArmorPtr chestCosmeticItem) { setItem(5, chestCosmeticItem, true); }
-void ArmorWearer::setLegsCosmeticItem(LegsArmorPtr legsCosmeticItem) { setItem(6, legsCosmeticItem, true); }
-void ArmorWearer::setBackCosmeticItem(BackArmorPtr backCosmeticItem) { setItem(7, backCosmeticItem, true); }
+void ArmorWearer::setHeadItem(std::shared_ptr<HeadArmor> headItem) { setItem(0, headItem, true); }
+void ArmorWearer::setChestItem(std::shared_ptr<ChestArmor> chestItem) { setItem(1, chestItem, true); }
+void ArmorWearer::setLegsItem(std::shared_ptr<LegsArmor> legsItem) { setItem(2, legsItem, true); }
+void ArmorWearer::setBackItem(std::shared_ptr<BackArmor> backItem) { setItem(3, backItem, true); }
+void ArmorWearer::setHeadCosmeticItem(std::shared_ptr<HeadArmor> headCosmeticItem) { setItem(4, headCosmeticItem, true); }
+void ArmorWearer::setChestCosmeticItem(std::shared_ptr<ChestArmor> chestCosmeticItem) { setItem(5, chestCosmeticItem, true); }
+void ArmorWearer::setLegsCosmeticItem(std::shared_ptr<LegsArmor> legsCosmeticItem) { setItem(6, legsCosmeticItem, true); }
+void ArmorWearer::setBackCosmeticItem(std::shared_ptr<BackArmor> backCosmeticItem) { setItem(7, backCosmeticItem, true); }
 
-ArmorItemPtr ArmorWearer::item(std::uint8_t slot) const {
+std::shared_ptr<ArmorItem> ArmorWearer::item(std::uint8_t slot) const {
   if (slot < m_armors.size())
     return m_armors[slot].item;
   return {};
 }
 
- HeadArmorPtr ArmorWearer:: headItem() const { return as< HeadArmor>(item(0)); }
-ChestArmorPtr ArmorWearer::chestItem() const { return as<ChestArmor>(item(1)); }
- LegsArmorPtr ArmorWearer:: legsItem() const { return as< LegsArmor>(item(2)); }
- BackArmorPtr ArmorWearer:: backItem() const { return as< BackArmor>(item(3)); }
- HeadArmorPtr ArmorWearer:: headCosmeticItem() const { return as< HeadArmor>(item(4)); }
-ChestArmorPtr ArmorWearer::chestCosmeticItem() const { return as<ChestArmor>(item(5)); }
- LegsArmorPtr ArmorWearer:: legsCosmeticItem() const { return as< LegsArmor>(item(6)); }
- BackArmorPtr ArmorWearer:: backCosmeticItem() const { return as< BackArmor>(item(7)); }
+ std::shared_ptr<HeadArmor> ArmorWearer:: headItem() const { return as< HeadArmor>(item(0)); }
+std::shared_ptr<ChestArmor> ArmorWearer::chestItem() const { return as<ChestArmor>(item(1)); }
+ std::shared_ptr<LegsArmor> ArmorWearer:: legsItem() const { return as< LegsArmor>(item(2)); }
+ std::shared_ptr<BackArmor> ArmorWearer:: backItem() const { return as< BackArmor>(item(3)); }
+ std::shared_ptr<HeadArmor> ArmorWearer:: headCosmeticItem() const { return as< HeadArmor>(item(4)); }
+std::shared_ptr<ChestArmor> ArmorWearer::chestCosmeticItem() const { return as<ChestArmor>(item(5)); }
+ std::shared_ptr<LegsArmor> ArmorWearer:: legsCosmeticItem() const { return as< LegsArmor>(item(6)); }
+ std::shared_ptr<BackArmor> ArmorWearer:: backCosmeticItem() const { return as< BackArmor>(item(7)); }
 
 ItemDescriptor ArmorWearer::itemDescriptor(std::uint8_t slot) const {
    if (auto foundItem = item(slot))
@@ -423,11 +410,11 @@ ItemDescriptor ArmorWearer::backCosmeticItemDescriptor() const {
   return {};
 }
 
-bool ArmorWearer::setCosmeticItem(std::uint8_t slot, ArmorItemPtr cosmeticItem) {
+bool ArmorWearer::setCosmeticItem(std::uint8_t slot, std::shared_ptr<ArmorItem> cosmeticItem) {
   return setItem(slot + 8, cosmeticItem, true);
 }
 
-ArmorItemPtr ArmorWearer::cosmeticItem(std::uint8_t slot) const {
+std::shared_ptr<ArmorItem> ArmorWearer::cosmeticItem(std::uint8_t slot) const {
   return item(slot + 8);
 }
 

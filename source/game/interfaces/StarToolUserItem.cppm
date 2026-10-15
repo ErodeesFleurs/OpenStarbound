@@ -75,14 +75,6 @@ struct ToolUserItemExceptionTag {
 };
 using ToolUserItemException = StarError<ToolUserItemExceptionTag, StarException>;
 
-class ToolUserItem;
-using ToolUserItemPtr = std::shared_ptr<ToolUserItem>;
-using ToolUserItemConstPtr = std::shared_ptr<const ToolUserItem>;
-using ToolUserItemWeakPtr = std::weak_ptr<ToolUserItem>;
-using ToolUserItemConstWeakPtr = std::weak_ptr<const ToolUserItem>;
-using ToolUserItemUPtr = std::unique_ptr<ToolUserItem>;
-using ToolUserItemConstUPtr = std::unique_ptr<const ToolUserItem>;
-
 // FIXME: You know what another name for an item that a tool user uses is?  A
 // Tool.  Three words when one will do, rename.
 class ToolUserItem {
@@ -125,10 +117,4 @@ export namespace Star {
   using ::Star::ToolUserItemExceptionTag;
   using ::Star::ToolUserItemException;
   using ::Star::ToolUserItem;
-  using ::Star::ToolUserItemPtr;
-  using ::Star::ToolUserItemConstPtr;
-  using ::Star::ToolUserItemWeakPtr;
-  using ::Star::ToolUserItemConstWeakPtr;
-  using ::Star::ToolUserItemUPtr;
-  using ::Star::ToolUserItemConstUPtr;
 }

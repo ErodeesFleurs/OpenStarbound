@@ -131,7 +131,7 @@ int main(int argc, char** argv) {
     rootLoader.addParameter("regionsize", "size", OptionParser::Optional, "width / height of each generation region, default 10");
     rootLoader.addParameter("reportevery", "report regions", OptionParser::Optional, "number of generation regions before each progress report, default 20");
 
-    RootUPtr root;
+    std::unique_ptr<::Star::Root> root;
     OptionParser::Options options;
     std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 

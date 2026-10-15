@@ -43,12 +43,6 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 class Monster;
-using MonsterPtr = std::shared_ptr<Monster>;
-using MonsterConstPtr = std::shared_ptr<const Monster>;
-using MonsterWeakPtr = std::weak_ptr<Monster>;
-using MonsterConstWeakPtr = std::weak_ptr<const Monster>;
-using MonsterUPtr = std::unique_ptr<Monster>;
-using MonsterConstUPtr = std::unique_ptr<const Monster>;
 }
 
 import star.damage_types;
@@ -101,19 +95,7 @@ import star.effect_emitter;
 namespace Star {
 
 class StatusController;
-using StatusControllerPtr = std::shared_ptr<StatusController>;
-using StatusControllerConstPtr = std::shared_ptr<const StatusController>;
-using StatusControllerWeakPtr = std::weak_ptr<StatusController>;
-using StatusControllerConstWeakPtr = std::weak_ptr<const StatusController>;
-using StatusControllerUPtr = std::unique_ptr<StatusController>;
-using StatusControllerConstUPtr = std::unique_ptr<const StatusController>;
 class BehaviorState;
-using BehaviorStatePtr = std::shared_ptr<BehaviorState>;
-using BehaviorStateConstPtr = std::shared_ptr<const BehaviorState>;
-using BehaviorStateWeakPtr = std::weak_ptr<BehaviorState>;
-using BehaviorStateConstWeakPtr = std::weak_ptr<const BehaviorState>;
-using BehaviorStateUPtr = std::unique_ptr<BehaviorState>;
-using BehaviorStateConstUPtr = std::unique_ptr<const BehaviorState>;
 
 class Monster
   : public virtual DamageBarEntity,
@@ -251,8 +233,8 @@ private:
   NetworkedAnimator m_networkedAnimator;
   NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
 
-  ActorMovementControllerPtr m_movementController;
-  StatusControllerPtr m_statusController;
+  std::shared_ptr<ActorMovementController> m_movementController;
+  std::shared_ptr<StatusController> m_statusController;
 
   EffectEmitter m_effectEmitter;
 
@@ -272,7 +254,7 @@ private:
 
   Vec2F m_questIndicatorOffset;
 
-  List<BehaviorStatePtr> m_behaviors;
+  List<std::shared_ptr<BehaviorState>> m_behaviors;
   mutable LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>> m_scriptComponent;
   LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
 

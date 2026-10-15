@@ -13,20 +13,7 @@ import star.bi_map;
 
 namespace Star {
 
-class AudioInstance;
-using AudioInstancePtr = std::shared_ptr<AudioInstance>;
-using AudioInstanceConstPtr = std::shared_ptr<AudioInstance const>;
-using AudioInstanceWeakPtr = std::weak_ptr<AudioInstance>;
-using AudioInstanceConstWeakPtr = std::weak_ptr<AudioInstance const>;
-using AudioInstanceUPtr = std::unique_ptr<AudioInstance>;
-using AudioInstanceConstUPtr = std::unique_ptr<AudioInstance const>;
 class Mixer;
-using MixerPtr = std::shared_ptr<Mixer>;
-using MixerConstPtr = std::shared_ptr<Mixer const>;
-using MixerWeakPtr = std::weak_ptr<Mixer>;
-using MixerConstWeakPtr = std::weak_ptr<Mixer const>;
-using MixerUPtr = std::unique_ptr<Mixer>;
-using MixerConstUPtr = std::unique_ptr<Mixer const>;
 
 struct RampedValue {
   float value;
@@ -140,7 +127,7 @@ public:
   // per mixer group volume
   void setGroupVolume(MixerGroup group, float targetValue, float rampTime = 0.0f);
 
-  void play(AudioInstancePtr sample);
+  void play(std::shared_ptr<AudioInstance> sample);
 
   void stopAll(float rampTime);
 
@@ -172,7 +159,7 @@ private:
 
   Mutex m_queueMutex;
 
-  HashMap<AudioInstancePtr, AudioState> m_audios;
+  HashMap<std::shared_ptr<AudioInstance>, AudioState> m_audios;
 
   Mutex m_effectsMutex;
   StringMap<std::shared_ptr<EffectInfo>> m_effects;
@@ -192,17 +179,5 @@ export namespace Star {
   using ::Star::MixerGroup;
   using ::Star::MixerGroupNames;
   using ::Star::AudioInstance;
-  using ::Star::AudioInstancePtr;
-  using ::Star::AudioInstanceConstPtr;
-  using ::Star::AudioInstanceWeakPtr;
-  using ::Star::AudioInstanceConstWeakPtr;
-  using ::Star::AudioInstanceUPtr;
-  using ::Star::AudioInstanceConstUPtr;
   using ::Star::Mixer;
-  using ::Star::MixerPtr;
-  using ::Star::MixerConstPtr;
-  using ::Star::MixerWeakPtr;
-  using ::Star::MixerConstWeakPtr;
-  using ::Star::MixerUPtr;
-  using ::Star::MixerConstUPtr;
 }

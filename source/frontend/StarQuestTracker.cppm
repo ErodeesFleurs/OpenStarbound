@@ -40,40 +40,10 @@ import star.pane;
 namespace Star {
 
 class LabelWidget;
-using LabelWidgetPtr = std::shared_ptr<LabelWidget>;
-using LabelWidgetConstPtr = std::shared_ptr<LabelWidget const>;
-using LabelWidgetWeakPtr = std::weak_ptr<LabelWidget>;
-using LabelWidgetConstWeakPtr = std::weak_ptr<LabelWidget const>;
-using LabelWidgetUPtr = std::unique_ptr<LabelWidget>;
-using LabelWidgetConstUPtr = std::unique_ptr<LabelWidget const>;
 class ImageWidget;
-using ImageWidgetPtr = std::shared_ptr<ImageWidget>;
-using ImageWidgetConstPtr = std::shared_ptr<ImageWidget const>;
-using ImageWidgetWeakPtr = std::weak_ptr<ImageWidget>;
-using ImageWidgetConstWeakPtr = std::weak_ptr<ImageWidget const>;
-using ImageWidgetUPtr = std::unique_ptr<ImageWidget>;
-using ImageWidgetConstUPtr = std::unique_ptr<ImageWidget const>;
 class ImageStretchWidget;
-using ImageStretchWidgetPtr = std::shared_ptr<ImageStretchWidget>;
-using ImageStretchWidgetConstPtr = std::shared_ptr<ImageStretchWidget const>;
-using ImageStretchWidgetWeakPtr = std::weak_ptr<ImageStretchWidget>;
-using ImageStretchWidgetConstWeakPtr = std::weak_ptr<ImageStretchWidget const>;
-using ImageStretchWidgetUPtr = std::unique_ptr<ImageStretchWidget>;
-using ImageStretchWidgetConstUPtr = std::unique_ptr<ImageStretchWidget const>;
 class ProgressWidget;
-using ProgressWidgetPtr = std::shared_ptr<ProgressWidget>;
-using ProgressWidgetConstPtr = std::shared_ptr<ProgressWidget const>;
-using ProgressWidgetWeakPtr = std::weak_ptr<ProgressWidget>;
-using ProgressWidgetConstWeakPtr = std::weak_ptr<ProgressWidget const>;
-using ProgressWidgetUPtr = std::unique_ptr<ProgressWidget>;
-using ProgressWidgetConstUPtr = std::unique_ptr<ProgressWidget const>;
 class Quest;
-using QuestPtr = std::shared_ptr<Quest>;
-using QuestConstPtr = std::shared_ptr<Quest const>;
-using QuestWeakPtr = std::weak_ptr<Quest>;
-using QuestConstWeakPtr = std::weak_ptr<Quest const>;
-using QuestUPtr = std::unique_ptr<Quest>;
-using QuestConstUPtr = std::unique_ptr<Quest const>;
 
 class QuestTrackerPane : public Pane {
 public:
@@ -82,21 +52,21 @@ public:
   bool sendEvent(InputEvent const& event) override;
   void update(float dt) override;
 
-  void setQuest(QuestPtr const& quest);
+  void setQuest(std::shared_ptr<Quest> const& quest);
 
 private:
   void setExpanded(bool expanded);
 
-  ImageWidgetPtr m_frame;
-  ImageStretchWidgetPtr m_expandedFrame;
+  std::shared_ptr<ImageWidget> m_frame;
+  std::shared_ptr<ImageStretchWidget> m_expandedFrame;
 
-  LabelWidgetPtr m_questObjectiveList;
+  std::shared_ptr<LabelWidget> m_questObjectiveList;
 
-  ImageWidgetPtr m_compassFrame;
-  ImageWidgetPtr m_compass;
+  std::shared_ptr<ImageWidget> m_compassFrame;
+  std::shared_ptr<ImageWidget> m_compass;
 
-  ImageWidgetPtr m_progressFrame;
-  ProgressWidgetPtr m_progress;
+  std::shared_ptr<ImageWidget> m_progressFrame;
+  std::shared_ptr<ProgressWidget> m_progress;
 
   int m_expandedFrameMinHeight;
   int m_expandedFramePadding;
@@ -106,7 +76,7 @@ private:
   float m_compassAcceleration;
   float m_compassFriction;
 
-  QuestPtr m_currentQuest;
+  std::shared_ptr<Quest> m_currentQuest;
   bool m_expanded;
 
   String m_compassFrameImage;
@@ -125,39 +95,9 @@ export module star.quest_tracker;
 
 export namespace Star {
   using ::Star::LabelWidget;
-  using ::Star::LabelWidgetPtr;
-  using ::Star::LabelWidgetConstPtr;
-  using ::Star::LabelWidgetWeakPtr;
-  using ::Star::LabelWidgetConstWeakPtr;
-  using ::Star::LabelWidgetUPtr;
-  using ::Star::LabelWidgetConstUPtr;
   using ::Star::ImageWidget;
-  using ::Star::ImageWidgetPtr;
-  using ::Star::ImageWidgetConstPtr;
-  using ::Star::ImageWidgetWeakPtr;
-  using ::Star::ImageWidgetConstWeakPtr;
-  using ::Star::ImageWidgetUPtr;
-  using ::Star::ImageWidgetConstUPtr;
   using ::Star::ImageStretchWidget;
-  using ::Star::ImageStretchWidgetPtr;
-  using ::Star::ImageStretchWidgetConstPtr;
-  using ::Star::ImageStretchWidgetWeakPtr;
-  using ::Star::ImageStretchWidgetConstWeakPtr;
-  using ::Star::ImageStretchWidgetUPtr;
-  using ::Star::ImageStretchWidgetConstUPtr;
   using ::Star::ProgressWidget;
-  using ::Star::ProgressWidgetPtr;
-  using ::Star::ProgressWidgetConstPtr;
-  using ::Star::ProgressWidgetWeakPtr;
-  using ::Star::ProgressWidgetConstWeakPtr;
-  using ::Star::ProgressWidgetUPtr;
-  using ::Star::ProgressWidgetConstUPtr;
   using ::Star::Quest;
-  using ::Star::QuestPtr;
-  using ::Star::QuestConstPtr;
-  using ::Star::QuestWeakPtr;
-  using ::Star::QuestConstWeakPtr;
-  using ::Star::QuestUPtr;
-  using ::Star::QuestConstUPtr;
   using ::Star::QuestTrackerPane;
 }

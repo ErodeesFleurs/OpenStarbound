@@ -15,14 +15,6 @@ struct CollectionDatabaseExceptionTag {
 };
 using CollectionDatabaseException = StarError<CollectionDatabaseExceptionTag, StarException>;
 
-class CollectionDatabase;
-using CollectionDatabasePtr = std::shared_ptr<CollectionDatabase>;
-using CollectionDatabaseConstPtr = std::shared_ptr<const CollectionDatabase>;
-using CollectionDatabaseWeakPtr = std::weak_ptr<CollectionDatabase>;
-using CollectionDatabaseConstWeakPtr = std::weak_ptr<const CollectionDatabase>;
-using CollectionDatabaseUPtr = std::unique_ptr<CollectionDatabase>;
-using CollectionDatabaseConstUPtr = std::unique_ptr<const CollectionDatabase>;
-
 enum class CollectionType : std::uint16_t {
   Generic,
   Item,
@@ -79,8 +71,6 @@ export namespace Star {
   using ::Star::CollectionDatabaseExceptionTag;
   using ::Star::CollectionDatabaseException;
   using ::Star::CollectionDatabase;
-  using ::Star::CollectionDatabasePtr;
-  using ::Star::CollectionDatabaseConstPtr;
   using ::Star::CollectionType;
   using ::Star::CollectionTypeNames;
   using ::Star::Collectable;

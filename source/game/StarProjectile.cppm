@@ -63,39 +63,13 @@ import star.line;
 namespace Star {
 
 class World;
-using WorldPtr = std::shared_ptr<World>;
-using WorldConstPtr = std::shared_ptr<const World>;
-using WorldWeakPtr = std::weak_ptr<World>;
-using WorldConstWeakPtr = std::weak_ptr<const World>;
-using WorldUPtr = std::unique_ptr<World>;
-using WorldConstUPtr = std::unique_ptr<const World>;
 class RenderCallback;
-using RenderCallbackPtr = std::shared_ptr<RenderCallback>;
-using RenderCallbackConstPtr = std::shared_ptr<const RenderCallback>;
-using RenderCallbackWeakPtr = std::weak_ptr<RenderCallback>;
-using RenderCallbackConstWeakPtr = std::weak_ptr<const RenderCallback>;
-using RenderCallbackUPtr = std::unique_ptr<RenderCallback>;
-using RenderCallbackConstUPtr = std::unique_ptr<const RenderCallback>;
 struct ProjectileConfig;
-using ProjectileConfigPtr = std::shared_ptr<ProjectileConfig>;
-using ProjectileConfigConstPtr = std::shared_ptr<const ProjectileConfig>;
-using ProjectileConfigWeakPtr = std::weak_ptr<ProjectileConfig>;
-using ProjectileConfigConstWeakPtr = std::weak_ptr<const ProjectileConfig>;
-using ProjectileConfigUPtr = std::unique_ptr<ProjectileConfig>;
-using ProjectileConfigConstUPtr = std::unique_ptr<const ProjectileConfig>;
-
-class Projectile;
-using ProjectilePtr = std::shared_ptr<Projectile>;
-using ProjectileConstPtr = std::shared_ptr<const Projectile>;
-using ProjectileWeakPtr = std::weak_ptr<Projectile>;
-using ProjectileConstWeakPtr = std::weak_ptr<const Projectile>;
-using ProjectileUPtr = std::unique_ptr<Projectile>;
-using ProjectileConstUPtr = std::unique_ptr<const Projectile>;
 
 class Projectile : public virtual MobileEntity, public virtual ScriptedEntity, public virtual PhysicsEntity, public virtual StatusEffectEntity {
 public:
-  Projectile(ProjectileConfigPtr const& config, Json const& parameters);
-  Projectile(ProjectileConfigPtr const& config, DataStreamBuffer& netState, NetCompatibilityRules rules = {});
+  Projectile(std::shared_ptr<ProjectileConfig> const& config, Json const& parameters);
+  Projectile(std::shared_ptr<ProjectileConfig> const& config, DataStreamBuffer& netState, NetCompatibilityRules rules = {});
 
   ByteArray netStore(NetCompatibilityRules rules = {}) const;
 
@@ -204,7 +178,7 @@ private:
 
   void renderPendingRenderables(RenderCallback* renderCallback);
 
-  ProjectileConfigPtr m_config;
+  std::shared_ptr<ProjectileConfig> m_config;
   Json m_parameters;
 
   // used when projectiles are fired from a moving entity and should include its velocity
@@ -231,13 +205,13 @@ private:
 
   Maybe<String> m_collisionSound;
   String m_persistentAudioFile;
-  AudioInstancePtr m_persistentAudio;
+  std::shared_ptr<AudioInstance> m_persistentAudio;
 
   List<std::tuple<GameTimer, bool, Json>> m_periodicActions;
 
   NetElementTopGroup m_netGroup;
-  MovementControllerPtr m_movementController;
-  EffectEmitterPtr m_effectEmitter;
+  std::shared_ptr<MovementController> m_movementController;
+  std::shared_ptr<EffectEmitter> m_effectEmitter;
   float m_timeToLive;
 
   Line2F m_travelLine;
@@ -264,7 +238,7 @@ private:
   OrderedHashMap<String, PhysicsForceConfig> m_physicsForces;
   OrderedHashMap<String, PhysicsCollisionConfig> m_physicsCollisions;
 
-  List<Variant<AudioInstancePtr, Particle, LightSource>> m_pendingRenderables;
+  List<Variant<std::shared_ptr<AudioInstance>, Particle, LightSource>> m_pendingRenderables;
 };
 
 }
@@ -273,31 +247,7 @@ export module star.projectile;
 
 export namespace Star {
   using ::Star::World;
-  using ::Star::WorldPtr;
-  using ::Star::WorldConstPtr;
-  using ::Star::WorldWeakPtr;
-  using ::Star::WorldConstWeakPtr;
-  using ::Star::WorldUPtr;
-  using ::Star::WorldConstUPtr;
   using ::Star::RenderCallback;
-  using ::Star::RenderCallbackPtr;
-  using ::Star::RenderCallbackConstPtr;
-  using ::Star::RenderCallbackWeakPtr;
-  using ::Star::RenderCallbackConstWeakPtr;
-  using ::Star::RenderCallbackUPtr;
-  using ::Star::RenderCallbackConstUPtr;
   using ::Star::ProjectileConfig;
-  using ::Star::ProjectileConfigPtr;
-  using ::Star::ProjectileConfigConstPtr;
-  using ::Star::ProjectileConfigWeakPtr;
-  using ::Star::ProjectileConfigConstWeakPtr;
-  using ::Star::ProjectileConfigUPtr;
-  using ::Star::ProjectileConfigConstUPtr;
   using ::Star::Projectile;
-  using ::Star::ProjectilePtr;
-  using ::Star::ProjectileConstPtr;
-  using ::Star::ProjectileWeakPtr;
-  using ::Star::ProjectileConstWeakPtr;
-  using ::Star::ProjectileUPtr;
-  using ::Star::ProjectileConstUPtr;
 }

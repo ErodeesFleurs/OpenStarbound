@@ -207,7 +207,7 @@ import star.team_client;
 import star.algorithm;
 namespace Star {
 
-Chat::Chat(UniverseClientPtr client, Json const& baseConfig) : BaseScriptPane(baseConfig, false) {
+Chat::Chat(std::shared_ptr<UniverseClient> client, Json const& baseConfig) : BaseScriptPane(baseConfig, false) {
   m_client = client;
   m_scripted = baseConfig.get("scripts", Json()).isType(Json::Type::Array);
   m_script.setLuaRoot(m_client->luaRoot());

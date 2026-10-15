@@ -9,14 +9,6 @@ import star.io_device;
 
 namespace Star {
 
-class AssetSource;
-using AssetSourcePtr = std::shared_ptr<AssetSource>;
-using AssetSourceConstPtr = std::shared_ptr<AssetSource const>;
-using AssetSourceWeakPtr = std::weak_ptr<AssetSource>;
-using AssetSourceConstWeakPtr = std::weak_ptr<AssetSource const>;
-using AssetSourceUPtr = std::unique_ptr<AssetSource>;
-using AssetSourceConstUPtr = std::unique_ptr<AssetSource const>;
-
 struct AssetSourceExceptionTag {
   static constexpr char const* name() { return "AssetSourceException"; }
 };
@@ -36,7 +28,7 @@ public:
   virtual StringList assetPaths() const = 0;
 
   // Open the given path in this source and return an IODevicePtr to it.
-  virtual IODevicePtr open(String const& path) = 0;
+  virtual std::shared_ptr<IODevice> open(String const& path) = 0;
 
   // Read the entirety of the given path into a buffer.
   virtual ByteArray read(String const& path) = 0;
@@ -50,10 +42,4 @@ export namespace Star {
   using ::Star::AssetSourceExceptionTag;
   using ::Star::AssetSourceException;
   using ::Star::AssetSource;
-  using ::Star::AssetSourcePtr;
-  using ::Star::AssetSourceConstPtr;
-  using ::Star::AssetSourceWeakPtr;
-  using ::Star::AssetSourceConstWeakPtr;
-  using ::Star::AssetSourceUPtr;
-  using ::Star::AssetSourceConstUPtr;
 }

@@ -49,13 +49,6 @@ import star.widget;
 
 namespace Star {
 
-class ImageWidget;
-using ImageWidgetPtr = std::shared_ptr<ImageWidget>;
-using ImageWidgetConstPtr = std::shared_ptr<ImageWidget const>;
-using ImageWidgetWeakPtr = std::weak_ptr<ImageWidget>;
-using ImageWidgetConstWeakPtr = std::weak_ptr<ImageWidget const>;
-using ImageWidgetUPtr = std::unique_ptr<ImageWidget>;
-using ImageWidgetConstUPtr = std::unique_ptr<ImageWidget const>;
 class ImageWidget : public Widget {
 public:
   ImageWidget();
@@ -103,10 +96,4 @@ export module star.image_widget;
 
 export namespace Star {
   using ::Star::ImageWidget;
-  using ::Star::ImageWidgetPtr;
-  using ::Star::ImageWidgetConstPtr;
-  using ::Star::ImageWidgetWeakPtr;
-  using ::Star::ImageWidgetConstWeakPtr;
-  using ::Star::ImageWidgetUPtr;
-  using ::Star::ImageWidgetConstUPtr;
 }

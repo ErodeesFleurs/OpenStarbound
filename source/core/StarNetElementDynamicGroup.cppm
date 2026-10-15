@@ -27,7 +27,6 @@ namespace Star {
 template <typename Element>
 class NetElementDynamicGroup : public NetElement {
 public:
-  typedef std::shared_ptr<Element> ElementPtr;
   typedef std::uint32_t ElementId;
   static ElementId const NullElementId = 0;
 
@@ -38,16 +37,16 @@ public:
 
   // Must not call addNetElement / removeNetElement when being used as a slave,
   // id errors will result.
-  ElementId addNetElement(ElementPtr element);
+  ElementId addNetElement(std::shared_ptr<Element> element);
   void removeNetElement(ElementId id);
 
   // Remove all elements
   void clearNetElements();
 
   List<ElementId> netElementIds() const;
-  ElementPtr getNetElement(ElementId id) const;
+  std::shared_ptr<Element> getNetElement(ElementId id) const;
 
-  List<ElementPtr> netElements() const;
+  List<std::shared_ptr<Element>> netElements() const;
 
   void initNetVersion(NetElementVersion const* version = nullptr) override;
 
@@ -78,11 +77,11 @@ private:
 
   typedef Variant<ElementReset, ElementRemoval, ElementAddition> ElementChange;
 
-  typedef IdMap<ElementId, ElementPtr> ElementMap;
+  typedef IdMap<ElementId, std::shared_ptr<Element>> ElementMap;
 
   void addChangeData(ElementChange change);
 
-  void readyElement(ElementPtr const& element);
+  void readyElement(std::shared_ptr<Element> const& element);
 
   NetElementVersion const* m_netVersion = nullptr;
   bool m_interpolationEnabled = false;
@@ -98,7 +97,7 @@ private:
 };
 
 template <typename Element>
-auto NetElementDynamicGroup<Element>::addNetElement(ElementPtr element) -> ElementId {
+auto NetElementDynamicGroup<Element>::addNetElement(std::shared_ptr<Element> element) -> ElementId {
   readyElement(element);
   auto id = m_idMap.add(std::move(element));
 
@@ -125,12 +124,12 @@ auto NetElementDynamicGroup<Element>::netElementIds() const -> List<ElementId> {
 }
 
 template <typename Element>
-auto NetElementDynamicGroup<Element>::getNetElement(ElementId id) const -> ElementPtr {
+auto NetElementDynamicGroup<Element>::getNetElement(ElementId id) const -> std::shared_ptr<Element> {
   return m_idMap.get(id);
 }
 
 template <typename Element>
-auto NetElementDynamicGroup<Element>::netElements() const -> List<ElementPtr> {
+auto NetElementDynamicGroup<Element>::netElements() const -> List<std::shared_ptr<Element>> {
   return m_idMap.values();
 }
 
@@ -198,7 +197,7 @@ void NetElementDynamicGroup<Element>::netLoad(DataStream& ds, NetCompatibilityRu
     ElementId id = ds.readVlqU();
     DataStreamBuffer storeBuffer(ds.read<ByteArray>());
 
-    ElementPtr element = std::make_shared<Element>();
+    std::shared_ptr<Element> element = std::make_shared<Element>();
     element->netLoad(storeBuffer, rules);
     readyElement(element);
 
@@ -279,7 +278,7 @@ void NetElementDynamicGroup<Element>::readNetDelta(DataStream& ds, float interpo
         if (changeUpdate.template is<ElementReset>()) {
           m_idMap.clear();
         } else if (auto addition = changeUpdate.template ptr<ElementAddition>()) {
-          ElementPtr element = std::make_shared<Element>();
+          std::shared_ptr<Element> element = std::make_shared<Element>();
           DataStreamBuffer storeBuffer(std::move(std::get<1>(*addition)));
           element->netLoad(storeBuffer, rules);
           readyElement(element);
@@ -330,7 +329,7 @@ void NetElementDynamicGroup<Element>::addChangeData(ElementChange change) {
 }
 
 template <typename Element>
-void NetElementDynamicGroup<Element>::readyElement(ElementPtr const& element) {
+void NetElementDynamicGroup<Element>::readyElement(std::shared_ptr<Element> const& element) {
   element->initNetVersion(m_netVersion);
   if (m_interpolationEnabled)
     element->enableNetInterpolation(m_extrapolationHint);

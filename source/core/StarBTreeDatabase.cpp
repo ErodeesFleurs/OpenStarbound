@@ -102,12 +102,12 @@ void BTreeDatabase::setAutoCommit(bool autoCommit) {
     doCommit();
 }
 
-IODevicePtr BTreeDatabase::ioDevice() const {
+std::shared_ptr<IODevice> BTreeDatabase::ioDevice() const {
   ReadLocker readLocker(m_lock);
   return m_device;
 }
 
-void BTreeDatabase::setIODevice(IODevicePtr device) {
+void BTreeDatabase::setIODevice(std::shared_ptr<IODevice> device) {
   WriteLocker writeLocker(m_lock);
   checkIfOpen("setIODevice", false);
   m_device = std::move(device);

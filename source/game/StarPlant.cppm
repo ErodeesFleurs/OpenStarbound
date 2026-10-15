@@ -45,19 +45,6 @@ import star.byte_array;
 namespace Star {
 
 class RenderCallback;
-using RenderCallbackPtr = std::shared_ptr<RenderCallback>;
-using RenderCallbackConstPtr = std::shared_ptr<const RenderCallback>;
-using RenderCallbackWeakPtr = std::weak_ptr<RenderCallback>;
-using RenderCallbackConstWeakPtr = std::weak_ptr<const RenderCallback>;
-using RenderCallbackUPtr = std::unique_ptr<RenderCallback>;
-using RenderCallbackConstUPtr = std::unique_ptr<const RenderCallback>;
-class Plant;
-using PlantPtr = std::shared_ptr<Plant>;
-using PlantConstPtr = std::shared_ptr<const Plant>;
-using PlantWeakPtr = std::weak_ptr<Plant>;
-using PlantConstWeakPtr = std::weak_ptr<const Plant>;
-using PlantUPtr = std::unique_ptr<Plant>;
-using PlantConstUPtr = std::unique_ptr<const Plant>;
 struct TreeVariant;
 struct GrassVariant;
 struct BushVariant;
@@ -233,19 +220,7 @@ export module star.plant;
 
 export namespace Star {
   using ::Star::RenderCallback;
-  using ::Star::RenderCallbackPtr;
-  using ::Star::RenderCallbackConstPtr;
-  using ::Star::RenderCallbackWeakPtr;
-  using ::Star::RenderCallbackConstWeakPtr;
-  using ::Star::RenderCallbackUPtr;
-  using ::Star::RenderCallbackConstUPtr;
   using ::Star::Plant;
-  using ::Star::PlantPtr;
-  using ::Star::PlantConstPtr;
-  using ::Star::PlantWeakPtr;
-  using ::Star::PlantConstWeakPtr;
-  using ::Star::PlantUPtr;
-  using ::Star::PlantConstUPtr;
   using ::Star::TreeVariant;
   using ::Star::GrassVariant;
   using ::Star::BushVariant;

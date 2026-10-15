@@ -170,7 +170,7 @@ SystemWorldConfig SystemWorldConfig::fromJson(Json const& json) {
   return config;
 }
 
-SystemWorld::SystemWorld(ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase)
+SystemWorld::SystemWorld(std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase)
   : m_celestialDatabase(std::move(celestialDatabase)), m_universeClock(std::move(universeClock)) {
   m_config = SystemWorldConfig::fromJson(Root::singleton().assets()->json("/systemworld.config"));
 }
@@ -499,7 +499,7 @@ void SystemObject::serverUpdate(SystemWorldServer* system, float dt) {
     }
   } else {
     auto planets = system->planets().filtered([system](CelestialCoordinate const& p) {
-        auto objectsAtPlanet = system->objects().filtered([p](SystemObjectPtr const& o) { return o->orbitTarget() == p; });
+        auto objectsAtPlanet = system->objects().filtered([p](std::shared_ptr<SystemObject> const& o) { return o->orbitTarget() == p; });
         return objectsAtPlanet.size() == 0;
       });
 

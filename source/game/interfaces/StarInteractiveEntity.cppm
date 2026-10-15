@@ -28,14 +28,6 @@ import star.quest_descriptor;
 import star.rect;
 namespace Star {
 
-class InteractiveEntity;
-using InteractiveEntityPtr = std::shared_ptr<InteractiveEntity>;
-using InteractiveEntityConstPtr = std::shared_ptr<const InteractiveEntity>;
-using InteractiveEntityWeakPtr = std::weak_ptr<InteractiveEntity>;
-using InteractiveEntityConstWeakPtr = std::weak_ptr<const InteractiveEntity>;
-using InteractiveEntityUPtr = std::unique_ptr<InteractiveEntity>;
-using InteractiveEntityConstUPtr = std::unique_ptr<const InteractiveEntity>;
-
 class InteractiveEntity : public virtual Entity {
 public:
   // Interaction always takes place on the *server*, whether the interactive
@@ -62,10 +54,4 @@ export module star.interactive_entity;
 
 export namespace Star {
   using ::Star::InteractiveEntity;
-  using ::Star::InteractiveEntityPtr;
-  using ::Star::InteractiveEntityConstPtr;
-  using ::Star::InteractiveEntityWeakPtr;
-  using ::Star::InteractiveEntityConstWeakPtr;
-  using ::Star::InteractiveEntityUPtr;
-  using ::Star::InteractiveEntityConstUPtr;
 }

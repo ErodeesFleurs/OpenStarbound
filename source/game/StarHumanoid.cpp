@@ -327,7 +327,7 @@ int Humanoid::HumanoidTiming::emoteStateSeq(float timer, HumanoidEmote state) co
   return genericSeq(timer, emoteCycle[(std::size_t)state], emoteFrames[(std::size_t)state], cyclicEmoteState(state));
 }
 
-int Humanoid::HumanoidTiming::danceSeq(float timer, DancePtr dance) const {
+int Humanoid::HumanoidTiming::danceSeq(float timer, std::shared_ptr<Dance> dance) const {
   return genericSeq(timer, dance->cycle, dance->steps.size(), dance->cyclic) - 1;
 }
 
@@ -1027,7 +1027,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   int bodyStateSeq = getBodyStateSequence();
   int emoteStateSeq = getEmoteStateSequence();
   float bobYOffset = getBobYOffset();
-  Maybe<DancePtr> dance = getDance();
+  Maybe<std::shared_ptr<Dance>> dance = getDance();
   Maybe<DanceStep> danceStep = {};
   if (dance.isValid()) {
     if (!(*dance)->states.contains(StateNames.getRight(m_state)))
@@ -1787,9 +1787,9 @@ List<Drawable> Humanoid::renderSkull() const {
       Root::singleton().speciesDatabase()->species(m_identity.species)->skull(), 1.0f, true, Vec2F())};
 }
 
-HumanoidPtr Humanoid::makeDummy(Gender) {
+std::shared_ptr<Humanoid> Humanoid::makeDummy(Gender) {
   auto assets = Root::singleton().assets();
-  HumanoidPtr humanoid = std::make_shared<Humanoid>(assets->json("/humanoid.config"));
+  std::shared_ptr<Humanoid> humanoid = std::make_shared<Humanoid>(assets->json("/humanoid.config"));
 
   humanoid->m_headFrameset = assets->json("/humanoid/any/dummy.config:head").toString();
   humanoid->m_bodyFrameset = assets->json("/humanoid/any/dummy.config:body").toString();
@@ -2197,7 +2197,7 @@ int Humanoid::getBodyStateSequence() const {
   return bodyStateSeq;
 }
 
-Maybe<DancePtr> Humanoid::getDance() const {
+Maybe<std::shared_ptr<Dance>> Humanoid::getDance() const {
   if (m_dance.isNothing())
     return {};
 
@@ -2434,7 +2434,7 @@ void NetHumanoid::netElementsNeedStore() {
   }
 }
 
-HumanoidPtr NetHumanoid::humanoid() {
+std::shared_ptr<Humanoid> NetHumanoid::humanoid() {
   return m_humanoid;
 }
 

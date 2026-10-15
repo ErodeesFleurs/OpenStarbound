@@ -13,12 +13,6 @@ import star.json;
 namespace Star {
 
 class FormattedJson;
-using FormattedJsonPtr = std::shared_ptr<FormattedJson>;
-using FormattedJsonConstPtr = std::shared_ptr<const FormattedJson>;
-using FormattedJsonWeakPtr = std::weak_ptr<FormattedJson>;
-using FormattedJsonConstWeakPtr = std::weak_ptr<const FormattedJson>;
-using FormattedJsonUPtr = std::unique_ptr<FormattedJson>;
-using FormattedJsonConstUPtr = std::unique_ptr<const FormattedJson>;
 
 struct ObjectElement;
 struct ObjectKeyElement;
@@ -32,7 +26,7 @@ typedef Variant<ValueElement, ObjectKeyElement, WhitespaceElement, ColonElement,
 struct ValueElement {
   ValueElement(FormattedJson const& json);
 
-  FormattedJsonPtr value;
+  std::shared_ptr<FormattedJson> value;
 
   bool operator==(ValueElement const& v) const;
 };
@@ -147,12 +141,6 @@ export template <> struct std::formatter<Star::FormattedJson> : Star::StreamForm
 
 export namespace Star {
   using ::Star::FormattedJson;
-  using ::Star::FormattedJsonPtr;
-  using ::Star::FormattedJsonConstPtr;
-  using ::Star::FormattedJsonWeakPtr;
-  using ::Star::FormattedJsonConstWeakPtr;
-  using ::Star::FormattedJsonUPtr;
-  using ::Star::FormattedJsonConstUPtr;
   using ::Star::JsonElement;
   using ::Star::ObjectElement;
   using ::Star::ObjectKeyElement;

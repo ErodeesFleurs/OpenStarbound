@@ -56,34 +56,16 @@ import star.main_interface_types;
 
 namespace Star {
 class UniverseClient;
-using UniverseClientPtr = std::shared_ptr<UniverseClient>;
-using UniverseClientConstPtr = std::shared_ptr<UniverseClient const>;
-using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
-using UniverseClientConstWeakPtr = std::weak_ptr<UniverseClient const>;
-using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
-using UniverseClientConstUPtr = std::unique_ptr<UniverseClient const>;
 class Cinematic;
-using CinematicPtr = std::shared_ptr<Cinematic>;
-using CinematicConstPtr = std::shared_ptr<Cinematic const>;
-using CinematicWeakPtr = std::weak_ptr<Cinematic>;
-using CinematicConstWeakPtr = std::weak_ptr<Cinematic const>;
-using CinematicUPtr = std::unique_ptr<Cinematic>;
-using CinematicConstUPtr = std::unique_ptr<Cinematic const>;
 }
 
 namespace Star {
 
 class Quest;
-using QuestPtr = std::shared_ptr<Quest>;
-using QuestConstPtr = std::shared_ptr<Quest const>;
-using QuestWeakPtr = std::weak_ptr<Quest>;
-using QuestConstWeakPtr = std::weak_ptr<Quest const>;
-using QuestUPtr = std::unique_ptr<Quest>;
-using QuestConstUPtr = std::unique_ptr<Quest const>;
 
 class ClientCommandProcessor {
 public:
-  ClientCommandProcessor(UniverseClientPtr universeClient, CinematicPtr cinematicOverlay,
+  ClientCommandProcessor(std::shared_ptr<UniverseClient> universeClient, std::shared_ptr<Cinematic> cinematicOverlay,
       MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands);
 
   StringList handleCommand(String const& commandLine, bool userInput = false);
@@ -95,7 +77,7 @@ public:
 
 private:
   bool adminCommandAllowed() const;
-  String previewQuestPane(StringList const& arguments, std::function<PanePtr(QuestPtr)> createPane);
+  String previewQuestPane(StringList const& arguments, std::function<std::shared_ptr<Pane>(std::shared_ptr<Quest>)> createPane);
 
   String reload();
   String hotReload();
@@ -134,8 +116,8 @@ private:
   String respawnInWorld(String const& argumentsString);
   String render(String const& imagePath);
 
-  UniverseClientPtr m_universeClient;
-  CinematicPtr m_cinematicOverlay;
+  std::shared_ptr<UniverseClient> m_universeClient;
+  std::shared_ptr<Cinematic> m_cinematicOverlay;
   MainInterfacePaneManager* m_paneManager;
   CaseInsensitiveStringMap<std::function<String(String const&)>> m_builtinCommands;
   StringMap<StringList> m_macroCommands;
@@ -152,11 +134,5 @@ export module star.client_command_processor;
 
 export namespace Star {
   using ::Star::Quest;
-  using ::Star::QuestPtr;
-  using ::Star::QuestConstPtr;
-  using ::Star::QuestWeakPtr;
-  using ::Star::QuestConstWeakPtr;
-  using ::Star::QuestUPtr;
-  using ::Star::QuestConstUPtr;
   using ::Star::ClientCommandProcessor;
 }

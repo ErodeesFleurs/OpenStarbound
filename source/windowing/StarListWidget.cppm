@@ -51,14 +51,6 @@ import star.gui_reader;
 
 namespace Star {
 
-class ListWidget;
-using ListWidgetPtr = std::shared_ptr<ListWidget>;
-using ListWidgetConstPtr = std::shared_ptr<ListWidget const>;
-using ListWidgetWeakPtr = std::weak_ptr<ListWidget>;
-using ListWidgetConstWeakPtr = std::weak_ptr<ListWidget const>;
-using ListWidgetUPtr = std::unique_ptr<ListWidget>;
-using ListWidgetConstUPtr = std::unique_ptr<ListWidget const>;
-
 class ListWidget : public Widget {
 public:
   ListWidget(Json const& schema);
@@ -71,24 +63,24 @@ public:
 
   bool sendEvent(InputEvent const& event) override;
   void setSchema(Json const& schema);
-  WidgetPtr constructWidget();
-  WidgetPtr addItem();
-  WidgetPtr addItem(std::size_t at);
-  WidgetPtr addItem(WidgetPtr existingItem);
+  std::shared_ptr<Widget> constructWidget();
+  std::shared_ptr<Widget> addItem();
+  std::shared_ptr<Widget> addItem(std::size_t at);
+  std::shared_ptr<Widget> addItem(std::shared_ptr<Widget> existingItem);
   void removeItem(std::size_t at);
-  void removeItem(WidgetPtr item);
+  void removeItem(std::shared_ptr<Widget> item);
   void clear();
   std::size_t selectedItem() const;
-  std::size_t itemPosition(WidgetPtr item) const;
-  WidgetPtr itemAt(std::size_t n) const;
-  WidgetPtr selectedWidget() const;
-  List<WidgetPtr> const& list() const;
+  std::size_t itemPosition(std::shared_ptr<Widget> item) const;
+  std::shared_ptr<Widget> itemAt(std::size_t n) const;
+  std::shared_ptr<Widget> selectedWidget() const;
+  List<std::shared_ptr<Widget>> const& list() const;
   std::size_t listSize() const;
   void setEnabled(std::size_t pos, bool enabled);
   void setHovered(std::size_t pos, bool hovered);
   void setSelected(std::size_t pos);
   void clearSelected();
-  void setSelectedWidget(WidgetPtr selected);
+  void setSelectedWidget(std::shared_ptr<Widget> selected);
 
   void registerMemberCallback(String const& name, WidgetCallbackFunc const& callback);
 
@@ -121,10 +113,4 @@ export module star.list_widget;
 
 export namespace Star {
   using ::Star::ListWidget;
-  using ::Star::ListWidgetPtr;
-  using ::Star::ListWidgetConstPtr;
-  using ::Star::ListWidgetWeakPtr;
-  using ::Star::ListWidgetConstWeakPtr;
-  using ::Star::ListWidgetUPtr;
-  using ::Star::ListWidgetConstUPtr;
 }

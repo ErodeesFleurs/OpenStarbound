@@ -39,26 +39,8 @@ import star.variant;
 
 namespace Star {
 class Assets;
-using AssetsPtr = std::shared_ptr<Assets>;
-using AssetsConstPtr = std::shared_ptr<Assets const>;
-using AssetsWeakPtr = std::weak_ptr<Assets>;
-using AssetsConstWeakPtr = std::weak_ptr<Assets const>;
-using AssetsUPtr = std::unique_ptr<Assets>;
-using AssetsConstUPtr = std::unique_ptr<Assets const>;
 class EnvironmentPainter;
-using EnvironmentPainterPtr = std::shared_ptr<EnvironmentPainter>;
-using EnvironmentPainterConstPtr = std::shared_ptr<EnvironmentPainter const>;
-using EnvironmentPainterWeakPtr = std::weak_ptr<EnvironmentPainter>;
-using EnvironmentPainterConstWeakPtr = std::weak_ptr<EnvironmentPainter const>;
-using EnvironmentPainterUPtr = std::unique_ptr<EnvironmentPainter>;
-using EnvironmentPainterConstUPtr = std::unique_ptr<EnvironmentPainter const>;
 class TilePainter;
-using TilePainterPtr = std::shared_ptr<TilePainter>;
-using TilePainterConstPtr = std::shared_ptr<TilePainter const>;
-using TilePainterWeakPtr = std::weak_ptr<TilePainter>;
-using TilePainterConstWeakPtr = std::weak_ptr<TilePainter const>;
-using TilePainterUPtr = std::unique_ptr<TilePainter>;
-using TilePainterConstUPtr = std::unique_ptr<TilePainter const>;
 }
 import star.world_geometry;
 import star.collision_block;
@@ -107,20 +89,12 @@ import star.world_camera;
 
 namespace Star {
 
-class WorldPainter;
-using WorldPainterPtr = std::shared_ptr<WorldPainter>;
-using WorldPainterConstPtr = std::shared_ptr<WorldPainter const>;
-using WorldPainterWeakPtr = std::weak_ptr<WorldPainter>;
-using WorldPainterConstWeakPtr = std::weak_ptr<WorldPainter const>;
-using WorldPainterUPtr = std::unique_ptr<WorldPainter>;
-using WorldPainterConstUPtr = std::unique_ptr<WorldPainter const>;
-
 // Will update client rendering window internally
 class WorldPainter {
 public:
   WorldPainter();
 
-  void renderInit(RendererPtr renderer);
+  void renderInit(std::shared_ptr<Renderer> renderer);
 
   void setCameraPosition(WorldGeometry const& worldGeometry, Vec2F const& position);
 
@@ -141,12 +115,12 @@ private:
 
   WorldCamera m_camera;
 
-  RendererPtr m_renderer;
+  std::shared_ptr<Renderer> m_renderer;
 
-  TextPainterPtr m_textPainter;
-  DrawablePainterPtr m_drawablePainter;
-  EnvironmentPainterPtr m_environmentPainter;
-  TilePainterPtr m_tilePainter;
+  std::shared_ptr<TextPainter> m_textPainter;
+  std::shared_ptr<DrawablePainter> m_drawablePainter;
+  std::shared_ptr<EnvironmentPainter> m_environmentPainter;
+  std::shared_ptr<TilePainter> m_tilePainter;
 
   Json m_highlightConfig;
   Map<EntityHighlightEffectType, std::pair<Directives, Directives>> m_highlightDirectives;
@@ -158,7 +132,7 @@ private:
 
   // Updated every frame
 
-  AssetsConstPtr m_assets;
+  std::shared_ptr<Assets const> m_assets;
   RectF m_worldScreenRect;
 
   Vec2F m_previousCameraCenter;
@@ -174,10 +148,4 @@ export module star.world_painter;
 export namespace Star {
   using ::Star::Assets;
   using ::Star::WorldPainter;
-  using ::Star::WorldPainterPtr;
-  using ::Star::WorldPainterConstPtr;
-  using ::Star::WorldPainterWeakPtr;
-  using ::Star::WorldPainterConstWeakPtr;
-  using ::Star::WorldPainterUPtr;
-  using ::Star::WorldPainterConstUPtr;
 }

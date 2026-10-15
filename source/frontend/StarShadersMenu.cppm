@@ -45,34 +45,20 @@ import star.base_script_pane;
 
 namespace Star {
 class UniverseClient;
-using UniverseClientPtr = std::shared_ptr<UniverseClient>;
-using UniverseClientConstPtr = std::shared_ptr<UniverseClient const>;
-using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
-using UniverseClientConstWeakPtr = std::weak_ptr<UniverseClient const>;
-using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
-using UniverseClientConstUPtr = std::unique_ptr<UniverseClient const>;
 }
 
 namespace Star {
 
-class ShadersMenu;
-using ShadersMenuPtr = std::shared_ptr<ShadersMenu>;
-using ShadersMenuConstPtr = std::shared_ptr<ShadersMenu const>;
-using ShadersMenuWeakPtr = std::weak_ptr<ShadersMenu>;
-using ShadersMenuConstWeakPtr = std::weak_ptr<ShadersMenu const>;
-using ShadersMenuUPtr = std::unique_ptr<ShadersMenu>;
-using ShadersMenuConstUPtr = std::unique_ptr<ShadersMenu const>;
-
 class ShadersMenu : public BaseScriptPane {
 public:
-  ShadersMenu(Json const& config, UniverseClientPtr client);
+  ShadersMenu(Json const& config, std::shared_ptr<UniverseClient> client);
 
   virtual void show() override;
   void displayed() override;
   void dismissed() override;
 
 private:
-  UniverseClientPtr m_client;
+  std::shared_ptr<UniverseClient> m_client;
 };
 
 }
@@ -81,10 +67,4 @@ export module star.shaders_menu;
 
 export namespace Star {
   using ::Star::ShadersMenu;
-  using ::Star::ShadersMenuPtr;
-  using ::Star::ShadersMenuConstPtr;
-  using ::Star::ShadersMenuWeakPtr;
-  using ::Star::ShadersMenuConstWeakPtr;
-  using ::Star::ShadersMenuUPtr;
-  using ::Star::ShadersMenuConstUPtr;
 }

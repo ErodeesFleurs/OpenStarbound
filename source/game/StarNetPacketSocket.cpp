@@ -170,13 +170,13 @@ NetCompatibilityRules PacketSocket::netRules() const { return m_netRules; }
 void CompressedPacketSocket::setCompressionStreamEnabled(bool enabled) { m_useCompressionStream = enabled; }
 bool CompressedPacketSocket::compressionStreamEnabled() const { return m_useCompressionStream; }
 
-std::pair<LocalPacketSocketUPtr, LocalPacketSocketUPtr> LocalPacketSocket::openPair() {
+std::pair<std::unique_ptr<LocalPacketSocket>, std::unique_ptr<LocalPacketSocket>> LocalPacketSocket::openPair() {
   auto lhsIncomingPipe = std::make_shared<Pipe>();
   auto rhsIncomingPipe = std::make_shared<Pipe>();
 
   return {
-    LocalPacketSocketUPtr(new LocalPacketSocket(lhsIncomingPipe, std::weak_ptr<Pipe>(rhsIncomingPipe))),
-    LocalPacketSocketUPtr(new LocalPacketSocket(rhsIncomingPipe, std::weak_ptr<Pipe>(lhsIncomingPipe)))
+    std::unique_ptr<LocalPacketSocket>(new LocalPacketSocket(lhsIncomingPipe, std::weak_ptr<Pipe>(rhsIncomingPipe))),
+    std::unique_ptr<LocalPacketSocket>(new LocalPacketSocket(rhsIncomingPipe, std::weak_ptr<Pipe>(lhsIncomingPipe)))
   };
 }
 
@@ -188,7 +188,7 @@ void LocalPacketSocket::close() {
   std::atomic_store(&m_incomingPipe, std::shared_ptr<Pipe>());
 }
 
-void LocalPacketSocket::sendPackets(List<PacketPtr> packets) {
+void LocalPacketSocket::sendPackets(List<std::shared_ptr<Packet>> packets) {
   if (!isOpen() || packets.empty())
     return;
 
@@ -221,7 +221,7 @@ void LocalPacketSocket::sendPackets(List<PacketPtr> packets) {
   }
 }
 
-List<PacketPtr> LocalPacketSocket::receivePackets() {
+List<std::shared_ptr<Packet>> LocalPacketSocket::receivePackets() {
   // One snapshot: the mutex and the queue must belong to the same pipe, and the
   // pipe can be closed by another thread between two loads.
   auto incomingPipe = std::atomic_load(&m_incomingPipe);
@@ -229,7 +229,7 @@ List<PacketPtr> LocalPacketSocket::receivePackets() {
     return {};
 
   MutexLocker locker(incomingPipe->mutex);
-  List<PacketPtr> packets;
+  List<std::shared_ptr<Packet>> packets;
   packets.appendAll(take(incomingPipe->queue));
   return packets;
 }
@@ -249,10 +249,10 @@ bool LocalPacketSocket::readData() {
 LocalPacketSocket::LocalPacketSocket(std::shared_ptr<Pipe> incomingPipe, std::weak_ptr<Pipe> outgoingPipe)
   : m_incomingPipe(std::move(incomingPipe)), m_outgoingPipe(std::move(outgoingPipe)) {}
 
-TcpPacketSocketUPtr TcpPacketSocket::open(TcpSocketPtr socket) {
+std::unique_ptr<TcpPacketSocket> TcpPacketSocket::open(std::shared_ptr<TcpSocket> socket) {
   socket->setNoDelay(true);
   socket->setNonBlocking(true);
-  return TcpPacketSocketUPtr(new TcpPacketSocket(std::move(socket)));
+  return std::unique_ptr<TcpPacketSocket>(new TcpPacketSocket(std::move(socket)));
 }
 
 bool TcpPacketSocket::isOpen() const {
@@ -263,12 +263,12 @@ void TcpPacketSocket::close() {
   m_socket->close();
 }
 
-void TcpPacketSocket::sendPackets(List<PacketPtr> packets) {
+void TcpPacketSocket::sendPackets(List<std::shared_ptr<Packet>> packets) {
   auto it = makeSMutableIterator(packets);
   if (compressionStreamEnabled()) {
     DataStreamBuffer outBuffer;
     while (it.hasNext()) {
-      PacketPtr& packet = it.next();
+      std::shared_ptr<Packet>& packet = it.next();
       auto packetType = packet->type();
       DataStreamBuffer packetBuffer;
       packetBuffer.setStreamCompatibilityVersion(netRules());
@@ -321,13 +321,13 @@ void TcpPacketSocket::sendPackets(List<PacketPtr> packets) {
   }
 }
 
-List<PacketPtr> TcpPacketSocket::receivePackets() {
+List<std::shared_ptr<Packet>> TcpPacketSocket::receivePackets() {
   // How large can uncompressed packets be
   // this limit is now also used during decompression
   std::uint64_t const PacketSizeLimit = 64 << 20;
   // How many packets can be batched together into one compressed chunk at once
   std::uint64_t const PacketBatchLimit = 131072;
-  List<PacketPtr> packets;
+  List<std::shared_ptr<Packet>> packets;
   try {
     DataStreamExternalBuffer ds(m_inputBuffer);
     std::size_t trimPos = 0;
@@ -371,7 +371,7 @@ List<PacketPtr> TcpPacketSocket::receivePackets() {
           throw IOException::format("Packet batch limit {} reached while reading {}s!", PacketBatchLimit, PacketTypeNames.getRight(packetType));
           break;
         }
-        PacketPtr packet = createPacket(packetType);
+        std::shared_ptr<Packet> packet = createPacket(packetType);
         packet->setCompressionMode(packetCompressed ? PacketCompressionMode::Enabled : PacketCompressionMode::Disabled);
         packet->read(packetStream, netRules());
         packets.append(std::move(packet));
@@ -463,10 +463,10 @@ Maybe<PacketStats> TcpPacketSocket::outgoingStats() const {
   return m_outgoingStats.stats();
 }
 
-TcpPacketSocket::TcpPacketSocket(TcpSocketPtr socket) : m_socket(std::move(socket)) {}
+TcpPacketSocket::TcpPacketSocket(std::shared_ptr<TcpSocket> socket) : m_socket(std::move(socket)) {}
 
-P2PPacketSocketUPtr P2PPacketSocket::open(P2PSocketUPtr socket) {
-  return P2PPacketSocketUPtr(new P2PPacketSocket(std::move(socket)));
+std::unique_ptr<P2PPacketSocket> P2PPacketSocket::open(std::unique_ptr<P2PSocket> socket) {
+  return std::unique_ptr<P2PPacketSocket>(new P2PPacketSocket(std::move(socket)));
 }
 
 bool P2PPacketSocket::isOpen() const {
@@ -477,7 +477,7 @@ void P2PPacketSocket::close() {
   m_socket.reset();
 }
 
-void P2PPacketSocket::sendPackets(List<PacketPtr> packets) {
+void P2PPacketSocket::sendPackets(List<std::shared_ptr<Packet>> packets) {
   auto it = makeSMutableIterator(packets);
 
   if (compressionStreamEnabled()) {
@@ -536,8 +536,8 @@ void P2PPacketSocket::sendPackets(List<PacketPtr> packets) {
   }
 }
 
-List<PacketPtr> P2PPacketSocket::receivePackets() {
-  List<PacketPtr> packets;
+List<std::shared_ptr<Packet>> P2PPacketSocket::receivePackets() {
+  List<std::shared_ptr<Packet>> packets;
   try {
     for (auto& inputMessage : take(m_inputMessages)) {
       DataStreamBuffer ds(std::move(inputMessage));
@@ -555,7 +555,7 @@ List<PacketPtr> P2PPacketSocket::receivePackets() {
       DataStreamExternalBuffer packetStream(packetBytes);
       packetStream.setStreamCompatibilityVersion(netRules());
       do {
-        PacketPtr packet = createPacket(packetType);
+        std::shared_ptr<Packet> packet = createPacket(packetType);
         packet->setCompressionMode(packetCompressed ? PacketCompressionMode::Enabled : PacketCompressionMode::Disabled);
         packet->read(packetStream, netRules());
         packets.append(std::move(packet));
@@ -624,7 +624,7 @@ Maybe<PacketStats> P2PPacketSocket::outgoingStats() const {
   return m_outgoingStats.stats();
 }
 
-P2PPacketSocket::P2PPacketSocket(P2PSocketPtr socket)
+P2PPacketSocket::P2PPacketSocket(std::shared_ptr<P2PSocket> socket)
   : m_socket(std::move(socket)) {}
 
 }

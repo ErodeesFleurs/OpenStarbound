@@ -175,7 +175,7 @@ int main(int argc, char** argv) {
     #endif
     RootLoader rootLoader({{}, AdditionalDefaultConfiguration, String("starbound_server.log"), LogLevel::Info, false, String("starbound_server.config")});
     rootLoader.setVersionName("Server");
-    RootUPtr root = rootLoader.commandInitOrDie(argc, argv).first;
+    std::unique_ptr<::Star::Root> root = rootLoader.commandInitOrDie(argc, argv).first;
     root->fullyLoad();
 
     SignalHandler signalHandler;
@@ -193,17 +193,17 @@ int main(int argc, char** argv) {
         Logger::info("Configured tick rate is {:4.2f}hz", updateRate);
       }
 
-      UniverseServerUPtr server = std::make_unique<UniverseServer>(root->toStoragePath("universe"));
+      std::unique_ptr<::Star::UniverseServer> server = std::make_unique<UniverseServer>(root->toStoragePath("universe"));
       server->setListeningTcp(true);
       server->start();
 
-      ServerQueryThreadUPtr queryServer;
+      std::unique_ptr<::Star::ServerQueryThread> queryServer;
       if (configuration->get("runQueryServer").toBool()) {
         queryServer = std::make_unique<ServerQueryThread>(server.get(), HostAddressWithPort(configuration->get("queryServerBind").toString(), configuration->get("queryServerPort").toInt()));
         queryServer->start();
       }
 
-      ServerRconThreadUPtr rconServer;
+      std::unique_ptr<::Star::ServerRconThread> rconServer;
       if (configuration->get("runRconServer").toBool()) {
         rconServer = std::make_unique<ServerRconThread>(server.get(), HostAddressWithPort(configuration->get("rconServerBind").toString(), configuration->get("rconServerPort").toInt()));
         rconServer->start();

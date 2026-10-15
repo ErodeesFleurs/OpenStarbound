@@ -117,7 +117,7 @@ void ServerWeather::setup(WeatherPool weatherPool, float undergroundLevel, World
   m_nextWeatherChangeTime = 0.0;
 }
 
-void ServerWeather::setReferenceClock(ClockConstPtr referenceClock) {
+void ServerWeather::setReferenceClock(std::shared_ptr<Clock const> referenceClock) {
   m_referenceClock = std::move(referenceClock);
   if (m_referenceClock)
     m_clockTrackingTime = m_referenceClock->time();
@@ -198,7 +198,7 @@ StringList ServerWeather::statusEffects() const {
   return {};
 }
 
-List<ProjectilePtr> ServerWeather::pullNewProjectiles() {
+List<std::shared_ptr<Projectile>> ServerWeather::pullNewProjectiles() {
   return take(m_newProjectiles);
 }
 

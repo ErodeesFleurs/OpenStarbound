@@ -36,27 +36,7 @@ import star.status_types;
 
 namespace Star {
 
-struct ProjectileConfig;
-using ProjectileConfigPtr = std::shared_ptr<ProjectileConfig>;
-using ProjectileConfigConstPtr = std::shared_ptr<const ProjectileConfig>;
-using ProjectileConfigWeakPtr = std::weak_ptr<ProjectileConfig>;
-using ProjectileConfigConstWeakPtr = std::weak_ptr<const ProjectileConfig>;
-using ProjectileConfigUPtr = std::unique_ptr<ProjectileConfig>;
-using ProjectileConfigConstUPtr = std::unique_ptr<const ProjectileConfig>;
 class Projectile;
-using ProjectilePtr = std::shared_ptr<Projectile>;
-using ProjectileConstPtr = std::shared_ptr<const Projectile>;
-using ProjectileWeakPtr = std::weak_ptr<Projectile>;
-using ProjectileConstWeakPtr = std::weak_ptr<const Projectile>;
-using ProjectileUPtr = std::unique_ptr<Projectile>;
-using ProjectileConstUPtr = std::unique_ptr<const Projectile>;
-class ProjectileDatabase;
-using ProjectileDatabasePtr = std::shared_ptr<ProjectileDatabase>;
-using ProjectileDatabaseConstPtr = std::shared_ptr<const ProjectileDatabase>;
-using ProjectileDatabaseWeakPtr = std::weak_ptr<ProjectileDatabase>;
-using ProjectileDatabaseConstWeakPtr = std::weak_ptr<const ProjectileDatabase>;
-using ProjectileDatabaseUPtr = std::unique_ptr<ProjectileDatabase>;
-using ProjectileDatabaseConstUPtr = std::unique_ptr<const ProjectileDatabase>;
 
 struct ProjectileDatabaseExceptionTag {
   static constexpr char const* name() { return "ProjectileDatabaseException"; }
@@ -161,13 +141,13 @@ public:
   String damageKindImage(String const& type) const;
   float gravityMultiplier(String const& type) const;
 
-  ProjectilePtr createProjectile(String const& type, Json const& parameters = JsonObject()) const;
-  ProjectilePtr netLoadProjectile(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  std::shared_ptr<Projectile> createProjectile(String const& type, Json const& parameters = JsonObject()) const;
+  std::shared_ptr<Projectile> netLoadProjectile(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
 private:
-  ProjectileConfigPtr readConfig(String const& path);
+  std::shared_ptr<ProjectileConfig> readConfig(String const& path);
 
-  StringMap<ProjectileConfigPtr> m_configs;
+  StringMap<std::shared_ptr<ProjectileConfig>> m_configs;
 };
 
 }
@@ -178,24 +158,6 @@ export namespace Star {
   using ::Star::ProjectileDatabaseExceptionTag;
   using ::Star::ProjectileDatabaseException;
   using ::Star::ProjectileConfig;
-  using ::Star::ProjectileConfigPtr;
-  using ::Star::ProjectileConfigConstPtr;
-  using ::Star::ProjectileConfigWeakPtr;
-  using ::Star::ProjectileConfigConstWeakPtr;
-  using ::Star::ProjectileConfigUPtr;
-  using ::Star::ProjectileConfigConstUPtr;
   using ::Star::Projectile;
-  using ::Star::ProjectilePtr;
-  using ::Star::ProjectileConstPtr;
-  using ::Star::ProjectileWeakPtr;
-  using ::Star::ProjectileConstWeakPtr;
-  using ::Star::ProjectileUPtr;
-  using ::Star::ProjectileConstUPtr;
   using ::Star::ProjectileDatabase;
-  using ::Star::ProjectileDatabasePtr;
-  using ::Star::ProjectileDatabaseConstPtr;
-  using ::Star::ProjectileDatabaseWeakPtr;
-  using ::Star::ProjectileDatabaseConstWeakPtr;
-  using ::Star::ProjectileDatabaseUPtr;
-  using ::Star::ProjectileDatabaseConstUPtr;
 }

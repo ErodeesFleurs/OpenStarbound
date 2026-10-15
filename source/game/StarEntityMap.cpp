@@ -106,7 +106,7 @@ EntityId EntityMap::reserveEntityId(EntityId entityId) {
 }
 
 
-void EntityMap::addEntity(EntityPtr entity) {
+void EntityMap::addEntity(std::shared_ptr<Entity> entity) {
   auto position = entity->position();
   auto boundBox = entity->metaBoundBox();
   auto entityId = entity->entityId();
@@ -131,7 +131,7 @@ void EntityMap::addEntity(EntityPtr entity) {
     m_uniqueMap.add(*uniqueId, entityId);
 }
 
-EntityPtr EntityMap::removeEntity(EntityId entityId) {
+std::shared_ptr<Entity> EntityMap::removeEntity(EntityId entityId) {
   if (auto entity = m_spatialMap.remove(entityId)) {
     m_uniqueMap.removeRight(entityId);
     return entity.take();
@@ -147,7 +147,7 @@ List<EntityId> EntityMap::entityIds() const {
   return m_spatialMap.keys();
 }
 
-void EntityMap::updateAllEntities(EntityCallback const& callback, std::function<bool(EntityPtr const&, EntityPtr const&)> sortOrder) {
+void EntityMap::updateAllEntities(EntityCallback const& callback, std::function<bool(std::shared_ptr<Entity> const&, std::shared_ptr<Entity> const&)> sortOrder) {
   auto updateEntityInfo = [&](SpatialMap::Entry const& entry) {
     auto const& entity = entry.value;
 
@@ -204,7 +204,7 @@ EntityId EntityMap::uniqueEntityId(String const& uniqueId) const {
   return m_uniqueMap.maybeRight(uniqueId).value(NullEntityId);
 }
 
-EntityPtr EntityMap::entity(EntityId entityId) const {
+std::shared_ptr<Entity> EntityMap::entity(EntityId entityId) const {
   auto entity = m_spatialMap.value(entityId);
   if constexpr (Star::DebugEnabled) {
     Star::starAssertFailed((!entity || entity->entityId() == entityId));
@@ -212,31 +212,31 @@ EntityPtr EntityMap::entity(EntityId entityId) const {
   return entity;
 }
 
-EntityPtr EntityMap::uniqueEntity(String const& uniqueId) const {
+std::shared_ptr<Entity> EntityMap::uniqueEntity(String const& uniqueId) const {
   return entity(uniqueEntityId(uniqueId));
 }
 
-List<EntityPtr> EntityMap::entityQuery(RectF const& boundBox, EntityFilter const& filter) const {
-  List<EntityPtr> values;
-  forEachEntity(boundBox, [&](EntityPtr const& entity) {
+List<std::shared_ptr<Entity>> EntityMap::entityQuery(RectF const& boundBox, EntityFilter const& filter) const {
+  List<std::shared_ptr<Entity>> values;
+  forEachEntity(boundBox, [&](std::shared_ptr<Entity> const& entity) {
       if (!filter || filter(entity))
         values.append(entity);
     });
   return values;
 }
 
-List<EntityPtr> EntityMap::entitiesAt(Vec2F const& pos, EntityFilter const& filter) const {
+List<std::shared_ptr<Entity>> EntityMap::entitiesAt(Vec2F const& pos, EntityFilter const& filter) const {
   auto entityList = entityQuery(RectF::withCenter(pos, {0, 0}), filter);
 
-  sortByComputedValue(entityList, [&](EntityPtr const& entity) -> float {
+  sortByComputedValue(entityList, [&](std::shared_ptr<Entity> const& entity) -> float {
       return vmagSquared(entity->position() - pos);
     });
   return entityList;
 }
 
-List<TileEntityPtr> EntityMap::entitiesAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> const& filter) const {
-  List<TileEntityPtr> values;
-  forEachEntityAtTile(pos, [&](TileEntityPtr const& entity) {
+List<std::shared_ptr<TileEntity>> EntityMap::entitiesAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> const& filter) const {
+  List<std::shared_ptr<TileEntity>> values;
+  forEachEntityAtTile(pos, [&](std::shared_ptr<TileEntity> const& entity) {
       if (!filter || filter(entity))
         values.append(entity);
     });
@@ -248,7 +248,7 @@ void EntityMap::forEachEntity(RectF const& boundBox, EntityCallback const& callb
 }
 
 void EntityMap::forEachEntityLine(Vec2F const& begin, Vec2F const& end, EntityCallback const& callback) const {
-  return m_spatialMap.forEach(m_geometry.splitRect(RectF::boundBoxOf(begin, end)), [&](EntityPtr const& entity) {
+  return m_spatialMap.forEach(m_geometry.splitRect(RectF::boundBoxOf(begin, end)), [&](std::shared_ptr<Entity> const& entity) {
       if (m_geometry.lineIntersectsRect({begin, end}, entity->metaBoundBox().translated(entity->position())))
         callback(entity);
     });
@@ -256,7 +256,7 @@ void EntityMap::forEachEntityLine(Vec2F const& begin, Vec2F const& end, EntityCa
 
 void EntityMap::forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEntity> const& callback) const {
   RectF rect(Vec2F(pos[0], pos[1]), Vec2F(pos[0] + 1, pos[1] + 1));
-  forEachEntity(rect, [&](EntityPtr const& entity) {
+  forEachEntity(rect, [&](std::shared_ptr<Entity> const& entity) {
       if (auto tileEntity = as<TileEntity>(entity)) {
         for (Vec2I space : tileEntity->spaces()) {
           if (m_geometry.equal(pos, space + tileEntity->tilePosition()))
@@ -266,16 +266,16 @@ void EntityMap::forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEntit
     });
 }
 
-void EntityMap::forAllEntities(EntityCallback const& callback, std::function<bool(EntityPtr const&, EntityPtr const&)> sortOrder) const {
+void EntityMap::forAllEntities(EntityCallback const& callback, std::function<bool(std::shared_ptr<Entity> const&, std::shared_ptr<Entity> const&)> sortOrder) const {
   // Even if there is no sort order, we still copy pointers to a temporary
   // list, so that it is safe to call addEntity from the callback.
-  List<EntityPtr const*> allEntities;
+  List<std::shared_ptr<Entity> const*> allEntities;
   allEntities.reserve(m_spatialMap.size());
   for (auto const& entry : m_spatialMap.entries())
     allEntities.append(&entry.second.value);
 
   if (sortOrder) {
-    allEntities.sort([&sortOrder](EntityPtr const* a, EntityPtr const* b) {
+    allEntities.sort([&sortOrder](std::shared_ptr<Entity> const* a, std::shared_ptr<Entity> const* b) {
         return sortOrder(*a, *b);
       });
   }
@@ -295,9 +295,9 @@ void EntityMap::forAllEntities(EntityCallback const& callback, std::function<boo
   }
 }
 
-EntityPtr EntityMap::findEntity(RectF const& boundBox, EntityFilter const& filter) const {
-  EntityPtr res;
-  forEachEntity(boundBox, [&filter, &res](EntityPtr const& entity) {
+std::shared_ptr<Entity> EntityMap::findEntity(RectF const& boundBox, EntityFilter const& filter) const {
+  std::shared_ptr<Entity> res;
+  forEachEntity(boundBox, [&filter, &res](std::shared_ptr<Entity> const& entity) {
       if (res)
         return;
       if (filter(entity))
@@ -306,8 +306,8 @@ EntityPtr EntityMap::findEntity(RectF const& boundBox, EntityFilter const& filte
   return res;
 }
 
-EntityPtr EntityMap::findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter const& filter) const {
-  return findEntity(RectF::boundBoxOf(begin, end), [&](EntityPtr const& entity) {
+std::shared_ptr<Entity> EntityMap::findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter const& filter) const {
+  return findEntity(RectF::boundBoxOf(begin, end), [&](std::shared_ptr<Entity> const& entity) {
       if (m_geometry.lineIntersectsRect({begin, end}, entity->metaBoundBox().translated(entity->position()))) {
         if (filter(entity))
           return true;
@@ -316,9 +316,9 @@ EntityPtr EntityMap::findEntityLine(Vec2F const& begin, Vec2F const& end, Entity
     });
 }
 
-EntityPtr EntityMap::findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> const& filter) const {
+std::shared_ptr<Entity> EntityMap::findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> const& filter) const {
   RectF rect(Vec2F(pos[0], pos[1]), Vec2F(pos[0] + 1, pos[1] + 1));
-  return findEntity(rect, [&](EntityPtr const& entity) {
+  return findEntity(rect, [&](std::shared_ptr<Entity> const& entity) {
       if (auto tileEntity = as<TileEntity>(entity)) {
         for (Vec2I space : tileEntity->spaces()) {
           if (m_geometry.equal(pos, space + tileEntity->tilePosition())) {
@@ -331,21 +331,21 @@ EntityPtr EntityMap::findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntit
     });
 }
 
-List<EntityPtr> EntityMap::entityLineQuery(Vec2F const& begin, Vec2F const& end, EntityFilter const& filter) const {
-  List<EntityPtr> values;
-  forEachEntityLine(begin, end, [&](EntityPtr const& entity) {
+List<std::shared_ptr<Entity>> EntityMap::entityLineQuery(Vec2F const& begin, Vec2F const& end, EntityFilter const& filter) const {
+  List<std::shared_ptr<Entity>> values;
+  forEachEntityLine(begin, end, [&](std::shared_ptr<Entity> const& entity) {
       if (!filter || filter(entity))
         values.append(entity);
     });
   return values;
 }
 
-EntityPtr EntityMap::closestEntity(Vec2F const& center, float radius, EntityFilter const& filter) const {
-  EntityPtr closest;
+std::shared_ptr<Entity> EntityMap::closestEntity(Vec2F const& center, float radius, EntityFilter const& filter) const {
+  std::shared_ptr<Entity> closest;
   float distSquared = square(radius);
   RectF boundBox(center[0] - radius, center[1] - radius, center[0] + radius, center[1] + radius);
 
-  m_spatialMap.forEach(m_geometry.splitRect(boundBox), [&](EntityPtr const& entity) {
+  m_spatialMap.forEach(m_geometry.splitRect(boundBox), [&](std::shared_ptr<Entity> const& entity) {
       Vec2F pos = entity->position();
       float thisDistSquared = m_geometry.diff(center, pos).magnitudeSquared();
       if (distSquared > thisDistSquared) {
@@ -359,12 +359,12 @@ EntityPtr EntityMap::closestEntity(Vec2F const& center, float radius, EntityFilt
   return closest;
 }
 
-InteractiveEntityPtr EntityMap::interactiveEntityNear(Vec2F const& pos, float maxRadius) const {
+std::shared_ptr<InteractiveEntity> EntityMap::interactiveEntityNear(Vec2F const& pos, float maxRadius) const {
   auto rect = RectF::withCenter(pos, Vec2F::filled(maxRadius));
-  InteractiveEntityPtr interactiveEntity;
+  std::shared_ptr<InteractiveEntity> interactiveEntity;
   double bestDistance = maxRadius + 100;
   double bestCenterDistance = maxRadius + 100;
-  m_spatialMap.forEach(m_geometry.splitRect(rect), [&](EntityPtr const& entity) {
+  m_spatialMap.forEach(m_geometry.splitRect(rect), [&](std::shared_ptr<Entity> const& entity) {
       if (auto ie = as<InteractiveEntity>(entity)) {
         if (ie->isInteractive()) {
           if (auto tileEntity = as<TileEntity>(entity)) {
@@ -397,7 +397,7 @@ InteractiveEntityPtr EntityMap::interactiveEntityNear(Vec2F const& pos, float ma
 
 bool EntityMap::tileIsOccupied(Vec2I const& pos, bool includeEphemeral) const {
   RectF rect(Vec2F(pos[0], pos[1]), Vec2F(pos[0] + 1, pos[1] + 1));
-  return (bool)findEntity(rect, [&](EntityPtr const& entity) {
+  return (bool)findEntity(rect, [&](std::shared_ptr<Entity> const& entity) {
       if (auto tileEntity = as<TileEntity>(entity)) {
         if (includeEphemeral || !tileEntity->ephemeral()) {
           for (Vec2I space : tileEntity->spaces()) {

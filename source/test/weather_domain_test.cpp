@@ -74,7 +74,7 @@ using namespace Star;
 
 namespace {
 
-static WorldTemplate makeGardenWorld(TerrestrialWorldParametersPtr parameters, std::uint64_t seed) {
+static WorldTemplate makeGardenWorld(std::shared_ptr<::Star::TerrestrialWorldParameters> parameters, std::uint64_t seed) {
   return WorldTemplate(parameters, SkyParameters(), seed);
 }
 

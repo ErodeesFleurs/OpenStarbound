@@ -128,19 +128,6 @@ import star.swingable_item;
 import star.durability_item;
 import star.pointable_item;
 struct PreviewTile;
-using PreviewTilePtr = std::shared_ptr<PreviewTile>;
-using PreviewTileConstPtr = std::shared_ptr<const PreviewTile>;
-using PreviewTileWeakPtr = std::weak_ptr<PreviewTile>;
-using PreviewTileConstWeakPtr = std::weak_ptr<const PreviewTile>;
-using PreviewTileUPtr = std::unique_ptr<PreviewTile>;
-using PreviewTileConstUPtr = std::unique_ptr<const PreviewTile>;
-class PreviewTileTool;
-using PreviewTileToolPtr = std::shared_ptr<PreviewTileTool>;
-using PreviewTileToolConstPtr = std::shared_ptr<const PreviewTileTool>;
-using PreviewTileToolWeakPtr = std::weak_ptr<PreviewTileTool>;
-using PreviewTileToolConstWeakPtr = std::weak_ptr<const PreviewTileTool>;
-using PreviewTileToolUPtr = std::unique_ptr<PreviewTileTool>;
-using PreviewTileToolConstUPtr = std::unique_ptr<const PreviewTileTool>;
 import star.preview_tile_tool;
 import star.tools;
 import star.scripted_entity;
@@ -267,7 +254,7 @@ EnumMap<Player::State> const Player::StateNames{
   {Player::State::Lounge, "lounge"}
 };
 
-Player::Player(PlayerConfigPtr config, Uuid uuid) {
+Player::Player(std::shared_ptr<PlayerConfig> config, Uuid uuid) {
   auto assets = Root::singleton().assets();
 
   m_config = config;
@@ -419,7 +406,7 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_netGroup.setNeedsStoreCallback(std::bind(&Player::setNetStates, this));
 }
 
-Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules) : Player(config, Uuid()) {
+Player::Player(std::shared_ptr<PlayerConfig> config, ByteArray const& netStore, NetCompatibilityRules rules) : Player(config, Uuid()) {
   DataStreamBuffer ds(netStore);
   ds.setStreamCompatibilityVersion(rules);
 
@@ -439,7 +426,7 @@ Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibili
 }
 
 
-Player::Player(PlayerConfigPtr config, Json const& diskStore) : Player(config, Uuid()) {
+Player::Player(std::shared_ptr<PlayerConfig> config, Json const& diskStore) : Player(config, Uuid()) {
   diskLoad(diskStore);
 }
 
@@ -518,21 +505,21 @@ void Player::diskLoad(Json const& diskStore) {
     m_description = "This gal seems to have nothing to say for herself.";
 }
 
-ClientContextPtr Player::clientContext() const {
+std::shared_ptr<ClientContext> Player::clientContext() const {
   return m_clientContext;
 }
 
-void Player::setClientContext(ClientContextPtr clientContext) {
+void Player::setClientContext(std::shared_ptr<ClientContext> clientContext) {
   m_clientContext = std::move(clientContext);
   if (m_clientContext && m_universeMap)
     m_universeMap->setServerUuid(m_clientContext->serverUuid());
 }
 
-StatisticsPtr Player::statistics() const {
+std::shared_ptr<Statistics> Player::statistics() const {
   return m_statistics;
 }
 
-void Player::setStatistics(StatisticsPtr statistics) {
+void Player::setStatistics(std::shared_ptr<Statistics> statistics) {
   m_statistics = statistics;
 }
 
@@ -847,7 +834,7 @@ void Player::destroy(RenderCallback* renderCallback) {
           });
         Set<ItemType> dropSet = Set<ItemType>::from(dropList);
         auto itemDb = Root::singleton().itemDatabase();
-        dropSelectedItems([dropSet, itemDb](ItemPtr item) {
+        dropSelectedItems([dropSet, itemDb](std::shared_ptr<Item> item) {
             return dropSet.contains(itemDb->itemType(item->name()));
           });
       }
@@ -1247,7 +1234,7 @@ void Player::update(float dt, std::uint64_t) {
 
     if (m_ageItemsTimer.wrapTick(dt)) {
       auto itemDatabase = Root::singleton().itemDatabase();
-      m_inventory->forEveryItem([&](InventorySlot const&, ItemPtr& item) {
+      m_inventory->forEveryItem([&](InventorySlot const&, std::shared_ptr<Item>& item) {
           itemDatabase->ageItem(item, m_ageItemsTimer.time);
         });
     }
@@ -1496,15 +1483,15 @@ void Player::setGenericProperty(String const& name, Json const& value) {
     m_genericProperties.set(name, value);
 }
 
-PlayerInventoryPtr Player::inventory() const {
+std::shared_ptr<PlayerInventory> Player::inventory() const {
   return m_inventory;
 }
 
-std::uint64_t Player::itemsCanHold(ItemPtr const& items) const {
+std::uint64_t Player::itemsCanHold(std::shared_ptr<Item> const& items) const {
   return m_inventory->itemsCanFit(items);
 }
 
-ItemPtr Player::pickupItems(ItemPtr const& items, bool silent) {
+std::shared_ptr<Item> Player::pickupItems(std::shared_ptr<Item> const& items, bool silent) {
   if (isDead() || !items || m_inventory->itemsCanFit(items) == 0)
     return items;
 
@@ -1524,12 +1511,12 @@ ItemPtr Player::pickupItems(ItemPtr const& items, bool silent) {
   return m_inventory->addItems(items);
 }
 
-void Player::giveItem(ItemPtr const& item) {
+void Player::giveItem(std::shared_ptr<Item> const& item) {
   if (auto spill = pickupItems(item, false))
     world()->addEntity(ItemDrop::createRandomizedDrop(spill->descriptor(), position()));
 }
 
-void Player::triggerPickupEvents(ItemPtr const& item) {
+void Player::triggerPickupEvents(std::shared_ptr<Item> const& item) {
   if (item) {
     for (auto b : item->learnBlueprintsOnPickup())
       addBlueprint(b);
@@ -1567,7 +1554,7 @@ void Player::triggerPickupEvents(ItemPtr const& item) {
   }
 }
 
-ItemPtr Player::essentialItem(EssentialItem essentialItem) const {
+std::shared_ptr<Item> Player::essentialItem(EssentialItem essentialItem) const {
   return m_inventory->essentialItem(essentialItem);
 }
 
@@ -1641,7 +1628,7 @@ void Player::refreshEquipment() {
   refreshItems();
 }
 
-PlayerBlueprintsPtr Player::blueprints() const {
+std::shared_ptr<PlayerBlueprints> Player::blueprints() const {
   return m_blueprints;
 }
 
@@ -1683,15 +1670,15 @@ bool Player::addCollectable(String const& collectionName, String const& collecta
   }
 }
 
-PlayerUniverseMapPtr Player::universeMap() const {
+std::shared_ptr<PlayerUniverseMap> Player::universeMap() const {
   return m_universeMap;
 }
 
-PlayerCodexesPtr Player::codexes() const {
+std::shared_ptr<PlayerCodexes> Player::codexes() const {
   return m_codexes;
 }
 
-PlayerTechPtr Player::techs() const {
+std::shared_ptr<PlayerTech> Player::techs() const {
   return m_techs;
 }
 
@@ -1706,19 +1693,19 @@ bool Player::techOverridden() const {
   return m_techController->techOverridden();
 }
 
-PlayerCompanionsPtr Player::companions() const {
+std::shared_ptr<PlayerCompanions> Player::companions() const {
   return m_companions;
 }
 
-PlayerLogPtr Player::log() const {
+std::shared_ptr<PlayerLog> Player::log() const {
   return m_log;
 }
 
-InteractiveEntityPtr Player::bestInteractionEntity(bool includeNearby) {
+std::shared_ptr<InteractiveEntity> Player::bestInteractionEntity(bool includeNearby) {
   if (!inWorld())
     return {};
 
-  InteractiveEntityPtr interactiveEntity;
+  std::shared_ptr<InteractiveEntity> interactiveEntity;
   if (auto entity = world()->getInteractiveInRange(m_aimPosition, isAdmin() ? m_aimPosition : position(), m_interactRadius)) {
     interactiveEntity = entity;
   } else if (includeNearby) {
@@ -1736,7 +1723,7 @@ InteractiveEntityPtr Player::bestInteractionEntity(bool includeNearby) {
   return {};
 }
 
-void Player::interactWithEntity(InteractiveEntityPtr entity) {
+void Player::interactWithEntity(std::shared_ptr<InteractiveEntity> entity) {
   bool questIntercepted = false;
   for (auto quest : m_questManager->listActiveQuests()) {
     if (quest->interactWithEntity(entity->entityId()))
@@ -1795,7 +1782,7 @@ Vec2F Player::handPosition(ToolHand hand, Vec2F const& handOffset) const {
   return m_tools->handPosition(hand, *humanoid(), handOffset);
 }
 
-ItemPtr Player::handItem(ToolHand hand) const {
+std::shared_ptr<Item> Player::handItem(ToolHand hand) const {
   if (hand == ToolHand::Primary)
     return m_tools->primaryHandItem();
   else
@@ -2287,7 +2274,7 @@ void Player::setNetStates() {
   m_humanoidDanceNetState.set(m_dance);
 }
 
-void Player::setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor, bool visible) {
+void Player::setNetArmorSecret(EquipmentSlot slot, std::shared_ptr<ArmorItem> const& armor, bool visible) {
   String const& slotName = EquipmentSlotNames.getRight(slot);
   ItemDescriptor descriptor = visible ? itemSafeDescriptor(armor) : ItemDescriptor();
   setSecretProperty(strf("armorWearer.{}.data", slotName), descriptor.diskStore());
@@ -2321,7 +2308,7 @@ void Player::getNetArmorSecrets() {
         newVersion = jVersion.toUInt();
       if (newVersion > curVersion) {
         curVersion = newVersion;
-        ArmorItemPtr item;
+        std::shared_ptr<ArmorItem> item;
         itemDatabase->diskLoad(getSecretProperty(strf("armorWearer.{}.data", slotName)), item);
         m_inventory->setItem(slot, item);
         m_armor->setCosmeticItem(i, item);
@@ -2406,11 +2393,11 @@ void Player::moveTo(Vec2F const& footPosition) {
   m_movementController->setVelocity(Vec2F());
 }
 
-ItemPtr Player::primaryHandItem() const {
+std::shared_ptr<Item> Player::primaryHandItem() const {
   return m_tools->primaryHandItem();
 }
 
-ItemPtr Player::altHandItem() const {
+std::shared_ptr<Item> Player::altHandItem() const {
   return m_tools->altHandItem();
 }
 
@@ -2609,10 +2596,10 @@ void Player::setImagePath(Maybe<String> const& imagePath) {
   updateIdentity();
 }
 
-HumanoidPtr Player::humanoid() {
+std::shared_ptr<Humanoid> Player::humanoid() {
   return m_netHumanoid.netElements().last()->humanoid();
 }
-HumanoidPtr Player::humanoid() const {
+std::shared_ptr<Humanoid> Player::humanoid() const {
   return m_netHumanoid.netElements().last()->humanoid();
 }
 
@@ -2629,7 +2616,7 @@ List<String> Player::pullQueuedMessages() {
   return take(m_queuedMessages);
 }
 
-List<ItemPtr> Player::pullQueuedItemDrops() {
+List<std::shared_ptr<Item>> Player::pullQueuedItemDrops() {
   return take(m_queuedItemPickups);
 }
 
@@ -2638,7 +2625,7 @@ void Player::queueUIMessage(String const& message) {
     m_queuedMessages.append(message);
 }
 
-void Player::queueItemPickupMessage(ItemPtr const& item) {
+void Player::queueItemPickupMessage(std::shared_ptr<Item> const& item) {
   if (!isSlave())
     m_queuedItemPickups.append(item);
 }
@@ -2669,7 +2656,7 @@ void Player::setDance(Maybe<String> const& danceName) {
 
   if (danceName.isValid()) {
     auto danceDatabase = Root::singleton().danceDatabase();
-    DancePtr dance = danceDatabase->getDance(*danceName);
+    std::shared_ptr<Dance> dance = danceDatabase->getDance(*danceName);
     m_danceCooldownTimer = GameTimer(dance->duration);
   }
 }
@@ -2746,23 +2733,23 @@ List<PhysicsForceRegion> Player::forceRegions() const {
 }
 
 
-StatusControllerPtr Player::statusControllerPtr() {
+std::shared_ptr<StatusController> Player::statusControllerPtr() {
   return m_statusController;
 }
 
-ActorMovementControllerPtr Player::movementControllerPtr() {
+std::shared_ptr<ActorMovementController> Player::movementControllerPtr() {
   return m_movementController;
 }
 
-PlayerConfigPtr Player::config() {
+std::shared_ptr<PlayerConfig> Player::config() {
   return m_config;
 }
 
-SongbookPtr Player::songbook() const {
+std::shared_ptr<Songbook> Player::songbook() const {
   return m_songbook;
 }
 
-QuestManagerPtr Player::questManager() const {
+std::shared_ptr<QuestManager> Player::questManager() const {
   return m_questManager;
 }
 
@@ -2866,11 +2853,11 @@ bool Player::isOutside() {
       && !world()->tileIsOccupied(Vec2I::floor(mouthPosition()), TileLayer::Background);
 }
 
-void Player::dropSelectedItems(std::function<bool(ItemPtr)> filter) {
+void Player::dropSelectedItems(std::function<bool(std::shared_ptr<Item>)> filter) {
   if (!world())
     return;
 
-  m_inventory->forEveryItem([&](InventorySlot const&, ItemPtr& item) {
+  m_inventory->forEveryItem([&](InventorySlot const&, std::shared_ptr<Item>& item) {
       if (item && (!filter || filter(item)))
         world()->addEntity(ItemDrop::throwDrop(take(item), position(), velocity(), Vec2F::withAngle(Random::randf(-Constants::pi, Constants::pi)), true));
     });
@@ -3019,7 +3006,7 @@ bool Player::inspecting() const {
   return is<InspectionTool>(m_tools->primaryHandItem()) || is<InspectionTool>(m_tools->altHandItem());
 }
 
-EntityHighlightEffect Player::inspectionHighlight(InspectableEntityPtr const& inspectableEntity) const {
+EntityHighlightEffect Player::inspectionHighlight(std::shared_ptr<InspectableEntity> const& inspectableEntity) const {
   auto inspectionTool = as<InspectionTool>(m_tools->primaryHandItem());
   if (!inspectionTool)
     inspectionTool = as<InspectionTool>(m_tools->altHandItem());
@@ -3063,7 +3050,7 @@ Vec2F Player::cameraPosition() {
   return position();
 }
 
-NetworkedAnimatorPtr Player::effectsAnimator() {
+std::shared_ptr<NetworkedAnimator> Player::effectsAnimator() {
   return m_effectsAnimator;
 }
 

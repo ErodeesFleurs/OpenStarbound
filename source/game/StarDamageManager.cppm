@@ -20,26 +20,7 @@ import star.damage_types;
 namespace Star {
 
 class World;
-using WorldPtr = std::shared_ptr<World>;
-using WorldConstPtr = std::shared_ptr<const World>;
-using WorldWeakPtr = std::weak_ptr<World>;
-using WorldConstWeakPtr = std::weak_ptr<const World>;
-using WorldUPtr = std::unique_ptr<World>;
-using WorldConstUPtr = std::unique_ptr<const World>;
 class Entity;
-using EntityPtr = std::shared_ptr<Entity>;
-using EntityConstPtr = std::shared_ptr<const Entity>;
-using EntityWeakPtr = std::weak_ptr<Entity>;
-using EntityConstWeakPtr = std::weak_ptr<const Entity>;
-using EntityUPtr = std::unique_ptr<Entity>;
-using EntityConstUPtr = std::unique_ptr<const Entity>;
-class DamageManager;
-using DamageManagerPtr = std::shared_ptr<DamageManager>;
-using DamageManagerConstPtr = std::shared_ptr<const DamageManager>;
-using DamageManagerWeakPtr = std::weak_ptr<DamageManager>;
-using DamageManagerConstWeakPtr = std::weak_ptr<const DamageManager>;
-using DamageManagerUPtr = std::unique_ptr<DamageManager>;
-using DamageManagerConstUPtr = std::unique_ptr<const DamageManager>;
 
 struct RemoteHitRequest {
   friend DataStream& operator<<(DataStream& ds, RemoteHitRequest const& hitRequest);
@@ -115,7 +96,7 @@ private:
   // damage source.  Skips over source.sourceEntityId, if set.
   SmallList<std::pair<EntityId, HitType>, 4> queryHit(DamageSource const& source, EntityId causingId) const;
 
-  bool isAuthoritative(EntityPtr const& causingEntity, EntityPtr const& targetEntity);
+  bool isAuthoritative(std::shared_ptr<Entity> const& causingEntity, std::shared_ptr<Entity> const& targetEntity);
 
   void addHitRequest(RemoteHitRequest const& remoteHitRequest);
   void addDamageRequest(RemoteDamageRequest remoteDamageRequest);
@@ -140,26 +121,8 @@ export module star.damage_manager;
 
 export namespace Star {
 using ::Star::World;
-using ::Star::WorldPtr;
-using ::Star::WorldConstPtr;
-using ::Star::WorldWeakPtr;
-using ::Star::WorldConstWeakPtr;
-using ::Star::WorldUPtr;
-using ::Star::WorldConstUPtr;
 using ::Star::Entity;
-using ::Star::EntityPtr;
-using ::Star::EntityConstPtr;
-using ::Star::EntityWeakPtr;
-using ::Star::EntityConstWeakPtr;
-using ::Star::EntityUPtr;
-using ::Star::EntityConstUPtr;
 using ::Star::DamageManager;
-using ::Star::DamageManagerPtr;
-using ::Star::DamageManagerConstPtr;
-using ::Star::DamageManagerWeakPtr;
-using ::Star::DamageManagerConstWeakPtr;
-using ::Star::DamageManagerUPtr;
-using ::Star::DamageManagerConstUPtr;
 using ::Star::RemoteHitRequest;
 using ::Star::RemoteDamageRequest;
 using ::Star::RemoteDamageNotification;

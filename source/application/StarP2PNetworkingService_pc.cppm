@@ -35,17 +35,9 @@ import star.rpc_promise;
 
 namespace Star {
 
-class PcP2PNetworkingService;
-using PcP2PNetworkingServicePtr = std::shared_ptr<PcP2PNetworkingService>;
-using PcP2PNetworkingServiceConstPtr = std::shared_ptr<PcP2PNetworkingService const>;
-using PcP2PNetworkingServiceWeakPtr = std::weak_ptr<PcP2PNetworkingService>;
-using PcP2PNetworkingServiceConstWeakPtr = std::weak_ptr<PcP2PNetworkingService const>;
-using PcP2PNetworkingServiceUPtr = std::unique_ptr<PcP2PNetworkingService>;
-using PcP2PNetworkingServiceConstUPtr = std::unique_ptr<PcP2PNetworkingService const>;
-
 class PcP2PNetworkingService : public P2PNetworkingService {
 public:
-  PcP2PNetworkingService(PcPlatformServicesStatePtr state);
+  PcP2PNetworkingService(std::shared_ptr<PcPlatformServicesState> state);
   ~PcP2PNetworkingService();
 
   void setJoinUnavailable() override;
@@ -57,9 +49,9 @@ public:
   Maybe<std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> pullJoinRequest() override;
 
   void setAcceptingP2PConnections(bool acceptingP2PConnections) override;
-  List<P2PSocketUPtr> acceptP2PConnections() override;
+  List<std::unique_ptr<P2PSocket>> acceptP2PConnections() override;
   void update() override;
-  Either<String, P2PSocketUPtr> connectToPeer(P2PNetworkingPeerId peerId) override;
+  Either<String, std::unique_ptr<P2PSocket>> connectToPeer(P2PNetworkingPeerId peerId) override;
 
   void addPendingJoin(String connectionString);
 
@@ -124,7 +116,7 @@ private:
     Deque<ByteArray> incoming;
   };
 
-  P2PSocketUPtr discordConnectRemote(discord::UserId remoteUserId, discord::LobbyId lobbyId, String const& lobbySecret);
+  std::unique_ptr<P2PSocket> discordConnectRemote(discord::UserId remoteUserId, discord::LobbyId lobbyId, String const& lobbySecret);
   void discordCloseSocket(DiscordP2PSocket* socket);
 
   void discordOnReceiveMessage(discord::LobbyId lobbyId, discord::UserId userId, discord::NetworkChannelId channel, std::uint8_t* data, std::uint32_t size);
@@ -136,7 +128,7 @@ private:
   
   void setJoinLocation(JoinLocation joinLocation);
 
-  PcPlatformServicesStatePtr m_state;
+  std::shared_ptr<PcPlatformServicesState> m_state;
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
   SteamCallback<PcP2PNetworkingService, P2PSessionConnectFail_t> m_callbackConnectionFailure;
   SteamCallback<PcP2PNetworkingService, GameRichPresenceJoinRequested_t> m_callbackJoinRequested;
@@ -146,7 +138,7 @@ private:
   Mutex m_mutex;
   JoinLocation m_joinLocation;
   bool m_acceptingP2PConnections = false;
-  List<P2PSocketUPtr> m_pendingIncomingConnections;
+  List<std::unique_ptr<P2PSocket>> m_pendingIncomingConnections;
   MVariant<P2PNetworkingPeerId, HostAddressWithPort> m_pendingJoin;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
@@ -186,10 +178,4 @@ export module star.p2p_networking_service_pc;
 
 export namespace Star {
   using ::Star::PcP2PNetworkingService;
-  using ::Star::PcP2PNetworkingServicePtr;
-  using ::Star::PcP2PNetworkingServiceConstPtr;
-  using ::Star::PcP2PNetworkingServiceUPtr;
-  using ::Star::PcP2PNetworkingServiceConstUPtr;
-  using ::Star::PcP2PNetworkingServiceWeakPtr;
-  using ::Star::PcP2PNetworkingServiceConstWeakPtr;
 }

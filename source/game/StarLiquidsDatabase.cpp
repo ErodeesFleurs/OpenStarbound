@@ -137,8 +137,8 @@ StringList LiquidsDatabase::liquidNames() const {
   return m_liquidNames.keys();
 }
 
-List<LiquidSettingsConstPtr> LiquidsDatabase::allLiquidSettings() const {
-  return filtered<List<LiquidSettingsConstPtr>>(m_settings, std::mem_fn(&LiquidSettingsConstPtr::operator bool));
+List<std::shared_ptr<LiquidSettings const>> LiquidsDatabase::allLiquidSettings() const {
+  return filtered<List<std::shared_ptr<LiquidSettings const>>>(m_settings, std::mem_fn(&std::shared_ptr<LiquidSettings const>::operator bool));
 }
 
 LiquidId LiquidsDatabase::liquidId(String const& str) const {

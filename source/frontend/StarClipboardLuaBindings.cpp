@@ -40,7 +40,7 @@ module star.clipboard_lua_bindings;
 import star.byte_array;
 namespace Star {
 
-LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appController, bool alwaysAllow) {
+LuaCallbacks LuaBindings::makeClipboardCallbacks(std::shared_ptr<ApplicationController> appController, bool alwaysAllow) {
   LuaCallbacks callbacks;
 
   auto available = [=]() { return alwaysAllow || (appController->isFocused() && Input::singleton().clipboardAllowed()); };
