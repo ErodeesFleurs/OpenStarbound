@@ -1,4 +1,4 @@
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 
 #include "gtest/gtest.h"
 

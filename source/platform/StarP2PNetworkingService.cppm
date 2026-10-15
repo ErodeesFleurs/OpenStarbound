@@ -8,7 +8,7 @@ import star.either;
 import star.list;
 import star.maybe;
 import star.string;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.rpc_promise;
 
 import star.host_address;

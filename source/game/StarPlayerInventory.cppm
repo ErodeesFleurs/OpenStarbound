@@ -8,7 +8,7 @@ import star.format;
 import star.json;
 
 import star.bi_map;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.inventory_types;
 import star.multi_array;
 import star.data_stream;

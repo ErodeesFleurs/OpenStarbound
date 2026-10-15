@@ -1,7 +1,7 @@
 import std;
 import star.memory;
 import star.json;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.color;
 import star.font;
@@ -31,7 +31,7 @@ import star.map;
 import star.id_map;
 import star.variant;
 import star.rpc_promise;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.a_star;
 import star.ordered_set;
 import star.either;
@@ -47,7 +47,7 @@ import star.desktop_service;
 import star.image;
 import star.application_controller;
 import star.renderer;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.asset_source;
 import star.assets;
 import star.root_base;
@@ -118,9 +118,9 @@ import star.ai_types;
 import star.entity_rendering_types;
 import star.entity_rendering;
 import star.player_types;
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_components;
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.radio_message_database;
 import star.player;
 

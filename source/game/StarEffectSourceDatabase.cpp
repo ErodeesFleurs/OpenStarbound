@@ -1,5 +1,5 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.game_types;
 import star.color;
 import star.bi_map;

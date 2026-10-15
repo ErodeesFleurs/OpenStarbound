@@ -75,6 +75,7 @@ if(STAR_BUILD_DEV_TOOLS)
 add_executable (update_tilesets
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_game>
   update_tilesets.cpp tileset_updater.cpp)
+target_sources (update_tilesets PRIVATE FILE_SET CXX_MODULES FILES tileset_updater.cppm)
 target_include_directories (update_tilesets PRIVATE
     ${STAR_EXTERN_INCLUDES}
     ${STAR_CORE_INCLUDES}

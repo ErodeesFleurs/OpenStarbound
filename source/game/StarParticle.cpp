@@ -1,7 +1,7 @@
 import star.memory;
 import std;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.color;
 import star.bi_map;
 import star.list;
@@ -16,7 +16,7 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.string;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.random;
 
 import star.animation;

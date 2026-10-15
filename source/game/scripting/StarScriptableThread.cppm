@@ -1,5 +1,4 @@
-#pragma once
-
+module;
 import std;
 import star.string;
 import star.list;
@@ -7,8 +6,9 @@ import star.json;
 import star.lua;
 import star.maybe;
 import star.thread;
-#include "StarLuaRoot.hpp"
-#include "StarLuaComponents.hpp"
+import star.lua_root;
+import star.lua_components;
+import star.game_types;
 import star.rpc_promise;
 
 namespace Star {
@@ -81,4 +81,10 @@ private:
   Json configValue(String const& name, Json def) const;
 };
 
+}
+
+export module star.scriptable_thread;
+
+export namespace Star {
+  using ::Star::ScriptableThread;
 }

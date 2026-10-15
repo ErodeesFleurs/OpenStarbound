@@ -34,8 +34,8 @@ import star.lru_cache;
 import star.perlin;
 import star.id_map;
 import star.set;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 
 import star.celestial_coordinate;
 import star.sky_types;

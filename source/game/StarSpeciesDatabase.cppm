@@ -21,7 +21,7 @@ import star.audio;
 import star.map;
 import star.set;
 import star.maybe;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.id_map;
 
 
@@ -35,7 +35,7 @@ import star.light_source;
 import star.networked_animator;
 import star.humanoid;
 import star.status_types;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 
 namespace Star {
 

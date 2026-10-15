@@ -14,7 +14,7 @@ import star.buffer;
 import star.file;
 import star.format;
 import star.logging;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.byte_array;
 import star.encode;
 

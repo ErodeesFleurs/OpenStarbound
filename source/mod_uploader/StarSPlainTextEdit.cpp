@@ -1,4 +1,6 @@
-#include "StarSPlainTextEdit.hpp"
+#include <QPlainTextEdit>
+
+import star.s_plain_text_edit;
 
 namespace Star {
 
@@ -20,4 +22,5 @@ void SPlainTextEdit::wasChanged() {
 
 }
 
+// Generate with moc -i from StarSPlainTextEdit.cppm; compile in this scanned owner.
 #include "moc_StarSPlainTextEdit.cpp"

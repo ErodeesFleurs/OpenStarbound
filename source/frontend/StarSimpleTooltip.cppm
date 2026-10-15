@@ -8,7 +8,7 @@ import star.ref_ptr;
 import star.logging;
 import star.version;
 import star.vector;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.color;
 import star.font;

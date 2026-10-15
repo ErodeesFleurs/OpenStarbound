@@ -1,4 +1,4 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
 import star.ordered_map;
 import star.bi_map;
@@ -23,7 +23,7 @@ import star.maybe;
 import star.format;
 import star.version;
 
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.asset_source;
 import star.assets;
 import star.root_base;

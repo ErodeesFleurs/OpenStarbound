@@ -2,11 +2,11 @@ import std;
 import star.set;
 import star.json;
 import star.id_map;
-#include "StarCasting.hpp"
+import star.casting;
 import star.data_stream;
 import star.game_types;
 import star.poly;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 import star.color;
 import star.list;
@@ -20,7 +20,7 @@ import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;

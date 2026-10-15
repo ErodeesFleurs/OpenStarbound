@@ -1,4 +1,4 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import std;
 import star.string;
 import star.data_stream;
@@ -6,7 +6,7 @@ import star.json;
 import star.color;
 import star.bi_map;
 import star.sky_types;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 
 import star.vector;
 namespace Star {

@@ -1,12 +1,12 @@
 module;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
-#include "StarCasting.hpp"
+import star.casting;
 import star.vector;
 import star.data_stream;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 import star.color;
 import star.list;
@@ -37,9 +37,9 @@ import star.periodic_function;
 import star.lua;
 import star.audio;
 import star.map;
-#include "StarLuaRoot.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_root;
+import star.lua_components;
+import star.lua_animation_component;
 
 
 import star.item;

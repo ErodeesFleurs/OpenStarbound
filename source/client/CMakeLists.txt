@@ -1,7 +1,3 @@
-set (star_client_HEADERS
-      StarClientApplication.hpp
-    )
-
 set (star_client_SOURCES
       StarClientApplication.cpp
       StarRenderingLuaBindings.cpp
@@ -16,7 +12,7 @@ endif ()
 
 add_executable (starbound WIN32
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_game>
-  ${star_client_HEADERS} ${star_client_SOURCES} ${star_client_RESOURCES})
+  ${star_client_SOURCES} ${star_client_RESOURCES})
 if (STAR_ENABLE_DISCORD_INTEGRATION)
   target_sources (starbound PRIVATE $<TARGET_OBJECTS:star_application>)
 endif ()
@@ -33,9 +29,12 @@ target_include_directories (starbound PRIVATE
   )
 add_library (star_client_module_interfaces OBJECT)
 target_sources (star_client_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
+    StarClientApplication.cppm
     StarRenderingLuaBindings.cppm
   )
-target_link_libraries (star_client_module_interfaces PRIVATE star_build_config)
+target_link_libraries (star_client_module_interfaces PUBLIC
+  star_base_modules star_frontend_modules star_application_modules
+  PRIVATE star_build_config star_client_dependencies)
 
 if(STAR_SYSTEM_MACOS)
   target_link_options (starbound PRIVATE "LINKER:-rpath,@executable_path")

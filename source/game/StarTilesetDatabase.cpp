@@ -11,7 +11,7 @@ import star.string_view;
 import star.directives;
 import star.asset_path;
 import star.ref_ptr;
-#include "StarCasting.hpp"
+import star.casting;
 import star.logging;
 import star.listener;
 import std;

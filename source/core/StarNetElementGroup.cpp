@@ -1,7 +1,7 @@
 import std;
 import star.data_stream;
 import star.format;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 import star.net_element;
 import star.net_element_group;

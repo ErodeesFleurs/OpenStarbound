@@ -3,9 +3,9 @@ import star.string;
 import star.stream_formatter;
 import star.json;
 import star.bi_map;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.format;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.inventory_types;
 
 namespace Star {

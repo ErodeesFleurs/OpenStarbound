@@ -1,15 +1,25 @@
+#include <QApplication>
+#include <QErrorMessage>
+#include <QGridLayout>
+#include <QLabel>
+#include <QLineEdit>
+#include <QMainWindow>
+#include <QPushButton>
+#include <QScrollBar>
+#include <QTextEdit>
+
 import std;
 import star.format;
 import star.string;
 import star.list;
 import star.json;
 
-#include <QApplication>
-#include <QGridLayout>
-#include <QPushButton>
 import star.file;
-#include "json_tool.hpp"
-#include "editor_gui.hpp"
+import star.json_tool;
+import star.json_editor;
+import star.formatted_json;
+import star.json_path;
+import star.variant;
 
 using namespace Star;
 
@@ -211,5 +221,5 @@ int Star::edit(int argc, char* argv[], std::shared_ptr<::Star::JsonPath::Path> c
   return app.exec();
 }
 
-// Keep generated project-header imports in this module-scanned translation unit.
+// Generate with moc -i from editor_gui.cppm; compile in this scanned owner.
 #include "moc_editor_gui.cpp"

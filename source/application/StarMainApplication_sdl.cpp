@@ -38,7 +38,7 @@ import star.ref_ptr;
 import star.renderer;
 import star.main_application;
 import star.logging;
-#include "StarCasting.hpp"
+import star.casting;
 import star.texture_atlas;
 
 import star.renderer_opengl;

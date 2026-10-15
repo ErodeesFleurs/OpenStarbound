@@ -15,7 +15,7 @@ import star.maybe;
 import star.vector;
 import star.data_stream;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.id_map;
 import star.color;
 import star.bi_map;

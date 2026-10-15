@@ -5,9 +5,9 @@ import star.id_map;
 import star.bi_map;
 import star.a_star;
 import star.variant;
-#include "StarCasting.hpp"
+import star.casting;
 import star.data_stream;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.list;
 import star.rpc_promise;
 import star.game_types;
@@ -30,7 +30,7 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 

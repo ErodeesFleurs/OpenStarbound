@@ -1,13 +1,14 @@
 module;
-#include "StarJsonExtra.hpp"
+import star.game_timers;
+import star.json_extra;
 import std;
 import star.json;
 import star.id_map;
 import star.random;
 import star.periodic;
 import star.periodic_function;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.set;
 import star.color;
 import star.lua;
@@ -45,9 +46,9 @@ struct ObjectOrientation;
 class Object;
 }
 
-#include "StarLuaRoot.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_root;
+import star.lua_components;
+import star.lua_animation_component;
 import star.world_geometry;
 import star.status_types;
 import star.damage;

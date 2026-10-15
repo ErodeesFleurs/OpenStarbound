@@ -1,11 +1,12 @@
 module;
 import std;
+import star.game_timers;
 import star.lua;
 import star.json;
 import star.net_compatibility;
 import star.list;
 import star.observer_stream;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.data_stream;
 import star.id_map;
 import star.either;
@@ -31,8 +32,8 @@ import star.status_types;
 import star.damage_types;
 import star.world_geometry;
 import star.damage;
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
+import star.lua_components;
+import star.lua_actor_movement_component;
 import star.animated_part_set;
 import star.drawable;
 import star.animation;
@@ -54,6 +55,9 @@ import star.net_element_group;
 import star.net_element_sync_group;
 
 namespace Star {
+class Entity;
+class ActorMovementController;
+
 
 class StatusController : public NetElement {
 public:

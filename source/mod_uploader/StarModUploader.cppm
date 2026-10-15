@@ -1,8 +1,8 @@
-#pragma once
-
+module;
 #include <QMainWindow>
 #include <QLabel>
 #include <QListWidget>
+#include <QImage>
 #include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QPushButton>
@@ -10,7 +10,7 @@
 
 #include "steam/steam_api.h"
 #include "steam/steam_api_flat.h"
-#include "../application/StarSteamDispatch.hpp"
+import star.steam_dispatch;
 
 import std;
 import star.io_device;
@@ -20,7 +20,7 @@ import star.maybe;
 import star.asset_source;
 import star.string;
 import star.directory_asset_source;
-#include "StarSPlainTextEdit.hpp"
+import star.s_plain_text_edit;
 
 namespace Star {
 
@@ -66,4 +66,11 @@ private:
   Maybe<std::pair<SubmitItemUpdateResult_t, bool>> m_steamItemSubmitResult;
 };
 
+}
+
+
+export module star.mod_uploader;
+
+export namespace Star {
+  using ::Star::ModUploader;
 }

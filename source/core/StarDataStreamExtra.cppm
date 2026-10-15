@@ -1,4 +1,4 @@
-#pragma once
+module;
 import std;
 import star.list;
 import star.map;
@@ -397,4 +397,17 @@ DataStream& operator<<(DataStream& ds, std::tuple<T...> const& t) {
   return ds;
 }
 
+}
+
+export module star.data_stream_extra;
+
+export namespace Star {
+  using ::Star::DataStreamWriteFunctor;
+  using ::Star::DataStreamReadFunctor;
+  using ::Star::DataStreamReader;
+  using ::Star::DataStreamWriter;
+  using ::Star::operator<<;
+  using ::Star::operator>>;
+  using ::Star::writeMaybe;
+  using ::Star::readMaybe;
 }

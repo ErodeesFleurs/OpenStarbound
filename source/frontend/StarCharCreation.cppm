@@ -3,7 +3,7 @@ import std;
 import star.format;
 import star.json;
 import star.vector;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.color;
 import star.list;

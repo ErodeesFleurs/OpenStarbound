@@ -1,6 +1,6 @@
 import star.xx_hash;
 import star.json;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.list;
 import star.bi_map;
 import std;

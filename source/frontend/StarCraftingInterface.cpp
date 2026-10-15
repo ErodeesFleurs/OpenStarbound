@@ -1,4 +1,4 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import std;
 import star.memory;
 import star.json;
@@ -12,7 +12,7 @@ import star.math_common;
 import star.either;
 import star.random;
 import star.weighted_pool;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.ordered_map;
 import star.lru_cache;
 import star.thread;
@@ -21,7 +21,7 @@ import star.ttl_cache;
 import star.perlin;
 import star.vector;
 import star.random_point;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.color;
 import star.font;
@@ -51,8 +51,8 @@ import star.net_compatibility;
 import star.worker_pool;
 
 import star.sector_array_2d;
-#include "StarBTree.hpp"
-#include "StarDataStreamDevices.hpp"
+import star.btree;
+import star.data_stream_devices;
 import star.btree_database;
 import star.ordered_set;
 import star.a_star;
@@ -77,7 +77,7 @@ import star.wiring;
 import star.inspectable_entity;
 import star.plant;
 import star.biome_placement;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.versioning_database;
 import star.world_storage;
 import star.player_types;
@@ -88,7 +88,7 @@ import star.world_structure;
 import star.chat_action;
 import star.entity_rendering;
 import star.world;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.world_client_state;
 import star.interpolation_tracker;
 import star.ambient;
@@ -169,8 +169,8 @@ import star.movement_controller;
 import star.platformer_astar_types;
 import star.actor_movement_controller;
 import star.ai_types;
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.radio_message_database;
 import star.player;
 import star.interaction_types;

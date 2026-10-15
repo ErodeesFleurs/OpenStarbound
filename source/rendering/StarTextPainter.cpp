@@ -1,7 +1,8 @@
+import star.maybe;
 import std;
 import star.memory;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.color;
 import star.font;
 import star.list;

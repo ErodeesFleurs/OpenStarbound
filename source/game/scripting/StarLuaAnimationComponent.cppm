@@ -1,53 +1,27 @@
-#pragma once
-#include "StarJsonExtra.hpp"
+module;
+import std;
+import star.json_extra;
 import star.json;
 import star.vector;
-import star.data_stream;
-import star.bi_map;
 import star.string;
 import star.color;
 import star.list;
-import star.image_processing;
-import star.hash;
-import star.string_view;
-import star.thread;
-import star.directives;
-import star.asset_path;
-import star.game_types;
-import star.audio;
-import star.map;
-import star.set;
 import star.maybe;
-import star.ordered_map;
-import star.io_device;
-import star.ref_ptr;
-import star.logging;
-import star.listener;
-import std;
 import star.lua;
 import star.format;
-import star.version;
-#include "StarLuaConverters.hpp"
-
-
-#include "StarLuaComponents.hpp"
-import star.drawable;
+import star.lua_converters;
+import star.lua_game_converters;
+import star.lua_components;
 import star.drawable;
 import star.entity_rendering_types;
 import star.mixer;
-import star.animation;
 import star.particle;
-import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
 import star.root;
-
 import star.particle_database;
-
 import star.light_source;
-
 import star.algorithm;
+
 namespace Star {
 
 struct LuaAnimationComponentExceptionTag {
@@ -169,4 +143,12 @@ void LuaAnimationComponent<Base>::contextShutdown() {
   Base::contextShutdown();
 }
 
+}
+
+export module star.lua_animation_component;
+
+export namespace Star {
+  using ::Star::LuaAnimationComponentExceptionTag;
+  using ::Star::LuaAnimationComponentException;
+  using ::Star::LuaAnimationComponent;
 }

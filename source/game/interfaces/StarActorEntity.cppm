@@ -6,9 +6,9 @@ import star.game_types;
 import star.maybe;
 import star.bi_map;
 import star.a_star;
-#include "StarCasting.hpp"
+import star.casting;
 import star.data_stream;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.variant;
 import star.list;
 import star.rpc_promise;

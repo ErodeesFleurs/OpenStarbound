@@ -6,9 +6,9 @@ import star.id_map;
 import star.color;
 import star.game_types;
 import star.data_stream;
-#include "StarCasting.hpp"
+import star.casting;
 import star.vector;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 import star.list;
 

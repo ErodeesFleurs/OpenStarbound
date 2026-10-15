@@ -31,15 +31,15 @@ import star.image;
 import star.ordered_map;
 import star.lru_cache;
 import star.id_map;
-#include "StarBTree.hpp"
-#include "StarDataStreamDevices.hpp"
+import star.btree;
+import star.data_stream_devices;
 import star.btree_database;
-#include "StarCasting.hpp"
+import star.casting;
 import star.ordered_set;
 import star.rpc_promise;
 import star.perlin;
 import star.weighted_pool;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 
 import star.collision_block;
 import star.liquid_types;
@@ -71,7 +71,7 @@ import star.interactive_entity;
 import star.tile_entity;
 import star.inspectable_entity;
 import star.plant;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.versioning_database;
 import star.world_storage;
 import star.cellular_liquid;

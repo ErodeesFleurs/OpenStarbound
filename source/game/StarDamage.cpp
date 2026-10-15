@@ -1,12 +1,12 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.vector;
 import star.data_stream;
 import star.game_types;
 import star.poly;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.id_map;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.ordered_map;
 import star.bi_map;
 import star.thread;

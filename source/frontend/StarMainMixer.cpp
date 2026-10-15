@@ -1,7 +1,7 @@
 import std;
 import star.json;
 import star.xx_hash;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
 import star.audio;
 import star.thread;
@@ -27,8 +27,8 @@ import star.asset_path;
 import star.either;
 import star.random;
 import star.weighted_pool;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.ordered_map;
 import star.lru_cache;
 import star.time;
@@ -39,7 +39,7 @@ import star.random_point;
 import star.font;
 import star.text;
 import star.format;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
@@ -56,14 +56,14 @@ import star.net_compatibility;
 import star.worker_pool;
 
 import star.sector_array_2d;
-#include "StarBTree.hpp"
+import star.btree;
 import star.btree_database;
 import star.rpc_promise;
 import star.a_star;
 import star.periodic_function;
 
 
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.mixer;
 
 
@@ -109,7 +109,7 @@ import star.world_structure;
 import star.chat_action;
 import star.entity_rendering;
 import star.world;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.world_client_state;
 import star.interpolation_tracker;
 import star.ambient;
@@ -138,8 +138,8 @@ import star.inventory_types;
 import star.movement_controller;
 import star.platformer_astar_types;
 import star.actor_movement_controller;
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.radio_message_database;
 import star.player;
 import star.world_geometry;

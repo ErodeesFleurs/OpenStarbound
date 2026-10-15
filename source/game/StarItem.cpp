@@ -1,5 +1,5 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.set;
 import star.string;
 import star.data_stream;
@@ -13,7 +13,7 @@ import star.directives;
 import star.asset_path;
 import star.bi_map;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.vector;
 import star.ordered_map;
 import star.io_device;
@@ -25,7 +25,9 @@ import star.version;
 import star.random;
 import star.logging;
 
-#include "StarItem.inc"
+import star.item;
+import star.memory;
+import star.format;
 import star.drawable;
 import star.item_descriptor;
 import star.celestial_coordinate;
@@ -166,7 +168,7 @@ std::shared_ptr<Item> Item::take(std::uint64_t max) {
   if (takeCount != 0) {
     if (auto newItems = clone()) {
       m_count -= takeCount;
-      newItems->setCount(takeCount);
+      newItems->setCount(takeCount, false);
       return newItems;
     } else {
       Logger::warn("Could not clone {}, not moving {} items as requested.", friendlyName(), takeCount);

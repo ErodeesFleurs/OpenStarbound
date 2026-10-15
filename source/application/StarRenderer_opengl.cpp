@@ -7,10 +7,10 @@ import star.format;
 import star.json;
 import star.string;
 import star.list;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.rect;
 import star.image;
-#include "StarCasting.hpp"
+import star.casting;
 import star.texture_atlas;
 import star.variant;
 import star.bi_map;

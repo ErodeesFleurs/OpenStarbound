@@ -20,7 +20,7 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.either;
 import star.net_compatibility;
 

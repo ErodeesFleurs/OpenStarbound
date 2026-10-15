@@ -1,15 +1,3 @@
-set (star_core_HEADERS
-    StarBTree.hpp
-    StarCasting.hpp
-    StarDataStreamDevices.hpp
-    StarDataStreamExtra.hpp
-    StarJsonExtra.hpp
-    StarLuaConverters.hpp
-    StarNetImpl.hpp
-    StarStrongTypedef.hpp
-    scripting/StarUtilityLuaBindings.hpp
-  )
-
 set (star_core_SOURCES
     StarDataStreamDevices.cpp
     StarJsonExtra.cpp
@@ -19,7 +7,7 @@ set (star_core_SOURCES
 
 
 configure_file (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
-add_library (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS})
+add_library (star_core OBJECT ${star_core_SOURCES})
 target_include_directories (star_core PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
 
 # All importers share the bundled standard-library module from the parent.
@@ -28,6 +16,10 @@ target_include_directories (star_core PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_COR
 add_library (star_modules STATIC)
 target_sources (star_modules PUBLIC FILE_SET CXX_MODULES
     FILES StarVlqEncoding.cppm StarCurve25519.cppm
+          StarBTree.cppm StarCasting.cppm StarStrongTypedef.cppm
+          StarDataStreamDevices.cppm StarDataStreamExtra.cppm
+          StarJsonExtra.cppm StarLuaConverters.cppm StarNetImpl.cppm
+          scripting/StarUtilityLuaBindings.cppm
           StarFormat.cppm StarStreamFormatter.cppm
           StarHash.cppm StarFlatHashTable.cppm StarFlatHashMap.cppm StarFlatHashSet.cppm
           StarMaybe.cppm StarVariant.cppm StarList.cppm StarMap.cppm StarSet.cppm

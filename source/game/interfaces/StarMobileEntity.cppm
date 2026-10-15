@@ -3,10 +3,10 @@ import std;
 import star.json;
 import star.id_map;
 import star.maybe;
-#include "StarCasting.hpp"
+import star.casting;
 import star.data_stream;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 
 

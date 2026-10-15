@@ -6,7 +6,7 @@ import star.list;
 import star.map;
 import star.data_stream;
 import star.set;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 import star.net_element;
 

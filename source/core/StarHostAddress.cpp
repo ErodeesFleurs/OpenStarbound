@@ -1,13 +1,42 @@
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <stdio.h>
+#else
+#ifdef STAR_SYSTEM_FREEBSD
+#include <sys/types.h>
+#include <sys/socket.h>
+#endif
+#include <errno.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <netinet/udp.h>
+#include <netinet/tcp.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <poll.h>
+#endif
+
+#ifndef AI_ADDRCONFIG
+#define AI_ADDRCONFIG 0
+#endif
+
 import std;
 import star.format;
 import star.string;
 import star.either;
 import star.host_address;
 import star.lexical_cast;
-#include "StarNetImpl.hpp"
+import star.net_impl;
 import star.hash;
 
 namespace Star {
+
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+static WindowsSocketInitializer g_windowsSocketInitializer;
+#endif
 
 HostAddress HostAddress::localhost(NetworkMode mode) {
   if (mode == NetworkMode::IPv4) {

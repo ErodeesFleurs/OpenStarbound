@@ -1,6 +1,7 @@
+import star.lua_root;
 import std;
 import star.json;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.color;
 import star.font;
@@ -38,7 +39,7 @@ import star.image;
 import star.application_controller;
 import star.variant;
 import star.renderer;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.asset_source;
 import star.assets;
 import star.root_base;

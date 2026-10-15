@@ -1,7 +1,7 @@
 import std;
 import star.xx_hash;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
 import star.game_types;
 import star.interpolation;
@@ -21,8 +21,8 @@ import star.thread;
 import star.directives;
 import star.random;
 import star.weighted_pool;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.ordered_map;
 import star.lru_cache;
 import star.time;

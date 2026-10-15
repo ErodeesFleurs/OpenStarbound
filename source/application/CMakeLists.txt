@@ -20,6 +20,15 @@ add_library (star_application_modules STATIC
   )
 
 if (STAR_ENABLE_STEAM_INTEGRATION)
+  add_library (star_steam_dispatch_modules STATIC)
+  target_sources (star_steam_dispatch_modules PUBLIC FILE_SET CXX_MODULES FILES
+      StarSteamDispatch.cppm)
+  target_include_directories (star_steam_dispatch_modules PRIVATE
+      ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
+  target_link_libraries (star_steam_dispatch_modules PUBLIC star_modules
+      PRIVATE star_build_config star_steam_dependencies)
+  set_target_properties (star_steam_dispatch_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
+  target_link_libraries (star_application_module_interfaces PUBLIC star_steam_dispatch_modules)
   target_sources (star_application_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
       StarDesktopService_pc_steam.cppm
       StarStatisticsService_pc_steam.cppm

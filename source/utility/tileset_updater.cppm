@@ -1,8 +1,10 @@
+module;
 import std;
 import star.json;
 import star.string;
 import star.list;
 import star.map;
+import star.set;
 import star.image;
 
 import star.tileset_database;
@@ -101,4 +103,14 @@ private:
   StringMap<StringMap<StringSet>> m_preexistingImages;
 };
 
+}
+
+
+export module star.tileset_updater;
+
+export namespace Star {
+  using ::Star::Tile;
+  using ::Star::TileDatabase;
+  using ::Star::Tileset;
+  using ::Star::TilesetUpdater;
 }

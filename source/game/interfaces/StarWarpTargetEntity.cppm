@@ -2,11 +2,11 @@ module;
 import std;
 import star.json;
 import star.id_map;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.data_stream;
 import star.vector;
 import star.game_types;
-#include "StarCasting.hpp"
+import star.casting;
 import star.bi_map;
 import star.list;
 

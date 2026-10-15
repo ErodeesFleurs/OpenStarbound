@@ -1,4 +1,5 @@
 module;
+import star.uuid;
 import std;
 import star.json;
 import star.string;
@@ -25,13 +26,13 @@ import star.set;
 import star.maybe;
 import star.rpc_promise;
 import star.game_types;
-#include "StarCasting.hpp"
+import star.casting;
 import star.listener;
 import star.ordered_map;
 
 import star.shell_parser;
-#include "StarLuaComponents.hpp"
-#include "StarLuaRoot.hpp"
+import star.lua_components;
+import star.lua_root;
 
 import star.drawable;
 import star.font_texture_group;

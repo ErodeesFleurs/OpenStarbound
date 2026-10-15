@@ -4,8 +4,8 @@ import star.maybe;
 import star.format;
 import star.json;
 import star.xx_hash;
-#include "StarJsonExtra.hpp"
-#include "StarUtilityLuaBindings.hpp"
+import star.json_extra;
+import star.utility_lua_bindings;
 import star.data_stream;
 import star.uuid;
 import star.random;
@@ -14,9 +14,10 @@ import star.interpolation;
 import star.perlin;
 import star.logging;
 import star.rpc_promise;
-#include "StarLuaConverters.hpp"
+import star.lua_converters;
 import star.string;
 import star.string_view;
+import star.lexical_cast;
 import star.vector;
 import star.list;
 import star.image_processing;

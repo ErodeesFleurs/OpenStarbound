@@ -17,10 +17,10 @@ import star.thread;
 import star.directives;
 import star.asset_path;
 import star.bi_map;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.vector;
 import star.variant;
-#include "StarCasting.hpp"
+import star.casting;
 
 import star.drawable;
 import star.item_descriptor;
@@ -36,7 +36,7 @@ import star.physics_entity;
 
 import star.light_source;
 
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.net_element;
 import star.net_element_basic_fields;
 import star.net_element_float_fields;

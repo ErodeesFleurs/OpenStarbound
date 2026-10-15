@@ -1,9 +1,9 @@
 import std;
 import star.string;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.lua;
-#include "StarLuaConverters.hpp"
+import star.lua_converters;
 import star.image;
 import star.color;
 import star.ordered_map;

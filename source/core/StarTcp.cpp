@@ -1,3 +1,24 @@
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <stdio.h>
+#else
+#ifdef STAR_SYSTEM_FREEBSD
+#include <sys/types.h>
+#include <sys/socket.h>
+#endif
+#include <errno.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <netinet/udp.h>
+#include <netinet/tcp.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <poll.h>
+#endif
+
 import std;
 import star.format;
 import star.io_device;
@@ -8,7 +29,7 @@ import star.thread;
 import star.socket;
 import star.tcp;
 import star.logging;
-#include "StarNetImpl.hpp"
+import star.net_impl;
 
 namespace Star {
 

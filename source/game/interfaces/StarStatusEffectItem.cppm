@@ -3,7 +3,7 @@ import std;
 import star.list;
 import star.json;
 import star.id_map;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.data_stream;
 
 import star.status_types;

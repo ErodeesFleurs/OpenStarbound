@@ -1,4 +1,4 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import std;
 import star.maybe;
 import star.json;

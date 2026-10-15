@@ -1,5 +1,5 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.list;
 import star.bi_map;
 import star.data_stream;
@@ -24,7 +24,7 @@ import star.map;
 import star.maybe;
 import star.format;
 import star.version;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.image;
 
 import star.collision_block;

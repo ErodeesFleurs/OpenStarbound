@@ -1,5 +1,5 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.string;
 import star.data_stream;
 import star.color;
@@ -11,7 +11,7 @@ import star.thread;
 import star.directives;
 import star.asset_path;
 import star.json_rpc;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.game_types;
 import std;
 import star.time;

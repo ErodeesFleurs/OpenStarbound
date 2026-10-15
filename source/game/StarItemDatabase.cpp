@@ -1,4 +1,4 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
 import star.thread;
 import star.data_stream;
@@ -8,7 +8,7 @@ import star.lru_cache;
 import star.time;
 import star.random;
 import star.ttl_cache;
-#include "StarCasting.hpp"
+import star.casting;
 import star.game_types;
 import star.set;
 import star.string;
@@ -19,7 +19,7 @@ import star.hash;
 import star.string_view;
 import star.directives;
 import star.asset_path;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
@@ -37,9 +37,9 @@ import star.a_star;
 import star.audio;
 import star.map;
 
-#include "StarLuaRoot.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
+import star.lua_root;
+import star.lua_components;
+import star.lua_actor_movement_component;
 import star.drawable;
 import star.celestial_coordinate;
 import star.quest_descriptor;
@@ -97,7 +97,7 @@ import star.tools;
 import star.effect_source_item;
 import star.previewable_item;
 import star.armors;
-#include "StarUtilityLuaBindings.hpp"
+import star.utility_lua_bindings;
 import star.rebuilder;
 
 import star.thrown_item;

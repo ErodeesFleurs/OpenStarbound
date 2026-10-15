@@ -1,6 +1,6 @@
 import star.json;
-#include "StarJsonExtra.hpp"
-#include "StarStrongTypedef.hpp"
+import star.json_extra;
+import star.strong_typedef;
 import star.data_stream;
 import star.id_map;
 import star.ordered_map;

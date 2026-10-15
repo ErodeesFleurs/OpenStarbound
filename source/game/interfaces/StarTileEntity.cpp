@@ -1,16 +1,16 @@
 import star.json;
 import star.id_map;
-#include "StarCasting.hpp"
+import star.casting;
 import star.vector;
 import star.data_stream;
 import star.game_types;
 import star.material_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 import star.list;
 import star.variant;
 import star.rpc_promise;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.ordered_map;
 import star.thread;
 import star.io_device;
@@ -26,7 +26,7 @@ import std;
 import star.string;
 import star.version;
 
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;

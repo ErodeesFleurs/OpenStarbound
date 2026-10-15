@@ -1,7 +1,7 @@
 module;
 import std;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.set;
 import star.string;
 import star.data_stream;
@@ -15,7 +15,7 @@ import star.directives;
 import star.asset_path;
 import star.bi_map;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.random;
 
 

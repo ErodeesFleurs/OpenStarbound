@@ -20,10 +20,10 @@ import star.string_view;
 import star.directives;
 import star.asset_path;
 import star.game_types;
-#include "StarCasting.hpp"
+import star.casting;
 import star.vector;
 import star.bi_map;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 
 import star.drawable;
 import star.entity_rendering_types;

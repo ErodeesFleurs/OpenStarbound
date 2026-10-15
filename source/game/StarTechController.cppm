@@ -31,8 +31,8 @@ import star.particle;
 import star.mixer;
 import star.light_source;
 import star.networked_animator;
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
+import star.lua_components;
+import star.lua_actor_movement_component;
 
 import star.tech_database;
 
@@ -46,6 +46,8 @@ import star.net_element_group;
 namespace Star {
 
 class StatusController;
+class Entity;
+class ActorMovementController;
 
 // Class that acts as a movement controller for the parent entity that supports
 // a variety scriptable "Tech" that the entity can use that affect movement,

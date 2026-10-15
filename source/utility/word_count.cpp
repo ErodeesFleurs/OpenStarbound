@@ -11,7 +11,7 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 import star.game_types;
 import star.file;

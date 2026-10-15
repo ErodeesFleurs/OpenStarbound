@@ -18,10 +18,10 @@ import star.time;
 import star.version;
 import star.file;
 import star.id_map;
-#include "StarCasting.hpp"
+import star.casting;
 import star.variant;
 import star.rpc_promise;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.game_types;
 import star.maybe;
 import star.vector;
@@ -43,13 +43,15 @@ import star.worker_pool;
 
 import star.sector_array_2d;
 import star.perlin;
-#include "StarBTree.hpp"
+import star.btree;
 import star.lru_cache;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.btree_database;
 import star.lua;
 
-#include "StarTestUniverse.hpp"
+import star.test_universe;
+import star.universe_client;
+import star.universe_server;
 import star.asset_source;
 import star.assets;
 import star.root_base;
@@ -77,7 +79,7 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 import star.physics_entity;
@@ -104,9 +106,9 @@ import star.ai_types;
 import star.entity_rendering_types;
 import star.entity_rendering;
 import star.player_types;
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_components;
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.radio_message_database;
 import star.player;
 import star.liquid_types;

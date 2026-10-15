@@ -1,14 +1,10 @@
-#pragma once
+module;
 
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <stdio.h>
 
-import std;
-#ifdef STAR_SYSTEM_FAMILY_WINDOWS
-import star.string_windows;
-#endif
 #else
 #ifdef STAR_SYSTEM_FREEBSD
 #include <sys/types.h>
@@ -24,6 +20,10 @@ import star.string_windows;
 #include <unistd.h>
 #include <fcntl.h>
 #include <poll.h>
+#endif
+import std;
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+import star.string_windows;
 #endif
 import star.string;
 import star.format;
@@ -44,7 +44,6 @@ struct WindowsSocketInitializer {
       fatalError("WSAStartup failed", false);
   };
 };
-static WindowsSocketInitializer g_windowsSocketInitializer;
 #endif
 
 inline String netErrorString() {
@@ -166,3 +165,19 @@ struct SocketImpl {
 };
 
 }
+
+export module star.net_impl;
+
+export namespace Star {
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+  using ::Star::WindowsSocketInitializer;
+#endif
+  using ::Star::netErrorString;
+  using ::Star::netErrorConnectionReset;
+  using ::Star::netErrorInterrupt;
+  using ::Star::setAddressFromNative;
+  using ::Star::setNativeFromAddress;
+  using ::Star::invalidSocketDescriptor;
+  using ::Star::SocketImpl;
+}
+

@@ -5,7 +5,7 @@ import star.stream_formatter;
 import star.json;
 
 import star.vector;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.string;
 import star.poly;

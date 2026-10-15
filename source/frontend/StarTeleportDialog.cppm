@@ -1,7 +1,7 @@
 module;
 import std;
 import star.json;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.color;
 import star.list;
@@ -21,7 +21,7 @@ import star.game_types;
 import star.set;
 import star.audio;
 import star.map;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.variant;
 import star.random;
 import star.weighted_pool;

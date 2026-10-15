@@ -1,9 +1,9 @@
 import std;
 import star.data_stream;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.game_types;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 
 import star.game_timers;
 

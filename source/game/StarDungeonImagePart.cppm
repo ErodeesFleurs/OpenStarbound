@@ -1,6 +1,6 @@
 module;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.data_stream;
 import star.bi_map;
 import star.vector;
@@ -26,7 +26,7 @@ import star.map;
 import star.maybe;
 import star.format;
 import star.version;
-#include "StarCasting.hpp"
+import star.casting;
 import star.image;
 
 

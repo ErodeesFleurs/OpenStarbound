@@ -1,6 +1,6 @@
 import std;
 import star.ref_ptr;
-#include "StarCasting.hpp"
+import star.casting;
 
 #include "gtest/gtest.h"
 

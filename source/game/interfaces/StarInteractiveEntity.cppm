@@ -5,10 +5,10 @@ import star.list;
 import star.json;
 import star.id_map;
 import star.game_types;
-#include "StarCasting.hpp"
+import star.casting;
 import star.vector;
 import star.data_stream;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 
 import star.interaction_types;

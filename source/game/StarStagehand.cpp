@@ -1,12 +1,12 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
-#include "StarCasting.hpp"
+import star.casting;
 import star.vector;
 import star.data_stream;
 import star.game_types;
 import star.poly;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 import star.lua;
 import star.ordered_map;
@@ -26,7 +26,7 @@ import std;
 import star.string;
 import star.maybe;
 import star.version;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 
 import star.damage_types;
 import star.world_geometry;
@@ -34,7 +34,7 @@ import star.status_types;
 import star.damage;
 import star.light_source;
 import star.entity;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.scripted_entity;
 import star.asset_source;
 import star.assets;
@@ -42,7 +42,7 @@ import star.root_base;
 import star.configuration;
 import star.root;
 import star.stagehand;
-#include "StarLuaGameConverters.hpp"
+import star.lua_game_converters;
 
 import star.behavior_lua_bindings;
 import star.entity_lua_bindings;
@@ -50,7 +50,7 @@ import star.config_lua_bindings;
 
 import star.behavior_state;
 
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 import star.net_compatibility;
 import star.byte_array;

@@ -13,8 +13,8 @@ import star.random;
 import star.ttl_cache;
 import star.weighted_pool;
 import star.set;
-#include "StarBTree.hpp"
-#include "StarDataStreamDevices.hpp"
+import star.btree;
+import star.data_stream_devices;
 import star.btree_database;
 import star.either;
 import star.vector;

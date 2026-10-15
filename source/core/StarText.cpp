@@ -2,7 +2,7 @@ import std;
 import star.memory;
 import star.format;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.string;
 import star.string_view;
 import star.list;

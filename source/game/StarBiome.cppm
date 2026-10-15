@@ -9,7 +9,7 @@ import star.perlin;
 import star.weighted_pool;
 import star.id_map;
 import star.set;
-#include "StarCasting.hpp"
+import star.casting;
 import star.data_stream;
 import star.game_types;
 import star.material_types;
@@ -20,7 +20,7 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 
 
 import star.damage_types;

@@ -1,6 +1,6 @@
 import std;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.color;
 import star.bi_map;
 import star.sky_types;
@@ -9,7 +9,7 @@ import star.vector;
 import star.celestial_coordinate;
 import star.sky_parameters;
 import star.sky_render_data;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.list;
 import star.static_random;
 import star.random_point;

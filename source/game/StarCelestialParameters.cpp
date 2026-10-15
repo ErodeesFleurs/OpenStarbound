@@ -1,5 +1,5 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.variant;
 import star.game_types;
 import star.color;
@@ -16,8 +16,8 @@ import star.thread;
 import star.directives;
 import star.asset_path;
 import star.static_random;
-#include "StarDataStreamDevices.hpp"
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_devices;
+import star.data_stream_extra;
 import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;

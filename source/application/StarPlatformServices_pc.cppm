@@ -19,7 +19,7 @@ import star.user_generated_content_service;
 import star.desktop_service;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-#include "StarSteamDispatch.hpp"
+import star.steam_dispatch;
 #endif
 
 

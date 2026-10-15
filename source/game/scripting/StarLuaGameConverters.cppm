@@ -1,77 +1,25 @@
-#pragma once
+module;
 import std;
 import star.lua;
-import star.json;
-import star.id_map;
-import star.variant;
-#include "StarCasting.hpp"
-#include "StarLuaConverters.hpp"
-import star.bi_map;
-#include "StarStrongTypedef.hpp"
-import star.list;
-import star.a_star;
-import star.game_types;
-import star.liquid_types;
+import star.lua_converters;
 import star.maybe;
-import star.rpc_promise;
-import star.data_stream;
-import star.string;
-import star.color;
-import star.image_processing;
-import star.hash;
-import star.string_view;
-import star.thread;
-import star.directives;
-import star.asset_path;
-import star.audio;
-import star.map;
-import star.set;
-import star.random;
-import star.weighted_pool;
-import star.either;
-
-
-import star.light_source;
-import star.entity;
-import star.force_regions;
-import star.physics_entity;
 import star.inventory_types;
 import star.collision_block;
 import star.platformer_astar_types;
-
-import star.tile_damage;
-import star.interaction_types;
-import star.item_descriptor;
-import star.celestial_coordinate;
-import star.quest_descriptor;
-import star.interactive_entity;
-import star.tile_entity;
-import star.tile_modification;
-#include "StarLuaRoot.hpp"
-import star.world;
-import star.movement_controller;
-import star.anchorable_entity;
-
-import star.game_timers;
-import star.actor_movement_controller;
-import star.damage_types;
-import star.world_geometry;
 import star.status_types;
-import star.damage;
-import star.sky_types;
-import star.animation;
-import star.particle;
-import star.weather_types;
-import star.world_parameters;
-import star.celestial_parameters;
-import star.uuid;
-import star.warping;
-import star.sky_parameters;
-import star.system_world;
-import star.drawable;
-import star.mixer;
 
 namespace Star {
+
+class Entity;
+class AudioInstance;
+struct ActorJumpProfile;
+struct ActorMovementParameters;
+struct ActorMovementModifiers;
+struct DamageRequest;
+struct DamageNotification;
+struct LiquidLevel;
+struct Drawable;
+struct PhysicsMovingCollision;
 
 struct Collection;
 struct Collectable;
@@ -228,4 +176,68 @@ struct LuaUserDataMethods<std::shared_ptr<AudioInstance>> {
   static LuaMethods<std::shared_ptr<AudioInstance>> make();
 };
 
+}
+
+export module star.lua_game_converters;
+
+export namespace Star {
+  template <>
+  struct LuaConverter<InventorySlot>;
+  template <>
+  struct LuaConverter<CollisionKind>;
+  template <>
+  struct LuaConverter<CollisionSet>;
+  template <>
+  struct LuaConverter<PlatformerAStar::Path>;
+  template <>
+  struct LuaConverter<PlatformerAStar::PathFinder>;
+  template <>
+  struct LuaUserDataMethods<PlatformerAStar::PathFinder>;
+  template <>
+  struct LuaConverter<PlatformerAStar::Parameters>;
+  template <>
+  struct LuaConverter<ActorJumpProfile>;
+  template <>
+  struct LuaConverter<ActorMovementParameters>;
+  template <>
+  struct LuaConverter<ActorMovementModifiers>;
+  template <>
+  struct LuaConverter<StatModifier>;
+  template <>
+  struct LuaConverter<EphemeralStatusEffect>;
+  template <>
+  struct LuaConverter<DamageRequest>;
+  template <>
+  struct LuaConverter<DamageNotification>;
+  template <>
+  struct LuaConverter<LiquidLevel>;
+  template <>
+  struct LuaConverter<Drawable>;
+  template <>
+  struct LuaConverter<Collection>;
+  template <>
+  struct LuaConverter<Collectable>;
+  template <>
+  struct LuaConverter<std::weak_ptr<BehaviorState>>;
+  template <>
+  struct LuaUserDataMethods<std::weak_ptr<BehaviorState>>;
+  template <>
+  struct LuaConverter<NodeStatus>;
+  template <>
+  struct LuaConverter<PhysicsMovingCollision>;
+  template <>
+  struct LuaConverter<std::weak_ptr<Blackboard>>;
+  template <>
+  struct LuaUserDataMethods<std::weak_ptr<Blackboard>>;
+  template <>
+  struct LuaConverter<std::shared_ptr<Entity>>;
+  template <>
+  struct LuaUserDataMethods<std::shared_ptr<Entity>>;
+  template <>
+  struct LuaConverter<std::shared_ptr<AudioInstance>>;
+  template <>
+  struct LuaUserDataMethods<std::shared_ptr<AudioInstance>>;
+
+  using ::Star::LuaConverter;
+  using ::Star::LuaUserDataMethods;
 }

@@ -1,6 +1,6 @@
 import std;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.input_event;
 import star.set;
 import star.ordered_map;

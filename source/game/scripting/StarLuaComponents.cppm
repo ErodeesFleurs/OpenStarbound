@@ -1,45 +1,22 @@
-#pragma once
+module;
 import std;
 import star.string;
 import star.lua;
 import star.maybe;
 import star.format;
 import star.json;
-import star.id_map;
-import star.random;
 import star.periodic;
 import star.logging;
 import star.thread;
 import star.listener;
 import star.variant;
-#include "StarCasting.hpp"
-import star.data_stream;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
-import star.bi_map;
 import star.list;
 import star.rpc_promise;
-
-import star.damage_types;
-import star.world_geometry;
-import star.status_types;
-import star.damage;
-import star.light_source;
-import star.entity;
-import star.tile_damage;
-import star.interaction_types;
-import star.item_descriptor;
-import star.celestial_coordinate;
-import star.quest_descriptor;
-import star.interactive_entity;
-import star.collision_block;
-import star.tile_entity;
-import star.tile_modification;
-#include "StarLuaRoot.hpp"
-import star.force_regions;
+import star.lua_root;
+import star.lua_converters;
+import star.lua_game_converters;
 import star.world;
-#include "StarLuaGameConverters.hpp"
-
 import star.world_lua_bindings;
 
 namespace Star {
@@ -397,8 +374,7 @@ LuaCallbacks LuaUpdatableComponent<Base>::makeThreadsCallbacks() {
   callbacks.registerCallback("setMessageHandler", [this](String message, Maybe<LuaFunction> handler) {
     if (handler) {
       ThreadMessageHandler handlerInfo = {};
-      handlerInfo.name = message;
-      handlerInfo.function.emplace(handler.take());
+      handlerInfo.name = message;      handlerInfo.function.emplace(handler.take());
       m_threadMessageHandlers.set(handlerInfo.name, handlerInfo);
     }
     else
@@ -521,4 +497,16 @@ void LuaMessageHandlingComponent<Base>::contextShutdown() {
   m_messageHandlers.clear();
   Base::contextShutdown();
 }
+}
+
+export module star.lua_components;
+
+export namespace Star {
+  using ::Star::LuaComponentExceptionTag;
+  using ::Star::LuaComponentException;
+  using ::Star::LuaBaseComponent;
+  using ::Star::LuaStorableComponent;
+  using ::Star::LuaUpdatableComponent;
+  using ::Star::LuaWorldComponent;
+  using ::Star::LuaMessageHandlingComponent;
 }

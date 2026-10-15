@@ -6,7 +6,7 @@ import star.json;
 import star.byte_array;
 import star.rpc_promise;
 import star.json_rpc;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.logging;
 
 namespace Star {

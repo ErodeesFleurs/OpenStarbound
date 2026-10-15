@@ -1,4 +1,4 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import std;
 import star.memory;
 import star.json;
@@ -9,11 +9,11 @@ import star.thread;
 import star.time;
 import star.random;
 import star.ttl_cache;
-#include "StarCasting.hpp"
+import star.casting;
 import star.game_types;
 import star.maybe;
 import star.variant;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.rpc_promise;
 import star.vector;
 import star.rect;
@@ -43,7 +43,7 @@ import star.logging;
 import star.format;
 import star.version;
 
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 
 import star.damage_types;
 import star.world_geometry;
@@ -99,7 +99,7 @@ import star.widget;
 import star.widget_parsing;
 import star.gui_reader;
 import star.widget_lua_bindings;
-#include "StarLuaGameConverters.hpp"
+import star.lua_game_converters;
 import star.canvas_widget;
 import star.label_widget;
 import star.list_widget;

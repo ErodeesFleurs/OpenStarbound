@@ -5,7 +5,7 @@ import star.string;
 import star.directory_asset_source;
 import star.thread;
 import star.time;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.file;
 import star.variant;
 import star.ordered_map;

@@ -1,4 +1,4 @@
-#pragma once
+module;
 import std;
 import star.string;
 import star.maybe;
@@ -8,24 +8,18 @@ import star.json;
 import star.poly;
 import star.color;
 import star.set;
-import star.random;
 import star.list;
 import star.rect;
-import star.hash;
-import star.data_stream;
-import star.string_view;
-import star.thread;
 
 import star.array;
 import star.vector;
 import star.matrix3;
 import star.line;
 import star.algorithm;
+import star.weighted_pool;
+import star.directives;
 namespace Star {
 
-class Directives;
-template <typename Item>
-struct WeightedPool;
 
 // Extra methods to parse a variety of types out of pure JSON.  Throws
 // JsonException if json is not of correct type or size.
@@ -400,6 +394,101 @@ Polygon<Float> fixInsideOutPoly(Polygon<Float> p) {
 }
 
 }
-import star.weighted_pool;
-import star.image_processing;
-import star.directives;
+
+export module star.json_extra;
+
+export namespace Star {
+  using ::Star::jsonToSize;
+  using ::Star::jsonFromSize;
+  using ::Star::jsonToVec2D;
+  using ::Star::jsonToVec2F;
+  using ::Star::jsonFromVec2F;
+  using ::Star::jsonToVec2I;
+  using ::Star::jsonFromVec2I;
+  using ::Star::jsonToVec2U;
+  using ::Star::jsonFromVec2U;
+  using ::Star::jsonToVec2B;
+  using ::Star::jsonFromVec2B;
+  using ::Star::jsonToVec3D;
+  using ::Star::jsonToVec3F;
+  using ::Star::jsonFromVec3F;
+  using ::Star::jsonToVec3I;
+  using ::Star::jsonFromVec3I;
+  using ::Star::jsonToVec3B;
+  using ::Star::jsonToVec4B;
+  using ::Star::jsonToVec4I;
+  using ::Star::jsonToVec4F;
+  using ::Star::jsonToRectD;
+  using ::Star::jsonFromRectD;
+  using ::Star::jsonToRectF;
+  using ::Star::jsonFromRectF;
+  using ::Star::jsonToRectI;
+  using ::Star::jsonFromRectI;
+  using ::Star::jsonToRectU;
+  using ::Star::jsonFromRectU;
+  using ::Star::jsonToColor;
+  using ::Star::jsonFromColor;
+  using ::Star::fixInsideOutPoly;
+  using ::Star::jsonToPolyD;
+  using ::Star::jsonToPolyF;
+  using ::Star::jsonToPolyI;
+  using ::Star::jsonFromPolyF;
+  using ::Star::jsonToLine2F;
+  using ::Star::jsonFromLine2F;
+  using ::Star::jsonToMat3F;
+  using ::Star::jsonFromMat3F;
+  using ::Star::jsonToStringList;
+  using ::Star::jsonFromStringList;
+  using ::Star::jsonToStringSet;
+  using ::Star::jsonFromStringSet;
+  using ::Star::jsonToFloatList;
+  using ::Star::jsonToIntList;
+  using ::Star::jsonToVec2IList;
+  using ::Star::jsonToVec2UList;
+  using ::Star::jsonToVec2FList;
+  using ::Star::jsonToVec4BList;
+  using ::Star::jsonToColorList;
+  using ::Star::jsonToDirectivesList;
+  using ::Star::jsonFromDirectivesList;
+  using ::Star::weightedChoiceFromJson;
+  using ::Star::binnedChoiceFromJson;
+  using ::Star::jsonToWeightedPool;
+  using ::Star::jsonFromWeightedPool;
+  using ::Star::jsonToArrayU;
+  using ::Star::jsonToArrayS;
+  using ::Star::jsonToArrayI;
+  using ::Star::jsonToArrayF;
+  using ::Star::jsonToArrayD;
+  using ::Star::jsonToStringArray;
+  using ::Star::jsonToList;
+  using ::Star::jsonFromList;
+  using ::Star::jsonToSet;
+  using ::Star::jsonFromSet;
+  using ::Star::jsonToMapKV;
+  using ::Star::jsonToMapK;
+  using ::Star::jsonToMapV;
+  using ::Star::jsonToMap;
+  using ::Star::jsonFromMapKV;
+  using ::Star::jsonFromMapK;
+  using ::Star::jsonFromMapV;
+  using ::Star::jsonFromMap;
+  using ::Star::jsonFromMaybe;
+  using ::Star::jsonToMaybe;
+
+  extern "C++" {
+  template <>
+  WeightedPool<int> jsonToWeightedPool(Json const& source);
+  template <>
+  WeightedPool<unsigned> jsonToWeightedPool(Json const& source);
+  template <>
+  WeightedPool<float> jsonToWeightedPool(Json const& source);
+  template <>
+  WeightedPool<double> jsonToWeightedPool(Json const& source);
+  template <>
+  WeightedPool<String> jsonToWeightedPool(Json const& source);
+  template <>
+  WeightedPool<JsonArray> jsonToWeightedPool(Json const& source);
+  template <>
+  WeightedPool<JsonObject> jsonToWeightedPool(Json const& source);
+  }
+}

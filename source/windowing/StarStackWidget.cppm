@@ -2,7 +2,7 @@ module;
 import std;
 import star.json;
 
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.application;
 import star.statistics_service;

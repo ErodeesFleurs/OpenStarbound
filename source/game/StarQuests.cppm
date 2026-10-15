@@ -22,19 +22,22 @@ import star.drawable;
 import star.vector;
 import star.celestial_coordinate;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.quest_descriptor;
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarStrongTypedef.hpp"
+import star.lua_components;
+import star.lua_actor_movement_component;
+import star.strong_typedef;
 import star.uuid;
 import star.warping;
+import star.system_world;
 
 namespace Star {
 
 class Player;
 class UniverseClient;
 class QuestTemplate;
+class World;
+class Entity;
 
 enum class QuestState {
   // New - being set up and quest hasn't been offered yet (or was offered and declined)

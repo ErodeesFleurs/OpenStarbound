@@ -7,7 +7,7 @@ import star.asset_source;
 import star.string;
 import star.directory_asset_source;
 import star.file;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.logging;
 
 

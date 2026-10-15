@@ -1,5 +1,5 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.set;
 import star.string;
 import star.color;
@@ -13,7 +13,7 @@ import star.directives;
 import star.asset_path;
 import star.bi_map;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.random;
 import star.periodic_function;
 import star.ordered_map;
@@ -48,13 +48,13 @@ import star.light_source;
 import star.networked_animator;
 import star.humanoid;
 import star.status_types;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.asset_source;
 import star.assets;
 import star.root_base;
 import star.configuration;
 import star.root;
-#include "StarUtilityLuaBindings.hpp"
+import star.utility_lua_bindings;
 import star.name_generator;
 
 import star.species_database;

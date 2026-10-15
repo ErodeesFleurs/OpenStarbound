@@ -1,10 +1,10 @@
 module;
 import std;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
@@ -46,7 +46,7 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 import star.physics_entity;

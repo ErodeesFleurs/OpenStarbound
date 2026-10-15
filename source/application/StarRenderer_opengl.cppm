@@ -10,7 +10,7 @@ import star.set;
 
 import star.rect;
 import star.image;
-#include "StarCasting.hpp"
+import star.casting;
 import star.texture_atlas;
 import star.variant;
 import star.bi_map;

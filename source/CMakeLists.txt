@@ -488,6 +488,25 @@ if(STAR_BUILD_GUI)
     function(star_import_qt_plugins target)
       qt5_import_plugins(${target} INCLUDE ${STAR_QT_PLATFORM_PLUGIN})
     endfunction()
+    function(star_module_moc target interface output)
+      set(moc_includes)
+      foreach(qt_target Qt5::Core Qt5::Gui Qt5::Widgets)
+        get_target_property(qt_includes ${qt_target} INTERFACE_INCLUDE_DIRECTORIES)
+        foreach(directory IN LISTS qt_includes)
+          list(APPEND moc_includes "-I${directory}")
+        endforeach()
+      endforeach()
+      set(moc_source "${CMAKE_CURRENT_SOURCE_DIR}/${interface}")
+      set(moc_output "${CMAKE_CURRENT_BINARY_DIR}/${output}")
+      add_custom_command(OUTPUT "${moc_output}"
+        COMMAND Qt5::moc -i ${moc_includes}
+          -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB
+          "${moc_source}" -o "${moc_output}"
+        DEPENDS "${moc_source}" Qt5::moc
+        VERBATIM)
+      set_source_files_properties("${moc_output}" PROPERTIES HEADER_FILE_ONLY TRUE)
+      target_sources(${target} PRIVATE "${moc_output}")
+    endfunction()
     add_subdirectory(json_tool)
 
     if(STAR_ENABLE_STEAM_INTEGRATION)

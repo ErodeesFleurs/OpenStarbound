@@ -1,5 +1,5 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.list;
 import star.rect;
 import star.image_processing;
@@ -12,7 +12,7 @@ import star.asset_path;
 import star.string;
 import star.poly;
 import star.color;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.ordered_map;
 import star.bi_map;
 import star.io_device;

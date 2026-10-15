@@ -1,11 +1,11 @@
 module;
 import std;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.xx_hash;
 import star.id_map;
 import star.lua;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.color;
 import star.font;
@@ -26,7 +26,7 @@ import star.game_types;
 import star.set;
 import star.audio;
 import star.map;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.rpc_promise;
 import star.ordered_map;
 import star.byte_array;
@@ -43,7 +43,7 @@ import star.variant;
 import star.random;
 import star.weighted_pool;
 import star.ordered_set;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
@@ -55,7 +55,7 @@ import star.worker_pool;
 
 import star.sector_array_2d;
 import star.perlin;
-#include "StarBTree.hpp"
+import star.btree;
 import star.lru_cache;
 import star.btree_database;
 import star.image;
@@ -88,7 +88,7 @@ import star.widget;
 import star.widget_parsing;
 import star.gui_reader;
 import star.widget_lua_bindings;
-#include "StarLuaGameConverters.hpp"
+import star.lua_game_converters;
 import star.inventory_types;
 import star.item_descriptor;
 import star.damage_types;
@@ -119,7 +119,7 @@ import star.main_interface;
 
 
 import star.pane;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 
 
 import star.base_script_pane;
@@ -178,7 +178,7 @@ import star.universe;
 // TODO: make this more thread safe
 import star.universe_client;
 import star.shell_parser;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.cinematic;
 import star.client_command_processor;
 

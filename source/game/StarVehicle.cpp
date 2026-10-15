@@ -1,9 +1,9 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
 import star.variant;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.rpc_promise;
 import star.lua;
 import star.random;
@@ -18,7 +18,7 @@ import star.thread;
 import star.listener;
 import std;
 import star.version;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.audio;
 import star.list;
 import star.map;
@@ -54,7 +54,7 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 import star.physics_entity;
@@ -62,18 +62,18 @@ import star.mobile_entity;
 import star.animated_part_set;
 import star.networked_animator;
 import star.movement_controller;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.anchorable_entity;
 import star.lounging_entities;
 import star.scripted_entity;
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_animation_component;
 import star.vehicle;
 import star.asset_source;
 import star.assets;
 import star.root_base;
 import star.configuration;
 import star.root;
-#include "StarLuaGameConverters.hpp"
+import star.lua_game_converters;
 import star.mixer;
 import star.drawable;
 import star.entity_rendering_types;
@@ -99,7 +99,7 @@ import star.game_timers;
 import star.actor_movement_controller;
 import star.ai_types;
 import star.player_types;
-#include "StarLuaActorMovementComponent.hpp"
+import star.lua_actor_movement_component;
 import star.radio_message_database;
 import star.player;
 

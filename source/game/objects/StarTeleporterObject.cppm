@@ -1,13 +1,13 @@
 module;
 import std;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.data_stream;
 import star.vector;
 import star.game_types;
-#include "StarCasting.hpp"
+import star.casting;
 import star.bi_map;
 import star.list;
 import star.random;
@@ -46,8 +46,8 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.warp_target_entity;
-#include "StarLuaComponents.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_components;
+import star.lua_animation_component;
 import star.status_effect_entity;
 import star.scripted_entity;
 import star.chat_action;

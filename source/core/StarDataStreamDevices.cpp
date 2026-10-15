@@ -1,7 +1,8 @@
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import std;
 import star.io_device;
 import star.data_stream;
+import star.buffer;
 
 import star.byte_array;
 namespace Star {

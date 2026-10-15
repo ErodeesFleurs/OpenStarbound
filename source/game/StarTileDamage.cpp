@@ -1,9 +1,9 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.interpolation;
 import star.vector;
 import star.bi_map;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.ordered_map;
 import star.thread;
 import star.io_device;

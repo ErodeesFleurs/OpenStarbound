@@ -1,6 +1,6 @@
 import star.json;
 import star.xx_hash;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
 import star.ordered_map;
 import star.lru_cache;
@@ -8,7 +8,7 @@ import star.thread;
 import star.time;
 import star.random;
 import star.ttl_cache;
-#include "StarCasting.hpp"
+import star.casting;
 import star.data_stream;
 import star.bi_map;
 import star.game_types;
@@ -16,8 +16,8 @@ import star.json_rpc;
 import star.rpc_promise;
 import star.string;
 import star.either;
-#include "StarStrongTypedef.hpp"
-#include "StarDataStreamExtra.hpp"
+import star.strong_typedef;
+import star.data_stream_extra;
 import star.logging;
 import star.lua;
 import star.list;
@@ -28,8 +28,8 @@ import star.hash;
 import star.string_view;
 import star.directives;
 import star.asset_path;
-#include "StarBTree.hpp"
-#include "StarDataStreamDevices.hpp"
+import star.btree;
+import star.data_stream_devices;
 import star.btree_database;
 import star.ordered_set;
 import star.format;
@@ -49,7 +49,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.listener;
 
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.drawable;
 import star.item;
 import star.item_descriptor;
@@ -92,7 +92,7 @@ import star.cellular_light_array;
 import star.cellular_lighting;
 import star.cellular_liquid;
 import star.world_structure;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.entity_rendering_types;
 import star.sky_render_data;
 import star.parallax;

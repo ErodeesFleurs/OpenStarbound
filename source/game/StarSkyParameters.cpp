@@ -1,7 +1,7 @@
 import std;
 import star.string;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.ordered_map;
 import star.either;
 import star.vector;
@@ -42,8 +42,8 @@ import star.force_regions;
 import star.world_parameters;
 import star.celestial_parameters;
 import star.celestial_graphics;
-#include "StarCasting.hpp"
-#include "StarDataStreamExtra.hpp"
+import star.casting;
+import star.data_stream_extra;
 
 
 import star.celestial_database;

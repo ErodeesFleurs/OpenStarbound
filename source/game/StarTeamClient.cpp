@@ -1,6 +1,6 @@
 import star.json;
 import star.xx_hash;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.data_stream;
 import star.string;
 import star.color;
@@ -11,7 +11,7 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.game_types;
 import star.time;
 import star.version;
@@ -25,7 +25,7 @@ import star.weighted_pool;
 import star.variant;
 import star.id_map;
 import star.set;
-#include "StarCasting.hpp"
+import star.casting;
 import star.either;
 import star.rpc_promise;
 import star.a_star;
@@ -43,12 +43,12 @@ import std;
 import star.worker_pool;
 
 import star.sector_array_2d;
-#include "StarBTree.hpp"
-#include "StarDataStreamDevices.hpp"
+import star.btree;
+import star.data_stream_devices;
 import star.btree_database;
 import star.json_rpc;
 
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.uuid;
 import star.drawable;
 import star.celestial_coordinate;
@@ -108,9 +108,9 @@ import star.ai_types;
 import star.entity_rendering_types;
 import star.entity_rendering;
 import star.player_types;
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_components;
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.radio_message_database;
 import star.player;
 import star.player_log;

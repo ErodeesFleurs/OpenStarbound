@@ -1,5 +1,5 @@
 module;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
 import star.xx_hash;
 import star.ordered_map;
@@ -8,7 +8,7 @@ import star.thread;
 import star.time;
 import star.random;
 import star.ttl_cache;
-#include "StarCasting.hpp"
+import star.casting;
 import star.set;
 import star.string;
 import star.color;
@@ -39,11 +39,11 @@ import star.audio;
 import star.map;
 import star.either;
 import star.periodic_function;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.vector;
 import star.weighted_pool;
 import star.byte_array;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
@@ -56,13 +56,13 @@ import star.worker_pool;
 
 import star.sector_array_2d;
 import star.perlin;
-#include "StarBTree.hpp"
+import star.btree;
 import star.btree_database;
 import star.image;
 
 
-#include "StarLuaRoot.hpp"
-#include "StarLuaActorMovementComponent.hpp"
+import star.lua_root;
+import star.lua_actor_movement_component;
 import star.drawable;
 import star.item;
 import star.item_descriptor;
@@ -115,8 +115,8 @@ import star.ai_types;
 import star.entity_rendering_types;
 import star.entity_rendering;
 import star.player_types;
-#include "StarLuaComponents.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_components;
+import star.lua_animation_component;
 import star.radio_message_database;
 import star.player;
 import star.player_tech;

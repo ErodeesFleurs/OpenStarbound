@@ -8,8 +8,8 @@ import star.game_types;
 import star.ordered_set;
 import star.data_stream;
 import star.bi_map;
-#include "StarStrongTypedef.hpp"
-#include "StarCasting.hpp"
+import star.strong_typedef;
+import star.casting;
 import star.input_event;
 import star.color;
 import star.list;

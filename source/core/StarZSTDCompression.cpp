@@ -1,7 +1,7 @@
 import std;
 import star.format;
 import star.byte_array;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;

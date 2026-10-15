@@ -8,7 +8,7 @@ import star.json;
 import star.game_types;
 import star.lua;
 import star.random;
-#include "StarLuaGameConverters.hpp"
+import star.lua_game_converters;
 
 import star.behavior_database;
 import star.behavior_state;

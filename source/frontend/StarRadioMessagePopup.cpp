@@ -1,9 +1,9 @@
 import std;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.game_types;
 import star.vector;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.color;
 import star.font;
@@ -29,7 +29,7 @@ import star.set;
 import star.audio;
 import star.map;
 import star.ordered_set;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.logging;
 import star.lexical_cast;
 

@@ -1,7 +1,7 @@
 import std;
 import star.json;
 import star.string;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.data_stream;
 import star.id_map;
 import star.status_types;

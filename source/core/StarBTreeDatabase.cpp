@@ -7,10 +7,10 @@ import star.memory;
 import star.maybe;
 import star.format;
 import star.set;
-#include "StarBTree.hpp"
+import star.btree;
 import star.ordered_map;
 import star.lru_cache;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.thread;
 import star.btree_database;
 import star.logging;

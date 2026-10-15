@@ -11,10 +11,10 @@ import star.directives;
 import star.asset_path;
 import star.maybe;
 import star.variant;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.rpc_promise;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.audio;
 import star.map;
 import star.set;
@@ -52,7 +52,7 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 import star.physics_entity;
@@ -82,9 +82,9 @@ import star.game_timers;
 import star.actor_movement_controller;
 import star.ai_types;
 import star.player_types;
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_components;
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.radio_message_database;
 import star.player;
 import star.asset_source;
@@ -107,7 +107,7 @@ import star.particle_database;
 import star.image_metadata_database;
 
 
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 import star.net_compatibility;
 import star.byte_array;

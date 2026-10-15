@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 import std;
 import star.rect;
@@ -329,4 +329,42 @@ LuaMethods<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>> LuaUserDataMethods<std:
   return methods;
 }
 
+}
+
+export module star.lua_converters;
+
+export namespace Star {
+  using ::Star::LuaConverter;
+  using ::Star::LuaUserDataMethods;
+
+  template <typename T>
+  struct LuaConverter<LuaNullTermWrapper<T>>;
+  template <typename T1, typename T2>
+  struct LuaConverter<std::pair<T1, T2>>;
+  template <typename T, std::size_t N>
+  struct LuaConverter<Vector<T, N>>;
+  template <typename T>
+  struct LuaConverter<Matrix3<T>>;
+  template <typename T>
+  struct LuaConverter<Rect<T>>;
+  template <typename T>
+  struct LuaConverter<Polygon<T>>;
+  template <typename T, std::size_t N>
+  struct LuaConverter<Line<T, N>>;
+  template <typename FirstType, typename... RestTypes>
+  struct LuaConverter<Variant<FirstType, RestTypes...>>;
+  template <typename... Types>
+  struct LuaConverter<MVariant<Types...>>;
+  template <>
+  struct LuaConverter<Color>;
+  template <>
+  struct LuaConverter<LuaCallbacks>;
+  template <typename T>
+  struct LuaConverter<RpcPromise<T>>;
+  template <typename T>
+  struct LuaUserDataMethods<RpcPromise<T>>;
+  template <typename T>
+  struct LuaConverter<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>>;
+  template <typename T>
+  struct LuaUserDataMethods<std::shared_ptr<AutoFailRpcPromiseKeeper<T>>>;
 }

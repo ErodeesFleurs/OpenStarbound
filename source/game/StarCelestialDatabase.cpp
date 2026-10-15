@@ -1,4 +1,4 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
 import star.rect;
 import star.ordered_map;
@@ -9,8 +9,8 @@ import star.random;
 import star.ttl_cache;
 import star.weighted_pool;
 import star.set;
-#include "StarBTree.hpp"
-#include "StarDataStreamDevices.hpp"
+import star.btree;
+import star.data_stream_devices;
 import star.btree_database;
 import star.either;
 import star.vector;
@@ -28,9 +28,9 @@ import star.directives;
 import star.asset_path;
 import star.perlin;
 import star.lexical_cast;
-#include "StarCasting.hpp"
+import star.casting;
 import star.file;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;

@@ -1,7 +1,7 @@
 import std;
 import star.string;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.list;
 import star.image_processing;
 import star.hash;

@@ -7,7 +7,7 @@ import star.variant;
 import star.maybe;
 import star.format;
 import star.json;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.data_stream;
 import star.id_map;
 

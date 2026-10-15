@@ -1,6 +1,6 @@
 import star.json;
 import star.xx_hash;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.ordered_map;
 import star.either;
 import star.vector;
@@ -25,7 +25,7 @@ import star.string;
 import star.lock_file;
 import star.rpc_promise;
 import star.byte_array;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
@@ -35,13 +35,13 @@ typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 import star.net_compatibility;
 import star.set;
-#include "StarBTree.hpp"
+import star.btree;
 import star.lru_cache;
 import star.btree_database;
-#include "StarCasting.hpp"
+import star.casting;
 import star.ordered_set;
 import star.perlin;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.worker_pool;
 
 import star.sector_array_2d;
@@ -57,8 +57,10 @@ import star.logging;
 import star.listener;
 import star.io_device;
 
-#include "StarUniverseServer.inc"
-#include "StarLuaComponents.hpp"
+import star.universe_server;
+import star.lua_components;
+import star.lua_converters;
+import star.lua_game_converters;
 import star.celestial_coordinate;
 import star.sky_types;
 import star.animation;
@@ -129,7 +131,7 @@ import star.asset_source;
 import star.assets;
 import star.chat_processor;
 import star.shell_parser;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.configuration;
 import star.root_base;
 import star.root;
@@ -1599,7 +1601,7 @@ void UniverseServer::shutdownInactiveWorlds() {
               m_connectionServer->sendPackets(cid, world->removeClient(clientId));
               m_clients.get(cid)->clearSubWorld(swid);
             } else {
-              clientWarpPlayer(clientId, WarpAlias::OwnShip);
+              clientWarpPlayer(clientId, WarpAlias::OwnShip, false);
             }
           }
         }
@@ -2419,7 +2421,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   if (!speciesIntroInstance.empty() && !clientConnect->introComplete) {
     Logger::info("UniverseServer: Spawning player in intro instance {}", speciesIntroInstance);
     WarpAction introWarp = WarpToWorld{InstanceWorldId(speciesIntroInstance, clientContext->playerUuid()), {}};
-    clientWarpPlayer(clientId, introWarp);
+    clientWarpPlayer(clientId, introWarp, false);
   } else if (auto reviveWarp = clientContext->playerReviveWarp()) {
     // Do not revive players at non-persistent instance worlds or on ship worlds that
     // are not their own ship.
@@ -2438,23 +2440,23 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
 
     if (useReviveWarp) {
       Logger::info("UniverseServer: Reviving player at {}", reviveWarp.world);
-      clientWarpPlayer(clientId, reviveWarp);
+      clientWarpPlayer(clientId, reviveWarp, false);
     } else {
       Logger::info("UniverseServer: Player revive position is expired, spawning back at own ship");
-      clientWarpPlayer(clientId, WarpAlias::OwnShip);
+      clientWarpPlayer(clientId, WarpAlias::OwnShip, false);
     }
   } else {
     Maybe<String> defaultReviveWarp = assets->json("/universe_server.config").optString("defaultReviveWarp");
     if (defaultReviveWarp) {
       Logger::info("UniverseServer: Spawning player at default warp");
-      clientWarpPlayer(clientId, parseWarpAction(*defaultReviveWarp));
+      clientWarpPlayer(clientId, parseWarpAction(*defaultReviveWarp), false);
     } else {
       Logger::info("UniverseServer: Spawning player at ship");
-      clientWarpPlayer(clientId, WarpAlias::OwnShip);
+      clientWarpPlayer(clientId, WarpAlias::OwnShip, false);
     }
   }
 
-  clientFlyShip(clientId, clientContext->shipCoordinate().location(), clientContext->shipLocation());
+  clientFlyShip(clientId, clientContext->shipCoordinate().location(), clientContext->shipLocation(), {});
   Logger::info("UniverseServer: Client {} connected", clientContext->descriptiveName());
 
   ReadLocker clientsReadLocker(m_clientsLock);

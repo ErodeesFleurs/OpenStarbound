@@ -4,7 +4,7 @@ import star.string;
 import star.map;
 import star.set;
 import star.json;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.data_stream;
 import star.vector;
 import star.game_types;

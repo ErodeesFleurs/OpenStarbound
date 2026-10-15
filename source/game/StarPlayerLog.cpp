@@ -2,7 +2,7 @@ import std;
 import star.string;
 import star.set;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 
 import star.player_log;
 

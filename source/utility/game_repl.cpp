@@ -29,7 +29,7 @@ import star.root_base;
 import star.configuration;
 import star.root;
 import star.root_loader;
-#include "StarUtilityLuaBindings.hpp"
+import star.utility_lua_bindings;
 
 import star.root_lua_bindings;
 

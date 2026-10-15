@@ -24,10 +24,10 @@ import star.string_view;
 import star.directives;
 import star.asset_path;
 import star.vector;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.string;
 import star.poly;
-#include "StarCasting.hpp"
+import star.casting;
 
 import star.item_descriptor;
 import star.animation;

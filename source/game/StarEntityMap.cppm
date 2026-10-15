@@ -10,11 +10,11 @@ import star.rect;
 import star.map;
 import star.set;
 import star.spatial_hash_2d;
-#include "StarCasting.hpp"
+import star.casting;
 import star.vector;
 import star.data_stream;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 
 import star.damage_types;

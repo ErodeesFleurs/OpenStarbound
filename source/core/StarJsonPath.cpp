@@ -2,7 +2,7 @@ import std;
 import star.string;
 import star.maybe;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.lexical_cast;
 import star.json_path;
 

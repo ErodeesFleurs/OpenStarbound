@@ -1,7 +1,7 @@
 import std;
 import star.xx_hash;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
 import star.list;
 import star.rect;
@@ -21,8 +21,8 @@ import star.vector;
 import star.text;
 import star.format;
 import star.version;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.maybe;
 import star.listener;
 import star.input_event;
@@ -45,9 +45,9 @@ import star.worker_pool;
 
 import star.sector_array_2d;
 import star.perlin;
-#include "StarBTree.hpp"
+import star.btree;
 import star.lru_cache;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.btree_database;
 import star.ordered_set;
 
@@ -102,7 +102,7 @@ import star.inspectable_entity;
 import star.plant;
 import star.plant_database;
 import star.biome_placement;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.versioning_database;
 import star.world_storage;
 import star.player_types;
@@ -119,7 +119,7 @@ import star.world_render_data;
 import star.world_structure;
 import star.entity_rendering;
 import star.world;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.world_client_state;
 import star.interpolation_tracker;
 import star.ambient;

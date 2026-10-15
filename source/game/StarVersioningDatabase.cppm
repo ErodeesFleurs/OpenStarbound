@@ -10,7 +10,7 @@ import star.map;
 import star.lua;
 import star.format;
 import star.version;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 
 namespace Star {
 

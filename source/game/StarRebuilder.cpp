@@ -23,8 +23,8 @@ import star.assets;
 import star.root_base;
 import star.configuration;
 import star.root;
-#include "StarLuaRoot.hpp"
-#include "StarUtilityLuaBindings.hpp"
+import star.lua_root;
+import star.utility_lua_bindings;
 
 import star.root_lua_bindings;
 import star.rebuilder;

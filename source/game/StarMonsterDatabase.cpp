@@ -1,11 +1,11 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
 import star.id_map;
 import star.game_types;
 import star.maybe;
 import star.variant;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.list;
 import star.rpc_promise;
 import star.bi_map;
@@ -24,7 +24,7 @@ import star.hash;
 import star.string_view;
 import star.directives;
 import star.asset_path;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.lexical_cast;
 import star.periodic_function;
 import star.audio;
@@ -39,7 +39,7 @@ import std;
 import star.format;
 import star.version;
 
-#include "StarUtilityLuaBindings.hpp"
+import star.utility_lua_bindings;
 
 import star.world_geometry;
 import star.status_types;
@@ -55,7 +55,7 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 import star.physics_entity;
@@ -81,9 +81,9 @@ import star.aggressive_entity;
 import star.scripted_entity;
 import star.chat_action;
 import star.chatty_entity;
-#include "StarLuaComponents.hpp"
-#include "StarLuaAnimationComponent.hpp"
-#include "StarLuaActorMovementComponent.hpp"
+import star.lua_components;
+import star.lua_animation_component;
+import star.lua_actor_movement_component;
 import star.mobile_entity;
 import star.actor_entity;
 import star.effect_emitter;

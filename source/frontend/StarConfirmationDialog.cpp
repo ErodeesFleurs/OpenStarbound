@@ -1,6 +1,6 @@
 import std;
 import star.json;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.color;
 import star.font;

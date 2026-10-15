@@ -1,4 +1,4 @@
-#pragma once
+module;
 import std;
 import star.list;
 import star.maybe;
@@ -931,4 +931,10 @@ std::size_t BTreeMixin<Base>::indexFind(Index const& index, Key const& key) {
   return first - 1;
 }
 
+}
+
+export module star.btree;
+
+export namespace Star {
+  using ::Star::BTreeMixin;
 }

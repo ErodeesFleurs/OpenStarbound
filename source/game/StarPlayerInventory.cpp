@@ -1,6 +1,6 @@
 import star.json;
-#include "StarJsonExtra.hpp"
-#include "StarDataStreamExtra.hpp"
+import star.json_extra;
+import star.data_stream_extra;
 import star.id_map;
 import star.ordered_map;
 import star.lru_cache;
@@ -8,7 +8,7 @@ import star.thread;
 import star.time;
 import star.random;
 import star.ttl_cache;
-#include "StarCasting.hpp"
+import star.casting;
 import star.game_types;
 import star.maybe;
 import star.variant;
@@ -17,7 +17,7 @@ import star.rpc_promise;
 import star.bi_map;
 import star.a_star;
 import star.data_stream;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.multi_array;
 import star.string;
 import star.color;
@@ -41,11 +41,11 @@ import star.map;
 import star.either;
 import star.periodic_function;
 
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_components;
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;

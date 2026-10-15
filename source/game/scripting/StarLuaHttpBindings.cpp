@@ -27,7 +27,7 @@ import star.rpc_promise;
 
 import star.configuration;
 import star.worker_pool;
-#include "StarLuaGameConverters.hpp"
+import star.lua_game_converters;
 import star.asset_source;
 import star.assets;
 import star.root_base;

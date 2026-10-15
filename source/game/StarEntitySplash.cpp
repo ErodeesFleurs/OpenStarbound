@@ -1,5 +1,5 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
 import star.color;
 import star.bi_map;
@@ -12,11 +12,11 @@ import star.thread;
 import star.directives;
 import star.asset_path;
 import star.variant;
-#include "StarCasting.hpp"
+import star.casting;
 import star.vector;
 import star.game_types;
 import star.liquid_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.rpc_promise;
 import star.ordered_map;
 import star.io_device;
@@ -26,7 +26,7 @@ import star.listener;
 import std;
 import star.version;
 
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.animation;
 import star.particle;
 

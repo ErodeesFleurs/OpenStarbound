@@ -1,5 +1,5 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
 import star.ordered_map;
 import star.lru_cache;
@@ -7,11 +7,11 @@ import star.thread;
 import star.time;
 import star.random;
 import star.ttl_cache;
-#include "StarCasting.hpp"
+import star.casting;
 import star.game_types;
 import star.maybe;
 import star.variant;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.rpc_promise;
 import star.bi_map;
 import star.a_star;
@@ -49,7 +49,7 @@ import star.ordered_set;
 import star.either;
 import star.image;
 
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 
 import star.damage_types;
 import star.world_geometry;
@@ -86,7 +86,7 @@ import star.scripted_entity;
 import star.status_effect_entity;
 import star.animation;
 import star.particle;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.effect_emitter;
 import star.projectile;
 import star.mixer;
@@ -100,8 +100,8 @@ import star.nametag_entity;
 import star.aggressive_entity;
 import star.chat_action;
 import star.chatty_entity;
-#include "StarLuaAnimationComponent.hpp"
-#include "StarLuaActorMovementComponent.hpp"
+import star.lua_animation_component;
+import star.lua_actor_movement_component;
 import star.actor_entity;
 import star.monster_database;
 import star.monster;

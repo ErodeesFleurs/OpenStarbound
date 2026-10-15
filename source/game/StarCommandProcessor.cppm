@@ -12,8 +12,8 @@ import star.encode;
 import star.bytes;
 import star.format;
 import star.shell_parser;
-#include "StarLuaComponents.hpp"
-#include "StarLuaRoot.hpp"
+import star.lua_components;
+import star.lua_root;
 
 namespace Star {
 

@@ -1,12 +1,12 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
 import star.id_map;
 import star.maybe;
 import star.variant;
-#include "StarCasting.hpp"
+import star.casting;
 import star.data_stream;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 import star.list;
 import star.rpc_promise;
@@ -39,10 +39,10 @@ import star.listener;
 import std;
 import star.version;
 
-#include "StarLuaRoot.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_root;
+import star.lua_components;
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.inspectable_entity;
 import star.plant;
 import star.plant_drop;

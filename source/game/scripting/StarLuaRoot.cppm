@@ -1,13 +1,12 @@
-#pragma once
-
+module;
 import std;
 import star.string;
 import star.maybe;
 import star.thread;
 import star.lua;
 import star.listener;
-
 import star.byte_array;
+
 namespace Star {
 
 // Loads and caches lua scripts from assets.  Automatically clears cache on
@@ -70,4 +69,10 @@ private:
   String m_storageDirectory;
 };
 
+}
+
+export module star.lua_root;
+
+export namespace Star {
+  using ::Star::LuaRoot;
 }

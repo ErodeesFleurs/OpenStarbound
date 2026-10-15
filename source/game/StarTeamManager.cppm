@@ -14,7 +14,7 @@ import star.asset_path;
 import star.drawable;
 import star.uuid;
 import star.json_rpc;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.vector;
 import star.celestial_coordinate;
 import star.game_types;

@@ -1,5 +1,6 @@
+import star.weighted_pool;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.ordered_map;
 import star.bi_map;
 import star.thread;

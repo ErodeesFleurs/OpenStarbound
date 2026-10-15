@@ -1,4 +1,4 @@
-#include "StarBTree.hpp"
+import star.btree;
 import std;
 import star.list;
 import star.format;

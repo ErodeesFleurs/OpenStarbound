@@ -1,4 +1,4 @@
-#pragma once
+module;
 import std;
 import star.format;
 
@@ -89,4 +89,17 @@ std::weak_ptr<Type const> asWeak(std::shared_ptr<Type const> const& p) {
   return std::weak_ptr<Type>(p);
 }
 
+}
+
+export module star.casting;
+
+export namespace Star {
+  using ::Star::PointerConvertExceptionTag;
+  using ::Star::PointerConvertException;
+  using ::Star::is;
+  using ::Star::ris;
+  using ::Star::as;
+  using ::Star::convert;
+  using ::Star::rconvert;
+  using ::Star::asWeak;
 }

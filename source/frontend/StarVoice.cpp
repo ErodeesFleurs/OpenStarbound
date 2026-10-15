@@ -2,14 +2,14 @@
 #include "SDL3/SDL.h"
 import std;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.bi_map;
 import star.format;
 import star.vector;
 import star.game_types;
 import star.maybe;
 import star.thread;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.time;
 import star.logging;
 import star.audio;

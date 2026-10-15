@@ -6,12 +6,12 @@ import star.lua;
 import star.maybe;
 import star.poly;
 import star.variant;
-#include "StarCasting.hpp"
+import star.casting;
 import star.vector;
 import star.data_stream;
 import star.game_types;
 import star.liquid_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 import star.list;
 import star.rpc_promise;
@@ -30,12 +30,12 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 import star.physics_entity;
 import star.movement_controller;
-#include "StarLuaGameConverters.hpp"
+import star.lua_game_converters;
 
 module star.movement_controller_lua_bindings;
 

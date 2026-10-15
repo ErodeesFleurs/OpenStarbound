@@ -1,4 +1,4 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import std;
 import star.json;
 import star.xx_hash;
@@ -26,7 +26,7 @@ import star.random;
 import star.weighted_pool;
 import star.logging;
 import star.lexical_cast;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.font;
 import star.string;
@@ -49,11 +49,11 @@ import star.encode;
 import star.bytes;
 import star.format;
 import star.version;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.ordered_set;
 import star.io_device;
 import star.ref_ptr;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
@@ -64,16 +64,16 @@ import star.net_compatibility;
 import star.worker_pool;
 
 import star.sector_array_2d;
-#include "StarBTree.hpp"
+import star.btree;
 import star.btree_database;
 import star.a_star;
 import star.periodic_function;
 import star.lua;
 
-#include "StarLuaRoot.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_root;
+import star.lua_components;
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.application;
 import star.statistics_service;
 import star.p2p_networking_service;

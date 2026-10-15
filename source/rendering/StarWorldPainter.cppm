@@ -24,8 +24,8 @@ import star.either;
 import star.maybe;
 import star.random;
 import star.weighted_pool;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.font;
 import star.text;
 import star.listener;

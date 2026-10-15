@@ -6,8 +6,8 @@ import star.data_stream;
 import star.maybe;
 import star.format;
 import star.map;
-#include "StarDataStreamExtra.hpp"
-#include "StarStrongTypedef.hpp"
+import star.data_stream_extra;
+import star.strong_typedef;
 
 import star.net_element;
 

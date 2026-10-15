@@ -6,7 +6,24 @@ import star.json;
 import star.lua;
 import star.maybe;
 import star.format;
-#include "StarLuaGameConverters.hpp"
+import star.lua_game_converters;
+import star.lua_converters;
+import star.inventory_types;
+import star.collision_block;
+import star.platformer_astar_types;
+import star.actor_movement_controller;
+import star.status_types;
+import star.damage;
+import star.damage_types;
+import star.liquid_types;
+import star.game_types;
+import star.drawable;
+import star.asset_path;
+import star.color;
+import star.physics_entity;
+import star.force_regions;
+import star.mixer;
+import star.bi_map;
 
 import star.collection_database;
 

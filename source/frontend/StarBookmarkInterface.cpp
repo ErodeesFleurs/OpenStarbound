@@ -1,13 +1,13 @@
 import std;
 import star.json;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.data_stream;
 import star.game_types;
 import star.variant;
 import star.random;
 import star.weighted_pool;
 import star.either;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.color;
 import star.font;

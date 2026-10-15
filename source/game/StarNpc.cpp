@@ -1,5 +1,6 @@
+import star.inventory_types;
 #include <assert.h>
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
 import star.id_map;
 import star.ordered_map;
@@ -8,13 +9,13 @@ import star.thread;
 import star.time;
 import star.random;
 import star.ttl_cache;
-#include "StarCasting.hpp"
+import star.casting;
 import star.data_stream;
 import star.bi_map;
 import star.game_types;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.variant;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.rpc_promise;
 import star.logging;
 import star.weighted_pool;
@@ -49,8 +50,8 @@ import star.version;
 import star.observer_stream;
 import star.either;
 
-#include "StarNpc.inc"
-#include "StarLuaRoot.hpp"
+import star.npc;
+import star.lua_root;
 import star.item;
 import star.item_database;
 import star.item_descriptor;
@@ -66,8 +67,8 @@ import star.chat_action;
 import star.chatty_entity;
 import star.emote_entity;
 import star.lounging_entities;
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.npc_database;
 import star.effect_emitter;
 import star.damage_types;
@@ -114,7 +115,9 @@ import star.actor_entity;
 import star.tool_user_entity;
 import star.tool_user_item;
 import star.status_effect_item;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
+import star.lua_converters;
+import star.lua_game_converters;
 import star.fireable_item;
 import star.stat_collection;
 import star.status_effect_database;
@@ -734,7 +737,7 @@ void Npc::tickShared(float dt) {
   m_songbook->update(*entityMode(), world());
 
   m_effectEmitter->setSourcePosition("normal", position());
-  m_effectEmitter->setSourcePosition("mouth", position() + mouthOffset());
+  m_effectEmitter->setSourcePosition("mouth", position() + mouthOffset(true));
   m_effectEmitter->setSourcePosition("feet", position() + feetOffset());
   m_effectEmitter->setSourcePosition("headArmor", headArmorOffset() + position());
   m_effectEmitter->setSourcePosition("chestArmor", chestArmorOffset() + position());

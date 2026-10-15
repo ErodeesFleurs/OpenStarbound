@@ -1,6 +1,6 @@
 import star.hash;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.input_event;
 import star.thread;
 import star.listener;

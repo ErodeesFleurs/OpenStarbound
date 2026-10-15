@@ -22,8 +22,8 @@ import star.asset_path;
 import star.either;
 import star.random;
 import star.weighted_pool;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.listener;
 import star.perlin;
 import star.random_point;

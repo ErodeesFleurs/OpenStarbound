@@ -6,7 +6,7 @@ import star.variant;
 import star.json;
 import star.maybe;
 import star.lua;
-#include "StarLuaConverters.hpp"
+import star.lua_converters;
 import star.lexical_cast;
 
 #include "gtest/gtest.h"

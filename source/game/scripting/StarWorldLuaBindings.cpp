@@ -1,4 +1,4 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
 import star.xx_hash;
 import star.id_map;
@@ -8,7 +8,7 @@ import star.thread;
 import star.time;
 import star.random;
 import star.ttl_cache;
-#include "StarCasting.hpp"
+import star.casting;
 import star.game_types;
 import star.material_types;
 import star.maybe;
@@ -33,7 +33,7 @@ import star.weighted_pool;
 import star.logging;
 import star.parametric_function;
 import star.perlin;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.set;
 import star.math_common;
 import star.periodic;
@@ -55,16 +55,16 @@ import star.worker_pool;
 import std;
 import star.sector_array_2d;
 import star.net_compatibility;
-#include "StarBTree.hpp"
-#include "StarDataStreamDevices.hpp"
+import star.btree;
+import star.data_stream_devices;
 import star.btree_database;
 
-#include "StarUtilityLuaBindings.hpp"
-#include "StarLuaRoot.hpp"
+import star.utility_lua_bindings;
+import star.lua_root;
 
-#include "StarLuaActorMovementComponent.hpp"
+import star.lua_actor_movement_component;
 import star.item;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.status_effect_entity;
 import star.scripted_entity;
 import star.chat_action;
@@ -176,7 +176,7 @@ import star.weather_types;
 import star.force_regions;
 import star.world_parameters;
 import star.item_drop;
-#include "StarLuaGameConverters.hpp"
+import star.lua_game_converters;
 import star.universe_settings;
 import star.plant_database;
 import star.biome_placement;

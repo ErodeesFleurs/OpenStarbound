@@ -1,5 +1,5 @@
 import star.memory;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
 import star.set;
 import star.string;
@@ -12,7 +12,7 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 import star.game_types;
 import star.ordered_map;

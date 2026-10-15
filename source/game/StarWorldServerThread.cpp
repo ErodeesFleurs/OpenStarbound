@@ -4,7 +4,7 @@ import star.id_map;
 import star.list;
 import star.bi_map;
 import star.variant;
-#include "StarCasting.hpp"
+import star.casting;
 import star.either;
 import star.image;
 import star.color;
@@ -25,7 +25,7 @@ import star.asset_path;
 import star.maybe;
 import star.random;
 import star.weighted_pool;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.set;
 import star.worker_pool;
 
@@ -34,9 +34,9 @@ import star.sector_array_2d;
 import star.ordered_map;
 import star.net_compatibility;
 import star.perlin;
-#include "StarBTree.hpp"
+import star.btree;
 import star.lru_cache;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.btree_database;
 import star.ordered_set;
 import star.map;
@@ -50,7 +50,7 @@ import star.ref_ptr;
 import star.listener;
 import star.logging;
 
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.tile_sector_array;
 import star.collision_block;
 import star.damage_types;
@@ -99,7 +99,7 @@ import star.cellular_light_array;
 import star.cellular_lighting;
 import star.cellular_liquid;
 import star.world_structure;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.drawable;
 import star.entity_rendering_types;
 import star.sky_render_data;
@@ -132,8 +132,8 @@ import star.lounging_entities;
 import star.mobile_entity;
 import star.actor_entity;
 import star.tool_user_entity;
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.npc_database;
 import star.effect_emitter;
 import star.npc;

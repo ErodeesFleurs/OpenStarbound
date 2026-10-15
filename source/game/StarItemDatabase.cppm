@@ -22,8 +22,8 @@ import star.hash;
 import star.string_view;
 import star.directives;
 import star.asset_path;
-#include "StarStrongTypedef.hpp"
-#include "StarCasting.hpp"
+import star.strong_typedef;
+import star.casting;
 
 
 import star.item_descriptor;

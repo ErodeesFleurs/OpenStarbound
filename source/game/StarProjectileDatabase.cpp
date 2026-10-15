@@ -1,5 +1,5 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.set;
 import star.thread;
 import star.color;
@@ -15,8 +15,8 @@ import star.game_types;
 import star.id_map;
 import star.ordered_map;
 import star.variant;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.rpc_promise;
 import star.lua;
 import star.maybe;
@@ -46,7 +46,7 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 import star.physics_entity;
@@ -56,7 +56,7 @@ import star.status_effect_entity;
 import star.movement_controller;
 import star.animation;
 import star.particle;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.effect_emitter;
 import star.projectile;
 import star.asset_source;
@@ -67,7 +67,7 @@ import star.root;
 
 import star.projectile_database;
 
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 import star.net_compatibility;
 import star.byte_array;

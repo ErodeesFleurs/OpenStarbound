@@ -1,4 +1,4 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.xx_hash;
 import star.json;
 import star.id_map;
@@ -25,8 +25,8 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.net_compatibility;
 import std;
 import star.set;
@@ -34,13 +34,13 @@ import star.worker_pool;
 
 import star.sector_array_2d;
 import star.perlin;
-#include "StarBTree.hpp"
+import star.btree;
 import star.lru_cache;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.btree_database;
 import star.ordered_set;
 import star.rpc_promise;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 
 import star.collision_block;
 import star.liquid_types;
@@ -78,7 +78,7 @@ import star.inspectable_entity;
 import star.plant;
 import star.plant_database;
 import star.biome_placement;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.versioning_database;
 import star.world_storage;
 import star.player_types;

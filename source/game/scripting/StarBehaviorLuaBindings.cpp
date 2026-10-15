@@ -22,7 +22,7 @@ import star.version;
 
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
-#include "StarLuaGameConverters.hpp"
+import star.lua_game_converters;
 import star.asset_source;
 import star.assets;
 import star.root_base;

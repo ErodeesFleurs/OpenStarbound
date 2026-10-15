@@ -1,12 +1,12 @@
 module;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.math_common;
 import star.id_map;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.data_stream;
 import star.string;
-#include "StarCasting.hpp"
+import star.casting;
 import star.vector;
 import star.game_types;
 import star.bi_map;
@@ -52,7 +52,7 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 import star.physics_entity;

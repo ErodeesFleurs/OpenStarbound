@@ -1,5 +1,4 @@
-#pragma once
-
+module;
 #include <QString>
 
 import std;
@@ -15,4 +14,12 @@ inline QString toQString(String const& str) {
   return QString::fromUtf8(str.utf8Ptr(), str.utf8Size());
 }
 
+}
+
+
+export module star.string_conversion;
+
+export namespace Star {
+  using ::Star::toSString;
+  using ::Star::toQString;
 }

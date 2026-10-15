@@ -3,7 +3,7 @@ import std;
 import star.json;
 import star.game_types;
 import star.vector;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.color;
 import star.list;
@@ -24,7 +24,7 @@ import star.audio;
 import star.map;
 import star.ordered_map;
 
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;

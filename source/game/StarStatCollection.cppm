@@ -6,7 +6,7 @@ import star.list;
 import star.maybe;
 import star.json;
 import star.either;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.data_stream;
 import star.id_map;
 import star.status_types;

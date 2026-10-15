@@ -16,8 +16,8 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.bi_map;
 import star.maybe;
 import star.variant;
@@ -53,7 +53,7 @@ import star.collision_block;
 
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 
 import star.force_regions;
 

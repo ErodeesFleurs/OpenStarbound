@@ -1,11 +1,11 @@
 module;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.xx_hash;
 import star.lua;
 import star.game_types;
 import star.rpc_promise;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.data_stream;
 import star.vector;
 import star.maybe;
@@ -26,7 +26,7 @@ import star.asset_path;
 import star.ordered_set;
 import star.io_device;
 import star.byte_array;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
@@ -40,13 +40,13 @@ import star.format;
 import star.id_map;
 import star.version;
 import star.ordered_map;
-#include "StarCasting.hpp"
+import star.casting;
 import star.set;
 import star.worker_pool;
 
 import star.sector_array_2d;
 import star.perlin;
-#include "StarBTree.hpp"
+import star.btree;
 import star.lru_cache;
 import star.btree_database;
 import star.image;
@@ -58,7 +58,7 @@ import star.map;
 import star.uuid;
 import star.celestial_coordinate;
 import star.warping;
-#include "StarLuaGameConverters.hpp"
+import star.lua_game_converters;
 import star.host_address;
 import star.sky_types;
 import star.animation;
@@ -97,7 +97,7 @@ import star.inspectable_entity;
 import star.plant;
 import star.plant_database;
 import star.biome_placement;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.versioning_database;
 import star.world_storage;
 import star.player_types;
@@ -119,7 +119,7 @@ import star.chat_action;
 import star.mixer;
 import star.entity_rendering;
 import star.world;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.world_client_state;
 import star.interpolation_tracker;
 import star.ambient;

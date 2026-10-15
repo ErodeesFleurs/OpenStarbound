@@ -3,8 +3,8 @@ import star.string;
 import star.map;
 import star.format;
 import star.json;
-#include "StarJsonExtra.hpp"
-#include "StarStrongTypedef.hpp"
+import star.json_extra;
+import star.strong_typedef;
 import star.data_stream;
 import star.vector;
 import star.game_types;

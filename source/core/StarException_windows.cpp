@@ -6,7 +6,7 @@ import star.format;
 import star.maybe;
 import star.output_proxy;
 import star.logging;
-#include "StarCasting.hpp"
+import star.casting;
 import star.string_windows;
 import star.version;
 

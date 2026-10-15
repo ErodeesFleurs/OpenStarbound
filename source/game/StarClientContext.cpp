@@ -1,19 +1,19 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
 import star.xx_hash;
 import star.json_rpc;
 import star.game_types;
 import star.data_stream;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.id_map;
 import star.set;
-#include "StarBTree.hpp"
+import star.btree;
 import star.ordered_map;
 import star.lru_cache;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.thread;
 import star.btree_database;
-#include "StarCasting.hpp"
+import star.casting;
 import star.ordered_set;
 import star.list;
 import star.string;
@@ -36,9 +36,9 @@ import star.directives;
 import star.asset_path;
 import star.variant;
 import star.either;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.damage_types;
 import star.celestial_coordinate;
 import star.uuid;

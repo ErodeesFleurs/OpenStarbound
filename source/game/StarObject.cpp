@@ -1,15 +1,15 @@
 #include <assert.h>
 import star.memory;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
 import star.id_map;
 import star.poly;
 import star.list;
 import star.bi_map;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.variant;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.rpc_promise;
 import star.lexical_cast;
 import star.logging;
@@ -46,8 +46,8 @@ import star.format;
 import star.version;
 
 import star.collision_block;
-#include "StarLuaComponents.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_components;
+import star.lua_animation_component;
 import star.status_effect_entity;
 import star.scripted_entity;
 import star.chat_action;
@@ -70,7 +70,7 @@ import star.quest_descriptor;
 import star.interactive_entity;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 import star.asset_source;
@@ -92,7 +92,7 @@ import star.particle;
 
 import star.light_source;
 import star.entity_rendering;
-#include "StarLuaGameConverters.hpp"
+import star.lua_game_converters;
 import star.treasure;
 
 import star.networked_animator_lua_bindings;
@@ -105,7 +105,7 @@ import star.material_database;
 
 
 
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 import star.net_compatibility;
 import star.byte_array;

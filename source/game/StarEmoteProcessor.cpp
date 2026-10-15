@@ -1,6 +1,6 @@
 import star.memory;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.data_stream;
 import star.game_types;
 import star.string;

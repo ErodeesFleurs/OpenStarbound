@@ -6,7 +6,7 @@ import star.data_stream;
 import star.bi_map;
 import star.game_types;
 import star.vector;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.color;
 import star.list;

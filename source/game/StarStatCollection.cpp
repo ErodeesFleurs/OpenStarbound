@@ -5,11 +5,11 @@ import star.variant;
 import star.maybe;
 import star.json;
 import star.either;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.data_stream;
 import star.id_map;
 import star.status_types;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.game_types;
 import star.logging;
 

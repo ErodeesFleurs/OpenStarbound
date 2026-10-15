@@ -4,7 +4,7 @@ import star.game_types;
 import star.world_geometry;
 import star.data_stream;
 import star.wiring;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 
 namespace Star {
 

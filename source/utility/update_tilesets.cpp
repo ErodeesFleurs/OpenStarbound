@@ -1,3 +1,5 @@
+import star.tileset_database;
+import star.json_extra;
 import star.json;
 import star.list;
 import star.bi_map;
@@ -16,8 +18,8 @@ import star.id_map;
 import star.random;
 import star.periodic;
 import star.periodic_function;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.set;
 import star.color;
 import star.lua;
@@ -40,8 +42,8 @@ import star.collision_block;
 import star.item_descriptor;
 import star.asset_source;
 import star.assets;
-#include "StarLuaComponents.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_components;
+import star.lua_animation_component;
 import star.world_geometry;
 import star.status_types;
 import star.damage;
@@ -76,7 +78,7 @@ import star.root_base;
 import star.configuration;
 import star.root;
 import star.root_loader;
-#include "tileset_updater.hpp"
+import star.tileset_updater;
 
 import star.liquids_database;
 import star.material_database;

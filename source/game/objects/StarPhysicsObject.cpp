@@ -1,16 +1,16 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
 import star.variant;
-#include "StarCasting.hpp"
+import star.casting;
 import star.vector;
 import star.data_stream;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 import star.list;
 import star.interpolation;
-#include "StarLuaConverters.hpp"
+import star.lua_converters;
 import star.random;
 import star.periodic;
 import star.periodic_function;
@@ -37,9 +37,9 @@ import std;
 import star.version;
 
 
-#include "StarLuaRoot.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_root;
+import star.lua_components;
+import star.lua_animation_component;
 import star.tile_damage;
 import star.interaction_types;
 import star.item_descriptor;

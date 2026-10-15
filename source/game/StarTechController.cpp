@@ -1,5 +1,5 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
 import star.list;
 import star.image_processing;
@@ -8,11 +8,11 @@ import star.data_stream;
 import star.string_view;
 import star.thread;
 import star.directives;
-#include "StarDataStreamExtra.hpp"
-#include "StarCasting.hpp"
+import star.data_stream_extra;
+import star.casting;
 import star.vector;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 import star.lua;
 import star.string;
@@ -44,8 +44,8 @@ import star.animation;
 import star.particle;
 import star.mixer;
 import star.networked_animator;
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
+import star.lua_components;
+import star.lua_actor_movement_component;
 
 import star.tech_database;
 
@@ -53,7 +53,7 @@ import star.tech_controller;
 import star.stat_collection;
 import star.status_effect_database;
 import star.status_controller;
-#include "StarLuaGameConverters.hpp"
+import star.lua_game_converters;
 import star.uuid;
 import star.humanoid;
 import star.physics_entity;
@@ -75,7 +75,7 @@ import star.actor_movement_controller;
 import star.ai_types;
 import star.entity_rendering;
 import star.player_types;
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_animation_component;
 import star.radio_message_database;
 import star.player;
 import star.asset_source;
@@ -103,7 +103,7 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 

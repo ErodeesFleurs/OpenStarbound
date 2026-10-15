@@ -1,4 +1,4 @@
-#pragma once
+module;
 import star.string;
 import star.list;
 import star.json;
@@ -26,4 +26,25 @@ namespace LuaBindings {
     String replaceTags(String const& str, StringMap<String> const& tags);
   }
 }
+}
+
+export module star.utility_lua_bindings;
+
+export namespace Star::LuaBindings {
+  using ::Star::LuaBindings::makeUtilityCallbacks;
+  using ::Star::LuaBindings::formatLua;
+}
+
+export namespace Star::LuaBindings::UtilityCallbacks {
+  using ::Star::LuaBindings::UtilityCallbacks::nrand;
+  using ::Star::LuaBindings::UtilityCallbacks::makeUuid;
+  using ::Star::LuaBindings::UtilityCallbacks::logInfo;
+  using ::Star::LuaBindings::UtilityCallbacks::logWarn;
+  using ::Star::LuaBindings::UtilityCallbacks::logError;
+  using ::Star::LuaBindings::UtilityCallbacks::setLogMap;
+  using ::Star::LuaBindings::UtilityCallbacks::parseJson;
+  using ::Star::LuaBindings::UtilityCallbacks::printJson;
+  using ::Star::LuaBindings::UtilityCallbacks::print;
+  using ::Star::LuaBindings::UtilityCallbacks::interpolateSinEase;
+  using ::Star::LuaBindings::UtilityCallbacks::replaceTags;
 }

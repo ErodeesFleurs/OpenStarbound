@@ -1,5 +1,5 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.variant;
 import star.vector;
 import star.game_types;
@@ -17,8 +17,8 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-#include "StarDataStreamExtra.hpp"
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_extra;
+import star.data_stream_devices;
 import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;

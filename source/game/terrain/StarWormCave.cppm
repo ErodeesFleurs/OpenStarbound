@@ -2,7 +2,7 @@ module;
 import std;
 import star.list;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 
 import star.ordered_map;
 import star.lru_cache;

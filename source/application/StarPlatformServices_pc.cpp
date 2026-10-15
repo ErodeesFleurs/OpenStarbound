@@ -18,12 +18,12 @@ import star.user_generated_content_service;
 import star.desktop_service;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-#include "StarSteamDispatch.hpp"
+import star.steam_dispatch;
 #endif
 
 import star.platform_services_pc;
 
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.rpc_promise;
 import star.p2p_networking_service_pc;
 

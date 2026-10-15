@@ -3,7 +3,7 @@ import std;
 import star.json;
 import star.id_map;
 import star.vector;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.color;
 import star.list;
@@ -23,10 +23,10 @@ import star.game_types;
 import star.set;
 import star.audio;
 import star.map;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.rpc_promise;
 
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 
 import star.damage_types;
 import star.world_geometry;

@@ -12,7 +12,7 @@ import star.game_types;
 import star.damage_types;
 import star.poly;
 import star.world_geometry;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.id_map;
 import star.status_types;
 

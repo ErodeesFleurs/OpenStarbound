@@ -27,8 +27,8 @@ import star.poly;
 import star.variant;
 import star.id_map;
 import star.set;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.either;
 
 import star.animation;

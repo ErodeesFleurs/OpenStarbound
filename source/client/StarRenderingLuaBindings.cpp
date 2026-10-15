@@ -3,12 +3,12 @@ import std;
 import star.maybe;
 import star.json;
 import star.string;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
 import star.lua;
-#include "StarLuaConverters.hpp"
-#include "StarClientApplication.hpp"
+import star.lua_converters;
+import star.client_application;
 import star.variant;
 import star.image;
 import star.bi_map;

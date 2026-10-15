@@ -3,13 +3,13 @@ import std;
 import star.string;
 import star.set;
 import star.json;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.id_map;
-#include "StarCasting.hpp"
+import star.casting;
 import star.vector;
 import star.data_stream;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 import star.color;
 import star.list;
@@ -48,7 +48,7 @@ import star.collision_block;
 
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 
 import star.force_regions;
 

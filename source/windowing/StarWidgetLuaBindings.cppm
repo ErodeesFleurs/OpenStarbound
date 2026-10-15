@@ -3,7 +3,7 @@ import std;
 import star.json;
 
 import star.lua;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.application;
 import star.statistics_service;

@@ -4,8 +4,8 @@ import star.maybe;
 import star.format;
 import star.hash;
 import star.json;
-#include "StarJsonExtra.hpp"
-#include "StarStrongTypedef.hpp"
+import star.json_extra;
+import star.strong_typedef;
 import star.data_stream;
 import star.uuid;
 import star.vector;
@@ -13,7 +13,7 @@ import star.celestial_coordinate;
 import star.bi_map;
 import star.game_types;
 import star.warping;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.lexical_cast;
 
 namespace Star {

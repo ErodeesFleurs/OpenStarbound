@@ -1,12 +1,12 @@
 module;
 import star.xx_hash;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
 import star.data_stream;
 import star.bi_map;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
@@ -49,18 +49,18 @@ import star.worker_pool;
 import std;
 import star.sector_array_2d;
 import star.perlin;
-#include "StarBTree.hpp"
-#include "StarDataStreamDevices.hpp"
+import star.btree;
+import star.data_stream_devices;
 import star.btree_database;
 import star.ordered_set;
 import star.input_event;
 import star.periodic_function;
 
 
-#include "StarLuaRoot.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_root;
+import star.lua_components;
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.item_descriptor;
 import star.item;
 import star.damage_types;

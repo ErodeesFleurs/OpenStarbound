@@ -2,10 +2,10 @@ import std;
 import star.string;
 import star.json;
 import star.id_map;
-#include "StarCasting.hpp"
+import star.casting;
 import star.data_stream;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 import star.color;
 import star.list;
@@ -19,7 +19,7 @@ import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;
@@ -50,7 +50,7 @@ import star.actor_entity;
 import star.tool_user_entity;
 import star.tool_user_item;
 import star.status_effect_item;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.fireable_item;
 import star.swingable_item;
 

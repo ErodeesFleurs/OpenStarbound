@@ -3,7 +3,7 @@ import star.id_map;
 import star.data_stream;
 import star.bi_map;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.vector;
 import star.color;
 import star.string;
@@ -15,7 +15,7 @@ import star.thread;
 import star.directives;
 import star.asset_path;
 import star.variant;
-#include "StarCasting.hpp"
+import star.casting;
 import star.audio;
 import star.map;
 import star.set;
@@ -40,8 +40,8 @@ import star.observer_stream;
 import star.either;
 
 // Keep Object's Lua/JSON foundations first for GCC 16 BMI loading.
-#include "StarLuaRoot.hpp"
-#include "StarLuaComponents.hpp"
+import star.lua_root;
+import star.lua_components;
 import star.status_effect_entity;
 import star.scripted_entity;
 import star.chat_action;
@@ -110,7 +110,7 @@ import star.interactive_entity;
 import star.tile_entity;
 import star.tile_modification;
 import star.world;
-#include "StarLuaActorMovementComponent.hpp"
+import star.lua_actor_movement_component;
 import star.stat_collection;
 import star.status_effect_database;
 import star.status_controller;

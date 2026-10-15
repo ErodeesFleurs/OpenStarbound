@@ -8,8 +8,8 @@ import star.version;
 import star.either;
 import star.random;
 import star.weighted_pool;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.variant;
 import star.rpc_promise;
 import star.ordered_map;
@@ -22,9 +22,9 @@ import star.worker_pool;
 import star.sector_array_2d;
 import star.bi_map;
 import star.perlin;
-#include "StarBTree.hpp"
+import star.btree;
 import star.lru_cache;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.btree_database;
 import star.ordered_set;
 import star.io_device;
@@ -54,7 +54,7 @@ typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.world_geometry;
 
 import star.collision_block;
@@ -108,7 +108,7 @@ import star.world_structure;
 import star.chat_action;
 import star.entity_rendering;
 import star.world;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.world_client_state;
 import star.interpolation_tracker;
 import star.ambient;

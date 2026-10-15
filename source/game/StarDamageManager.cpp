@@ -5,13 +5,13 @@ import star.id_map;
 import star.map;
 import star.set;
 import star.spatial_hash_2d;
-#include "StarCasting.hpp"
+import star.casting;
 import star.bi_map;
 import star.data_stream;
 import star.game_types;
 import star.poly;
-#include "StarStrongTypedef.hpp"
-#include "StarDataStreamExtra.hpp"
+import star.strong_typedef;
+import star.data_stream_extra;
 import star.iterator;
 import star.logging;
 import star.color;
@@ -33,7 +33,7 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 

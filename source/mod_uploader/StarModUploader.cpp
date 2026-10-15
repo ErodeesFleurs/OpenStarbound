@@ -1,3 +1,19 @@
+#include <QApplication>
+#include <QCheckBox>
+#include <QCloseEvent>
+#include <QFileDialog>
+#include <QHBoxLayout>
+#include <QImage>
+#include <QLabel>
+#include <QLineEdit>
+#include <QListWidget>
+#include <QMainWindow>
+#include <QMessageBox>
+#include <QPlainTextEdit>
+#include <QProgressDialog>
+#include <QPushButton>
+#include <QVBoxLayout>
+
 #include "steam/steam_api.h"
 #include "steam/steam_api_flat.h"
 
@@ -6,19 +22,19 @@ import star.format;
 import star.string;
 import star.list;
 import star.json;
-#include <QApplication>
-#include <QFileDialog>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QProgressDialog>
-#include <QMessageBox>
-#include <QCloseEvent>
 
-#include "StarModUploader.hpp"
+import star.mod_uploader;
+import star.steam_dispatch;
+import star.s_plain_text_edit;
+import star.io_device;
+import star.map;
+import star.maybe;
+import star.asset_source;
+import star.directory_asset_source;
 import star.file;
 import star.thread;
 import star.lexical_cast;
-#include "StarStringConversion.hpp"
+import star.string_conversion;
 import star.packed_asset_source;
 
 namespace Star {
@@ -426,5 +442,5 @@ void ModUploader::onSteamSubmitItem(SubmitItemUpdateResult_t* result, bool ioFai
 
 }
 
-// Keep generated project-header imports in this module-scanned translation unit.
+// Generate with moc -i from StarModUploader.cppm; compile in this scanned owner.
 #include "moc_StarModUploader.cpp"

@@ -21,14 +21,18 @@ import star.format;
 import star.version;
 import star.rpc_promise;
 
-#include "StarLuaComponents.hpp"
+import star.lua_components;
+import star.lua_root;
+import star.lua_converters;
+import star.game_types;
+import star.uuid;
 import star.asset_source;
 import star.assets;
 import star.root_base;
 import star.configuration;
 import star.root;
-#include "StarUtilityLuaBindings.hpp"
-#include "StarScriptableThread.hpp"
+import star.utility_lua_bindings;
+import star.scriptable_thread;
 
 import star.root_lua_bindings;
 

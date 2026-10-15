@@ -8,7 +8,7 @@ import star.format;
 import star.set;
 import star.list;
 import star.image;
-#include "StarCasting.hpp"
+import star.casting;
 
 import star.vector;
 import star.math_common;

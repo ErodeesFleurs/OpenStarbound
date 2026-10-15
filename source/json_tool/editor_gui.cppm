@@ -1,16 +1,18 @@
-#pragma once
-
+module;
 #include <QErrorMessage>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMainWindow>
+#include <QPushButton>
 #include <QScrollBar>
 #include <QTextEdit>
 
-#include "json_tool.hpp"
+import star.json_tool;
 import std;
 import star.string;
 import star.list;
+import star.formatted_json;
+import star.json_path;
 
 namespace Star {
 
@@ -53,4 +55,12 @@ private:
 
 int edit(int argc, char* argv[], std::shared_ptr<JsonPath::Path> const& path, Options const& options, List<Input> const& inputs);
 
+}
+
+
+export module star.json_editor;
+
+export namespace Star {
+  using ::Star::JsonEditor;
+  using ::Star::edit;
 }

@@ -1,11 +1,11 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
 import star.poly;
 import star.variant;
-#include "StarCasting.hpp"
+import star.casting;
 import star.vector;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.list;
 import star.rpc_promise;
 import star.logging;
@@ -46,7 +46,8 @@ import star.version;
 import star.observer_stream;
 import star.either;
 
-#include "StarMonster.inc"
+import star.monster;
+import star.data_stream_extra;
 import star.mixer;
 import star.drawable;
 import star.entity_rendering_types;
@@ -68,9 +69,11 @@ import star.aggressive_entity;
 import star.scripted_entity;
 import star.chat_action;
 import star.chatty_entity;
-#include "StarLuaComponents.hpp"
-#include "StarLuaAnimationComponent.hpp"
-#include "StarLuaActorMovementComponent.hpp"
+import star.lua_components;
+import star.lua_converters;
+import star.lua_game_converters;
+import star.lua_animation_component;
+import star.lua_actor_movement_component;
 import star.mobile_entity;
 import star.actor_entity;
 import star.effect_emitter;
@@ -88,7 +91,7 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 import star.asset_source;
@@ -171,7 +174,7 @@ Monster::Monster(MonsterVariant const& monsterVariant, Maybe<float> level) {
 }
 
 Monster::Monster(Json const& diskStore)
-  : Monster(Root::singleton().monsterDatabase()->readMonsterVariantFromJson(diskStore.get("monsterVariant"))) {
+  : Monster(Root::singleton().monsterDatabase()->readMonsterVariantFromJson(diskStore.get("monsterVariant")), {}) {
   m_monsterLevel = diskStore.optFloat("monsterLevel");
   m_movementController->loadState(diskStore.get("movementState"));
   m_statusController->diskLoad(diskStore.get("statusController"));

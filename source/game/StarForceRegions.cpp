@@ -2,10 +2,10 @@ import std;
 import star.string;
 import star.data_stream;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.poly;
 import star.variant;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 
 import star.force_regions;
 

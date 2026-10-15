@@ -4,7 +4,7 @@ import star.list;
 import star.variant;
 import star.maybe;
 import star.json;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.data_stream;
 import star.id_map;
 import star.status_types;

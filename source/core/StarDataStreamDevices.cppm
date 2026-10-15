@@ -1,4 +1,4 @@
-#pragma once
+module;
 import std;
 import star.io_device;
 import star.string;
@@ -255,4 +255,13 @@ T DataStreamBuffer::deserializeMapContainer(ByteArray data, ReadFunction readFun
   return t;
 }
 
+}
+
+export module star.data_stream_devices;
+
+export namespace Star {
+  using ::Star::DataStreamFunctions;
+  using ::Star::DataStreamIODevice;
+  using ::Star::DataStreamBuffer;
+  using ::Star::DataStreamExternalBuffer;
 }

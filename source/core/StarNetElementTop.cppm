@@ -3,7 +3,7 @@ import std;
 import star.net_compatibility;
 import star.byte_array;
 
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 import star.net_element;
 

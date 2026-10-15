@@ -1,9 +1,9 @@
 module;
 import star.memory;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.byte_array;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
@@ -33,7 +33,7 @@ import star.format;
 import star.version;
 import star.vector;
 import star.game_types;
-#include "StarCasting.hpp"
+import star.casting;
 import star.lexical_cast;
 import star.image;
 import star.random;

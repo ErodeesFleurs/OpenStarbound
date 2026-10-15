@@ -1,12 +1,12 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
-#include "StarCasting.hpp"
+import star.casting;
 import star.vector;
 import star.data_stream;
 import star.game_types;
 import star.poly;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 import star.color;
 import star.list;
@@ -22,7 +22,7 @@ import star.rpc_promise;
 import star.a_star;
 import std;
 import star.lua;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.set;
 import star.string;
 import star.random;
@@ -39,10 +39,10 @@ import star.ordered_set;
 import star.either;
 
 
-#include "StarLuaRoot.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_root;
+import star.lua_components;
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.drawable;
 import star.item;
 import star.damage_types;

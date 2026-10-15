@@ -2,7 +2,7 @@ import std;
 import star.string;
 import star.format;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.ordered_map;
 import star.matrix3;
 import star.animated_part_set;

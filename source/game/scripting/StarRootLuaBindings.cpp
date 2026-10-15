@@ -1,5 +1,6 @@
 module;
-#include "StarJsonExtra.hpp"
+import star.system_world;
+import star.json_extra;
 import star.json;
 import star.xx_hash;
 import star.id_map;
@@ -9,7 +10,7 @@ import star.thread;
 import star.time;
 import star.random;
 import star.ttl_cache;
-#include "StarCasting.hpp"
+import star.casting;
 import star.game_types;
 import star.liquid_types;
 import star.material_types;
@@ -29,7 +30,7 @@ import star.directives;
 import star.asset_path;
 import star.perlin;
 import star.weighted_pool;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.lua;
 import star.parametric_function;
 import star.multi_array_interpolator;
@@ -50,7 +51,7 @@ import star.map;
 import star.image;
 
 
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 
 import star.damage_types;
 import star.world_geometry;
@@ -86,7 +87,7 @@ import star.plant_database;
 import star.biome_placement;
 import star.spawn_type_database;
 import star.biome;
-#include "StarLuaGameConverters.hpp"
+import star.lua_game_converters;
 import star.asset_source;
 import star.assets;
 import star.root_base;
@@ -110,9 +111,9 @@ import star.lounging_entities;
 import star.mobile_entity;
 import star.actor_entity;
 import star.tool_user_entity;
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_components;
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.effect_emitter;
 import star.npc;
 import star.entity_rendering;

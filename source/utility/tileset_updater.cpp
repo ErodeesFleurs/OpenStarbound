@@ -8,7 +8,12 @@ import star.logging;
 import star.json;
 import star.game_types;
 import star.lexical_cast;
-#include "tileset_updater.hpp"
+import star.tileset_updater;
+import star.list;
+import star.map;
+import star.set;
+import star.image;
+import star.tileset_database;
 
 using namespace Star;
 

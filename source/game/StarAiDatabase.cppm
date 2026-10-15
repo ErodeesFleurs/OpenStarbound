@@ -9,7 +9,7 @@ import star.data_stream;
 import star.bi_map;
 import star.item_descriptor;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.item_descriptor;
 import star.celestial_coordinate;
 import star.quest_descriptor;

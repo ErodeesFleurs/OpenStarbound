@@ -9,8 +9,8 @@ import star.byte_array;
 
 import star.io_device;
 import star.asset_source;
-#include "StarDataStreamDevices.hpp"
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_devices;
+import star.data_stream_extra;
 import star.image;
 import star.math_common;
 

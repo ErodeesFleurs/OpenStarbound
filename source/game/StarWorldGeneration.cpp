@@ -16,11 +16,11 @@ import star.format;
 import star.version;
 import star.rect;
 import star.spatial_hash_2d;
-#include "StarCasting.hpp"
+import star.casting;
 import star.data_stream;
 import star.perlin;
 import star.weighted_pool;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.logging;
 import star.thread;
 import star.worker_pool;
@@ -38,8 +38,8 @@ import star.string;
 import star.image;
 import star.ordered_map;
 import star.lru_cache;
-#include "StarBTree.hpp"
-#include "StarDataStreamDevices.hpp"
+import star.btree;
+import star.data_stream_devices;
 import star.btree_database;
 import star.ordered_set;
 import star.rpc_promise;
@@ -84,7 +84,7 @@ import star.item_recipe;
 import star.dungeon_generator;
 import star.inspectable_entity;
 import star.plant;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.versioning_database;
 import star.world_storage;
 import star.cellular_liquid;
@@ -105,7 +105,7 @@ import star.net_packets;
 import star.cellular_light_array;
 import star.cellular_lighting;
 import star.world_structure;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.entity_rendering_types;
 import star.sky_render_data;
 import star.parallax;
@@ -134,8 +134,8 @@ import star.lounging_entities;
 import star.mobile_entity;
 import star.actor_entity;
 import star.tool_user_entity;
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.npc_database;
 import star.effect_emitter;
 import star.npc;

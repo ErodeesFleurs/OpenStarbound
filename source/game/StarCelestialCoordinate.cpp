@@ -1,4 +1,4 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import std;
 import star.string;
 import star.format;
@@ -33,7 +33,7 @@ import star.celestial_parameters;
 import star.celestial_types;
 import star.lexical_cast;
 import star.static_random;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 
 namespace Star {
 

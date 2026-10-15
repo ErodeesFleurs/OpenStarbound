@@ -7,7 +7,7 @@ import star.stream_formatter;
 import star.hash;
 import star.json;
 
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.data_stream;
 import star.uuid;
 import star.vector;

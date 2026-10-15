@@ -4,7 +4,7 @@ import star.json;
 
 // Keep Uuid's textual definition ahead of the global codex interface on GCC.
 import star.data_stream;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.color;
 import star.list;

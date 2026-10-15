@@ -1,6 +1,6 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.id_map;
 import star.list;
 import star.rect;
@@ -12,8 +12,8 @@ import star.thread;
 import star.directives;
 import star.asset_path;
 import star.variant;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.rpc_promise;
 import star.maybe;
 import star.image;
@@ -50,7 +50,7 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 import star.asset_source;
@@ -78,7 +78,7 @@ import star.plant_database;
 
 import star.plant_drop;
 
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 import star.net_compatibility;
 import star.random;

@@ -4,7 +4,7 @@ import star.format;
 import star.json;
 
 import star.game_types;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.application;
 import star.statistics_service;

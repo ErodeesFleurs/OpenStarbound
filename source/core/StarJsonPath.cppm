@@ -4,7 +4,7 @@ import star.string;
 import star.maybe;
 import star.format;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 
 import star.lexical_cast;
 

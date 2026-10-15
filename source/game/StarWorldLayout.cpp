@@ -1,5 +1,5 @@
 import star.memory;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
 import star.list;
 import star.rect;
@@ -19,8 +19,8 @@ import star.perlin;
 import star.weighted_pool;
 import star.id_map;
 import star.set;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;

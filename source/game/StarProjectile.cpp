@@ -1,21 +1,21 @@
 import star.memory;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
 import star.poly;
 import star.list;
 import star.bi_map;
 import star.data_stream;
 import star.variant;
-#include "StarCasting.hpp"
+import star.casting;
 import star.vector;
 import star.game_types;
 import star.liquid_types;
 import star.material_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.rpc_promise;
 import star.logging;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.parametric_function;
 import star.multi_array_interpolator;
 import star.multi_table;
@@ -57,7 +57,7 @@ import star.status_effect_entity;
 import star.movement_controller;
 import star.animation;
 import star.particle;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.effect_emitter;
 import star.projectile;
 import star.damage_types;
@@ -73,7 +73,7 @@ import star.quest_descriptor;
 import star.interactive_entity;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 import star.asset_source;
@@ -97,8 +97,8 @@ import star.nametag_entity;
 import star.aggressive_entity;
 import star.chat_action;
 import star.chatty_entity;
-#include "StarLuaAnimationComponent.hpp"
-#include "StarLuaActorMovementComponent.hpp"
+import star.lua_animation_component;
+import star.lua_actor_movement_component;
 import star.actor_entity;
 import star.monster_database;
 import star.monster;
@@ -114,7 +114,7 @@ import star.particle_database;
 import star.material_database;
 
 
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 import star.net_compatibility;
 import star.byte_array;

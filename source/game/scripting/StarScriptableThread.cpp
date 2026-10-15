@@ -1,9 +1,9 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
-#include "StarCasting.hpp"
+import star.casting;
 import star.data_stream;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.game_types;
 import star.maybe;
 import star.variant;
@@ -34,9 +34,9 @@ import star.format;
 import star.version;
 import star.logging;
 
-// Match module include order for SIMD intrinsics used by xxhash and fast_float.
-#include "StarScriptableThread.hpp"
-#include "StarLuaRoot.hpp"
+import star.scriptable_thread;
+import star.lua_root;
+import star.lua_converters;
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;
@@ -79,9 +79,9 @@ import star.lounging_entities;
 import star.mobile_entity;
 import star.actor_entity;
 import star.tool_user_entity;
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_components;
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.npc_database;
 import star.effect_emitter;
 import star.npc;

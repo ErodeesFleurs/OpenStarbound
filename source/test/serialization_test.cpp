@@ -1,4 +1,4 @@
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.string;
 import star.map;
 

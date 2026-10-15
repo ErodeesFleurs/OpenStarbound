@@ -1,5 +1,4 @@
-#pragma once
-
+module;
 #include "steam/steam_api.h"
 #include "steam/steam_api_flat.h"
 import std;
@@ -192,3 +191,13 @@ private:
 };
 
 }// namespace Star
+
+
+export module star.steam_dispatch;
+
+export namespace Star {
+  using ::Star::SteamRegistration;
+  using ::Star::SteamDispatch;
+  using ::Star::SteamCallback;
+  using ::Star::SteamCallResult;
+}

@@ -1,10 +1,10 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
-#include "StarCasting.hpp"
+import star.casting;
 import star.data_stream;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 import star.lua;
 import star.ordered_map;
@@ -30,7 +30,7 @@ import star.status_types;
 import star.damage;
 import star.light_source;
 import star.entity;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.scripted_entity;
 import star.asset_source;
 import star.assets;

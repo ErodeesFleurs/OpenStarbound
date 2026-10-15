@@ -1,4 +1,4 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
 import star.xx_hash;
 import star.id_map;
@@ -8,11 +8,11 @@ import star.thread;
 import star.time;
 import star.random;
 import star.ttl_cache;
-#include "StarCasting.hpp"
+import star.casting;
 import star.game_types;
 import star.maybe;
 import star.variant;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.list;
 import star.rpc_promise;
 import star.vector;
@@ -50,8 +50,8 @@ import std;
 import star.sector_array_2d;
 import star.net_compatibility;
 import star.perlin;
-#include "StarBTree.hpp"
-#include "StarDataStreamDevices.hpp"
+import star.btree;
+import star.data_stream_devices;
 import star.btree_database;
 import star.ordered_set;
 import star.lock_file;
@@ -65,7 +65,7 @@ import star.zstd_compression;
 import star.ref_ptr;
 import star.listener;
 
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 
 import star.damage_types;
 import star.world_geometry;
@@ -95,7 +95,7 @@ import star.item;
 import star.item_descriptor;
 import star.item_recipe;
 import star.shell_parser;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 
 import star.command_processor;
 import star.animation;
@@ -116,8 +116,8 @@ import star.lounging_entities;
 import star.mobile_entity;
 import star.actor_entity;
 import star.tool_user_entity;
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.npc_database;
 import star.effect_emitter;
 import star.npc;

@@ -3,11 +3,11 @@ import std;
 import star.format;
 #include "gtest/gtest.h"
 
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.list;
 import star.string;
 import star.vector;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.interpolation;
 import star.net_element_basic_fields;
 import star.net_element_float_fields;

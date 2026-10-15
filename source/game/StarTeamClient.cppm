@@ -13,7 +13,7 @@ import star.thread;
 import star.directives;
 import star.asset_path;
 import star.drawable;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.vector;
 import star.celestial_coordinate;
 import star.rpc_promise;

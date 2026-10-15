@@ -1,7 +1,7 @@
 module;
 import std;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.lua;
 import star.random;
 import star.periodic_function;
@@ -35,7 +35,7 @@ import star.particle;
 import star.mixer;
 import star.light_source;
 import star.networked_animator;
-#include "StarLuaGameConverters.hpp"
+import star.lua_game_converters;
 
 module star.networked_animator_lua_bindings;
 

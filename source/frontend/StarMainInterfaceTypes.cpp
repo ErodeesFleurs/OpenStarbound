@@ -1,6 +1,6 @@
 import std;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.list;
 import star.image_processing;
 import star.hash;
@@ -11,7 +11,7 @@ import star.directives;
 import star.asset_path;
 import star.bi_map;
 import star.game_types;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.color;
 import star.font;

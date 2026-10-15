@@ -5,7 +5,7 @@ import star.thread;
 import star.string;
 import star.either;
 import star.map;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import std;
 import star.logging;
 import star.ordered_map;
@@ -38,15 +38,15 @@ typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 import star.net_compatibility;
 import star.set;
-#include "StarBTree.hpp"
+import star.btree;
 import star.lru_cache;
 import star.btree_database;
-#include "StarCasting.hpp"
+import star.casting;
 import star.ordered_set;
 import star.random;
 import star.perlin;
 import star.weighted_pool;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.worker_pool;
 
 import star.sector_array_2d;
@@ -96,7 +96,7 @@ import star.inspectable_entity;
 import star.plant;
 import star.plant_database;
 import star.biome_placement;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.versioning_database;
 import star.world_storage;
 import star.tile_modification;
@@ -114,7 +114,7 @@ import star.cellular_light_array;
 import star.cellular_lighting;
 import star.cellular_liquid;
 import star.world_structure;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.drawable;
 import star.entity_rendering_types;
 import star.sky_render_data;

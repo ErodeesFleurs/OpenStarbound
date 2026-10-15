@@ -1,6 +1,6 @@
 import star.xx_hash;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
 import star.list;
 import star.bi_map;
@@ -29,8 +29,8 @@ import star.asset_path;
 import star.either;
 import star.maybe;
 import star.weighted_pool;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.lexical_cast;
 import std;
 import star.set;

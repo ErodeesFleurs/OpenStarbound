@@ -10,7 +10,7 @@ import star.game_types;
 import star.byte_array;
 import star.map;
 import star.net_compatibility;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.data_stream;
 import star.uuid;
 import star.vector;

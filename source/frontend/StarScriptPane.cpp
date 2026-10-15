@@ -1,9 +1,10 @@
+import star.world_lua_bindings;
 import std;
 import star.xx_hash;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.vector;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.color;
 import star.font;
@@ -34,7 +35,7 @@ import star.image;
 import star.either;
 import star.random;
 import star.weighted_pool;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.variant;
 import star.rpc_promise;
 import star.net_compatibility;
@@ -42,9 +43,9 @@ import star.worker_pool;
 
 import star.sector_array_2d;
 import star.perlin;
-#include "StarBTree.hpp"
+import star.btree;
 import star.lru_cache;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.btree_database;
 import star.ordered_set;
 import star.a_star;
@@ -84,7 +85,7 @@ import star.mixer;
 import star.gui_context;
 import star.widget;
 import star.pane;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.widget_parsing;
 import star.gui_reader;
 
@@ -93,7 +94,7 @@ import star.base_script_pane;
 
 
 import star.script_pane;
-#include "StarLuaGameConverters.hpp"
+import star.lua_game_converters;
 import star.collision_block;
 import star.liquid_types;
 import star.tile_damage;
@@ -129,7 +130,7 @@ import star.inspectable_entity;
 import star.plant;
 import star.plant_database;
 import star.biome_placement;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.versioning_database;
 import star.world_storage;
 import star.player_types;
@@ -172,8 +173,8 @@ import star.movement_controller;
 import star.platformer_astar_types;
 import star.actor_movement_controller;
 import star.ai_types;
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.radio_message_database;
 import star.player;
 import star.host_address;

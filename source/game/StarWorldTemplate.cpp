@@ -1,5 +1,5 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.ordered_map;
 import star.lru_cache;
 import star.maybe;
@@ -20,14 +20,14 @@ import star.poly;
 import star.variant;
 import star.id_map;
 import star.set;
-#include "StarCasting.hpp"
+import star.casting;
 import star.either;
 import star.interpolation;
 import star.bi_map;
 import star.random;
 import star.perlin;
 import star.weighted_pool;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.io_device;
 import star.ref_ptr;
 import star.listener;

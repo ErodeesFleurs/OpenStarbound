@@ -1,52 +1,19 @@
-#pragma once
+module;
 import std;
 import star.lua;
 import star.json;
-import star.id_map;
 import star.game_types;
 import star.maybe;
-import star.variant;
-#include "StarCasting.hpp"
-import star.data_stream;
-#include "StarStrongTypedef.hpp"
 import star.list;
-import star.rpc_promise;
 import star.vector;
-import star.bi_map;
-import star.a_star;
-
-
-import star.damage_types;
-import star.world_geometry;
-import star.status_types;
-import star.damage;
-import star.light_source;
-import star.entity;
-import star.tile_damage;
-import star.interaction_types;
-import star.item_descriptor;
-import star.celestial_coordinate;
-import star.quest_descriptor;
-import star.interactive_entity;
-import star.collision_block;
-import star.tile_entity;
-import star.tile_modification;
-#include "StarLuaRoot.hpp"
-import star.force_regions;
-import star.world;
-import star.physics_entity;
-import star.movement_controller;
 import star.platformer_astar_types;
-import star.anchorable_entity;
-
-import star.game_timers;
 import star.actor_movement_controller;
-#include "StarLuaGameConverters.hpp"
-
+import star.lua_converters;
+import star.lua_game_converters;
 import star.movement_controller_lua_bindings;
-
 import star.math_common;
 import star.algorithm;
+
 namespace Star {
 
 // Wraps a LuaUpdatableComponent to handle the particularly tricky case of
@@ -198,7 +165,6 @@ void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementCon
     callbacks.registerCallback("canJump", [this]() {
         return m_movementController->canJump();
       });
-
     callbacks.registerCallback("jumping", [this]() {
         return m_movementController->jumping();
       });
@@ -393,4 +359,10 @@ void LuaActorMovementComponent<Base>::clearControls() {
     m_pathMoveResult = {};
   m_controlPathMove = {};
 }
+}
+
+export module star.lua_actor_movement_component;
+
+export namespace Star {
+  using ::Star::LuaActorMovementComponent;
 }

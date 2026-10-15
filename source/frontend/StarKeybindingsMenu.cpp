@@ -1,7 +1,7 @@
 import std;
 import star.json;
-#include "StarJsonExtra.hpp"
-#include "StarCasting.hpp"
+import star.json_extra;
+import star.casting;
 import star.input_event;
 import star.color;
 import star.font;

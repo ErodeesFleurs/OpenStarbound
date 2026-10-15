@@ -33,8 +33,8 @@ import star.lru_cache;
 import star.perlin;
 import star.id_map;
 import star.set;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.image;
 import star.rpc_promise;
 import star.worker_pool;
@@ -42,12 +42,12 @@ import star.worker_pool;
 import std;
 import star.sector_array_2d;
 import star.net_compatibility;
-#include "StarBTree.hpp"
-#include "StarDataStreamDevices.hpp"
+import star.btree;
+import star.data_stream_devices;
 import star.btree_database;
 import star.map;
 
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.celestial_coordinate;
 import star.sky_types;
 import star.animation;
@@ -105,7 +105,7 @@ import star.cellular_light_array;
 import star.cellular_lighting;
 import star.cellular_liquid;
 import star.world_structure;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.drawable;
 import star.entity_rendering_types;
 import star.sky_render_data;

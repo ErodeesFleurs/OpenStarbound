@@ -3,7 +3,7 @@ import std;
 import star.maybe;
 import star.json;
 import star.lua;
-#include "StarLuaConverters.hpp"
+import star.lua_converters;
 import star.input_event;
 import star.thread;
 import star.listener;

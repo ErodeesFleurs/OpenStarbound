@@ -1,5 +1,5 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.interpolation;
 import star.ordered_map;
 import star.either;
@@ -19,7 +19,7 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
@@ -57,7 +57,7 @@ import star.sky;
 import star.compression;
 import star.celestial_database;
 
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 import star.net_compatibility;
 import star.byte_array;

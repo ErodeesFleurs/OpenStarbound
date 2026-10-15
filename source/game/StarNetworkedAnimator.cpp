@@ -1,5 +1,5 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.interpolation;
 import star.random;
 import star.periodic_function;
@@ -31,7 +31,7 @@ import std;
 import star.format;
 import star.version;
 import star.lexical_cast;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.game_types;
 
 import star.animated_part_set;

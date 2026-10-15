@@ -1,5 +1,5 @@
 import star.memory;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
 import star.id_map;
 import star.random;
@@ -24,10 +24,10 @@ import star.directives;
 import star.asset_path;
 import star.set;
 import star.vector;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.iterator;
 import star.variant;
-#include "StarCasting.hpp"
+import star.casting;
 import star.rpc_promise;
 import star.logging;
 import star.math_common;
@@ -44,8 +44,8 @@ import star.format;
 import star.version;
 import star.weighted_pool;
 
-#include "StarLuaRoot.hpp"
-#include "StarUtilityLuaBindings.hpp"
+import star.lua_root;
+import star.utility_lua_bindings;
 // Parse JSON iterator templates before Particle imports animation (GCC 16).
 import star.item_descriptor;
 import star.drawable;
@@ -55,7 +55,7 @@ import star.tile_damage;
 import star.damage_types;
 import star.status_types;
 import star.entity_rendering_types;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.status_effect_entity;
 import star.scripted_entity;
 import star.chat_action;
@@ -100,7 +100,7 @@ import star.rebuilder;
 
 import star.light_source;
 
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 import star.net_compatibility;
 import star.byte_array;

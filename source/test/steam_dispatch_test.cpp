@@ -1,7 +1,7 @@
 #define STEAM_API_EXPORTS
 #include "steam/steam_api.h"
 #include "steam/steam_api_flat.h"
-#include "../application/StarSteamDispatch.hpp"
+import star.steam_dispatch;
 
 import std;
 

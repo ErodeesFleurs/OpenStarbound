@@ -1,5 +1,4 @@
-#pragma once
-
+module;
 import std;
 import star.json;
 import star.string;
@@ -147,4 +146,37 @@ FormattedJson addOrSet(bool add, std::shared_ptr<JsonPath::Path> path, Formatted
 String reprWithLineEnding(FormattedJson const& json);
 StringList findFiles(FindInput const& findArgs);
 
+}
+
+
+export module star.json_tool;
+
+export namespace Star {
+  using ::Star::GetCommand;
+  using ::Star::SetCommand;
+  using ::Star::AddCommand;
+  using ::Star::RemoveCommand;
+  using ::Star::EditCommand;
+  using ::Star::Command;
+  using ::Star::AtBeginning;
+  using ::Star::AtEnd;
+  using ::Star::BeforeKey;
+  using ::Star::AfterKey;
+  using ::Star::InsertLocation;
+  using ::Star::JsonInputFormat;
+  using ::Star::GenericInputFormat;
+  using ::Star::CommaSeparatedStrings;
+  using ::Star::StringInputFormat;
+  using ::Star::Output;
+  using ::Star::OutputOnSeparateLines;
+  using ::Star::ArrayOutput;
+  using ::Star::Options;
+  using ::Star::JsonLiteralInput;
+  using ::Star::FileInput;
+  using ::Star::FindInput;
+  using ::Star::Input;
+  using ::Star::ParsedArgs;
+  using ::Star::addOrSet;
+  using ::Star::reprWithLineEnding;
+  using ::Star::findFiles;
 }

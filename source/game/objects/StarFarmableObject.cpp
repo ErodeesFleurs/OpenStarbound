@@ -1,6 +1,6 @@
 import star.json;
 import star.xx_hash;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.list;
 import star.bi_map;
 import star.data_stream;
@@ -9,8 +9,8 @@ import star.math_common;
 import star.random;
 import star.periodic;
 import star.periodic_function;
-#include "StarCasting.hpp"
-#include "StarStrongTypedef.hpp"
+import star.casting;
+import star.strong_typedef;
 import star.set;
 import star.color;
 import star.lua;
@@ -43,9 +43,9 @@ import std;
 import star.sector_array_2d;
 import star.net_compatibility;
 import star.perlin;
-#include "StarBTree.hpp"
+import star.btree;
 import star.lru_cache;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.btree_database;
 import star.ordered_set;
 import star.game_types;
@@ -56,8 +56,8 @@ import star.logging;
 
 import star.collision_block;
 import star.item_descriptor;
-#include "StarLuaComponents.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_components;
+import star.lua_animation_component;
 import star.world_geometry;
 import star.status_types;
 import star.damage;
@@ -92,7 +92,7 @@ import star.root_base;
 import star.configuration;
 import star.root;
 import star.plant;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.tile_sector_array;
 import star.tile_modification;
 import star.force_regions;

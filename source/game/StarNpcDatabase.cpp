@@ -1,6 +1,7 @@
-#include "StarJsonExtra.hpp"
+import star.inventory_types;
+import star.json_extra;
 import star.json;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.string;
 import star.random;
 import star.periodic_function;
@@ -12,7 +13,7 @@ import star.set;
 import star.maybe;
 import star.data_stream;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.id_map;
 import star.color;
 import star.bi_map;
@@ -22,10 +23,10 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.byte_array;
 import star.encode;
-#include "StarCasting.hpp"
+import star.casting;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
@@ -63,7 +64,7 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 import star.physics_entity;
@@ -84,9 +85,9 @@ import star.lounging_entities;
 import star.mobile_entity;
 import star.actor_entity;
 import star.tool_user_entity;
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_components;
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.effect_emitter;
 import star.npc;
 import star.asset_source;
@@ -102,7 +103,7 @@ import star.tool_user_item;
 import star.fireable_item;
 import star.swingable_item;
 import star.armors;
-#include "StarUtilityLuaBindings.hpp"
+import star.utility_lua_bindings;
 import star.name_generator;
 import star.stored_functions;
 import star.rebuilder;

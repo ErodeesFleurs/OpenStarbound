@@ -1,6 +1,6 @@
 import std;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.list;
 import star.rect;
 import star.image_processing;
@@ -13,7 +13,7 @@ import star.asset_path;
 import star.string;
 import star.color;
 import star.vector;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.font;
 import star.bi_map;
@@ -31,7 +31,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.version;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 
 import star.drawable;
 import star.application;

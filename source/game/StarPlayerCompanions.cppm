@@ -15,15 +15,15 @@ import star.thread;
 import star.directives;
 import star.asset_path;
 import star.variant;
-#include "StarCasting.hpp"
+import star.casting;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 import star.rpc_promise;
 
 import star.uuid;
 import star.drawable;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;
@@ -39,7 +39,7 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 

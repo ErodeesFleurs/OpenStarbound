@@ -4,13 +4,13 @@ import star.xx_hash;
 import star.json;
 import star.id_map;
 import star.set;
-#include "StarBTree.hpp"
+import star.btree;
 import star.ordered_map;
 import star.lru_cache;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.thread;
 import star.btree_database;
-#include "StarCasting.hpp"
+import star.casting;
 import star.data_stream;
 import star.ordered_set;
 import star.list;
@@ -26,7 +26,7 @@ import star.rpc_promise;
 import star.random;
 import star.perlin;
 import star.weighted_pool;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import std;
 import star.rect;
 import star.worker_pool;
@@ -71,7 +71,7 @@ import star.inspectable_entity;
 import star.plant;
 import star.plant_database;
 import star.biome_placement;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.versioning_database;
 
 import star.byte_array;

@@ -12,7 +12,7 @@ import star.thread;
 import star.directives;
 import star.asset_path;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;

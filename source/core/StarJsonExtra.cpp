@@ -1,4 +1,4 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import std;
 import star.memory;
 import star.string;
@@ -7,6 +7,10 @@ import star.json;
 import star.format;
 import star.logging;
 import star.random;
+import star.color;
+import star.set;
+import star.weighted_pool;
+import star.directives;
 
 import star.vector;
 import star.matrix3;

@@ -11,7 +11,7 @@ import star.data_stream;
 import star.rpc_promise;
 import star.io_device;
 import star.byte_array;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
@@ -21,11 +21,11 @@ typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 import star.net_compatibility;
 import star.set;
-#include "StarBTree.hpp"
+import star.btree;
 import star.ordered_map;
 import star.lru_cache;
 import star.btree_database;
-#include "StarCasting.hpp"
+import star.casting;
 import star.ordered_set;
 import star.list;
 import star.bi_map;
@@ -33,7 +33,7 @@ import star.version;
 import star.random;
 import star.perlin;
 import star.weighted_pool;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.worker_pool;
 
 import star.sector_array_2d;
@@ -50,7 +50,7 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.universe;
 import star.celestial_coordinate;
 import star.host_address;
@@ -101,7 +101,7 @@ import star.cellular_light_array;
 import star.cellular_lighting;
 import star.cellular_liquid;
 import star.world_structure;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.drawable;
 import star.entity_rendering_types;
 import star.sky_render_data;

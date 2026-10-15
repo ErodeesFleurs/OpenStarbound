@@ -27,6 +27,7 @@ import star.format;
 import star.version;
 
 import star.celestial_coordinate;
+import star.warping;
 import star.sky_types;
 import star.animation;
 import star.particle;
@@ -41,7 +42,7 @@ import star.root_base;
 import star.configuration;
 import star.root;
 
-#include "StarTestUniverse.hpp"
+import star.test_universe;
 #include "gtest/gtest.h"
 
 

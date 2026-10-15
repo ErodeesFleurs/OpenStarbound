@@ -5,7 +5,7 @@ import star.game_types;
 import star.list;
 import star.bi_map;
 import star.collision_block;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.tile_modification;
 
 namespace Star {

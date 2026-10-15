@@ -1,4 +1,4 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
 import star.ordered_map;
 import star.either;
@@ -18,7 +18,7 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-#include "StarCasting.hpp"
+import star.casting;
 import star.lexical_cast;
 import star.format;
 import star.io_device;

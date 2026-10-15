@@ -9,7 +9,7 @@ import star.vector;
 import star.game_types;
 
 import star.lua;
-#include "StarLuaConverters.hpp"
+import star.lua_converters;
 
 import star.songbook;
 

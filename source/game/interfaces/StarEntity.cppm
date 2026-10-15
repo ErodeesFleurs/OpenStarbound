@@ -8,12 +8,12 @@ import star.json;
 import star.net_compatibility;
 import star.byte_array;
 import star.id_map;
-#include "StarCasting.hpp"
+import star.casting;
 import star.vector;
 import star.data_stream;
 import star.game_types;
 import star.poly;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 
 import star.damage_types;

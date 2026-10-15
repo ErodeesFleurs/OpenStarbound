@@ -1,5 +1,4 @@
-#pragma once
-
+module;
 #include <QPlainTextEdit>
 
 namespace Star {
@@ -22,4 +21,11 @@ private:
   bool m_changed;
 };
 
+}
+
+
+export module star.s_plain_text_edit;
+
+export namespace Star {
+  using ::Star::SPlainTextEdit;
 }

@@ -1,13 +1,13 @@
 module;
 import star.json;
 import star.xx_hash;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
 import star.rect;
 import star.map;
 import star.set;
 import star.spatial_hash_2d;
-#include "StarCasting.hpp"
+import star.casting;
 import star.iterator;
 import star.list;
 import star.bi_map;
@@ -19,7 +19,7 @@ import star.version;
 import star.random;
 import star.perlin;
 import star.weighted_pool;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.either;
 import star.image;
 import star.color;

@@ -14,8 +14,8 @@ import star.string;
 import star.directory_asset_source;
 
 import star.ordered_set;
-#include "StarDataStreamDevices.hpp"
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_devices;
+import star.data_stream_extra;
 import star.math_common;
 
 export module star.packed_asset_source;

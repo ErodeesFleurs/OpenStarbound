@@ -9,7 +9,7 @@ set -euo pipefail
 compiler_root="$(dirname -- "$(dirname -- "$(command -v clang++)")")"
 cxx_stdlib_flags="$(<"$compiler_root/nix-support/libcxx-cxxflags")"
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
-cmake -S "$root/source" -B "$root/build/clangd" -G Ninja \
+cmake --fresh -S "$root/source" -B "$root/build/clangd" -G Ninja \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
   -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \

@@ -7,7 +7,7 @@
 #endif
 import star.format;
 import star.maybe;
-#include "StarCasting.hpp"
+import star.casting;
 import star.logging;
 
 import std;

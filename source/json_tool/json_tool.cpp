@@ -8,8 +8,12 @@ import star.format;
 import star.json;
 import star.file;
 import star.logging;
-#include "json_tool.hpp"
-#include "editor_gui.hpp"
+import star.json_tool;
+import star.json_editor;
+import star.variant;
+import star.lexical_cast;
+import star.formatted_json;
+import star.json_path;
 
 // Tool for scripting and mass-editing of JSON+Comments files without affecting
 // formatting.

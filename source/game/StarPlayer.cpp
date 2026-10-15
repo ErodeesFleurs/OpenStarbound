@@ -1,8 +1,8 @@
 #include <assert.h>
 import star.json;
 import star.xx_hash;
-#include "StarJsonExtra.hpp"
-#include "StarDataStreamExtra.hpp"
+import star.json_extra;
+import star.data_stream_extra;
 import star.id_map;
 import star.ordered_map;
 import star.lru_cache;
@@ -10,14 +10,14 @@ import star.thread;
 import star.time;
 import star.random;
 import star.ttl_cache;
-#include "StarCasting.hpp"
+import star.casting;
 import star.poly;
 import star.list;
 import star.bi_map;
 import star.data_stream;
 import star.game_types;
 import star.json_rpc;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.vector;
 import star.string;
 import star.byte_array;
@@ -51,7 +51,7 @@ import star.spline;
 import star.lua;
 import star.observer_stream;
 import star.weighted_pool;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
@@ -65,16 +65,16 @@ import star.worker_pool;
 
 import star.sector_array_2d;
 import star.perlin;
-#include "StarBTree.hpp"
+import star.btree;
 import star.btree_database;
 import star.image;
 
-#include "StarUtilityLuaBindings.hpp"
+import star.utility_lua_bindings;
 // Parse JSON iterator templates before game headers import modules (GCC 16).
-#include "StarLuaRoot.hpp"
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_root;
+import star.lua_actor_movement_component;
+import star.lua_components;
+import star.lua_animation_component;
 import star.collision_block;
 import star.item_descriptor;
 import star.drawable;

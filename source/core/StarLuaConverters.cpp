@@ -1,7 +1,7 @@
 import std;
+import star.lua_converters;
 import star.lua;
 import star.maybe;
-#include "StarLuaConverters.hpp"
 import star.color;
 
 namespace Star {

@@ -6,8 +6,8 @@ import star.format;
 #include <QMessageBox>
 
 
-#include "StarModUploader.hpp"
-#include "StarStringConversion.hpp"
+import star.mod_uploader;
+import star.string_conversion;
 
 using namespace Star;
 

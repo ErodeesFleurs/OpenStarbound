@@ -1,6 +1,6 @@
 import star.xx_hash;
 import star.json;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.ordered_map;
 import star.either;
 import star.vector;
@@ -19,11 +19,11 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.id_map;
 import star.string;
 import star.version;
-#include "StarCasting.hpp"
+import star.casting;
 import star.net_compatibility;
 import std;
 import star.set;
@@ -31,9 +31,9 @@ import star.worker_pool;
 
 import star.sector_array_2d;
 import star.perlin;
-#include "StarBTree.hpp"
+import star.btree;
 import star.lru_cache;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.btree_database;
 import star.ordered_set;
 import star.rpc_promise;
@@ -42,7 +42,7 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.celestial_coordinate;
 import star.sky_types;
 import star.animation;

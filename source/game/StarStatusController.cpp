@@ -1,13 +1,15 @@
+import star.game_timers;
+import star.actor_movement_controller;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.poly;
 import star.variant;
-#include "StarCasting.hpp"
+import star.casting;
 import star.data_stream;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 import star.list;
 import star.rpc_promise;
@@ -37,8 +39,8 @@ import std;
 import star.lua;
 import star.version;
 
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
+import star.lua_components;
+import star.lua_actor_movement_component;
 import star.animated_part_set;
 import star.drawable;
 import star.animation;
@@ -54,7 +56,7 @@ import star.assets;
 import star.root_base;
 import star.configuration;
 import star.root;
-#include "StarLuaGameConverters.hpp"
+import star.lua_game_converters;
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;
@@ -70,7 +72,7 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 import star.status_effect_entity;

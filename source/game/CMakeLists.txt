@@ -1,15 +1,3 @@
-set (star_game_HEADERS
-
-
-
-    scripting/StarLuaActorMovementComponent.hpp
-    scripting/StarLuaAnimationComponent.hpp
-    scripting/StarLuaGameConverters.hpp
-    scripting/StarLuaComponents.hpp
-    scripting/StarLuaRoot.hpp
-    scripting/StarScriptableThread.hpp
-  )
-
 set (star_game_SOURCES
 
 
@@ -24,6 +12,12 @@ set (star_game_SOURCES
 add_library (star_game_module_interfaces OBJECT)
 target_sources (star_game_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
     StarGameTypes.cppm
+    scripting/StarLuaRoot.cppm
+    scripting/StarLuaComponents.cppm
+    scripting/StarLuaGameConverters.cppm
+    scripting/StarLuaAnimationComponent.cppm
+    scripting/StarLuaActorMovementComponent.cppm
+    scripting/StarScriptableThread.cppm
     StarItem.cppm
     StarItemDrop.cppm
     StarMonster.cppm
@@ -291,17 +285,6 @@ target_include_directories (star_game_module_interfaces PRIVATE
   )
 target_link_libraries (star_game_module_interfaces PUBLIC star_base_modules star_platform_modules PRIVATE star_modules star_build_config)
 
-# Share native declarations with ordinary key-function providers.
-target_sources (star_game_module_interfaces PRIVATE
-    StarItem.inc
-    StarMonster.inc
-    StarNpc.inc
-    items/StarArmors.inc
-    StarUniverseClient.inc
-    StarUniverseServer.inc
-    StarSystemWorldServer.inc
-  )
-
 # Keep implementation template instantiations out of interface BMIs.
 add_library (star_game_modules STATIC
     StarGameTypes.cpp
@@ -521,7 +504,7 @@ target_include_directories (star_game_modules PRIVATE
 target_link_libraries (star_game_modules PUBLIC star_game_module_interfaces PRIVATE star_modules star_build_config)
 set_target_properties (star_game_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-add_library (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
+add_library (star_game OBJECT ${star_game_SOURCES})
 target_include_directories (star_game PRIVATE
     ${STAR_EXTERN_INCLUDES}
     ${STAR_CORE_INCLUDES}

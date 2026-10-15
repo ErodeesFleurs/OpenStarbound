@@ -13,7 +13,7 @@ import star.vector;
 import star.game_types;
 import star.maybe;
 import star.thread;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 
 

@@ -1,7 +1,7 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
 import star.xx_hash;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.ordered_map;
 import star.rect;
 import star.either;
@@ -22,7 +22,7 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.file;
 import star.io_device;
 import star.ref_ptr;
@@ -30,10 +30,10 @@ import star.logging;
 import star.listener;
 import star.version;
 import star.id_map;
-#include "StarCasting.hpp"
+import star.casting;
 import star.image;
 import star.string;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.rpc_promise;
 import star.set;
 import star.worker_pool;
@@ -42,7 +42,7 @@ import std;
 import star.sector_array_2d;
 import star.net_compatibility;
 import star.perlin;
-#include "StarBTree.hpp"
+import star.btree;
 import star.lru_cache;
 import star.btree_database;
 import star.ordered_set;
@@ -62,7 +62,7 @@ import star.assets;
 import star.root_base;
 import star.configuration;
 import star.root;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.tile_sector_array;
 import star.collision_block;
 import star.damage_types;
@@ -101,7 +101,7 @@ import star.net_packets;
 import star.cellular_light_array;
 import star.cellular_lighting;
 import star.cellular_liquid;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.drawable;
 import star.entity_rendering_types;
 import star.sky_render_data;

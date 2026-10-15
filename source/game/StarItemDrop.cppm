@@ -5,9 +5,9 @@ import star.id_map;
 import star.game_types;
 import star.maybe;
 import star.variant;
-#include "StarCasting.hpp"
+import star.casting;
 import star.vector;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.list;
 import star.rpc_promise;
 import star.data_stream;
@@ -23,8 +23,8 @@ import star.thread;
 import star.directives;
 import star.asset_path;
 
-#include "StarLuaRoot.hpp"
-#include "StarLuaComponents.hpp"
+import star.lua_root;
+import star.lua_components;
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;

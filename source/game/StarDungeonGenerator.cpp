@@ -1,5 +1,5 @@
 import std;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
 import star.poly;
 import star.list;
@@ -14,7 +14,7 @@ import star.set;
 import star.thread;
 import star.ordered_map;
 import star.lru_cache;
-#include "StarCasting.hpp"
+import star.casting;
 import star.random;
 import star.logging;
 import star.rect;

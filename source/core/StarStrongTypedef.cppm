@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 import std;
 
@@ -45,3 +45,7 @@ struct StrongTypedefBuiltin {
     return std::weak_ordering::equivalent;
   }
 };
+
+export module star.strong_typedef;
+
+export using ::StrongTypedefBuiltin;

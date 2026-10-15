@@ -1,12 +1,12 @@
 import std;
 import star.json;
-#include "StarJsonExtra.hpp"
-#include "StarStrongTypedef.hpp"
+import star.json_extra;
+import star.strong_typedef;
 import star.data_stream;
 import star.bi_map;
 import star.game_types;
 import star.vector;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.color;
 import star.font;
@@ -63,13 +63,13 @@ import star.mixer;
 import star.gui_context;
 import star.widget;
 import star.pane;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.widget_parsing;
 import star.gui_reader;
 
 
 import star.base_script_pane;
-#include "StarLuaGameConverters.hpp"
+import star.lua_game_converters;
 import star.widget_lua_bindings;
 import star.canvas_widget;
 import star.progress_widget;

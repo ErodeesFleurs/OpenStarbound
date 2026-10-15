@@ -2,7 +2,7 @@ import star.json;
 import star.rect;
 import star.vector;
 import star.game_types;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.ordered_map;
 import star.bi_map;
 import star.thread;

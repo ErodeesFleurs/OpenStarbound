@@ -1,4 +1,4 @@
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.json;
 import star.id_map;
 import star.ordered_map;
@@ -7,11 +7,11 @@ import star.thread;
 import star.time;
 import star.random;
 import star.ttl_cache;
-#include "StarCasting.hpp"
+import star.casting;
 import star.game_types;
 import star.maybe;
 import star.variant;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.rpc_promise;
 import star.vector;
 import star.rect;
@@ -29,7 +29,7 @@ import star.hash;
 import star.string_view;
 import star.directives;
 import star.asset_path;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.lua;
 import star.io_device;
 import star.ref_ptr;
@@ -42,11 +42,11 @@ import star.either;
 import star.periodic_function;
 
 // Parse JSON iterator templates before game headers import modules (GCC 16).
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_components;
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;
@@ -116,7 +116,7 @@ import star.item_lua_bindings;
 import star.movement_controller_lua_bindings;
 
 
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 import star.net_compatibility;
 import star.byte_array;

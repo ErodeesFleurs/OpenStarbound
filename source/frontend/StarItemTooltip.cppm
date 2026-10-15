@@ -1,13 +1,13 @@
 module;
 import std;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.algorithm;
 import star.id_map;
 import star.string;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.data_stream;
-#include "StarCasting.hpp"
+import star.casting;
 import star.input_event;
 import star.color;
 import star.font;
@@ -44,9 +44,9 @@ import star.periodic_function;
 import star.lua;
 
 
-#include "StarLuaRoot.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_root;
+import star.lua_components;
+import star.lua_animation_component;
 import star.status_types;
 import star.application;
 import star.statistics_service;

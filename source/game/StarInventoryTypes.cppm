@@ -6,7 +6,7 @@ import star.stream_formatter;
 import star.json;
 
 import star.bi_map;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 
 import star.algorithm;
 namespace Star {

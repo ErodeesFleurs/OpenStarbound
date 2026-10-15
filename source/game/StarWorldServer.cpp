@@ -1,6 +1,6 @@
 import star.xx_hash;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
 import star.vector;
 import star.set;
@@ -17,11 +17,11 @@ import star.version;
 import star.data_stream;
 import star.logging;
 import star.iterator;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 import star.perlin;
 import star.weighted_pool;
-#include "StarStrongTypedef.hpp"
-#include "StarCasting.hpp"
+import star.strong_typedef;
+import star.casting;
 import star.rpc_promise;
 import star.variant;
 import std;
@@ -42,9 +42,9 @@ import star.either;
 import star.image;
 import star.ordered_map;
 import star.net_compatibility;
-#include "StarBTree.hpp"
+import star.btree;
 import star.lru_cache;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.btree_database;
 import star.ordered_set;
 import star.io_device;
@@ -82,7 +82,7 @@ import star.drawable;
 import star.item;
 import star.item_descriptor;
 import star.item_recipe;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.tile_modification;
 import star.world;
 import star.celestial_types;
@@ -99,7 +99,7 @@ import star.cellular_light_array;
 import star.cellular_lighting;
 import star.cellular_liquid;
 import star.world_structure;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.entity_rendering_types;
 import star.sky_render_data;
 import star.parallax;
@@ -142,7 +142,7 @@ import star.mobile_entity;
 import star.scripted_entity;
 import star.game_timers;
 import star.item_drop;
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_animation_component;
 import star.status_effect_entity;
 import star.chat_action;
 import star.chatty_entity;
@@ -169,7 +169,7 @@ import star.inventory_types;
 import star.platformer_astar_types;
 import star.actor_movement_controller;
 import star.ai_types;
-#include "StarLuaActorMovementComponent.hpp"
+import star.lua_actor_movement_component;
 import star.player;
 import star.uuid;
 import star.warping;

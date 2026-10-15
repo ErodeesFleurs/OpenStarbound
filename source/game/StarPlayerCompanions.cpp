@@ -1,7 +1,7 @@
 import std;
 import star.lua;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
 import star.data_stream;
 import star.string;
@@ -14,9 +14,9 @@ import star.thread;
 import star.directives;
 import star.asset_path;
 import star.variant;
-#include "StarCasting.hpp"
+import star.casting;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.bi_map;
 import star.rpc_promise;
 import star.maybe;
@@ -30,7 +30,7 @@ import star.random;
 import star.periodic_function;
 import star.ordered_map;
 
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.uuid;
 import star.drawable;
 import star.damage_types;
@@ -48,7 +48,7 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.force_regions;
 import star.world;
 
@@ -81,8 +81,8 @@ import star.ai_types;
 import star.entity_rendering_types;
 import star.entity_rendering;
 import star.player_types;
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.radio_message_database;
 import star.player;
 

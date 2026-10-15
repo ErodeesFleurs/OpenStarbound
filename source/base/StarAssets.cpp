@@ -2,7 +2,7 @@ import std;
 import star.maybe;
 import star.format;
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.ordered_map;
 import star.rect;
 import star.bi_map;
@@ -27,16 +27,16 @@ import star.logging;
 import star.random;
 import star.font;
 import star.audio;
-#include "StarCasting.hpp"
+import star.casting;
 import star.lexical_cast;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.lua;
 
 import star.assets;
 import star.asset_source;
 import star.directory_asset_source;
 import star.image_lua_bindings;
-#include "StarUtilityLuaBindings.hpp"
+import star.utility_lua_bindings;
 
 import star.sha256;
 import star.memory_asset_source;

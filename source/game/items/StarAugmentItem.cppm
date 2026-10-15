@@ -14,7 +14,7 @@ import star.directives;
 import star.asset_path;
 import star.bi_map;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 
 import star.drawable;
 import star.item_descriptor;

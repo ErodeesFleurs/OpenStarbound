@@ -1,5 +1,5 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.list;
 import star.image_processing;
 import star.hash;
@@ -23,7 +23,7 @@ import star.string;
 import star.format;
 import star.version;
 import star.random;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 
 import star.tile_damage;
 import star.plant_database;

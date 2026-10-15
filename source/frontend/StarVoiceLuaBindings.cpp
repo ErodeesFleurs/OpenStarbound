@@ -4,13 +4,13 @@ import star.json;
 import star.lua;
 import star.string;
 import star.list;
-#include "StarLuaConverters.hpp"
+import star.lua_converters;
 import star.bi_map;
 import star.format;
 import star.game_types;
 import star.maybe;
 import star.thread;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
 import star.input_event;

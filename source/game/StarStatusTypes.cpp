@@ -2,12 +2,12 @@ import std;
 import star.string;
 import star.maybe;
 import star.json;
-#include "StarJsonExtra.hpp"
-#include "StarStrongTypedef.hpp"
+import star.json_extra;
+import star.strong_typedef;
 import star.data_stream;
 import star.id_map;
 import star.status_types;
-#include "StarDataStreamExtra.hpp"
+import star.data_stream_extra;
 
 namespace Star {
 

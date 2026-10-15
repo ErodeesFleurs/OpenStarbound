@@ -1,4 +1,5 @@
-#include "StarJsonExtra.hpp"
+import star.buffer;
+import star.json_extra;
 import std;
 import star.json;
 import star.xx_hash;
@@ -8,12 +9,12 @@ import star.thread;
 import star.time;
 import star.random;
 import star.ttl_cache;
-#include "StarCasting.hpp"
+import star.casting;
 import star.data_stream;
 import star.bi_map;
 import star.game_types;
 import star.json_rpc;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.vector;
 import star.string;
 import star.byte_array;
@@ -45,7 +46,7 @@ import star.version;
 import star.either;
 import star.variant;
 import star.weighted_pool;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 
 import star.lexical_cast;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
@@ -59,15 +60,15 @@ import star.worker_pool;
 
 import star.sector_array_2d;
 import star.perlin;
-#include "StarBTree.hpp"
+import star.btree;
 import star.btree_database;
 import star.rpc_promise;
 import star.image;
 import star.a_star;
 import star.periodic_function;
 
-#include "StarLuaRoot.hpp"
-#include "StarLuaActorMovementComponent.hpp"
+import star.lua_root;
+import star.lua_actor_movement_component;
 import star.item;
 import star.application;
 import star.statistics_service;
@@ -86,7 +87,7 @@ import star.item_database;
 import star.item_recipe;
 import star.celestial_coordinate;
 import star.quest_descriptor;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.uuid;
 import star.warping;
 import star.quests;
@@ -173,7 +174,7 @@ import star.inventory_types;
 import star.movement_controller;
 import star.platformer_astar_types;
 import star.actor_movement_controller;
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_animation_component;
 import star.radio_message_database;
 import star.player;
 import star.player_tech;

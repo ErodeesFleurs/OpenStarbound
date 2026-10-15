@@ -1,8 +1,8 @@
 import star.json;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.id_map;
 import star.game_types;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.data_stream;
 import star.string;
 import star.color;
@@ -13,7 +13,7 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-#include "StarCasting.hpp"
+import star.casting;
 import star.bi_map;
 import star.maybe;
 import star.variant;
@@ -37,8 +37,8 @@ import star.multi_table;
 import star.ordered_set;
 import star.either;
 
-#include "StarArmors.inc"
-#include "StarLuaRoot.hpp"
+import star.armors;
+import star.lua_root;
 import star.drawable;
 import star.item_descriptor;
 import star.celestial_coordinate;
@@ -73,7 +73,7 @@ import star.mobile_entity;
 import star.actor_entity;
 import star.tool_user_entity;
 import star.tool_user_item;
-#include "StarLuaComponents.hpp"
+import star.lua_components;
 import star.fireable_item;
 import star.swingable_item;
 import star.asset_source;
@@ -99,8 +99,8 @@ import star.ai_types;
 import star.entity_rendering_types;
 import star.entity_rendering;
 import star.player_types;
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarLuaAnimationComponent.hpp"
+import star.lua_actor_movement_component;
+import star.lua_animation_component;
 import star.radio_message_database;
 import star.player;
 import star.stored_functions;

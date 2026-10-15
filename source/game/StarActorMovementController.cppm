@@ -8,9 +8,9 @@ import star.game_types;
 import star.maybe;
 import star.poly;
 import star.variant;
-#include "StarCasting.hpp"
+import star.casting;
 import star.data_stream;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.list;
 import star.vector;
 import star.bi_map;

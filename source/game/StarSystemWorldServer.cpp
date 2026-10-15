@@ -1,6 +1,6 @@
 import star.json;
 import star.xx_hash;
-#include "StarJsonExtra.hpp"
+import star.json_extra;
 import star.ordered_map;
 import star.either;
 import star.vector;
@@ -19,7 +19,7 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-#include "StarStrongTypedef.hpp"
+import star.strong_typedef;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
@@ -29,7 +29,7 @@ import star.map;
 import star.format;
 import star.version;
 import star.id_map;
-#include "StarCasting.hpp"
+import star.casting;
 import star.net_compatibility;
 import std;
 import star.set;
@@ -37,15 +37,15 @@ import star.worker_pool;
 
 import star.sector_array_2d;
 import star.perlin;
-#include "StarBTree.hpp"
+import star.btree;
 import star.lru_cache;
-#include "StarDataStreamDevices.hpp"
+import star.data_stream_devices;
 import star.btree_database;
 import star.ordered_set;
 import star.rpc_promise;
 import star.math_common;
 
-#include "StarSystemWorldServer.inc"
+import star.system_world_server;
 import star.celestial_coordinate;
 import star.sky_types;
 import star.animation;
@@ -90,7 +90,7 @@ import star.inspectable_entity;
 import star.plant;
 import star.plant_database;
 import star.biome_placement;
-#include "StarLuaRoot.hpp"
+import star.lua_root;
 import star.versioning_database;
 import star.world_storage;
 import star.player_types;
@@ -470,7 +470,7 @@ void SystemWorldServer::spawnObjects() {
     } else {
       object = std::make_shared<SystemObject>(objectConfig, uuid, position, m_lastSpawn);
     }
-    addObject(object);
+    addObject(object, false);
   }
 }
 

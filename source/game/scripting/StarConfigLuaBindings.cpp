@@ -5,8 +5,8 @@ import std;
 import star.string;
 import star.json;
 import star.lua;
-#include "StarJsonExtra.hpp"
-#include "StarLuaGameConverters.hpp"
+import star.json_extra;
+import star.lua_game_converters;
 
 module star.config_lua_bindings;
 

@@ -51,6 +51,7 @@ add_executable (core_tests
 if (STAR_ENABLE_STEAM_INTEGRATION)
   target_sources (core_tests PRIVATE steam_dispatch_test.cpp)
   target_include_directories (core_tests SYSTEM PRIVATE ${STEAM_API_INCLUDE_DIR})
+  target_link_libraries (core_tests PRIVATE star_steam_dispatch_modules)
 endif ()
 # gtest-all.cc includes its implementation files relative to the test directory.
 target_include_directories (core_tests PRIVATE
@@ -95,6 +96,7 @@ set (star_game_tests_SOURCES
 add_executable (game_tests
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_game>
   ${star_game_tests_SOURCES})
+target_sources (game_tests PRIVATE FILE_SET CXX_MODULES FILES StarTestUniverse.cppm)
 target_include_directories (game_tests PRIVATE
     ${STAR_EXTERN_INCLUDES}
     ${STAR_CORE_INCLUDES}
