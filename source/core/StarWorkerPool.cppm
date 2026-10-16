@@ -1,5 +1,6 @@
 module;
 import std;
+import star.unique_function;
 import star.string;
 import star.list;
 import star.maybe;
@@ -84,6 +85,7 @@ private:
     ConditionVariable condition;
     Maybe<ResultType> result;
     std::exception_ptr exception;
+    std::atomic<bool> done{false};
   };
 
   WorkerPoolPromise(std::shared_ptr<Impl> impl);
@@ -120,13 +122,13 @@ public:
   // required that the caller of this method hold on to the worker handle, the
   // work will be managed and completed regardless of the WorkerPoolHandle
   // lifetime.
-  WorkerPoolHandle addWork(std::function<void()> work);
+  WorkerPoolHandle addWork(UniqueFunction<void()> work);
 
   // Like addWork, but the worker is expected to produce some result.  The
   // returned promise can be used to get this return value once the producer is
   // complete.
   template <typename ResultType>
-  WorkerPoolPromise<ResultType> addProducer(std::function<ResultType()> producer);
+  WorkerPoolPromise<ResultType> addProducer(UniqueFunction<ResultType()> producer);
 
   // Returns the current number of worker threads.
   std::size_t getWorkerCount() const;
@@ -145,7 +147,7 @@ private:
     std::atomic<bool> waiting;
   };
 
-  void queueWork(std::function<void()> work);
+  void queueWork(UniqueFunction<void()> work);
 
   String m_name;
   Mutex m_threadMutex;
@@ -153,21 +155,26 @@ private:
 
   Mutex m_workMutex;
   ConditionVariable m_workCondition;
-  Deque<std::function<void()>> m_pendingWork;
+  Deque<UniqueFunction<void()>> m_pendingWork;
 };
 
 template <typename ResultType>
 bool WorkerPoolPromise<ResultType>::done() const {
-  MutexLocker locker(m_impl->mutex);
-  return m_impl->result || m_impl->exception;
+  return m_impl->done.load(std::memory_order_acquire);
 }
 
 template <typename ResultType>
 bool WorkerPoolPromise<ResultType>::wait(unsigned millis) const {
   MutexLocker locker(m_impl->mutex);
 
-  if (!m_impl->result && !m_impl->exception && millis != 0)
-    m_impl->condition.wait(m_impl->mutex, millis);
+  auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(millis);
+  while (!m_impl->done.load(std::memory_order_acquire) && millis != 0) {
+    auto remaining = deadline - std::chrono::steady_clock::now();
+    if (remaining <= decltype(remaining)::zero())
+      break;
+    m_impl->condition.wait(m_impl->mutex,
+        static_cast<unsigned>(std::chrono::ceil<std::chrono::milliseconds>(remaining).count()));
+  }
 
   if (m_impl->exception)
     std::rethrow_exception(m_impl->exception);
@@ -185,10 +192,7 @@ bool WorkerPoolPromise<ResultType>::poll() const {
 
 template <typename ResultType>
 ResultType& WorkerPoolPromise<ResultType>::get() {
-  MutexLocker locker(m_impl->mutex);
-
-  if (!m_impl->result && !m_impl->exception)
-    m_impl->condition.wait(m_impl->mutex);
+  m_impl->done.wait(false, std::memory_order_acquire);
 
   if (m_impl->exception)
     std::rethrow_exception(m_impl->exception);
@@ -206,19 +210,23 @@ WorkerPoolPromise<ResultType>::WorkerPoolPromise(std::shared_ptr<Impl> impl)
   : m_impl(std::move(impl)) {}
 
 template <typename ResultType>
-WorkerPoolPromise<ResultType> WorkerPool::addProducer(std::function<ResultType()> producer) {
+WorkerPoolPromise<ResultType> WorkerPool::addProducer(UniqueFunction<ResultType()> producer) {
   // Construct a worker pool promise and wrap the producer to signal the
   // promise when finished.
   auto workerPoolPromiseImpl = std::make_shared<typename WorkerPoolPromise<ResultType>::Impl>();
-  queueWork([workerPoolPromiseImpl, producer]() {
+  queueWork([workerPoolPromiseImpl, producer = std::move(producer)]() mutable {
     try {
       auto result = producer();
       MutexLocker promiseLocker(workerPoolPromiseImpl->mutex);
       workerPoolPromiseImpl->result = std::move(result);
+      workerPoolPromiseImpl->done.store(true, std::memory_order_release);
+      workerPoolPromiseImpl->done.notify_all();
       workerPoolPromiseImpl->condition.broadcast();
     } catch (...) {
       MutexLocker promiseLocker(workerPoolPromiseImpl->mutex);
       workerPoolPromiseImpl->exception = std::current_exception();
+      workerPoolPromiseImpl->done.store(true, std::memory_order_release);
+      workerPoolPromiseImpl->done.notify_all();
       workerPoolPromiseImpl->condition.broadcast();
     }
   });

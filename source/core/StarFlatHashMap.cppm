@@ -7,7 +7,7 @@ import star.hash;
 
 namespace Star {
 
-template <typename Key, typename Mapped, typename Hash = hash<Key>, typename Equals = std::equal_to<Key>, typename Allocator = std::allocator<Key>>
+template <typename Key, typename Mapped, typename Hash = hash<Key>, typename Equals = std::equal_to<>, typename Allocator = std::allocator<Key>>
 class FlatHashMap {
 public:
   typedef Key key_type;
@@ -134,6 +134,40 @@ public:
   template <typename... Args>
   iterator emplace_hint(const_iterator hint, Args&&... args);
 
+  template <typename... Args>
+  std::pair<iterator, bool> try_emplace(key_type const& key, Args&&... args) {
+    auto result = m_table.insertWith(key, [&] {
+      return TableValue(std::piecewise_construct, std::forward_as_tuple(key),
+          std::forward_as_tuple(std::forward<Args>(args)...));
+    });
+    return {iterator{result.first}, result.second};
+  }
+
+  template <typename... Args>
+  std::pair<iterator, bool> try_emplace(key_type&& key, Args&&... args) {
+    auto result = m_table.insertWith(key, [&] {
+      return TableValue(std::piecewise_construct, std::forward_as_tuple(std::move(key)),
+          std::forward_as_tuple(std::forward<Args>(args)...));
+    });
+    return {iterator{result.first}, result.second};
+  }
+
+  template <typename Value>
+  std::pair<iterator, bool> insert_or_assign(key_type const& key, Value&& value) {
+    auto result = try_emplace(key, std::forward<Value>(value));
+    if (!result.second)
+      result.first->second = std::forward<Value>(value);
+    return result;
+  }
+
+  template <typename Value>
+  std::pair<iterator, bool> insert_or_assign(key_type&& key, Value&& value) {
+    auto result = try_emplace(std::move(key), std::forward<Value>(value));
+    if (!result.second)
+      result.first->second = std::forward<Value>(value);
+    return result;
+  }
+
   iterator erase(const_iterator pos);
   iterator erase(const_iterator first, const_iterator last);
   std::size_t erase(key_type const& key);
@@ -147,6 +181,24 @@ public:
   std::size_t count(key_type const& key) const;
   const_iterator find(key_type const& key) const;
   iterator find(key_type const& key);
+
+  template <typename LookupKey>
+    requires requires(hasher const& h, key_equal const& equal, key_type const& stored, LookupKey const& query) {
+      typename hasher::is_transparent;
+      typename key_equal::is_transparent;
+      { h(query) } -> std::convertible_to<std::size_t>;
+      { equal(stored, query) } -> std::convertible_to<bool>;
+    }
+  const_iterator find(LookupKey const& key) const { return const_iterator{m_table.find(key)}; }
+
+  template <typename LookupKey>
+    requires requires(hasher const& h, key_equal const& equal, key_type const& stored, LookupKey const& query) {
+      typename hasher::is_transparent;
+      typename key_equal::is_transparent;
+      { h(query) } -> std::convertible_to<std::size_t>;
+      { equal(stored, query) } -> std::convertible_to<bool>;
+    }
+  iterator find(LookupKey const& key) { return iterator{m_table.find(key)}; }
   std::pair<iterator, iterator> equal_range(key_type const& key);
   std::pair<const_iterator, const_iterator> equal_range(key_type const& key) const;
 
@@ -408,7 +460,8 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::insert(const_iterator, T
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
 template <typename InputIt>
 void FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::insert(InputIt first, InputIt last) {
-  m_table.reserve(m_table.size() + std::distance(first, last));
+  if constexpr (std::forward_iterator<InputIt>)
+    m_table.reserve(m_table.size() + std::distance(first, last));
   for (auto i = first; i != last; ++i)
     m_table.insert(*i);
 }
@@ -468,18 +521,12 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::at(key_type const& key) 
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
 auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::operator[](key_type const& key) -> mapped_type& {
-  auto i = m_table.find(key);
-  if (i != m_table.end())
-    return i->second;
-  return m_table.insert({key, mapped_type()}).first->second;
+  return try_emplace(key).first->second;
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
 auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::operator[](key_type&& key) -> mapped_type& {
-  auto i = m_table.find(key);
-  if (i != m_table.end())
-    return i->second;
-  return m_table.insert({std::move(key), mapped_type()}).first->second;
+  return try_emplace(std::move(key)).first->second;
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>

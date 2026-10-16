@@ -23,16 +23,30 @@ void fromByteOrder(ByteOrder order, void* dest, void const* src, std::size_t len
 
 template <typename T>
 T toByteOrder(ByteOrder order, T const& t) {
-  T ret;
-  toByteOrder(order, &ret, &t, sizeof(t));
-  return ret;
+  if constexpr ((std::integral<T> && std::has_unique_object_representations_v<T>)
+      || (std::floating_point<T> && (sizeof(T) == sizeof(std::uint32_t) || sizeof(T) == sizeof(std::uint64_t)))) {
+    if (order == ByteOrder::NoConversion || platformByteOrder() == order)
+      return t;
+    if constexpr (std::integral<T>) {
+      if constexpr (sizeof(T) == 1)
+        return t;
+      else
+        return std::byteswap(t);
+    } else if constexpr (sizeof(T) == sizeof(std::uint32_t)) {
+      return std::bit_cast<T>(std::byteswap(std::bit_cast<std::uint32_t>(t)));
+    } else {
+      return std::bit_cast<T>(std::byteswap(std::bit_cast<std::uint64_t>(t)));
+    }
+  } else {
+    T ret;
+    toByteOrder(order, &ret, &t, sizeof(t));
+    return ret;
+  }
 }
 
 template <typename T>
 T fromByteOrder(ByteOrder order, T const& t) {
-  T ret;
-  fromByteOrder(order, &ret, &t, sizeof(t));
-  return ret;
+  return toByteOrder(order, t);
 }
 
 template <typename T>

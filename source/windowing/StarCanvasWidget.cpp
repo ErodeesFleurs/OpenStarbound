@@ -199,23 +199,23 @@ void CanvasWidget::renderImpl() {
 
   for (auto const& op : m_renderOps) {
     if (auto args = op.ptr<ImageOp>())
-      std::apply(std::bind(&CanvasWidget::renderImage, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), *args);
+      std::apply(std::bind_front(&CanvasWidget::renderImage, this, renderingOffset), *args);
     if (auto args = op.ptr<ImageRectOp>())
-      std::apply(std::bind(&CanvasWidget::renderImageRect, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), *args);
+      std::apply(std::bind_front(&CanvasWidget::renderImageRect, this, renderingOffset), *args);
     if (auto args = op.ptr<DrawableOp>())
-      std::apply(std::bind(&CanvasWidget::renderDrawable, this, renderingOffset, std::placeholders::_1, std::placeholders::_2), *args);
+      std::apply(std::bind_front(&CanvasWidget::renderDrawable, this, renderingOffset), *args);
     if (auto args = op.ptr<TiledImageOp>())
-      std::apply(std::bind(&CanvasWidget::renderTiledImage, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), *args);
+      std::apply(std::bind_front(&CanvasWidget::renderTiledImage, this, renderingOffset), *args);
     if (auto args = op.ptr<LineOp>())
-      std::apply(std::bind(&CanvasWidget::renderLine, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), *args);
+      std::apply(std::bind_front(&CanvasWidget::renderLine, this, renderingOffset), *args);
     if (auto args = op.ptr<RectOp>())
-      std::apply(std::bind(&CanvasWidget::renderRect, this, renderingOffset, std::placeholders::_1, std::placeholders::_2), *args);
+      std::apply(std::bind_front(&CanvasWidget::renderRect, this, renderingOffset), *args);
     if (auto args = op.ptr<PolyOp>())
-      std::apply(std::bind(&CanvasWidget::renderPoly, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), *args);
+      std::apply(std::bind_front(&CanvasWidget::renderPoly, this, renderingOffset), *args);
     if (auto args = op.ptr<TrianglesOp>())
-      std::apply(std::bind(&CanvasWidget::renderTriangles, this, renderingOffset, std::placeholders::_1, std::placeholders::_2), *args);
+      std::apply(std::bind_front(&CanvasWidget::renderTriangles, this, renderingOffset), *args);
     if (auto args = op.ptr<TextOp>())
-      std::apply(std::bind(&CanvasWidget::renderText, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), *args);
+      std::apply(std::bind_front(&CanvasWidget::renderText, this, renderingOffset), *args);
   }
 }
 

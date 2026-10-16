@@ -25,6 +25,7 @@ target_sources (star_modules PUBLIC FILE_SET CXX_MODULES
           StarMaybe.cppm StarVariant.cppm StarList.cppm StarMap.cppm StarSet.cppm
           StarOrderedMap.cppm StarOrderedSet.cppm
           StarString.cppm StarStringView.cppm StarThread.cppm StarBiMap.cppm
+          StarUniqueFunction.cppm
           StarIODevice.cppm StarFile.cppm StarDataStream.cppm StarXXHash.cppm
           StarJson.cppm StarLogging.cppm StarLua.cppm
           StarSha256.cppm StarImageScaling.cppm StarSecureRandom.cppm

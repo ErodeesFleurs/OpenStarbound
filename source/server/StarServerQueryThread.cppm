@@ -191,13 +191,13 @@ private:
   static const std::int32_t responseCacheTime = 5000;
 
   void sendTo(HostAddressWithPort const& address, DataStreamBuffer* ds);
-  bool processPacket(HostAddressWithPort const& address, char const* data, std::size_t length);
+  bool processPacket(HostAddressWithPort const& address, std::span<std::uint8_t const> data);
   void buildPlayerResponse();
   void buildRuleResponse();
-  bool validChallenge(HostAddressWithPort const& address, char const* data, std::size_t length);
+  bool validChallenge(HostAddressWithPort const& address, std::span<std::uint8_t const> data);
   void sendChallenge(HostAddressWithPort const& address);
   void pruneChallenges();
-  bool challengeRequest(HostAddressWithPort const& address, char const* data, std::size_t length);
+  bool challengeRequest(HostAddressWithPort const& address, std::span<std::uint8_t const> data);
 
   // Server API
   std::uint8_t serverPlayerCount();
@@ -310,9 +310,8 @@ const char* ServerQueryThread::serverPlugins() {
   return "none";
 }
 
-bool ServerQueryThread::processPacket(HostAddressWithPort const& address, char const* data, std::size_t length) {
-  std::uint8_t* buf = (std::uint8_t*)data;
-  if (length < 5 || buf[0] != 0xff || buf[1] != 0xff || buf[2] != 0xff || buf[3] != 0xff) {
+bool ServerQueryThread::processPacket(HostAddressWithPort const& address, std::span<std::uint8_t const> buf) {
+  if (buf.size() < 5 || buf[0] != 0xff || buf[1] != 0xff || buf[2] != 0xff || buf[3] != 0xff) {
     // short packet or missing header
     return false;
   }
@@ -320,14 +319,10 @@ bool ServerQueryThread::processPacket(HostAddressWithPort const& address, char c
   // Process packet
   switch (buf[4]) {
     case A2S_INFO_REQUEST: {
-      // We use -6 and not -5 as the string should be NULL terminated
-      // but instead of the std::string constructor stopping at the NULL
-      // it includes it :(
-      if (length < 6) {
-        // Without the trailing NULL byte the subtraction below would wrap around
+      // Exclude the trailing byte, preserving the existing accepted payload.
+      if (buf.size() < 6)
         return false;
-      }
-      std::string str((const char*)(buf + 5), length - 6);
+      std::string_view str(reinterpret_cast<char const*>(buf.data() + 5), buf.size() - 6);
       if (str.compare(A2S_INFO_REQUEST_STRING) != 0) {
         // Invalid request
         return false;
@@ -357,10 +352,10 @@ bool ServerQueryThread::processPacket(HostAddressWithPort const& address, char c
       return true;
 
     case A2S_PLAYER_REQUEST:
-      if (challengeRequest(address, data, length))
+      if (challengeRequest(address, buf))
         return true;
 
-      if (!validChallenge(address, data, length))
+      if (!validChallenge(address, buf))
         return false;
 
       buildPlayerResponse();
@@ -368,10 +363,10 @@ bool ServerQueryThread::processPacket(HostAddressWithPort const& address, char c
       return true;
 
     case A2S_RULES_REQUEST:
-      if (challengeRequest(address, data, length))
+      if (challengeRequest(address, buf))
         return true;
 
-      if (!validChallenge(address, data, length))
+      if (!validChallenge(address, buf))
         return false;
 
       buildRuleResponse();
@@ -452,7 +447,7 @@ void ServerQueryThread::run() {
       auto len = m_queryServer.receive(&udpAddress, udpData, MaxUdpData, 100);
       pruneChallenges();
       if (len != 0)
-        processPacket(udpAddress, udpData, len);
+        processPacket(udpAddress, std::span(reinterpret_cast<std::uint8_t const*>(udpData), len));
     } catch (SocketClosedException const&) {
     } catch (std::exception const& e) {
       Logger::error("ServerQueryThread exception caught: {}", outputException(e, true));
@@ -471,8 +466,8 @@ int ServerQueryThread::RequestChallenge::getChallenge() {
   return m_challenge;
 }
 
-bool ServerQueryThread::validChallenge(HostAddressWithPort const& address, char const* data, std::size_t len) {
-  if (len != 9) {
+bool ServerQueryThread::validChallenge(HostAddressWithPort const& address, std::span<std::uint8_t const> b) {
+  if (b.size() != 9) {
     // too much or too little data
     return false;
   }
@@ -482,7 +477,6 @@ bool ServerQueryThread::validChallenge(HostAddressWithPort const& address, char 
     return false;
   }
 
-  std::uint8_t const* b = (std::uint8_t const*)data;
   std::int32_t challenge = ((std::int32_t)b[8] & 0xff) << 24 | ((std::int32_t)b[7] & 0xff) << 16 | ((std::int32_t)b[6] & 0xff) << 8
       | ((std::int32_t)b[5] & 0xff);
   // Note: No byte order swapping needed as protcol performs no conversion
@@ -495,13 +489,12 @@ bool ServerQueryThread::validChallenge(HostAddressWithPort const& address, char 
   return true;
 }
 
-bool ServerQueryThread::challengeRequest(HostAddressWithPort const& address, char const* data, std::size_t len) {
-  if (len != 9) {
+bool ServerQueryThread::challengeRequest(HostAddressWithPort const& address, std::span<std::uint8_t const> buf) {
+  if (buf.size() != 9) {
     // too much or too little data
     return false;
   }
 
-  std::uint8_t const* buf = (std::uint8_t const*)data;
   if ((buf[5] == 0xff) && (buf[6] == 0xff) && (buf[7] == 0xff) && (buf[8] == 0xff)) {
     sendChallenge(address);
     return true;

@@ -558,7 +558,10 @@ std::size_t ListMixin<BaseList>::remove(const_reference e) {
 template <typename BaseList>
 template <typename Filter>
 void ListMixin<BaseList>::filter(Filter&& filter) {
-  Star::filter(*this, std::forward<Filter>(filter));
+  auto removed = std::remove_if(Base::begin(), Base::end(), [&](auto&& value) {
+    return !filter(std::forward<decltype(value)>(value));
+  });
+  Base::erase(removed, Base::end());
 }
 
 template <typename BaseList>

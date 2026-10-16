@@ -244,6 +244,7 @@ public:
 
   friend bool operator==(String const& s1, String const& s2);
   friend bool operator==(String const& s1, std::string const& s2);
+  friend bool operator==(String const& s1, std::string_view s2) { return s1.m_string == s2; }
   friend bool operator==(String const& s1, Char const* s2);
   friend bool operator==(String const& s1, char const* s2);
   friend bool operator==(std::string const& s1, String const& s2);
@@ -349,25 +350,56 @@ std::ostream& operator<<(std::ostream& os, StringList const& list);
 
 template <>
 struct hash<String> {
+  using is_transparent = void;
   std::size_t operator()(String const& s) const;
+  std::size_t operator()(StringView const& s) const;
+  std::size_t operator()(std::string_view s) const {
+    PLHasher value;
+    for (auto c : s)
+      value.put(c);
+    return value.hash();
+  }
+  std::size_t operator()(char const* s) const { return (*this)(std::string_view(s)); }
+  std::size_t operator()(std::string const& s) const { return (*this)(std::string_view(s)); }
 };
 
 struct CaseInsensitiveStringHash {
+  using is_transparent = void;
   std::size_t operator()(String const& s) const;
+  std::size_t operator()(StringView const& s) const;
+  std::size_t operator()(std::string_view s) const;
+  std::size_t operator()(char const* s) const { return (*this)(std::string_view(s)); }
+  std::size_t operator()(std::string const& s) const { return (*this)(std::string_view(s)); }
 };
 
 struct CaseInsensitiveStringCompare {
+  using is_transparent = void;
   bool operator()(String const& lhs, String const& rhs) const;
+  bool operator()(String const& lhs, StringView const& rhs) const;
+  bool operator()(StringView const& lhs, String const& rhs) const;
+  bool operator()(StringView const& lhs, StringView const& rhs) const;
+  bool operator()(String const& lhs, std::string_view rhs) const;
+  bool operator()(std::string_view lhs, String const& rhs) const;
+  bool operator()(String const& lhs, char const* rhs) const { return (*this)(lhs, std::string_view(rhs)); }
+  bool operator()(char const* lhs, String const& rhs) const { return (*this)(std::string_view(lhs), rhs); }
+  bool operator()(String const& lhs, std::string const& rhs) const { return (*this)(lhs, std::string_view(rhs)); }
+  bool operator()(std::string const& lhs, String const& rhs) const { return (*this)(std::string_view(lhs), rhs); }
+  bool operator()(std::string_view lhs, std::string_view rhs) const;
+  template <typename Left, typename Right>
+    requires (std::convertible_to<Left const&, std::string_view> && std::convertible_to<Right const&, std::string_view>)
+  bool operator()(Left const& lhs, Right const& rhs) const {
+    return (*this)(std::string_view(lhs), std::string_view(rhs));
+  }
 };
 
 typedef HashSet<String> StringSet;
 
 typedef HashSet<String, CaseInsensitiveStringHash, CaseInsensitiveStringCompare> CaseInsensitiveStringSet;
 
-template <typename MappedT, typename HashT = hash<String>, typename ComparatorT = std::equal_to<String>>
+template <typename MappedT, typename HashT = hash<String>, typename ComparatorT = std::equal_to<>>
 using StringMap = HashMap<String, MappedT, HashT, ComparatorT>;
 
-template <typename MappedT, typename HashT = hash<String>, typename ComparatorT = std::equal_to<String>>
+template <typename MappedT, typename HashT = hash<String>, typename ComparatorT = std::equal_to<>>
 using StableStringMap = StableHashMap<String, MappedT, HashT, ComparatorT>;
 
 template <typename MappedT>

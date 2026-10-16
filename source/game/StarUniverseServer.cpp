@@ -270,10 +270,8 @@ void UniverseServer::setListeningTcp(bool listenTcp) {
 
 void UniverseServer::addClient(UniverseConnection remoteConnection) {
   RecursiveMutexLocker acceptThreadsLocker(m_connectionAcceptThreadsMutex);
-  // Binding requires us to make the given lambda copy constructible, so the
-  // make_shared is requried here.
-  m_connectionAcceptThreads.append(Thread::invoke("UniverseServer::acceptConnection", [this, conn = std::make_shared<UniverseConnection>(std::move(remoteConnection))]() {
-    acceptConnection(std::move(*conn), {});
+  m_connectionAcceptThreads.append(Thread::invoke("UniverseServer::acceptConnection", [this, conn = std::move(remoteConnection)]() mutable {
+    acceptConnection(std::move(conn), {});
   }));
 }
 

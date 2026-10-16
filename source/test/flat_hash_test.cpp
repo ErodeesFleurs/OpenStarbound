@@ -5,11 +5,93 @@ import star.flat_hash_map;
 import star.random;
 import star.vector;
 import star.iterator;
+import star.map;
+import star.string;
+import star.string_view;
+import star.color;
 
 #include "gtest/gtest.h"
 
 import star.list;
 using namespace Star;
+
+namespace {
+struct ParsedMapEntry {
+  int key = 0;
+  operator std::pair<int, int>() const { return {key, key * 2}; }
+  friend std::istream& operator>>(std::istream& input, ParsedMapEntry& entry) {
+    return input >> entry.key;
+  }
+};
+struct CollisionHash {
+  std::size_t operator()(int) const { return 0; }
+};
+}
+
+TEST(FlatHashMap, SinglePassInputPreservesEveryElement) {
+  std::istringstream input("1 2 3 4");
+  FlatHashMap<int, int> values;
+  values.insert(std::istream_iterator<ParsedMapEntry>(input), {});
+  EXPECT_EQ(values.size(), 4u);
+  for (int key = 1; key <= 4; ++key)
+    EXPECT_EQ(values.at(key), key * 2);
+  std::istringstream setInput("1 2 3 4");
+  FlatHashSet<int> keys(std::istream_iterator<int>(setInput), {});
+  EXPECT_EQ(keys.size(), 4u);
+  for (int key = 1; key <= 4; ++key)
+    EXPECT_NE(keys.find(key), keys.end());
+}
+
+TEST(FlatHashMap, RemoveAllValuesAcrossCollisionShift) {
+  HashMap<int, int, CollisionHash> values;
+  for (int key = 0; key < 40; ++key)
+    values.set(key, key % 2);
+  EXPECT_TRUE(values.removeValues(0));
+  EXPECT_EQ(values.size(), 20u);
+  for (int key = 0; key < 40; ++key)
+    EXPECT_EQ(values.contains(key), key % 2 != 0);
+  EXPECT_TRUE(values.removeValues(1));
+  EXPECT_TRUE(values.empty());
+}
+
+TEST(FlatHashMap, TryEmplaceKeepsOwnershipOnDuplicate) {
+  HashMap<int, std::unique_ptr<int>, CollisionHash> values;
+  values.try_emplace(1, std::make_unique<int>(42));
+  auto candidate = std::make_unique<int>(99);
+  auto result = values.try_emplace(1, std::move(candidate));
+  EXPECT_FALSE(result.second);
+  ASSERT_TRUE(candidate);
+  EXPECT_EQ(*candidate, 99);
+  EXPECT_EQ(*result.first->second, 42);
+  values.insert_or_assign(1, std::move(candidate));
+  EXPECT_FALSE(candidate);
+  EXPECT_EQ(*values.get(1), 99);
+
+  StringMap<int> keyed;
+  keyed.try_emplace("present", 1);
+  String key("present");
+  auto assigned = keyed.insert_or_assign(std::move(key), 2);
+  EXPECT_FALSE(assigned.second);
+  EXPECT_EQ(key, "present");
+  EXPECT_EQ(assigned.first->second, 2);
+}
+
+TEST(FlatHashMap, BorrowedLookupPreservesBytesAndCaseRules) {
+  String key("x\0中", 5);
+  std::string bytes = "!" + key.utf8() + "?";
+  StringView query(bytes.data() + 1, key.utf8Size());
+  StringMap<int> values{{key, 7}};
+  StableStringMap<int> stable{{key, 8}};
+  EXPECT_EQ(hash<String>{}(key), hash<String>{}(query));
+  EXPECT_EQ(values.get(query), 7);
+  EXPECT_EQ(stable.get(query), 8);
+  *values.ptr(query) = 9;
+  EXPECT_EQ(values.value(query), 9);
+  EXPECT_EQ(values.maybe(query).get(), 9);
+  CaseInsensitiveStringMap<int> insensitive{{"MiXeD中", 10}};
+  EXPECT_EQ(insensitive.get(StringView("mixed中")), 10);
+  EXPECT_EQ(Color(StringView("RED")), Color::Red);
+}
 
 TEST(FlatHashSet, Preset) {
   FlatHashSet<int> testSet = {42, 63};

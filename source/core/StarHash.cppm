@@ -99,9 +99,9 @@ export module star.hash;
 
 export namespace Star {
   template <typename first_t, typename second_t>
-  class hash<std::pair<first_t, second_t>>;
+  struct hash<std::pair<first_t, second_t>>;
   template <typename... TTypes>
-  class hash<std::tuple<TTypes...>>;
+  struct hash<std::tuple<TTypes...>>;
   template <typename EnumType>
   struct hash<EnumType, typename std::enable_if<std::is_enum<EnumType>::value>::type>;
 }

@@ -203,6 +203,7 @@ List<Value> jsonToList(Json const& v, Converter&& valueConvert) {
     throw JsonException("Json type is not a array in jsonToList");
 
   List<Value> res;
+  res.reserve(v.size());
   for (auto const& entry : v.iterateArray())
     res.push_back(valueConvert(entry));
 
@@ -217,6 +218,7 @@ Json jsonFromList(List<Value> const& list) {
 template <typename Value, typename Converter>
 Json jsonFromList(List<Value> const& list, Converter&& valueConvert) {
   JsonArray res;
+  res.reserve(list.size());
   for (auto const& entry : list)
     res.push_back(valueConvert(entry));
 
@@ -248,6 +250,7 @@ Json jsonFromSet(SetType const& Set) {
 template <typename SetType, typename Converter>
 Json jsonFromSet(SetType const& Set, Converter&& valueConvert) {
   JsonArray res;
+  res.reserve(Set.size());
   for (auto& entry : Set)
     res.push_back(valueConvert(entry));
 
@@ -284,7 +287,7 @@ MapType jsonToMap(Json const& v) {
 template <typename MapType, typename KeyConverter, typename ValueConverter>
 Json jsonFromMapKV(MapType const& map, KeyConverter&& keyConvert, ValueConverter&& valueConvert) {
   JsonObject res;
-  for (auto pair : map)
+  for (auto const& pair : map)
     res[keyConvert(pair.first)] = valueConvert(pair.second);
 
   return res;

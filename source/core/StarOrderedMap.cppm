@@ -160,6 +160,23 @@ public:
   void sortByValue();
 
 private:
+  template <typename Self>
+  static decltype(auto) getImpl(Self& self, key_type const& key) {
+    auto position = self.m_map.find(key);
+    if (position == self.m_map.end())
+      throw MapException(strf("Key '{}' not found in OrderedMap::get()", outputAny(key)));
+    return std::forward_like<Self&>(position->second->second);
+  }
+
+  template <typename Self>
+  static decltype(auto) valueAtImpl(Self& self, std::size_t index) {
+    if (index >= self.size())
+      throw MapException(strf("index {} out of range in OrderedMap::valueAt()", index));
+    auto position = self.m_order.begin();
+    std::advance(position, index);
+    return std::forward_like<Self&>(position->second);
+  }
+
   MapType m_map;
   OrderType m_order;
 };
@@ -234,16 +251,12 @@ bool OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::contains(key_typ
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::get(key_type const& k) -> mapped_type& {
-  auto i = m_map.find(k);
-  if (i == m_map.end())
-    throw MapException(strf("Key '{}' not found in OrderedMap::get()", outputAny(k)));
-
-  return i->second->second;
+  return getImpl(*this, k);
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::get(key_type const& k) const -> mapped_type const& {
-  return const_cast<OrderedMapWrapper*>(this)->get(k);
+  return getImpl(*this, k);
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
@@ -526,17 +539,12 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::keyAt(std::size_
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::valueAt(std::size_t i) const -> mapped_type const& {
-  return const_cast<OrderedMapWrapper*>(this)->valueAt(i);
+  return valueAtImpl(*this, i);
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::valueAt(std::size_t i) -> mapped_type& {
-  if (i >= size())
-    throw MapException(strf("index {} out of range in OrderedMap::valueAt()", i));
-
-  auto it = m_order.begin();
-  std::advance(it, i);
-  return it->second;
+  return valueAtImpl(*this, i);
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>

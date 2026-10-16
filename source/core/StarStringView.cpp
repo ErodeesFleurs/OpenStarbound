@@ -4,6 +4,7 @@ import star.string_view;
 import star.string;
 import star.unicode;
 import star.format;
+import star.hash;
 
 import star.byte_array;
 import star.algorithm;
@@ -32,6 +33,48 @@ StringView::StringView(char const* s, std::size_t n) : m_view(s, n) {};
 StringView::StringView(std::string_view const& s) : m_view(s) {};
 StringView::StringView(std::string_view&& s) noexcept : m_view(std::move(s)) {};
 StringView::StringView(std::string const& s) : m_view(s) {}
+
+std::size_t hash<String>::operator()(StringView const& s) const {
+  PLHasher hash;
+  for (auto c : s.utf8())
+    hash.put(c);
+  return hash.hash();
+}
+
+std::size_t CaseInsensitiveStringHash::operator()(std::string_view s) const {
+  return (*this)(StringView(s));
+}
+
+bool CaseInsensitiveStringCompare::operator()(String const& lhs, std::string_view rhs) const {
+  return StringView(lhs).equalsIgnoreCase(StringView(rhs));
+}
+
+bool CaseInsensitiveStringCompare::operator()(std::string_view lhs, String const& rhs) const {
+  return StringView(lhs).equalsIgnoreCase(StringView(rhs));
+}
+
+bool CaseInsensitiveStringCompare::operator()(std::string_view lhs, std::string_view rhs) const {
+  return StringView(lhs).equalsIgnoreCase(StringView(rhs));
+}
+
+std::size_t CaseInsensitiveStringHash::operator()(StringView const& s) const {
+  PLHasher hash;
+  for (auto c : s)
+    hash.put(String::toLower(c));
+  return hash.hash();
+}
+
+bool CaseInsensitiveStringCompare::operator()(String const& lhs, StringView const& rhs) const {
+  return StringView(lhs).equalsIgnoreCase(rhs);
+}
+
+bool CaseInsensitiveStringCompare::operator()(StringView const& lhs, String const& rhs) const {
+  return lhs.equalsIgnoreCase(StringView(rhs));
+}
+
+bool CaseInsensitiveStringCompare::operator()(StringView const& lhs, StringView const& rhs) const {
+  return lhs.equalsIgnoreCase(rhs);
+}
 
 
 std::string_view const& StringView::utf8() const {

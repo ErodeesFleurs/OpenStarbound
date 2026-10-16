@@ -170,9 +170,9 @@ private:
   using OversizedPacket = StarError<OversizedPacketTag, StarException>;
 
   void receive(std::size_t size);
-  void send(std::uint32_t requestId, std::uint32_t cmd, String str = "");
+  void send(std::uint32_t requestId, std::uint32_t cmd, std::string_view str = {});
   void sendAuthFailure();
-  void sendCmdResponse(std::uint32_t requestId, String response);
+  void sendCmdResponse(std::uint32_t requestId, String const& response);
   void closeSocket();
   void processRequest();
   ServerCommandResult handleCommand(String commandLine);
@@ -265,9 +265,12 @@ void ServerRconClient::receive(std::size_t size) {
   }
 }
 
-void ServerRconClient::send(std::uint32_t requestId, std::uint32_t cmd, String str) {
+void ServerRconClient::send(std::uint32_t requestId, std::uint32_t cmd, std::string_view str) {
   m_packetBuffer.clear();
-  m_packetBuffer << (std::uint32_t)(str.utf8Size() + 10) << requestId << cmd << str << (std::uint8_t)0x00;
+  m_packetBuffer << static_cast<std::uint32_t>(str.size() + 10) << requestId << cmd;
+  if (!str.empty())
+    m_packetBuffer.writeData(str.data(), str.size());
+  m_packetBuffer << std::uint8_t{0} << std::uint8_t{0};
   m_socket->send(m_packetBuffer.ptr(), m_packetBuffer.size());
 }
 
@@ -275,15 +278,17 @@ void ServerRconClient::sendAuthFailure() {
   send(SERVERDATA_AUTH_FAILURE, SERVERDATA_AUTH_RESPONSE, "");
 }
 
-void ServerRconClient::sendCmdResponse(std::uint32_t requestId, String response) {
-  std::size_t len = response.length();
-  // Always send at least one packet even if the response was blank
+void ServerRconClient::sendCmdResponse(std::uint32_t requestId, String const& response) {
+  std::size_t remaining = response.length();
+  auto cursor = response.begin();
+  // Preserve code-point chunk boundaries and the packet for an empty response.
   do {
-    auto dataLen = (len >= MaxPacketSize) ? MaxPacketSize : len;
-    send(requestId, SERVERDATA_RESPONSE_VALUE, response.substr(0, dataLen));
-    response = response.substr(dataLen);
-    len = response.length();
-  } while (len > 0);
+    auto first = cursor.base();
+    auto count = std::min(remaining, MaxPacketSize);
+    std::advance(cursor, count);
+    send(requestId, SERVERDATA_RESPONSE_VALUE, std::string_view(first, cursor.base()));
+    remaining -= count;
+  } while (remaining > 0);
 }
 
 void ServerRconClient::start() {

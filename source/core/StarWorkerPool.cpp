@@ -1,4 +1,5 @@
 import std;
+import star.unique_function;
 import star.string;
 import star.format;
 import star.thread;
@@ -7,15 +8,20 @@ import star.worker_pool;
 namespace Star {
 
 bool WorkerPoolHandle::done() const {
-  MutexLocker locker(m_impl->mutex);
-  return m_impl->done;
+  return m_impl->done.load(std::memory_order_acquire);
 }
 
 bool WorkerPoolHandle::wait(unsigned millis) const {
   MutexLocker locker(m_impl->mutex);
 
-  if (!m_impl->done && millis != 0)
-    m_impl->condition.wait(m_impl->mutex, millis);
+  auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(millis);
+  while (!m_impl->done.load(std::memory_order_acquire) && millis != 0) {
+    auto remaining = deadline - std::chrono::steady_clock::now();
+    if (remaining <= decltype(remaining)::zero())
+      break;
+    m_impl->condition.wait(m_impl->mutex,
+        static_cast<unsigned>(std::chrono::ceil<std::chrono::milliseconds>(remaining).count()));
+  }
 
   if (m_impl->exception)
     std::rethrow_exception(m_impl->exception);
@@ -28,10 +34,7 @@ bool WorkerPoolHandle::poll() const {
 }
 
 void WorkerPoolHandle::finish() const {
-  MutexLocker locker(m_impl->mutex);
-
-  if (!m_impl->done)
-    m_impl->condition.wait(m_impl->mutex);
+  m_impl->done.wait(false, std::memory_order_acquire);
 
   if (m_impl->exception)
     std::rethrow_exception(m_impl->exception);
@@ -104,21 +107,23 @@ void WorkerPool::finish() {
   stop();
 }
 
-WorkerPoolHandle WorkerPool::addWork(std::function<void()> work) {
+WorkerPoolHandle WorkerPool::addWork(UniqueFunction<void()> work) {
   // Construct a worker pool handle and wrap the work to signal the handle when
   // finished.  Set the result to empty string if successful and to the content
   // of the exception if an exception is thrown.
   auto workerPoolHandleImpl = std::make_shared<WorkerPoolHandle::Impl>();
-  queueWork([workerPoolHandleImpl, work]() {
+  queueWork([workerPoolHandleImpl, work = std::move(work)]() mutable {
     try {
       work();
       MutexLocker handleLocker(workerPoolHandleImpl->mutex);
-      workerPoolHandleImpl->done = true;
+      workerPoolHandleImpl->done.store(true, std::memory_order_release);
+      workerPoolHandleImpl->done.notify_all();
       workerPoolHandleImpl->condition.broadcast();
     } catch (...) {
       MutexLocker handleLocker(workerPoolHandleImpl->mutex);
-      workerPoolHandleImpl->done = true;
       workerPoolHandleImpl->exception = std::current_exception();
+      workerPoolHandleImpl->done.store(true, std::memory_order_release);
+      workerPoolHandleImpl->done.notify_all();
       workerPoolHandleImpl->condition.broadcast();
     }
   });
@@ -163,7 +168,7 @@ void WorkerPool::WorkerThread::run() {
   }
 }
 
-void WorkerPool::queueWork(std::function<void()> work) {
+void WorkerPool::queueWork(UniqueFunction<void()> work) {
   MutexLocker workLock(m_workMutex);
   m_pendingWork.append(std::move(work));
   m_workCondition.signal();

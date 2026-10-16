@@ -9,6 +9,7 @@ import star.pythonic;
 import star.data_stream;
 import star.data_stream_devices;
 import star.data_stream_extra;
+import star.bytes;
 using namespace Star;
 
 TEST(any, allTests) {
@@ -185,4 +186,30 @@ TEST(TupleSerialization, OrderedWireAndEnumWidths) {
   EXPECT_TRUE(empty.empty());
   empty >> emptyTuple;
   EXPECT_EQ(empty.pos(), 0u);
+}
+
+TEST(ListFiltering, MoveOnlyValuesKeepStableOrder) {
+  List<std::unique_ptr<int>> values;
+  for (int value = 0; value < 8; ++value)
+    values.append(std::make_unique<int>(value));
+  values.filter([](std::unique_ptr<int>& value) { return *value % 2 != 0; });
+  ASSERT_EQ(values.size(), 4u);
+  for (std::size_t i = 0; i < values.size(); ++i)
+    EXPECT_EQ(*values[i], static_cast<int>(i * 2 + 1));
+  values.filter([](auto const&) { return true; });
+  EXPECT_EQ(values.size(), 4u);
+  values.filter([](auto const&) { return false; });
+  EXPECT_TRUE(values.empty());
+}
+
+TEST(ByteOrder, FloatingPayloadAndIntegerRepresentations) {
+  auto opposite = platformByteOrder() == ByteOrder::LittleEndian ? ByteOrder::BigEndian : ByteOrder::LittleEndian;
+  for (auto bits : {std::uint32_t{0}, std::uint32_t{0x80000000}, std::uint32_t{0x7fc12345}, std::uint32_t{0x3f800000}}) {
+    auto value = std::bit_cast<float>(bits);
+    EXPECT_EQ(std::bit_cast<std::uint32_t>(toByteOrder(opposite, value)), std::byteswap(bits));
+    EXPECT_EQ(std::bit_cast<std::uint32_t>(fromByteOrder(opposite, toByteOrder(opposite, value))), bits);
+  }
+  EXPECT_EQ(toByteOrder(opposite, std::uint16_t{0x1234}), 0x3412u);
+  EXPECT_EQ(toByteOrder(opposite, std::int32_t{-2}), std::byteswap(std::int32_t{-2}));
+  EXPECT_EQ(toByteOrder(ByteOrder::NoConversion, std::uint64_t{0x12345678}), 0x12345678u);
 }

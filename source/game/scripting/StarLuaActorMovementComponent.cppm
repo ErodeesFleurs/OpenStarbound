@@ -260,9 +260,9 @@ void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementCon
         return m_movementController->pathfinding();
       });
 
-    callbacks.registerCallbackWithSignature<bool>("autoClearControls", std::bind(&LuaActorMovementComponent::autoClearControls, this));
-    callbacks.registerCallbackWithSignature<void, bool>("setAutoClearControls", std::bind(&LuaActorMovementComponent::setAutoClearControls, this, std::placeholders::_1));
-    callbacks.registerCallbackWithSignature<void>("clearControls", std::bind(&LuaActorMovementComponent::clearControls, this));
+    callbacks.registerCallbackWithSignature<bool>("autoClearControls", std::bind_front(&LuaActorMovementComponent::autoClearControls, this));
+    callbacks.registerCallbackWithSignature<void, bool>("setAutoClearControls", std::bind_front(&LuaActorMovementComponent::setAutoClearControls, this));
+    callbacks.registerCallbackWithSignature<void>("clearControls", std::bind_front(&LuaActorMovementComponent::clearControls, this));
 
     Base::addCallbacks("mcontroller", callbacks);
 
@@ -305,15 +305,15 @@ void LuaActorMovementComponent<Base>::performControls() {
     m_movementController->controlAcceleration(m_controlAcceleration);
     m_movementController->controlForce(m_controlForce);
     if (m_controlApproachVelocity)
-      std::apply(std::bind(&ActorMovementController::controlApproachVelocity, m_movementController, std::placeholders::_1, std::placeholders::_2), *m_controlApproachVelocity);
+      std::apply(std::bind_front(&ActorMovementController::controlApproachVelocity, m_movementController), *m_controlApproachVelocity);
     if (m_controlApproachVelocityAlongAngle)
-      std::apply(std::bind(&ActorMovementController::controlApproachVelocityAlongAngle, m_movementController, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), *m_controlApproachVelocityAlongAngle);
+      std::apply(std::bind_front(&ActorMovementController::controlApproachVelocityAlongAngle, m_movementController), *m_controlApproachVelocityAlongAngle);
     if (m_controlParameters)
       m_movementController->controlParameters(*m_controlParameters);
     if (m_controlModifiers)
       m_movementController->controlModifiers(*m_controlModifiers);
     if (m_controlMove)
-      std::apply(std::bind(&ActorMovementController::controlMove, m_movementController, std::placeholders::_1, std::placeholders::_2), *m_controlMove);
+      std::apply(std::bind_front(&ActorMovementController::controlMove, m_movementController), *m_controlMove);
     if (m_controlFace)
       m_movementController->controlFace(*m_controlFace);
     if (m_controlDown)

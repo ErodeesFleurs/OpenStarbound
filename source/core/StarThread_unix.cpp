@@ -14,6 +14,7 @@
 #include <sys/time.h>
 #include <errno.h>
 import std;
+import star.unique_function;
 import star.thread;
 import star.string;
 import star.maybe;
@@ -57,7 +58,7 @@ struct ThreadImpl {
     return nullptr;
   }
 
-  ThreadImpl(std::function<void()> function, String name)
+  ThreadImpl(UniqueFunction<void()> function, String name)
     : function(std::move(function)), name(std::move(name)), stopped(true), joined(true) {}
 
   bool start() {
@@ -99,7 +100,7 @@ struct ThreadImpl {
     return true;
   }
 
-  std::function<void()> function;
+  UniqueFunction<void()> function;
   String name;
   pthread_t pthread;
   std::atomic<bool> stopped;
@@ -108,11 +109,11 @@ struct ThreadImpl {
 };
 
 struct ThreadFunctionImpl : ThreadImpl {
-  ThreadFunctionImpl(std::function<void()> function, String name)
+  ThreadFunctionImpl(UniqueFunction<void()> function, String name)
     : ThreadImpl(wrapFunction(std::move(function)), std::move(name)) {}
 
-  std::function<void()> wrapFunction(std::function<void()> function) {
-    return [function = std::move(function), this]() {
+  UniqueFunction<void()> wrapFunction(UniqueFunction<void()> function) {
+    return [function = std::move(function), this]() mutable {
       try {
         function();
       } catch (...) {
@@ -310,7 +311,7 @@ ThreadFunction<void>::ThreadFunction() {}
 
 ThreadFunction<void>::ThreadFunction(ThreadFunction&&) = default;
 
-ThreadFunction<void>::ThreadFunction(std::function<void()> function, String const& name) {
+ThreadFunction<void>::ThreadFunction(UniqueFunction<void()> function, String const& name) {
   m_impl.reset(new ThreadFunctionImpl(std::move(function), name));
   m_impl->start();
 }

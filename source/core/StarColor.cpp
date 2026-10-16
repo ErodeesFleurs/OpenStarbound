@@ -225,7 +225,7 @@ Color::Color(StringView name) {
   if (name.utf8().rfind('#', 0) == 0)
     *this = fromHex(name.utf8().substr(1));
   else {
-    auto i = NamedColors.find(String(name));
+    auto i = NamedColors.find(name);
     if (i != NamedColors.end())
       *this = i->second;
     else

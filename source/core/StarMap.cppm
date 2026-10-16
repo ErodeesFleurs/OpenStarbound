@@ -78,6 +78,60 @@ public:
   bool hasValue(mapped_type const& v) const;
 
   using Base::insert;
+  using Base::try_emplace;
+  using Base::insert_or_assign;
+
+  template <typename LookupKey>
+    requires requires(Base const& base, LookupKey const& key) { base.find(key); }
+  bool contains(LookupKey const& key) const { return Base::find(key) != Base::end(); }
+
+  template <typename LookupKey>
+    requires requires(Base& base, LookupKey const& key) { base.find(key); }
+  mapped_type& get(LookupKey const& key) {
+    auto position = Base::find(key);
+    if (position == Base::end())
+      throw MapException(strf("Key '{}' not found in Map::get()", outputAny(key)));
+    return position->second;
+  }
+
+  template <typename LookupKey>
+    requires requires(Base const& base, LookupKey const& key) { base.find(key); }
+  mapped_type const& get(LookupKey const& key) const {
+    auto position = Base::find(key);
+    if (position == Base::end())
+      throw MapException(strf("Key '{}' not found in Map::get()", outputAny(key)));
+    return position->second;
+  }
+
+  template <typename LookupKey>
+    requires requires(Base const& base, LookupKey const& key) { base.find(key); }
+  mapped_type value(LookupKey const& key, mapped_type fallback = mapped_type()) const {
+    auto position = Base::find(key);
+    return position == Base::end() ? std::move(fallback) : position->second;
+  }
+
+  template <typename LookupKey>
+    requires requires(Base const& base, LookupKey const& key) { base.find(key); }
+  Maybe<mapped_type> maybe(LookupKey const& key) const {
+    auto position = Base::find(key);
+    if (position == Base::end())
+      return {};
+    return position->second;
+  }
+
+  template <typename LookupKey>
+    requires requires(Base const& base, LookupKey const& key) { base.find(key); }
+  mapped_const_ptr ptr(LookupKey const& key) const {
+    auto position = Base::find(key);
+    return position == Base::end() ? nullptr : &position->second;
+  }
+
+  template <typename LookupKey>
+    requires requires(Base& base, LookupKey const& key) { base.find(key); }
+  mapped_ptr ptr(LookupKey const& key) {
+    auto position = Base::find(key);
+    return position == Base::end() ? nullptr : &position->second;
+  }
 
   // Same as insert(value_type), returns the iterator to either the newly
   // inserted value or the existing value, and then a bool that is true if the
@@ -105,10 +159,10 @@ std::ostream& operator<<(std::ostream& os, MapMixin<BaseMap> const& m);
 template <typename Key, typename Value, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<Key const, Value>>>
 using Map = MapMixin<std::map<Key, Value, Compare, Allocator>>;
 
-template <typename Key, typename Value, typename Hash = hash<Key>, typename Equals = std::equal_to<Key>, typename Allocator = std::allocator<std::pair<Key const, Value>>>
+template <typename Key, typename Value, typename Hash = hash<Key>, typename Equals = std::equal_to<>, typename Allocator = std::allocator<std::pair<Key const, Value>>>
 using HashMap = MapMixin<FlatHashMap<Key, Value, Hash, Equals, Allocator>>;
 
-template <typename Key, typename Value, typename Hash = hash<Key>, typename Equals = std::equal_to<Key>, typename Allocator = std::allocator<std::pair<Key const, Value>>>
+template <typename Key, typename Value, typename Hash = hash<Key>, typename Equals = std::equal_to<>, typename Allocator = std::allocator<std::pair<Key const, Value>>>
 using StableHashMap = MapMixin<std::unordered_map<Key, Value, Hash, Equals, Allocator>>;
 
 template <typename BaseMap>
@@ -157,7 +211,7 @@ bool MapMixin<BaseMap>::removeValues(mapped_type const& v) {
   const_iterator i = Base::begin();
   while (i != Base::end()) {
     if (i->second == v) {
-      Base::erase(i++);
+      i = Base::erase(i);
       removed = true;
     } else {
       ++i;
@@ -267,12 +321,12 @@ auto MapMixin<BaseMap>::hasValue(mapped_type const& v) const -> bool {
 
 template <typename BaseMap>
 auto MapMixin<BaseMap>::insert(key_type k, mapped_type v) -> std::pair<iterator, bool> {
-  return Base::insert(value_type(std::move(k), std::move(v)));
+  return Base::try_emplace(std::move(k), std::move(v));
 }
 
 template <typename BaseMap>
 auto MapMixin<BaseMap>::add(key_type k, mapped_type v) -> mapped_type& {
-  auto pair = Base::insert(value_type(std::move(k), std::move(v)));
+  auto pair = Base::try_emplace(std::move(k), std::move(v));
   if (!pair.second)
     throw MapException(strf("Entry with key '{}' already present.", outputAny(k)));
   else
@@ -281,13 +335,7 @@ auto MapMixin<BaseMap>::add(key_type k, mapped_type v) -> mapped_type& {
 
 template <typename BaseMap>
 auto MapMixin<BaseMap>::set(key_type k, mapped_type v) -> mapped_type& {
-  auto i = Base::find(k);
-  if (i != Base::end()) {
-    i->second = std::move(v);
-    return i->second;
-  } else {
-    return Base::insert(value_type(std::move(k), std::move(v))).first->second;
-  }
+  return Base::insert_or_assign(std::move(k), std::move(v)).first->second;
 }
 
 template <typename BaseMap>

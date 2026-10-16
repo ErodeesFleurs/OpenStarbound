@@ -393,7 +393,8 @@ auto FlatHashSet<Key, Hash, Equals, Allocator>::insert(const_iterator, value_typ
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 template <typename InputIt>
 void FlatHashSet<Key, Hash, Equals, Allocator>::insert(InputIt first, InputIt last) {
-  m_table.reserve(m_table.size() + std::distance(first, last));
+  if constexpr (std::forward_iterator<InputIt>)
+    m_table.reserve(m_table.size() + std::distance(first, last));
   for (auto i = first; i != last; ++i)
     m_table.insert(*i);
 }

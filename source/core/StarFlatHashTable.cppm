@@ -16,10 +16,11 @@ private:
     Bucket();
     ~Bucket();
 
-    Bucket(Bucket const& rhs);
-    Bucket(Bucket&& rhs);
+    Bucket(Bucket const& rhs) requires std::is_copy_constructible_v<Value>;
+    Bucket(Bucket&& rhs) noexcept(std::is_nothrow_move_constructible_v<Value>);
 
-    Bucket& operator=(Bucket const& rhs);
+    Bucket& operator=(Bucket const& rhs)
+      requires (std::is_copy_constructible_v<Value> && std::is_copy_assignable_v<Value>);
     Bucket& operator=(Bucket&& rhs);
 
     void setFilled(std::size_t hash, Value value);
@@ -85,12 +86,21 @@ public:
   void clear();
 
   std::pair<iterator, bool> insert(Value value);
+  template <typename Factory>
+  std::pair<iterator, bool> insertWith(Key const& key, Factory&& factory) {
+    auto position = find(key);
+    if (position != end())
+      return {position, false};
+    return insert(std::invoke(std::forward<Factory>(factory)));
+  }
 
   iterator erase(const_iterator pos);
   iterator erase(const_iterator first, const_iterator last);
 
-  const_iterator find(Key const& key) const;
-  iterator find(Key const& key);
+  template <typename LookupKey>
+  const_iterator find(LookupKey const& key) const;
+  template <typename LookupKey>
+  iterator find(LookupKey const& key);
 
   void reserve(std::size_t capacity);
   Allocator getAllocator() const;
@@ -130,21 +140,24 @@ FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::~Bucket() {
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::Bucket(Bucket const& rhs) {
+FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::Bucket(Bucket const& rhs)
+  requires std::is_copy_constructible_v<Value> {
   this->hash = rhs.hash;
   if (auto o = rhs.valuePtr())
     new (&this->storage.value) Value(*o);
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::Bucket(Bucket&& rhs) {
+FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::Bucket(Bucket&& rhs)
+  noexcept(std::is_nothrow_move_constructible_v<Value>) {
   this->hash = rhs.hash;
   if (auto o = rhs.valuePtr())
     new (&this->storage.value) Value(std::move(*o));
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::operator=(Bucket const& rhs) -> Bucket& {
+auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::operator=(Bucket const& rhs) -> Bucket&
+  requires (std::is_copy_constructible_v<Value> && std::is_copy_assignable_v<Value>) {
   if (auto o = rhs.valuePtr()) {
     if (auto s = valuePtr())
       *s = *o;
@@ -427,12 +440,14 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::erase(const_ite
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::find(Key const& key) const -> const_iterator {
+template <typename LookupKey>
+auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::find(LookupKey const& key) const -> const_iterator {
   return const_cast<FlatHashTable*>(this)->find(key);
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::find(Key const& key) -> iterator {
+template <typename LookupKey>
+auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::find(LookupKey const& key) -> iterator {
   if (m_buckets.empty())
     return end();
 

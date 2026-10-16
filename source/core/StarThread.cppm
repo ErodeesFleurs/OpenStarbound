@@ -1,6 +1,7 @@
 module;
 
 import std;
+import star.unique_function;
 import star.format;
 import star.string;
 import star.maybe;
@@ -34,7 +35,7 @@ public:
   static unsigned numberOfProcessors();
 
   template <typename Function, typename... Args>
-  static ThreadFunction<decltype(std::declval<Function>()(std::declval<Args>()...))> invoke(String const& name, Function&& f, Args&&... args);
+  static ThreadFunction<std::invoke_result_t<std::decay_t<Function>&, std::decay_t<Args>&...>> invoke(String const& name, Function&& f, Args&&... args);
 
   Thread(String const& name);
   Thread(Thread&&);
@@ -84,7 +85,7 @@ public:
 
   // Automatically starts the given function, ThreadFunction can also be
   // constructed with Thread::invoke, which is a shorthand.
-  ThreadFunction(std::function<void()> function, String const& name);
+  ThreadFunction(UniqueFunction<void()> function, String const& name);
 
   // Automatically calls finish, though BEWARE that often times this is quite
   // dangerous, and this is here mostly as a fallback.  The natural destructor
@@ -121,7 +122,7 @@ class ThreadFunction {
 public:
   ThreadFunction();
   ThreadFunction(ThreadFunction&&);
-  ThreadFunction(std::function<Return()> function, String const& name);
+  ThreadFunction(UniqueFunction<Return()> function, String const& name);
 
   ~ThreadFunction();
 
@@ -361,8 +362,12 @@ bool MLocker<MutexType>::tryLock() {
 }
 
 template <typename Function, typename... Args>
-ThreadFunction<decltype(std::declval<Function>()(std::declval<Args>()...))> Thread::invoke(String const& name, Function&& f, Args&&... args) {
-  return {std::bind(std::forward<Function>(f), std::forward<Args>(args)...), name};
+ThreadFunction<std::invoke_result_t<std::decay_t<Function>&, std::decay_t<Args>&...>> Thread::invoke(String const& name, Function&& f, Args&&... args) {
+  return {[function = std::forward<Function>(f), arguments = std::make_tuple(std::forward<Args>(args)...)]() mutable -> decltype(auto) {
+    return std::apply([&function](auto&... saved) -> decltype(auto) {
+      return std::invoke(function, saved...);
+    }, arguments);
+  }, name};
 }
 
 template <typename Return>
@@ -372,9 +377,9 @@ template <typename Return>
 ThreadFunction<Return>::ThreadFunction(ThreadFunction&&) = default;
 
 template <typename Return>
-ThreadFunction<Return>::ThreadFunction(std::function<Return()> function, String const& name) {
+ThreadFunction<Return>::ThreadFunction(UniqueFunction<Return()> function, String const& name) {
   m_return = std::make_shared<Maybe<Return>>();
-  m_function = ThreadFunction<void>([function = std::move(function), retValue = m_return]() {
+  m_function = ThreadFunction<void>([function = std::move(function), retValue = m_return]() mutable {
       *retValue = function();
     }, name);
 }
