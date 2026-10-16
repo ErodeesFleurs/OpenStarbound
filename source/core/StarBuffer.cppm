@@ -77,7 +77,7 @@ public:
   ExternalBuffer();
   // Constructs a ReadOnly ExternalBuffer pointing to the given external data, which
   // must be valid for the lifetime of the ExternalBuffer.
-  ExternalBuffer(char const* externalData, std::size_t len);
+  ExternalBuffer(std::span<char const> externalData);
 
   ExternalBuffer(ExternalBuffer const& buffer) = default;
   ExternalBuffer& operator=(ExternalBuffer const& buffer) = default;
@@ -110,14 +110,13 @@ public:
   operator bool() const;
 
   // Reset buffer with new contents, moves position to 0.
-  void reset(char const* externalData, std::size_t len);
+  void reset(std::span<char const> externalData);
 
 private:
   std::size_t doRead(std::size_t pos, char* data, std::size_t len);
 
   std::size_t m_pos;
-  char const* m_bytes;
-  std::size_t m_size;
+  std::span<char const> m_bytes;
 };
 
 }

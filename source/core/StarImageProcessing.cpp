@@ -96,25 +96,25 @@ ImageOperation imageOperationFromString(StringView string) {
             char* c = which ? a : b;
 
             if (hexLen == 3) {
-              nibbleDecode(hexPtr, 3, c, 4);
+              nibbleDecode({hexPtr, 3}, {c, 4});
               c[0] |= (c[0] << 4);
               c[1] |= (c[1] << 4);
               c[2] |= (c[2] << 4);
               c[3] = static_cast<char>(255);
             }
             else if (hexLen == 4) {
-              nibbleDecode(hexPtr, 4, c, 4);
+              nibbleDecode({hexPtr, 4}, {c, 4});
               c[0] |= (c[0] << 4);
               c[1] |= (c[1] << 4);
               c[2] |= (c[2] << 4);
               c[3] |= (c[3] << 4);
             }
             else if (hexLen == 6) {
-              hexDecode(hexPtr, 6, c, 4);
+              hexDecode({hexPtr, 6}, {c, 4});
               c[3] = static_cast<char>(255);
             }
             else if (hexLen == 8) {
-              hexDecode(hexPtr, 8, c, 4);
+              hexDecode({hexPtr, 8}, {c, 4});
             }
             else if (!which || (ptr != end && ++ptr != end))
                 return ErrorImageOperation{strf("Improper size for hex string '{}'", StringView(hexPtr, hexLen))};

@@ -284,13 +284,11 @@ typename zipIteratorReturn<Container, Rest...>::type zipIterator(Container& cont
 namespace RangeHelper {
 
   template <typename Diff>
-  typename std::enable_if<std::is_unsigned<Diff>::value, bool>::type checkIfDiffLessThanZero(Diff) {
-    return false;
-  }
-
-  template <typename Diff>
-  typename std::enable_if<!std::is_unsigned<Diff>::value, bool>::type checkIfDiffLessThanZero(Diff diff) {
-    return diff < 0;
+  bool checkIfDiffLessThanZero(Diff diff) {
+    if constexpr (std::is_unsigned_v<Diff>)
+      return false;
+    else
+      return diff < 0;
   }
 }
 

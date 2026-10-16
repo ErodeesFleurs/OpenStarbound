@@ -231,7 +231,7 @@ public:
 
     CompressedAudioImpl(CompressedAudioImpl const& impl) {
     m_audioData = impl.m_audioData;
-    m_memoryFile.reset(m_audioData->ptr(), m_audioData->size());
+    m_memoryFile.reset({m_audioData->ptr(), m_audioData->size()});
     m_vorbisInfo = nullptr;
   }
 
@@ -239,7 +239,7 @@ public:
     audioData->open(IOMode::Read);
     audioData->seek(0);
     m_audioData = std::make_shared<ByteArray>(audioData->readBytes((std::size_t)audioData->size()));
-    m_memoryFile.reset(m_audioData->ptr(), m_audioData->size());
+    m_memoryFile.reset({m_audioData->ptr(), m_audioData->size()});
     m_vorbisInfo = nullptr;
   }
   #endif
@@ -394,7 +394,7 @@ public:
     m_channels = impl.m_channels;
     m_sampleRate = impl.m_sampleRate;
     m_audioData = impl.m_audioData;
-    m_memoryFile.reset(m_audioData->ptr(), m_audioData->size());
+    m_memoryFile.reset({m_audioData->ptr(), m_audioData->size()});
   }
 
   UncompressedAudioImpl(CompressedAudioImpl& impl) {
@@ -415,14 +415,14 @@ public:
     }
 
     m_audioData = std::make_shared<ByteArray>(uncompressBuffer.takeData());
-    m_memoryFile.reset(m_audioData->ptr(), m_audioData->size());
+    m_memoryFile.reset({m_audioData->ptr(), m_audioData->size()});
   }
 
   UncompressedAudioImpl(std::shared_ptr<ByteArray const> data, unsigned channels, unsigned sampleRate) {
     m_channels = channels;
     m_sampleRate = sampleRate;
     m_audioData = std::move(data);
-    m_memoryFile.reset(m_audioData->ptr(), m_audioData->size());
+    m_memoryFile.reset({m_audioData->ptr(), m_audioData->size()});
   }
   #endif
 

@@ -15,6 +15,10 @@ class CompressionStream {
 public:
   CompressionStream();
   ~CompressionStream();
+  CompressionStream(CompressionStream const&) = delete;
+  CompressionStream& operator=(CompressionStream const&) = delete;
+  CompressionStream(CompressionStream&&) = delete;
+  CompressionStream& operator=(CompressionStream&&) = delete;
 
   void compress(const char* in, std::size_t inLen, ByteArray& out);
   void compress(ByteArray const& in, ByteArray& out);
@@ -22,13 +26,20 @@ public:
   ByteArray compress(ByteArray const& in);
 
 private:
-  ZSTD_CStream* m_cStream;
+  struct StreamDeleter {
+    void operator()(ZSTD_CStream* stream) const noexcept;
+  };
+  std::unique_ptr<ZSTD_CStream, StreamDeleter> m_cStream;
 };
 
 class DecompressionStream {
 public:
   DecompressionStream();
   ~DecompressionStream();
+  DecompressionStream(DecompressionStream const&) = delete;
+  DecompressionStream& operator=(DecompressionStream const&) = delete;
+  DecompressionStream(DecompressionStream&&) = delete;
+  DecompressionStream& operator=(DecompressionStream&&) = delete;
 
   void decompress(const char* in, std::size_t inLen, ByteArray& out);
   void decompress(ByteArray const& in, ByteArray& out);
@@ -36,7 +47,10 @@ public:
   ByteArray decompress(ByteArray const& in);
 
 private:
-  ZSTD_DStream* m_dStream;
+  struct StreamDeleter {
+    void operator()(ZSTD_DStream* stream) const noexcept;
+  };
+  std::unique_ptr<ZSTD_DStream, StreamDeleter> m_dStream;
 };
 
 class ZstdCompression {

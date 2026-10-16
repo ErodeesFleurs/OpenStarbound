@@ -14,13 +14,17 @@ import star.compression;
 
 namespace Star {
 
-CompressionStream::CompressionStream() : m_cStream(ZSTD_createCStream()) {
-  ZSTD_CCtx_setParameter(m_cStream, ZSTD_c_enableLongDistanceMatching, 1);
-  ZSTD_CCtx_setParameter(m_cStream, ZSTD_c_windowLog, 24);
-  ZSTD_initCStream(m_cStream, 2);
+void CompressionStream::StreamDeleter::operator()(ZSTD_CStream* stream) const noexcept {
+  ZSTD_freeCStream(stream);
 }
 
-CompressionStream::~CompressionStream() { ZSTD_freeCStream(m_cStream); }
+CompressionStream::CompressionStream() : m_cStream(ZSTD_createCStream()) {
+  ZSTD_CCtx_setParameter(m_cStream.get(), ZSTD_c_enableLongDistanceMatching, 1);
+  ZSTD_CCtx_setParameter(m_cStream.get(), ZSTD_c_windowLog, 24);
+  ZSTD_initCStream(m_cStream.get(), 2);
+}
+
+CompressionStream::~CompressionStream() = default;
 
 void CompressionStream::compress(const char* in, std::size_t inLen, ByteArray& out) {
   std::size_t const cOutSize = ZSTD_CStreamOutSize();
@@ -30,7 +34,7 @@ void CompressionStream::compress(const char* in, std::size_t inLen, ByteArray& o
   bool finished = false;
   do {
     ZSTD_outBuffer outBuffer = {out.ptr() + written, std::min(cOutSize, out.size() - written), 0};
-    std::size_t ret = ZSTD_compressStream2(m_cStream, &outBuffer, &inBuffer, ZSTD_e_flush);
+    std::size_t ret = ZSTD_compressStream2(m_cStream.get(), &outBuffer, &inBuffer, ZSTD_e_flush);
     if (ZSTD_isError(ret)) {
       throw IOException(strf("ZSTD compression error {}", ZSTD_getErrorName(ret)));
       break;
@@ -65,12 +69,16 @@ ByteArray CompressionStream::compress(ByteArray const& in) {
   return out;
 }
 
-DecompressionStream::DecompressionStream() : m_dStream(ZSTD_createDStream()) {
-  ZSTD_DCtx_setParameter(m_dStream, ZSTD_d_windowLogMax, 25);
-  ZSTD_initDStream(m_dStream);
+void DecompressionStream::StreamDeleter::operator()(ZSTD_DStream* stream) const noexcept {
+  ZSTD_freeDStream(stream);
 }
 
-DecompressionStream::~DecompressionStream() { ZSTD_freeDStream(m_dStream); }
+DecompressionStream::DecompressionStream() : m_dStream(ZSTD_createDStream()) {
+  ZSTD_DCtx_setParameter(m_dStream.get(), ZSTD_d_windowLogMax, 25);
+  ZSTD_initDStream(m_dStream.get());
+}
+
+DecompressionStream::~DecompressionStream() = default;
 
 void DecompressionStream::decompress(const char* in, std::size_t inLen, ByteArray& out) {
   std::size_t const dOutSize = ZSTD_DStreamOutSize();
@@ -80,7 +88,7 @@ void DecompressionStream::decompress(const char* in, std::size_t inLen, ByteArra
   bool finished = false;
   do {
     ZSTD_outBuffer outBuffer = {out.ptr() + written, std::min(dOutSize, out.size() - written), 0};
-    std::size_t ret = ZSTD_decompressStream(m_dStream, &outBuffer, &inBuffer);
+    std::size_t ret = ZSTD_decompressStream(m_dStream.get(), &outBuffer, &inBuffer);
     if (ZSTD_isError(ret)) {
       throw IOException(strf("ZSTD decompression error {}", ZSTD_getErrorName(ret)));
       break;

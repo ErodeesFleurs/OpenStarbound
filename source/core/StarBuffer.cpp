@@ -197,12 +197,12 @@ std::size_t Buffer::doWrite(std::size_t pos, char const* data, std::size_t len) 
 }
 
 ExternalBuffer::ExternalBuffer()
-  : m_pos(0), m_bytes(nullptr), m_size(0) {
+  : m_pos(0), m_bytes() {
   setMode(IOMode::Read);
 }
 
-ExternalBuffer::ExternalBuffer(char const* externalData, std::size_t len) : ExternalBuffer() {
-  reset(externalData, len);
+ExternalBuffer::ExternalBuffer(std::span<char const> externalData) : ExternalBuffer() {
+  reset(externalData);
 }
 
 StreamOffset ExternalBuffer::pos() {
@@ -216,12 +216,12 @@ void ExternalBuffer::seek(StreamOffset pos, IOSeek mode) {
   else if (mode == IOSeek::Relative)
     newPos += pos;
   else if (mode == IOSeek::End)
-    newPos = m_size - pos;
+    newPos = m_bytes.size() - pos;
   m_pos = newPos;
 }
 
 bool ExternalBuffer::atEnd() {
-  return m_pos >= m_size;
+  return m_pos >= m_bytes.size();
 }
 
 std::size_t ExternalBuffer::read(char* data, std::size_t len) {
@@ -251,31 +251,28 @@ String ExternalBuffer::deviceName() const {
 }
 
 StreamOffset ExternalBuffer::size() {
-  return m_size;
+  return m_bytes.size();
 }
 
 char const* ExternalBuffer::ptr() const {
-  return m_bytes;
+  return m_bytes.data();
 }
 
 std::size_t ExternalBuffer::dataSize() const {
-  return m_size;
+  return m_bytes.size();
 }
 
 bool ExternalBuffer::empty() const {
-  return m_size == 0;
+  return m_bytes.empty();
 }
 
 ExternalBuffer::operator bool() const {
-  // Was m_size == 0, i.e. the inverse of empty() and of what a bool conversion
-  // of a buffer is expected to mean.
-  return m_size != 0;
+  return !m_bytes.empty();
 }
 
-void ExternalBuffer::reset(char const* externalData, std::size_t len) {
+void ExternalBuffer::reset(std::span<char const> externalData) {
   m_pos = 0;
   m_bytes = externalData;
-  m_size = len;
 }
 
 std::shared_ptr<IODevice> Buffer::clone() {
@@ -291,17 +288,16 @@ std::shared_ptr<IODevice> ExternalBuffer::clone() {
 }
 
 std::size_t ExternalBuffer::doRead(std::size_t pos, char* data, std::size_t len) {
+  if (!isReadable())
+    throw IOException("Error, read called on non-readable Buffer");
   if (len == 0)
     return 0;
 
-  if (!isReadable())
-    throw IOException("Error, read called on non-readable Buffer");
-
-  if (pos >= m_size)
+  if (pos >= m_bytes.size())
     return 0;
 
-  std::size_t l = std::min(m_size - pos, len);
-  std::memcpy(data, m_bytes + pos, l);
+  std::size_t l = std::min(m_bytes.size() - pos, len);
+  std::memcpy(data, m_bytes.data() + pos, l);
   return l;
 }
 

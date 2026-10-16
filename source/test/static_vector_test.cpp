@@ -109,3 +109,36 @@ TEST(StaticVectorTest, AlignedStorageAndZeroCapacity) {
   values.emplace_back(3);
   EXPECT_EQ(values[0].value, 3);
 }
+
+TEST(StaticVectorTest, SinglePassAndMoveOnlyInsertion) {
+  std::istringstream stream("2 3 4");
+  StaticVector<int, 5> values{1};
+  auto inserted = values.insert(values.end(), std::istream_iterator<int>(stream), std::istream_iterator<int>{});
+  ASSERT_EQ(inserted, values.begin() + 1);
+  EXPECT_EQ(values, (StaticVector<int, 5>{1, 2, 3, 4}));
+  StaticVector<std::unique_ptr<int>, 2> owners;
+  owners.emplace_back(std::make_unique<int>(7));
+  owners.emplace(owners.begin(), std::make_unique<int>(9));
+  EXPECT_EQ(*owners[0], 9);
+  EXPECT_EQ(*owners[1], 7);
+}
+
+TEST(StaticVectorTest, RangeOverflowRollsBackAppendedElements) {
+  StaticVector<int, 3> values{1, 2};
+  std::array<int, 2> more{3, 4};
+  EXPECT_THROW(values.insert(values.begin(), more.begin(), more.end()), StaticVectorSizeException);
+  EXPECT_EQ(values, (StaticVector<int, 3>{1, 2}));
+  std::istringstream stream("3 4");
+  EXPECT_THROW(values.insert(values.begin(), std::istream_iterator<int>(stream), std::istream_iterator<int>{}), StaticVectorSizeException);
+  EXPECT_EQ(values, (StaticVector<int, 3>{1, 2}));
+}
+
+TEST(StaticVectorTest, CapacityFailureDoesNotConsumeEmplaceArgument) {
+  StaticVector<std::unique_ptr<int>, 1> values;
+  values.emplace_back(std::make_unique<int>(7));
+  auto candidate = std::make_unique<int>(9);
+  EXPECT_THROW(values.emplace(values.begin(), std::move(candidate)), StaticVectorSizeException);
+  ASSERT_TRUE(candidate);
+  EXPECT_EQ(*candidate, 9);
+  EXPECT_EQ(*values[0], 7);
+}

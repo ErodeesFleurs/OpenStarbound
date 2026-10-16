@@ -72,9 +72,9 @@ Json jsonPatch(Json const& base, JsonArray const& patch) {
 // Returns 0 if not found, index + 1 if found.
 std::size_t findJsonMatch(Json const& searchable, Json const& value, JsonPath::Pointer& pointer) {
   if (searchable.isType(Json::Type::Array)) {
-    auto array = searchable.toArray();
-    for (std::size_t i = 0; i != array.size(); ++i) {
-      if (jsonPartialMatch(array[i], value))
+    auto array = searchable.arrayPtr();
+    for (std::size_t i = 0; i != array->size(); ++i) {
+      if (jsonPartialMatch((*array)[i], value))
         return i + 1;
     }
   } else {
@@ -86,14 +86,14 @@ std::size_t findJsonMatch(Json const& searchable, Json const& value, JsonPath::P
 
 namespace JsonPatching {
 
-  static const StringMap<std::function<Json(Json, Json)>> functionMap = StringMap<std::function<Json(Json, Json)>>{
-      {"test", std::bind(applyTestOperation, std::placeholders::_1, std::placeholders::_2)},
-      {"remove", std::bind(applyRemoveOperation, std::placeholders::_1, std::placeholders::_2)},
-      {"add", std::bind(applyAddOperation, std::placeholders::_1, std::placeholders::_2)},
-      {"replace", std::bind(applyReplaceOperation, std::placeholders::_1, std::placeholders::_2)},
-      {"move", std::bind(applyMoveOperation, std::placeholders::_1, std::placeholders::_2)},
-      {"copy", std::bind(applyCopyOperation, std::placeholders::_1, std::placeholders::_2)},
-      {"merge", std::bind(applyMergeOperation, std::placeholders::_1, std::placeholders::_2)},
+  static const StringMap<Json (*)(Json const&, Json const&)> functionMap{
+      {"test", &applyTestOperation},
+      {"remove", &applyRemoveOperation},
+      {"add", &applyAddOperation},
+      {"replace", &applyReplaceOperation},
+      {"move", &applyMoveOperation},
+      {"copy", &applyCopyOperation},
+      {"merge", &applyMergeOperation},
   };
 
   Json applyOperation(Json const& base, Json const& op, Maybe<Json> const&) {

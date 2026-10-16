@@ -222,46 +222,50 @@ namespace Star {
 ClientCommandProcessor::ClientCommandProcessor(std::shared_ptr<UniverseClient> universeClient, std::shared_ptr<Cinematic> cinematicOverlay,
   MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands)
   : m_universeClient(std::move(universeClient)), m_cinematicOverlay(std::move(cinematicOverlay)),
-  m_paneManager(paneManager), m_macroCommands(std::move(macroCommands)) {
-  m_builtinCommands = {
-    {"reload", std::bind(&ClientCommandProcessor::reload, this)},
-    {"hotReload", std::bind(&ClientCommandProcessor::hotReload, this)},
-    {"whoami", std::bind(&ClientCommandProcessor::whoami, this)},
-    {"gravity", std::bind(&ClientCommandProcessor::gravity, this)},
-    {"debug", std::bind(&ClientCommandProcessor::debug, this, std::placeholders::_1)},
-    {"boxes", std::bind(&ClientCommandProcessor::boxes, this)},
-    {"fullbright", std::bind(&ClientCommandProcessor::fullbright, this)},
-    {"asyncLighting", std::bind(&ClientCommandProcessor::asyncLighting, this)},
-    {"setGravity", std::bind(&ClientCommandProcessor::setGravity, this, std::placeholders::_1)},
-    {"resetGravity", std::bind(&ClientCommandProcessor::resetGravity, this)},
-    {"fixedCamera", std::bind(&ClientCommandProcessor::fixedCamera, this)},
-    {"monochromeLighting", std::bind(&ClientCommandProcessor::monochromeLighting, this)},
-    {"radioMessage", std::bind(&ClientCommandProcessor::radioMessage, this, std::placeholders::_1)},
-    {"clearRadioMessages", std::bind(&ClientCommandProcessor::clearRadioMessages, this)},
-    {"clearCinematics", std::bind(&ClientCommandProcessor::clearCinematics, this)},
-    {"startQuest", std::bind(&ClientCommandProcessor::startQuest, this, std::placeholders::_1)},
-    {"completeQuest", std::bind(&ClientCommandProcessor::completeQuest, this, std::placeholders::_1)},
-    {"failQuest", std::bind(&ClientCommandProcessor::failQuest, this, std::placeholders::_1)},
-    {"previewNewQuest", std::bind(&ClientCommandProcessor::previewNewQuest, this, std::placeholders::_1)},
-    {"previewQuestComplete", std::bind(&ClientCommandProcessor::previewQuestComplete, this, std::placeholders::_1)},
-    {"previewQuestFailed", std::bind(&ClientCommandProcessor::previewQuestFailed, this, std::placeholders::_1)},
-    {"clearScannedObjects", std::bind(&ClientCommandProcessor::clearScannedObjects, this)},
-    {"played", std::bind(&ClientCommandProcessor::playTime, this)},
-    {"deaths", std::bind(&ClientCommandProcessor::deathCount, this)},
-    {"cinema", std::bind(&ClientCommandProcessor::cinema, this, std::placeholders::_1)},
-    {"suicide", std::bind(&ClientCommandProcessor::suicide, this)},
-    {"naked", std::bind(&ClientCommandProcessor::naked, this)},
-    {"resetAchievements", std::bind(&ClientCommandProcessor::resetAchievements, this)},
-    {"statistic", std::bind(&ClientCommandProcessor::statistic, this, std::placeholders::_1)},
-    {"giveessentialitem", std::bind(&ClientCommandProcessor::giveEssentialItem, this, std::placeholders::_1)},
-    {"maketechavailable", std::bind(&ClientCommandProcessor::makeTechAvailable, this, std::placeholders::_1)},
-    {"enabletech", std::bind(&ClientCommandProcessor::enableTech, this, std::placeholders::_1)},
-    {"upgradeship", std::bind(&ClientCommandProcessor::upgradeShip, this, std::placeholders::_1)},
-    {"swap", std::bind(&ClientCommandProcessor::swap, this, std::placeholders::_1)},
-    {"respawnInWorld", std::bind(&ClientCommandProcessor::respawnInWorld, this, std::placeholders::_1)},
-    {"render", std::bind(&ClientCommandProcessor::render, this, std::placeholders::_1)}
+  m_paneManager(paneManager), m_macroCommands(std::move(macroCommands)) {}
+
+CaseInsensitiveStringMap<ClientCommandProcessor::BuiltinCommand> ClientCommandProcessor::makeBuiltinCommands() {
+  return {
+    {"reload", &invokeBuiltin<&ClientCommandProcessor::reload>},
+    {"hotReload", &invokeBuiltin<&ClientCommandProcessor::hotReload>},
+    {"whoami", &invokeBuiltin<&ClientCommandProcessor::whoami>},
+    {"gravity", &invokeBuiltin<&ClientCommandProcessor::gravity>},
+    {"debug", &invokeBuiltin<&ClientCommandProcessor::debug>},
+    {"boxes", &invokeBuiltin<&ClientCommandProcessor::boxes>},
+    {"fullbright", &invokeBuiltin<&ClientCommandProcessor::fullbright>},
+    {"asyncLighting", &invokeBuiltin<&ClientCommandProcessor::asyncLighting>},
+    {"setGravity", &invokeBuiltin<&ClientCommandProcessor::setGravity>},
+    {"resetGravity", &invokeBuiltin<&ClientCommandProcessor::resetGravity>},
+    {"fixedCamera", &invokeBuiltin<&ClientCommandProcessor::fixedCamera>},
+    {"monochromeLighting", &invokeBuiltin<&ClientCommandProcessor::monochromeLighting>},
+    {"radioMessage", &invokeBuiltin<&ClientCommandProcessor::radioMessage>},
+    {"clearRadioMessages", &invokeBuiltin<&ClientCommandProcessor::clearRadioMessages>},
+    {"clearCinematics", &invokeBuiltin<&ClientCommandProcessor::clearCinematics>},
+    {"startQuest", &invokeBuiltin<&ClientCommandProcessor::startQuest>},
+    {"completeQuest", &invokeBuiltin<&ClientCommandProcessor::completeQuest>},
+    {"failQuest", &invokeBuiltin<&ClientCommandProcessor::failQuest>},
+    {"previewNewQuest", &invokeBuiltin<&ClientCommandProcessor::previewNewQuest>},
+    {"previewQuestComplete", &invokeBuiltin<&ClientCommandProcessor::previewQuestComplete>},
+    {"previewQuestFailed", &invokeBuiltin<&ClientCommandProcessor::previewQuestFailed>},
+    {"clearScannedObjects", &invokeBuiltin<&ClientCommandProcessor::clearScannedObjects>},
+    {"played", &invokeBuiltin<&ClientCommandProcessor::playTime>},
+    {"deaths", &invokeBuiltin<&ClientCommandProcessor::deathCount>},
+    {"cinema", &invokeBuiltin<&ClientCommandProcessor::cinema>},
+    {"suicide", &invokeBuiltin<&ClientCommandProcessor::suicide>},
+    {"naked", &invokeBuiltin<&ClientCommandProcessor::naked>},
+    {"resetAchievements", &invokeBuiltin<&ClientCommandProcessor::resetAchievements>},
+    {"statistic", &invokeBuiltin<&ClientCommandProcessor::statistic>},
+    {"giveessentialitem", &invokeBuiltin<&ClientCommandProcessor::giveEssentialItem>},
+    {"maketechavailable", &invokeBuiltin<&ClientCommandProcessor::makeTechAvailable>},
+    {"enabletech", &invokeBuiltin<&ClientCommandProcessor::enableTech>},
+    {"upgradeship", &invokeBuiltin<&ClientCommandProcessor::upgradeShip>},
+    {"swap", &invokeBuiltin<&ClientCommandProcessor::swap>},
+    {"respawnInWorld", &invokeBuiltin<&ClientCommandProcessor::respawnInWorld>},
+    {"render", &invokeBuiltin<&ClientCommandProcessor::render>}
   };
 }
+
+const CaseInsensitiveStringMap<ClientCommandProcessor::BuiltinCommand> ClientCommandProcessor::s_builtinCommands = makeBuiltinCommands();
 
 bool ClientCommandProcessor::adminCommandAllowed() const {
   return Root::singleton().configuration()->get("allowAdminCommandsFromAnyone").toBool() ||
@@ -291,8 +295,8 @@ StringList ClientCommandProcessor::handleCommand(String const& commandLine, bool
     String command = allArguments.extract();
 
     StringList result;
-    if (auto builtinCommand = m_builtinCommands.maybe(command)) {
-      result.append((*builtinCommand)(allArguments));
+    if (auto builtinCommand = s_builtinCommands.maybe(command)) {
+      result.append((*builtinCommand)(*this, allArguments));
     } else if (auto macroCommand = m_macroCommands.maybe(command)) {
       for (auto const& c : *macroCommand) {
         if (c.beginsWith("/"))

@@ -1177,13 +1177,11 @@ Maybe<ConnectionId> CommandProcessor::playerCidFromCommand(String const& player,
   return universe->findNick(player);
 }
 
-CaseInsensitiveStringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> CommandProcessor::makeCommandMap() {
-  CaseInsensitiveStringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> map;
-	
-  auto add = [&map](const char* cmd, String (CommandProcessor::*func)(ConnectionId, const String&)) {
-    map[cmd] = [func](CommandProcessor* self, ConnectionId cid, const String& args) {
-      return (self->*func)(cid, args);
-    };
+CaseInsensitiveStringMap<CommandProcessor::Command> CommandProcessor::makeCommandMap() {
+  CaseInsensitiveStringMap<Command> map;
+
+  auto add = [&map](char const* cmd, Command func) {
+    map[cmd] = func;
   };
 
   // Register all commands
@@ -1232,12 +1230,12 @@ CaseInsensitiveStringMap<std::function<String(CommandProcessor*, ConnectionId, S
   return map;
 }
 
-const CaseInsensitiveStringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> CommandProcessor::s_commandMap = makeCommandMap();
+const CaseInsensitiveStringMap<CommandProcessor::Command> CommandProcessor::s_commandMap = makeCommandMap();
 
 ServerCommandResult CommandProcessor::handleCommand(ConnectionId connectionId, String const& command, String const& argumentString) {
   auto it = s_commandMap.find(command);
   if (it != s_commandMap.end()) {
-    return it->second(this, connectionId, argumentString);
+    return (this->*it->second)(connectionId, argumentString);
   }
   if (auto res = m_scriptComponent.invoke<Variant<RpcPromise<Json>,LuaValue>>("command", command, connectionId, jsonFromStringList(m_parser.tokenizeToStringList(argumentString)))) {
     if (res->is<RpcPromise<Json>>()) {

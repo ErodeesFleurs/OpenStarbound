@@ -117,10 +117,22 @@ private:
   String respawnInWorld(String const& argumentsString);
   String render(String const& imagePath);
 
+  using BuiltinCommand = String (*)(ClientCommandProcessor&, String const&);
+  template <auto Command>
+  static String invokeBuiltin(ClientCommandProcessor& self, String const& arguments) {
+    if constexpr (std::is_invocable_v<decltype(Command), ClientCommandProcessor&, String const&>) {
+      return (self.*Command)(arguments);
+    } else {
+      (void)arguments;
+      return (self.*Command)();
+    }
+  }
+  static CaseInsensitiveStringMap<BuiltinCommand> makeBuiltinCommands();
+  static const CaseInsensitiveStringMap<BuiltinCommand> s_builtinCommands;
+
   std::shared_ptr<UniverseClient> m_universeClient;
   std::shared_ptr<Cinematic> m_cinematicOverlay;
   MainInterfacePaneManager* m_paneManager;
-  CaseInsensitiveStringMap<std::function<String(String const&)>> m_builtinCommands;
   StringMap<StringList> m_macroCommands;
   HashMap<Uuid,RpcPromise<Json>> m_commandPromises;
   ShellParser m_parser;

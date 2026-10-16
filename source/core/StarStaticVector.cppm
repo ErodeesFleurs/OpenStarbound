@@ -293,27 +293,30 @@ void StaticVector<Element, MaxSize>::pop_back() {
 
 template <typename Element, std::size_t MaxSize>
 auto StaticVector<Element, MaxSize>::insert(iterator pos, Element e) -> iterator {
+  auto index = static_cast<std::size_t>(pos - ptr());
   emplace(pos, std::move(e));
-  return pos;
+  return begin() + index;
 }
 
 template <typename Element, std::size_t MaxSize>
 template <typename Iterator>
-auto StaticVector<Element, MaxSize>::insert(iterator pos, Iterator begin, Iterator end) -> iterator {
-  std::size_t toAdd = std::distance(begin, end);
-  std::size_t startIndex = pos - ptr();
-  std::size_t endIndex = startIndex + toAdd;
-  std::size_t toShift = m_size - startIndex;
-
-  resize(m_size + toAdd);
-
-  for (std::size_t i = toShift; i != 0; --i)
-    operator[](endIndex + i - 1) = std::move(operator[](startIndex + i - 1));
-
-  for (std::size_t i = 0; i != toAdd; ++i)
-    operator[](startIndex + i) = *begin++;
-
-  return pos;
+auto StaticVector<Element, MaxSize>::insert(iterator pos, Iterator first, Iterator last) -> iterator {
+  auto index = static_cast<std::size_t>(pos - ptr());
+  auto previousSize = size();
+  if constexpr (std::forward_iterator<Iterator>) {
+    if (static_cast<std::size_t>(std::distance(first, last)) > MaxSize - previousSize)
+      throw StaticVectorSizeException::format("StaticVector::insert would extend StaticVector beyond size {}", MaxSize);
+  }
+  try {
+    for (; first != last; ++first)
+      emplace_back(*first);
+  } catch (...) {
+    while (size() > previousSize)
+      pop_back();
+    throw;
+  }
+  std::rotate(begin() + index, begin() + previousSize, end());
+  return begin() + index;
 }
 
 template <typename Element, std::size_t MaxSize>
@@ -324,11 +327,17 @@ auto StaticVector<Element, MaxSize>::insert(iterator pos, std::initializer_list<
 template <typename Element, std::size_t MaxSize>
 template <typename... Args>
 void StaticVector<Element, MaxSize>::emplace(iterator pos, Args&&... args) {
-  std::size_t index = pos - ptr();
-  resize(m_size + 1);
-  for (std::size_t i = m_size - 1; i != index; --i)
-    operator[](i) = std::move(operator[](i - 1));
-  operator[](index) = Element(std::forward<Args>(args)...);
+  auto index = static_cast<std::size_t>(pos - ptr());
+  if (m_size == MaxSize)
+    throw StaticVectorSizeException::format("StaticVector::emplace would extend StaticVector beyond size {}", MaxSize);
+  Element value(std::forward<Args>(args)...);
+  if (index == size()) {
+    emplace_back(std::move(value));
+    return;
+  }
+  emplace_back(std::move(*(end() - 1)));
+  std::move_backward(begin() + index, end() - 2, end() - 1);
+  operator[](index) = std::move(value);
 }
 
 template <typename Element, std::size_t MaxSize>

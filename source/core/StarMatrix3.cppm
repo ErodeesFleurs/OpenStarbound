@@ -16,12 +16,6 @@ public:
   typedef Vector<T, 2> Vec2;
   typedef Array<Vec3, 3> Rows;
 
-  // Only enable pointer access if we know that our internal rows are not
-  // padded
-  template <typename RT = void>
-  using EnableIfContiguousStorage =
-      typename std::enable_if<sizeof(Vec3) == 3 * sizeof(T) && sizeof(Rows) == 3 * sizeof(Vec3), RT>::type;
-
   static Matrix3 identity();
 
   // Construct an affine 2d transform
@@ -47,9 +41,9 @@ public:
   Vec3& operator[](std::size_t const i);
   Vec3 const& operator[](std::size_t const i) const;
 
-  // Gives pointer to row major storage
-  EnableIfContiguousStorage<T*> ptr();
-  EnableIfContiguousStorage<T const*> ptr() const;
+  // Gives pointer to row major storage only if our internal rows are not padded.
+  T* ptr() requires (sizeof(Vec3) == 3 * sizeof(T) && sizeof(Rows) == 3 * sizeof(Vec3));
+  T const* ptr() const requires (sizeof(Vec3) == 3 * sizeof(T) && sizeof(Rows) == 3 * sizeof(Vec3));
 
   // Copy to an existing array
   void copy(T* loc) const;
@@ -190,12 +184,12 @@ auto Matrix3<T>::operator[](const std::size_t i) const -> Vec3 const & {
 }
 
 template <typename T>
-auto Matrix3<T>::ptr() -> EnableIfContiguousStorage<T*> {
+T* Matrix3<T>::ptr() requires (sizeof(Vec3) == 3 * sizeof(T) && sizeof(Rows) == 3 * sizeof(Vec3)) {
   return m_rows[0].ptr();
 }
 
 template <typename T>
-auto Matrix3<T>::ptr() const -> EnableIfContiguousStorage<T const*> {
+T const* Matrix3<T>::ptr() const requires (sizeof(Vec3) == 3 * sizeof(T) && sizeof(Rows) == 3 * sizeof(Vec3)) {
   return m_rows[0].ptr();
 }
 

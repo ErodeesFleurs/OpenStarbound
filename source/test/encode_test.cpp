@@ -38,3 +38,33 @@ TEST(EncodeTest, SHA256) {
 
   EXPECT_EQ(sha256(testSource), testHash);
 }
+
+TEST(EncodeTest, BorrowedSpans) {
+  char output[8]{};
+  EXPECT_EQ(hexEncode(std::span<char const>{}, std::span<char>{}), 0u);
+  EXPECT_EQ(hexDecode(std::span<char const>{}, std::span<char>{}), 0u);
+  EXPECT_EQ(nibbleDecode(std::span<char const>{}, std::span<char>{}), 0u);
+  EXPECT_EQ(base64Encode(std::span<char const>{}, std::span<char>{}), 0u);
+  EXPECT_EQ(base64Decode(std::span<char const>{}, std::span<char>{}), 0u);
+
+  EXPECT_EQ(hexEncode({"ab", 2}, {output, 3}), 2u);
+  EXPECT_EQ(std::string_view(output, 2), "61");
+  EXPECT_EQ(hexDecode({"g1f", 3}, output), 1u);
+  EXPECT_EQ(static_cast<unsigned char>(output[0]), 1u);
+  EXPECT_EQ(nibbleDecode({"gF1", 3}, {output, 2}), 2u);
+  EXPECT_EQ(output[0], 0);
+  EXPECT_EQ(output[1], 15);
+
+  EXPECT_EQ(base64Encode({"M", 1}, output), 4u);
+  EXPECT_EQ(std::string_view(output, 4), "TQ==");
+  EXPECT_EQ(base64Encode({"Man", 3}, {output, 2}), 2u);
+  EXPECT_EQ(std::string_view(output, 2), "TW");
+  EXPECT_EQ(base64Decode({"TWE", 3}, output), 2u);
+  EXPECT_EQ(std::string_view(output, 2), "Ma");
+  EXPECT_EQ(base64Decode({"TQ=ignored", 10}, output), 1u);
+  EXPECT_EQ(output[0], 'M');
+  EXPECT_EQ(base64Decode({"TQ!ignored", 10}, output), 1u);
+  EXPECT_EQ(output[0], 'M');
+  EXPECT_EQ(base64Decode({"TWFu", 4}, {output, 1}), 1u);
+  EXPECT_EQ(output[0], 'M');
+}

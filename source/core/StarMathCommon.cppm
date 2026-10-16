@@ -35,33 +35,33 @@ unsigned countSetBits(Int value) {
 }
 
 template <typename T, typename T2>
-typename std::enable_if<!std::numeric_limits<T>::is_integer && !std::numeric_limits<T2>::is_integer && sizeof(T) >= sizeof(T2), bool>::type
-nearEqual(T x, T2 y, unsigned ulp) {
+  requires (!std::numeric_limits<T>::is_integer && !std::numeric_limits<T2>::is_integer && sizeof(T) >= sizeof(T2))
+bool nearEqual(T x, T2 y, unsigned ulp) {
   auto epsilon = std::numeric_limits<T>::epsilon();
   return std::abs(x - y) <= epsilon * std::max(std::abs(x), (T)std::abs(y)) * ulp;
 }
 
 template <typename T, typename T2>
-typename std::enable_if<!std::numeric_limits<T>::is_integer && !std::numeric_limits<T2>::is_integer && sizeof(T) < sizeof(T2), bool>::type
-nearEqual(T x, T2 y, unsigned ulp) {
+  requires (!std::numeric_limits<T>::is_integer && !std::numeric_limits<T2>::is_integer && sizeof(T) < sizeof(T2))
+bool nearEqual(T x, T2 y, unsigned ulp) {
   return nearEqual(y, x, ulp);
 }
 
 template <typename T, typename T2>
-typename std::enable_if<std::numeric_limits<T>::is_integer && !std::numeric_limits<T2>::is_integer, bool>::type
-nearEqual(T x, T2 y, unsigned ulp) {
+  requires (std::numeric_limits<T>::is_integer && !std::numeric_limits<T2>::is_integer)
+bool nearEqual(T x, T2 y, unsigned ulp) {
   return nearEqual((double)x, y, ulp);
 }
 
 template <typename T, typename T2>
-typename std::enable_if<!std::numeric_limits<T>::is_integer && std::numeric_limits<T2>::is_integer, bool>::type
-nearEqual(T x, T2 y, unsigned ulp) {
+  requires (!std::numeric_limits<T>::is_integer && std::numeric_limits<T2>::is_integer)
+bool nearEqual(T x, T2 y, unsigned ulp) {
   return nearEqual(x, (double)y, ulp);
 }
 
 template <typename T, typename T2>
-typename std::enable_if<std::numeric_limits<T>::is_integer && std::numeric_limits<T2>::is_integer, bool>::type
-nearEqual(T x, T2 y, unsigned) {
+  requires (std::numeric_limits<T>::is_integer && std::numeric_limits<T2>::is_integer)
+bool nearEqual(T x, T2 y, unsigned) {
   return x == y;
 }
 
@@ -71,12 +71,14 @@ bool nearEqual(T x, T2 y) {
 }
 
 template <typename T>
-typename std::enable_if<!std::numeric_limits<T>::is_integer, bool>::type nearZero(T x, unsigned ulp = 2) {
+  requires (!std::numeric_limits<T>::is_integer)
+bool nearZero(T x, unsigned ulp = 2) {
   return std::abs(x) <= std::numeric_limits<T>::min() * ulp;
 }
 
 template <typename T>
-typename std::enable_if<std::numeric_limits<T>::is_integer, bool>::type nearZero(T x) {
+  requires std::numeric_limits<T>::is_integer
+bool nearZero(T x) {
   return x == 0;
 }
 

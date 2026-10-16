@@ -95,6 +95,8 @@ void compressData(ByteArray const& in, ByteArray& out, CompressionLevel compress
   int deflate_res = zng_deflateInit(&strm, compression);
   if (deflate_res != Z_OK)
     throw IOException(strf("Failed to initialise deflate ({})", deflate_res));
+  auto endStream = [](zng_stream* stream) noexcept { zng_deflateEnd(stream); };
+  std::unique_ptr<zng_stream, decltype(endStream)> streamOwner(&strm, endStream);
 
   strm.next_in = (const std::uint8_t*)in.ptr();
   strm.avail_in = in.size();
@@ -108,7 +110,6 @@ void compressData(ByteArray const& in, ByteArray& out, CompressionLevel compress
       strm.avail_out = BUFSIZE;
     }
   }
-  zng_deflateEnd(&strm);
 
   if (deflate_res != Z_STREAM_END)
     throw IOException(strf("Internal error in uncompressData, deflate_res is {}", deflate_res));
@@ -138,6 +139,8 @@ void uncompressData(const char* in, std::size_t inLen, ByteArray& out, std::size
   int inflate_res = zng_inflateInit(&strm);
   if (inflate_res != Z_OK)
     throw IOException(strf("Failed to initialise inflate ({})", inflate_res));
+  auto endStream = [](zng_stream* stream) noexcept { zng_inflateEnd(stream); };
+  std::unique_ptr<zng_stream, decltype(endStream)> streamOwner(&strm, endStream);
 
   strm.next_in = (const std::uint8_t*)in;
   strm.avail_in = inLen;
@@ -148,7 +151,6 @@ void uncompressData(const char* in, std::size_t inLen, ByteArray& out, std::size
     inflate_res = zng_inflate(&strm, Z_FINISH);
     if (strm.avail_out == 0) {
       if (limit && out.size() + BUFSIZE > limit) {
-        zng_inflateEnd(&strm);
         throw IOException(strf("hit uncompressData limit of {} bytes", limit));
       }
       out.append((char const*)tempBuffer.get(), BUFSIZE);
@@ -158,7 +160,6 @@ void uncompressData(const char* in, std::size_t inLen, ByteArray& out, std::size
       break;
     }
   }
-  zng_inflateEnd(&strm);
 
   if (inflate_res != Z_STREAM_END)
     throw IOException(strf("Internal error in uncompressData, inflate_res is {}", inflate_res));
@@ -196,6 +197,8 @@ void uncompressDataGzip(const char* in, std::size_t inLen, ByteArray& out, std::
   int inflate_res = zng_inflateInit2(&strm, 31);
   if (inflate_res != Z_OK)
     throw IOException(strf("Failed to initialise inflate ({})", inflate_res));
+  auto endStream = [](zng_stream* stream) noexcept { zng_inflateEnd(stream); };
+  std::unique_ptr<zng_stream, decltype(endStream)> streamOwner(&strm, endStream);
 
   strm.next_in = (const std::uint8_t*)in;
   strm.avail_in = inLen;
@@ -209,15 +212,12 @@ void uncompressDataGzip(const char* in, std::size_t inLen, ByteArray& out, std::
       strm.next_out = tempBuffer.get();
       strm.avail_out = BUFSIZE;
       if (limit && out.size() >= limit) {
-        zng_inflateEnd(&strm);
         throw IOException(strf("hit uncompressDataGzip limit of {} bytes", limit));
-        break;
       }
     } else if (inflate_res == Z_BUF_ERROR) {
       break;
     }
   }
-  zng_inflateEnd(&strm);
 
   if (inflate_res != Z_STREAM_END)
     throw IOException(strf("Internal error in uncompressDataGzip, inflate_res is {}", inflate_res));

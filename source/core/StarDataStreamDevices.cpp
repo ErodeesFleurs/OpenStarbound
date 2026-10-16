@@ -174,7 +174,7 @@ std::size_t DataStreamExternalBuffer::remaining() {
 }
 
 void DataStreamExternalBuffer::reset(char const* externalData, std::size_t len) {
-  m_buffer.reset(externalData, len);
+  m_buffer.reset({externalData, len});
 }
 
 void DataStreamExternalBuffer::readData(char* data, std::size_t len) {

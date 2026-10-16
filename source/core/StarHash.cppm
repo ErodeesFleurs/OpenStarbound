@@ -71,9 +71,10 @@ public:
 };
 
 template <typename EnumType>
-struct hash<EnumType, typename std::enable_if<std::is_enum<EnumType>::value>::type> {
+  requires std::is_enum_v<EnumType>
+struct hash<EnumType> {
 private:
-  typedef typename std::underlying_type<EnumType>::type UnderlyingType;
+  using UnderlyingType = std::underlying_type_t<EnumType>;
 
 public:
   std::size_t operator()(EnumType e) const {
@@ -103,7 +104,8 @@ export namespace Star {
   template <typename... TTypes>
   struct hash<std::tuple<TTypes...>>;
   template <typename EnumType>
-  struct hash<EnumType, typename std::enable_if<std::is_enum<EnumType>::value>::type>;
+    requires std::is_enum_v<EnumType>
+  struct hash<EnumType>;
 }
 
 

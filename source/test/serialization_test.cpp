@@ -1,3 +1,6 @@
+import std;
+import star.buffer;
+import star.format;
 import star.data_stream_devices;
 import star.string;
 import star.map;
@@ -27,4 +30,11 @@ TEST(DataStreamTest, All) {
   testMap(map1);
   testMap(map2);
   testMap(map3);
+}
+
+TEST(ExternalBufferTest, ClosedDeviceRejectsZeroLengthRead) {
+  ExternalBuffer buffer{std::span<char const>{}};
+  EXPECT_EQ(buffer.read(nullptr, 0), 0u);
+  buffer.close();
+  EXPECT_THROW(buffer.read(nullptr, 0), IOException);
 }

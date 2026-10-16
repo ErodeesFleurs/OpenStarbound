@@ -214,3 +214,27 @@ TEST(SmallVectorTest, NothrowMoveIsPreferredToCopy) {
   EXPECT_EQ(moves, 1);
   EXPECT_EQ(values.size(), 1u);
 }
+
+TEST(SmallVectorTest, InsertReturnsNewStoragePosition) {
+  SmallVector<int, 1> values{1};
+  auto first = values.insert(values.begin(), 2);
+  ASSERT_EQ(first, values.begin());
+  EXPECT_EQ(*first, 2);
+  std::array<int, 3> more{3, 4, 5};
+  auto inserted = values.insert(values.begin() + 1, more.begin(), more.end());
+  ASSERT_EQ(inserted, values.begin() + 1);
+  EXPECT_EQ(values, (SmallVector<int, 1>{2, 3, 4, 5, 1}));
+}
+
+TEST(SmallVectorTest, SinglePassAndMoveOnlyInsertion) {
+  std::istringstream stream("2 3 4");
+  SmallVector<int, 1> values{1};
+  auto inserted = values.insert(values.end(), std::istream_iterator<int>(stream), std::istream_iterator<int>{});
+  ASSERT_EQ(inserted, values.begin() + 1);
+  EXPECT_EQ(values, (SmallVector<int, 1>{1, 2, 3, 4}));
+  SmallVector<std::unique_ptr<int>, 1> owners;
+  owners.emplace_back(std::make_unique<int>(7));
+  owners.emplace(owners.begin(), std::make_unique<int>(9));
+  EXPECT_EQ(*owners[0], 9);
+  EXPECT_EQ(*owners[1], 7);
+}
