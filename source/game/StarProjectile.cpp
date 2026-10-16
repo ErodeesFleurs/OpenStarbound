@@ -881,17 +881,19 @@ void Projectile::processAction(Json const& action) {
     unsigned harvestLevel = parameters.getUInt("harvestLevel", 0);
     Vec2F explosionPosition = position();
 
-    doWithDelay(parameters.getUInt("delaySteps", 0), [=, this](World* world) {
+    doWithDelay(parameters.getUInt("delaySteps", 0),
+        [foregroundRadius, backgroundRadius, explosionPosition, damageType,
+            explosiveDamageAmount, harvestLevel, sourceEntityId = sourceEntity()](World* world) {
         world->damageTiles(tileAreaBrush(foregroundRadius, explosionPosition, false),
             TileLayer::Foreground,
             explosionPosition,
             {damageType, explosiveDamageAmount, harvestLevel},
-            sourceEntity());
+            sourceEntityId);
         world->damageTiles(tileAreaBrush(backgroundRadius, explosionPosition, false),
             TileLayer::Background,
             explosionPosition,
             {damageType, explosiveDamageAmount, harvestLevel},
-            sourceEntity());
+            sourceEntityId);
       });
 
   } else if (command == "spawnmonster") {

@@ -52,7 +52,8 @@ ItemBag::ItemBag(std::size_t size) {
 ItemBag ItemBag::fromJson(Json const& store) {
   auto itemDatabase = Root::singleton().itemDatabase();
   ItemBag res;
-  res.m_items = store.toArray().transformed([itemDatabase](Json const& v) { return itemDatabase->fromJson(v); });
+  auto entries = store.arrayPtr();
+  res.m_items = entries->transformed([itemDatabase](Json const& v) { return itemDatabase->fromJson(v); });
 
   return res;
 }
@@ -60,7 +61,8 @@ ItemBag ItemBag::fromJson(Json const& store) {
 ItemBag ItemBag::loadStore(Json const& store) {
   auto itemDatabase = Root::singleton().itemDatabase();
   ItemBag res;
-  res.m_items = store.toArray().transformed([itemDatabase](Json const& v) { return itemDatabase->diskLoad(v); });
+  auto entries = store.arrayPtr();
+  res.m_items = entries->transformed([itemDatabase](Json const& v) { return itemDatabase->diskLoad(v); });
 
   return res;
 }

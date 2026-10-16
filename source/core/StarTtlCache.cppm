@@ -19,8 +19,6 @@ public:
   typedef typename LruCacheType::Key Key;
   typedef typename LruCacheType::Value::second_type Value;
 
-  typedef std::function<Value(Key const&)> ProducerFunction;
-
   TtlCacheBase();
   TtlCacheBase(std::int64_t timeToLive, int timeSmear = 1000, std::size_t maxSize = NPos, bool ttlUpdateEnabled = true);
 
@@ -56,22 +54,41 @@ public:
   bool remove(Key const& key);
 
   // Remove all key / value pairs matching a filter.
-  void removeWhere(std::function<bool(Key const&, Value&)> filter);
+  template <typename Filter>
+    requires std::is_invocable_r_v<bool, Filter&, Key const&, Value&>
+  void removeWhere(Filter&& filter);
 
   // If the value for the key is not found in the cache, produce it with the
   // given producer.  Producer should take the key as an argument and return
   // the Value.
   template <typename Producer>
-  Value& get(Key const& key, Producer producer);
+    requires std::invocable<Producer&, Key const&>
+  Value& get(Key const& key, Producer&& producer);
 
   void clear();
 
   // Cleanup any cached entries that are older than their time to live, if the
   // refreshFilter is given, things that match the refreshFilter instead have
   // their ttl refreshed rather than being removed.
-  void cleanup(std::function<bool(Key const&, Value const&)> refreshFilter = {});
+  void cleanup(std::nullptr_t = nullptr);
+  template <typename Filter>
+    requires std::is_invocable_r_v<bool, Filter&, Key const&, Value const&>
+  void cleanup(Filter&& refreshFilter);
 
 private:
+  template <typename Filter>
+  static bool refreshFilterPresent(Filter const& filter) {
+    if constexpr (std::is_pointer_v<Filter> || std::is_member_pointer_v<Filter>)
+      return filter != nullptr;
+    else
+      return true;
+  }
+
+  template <typename Result, typename... Args>
+  static bool refreshFilterPresent(std::function<Result(Args...)> const& filter) {
+    return static_cast<bool>(filter);
+  }
+
   LruCacheType m_cache;
   std::int64_t m_timeToLive;
   int m_timeSmear;
@@ -175,15 +192,18 @@ bool TtlCacheBase<LruCacheType>::remove(Key const& key) {
 }
 
 template <typename LruCacheType>
-void TtlCacheBase<LruCacheType>::removeWhere(std::function<bool(Key const&, Value&)> filter) {
-  m_cache.removeWhere([&filter](auto const& key, auto& value) { return filter(key, value.second); });
+template <typename Filter>
+  requires std::is_invocable_r_v<bool, Filter&, typename LruCacheType::Key const&, typename LruCacheType::Value::second_type&>
+void TtlCacheBase<LruCacheType>::removeWhere(Filter&& filter) {
+  m_cache.removeWhere([&filter](auto const& key, auto& value) { return std::invoke(filter, key, value.second); });
 }
 
 template <typename LruCacheType>
 template <typename Producer>
-auto TtlCacheBase<LruCacheType>::get(Key const& key, Producer producer) -> Value & {
-  auto& value = m_cache.get(key, [producer](Key const& key) {
-      return std::pair<std::int64_t, Value>(0, producer(key));
+  requires std::invocable<Producer&, typename LruCacheType::Key const&>
+auto TtlCacheBase<LruCacheType>::get(Key const& key, Producer&& producer) -> Value & {
+  auto& value = m_cache.get(key, [&producer](Key const& key) {
+      return std::pair<std::int64_t, Value>(0, std::invoke(producer, key));
     });
   if (value.first == 0 || m_ttlUpdateEnabled)
     value.first = Time::monotonicMilliseconds() + Random::randInt(-m_timeSmear, m_timeSmear);
@@ -196,10 +216,17 @@ void TtlCacheBase<LruCacheType>::clear() {
 }
 
 template <typename LruCacheType>
-void TtlCacheBase<LruCacheType>::cleanup(std::function<bool(Key const&, Value const&)> refreshFilter) {
+void TtlCacheBase<LruCacheType>::cleanup(std::nullptr_t) {
+  cleanup([](Key const&, Value const&) { return false; });
+}
+
+template <typename LruCacheType>
+template <typename Filter>
+  requires std::is_invocable_r_v<bool, Filter&, typename LruCacheType::Key const&, typename LruCacheType::Value::second_type const&>
+void TtlCacheBase<LruCacheType>::cleanup(Filter&& refreshFilter) {
   std::int64_t currentTime = Time::monotonicMilliseconds();
   m_cache.removeWhere([&](auto const& key, auto& value) {
-      if (refreshFilter && refreshFilter(key, value.second)) {
+      if (refreshFilterPresent(refreshFilter) && std::invoke(refreshFilter, key, std::as_const(value.second))) {
         value.first = currentTime;
       } else {
         if (currentTime - value.first > m_timeToLive)

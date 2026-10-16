@@ -254,10 +254,10 @@ Image& Image::operator=(Image const& image) {
 Image& Image::operator=(Image&& image) {
   reset(0, 0, m_pixelFormat);
 
-  m_data = take(image.m_data);
-  m_width = take(image.m_width);
-  m_height = take(image.m_height);
-  m_pixelFormat = take(image.m_pixelFormat);
+  m_data = std::exchange(image.m_data, nullptr);
+  m_width = std::exchange(image.m_width, 0);
+  m_height = std::exchange(image.m_height, 0);
+  m_pixelFormat = std::exchange(image.m_pixelFormat, PixelFormat{});
   return *this;
 }
 

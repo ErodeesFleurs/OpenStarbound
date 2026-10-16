@@ -168,7 +168,7 @@ void NetElementBasicField<T>::push(T value) {
 
 template <typename T>
 bool NetElementBasicField<T>::pullUpdated() {
-  return take(m_updated);
+  return std::exchange(m_updated, false);
 }
 
 template <typename T>

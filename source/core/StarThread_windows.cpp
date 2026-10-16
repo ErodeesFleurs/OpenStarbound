@@ -459,7 +459,7 @@ void ThreadFunction<void>::finish() {
     m_impl->join();
 
     if (m_impl->exception)
-      std::rethrow_exception(take(m_impl->exception));
+      std::rethrow_exception(std::exchange(m_impl->exception, {}));
   }
 }
 

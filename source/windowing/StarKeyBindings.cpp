@@ -32,17 +32,12 @@ import star.configuration;
 
 namespace Star {
 
-extern HashMap<Key, KeyMod> const KeyChordMods{
-  {Key::LShift, KeyMod::LShift},
-  {Key::RShift, KeyMod::RShift},
-  {Key::LCtrl, KeyMod::LCtrl},
-  {Key::RCtrl, KeyMod::RCtrl},
-  {Key::LAlt, KeyMod::LAlt},
-  {Key::RAlt, KeyMod::RAlt},
-  {Key::LGui, KeyMod::LGui},
-  {Key::RGui, KeyMod::RGui},
-  {Key::AltGr, KeyMod::AltGr}
-};
+constexpr unsigned KeyChordModMask = [] {
+  unsigned mask = 0;
+  for (auto const& pair : KeyChordMods)
+    mask |= std::to_underlying(pair.second);
+  return mask;
+}();
 
 extern EnumMap<InterfaceAction> const InterfaceActionNames{
     {InterfaceAction::None, "None"},
@@ -206,11 +201,8 @@ Set<InterfaceAction> KeyBindings::actions(KeyChord chord) const {
     // first make sure that all required mods for the binding are held
     if ((pair.first & chord.mods) == pair.first) {
       // now count the number of mods in the binding
-      std::size_t matchedMods = 0;
-      for (auto modPair : KeyChordMods) {
-        if ((modPair.second & pair.first) == modPair.second)
-          ++matchedMods;
-      }
+      auto matchedMods = static_cast<std::size_t>(
+          std::popcount(static_cast<unsigned>(std::to_underlying(pair.first)) & KeyChordModMask));
 
       if (matchedMods > mostMatchedMods) {
         matching.clear();

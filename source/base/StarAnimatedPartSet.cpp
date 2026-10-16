@@ -366,8 +366,8 @@ void AnimatedPartSet::freshenActivePart(Part const& part) const {
       break;
     }
     if (version() > 0) {
-      auto processTransforms = [](Mat3F mat, JsonArray transforms, JsonObject properties) -> Mat3F {
-        for (auto const& v : transforms) {
+      auto processTransforms = [](Mat3F mat, Json const& transforms, JsonObject const& properties) -> Mat3F {
+        for (auto const& v : transforms.iterateArray()) {
           auto action = v.getString(0);
           if (action == "reset") {
             mat = Mat3F::identity();
@@ -388,10 +388,10 @@ void AnimatedPartSet::freshenActivePart(Part const& part) const {
 
 
       if (auto transforms = activePart.properties.ptr("transforms")) {
-        auto mat = processTransforms(activePart.animationAffineTransform(), transforms->toArray(), activePart.properties);
+        auto mat = processTransforms(activePart.animationAffineTransform(), *transforms, activePart.properties);
         if (activePart.properties.maybe("interpolated").value(false).toBool()) {
           if (auto nextTransforms = activePart.nextProperties.ptr("transforms")) {
-            auto nextMat = processTransforms(activePart.animationAffineTransform(), nextTransforms->toArray(), activePart.nextProperties);
+            auto nextMat = processTransforms(activePart.animationAffineTransform(), *nextTransforms, activePart.nextProperties);
             activePart.setAnimationAffineTransform(mat, nextMat, activePart.activeState ? activePart.activeState->frameProgress : 1);
           } else {
             activePart.setAnimationAffineTransform(mat);

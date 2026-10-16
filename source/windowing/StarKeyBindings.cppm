@@ -85,8 +85,18 @@ enum class InterfaceAction {
 };
 extern EnumMap<InterfaceAction> const InterfaceActionNames;
 
-// Maps the mod keys that can used in key chords to its associated KeyMod.
-extern HashMap<Key, KeyMod> const KeyChordMods;
+// Modifier keys accepted in key chords; lock-state bits are excluded.
+inline constexpr std::array<std::pair<Key, KeyMod>, 9> KeyChordMods{{
+  {Key::LShift, KeyMod::LShift},
+  {Key::RShift, KeyMod::RShift},
+  {Key::LCtrl, KeyMod::LCtrl},
+  {Key::RCtrl, KeyMod::RCtrl},
+  {Key::LAlt, KeyMod::LAlt},
+  {Key::RAlt, KeyMod::RAlt},
+  {Key::LGui, KeyMod::LGui},
+  {Key::RGui, KeyMod::RGui},
+  {Key::AltGr, KeyMod::AltGr}
+}};
 
 struct KeyChord {
   Key key;

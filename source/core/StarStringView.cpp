@@ -82,7 +82,7 @@ std::string_view const& StringView::utf8() const {
 }
 
 std::string_view StringView::takeUtf8() {
-  return take(m_view);
+  return std::exchange(m_view, {});
 }
 
 ByteArray StringView::utf8Bytes() const {

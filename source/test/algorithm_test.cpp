@@ -10,6 +10,8 @@ import star.data_stream;
 import star.data_stream_devices;
 import star.data_stream_extra;
 import star.bytes;
+import star.array;
+import star.vector;
 using namespace Star;
 
 TEST(any, allTests) {
@@ -212,4 +214,19 @@ TEST(ByteOrder, FloatingPayloadAndIntegerRepresentations) {
   EXPECT_EQ(toByteOrder(opposite, std::uint16_t{0x1234}), 0x3412u);
   EXPECT_EQ(toByteOrder(opposite, std::int32_t{-2}), std::byteswap(std::int32_t{-2}));
   EXPECT_EQ(toByteOrder(ByteOrder::NoConversion, std::uint64_t{0x12345678}), 0x12345678u);
+}
+
+TEST(FixedContainerCopy, PreservesSinglePassInputPosition) {
+  std::istringstream arrayInput("1 2 3 4 5");
+  auto array = Array<int, 3>::copyFrom(std::istream_iterator<int>(arrayInput), 2);
+  EXPECT_EQ(array, (Array<int, 3>{1, 2, 0}));
+  int next = 0;
+  arrayInput >> next;
+  EXPECT_EQ(next, 4);
+
+  std::istringstream vectorInput("1 2 3 4 5");
+  auto vector = Vector<int, 2>::copyFrom(std::istream_iterator<int>(vectorInput));
+  EXPECT_EQ(vector, (Vector<int, 2>{1, 2}));
+  vectorInput >> next;
+  EXPECT_EQ(next, 4);
 }

@@ -401,7 +401,7 @@ void NetElementMapWrapper<BaseMap>::reset(BaseMap values) {
 
 template <typename BaseMap>
 bool NetElementMapWrapper<BaseMap>::pullUpdated() {
-  return Star::take(m_updated);
+  return std::exchange(m_updated, false);
 }
 
 template <typename BaseMap>

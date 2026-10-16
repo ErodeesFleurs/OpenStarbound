@@ -317,8 +317,7 @@ template <typename T, std::size_t N>
 template <typename Iterator>
 Vector<T, N> Vector<T, N>::copyFrom(Iterator p) {
   Vector v;
-  for (std::size_t i = 0; i < N; ++i)
-    v[i] = *(p++);
+  std::ranges::copy_n(std::move(p), N, v.begin());
   return v;
 }
 
@@ -352,9 +351,7 @@ template <typename T, std::size_t N>
 template <std::size_t N2>
 Vector<T, N2> Vector<T, N>::toSize() const {
   Vector<T, N2> r;
-  std::size_t ns = std::min(N2, N);
-  for (std::size_t i = 0; i < ns; ++i)
-    r[i] = (*this)[i];
+  std::ranges::copy_n(this->begin(), std::min(N2, N), r.begin());
   return r;
 }
 

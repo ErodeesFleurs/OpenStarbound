@@ -114,6 +114,9 @@ import star.spawn_type_database;
 import star.spawner;
 import star.world_server;
 import star.world_server_thread;
+import star.projectile;
+import star.projectile_database;
+import star.material_database;
 import star.world_structure;
 import star.world_template;
 
@@ -297,4 +300,40 @@ TEST(WorldSnapshot, StoppedWorldRetainsClientsAndExportsRecoverableChunks) {
   WorldServer fromFile(File::open(path, IOMode::ReadWrite));
   EXPECT_EQ(fromFile.getProperty("stopSaveRegression", Json()), Json(42));
   fromFile.close();
+}
+
+TEST(ProjectileActions, DelayedExplosionOutlivesProjectile) {
+  auto& root = Root::singleton();
+  auto world = std::make_shared<WorldServer>(Vec2U(2048, 2048), File::ephemeralFile());
+  auto closeWorld = finally([&]() { world->close(); });
+  Vec2I tilePosition(1024, 1024);
+  world->generateRegion(RectI::withSize(tilePosition - Vec2I(4, 4), Vec2I(9, 9)));
+  world->setTileProtectionEnabled(false);
+  auto dirt = root.materialDatabase()->materialId("dirt");
+  auto tile = world->modifyServerTile(tilePosition, true);
+  ASSERT_NE(tile, nullptr);
+  tile->foreground = dirt;
+
+  auto projectile = root.projectileDatabase()->createProjectile("grenade", Json::parse(R"({
+    "actionOnReap": [{"action":"explosion","delaySteps":6,"foregroundRadius":2,
+      "backgroundRadius":0,"explosiveDamageAmount":10000,"harvestLevel":99}],
+    "actionOnHit": [], "actionOnTimeout": []
+  })"));
+  projectile->setInitialPosition(Vec2F(tilePosition) + Vec2F(0.5f, 0.5f));
+  projectile->setInitialVelocity(Vec2F());
+  projectile->setSourceEntity(4242, false);
+  world->addEntity(projectile);
+  auto projectileId = projectile->entityId();
+  std::weak_ptr<Projectile> retired = projectile;
+  world->removeEntity(projectileId, true);
+  projectile.reset();
+  ASSERT_TRUE(retired.expired());
+  EXPECT_FALSE(world->entity(projectileId));
+
+  world->update(0.025f);
+  EXPECT_EQ(world->material(tilePosition, TileLayer::Foreground), dirt);
+  EXPECT_FALSE(world->getServerTile(tilePosition).foregroundDamage.dead());
+  for (unsigned step = 0; step < 10 && world->material(tilePosition, TileLayer::Foreground) != EmptyMaterialId; ++step)
+    world->update(0.2f);
+  EXPECT_EQ(world->material(tilePosition, TileLayer::Foreground), EmptyMaterialId);
 }

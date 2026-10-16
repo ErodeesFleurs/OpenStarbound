@@ -14,8 +14,6 @@ public:
   typedef typename OrderedMapType::key_type Key;
   typedef typename OrderedMapType::mapped_type Value;
 
-  typedef std::function<Value(Key const&)> ProducerFunction;
-
   LruCacheBase();
   LruCacheBase(std::size_t maxSize);
 
@@ -40,13 +38,16 @@ public:
   bool remove(Key const& key);
 
   // Remove all key / value pairs matching a filter.
-  void removeWhere(std::function<bool(Key const&, Value&)> filter);
+  template <typename Filter>
+    requires std::is_invocable_r_v<bool, Filter&, Key const&, Value&>
+  void removeWhere(Filter&& filter);
 
   // If the value for the key is not found in the cache, produce it with the
   // given producer.  Producer shold take the key as an argument and return the
   // value.
   template <typename Producer>
-  Value& get(Key const& key, Producer producer);
+    requires std::invocable<Producer&, Key const&>
+  Value& get(Key const& key, Producer&& producer);
 
   // Clear all cached entries.
   void clear();
@@ -125,23 +126,26 @@ bool LruCacheBase<OrderedMapType>::remove(Key const& key) {
 }
 
 template <typename OrderedMapType>
-void LruCacheBase<OrderedMapType>::removeWhere(std::function<bool(Key const&, Value&)> filter) {
+template <typename Filter>
+  requires std::is_invocable_r_v<bool, Filter&, typename OrderedMapType::key_type const&, typename OrderedMapType::mapped_type&>
+void LruCacheBase<OrderedMapType>::removeWhere(Filter&& filter) {
   eraseWhere(m_map, [&filter](auto& p) {
-      return filter(p.first, p.second);
+      return std::invoke(filter, p.first, p.second);
     });
 }
 
 template <typename OrderedMapType>
 template <typename Producer>
-auto LruCacheBase<OrderedMapType>::get(Key const& key, Producer producer) -> Value & {
-  while (m_map.size() > m_maxSize - 1)
-    m_map.removeFirst();
-
+  requires std::invocable<Producer&, typename OrderedMapType::key_type const&>
+auto LruCacheBase<OrderedMapType>::get(Key const& key, Producer&& producer) -> Value & {
   auto i = m_map.find(key);
-  if (i == m_map.end())
-    i = m_map.insert({key, producer(key)}).first;
-  else
+  if (i == m_map.end()) {
+    while (m_map.size() > m_maxSize - 1)
+      m_map.removeFirst();
+    i = m_map.insert({key, std::invoke(producer, key)}).first;
+  } else {
     i = m_map.toBack(i);
+  }
 
   return i->second;
 }

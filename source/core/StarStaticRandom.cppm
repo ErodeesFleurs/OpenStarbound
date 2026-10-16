@@ -8,34 +8,21 @@ namespace Star {
 
 // Cross-platform, predictable random number generators based on XXHash.
 // Supports primitive types as well as strings for input data.
-
-inline void staticRandomHash32Iter(XXHash32&) {}
-
-template <typename T, typename... TL>
-void staticRandomHash32Iter(XXHash32& hash, T const& v, TL const&... rest) {
-  xxHash32Push(hash, v);
-  staticRandomHash32Iter(hash, rest...);
-}
+// Each folded call also ends the lifetime of any ADL push return temporaries.
 
 template <typename T, typename... TL>
 std::uint32_t staticRandomHash32(T const& v, TL const&... rest) {
   XXHash32 hash(2938728349u);
-  staticRandomHash32Iter(hash, v, rest...);
+  xxHash32Push(hash, v);
+  ([&] { xxHash32Push(hash, rest); }(), ...);
   return hash.digest();
-}
-
-inline void staticRandomHash64Iter(XXHash64&) {}
-
-template <typename T, typename... TL>
-void staticRandomHash64Iter(XXHash64& hash, T const& v, TL const&... rest) {
-  xxHash64Push(hash, v);
-  staticRandomHash64Iter(hash, rest...);
 }
 
 template <typename T, typename... TL>
 std::uint64_t staticRandomHash64(T const& v, TL const&... rest) {
   XXHash64 hash(1997293021376312589);
-  staticRandomHash64Iter(hash, v, rest...);
+  xxHash64Push(hash, v);
+  ([&] { xxHash64Push(hash, rest); }(), ...);
   return hash.digest();
 }
 
@@ -154,9 +141,7 @@ void staticRandomShuffle(Container& container, T const& d, TL const&... rest) {
 export module star.static_random;
 
 export namespace Star {
-  using ::Star::staticRandomHash32Iter;
   using ::Star::staticRandomHash32;
-  using ::Star::staticRandomHash64Iter;
   using ::Star::staticRandomHash64;
   using ::Star::staticRandomU32;
   using ::Star::staticRandomU64;

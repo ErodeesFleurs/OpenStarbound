@@ -103,8 +103,7 @@ template <typename Element, std::size_t Size>
 template <typename Iterator>
 Array<Element, Size> Array<Element, Size>::copyFrom(Iterator p, std::size_t n) {
   Array a;
-  for (std::size_t i = 0; i < n && i < Size; ++i)
-    a[i] = *(p++);
+  std::ranges::copy_n(std::move(p), std::min(n, Size), a.begin());
   return a;
 }
 
@@ -185,9 +184,7 @@ template <typename Element, std::size_t Size>
 template <std::size_t Size2>
 Array<Element, Size2> Array<Element, Size>::toSize() const {
   Array<Element, Size2> r;
-  std::size_t ns = std::min(Size2, Size);
-  for (std::size_t i = 0; i < ns; ++i)
-    r[i] = (*this)[i];
+  std::ranges::copy_n(this->begin(), std::min(Size2, Size), r.begin());
   return r;
 }
 

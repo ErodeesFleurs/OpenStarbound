@@ -1135,8 +1135,8 @@ namespace LuaDetail {
   }
 
   inline LuaHandle::LuaHandle(LuaHandle&& other) {
-    engine = take(other.engine);
-    handleIndex = take(other.handleIndex);
+    engine = std::exchange(other.engine, {});
+    handleIndex = std::exchange(other.handleIndex, 0);
   }
 
   inline LuaHandle& LuaHandle::operator=(LuaHandle const& other) {
@@ -1154,8 +1154,8 @@ namespace LuaDetail {
     if (engine)
       engine->destroyHandle(handleIndex);
 
-    engine = take(other.engine);
-    handleIndex = take(other.handleIndex);
+    engine = std::exchange(other.engine, {});
+    handleIndex = std::exchange(other.handleIndex, 0);
 
     return *this;
   }

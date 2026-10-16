@@ -387,7 +387,7 @@ Pos inverseLinearInterpolateLower(Iterator begin, Iterator end, Pos t, Comp&& co
 
 template <typename Iterator, typename Pos>
 Pos inverseLinearInterpolateLower(Iterator begin, Iterator end, Pos t) {
-  return inverseLinearInterpolateLower(begin, end, t, std::less<Pos>(), identity());
+  return inverseLinearInterpolateLower(begin, end, t, std::less<Pos>(), std::identity());
 }
 
 // Same as inverseLinearInterpolateLower, except chooses the upper most of the
@@ -414,7 +414,7 @@ Pos inverseLinearInterpolateUpper(Iterator begin, Iterator end, Pos t, Comp&& co
 
 template <typename Iterator, typename Pos>
 Pos inverseLinearInterpolateUpper(Iterator begin, Iterator end, Pos t) {
-  return inverseLinearInterpolateUpper(begin, end, t, std::less<Pos>(), identity());
+  return inverseLinearInterpolateUpper(begin, end, t, std::less<Pos>(), std::identity());
 }
 
 template <typename XContainer, typename YContainer, typename PositionType, typename WeightOp>

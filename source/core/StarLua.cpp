@@ -148,7 +148,7 @@ LuaTable LuaContext::createTable() {
 LuaNullEnforcer::LuaNullEnforcer(LuaEngine& engine)
   : m_engine(&engine) { ++m_engine->m_nullTerminated; };
 
-LuaNullEnforcer::LuaNullEnforcer(LuaNullEnforcer&& other) { m_engine = take(other.m_engine); };
+LuaNullEnforcer::LuaNullEnforcer(LuaNullEnforcer&& other) { m_engine = std::exchange(other.m_engine, nullptr); };
 
 LuaNullEnforcer::~LuaNullEnforcer() { if (m_engine) --m_engine->m_nullTerminated; };
 

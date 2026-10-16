@@ -39,9 +39,9 @@ Lightmap& Lightmap::operator=(Lightmap const& lightMap) {
 }
 
 Lightmap& Lightmap::operator=(Lightmap&& lightMap) noexcept {
-  m_width = take(lightMap.m_width);
-  m_height = take(lightMap.m_height);
-  m_data = take(lightMap.m_data);
+  m_width = std::exchange(lightMap.m_width, 0);
+  m_height = std::exchange(lightMap.m_height, 0);
+  m_data = std::move(lightMap.m_data);
   return *this;
 }
 

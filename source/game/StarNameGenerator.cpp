@@ -66,12 +66,12 @@ String PatternedNameGenerator::generateName(String const& rulesAsset, std::uint6
 
 String PatternedNameGenerator::generateName(String const& rulesAsset, RandomSource& random) const {
   auto assets = Root::singleton().assets();
-  auto rules = assets->json(rulesAsset).toArray();
+  auto rules = assets->json(rulesAsset).arrayPtr();
   String res = "";
   int tries = 100;
   while ((res.empty() || isProfane(res)) && tries > 0) {
     --tries;
-    res = processRule(rules, random);
+    res = processRule(*rules, random);
   }
   return res;
 }
@@ -93,24 +93,24 @@ String PatternedNameGenerator::processRule(JsonArray const& rule, RandomSource& 
 
   if (mode == "serie") {
     for (; index < rule.size(); index++) {
-      auto entry = rule[index];
+      auto const& entry = rule[index];
       if (entry.type() == Json::Type::Array)
-        result += processRule(entry.toArray(), random);
+        result += processRule(*entry.arrayPtr(), random);
       else
         result += entry.toString();
     }
   } else if (mode == "alts") {
     int i = index + random.randInt(rule.size() - 1 - index);
-    auto entry = rule[i];
+    auto const& entry = rule[i];
     if (entry.type() == Json::Type::Array)
-      result += processRule(entry.toArray(), random);
+      result += processRule(*entry.arrayPtr(), random);
     else
       result += entry.toString();
   } else if (mode == "markov") {
     if (!m_markovSources.contains(meta.getString("source")))
       throw NameGeneratorException::format("Unknown name source '{}'", meta.getString("source"));
 
-    auto source = m_markovSources.get(meta.getString("source"));
+    auto const& source = m_markovSources.get(meta.getString("source"));
     auto lengthRange = meta.getArray("targetLength");
     auto targetLength = random.randUInt(lengthRange[0].toUInt(), lengthRange[1].toUInt());
 

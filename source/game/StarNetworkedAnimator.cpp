@@ -1143,8 +1143,8 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
 
     });
   if (version() > 0) {
-    auto processTransforms = [](Mat3F mat, JsonArray transforms, JsonObject properties) -> Mat3F {
-      for (auto const& v : transforms) {
+    auto processTransforms = [](Mat3F mat, Json const& transforms, JsonObject const& properties) -> Mat3F {
+      for (auto const& v : transforms.iterateArray()) {
         auto action = v.getString(0);
         if (action == "reset") {
           mat = Mat3F::identity();
@@ -1166,10 +1166,10 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
       for (auto& stateTypeName : m_animatedParts.stateTypes()) {
         auto& activeState = m_animatedParts.activeState(stateTypeName);
         if (auto transforms = activeState.properties.ptr(pair.first)) {
-          auto mat = processTransforms(pair.second.animationAffineTransform(), transforms->toArray(), activeState.properties);
+          auto mat = processTransforms(pair.second.animationAffineTransform(), *transforms, activeState.properties);
           if (pair.second.interpolated) {
             if (auto nextTransforms = activeState.nextProperties.ptr(pair.first)) {
-              auto nextMat = processTransforms(pair.second.animationAffineTransform(), nextTransforms->toArray(), activeState.nextProperties);
+              auto nextMat = processTransforms(pair.second.animationAffineTransform(), *nextTransforms, activeState.nextProperties);
               pair.second.setAnimationAffineTransform(mat, nextMat, activeState.frameProgress);
             } else {
               pair.second.setAnimationAffineTransform(mat);

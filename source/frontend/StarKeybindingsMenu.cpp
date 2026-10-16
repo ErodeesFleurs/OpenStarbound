@@ -121,8 +121,9 @@ bool KeybindingsMenu::sendEvent(InputEvent const& event) {
       return true;
 
     if (auto keyUp = event.ptr<KeyUpEvent>()) {
-      if (Maybe<KeyMod> modKey = KeyChordMods.maybe(keyUp->key)) {
-        m_currentMods &= ~*modKey;
+      if (auto modKey = std::ranges::find(KeyChordMods, keyUp->key, &std::pair<Key, KeyMod>::first);
+          modKey != KeyChordMods.end()) {
+        m_currentMods &= ~modKey->second;
         setKeybinding(KeyChord{keyUp->key, m_currentMods});
         return true;
       }

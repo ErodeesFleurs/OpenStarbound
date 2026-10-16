@@ -68,9 +68,9 @@ ByteArray& ByteArray::operator=(ByteArray&& b) noexcept {
   if (&b != this) {
     reset();
 
-    m_data = take(b.m_data);
-    m_capacity = take(b.m_capacity);
-    m_size = take(b.m_size);
+    m_data = std::exchange(b.m_data, nullptr);
+    m_capacity = std::exchange(b.m_capacity, 0);
+    m_size = std::exchange(b.m_size, 0);
   }
 
   return *this;

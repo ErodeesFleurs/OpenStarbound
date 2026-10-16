@@ -18,13 +18,6 @@ struct construct {
   }
 };
 
-struct identity {
-  template <typename U>
-  constexpr decltype(auto) operator()(U&& v) const {
-    return std::forward<U>(v);
-  }
-};
-
 template <typename Func>
 struct SwallowReturn {
   template <typename... T>
@@ -331,6 +324,8 @@ OutputContainer zipWith(Function&& function, Container1 const& cont1, Container2
 // Moves the given value and into an rvalue.  Works whether or not the type has
 // a valid move constructor or not.  Always leaves the given value in its
 // default constructed state.
+// Default construction follows the move; std::exchange constructs its
+// replacement first, which differs if default construction throws.
 template <typename T>
 T take(T& t) {
   T t2 = std::move(t);
@@ -588,7 +583,6 @@ export module star.algorithm;
 export namespace Star {
   using ::Star::nothing;
   using ::Star::construct;
-  using ::Star::identity;
   using ::Star::SwallowReturn;
   using ::Star::swallow;
   using ::Star::Empty;
