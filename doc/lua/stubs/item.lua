@@ -22,7 +22,7 @@ function item.setCount(count) end
 function item.maxStack() end
 
 --- Returns whether the item matches the specified item. If exactMatch is `true` then both the items' names and parameters are compared, otherwise only the items' names. ---
----@param desc ItemDescriptor
+---@param desc ItemDescriptorInput
 ---@param exactMatch boolean
 ---@return boolean
 function item.matches(desc, exactMatch) end

@@ -44,7 +44,7 @@ function root.imageSize(imagePath) end
 ---@param worldPosition Vec2F
 ---@param spaceScan number
 ---@param flip boolean
----@return List<Vec2I>
+---@return Vec2I[]
 function root.imageSpaces(imagePath, worldPosition, spaceScan, flip) end
 
 --- Returns the rectangle containing the portion of the specified asset image that is non-transparent. ---
@@ -61,8 +61,8 @@ function root.npcConfig(npcType) end
 ---@param species string
 ---@param npcType string
 ---@param level number
----@param seed unsigned
----@param parameters Json
+---@param seed? unsigned
+---@param parameters? Json
 ---@return Json
 function root.npcVariant(species, npcType, level, seed, parameters) end
 
@@ -77,10 +77,10 @@ function root.projectileGravityMultiplier(projectileName) end
 function root.projectileConfig(projectileName) end
 
 --- Returns `true` if the given item descriptors match. If exactMatch is `true` then both names and parameters will be compared, otherwise only names. ---
----@param descriptor1 ItemDescriptor
----@param descriptor2 ItemDescriptor
----@param exactMatch boolean
----@return Json
+---@param descriptor1 ItemDescriptorInput
+---@param descriptor2 ItemDescriptorInput
+---@param exactMatch? boolean
+---@return boolean
 function root.itemDescriptorsMatch(descriptor1, descriptor2, exactMatch) end
 
 --- Returns a list of JSON configurations of all recipes which output the given item. ---
@@ -105,17 +105,17 @@ function root.itemTags(itemName) end
 function root.itemHasTag(itemName, tagName) end
 
 --- Generates an item from the specified descriptor, level and seed and returns a JSON object containing the `directory`, `config` and `parameters` for that item. ---
----@param descriptor ItemDescriptor
----@param level number
----@param seed unsigned
----@return Json
+---@param descriptor ItemDescriptorInput
+---@param level? number
+---@param seed? unsigned
+---@return {directory: string, config: JsonObject, parameters: JsonObject}
 function root.itemConfig(descriptor, level, seed) end
 
 --- Generates an item from the specified descriptor, level and seed and returns a new item descriptor for the resulting item. ---
----@param descriptor ItemDescriptor
----@param level number
----@param seed unsigned
----@return ItemDescriptor
+---@param descriptor ItemDescriptorInput
+---@param level? number
+---@param seed? unsigned
+---@return ItemDescriptor?
 function root.createItem(descriptor, level, seed) end
 
 --- Returns the JSON configuration for the given tenant. ---
@@ -124,8 +124,9 @@ function root.createItem(descriptor, level, seed) end
 function root.tenantConfig(tenantName) end
 
 --- Returns an array of JSON configurations of tenants matching the given map of colony tags and corresponding object counts. ---
+---@param tags table<string, unsigned>
 ---@return JsonArray
-function root.getMatchingTenants() end
+function root.getMatchingTenants(tags) end
 
 --- Returns an array of status effects applied by the given liquid. ---
 ---@param liquid LiquidId
@@ -134,7 +135,7 @@ function root.liquidStatusEffects(liquid) end
 
 --- Returns a randomly generated name using the specified name gen config and seed. ---
 ---@param assetPath string
----@param seed unsigned
+---@param seed? unsigned
 ---@return string
 function root.generateName(assetPath, seed) end
 
@@ -148,14 +149,14 @@ function root.questConfig(questTemplateId) end
 ---@param species string
 ---@param npcType string
 ---@param level number
----@param seed unsigned
----@param parameters Json
+---@param seed? unsigned
+---@param parameters? Json
 ---@return JsonArray
 function root.npcPortrait(portraitMode, species, npcType, level, seed, parameters) end
 
 --- Generates a monster of the given type with the given parameters and returns its portrait as a list of drawables. ---
 ---@param typeName string
----@param parameters Json
+---@param parameters? Json
 ---@return JsonArray
 function root.monsterPortrait(typeName, parameters) end
 
@@ -167,19 +168,19 @@ function root.isTreasurePool(poolName) end
 --- Generates an instance of the specified treasure pool, level and seed and returns the contents as a list of item descriptors. ---
 ---@param poolName string
 ---@param level number
----@param seed unsigned
+---@param seed? unsigned
 ---@return JsonArray
 function root.createTreasure(poolName, level, seed) end
 
 --- Returns the path of the mining sound asset for the given material and mod combination, or `nil` if no mining sound is set. ---
 ---@param materialName string
----@param modName string
+---@param modName? string
 ---@return string
 function root.materialMiningSound(materialName, modName) end
 
 --- Returns the path of the footstep sound asset for the given material and mod combination, or `nil` if no footstep sound is set. ---
 ---@param materialName string
----@param modName string
+---@param modName? string
 ---@return string
 function root.materialFootstepSound(materialName, modName) end
 
@@ -200,12 +201,8 @@ function root.modConfig(modName) end
 
 ---@param liquidId LiquidId
 ---@return Json
+---@overload fun(liquidName: string): Json
 function root.liquidConfig(liquidId) end
-
---- Returns a JSON object containing the `path` and base `config` for the specified liquid name or id if it is a real liquid, or `nil` if the liquid is empty or invalid. ---
----@param liquidName string
----@return Json
-function root.liquidConfig(liquidName) end
 
 --- Returns the string name of the liquid with the given ID. ---
 ---@param liquidId LiquidId
@@ -273,7 +270,7 @@ function root.collection(collectionName) end
 
 --- Returns a list of collectables for the specified collection. ---
 ---@param collectionName string
----@return List<Collectable>
+---@return Collectable[]
 function root.collectables(collectionName) end
 
 --- Returns the name of the stat used to calculate elemental resistance for the specified elemental type. ---

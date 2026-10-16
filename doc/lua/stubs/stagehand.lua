@@ -14,11 +14,9 @@ function stagehand.position() end
 
 --- Moves the stagehand to the specified position. ---
 ---@param position Vec2F
----@return void
 function stagehand.setPosition(position) end
 
 --- Destroys the stagehand. ---
----@return void
 function stagehand.die() end
 
 --- Returns the stagehand's type name. ---
@@ -27,5 +25,4 @@ function stagehand.typeName() end
 
 --- Sets the stagehand's unique entity id, or clears it if unspecified.
 ---@param uniqueId string
----@return void
 function stagehand.setUniqueId(uniqueId) end

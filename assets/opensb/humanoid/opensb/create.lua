@@ -6,6 +6,7 @@ function create(name, species, genderIndex, bodyColor, alty, hairChoice, heady, 
 
     local speciesConfig = root.speciesConfig(species)
     local humanoidConfig = sb.jsonMerge(root.assetJson(speciesConfig.humanoidConfig or "/humanoid.config"), speciesConfig.humanoidOverrides or {})
+    ---@cast humanoidConfig JsonObject
 
     genderIndex = math.fmod(genderIndex, #speciesConfig.genders)
     personality = math.fmod(personality, #humanoidConfig.personalities)

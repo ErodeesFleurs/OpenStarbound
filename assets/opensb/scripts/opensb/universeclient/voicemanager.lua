@@ -1,7 +1,7 @@
 -- Manages the voice HUD indicators and click-to-mute/unmute.
 
 local fmt = string.format
-local sqrt, min, max = math.sqrt, math.min, math.max
+local sqrt = math.sqrt
 
 local module = {}
 modules.voice_manager = module
@@ -95,21 +95,6 @@ local function drawSpeakerBar(mouse, pos, speaker, i)
 	end
 end
 
-local function simulateSpeakers()
-	local speakers = {}
-	for i = 2, 5 + math.floor((math.sin(os.clock()) * 4) + .5) do
-		local dB = -48 + 48 * math.sin(os.clock() + (i * 0.5))
-		speakers[i] = {
-			speakerId = i,
-			entityId = -65536 * i,
-			name = "Player " .. i .. " (" .. (math.floor((dB * 100) + 0.5) / 100) .. " dB)",
-			decibels = dB,
-			smoothDecibels = dB,
-			muted = false
-		}
-	end
-	return speakers
-end
 
 local function drawIndicators()
 	canvas:clear()
@@ -117,7 +102,7 @@ local function drawIndicators()
 	local mousePosition = canvas:mousePosition()
 	local basePos = {screenSize[1] - 350, 50}
 
-	local speakersRemaining, speakers = {}, {}
+	local speakers = {}
 	local hoveredSpeakerId = nil
 	if hoveredSpeaker then
 		if not mouseOverSpeaker(mousePosition, hoveredSpeakerPosition, 16) then
@@ -128,9 +113,8 @@ local function drawIndicators()
 	end
 
 	local speakerCount = 0
-	for i, speaker in pairs(voice.speakers()) do
+	for _, speaker in pairs(voice.speakers()) do
 		local speakerId = speaker.speakerId
-		speakersRemaining[speakerId] = true
 		if speakerId == hoveredSpeakerId then
 			hoveredSpeaker = speaker
 		else

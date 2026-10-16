@@ -1,0 +1,45 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "runtime.version": "Lua 5.3",
+  "completion.requireSeparator": "/",
+  "runtime.path": [
+    "assets/opensb/?"
+  ],
+  "runtime.pathStrict": true,
+  "diagnostics.unusedLocalExclude": ["_*"],
+  "workspace.checkThirdParty": false,
+  "workspace.ignoreDir": [
+    ".git",
+    "build",
+    "dist",
+    "result",
+    "result-*"
+  ],
+  "diagnostics.globals": [
+    "init",
+    "update",
+    "uninit",
+    "patch",
+    "build",
+    "create",
+    "render",
+    "command",
+    "modules",
+    "snare",
+    "selectCategory",
+    "applyBind",
+    "eraseBind",
+    "resetBind",
+    "selectGroup",
+    "toggleGroupEnabled",
+    "sliderOptionModified",
+    "selectOptionPressed",
+    "selectDevice",
+    "displayed",
+    "voiceVolume",
+    "inputVolume",
+    "threshold",
+    "switchVoiceMode",
+    "voiceToggle"
+  ]
+}

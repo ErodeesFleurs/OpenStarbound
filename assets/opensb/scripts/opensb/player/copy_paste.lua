@@ -43,6 +43,8 @@ local function pasteItem()
   if not success then
     popupError("Error parsing clipboard item", result)
   else
+    -- getClipboardText only accepts JSON objects (a leading '{').
+    ---@cast result JsonObject
     if swap then
       if swap.name == result.name and sb.jsonEqual(swap.parameters, result.parameters) then
         result.count = (tonumber(result.count) or 1) + (tonumber(swap.count) or 1)
@@ -50,8 +52,8 @@ local function pasteItem()
         return interface.queueMessage("^#f00;Cursor is occupied^reset;", 4, 0.5)
       end
     end
-    local success, err = pcall(player.setSwapSlotItem, result)
-    if not success then popupError("Error loading clipboard item", err)
+    local loaded, err = pcall(player.setSwapSlotItem, result)
+    if not loaded then popupError("Error loading clipboard item", err)
     else
       local message = string.format("Pasted ^cyan;%s^reset; from clipboard", getItemName(result))
       interface.queueMessage(message, 4, 0.5)

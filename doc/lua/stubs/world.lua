@@ -18,7 +18,7 @@ function world.size() end
 
 --- Returns the magnitude of the distance between the specified world positions. Use this rather than simple vector subtraction to handle world wrapping. ---
 ---@param position1 Vec2F
----@param position2 Vec2F
+---@param position2? Vec2F
 ---@return number
 function world.magnitude(position1, position2) end
 
@@ -37,113 +37,112 @@ function world.polyContains(poly, position) end
 --- Returns the specified position with its X coordinate wrapped around the world width.
 ---@param position Vec2F
 ---@return Vec2F
+---@overload fun(xPosition: number): number
 function world.xwrap(position) end
 
---- Returns the specified X position wrapped around the world width. ---
----@param xPosition number
----@return number
-function world.xwrap(xPosition) end
-
 --- Returns the point nearest to (i.e. on the same side of the world as) the source point. Either argument can be specified as a `Vec2F` point or as a `float` X position. The type of the targetPosition determines the return type. ---
----@return Variant<Vec2F, float>
-function world.nearestTo() end
+---@param sourcePosition number|Vec2F
+---@param targetPosition Vec2F
+---@overload fun(sourcePosition: number|Vec2F, targetPosition: number): number
+---@return Vec2F
+function world.nearestTo(sourcePosition, targetPosition) end
 
 --- Returns `true` if the generated collision geometry at the specified point matches any of the specified collision kinds and `false` otherwise. ---
 ---@param point Vec2F
----@param collisionKinds CollisionSet
+---@param collisionKinds? CollisionSet
 ---@return boolean
 function world.pointCollision(point, collisionKinds) end
 
 --- Returns `true` if the tile at the specified point matches any of the specified collision kinds and `false` otherwise. ---
 ---@param point Vec2F
----@param collisionKinds CollisionSet
+---@param collisionKinds? CollisionSet
 ---@return boolean
 function world.pointTileCollision(point, collisionKinds) end
 
 --- If the line between the specified points overlaps any generated collision geometry of the specified collision kinds, returns the point at which the line collides, or `nil` if the line does not collide. If intersecting a side of the poly, also returns the normal of the intersected side as a second return. ---
 ---@param startPoint Vec2F
 ---@param endPoint Vec2F
----@param collisionKinds CollisionSet
----@return Tuple<Maybe<Vec2F>, Maybe<Vec2F>>
+---@param collisionKinds? CollisionSet
+---@return Vec2F?, Vec2F?
 function world.lineCollision(startPoint, endPoint, collisionKinds) end
 
 --- Returns `true` if the line between the specified points overlaps any tiles of the specified collision kinds and `false` otherwise. ---
 ---@param startPoint Vec2F
 ---@param endPoint Vec2F
----@param collisionKinds CollisionSet
+---@param collisionKinds? CollisionSet
 ---@return boolean
 function world.lineTileCollision(startPoint, endPoint, collisionKinds) end
 
 --- Returns a table of {`position`, `normal`} where `position` is the position that the line intersects the first collidable tile, and `normal` is the collision normal. Returns `nil` if no tile is intersected. ---
 ---@param startPoint Vec2F
 ---@param endPoint Vec2F
----@param collisionKinds CollisionSet
----@return Maybe<pair<Vec2F, Vec2F>>
+---@param collisionKinds? CollisionSet
+---@return ({[1]: Vec2F, [2]: Vec2F})?
 function world.lineTileCollisionPoint(startPoint, endPoint, collisionKinds) end
 
 --- Returns `true` if the specified rectangle overlaps any generated collision geometry of the specified collision kinds and `false` otherwise. ---
 ---@param rect RectF
----@param collisionKinds CollisionSet
+---@param collisionKinds? CollisionSet
 ---@return boolean
 function world.rectCollision(rect, collisionKinds) end
 
 --- Returns `true` if the specified rectangle overlaps any tiles of the specified collision kinds and `false` otherwise. ---
 ---@param rect RectF
----@param collisionKinds CollisionSet
+---@param collisionKinds? CollisionSet
 ---@return boolean
 function world.rectTileCollision(rect, collisionKinds) end
 
 --- Returns `true` if the specified polygon overlaps any generated collision geometry of the specified collision kinds and `false` otherwise. If a position is specified, the polygon coordinates will be treated as relative to that world position. ---
 ---@param poly PolyF
----@param position Vec2F
----@param collisionKinds CollisionSet
+---@param position? Vec2F
+---@param collisionKinds? CollisionSet
 ---@return boolean
 function world.polyCollision(poly, position, collisionKinds) end
 
 --- Returns an ordered list of tile positions along the line between the specified points that match any of the specified collision kinds. If maxReturnCount is specified, the function will only return up to that number of points. ---
 ---@param startPoint Vec2F
 ---@param endPoint Vec2F
----@param collisionKinds CollisionSet
----@param maxReturnCount number
----@return List<Vec2I>
+---@param collisionKinds? CollisionSet
+---@param maxReturnCount? number
+---@return Vec2I[]
 function world.collisionBlocksAlongLine(startPoint, endPoint, collisionKinds, maxReturnCount) end
 
 --- Returns a list of pairs containing a position and a `LiquidLevel` for all tiles along the line between the specified points that contain any liquid. ---
 ---@param startPoint Vec2F
 ---@param endPoint Vec2F
----@return List<pair<Vec2I, LiquidLevel>>
+---@return ({[1]: Vec2I, [2]: LiquidLevel})[]
 function world.liquidAlongLine(startPoint, endPoint) end
 
 --- Attempts to move the specified poly (relative to the specified position) such that it does not collide with any of the specified collision kinds. Will only move the poly up to the distance specified by maximumCorrection. Returns `nil` if the collision resolution fails. ---
 ---@param poly PolyF
 ---@param position Vec2F
 ---@param maximumCorrection number
----@param collisionKinds CollisionSet
+---@param collisionKinds? CollisionSet
 ---@return Vec2F
 function world.resolvePolyCollision(poly, position, maximumCorrection, collisionKinds) end
 
 --- Returns `true` if the specified tile position is occupied by a material or tile entity and `false` if it is empty. The check will be performed on the foreground tile layer if foregroundLayer is `true` (or unspecified) and the background tile layer if it is `false`. The check will include ephemeral tile entities such as preview objects if includeEphemeral is `true`, and will not include these entities if it is `false` (or unspecified). ---
 ---@param tilePosition Vec2I
----@param foregroundLayer boolean
----@param includeEphemeral boolean
+---@param foregroundLayer? boolean
+---@param includeEphemeral? boolean
 ---@return boolean
 function world.tileIsOccupied(tilePosition, foregroundLayer, includeEphemeral) end
 
 --- Attempts to place the specified object into the world at the specified position, preferring it to be right-facing if direction is positive (or unspecified) and left-facing if it is negative. If parameters are specified they will be applied to the object. Returns `true` if the object is placed successfully and `false` otherwise. ---
 ---@param objectName string
 ---@param tilePosition Vec2I
----@param direction number
+---@param direction? number
 ---@param parameters Json
 ---@return boolean
 function world.placeObject(objectName, tilePosition, direction, parameters) end
 
 --- Attempts to spawn the specified item into the world as the specified position. If item is specified as a name, it will optionally apply the specified count and parameters. The item drop entity can also be spawned with an initial velocity and intangible time (delay before it can be picked up) if specified. Returns an `EntityId` of the item drop if successful and `nil` otherwise. ---
----@param item ItemDescriptor
+---@param item ItemDescriptorInput
 ---@param position Vec2F
----@param count unsigned
+---@param count? unsigned
 ---@param parameters Json
----@param velocity Vec2F
----@param intangibleTime number
+---@param velocity? Vec2F
+---@param intangibleTime? number
 ---@return EntityId
 function world.spawnItem(item, position, count, parameters, velocity, intangibleTime) end
 
@@ -151,14 +150,14 @@ function world.spawnItem(item, position, count, parameters, velocity, intangible
 ---@param position Vec2F
 ---@param poolName string
 ---@param level number
----@param seed unsigned
----@return List<EntityId>
+---@param seed? unsigned
+---@return EntityId[]
 function world.spawnTreasure(position, poolName, level, seed) end
 
 --- Attempts to spawn a monster of the specified type at the specified position. If parameters are specified they will be applied to the spawned monster. If they are unspecified, they default to an object setting aggressive to be randomly `true` or `false`. Level for the monster may be specified in parameters. Returns the `EntityId` of the spawned monster if successful and `nil` otherwise. ---
 ---@param monsterType string
 ---@param position Vec2F
----@param parameters Json
+---@param parameters? Json
 ---@return EntityId
 function world.spawnMonster(monsterType, position, parameters) end
 
@@ -167,7 +166,7 @@ function world.spawnMonster(monsterType, position, parameters) end
 ---@param species string
 ---@param npcType string
 ---@param level number
----@param seed unsigned
+---@param seed? unsigned
 ---@param parameters Json
 ---@return EntityId
 function world.spawnNpc(position, species, npcType, level, seed, parameters) end
@@ -182,8 +181,8 @@ function world.spawnStagehand(position, type, overrides) end
 --- Attempts to spawn a projectile of the specified type at the specified position with the specified source entity id, direction, and parameters. If trackSourceEntity is `true` then the projectile's position will be locked relative to its source entity's position. Returns the `EntityId` of the spawned projectile if successful and `nil` otherwise. ---
 ---@param projectileName string
 ---@param position Vec2F
----@param sourceEntityId EntityId
----@param direction Vec2F
+---@param sourceEntityId? EntityId
+---@param direction? Vec2F
 ---@param trackSourceEntity boolean
 ---@param parameters Json
 ---@return EntityId
@@ -225,18 +224,13 @@ function world.getProperty(propertyName, defaultValue) end
 --- Sets the specified world property to the specified value. ---
 ---@param propertyName string
 ---@param value Json
----@return void
 function world.setProperty(propertyName, value) end
 
 --- Returns the `LiquidLevel` at the specified tile position, or `nil` if there is no liquid.
 ---@param position Vec2I
 ---@return LiquidLevel
+---@overload fun(region: RectF): LiquidLevel
 function world.liquidAt(position) end
-
---- Returns the average `LiquidLevel` of the most plentiful liquid within the specified region, or `nil` if there is no liquid. ---
----@param region RectF
----@return LiquidLevel
-function world.liquidAt(region) end
 
 --- Returns the gravity at the specified position. This should be consistent for all non-dungeon tiles in a world but can be altered by dungeons. ---
 ---@param position Vec2F
@@ -264,16 +258,16 @@ function world.isTileProtected(position) end
 ---@param startPosition Vec2F
 ---@param endPosition Vec2F
 ---@param movementParameters ActorMovementParameters
----@param searchParameters PlatformerAStar::Parameters
----@return PlatformerAStar::Path
+---@param searchParameters PlatformerAStarParameters
+---@return PlatformerPath
 function world.findPlatformerPath(startPosition, endPosition, movementParameters, searchParameters) end
 
 --- Creates and returns a Lua UserData value which can be used for pathfinding over multiple frames. The `PathFinder` returned has the following two methods:
 ---@param startPosition Vec2F
 ---@param endPosition Vec2F
 ---@param movementParameters ActorMovementParameters
----@param searchParameters PlatformerAStar::Parameters
----@return PlatformerAStar::PathFinder
+---@param searchParameters PlatformerAStarParameters
+---@return PlatformerPathFinder
 function world.platformerPathStart(startPosition, endPosition, movementParameters, searchParameters) end
 
 --- Returns the current logical light level at the specified position. Requires recalculation of lighting, so this should be used sparingly. ---
@@ -293,7 +287,7 @@ function world.breathable(position) end
 
 --- Returns a list of the environmental status effects at the specified position. ---
 ---@param position Vec2F
----@return List<String>
+---@return String[]
 function world.environmentStatusEffects(position) end
 
 --- Returns `true` if the specified position is below the world's surface level and `false` otherwise. ---
@@ -318,7 +312,7 @@ function world.oceanLevel(position) end
 --- Returns the name of the material at the specified position and layer. Layer can be specified as 'foreground' or 'background'. Returns `false` if the space is empty in that layer. Returns `nil` if the material is NullMaterial (e.g. if the position is in an unloaded sector). ---
 ---@param position Vec2F
 ---@param layerName string
----@return Variant<String, bool>
+---@return (String|bool)
 function world.material(position, layerName) end
 
 --- Returns the name of the mod at the specified position and layer, or `nil` if there is no mod. ---
@@ -349,17 +343,16 @@ function world.materialColor(position, layerName) end
 ---@param position Vec2F
 ---@param layerName string
 ---@param color unsigned
----@return void
 function world.setMaterialColor(position, layerName, color) end
 
 --- Damages all tiles in the specified layer and positions by the specified amount. The source position of the damage determines the initial direction of the damage particles. Damage types are: "plantish", "blockish", "beamish", "explosive", "fire", "tilling". Harvest level determines whether destroyed materials or mods will drop as items. Returns `true` if any damage was done and `false` otherwise. ---
----@param positions List<Vec2I>
+---@param positions Vec2I[]
 ---@param layerName string
 ---@param sourcePosition Vec2F
 ---@param damageType string
 ---@param damageAmount number
----@param harvestLevel unsigned
----@param sourceEntity EntityId
+---@param harvestLevel? unsigned
+---@param sourceEntity? EntityId
 ---@return boolean
 function world.damageTiles(positions, layerName, sourcePosition, damageType, damageAmount, harvestLevel, sourceEntity) end
 
@@ -370,8 +363,8 @@ function world.damageTiles(positions, layerName, sourcePosition, damageType, dam
 ---@param sourcePosition Vec2F
 ---@param damageType string
 ---@param damageAmount number
----@param harvestLevel unsigned
----@param sourceEntity EntityId
+---@param harvestLevel? unsigned
+---@param sourceEntity? EntityId
 ---@return boolean
 function world.damageTileArea(center, radius, layerName, sourcePosition, damageType, damageAmount, harvestLevel, sourceEntity) end
 
@@ -379,14 +372,14 @@ function world.damageTileArea(center, radius, layerName, sourcePosition, damageT
 ---@param position Vec2F
 ---@param radius number
 ---@param layerName string
----@return List<Vec2I>
+---@return Vec2I[]
 function world.radialTileQuery(position, radius, layerName) end
 
 --- Attempts to place the specified material in the specified position and layer. If allowOverlap is `true` the material can be placed in a space occupied by mobile entities, otherwise such placement attempts will fail. Returns `true` if the placement succeeds and `false` otherwise. ---
 ---@param position Vec2I
 ---@param layerName string
 ---@param materialName string
----@param hueShift number
+---@param hueShift? number
 ---@param allowOverlap boolean
 ---@return boolean
 function world.placeMaterial(position, layerName, materialName, hueShift, allowOverlap) end
@@ -395,7 +388,7 @@ function world.placeMaterial(position, layerName, materialName, hueShift, allowO
 ---@param position Vec2I
 ---@param layerName string
 ---@param modName string
----@param hueShift number
+---@param hueShift? number
 ---@param allowOverlap boolean
 ---@return boolean
 function world.placeMod(position, layerName, modName, hueShift, allowOverlap) end
@@ -403,64 +396,64 @@ function world.placeMod(position, layerName, modName, hueShift, allowOverlap) en
 --- Queries for entities in a specified area of the world and returns a list of their entity ids. Area can be specified either as the `Vec2F` lower left and upper right positions of a rectangle, or as the `Vec2F` center and `float` radius of a circular area. The following additional parameters can be specified in options: * __withoutEntityId__ - Specifies an `EntityId` that will be excluded from the returned results * __includedTypes__ - Specifies a list of one or more `String` entity types that the query will return. In addition to standard entity type names, this list can include "mobile" for all mobile entity types or "creature" for players, monsters and NPCs. * __boundMode__ - Specifies the bounding mode for determining whether entities fall within the query area. Valid options are "position", "collisionarea", "metaboundbox". Defaults to "collisionarea" if unspecified. * __order__ - A `String` used to specify how the results will be ordered. If this is set to "nearest" the entities will be sorted by ascending distance from the first positional argument. If this is set to "random" the list of results will be shuffled. * __callScript__ - Specifies a `String` name of a function that should be called in the script context of all scripted entities matching the query. * __callScriptArgs__ - Specifies a list of arguments that will be passed to the function called by callScript. * __callScriptResult__ - Specifies a `LuaValue` that the function called by callScript must return; entities whose script calls do not return this value will be excluded from the results. Defaults to `true`. ---
 ---@param position Vec2F
 ---@param options Json
----@return List<EntityId>
+---@return EntityId[]
 function world.entityQuery(position, options) end
 
 --- Identical to world.entityQuery but only considers monsters. ---
 ---@param position Vec2F
 ---@param options Json
----@return List<EntityId>
+---@return EntityId[]
 function world.monsterQuery(position, options) end
 
 --- Identical to world.entityQuery but only considers NPCs. ---
 ---@param position Vec2F
 ---@param options Json
----@return List<EntityId>
+---@return EntityId[]
 function world.npcQuery(position, options) end
 
 --- Similar to world.entityQuery but only considers objects. Allows an additional option, __name__, which specifies a `String` object type name and will only return objects of that type. ---
 ---@param position Vec2F
 ---@param options Json
----@return List<EntityId>
+---@return EntityId[]
 function world.objectQuery(position, options) end
 
 --- Identical to world.entityQuery but only considers item drops. ---
 ---@param position Vec2F
 ---@param options Json
----@return List<EntityId>
+---@return EntityId[]
 function world.itemDropQuery(position, options) end
 
 --- Identical to world.entityQuery but only considers players. ---
 ---@param position Vec2F
 ---@param options Json
----@return List<EntityId>
+---@return EntityId[]
 function world.playerQuery(position, options) end
 
 --- Similar to world.entityQuery but only considers loungeable entities. Allows an additional option, __orientation__, which specifies the `String` name of a loungeable orientation ("sit", "lay" or "stand") and only returns loungeable entities which use that orientation. ---
 ---@param position Vec2F
 ---@param options Json
----@return List<EntityId>
+---@return EntityId[]
 function world.loungeableQuery(position, options) end
 
 --- Similar to world.entityQuery but only returns entities that intersect the line between the specified positions. ---
 ---@param startPosition Vec2F
 ---@param endPosition Vec2F
----@param options Json
----@return List<EntityId>
+---@param options? Json
+---@return EntityId[]
 function world.entityLineQuery(startPosition, endPosition, options) end
 
 --- Identical to world.entityLineQuery but only considers objects. ---
 ---@param startPosition Vec2F
 ---@param endPosition Vec2F
----@param options Json
----@return List<EntityId>
+---@param options? Json
+---@return EntityId[]
 function world.objectLineQuery(startPosition, endPosition, options) end
 
 --- Identical to world.entityLineQuery but only considers NPCs. ---
 ---@param startPosition Vec2F
 ---@param endPosition Vec2F
----@param options Json
----@return List<EntityId>
+---@param options? Json
+---@return EntityId[]
 function world.npcLineQuery(startPosition, endPosition, options) end
 
 --- Returns the entity id of any object occupying the specified tile position, or `nil` if the position is not occupied by an object. ---
@@ -523,7 +516,7 @@ function world.entityCurrency(entityId, currencyType) end
 --- Returns the nubmer of the specified item that the specified player entity is currently carrying, or `nil` if the entity is not a player. If exactMatch is `true` then parameters as well as item name must match. NOTE: This function currently does not work correctly over the network, making it inaccurate when not used from client side scripts such as status. ---
 ---@param entityId EntityId
 ---@param itemDescriptor Json
----@param exactMatch boolean
+---@param exactMatch? boolean
 ---@return unsigned
 function world.entityHasCountOfItem(entityId, itemDescriptor, exactMatch) end
 
@@ -554,7 +547,7 @@ function world.entityTypeName(entityId) end
 
 --- Returns the configured description for the specified inspectable entity (currently only objects and plants support this). Will return a species-specific description if species is specified and a generic description otherwise. ---
 ---@param entityId EntityId
----@param species string
+---@param species? string
 ---@return string
 function world.entityDescription(entityId, species) end
 
@@ -584,20 +577,20 @@ function world.entityUniqueId(entityId) end
 --- Returns the value of the specified NPC's variant script config parameter, or defaultValue or `nil` if the parameter is not set or the entity is not an NPC. ---
 ---@param entityId EntityId
 ---@param parameterName string
----@param defaultValue Json
+---@param defaultValue? Json
 ---@return Json
 function world.getNpcScriptParameter(entityId, parameterName, defaultValue) end
 
 --- Returns the value of the specified object's config parameter, or defaultValue or `nil` if the parameter is not set or the entity is not an object. ---
 ---@param entityId EntityId
 ---@param parameterName string
----@param defaultValue Json
+---@param defaultValue? Json
 ---@return Json
 function world.getObjectParameter(entityId, parameterName, defaultValue) end
 
 --- Returns a list of tile positions that the specified object occupies, or `nil` if the entity is not an object. ---
 ---@param entityId EntityId
----@return List<Vec2I>
+---@return Vec2I[]
 function world.objectSpaces(entityId) end
 
 --- Returns the current growth stage of the specified farmable object, or `nil` if the entity is not a farmable object. ---
@@ -633,7 +626,7 @@ function world.containerItemAt(entityId, offset) end
 
 --- Attempts to consume items from the specified container that match the specified item descriptor and returns `true` if successful, `false` if unsuccessful, or `nil` if the entity is not a container. Only succeeds if the full count of the specified item can be consumed. ---
 ---@param entityId EntityId
----@param item ItemDescriptor
+---@param item ItemDescriptorInput
 ---@return boolean
 function world.containerConsume(entityId, item) end
 
@@ -646,7 +639,7 @@ function world.containerConsumeAt(entityId, offset, count) end
 
 --- Returns the number of the specified item that are currently available to consume in the specified container, or `nil` if the entity is not a container. ---
 ---@param entityId EntityId
----@param item ItemDescriptor
+---@param item ItemDescriptorInput
 ---@return unsigned
 function world.containerAvailable(entityId, item) end
 
@@ -670,52 +663,52 @@ function world.containerTakeNumItemsAt(entityId, offset, count) end
 
 --- Returns the number of times the specified item can fit in the specified container, or `nil` if the entity is not a container. ---
 ---@param entityId EntityId
----@param item ItemDescriptor
+---@param item ItemDescriptorInput
 ---@return unsigned
 function world.containerItemsCanFit(entityId, item) end
 
 --- Returns a JsonObject containing a list of "slots" the specified item would fit and the count of "leftover" items that would remain after attempting to add the items. Returns `nil` if the entity is not a container. ---
 ---@param entityId EntityId
----@param items ItemDescriptor
+---@param items ItemDescriptorInput
 ---@return Json
 function world.containerItemsFitWhere(entityId, items) end
 
 --- Adds the specified items to the specified container. Returns the leftover items after filling the container, or all items if the entity is not a container. ---
 ---@param entityId EntityId
----@param items ItemDescriptor
+---@param items ItemDescriptorInput
 ---@return ItemDescriptor
 function world.containerAddItems(entityId, items) end
 
 --- Similar to world.containerAddItems but will only combine items with existing stacks and will not fill empty slots. ---
 ---@param entityId EntityId
----@param items ItemDescriptor
+---@param items ItemDescriptorInput
 ---@return ItemDescriptor
 function world.containerStackItems(entityId, items) end
 
 --- Similar to world.containerAddItems but only considers the specified slot in the container. ---
 ---@param entityId EntityId
----@param items ItemDescriptor
+---@param items ItemDescriptorInput
 ---@param offset unsigned
 ---@return ItemDescriptor
 function world.containerPutItemsAt(entityId, items, offset) end
 
 --- Attempts to combine the specified items with the current contents (if any) of the specified container slot and returns any items unable to be placed into the slot. ---
 ---@param entityId EntityId
----@param items ItemDescriptor
+---@param items ItemDescriptorInput
 ---@param offset unsigned
 ---@return ItemDescriptor
 function world.containerItemApply(entityId, items, offset) end
 
 --- Places the specified items into the specified container slot and returns the previous contents of the slot if successful, or the original items if unsuccessful. ---
 ---@param entityId EntityId
----@param items ItemDescriptor
+---@param items ItemDescriptorInput
 ---@param offset unsigned
 ---@return ItemDescriptor
 function world.containerSwapItemsNoCombine(entityId, items, offset) end
 
 --- A combination of world.containerItemApply and world.containerSwapItemsNoCombine that attempts to combine items before swapping and returns the leftovers if stacking was successful or the previous contents of the container slot if the items did not stack. ---
 ---@param entityId EntityId
----@param items ItemDescriptor
+---@param items ItemDescriptorInput
 ---@param offset unsigned
 ---@return ItemDescriptor
 function world.containerSwapItems(entityId, items, offset) end
@@ -723,15 +716,16 @@ function world.containerSwapItems(entityId, items, offset) end
 --- Attempts to call the specified function name in the context of the specified scripted entity with the specified arguments and returns the result. This method is synchronous and thus can only be used on local master entities, i.e. scripts run on the server may only call scripted entities that are also server-side master and scripts run on the client may only call scripted entities that are client-side master on that client. For more featureful entity messaging, use world.sendEntityMessage. ---
 ---@param entityId EntityId
 ---@param functionName string
----@param args LuaValue
+---@param ... LuaValue
 ---@return LuaValue
-function world.callScriptedEntity(entityId, functionName, args) end
+function world.callScriptedEntity(entityId, functionName, ...) end
 
 --- Sends an asynchronous message to an entity with the specified entity id or unique id with the specified message type and arguments and returns an `RpcPromise` which can be used to receive the result of the message when available. See the message table for information on entity message handling. This function __should not be called in any entity's init function__ as the sending entity will not have been fully loaded. ---
+---@param entityId EntityId|string
 ---@param messageType string
----@param args LuaValue
+---@param ... Json
 ---@return RpcPromise<Json>
-function world.sendEntityMessage(messageType, args) end
+function world.sendEntityMessage(entityId, messageType, ...) end
 
 --- Attempts to find an entity on the server by unique id and returns an `RpcPromise` that can be used to get the position of that entity if successful. ---
 ---@param uniqueId string
@@ -745,7 +739,7 @@ function world.loungeableOccupied(entityId) end
 
 --- Returns `true` if the specified entity exists and is a monster and `false` otherwise. If aggressive is specified, will return `false` unless the monster's aggressive state matches the specified value. ---
 ---@param entityId EntityId
----@param aggressive boolean
+---@param aggressive? boolean
 ---@return boolean
 function world.isMonster(entityId, aggressive) end
 
@@ -756,7 +750,7 @@ function world.monsterType(entityId) end
 
 --- Returns `true` if the specified entity exists and is an NPC and `false` otherwise. If damageTeam is specified, will return `false` unless the NPC's damage team number matches the specified value. ---
 ---@param entityId EntityId
----@param damageTeam number
+---@param damageTeam? number
 ---@return boolean
 function world.isNpc(entityId, damageTeam) end
 
@@ -778,20 +772,17 @@ function world.stagehandType(entityId) end
 --- Displays a point visible in debug mode at the specified world position. ---
 ---@param position Vec2F
 ---@param color Color
----@return void
 function world.debugPoint(position, color) end
 
 --- Displayes a line visible in debug mode between the specified world positions. ---
 ---@param startPosition Vec2F
 ---@param endPosition Vec2F
 ---@param color Color
----@return void
 function world.debugLine(startPosition, endPosition, color) end
 
 --- Displays a polygon consisting of the specified points that is visible in debug mode. ---
 ---@param poly PolyF
 ---@param color Color
----@return void
 function world.debugPoly(poly, color) end
 
 --- Displays text visible in debug mode at the specified position using the specified format string and optional formatted values. --- The following additional world bindings are available only for scripts running on the server. ---
@@ -799,7 +790,6 @@ function world.debugPoly(poly, color) end
 ---@param formatValues LuaValue
 ---@param position Vec2F
 ---@param color Color
----@return void
 function world.debugText(formatString, formatValues, position, color) end
 
 --- Breaks the specified object and returns `true` if successful and `false` otherwise. If smash is `true` the object will not (by default) drop any items. ---
@@ -826,7 +816,6 @@ function world.regionActive(region) end
 --- Enables or disables tile protection for the specified dungeon id. ---
 ---@param dungeonId DungeonId
 ---@param protected boolean
----@return void
 function world.setTileProtection(dungeonId, protected) end
 
 --- Returns the dungeon id at the specified world position. ---
@@ -841,9 +830,9 @@ function world.dungeonId(position) end
 function world.setDungeonId(tileArea, dungeonId) end
 
 --- Enqueues a biome distribution config for placement through world generation. The returned promise is fulfilled with the position of the placement, once it has been placed. ---
----@param distributionConfigs List<Json>
----@param id DungeonId
----@return Promise<Vec2I>
+---@param distributionConfigs Json[]
+---@param id? DungeonId
+---@return RpcPromise<Vec2I>
 function world.enqueuePlacement(distributionConfigs, id) end
 
 --- Returns `true` if any tile within the specified region has been modified (placed or broken) by a player and `false` otherwise. ---
@@ -864,23 +853,21 @@ function world.loadUniqueEntity(uniqueId) end
 --- Sets the unique id of the specified entity to the specified unique id or clears it if no unique id is specified. ---
 ---@param entityId EntityId
 ---@param uniqueId string
----@return void
 function world.setUniqueId(entityId, uniqueId) end
 
 --- Takes the specified item drop and returns an `ItemDescriptor` of its contents or `nil` if the operation fails. If a source entity id is specified, the item drop will briefly animate toward that entity. ---
 ---@param targetEntityId EntityId
----@param sourceEntityId EntityId
+---@param sourceEntityId? EntityId
 ---@return ItemDescriptor
 function world.takeItemDrop(targetEntityId, sourceEntityId) end
 
 --- Sets the world's default beam-down point to the specified position. If respawnInWorld is set to `true` then players who die in that world will respawn at the specified start position rather than being returned to their ships. ---
 ---@param position Vec2F
----@param respawnInWorld boolean
----@return void
+---@param respawnInWorld? boolean
 function world.setPlayerStart(position, respawnInWorld) end
 
 --- Returns a list of the entity ids of all players currently in the world. ---
----@return List<EntityId>
+---@return EntityId[]
 function world.players() end
 
 --- Returns the name of the fidelity level at which the world is currently running. See worldserver.config for fidelity configuration. ---
@@ -897,11 +884,10 @@ function world.warpPhase() end
 
 --- Sets the specified universe flag on the current universe. ---
 ---@param flagName string
----@return void
 function world.setUniverseFlag(flagName) end
 
 --- Returns a list of all universe flags set on the current universe. ---
----@return List<String>
+---@return String[]
 function world.universeFlags() end
 
 --- Returns `true` if the specified universe flag is set and `false` otherwise. ---
@@ -915,21 +901,13 @@ function world.skyTime() end
 
 --- Sets the current time for the world's sky to the specified value. ---
 ---@param time number
----@return void
 function world.setSkyTime(time) end
 
 --- Generates the specified dungeon in the world at the specified position, ignoring normal dungeon anchoring rules. If a dungeon id is specified, it will be assigned to the dungeon. ---
 ---@param dungeonName string
 ---@param position Vec2I
----@param dungeonId DungeonId
----@return void
-function world.placeDungeon(dungeonName, position, dungeonId) end
-
---- Generates the specified dungeon in the world at the specified position. Does not ignore anchoring rules, will fail if the dungeon can't be placed. If a dungeon id is specified, it will be assigned to the dungeon. ---
----@param dungeonName string
----@param position Vec2I
----@param dungeonId DungeonId
----@return void
+---@param dungeonId? DungeonId
+---@return boolean
 function world.placeDungeon(dungeonName, position, dungeonId) end
 
 --- Adds a biome region to the world, centered on `position`, `width` blocks wide. ---
@@ -937,56 +915,38 @@ function world.placeDungeon(dungeonName, position, dungeonId) end
 ---@param biomeName string
 ---@param subBlockSelector string
 ---@param width number
----@return void
 function world.addBiomeRegion(position, biomeName, subBlockSelector, width) end
 
 --- Expands the biome region currently at `position` by `width` blocks. ---
 ---@param position Vec2I
 ---@param width number
----@return void
 function world.expandBiomeRegion(position, width) end
 
 --- Signals a region for asynchronous generation. The region signaled is the region that needs to be generated to add a biome region of `width` tiles to `position`. ---
 ---@param position Vec2I
 ---@param width number
----@return void
 function world.pregenerateAddBiome(position, width) end
 
 --- Signals a region for asynchronous generation. The region signaled is the region that needs to be generated to expand the biome at `position` by `width` blocks. ---
 ---@param position Vec2I
 ---@param width number
----@return void
 function world.pregenerateExpandBiome(position, width) end
 
 --- Sets the environment biome for a layer to the biome at `position`. ---
 ---@param position Vec2I
----@return void
 function world.setLayerEnvironmentBiome(position) end
 
 --- Sets the planet type of the current world to `planetType` with primary biome `primaryBiomeName`. ---
 ---@param planetType string
----@return void
 function world.setPlanetType(planetType) end
 
 --- Sets the overriding gravity for the specified dungeon id, or returns it to the world default if unspecified. ---
 ---@param dungeonId DungeonId
----@param gravity Maybe<float>
----@return void
+---@param gravity? float?
 function world.setDungeonGravity(dungeonId, gravity) end
 
 --- Sets the overriding breathability for the specified dungeon id, or returns it to the world default if unspecified.
 ---@param dungeonId DungeonId
----@param breathable Maybe<bool>
----@return void
+---@param breathable? bool?
 function world.setDungeonBreathable(dungeonId, breathable) end
 
---- Global functions
-
---- Explores the path up to the specified node count limit. Returns `true` if the pathfinding is complete and `false` if it is still incomplete. If nodeLimit is unspecified, this will search up to the configured maximum number of nodes, making it equivalent to world.platformerPathStart.
----@param nodeLimit number
----@return boolean
-function explore(nodeLimit) end
-
---- Returns the completed path. ---
----@return PlatformerAStar::Path
-function result() end

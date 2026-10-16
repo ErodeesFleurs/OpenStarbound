@@ -10,10 +10,16 @@ local emoteStates = { "idle", "blabber", "shout", "happy", "sad", "neutral", "la
 local bodyStates = { "idle", "walk", "run", "jump", "fall", "swim", "swimIdle", "duck", "sit", "lay" }
 local portraitModes = { "head", "bust", "full", "fullNeutral", "fullNude", "fullNeutralNude" }
 local tilePixels = 8
+local setPath, vecTilePixels
 -- this build script is meant to interpret retail's humanoidConfig and apply all the relevant values to a base animation that should then
 -- be basically identical to how the retail humanoids look, now with the ability to add extra parts into the animation
+---@param identity JsonObject
+---@param humanoidParameters JsonObject
+---@param humanoidConfig JsonObject
+---@param npcHumanoidConfig? JsonObject
+---@return JsonObject
 function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
-	humanoidConfig = sb.jsonMerge(npcHumanoidConfig or humanoidConfig, humanoidParameters)
+	humanoidConfig = sb.jsonMerge(npcHumanoidConfig or humanoidConfig, humanoidParameters) --[[@as JsonObject]]
 	if not humanoidConfig.useAnimation then return humanoidConfig end
 
 	if not humanoidConfig.animation then
@@ -52,7 +58,9 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 	end
 	-- there are 20 cosmetic slots and we need to support any cosmetic being in any slot
 	-- in postload we generated 20 duplicates of each cosmetic's animation but with the <slot> tag changed and z levels changed to respect the slot
-	for _, path in ipairs(humanoidConfig.cosmeticAnimations or root.assetJson("/humanoid.config:cosmeticAnimations")) do
+	local cosmeticAnimations = humanoidConfig.cosmeticAnimations or root.assetJson("/humanoid.config:cosmeticAnimations")
+	---@cast cosmeticAnimations string[]
+	for _, path in ipairs(cosmeticAnimations) do
 		for i = 1, 20 do
 			table.insert(humanoidConfig.animation.includes, path .. "." .. i)
 		end
@@ -81,7 +89,7 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 		setPath(humanoidConfig, { "stateAnimations", bodyState, "body" }, { bodyState, false, false })
 		setPath(humanoidConfig, { "stateAnimations", bodyState, "bodyHighPriority" }, { bodyState, false, false })
 	end
-	for i, portraitMode in ipairs(portraitModes) do
+	for _, portraitMode in ipairs(portraitModes) do
 		setPath(humanoidConfig, { "portraitAnimations", portraitMode, "body" }, { "idle", true, false })
 	end
 	humanoidConfig.portraitAnimations.bust.portraitMode = { "bust", true, false }
@@ -146,7 +154,9 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 		}
 	end
 	if humanoidConfig.bodyFullbright then
-		for _, v in ipairs(humanoidConfig.bodyFullbrightParts or root.assetJson("/humanoid.config:bodyFullbrightParts")) do
+		local fullbrightParts = humanoidConfig.bodyFullbrightParts or root.assetJson("/humanoid.config:bodyFullbrightParts")
+		---@cast fullbrightParts string[]
+		for _, v in ipairs(fullbrightParts) do
 			setPath(parts, { v, "properties", "fullbright" }, true)
 		end
 	end
@@ -185,7 +195,7 @@ function build(identity, humanoidParameters, humanoidConfig, npcHumanoidConfig)
 	return humanoidConfig
 end
 
-function setPath(input, path, value)
+setPath = function(input, path, value)
 	local i = input
 	for j, v in ipairs(path) do
 		if type(i[v]) == "nil" then
@@ -202,6 +212,6 @@ function setPath(input, path, value)
 	end
 end
 
-function vecTilePixels(vec)
+vecTilePixels = function(vec)
 	return { vec[1] / tilePixels, vec[2] / tilePixels }
 end

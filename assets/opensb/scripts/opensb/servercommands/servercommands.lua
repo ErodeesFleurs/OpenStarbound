@@ -40,7 +40,7 @@ cmd({
   description = "Get help",
   permission = "tell"
 },
-function(isAdmin, connectionId)
+function(isAdmin, _connectionId)
   return isAdmin and adminHelp or userHelp
 end)
 
@@ -59,6 +59,7 @@ function(connectionId)
     local paths = root.assetsByExtension("object")
     for i, v in pairs(paths) do
       local json = root.assetJson(v)
+      ---@cast json JsonObject
       objects[i] = {json.objectName, json.shortdescription or json.objectName}
     end
   end
@@ -80,8 +81,8 @@ end
 
 local _command = type(command) == "function" and command
 function command(commandName, connectionId, args)
-  local ret = _command and _command(commandName, connectionId, args)
-  if ret then return ret end
+  local previousResult = _command and _command(commandName, connectionId, args)
+  if previousResult then return previousResult end
 
   local command = commands[commandName:lower()]
   if command then

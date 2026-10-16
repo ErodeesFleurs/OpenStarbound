@@ -13,23 +13,24 @@ function module.init()
 end
 
 register("run", function(src)
-	local success, result = pcall(loadstring, src, "/run")
-  if not success then
-    return "^#f00;compile error: " .. result
+	local compiled, chunk = pcall(loadstring, src, "/run")
+  if not compiled then
+    return "^#f00;compile error: " .. chunk
   else
-    local success, result = pcall(result)
-    if not success then
+    ---@cast chunk function
+    local ran, result = pcall(chunk)
+    if not ran then
       return "^#f00;error: " .. result
     elseif result == nil then
       return nil
     elseif type(result) == "string" then
       return result
     else
-      local success, printed = pcall(sb.printJson, result)
-      if not success then
-        success, printed = pcall(sb.print, result)
+      local printedOk, printed = pcall(sb.printJson, result)
+      if not printedOk then
+        printedOk, printed = pcall(sb.print, result)
       end
-      if not success then
+      if not printedOk then
         return "^#f00;could not print return value: " .. printed
       else
         return printed
@@ -38,7 +39,7 @@ register("run", function(src)
   end
 end)
 
-register("headrotation", function(arg)
+register("headrotation", function(_arg)
   local key = "disableHeadRotation"
   if status.statusProperty(key) == true then
     status.setStatusProperty(key, nil)

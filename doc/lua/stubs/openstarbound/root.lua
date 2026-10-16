@@ -1,8 +1,6 @@
 ---@meta
 
 --- root API
----@class root
-root = {}
 
 --- Returns the variant index starting from 0 for the material variant used at the specified **tilePosition**. **layer** must be either `"foreground"`, `"background"` or `"platform"`, and **matVariants** must be the amount of variants the material has, which you can use the vanilla `root.materialConfig` function to fetch.
 ---@param tilePosition table
@@ -29,11 +27,11 @@ function root.assetData(path) end
 --- Returns the asset source path of an asset, or nil if the asset doesn't exist. If you specify getPatches as true then also returns the patches for the asset as an array, each element containing the source path and patch path in indexes 1 and 2 respectively. ---
 ---@param path string
 ---@param getPatches boolean
----@return string, Maybe<LuaTable>
+---@return string, LuaTable?
 function root.assetOrigin(path, getPatches) end
 
 --- Without metadata: Returns an array with all the asset source paths. With metadata: Returns a table, key/value being source path/metadata. ---
----@param withMetadata boolean
+---@param withMetadata? boolean
 ---@return LuaTable
 function root.assetSourcePaths(withMetadata) end
 
@@ -95,9 +93,9 @@ function root.speciesConfig(species) end
 
 --- Generates a random humanoid identity for the given species. Optionally supply a seed and or predetermined gender. Additionaly supplies a humanoidParameters object, as well as an object of the clothing that would be chosen with those choices humanoidParameters will have the `choices` value set to an array of the indexes of the choices made. ---
 ---@param species string
----@param seed Maybe<uint64_t>
----@param gender Maybe<String>
----@return LuaTupleReturn<Json, JsonObject, JsonObject>
+---@param seed? uint64_t?
+---@param gender? String?
+---@return Json, JsonObject, JsonObject
 function root.generateHumanoidIdentity(species, seed, gender) end
 
 --- Generates a the identity for the given choices on the character creation screen for the given species. Additionaly supplies a humanoidParameters object, as well as an object of the clothing that would be chosen with those choices humanoidParameters will have the `choices` value set to an array of the indexes of the choices made. Additional arguments **ext** are not used by the retail character creation, but will be passed to a species' character creation script if it is defined. ---
@@ -113,9 +111,9 @@ function root.generateHumanoidIdentity(species, seed, gender) end
 ---@param pantsChoice size_t
 ---@param pantsColor size_t
 ---@param personality size_t
----@param ext LuaVariadic<LuaValue>
----@return LuaTupleReturn<Json, JsonObject, JsonObject>
-function root.createHumanoid(name, speciesChoice, genderChoice, bodyColorChoice, alty, hairChoice, heady, shirtChoice, shirtColor, pantsChoice, pantsColor, personality, ext) end
+---@param ... LuaValue
+---@return Json, JsonObject, JsonObject
+function root.createHumanoid(name, speciesChoice, genderChoice, bodyColorChoice, alty, hairChoice, heady, shirtChoice, shirtColor, pantsChoice, pantsColor, personality, ...) end
 
 --- Returns the config for the status effect.
 ---@param effect string

@@ -42,10 +42,10 @@ function update(dt)
   end
 end
 
-function render(data)
+function render(_data)
   canvas:clear()
   local window = canvas:size()
-  for i, v in pairs(backdropImages) do
+  for _, v in pairs(backdropImages) do
     local offset, image, scale, origin, misc = table.unpack(v)
     origin = origin or {0.5, 1.0}
     local imageSize = vec2.mul(root.imageSize(image), scale)
@@ -55,6 +55,6 @@ function render(data)
       canvas:drawImageDrawable(image, position, scale * logoScale, {255, 255, 255}, logoRotation)
     else
       canvas:drawImageDrawable(image, position, scale)
-    end 
+    end
   end
 end

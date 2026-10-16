@@ -1,3 +1,3 @@
-function error(descriptor, e)
+function error(_descriptor, _e)
     return nil
 end

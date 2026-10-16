@@ -1,0 +1,196 @@
+---@meta
+
+-- Lua representations used by the engine converters, not C++ objects.
+---@alias Json nil|boolean|number|string|table
+---@alias JsonObject table<string, any>
+---@alias JsonArray any[]
+---@alias LuaValue any
+---@alias LuaTable table
+---@alias LuaFunction function
+---@alias LuaCallbacks table<string, function>
+---@alias unsigned integer
+---@alias size_t integer
+---@alias uint64_t integer
+---@alias int integer
+---@alias Int integer
+---@alias float number
+---@alias Float number
+---@alias double number
+---@alias bool boolean
+---@alias Bool boolean
+---@alias String string
+---@alias StringList string[]
+---@alias StringSet string[]
+---@alias Vec2F [number, number]
+---@alias Vec2I [integer, integer]
+---@alias Vec2U [integer, integer]
+---@alias Vec3I [integer, integer, integer]
+---@alias RectF [number, number, number, number]
+---@alias RectI [integer, integer, integer, integer]
+---@alias RectU [integer, integer, integer, integer]
+---@alias PolyF Vec2F[]
+---@alias Mat3F [Vec3F, Vec3F, Vec3F]
+---@alias Vec3F [number, number, number]
+---@alias Color string|[integer, integer, integer]|[integer, integer, integer, integer]
+---@alias EntityId integer
+---@alias ConnectionId integer
+---@alias DungeonId integer
+---@alias LiquidId integer
+---@alias StatModifierGroupId integer
+---@alias QuestId string
+---@alias Uuid string
+---@alias WorldId string
+---@alias PlayerMode 'casual'|'survival'|'hardcore'
+---@alias CollisionSet string[]
+---@alias LiquidLevel [LiquidId, number]
+---@alias ItemSlot string|[string, integer]
+---@alias ItemDescriptorInput string|[string, integer?, JsonObject?]|{name:string, count?:integer, parameters?:JsonObject}|{item:string, count?:integer, data?:JsonObject}|nil
+---@alias ActionBarLink ItemSlot
+---@alias EssentialItem string
+---@alias SystemLocation Vec2F|[string, Json]
+---@alias Orbit JsonObject
+---@alias CelestialParameters JsonObject
+---@alias VisitableParameters JsonObject
+---@alias QuestParameters JsonObject
+---@alias ActorMovementParameters JsonObject
+---@alias MovementParameters ActorMovementParameters
+---@alias ActorMovementModifiers JsonObject
+---@alias PhysicsForceRegion JsonObject
+---@alias DamageSource JsonObject
+---@alias StatModifier JsonObject
+---@alias PlatformerAStarParameters JsonObject
+---@alias PlatformerPath {cost:number, action:string, jumpVelocity:number?, source:PlatformerNode, target:PlatformerNode}[]
+---@alias PlatformerNode {position:Vec2F, velocity:Vec2F}
+
+---@class CelestialCoordinate
+---@field location Vec3I
+---@field planet integer
+---@field satellite integer
+
+---@class ItemDescriptor
+---@field name string
+---@field count integer
+---@field parameters JsonObject
+
+---@class Personality
+---@field idle string
+---@field armIdle string
+---@field headOffset Vec2F
+---@field armOffset Vec2F
+
+---@class DamageTeam
+---@field type string
+---@field team integer
+
+---@class DamageRequest
+---@field damage number
+---@field hitType? string
+---@field damageType? string
+---@field knockbackMomentum? Vec2F
+---@field sourceEntityId? EntityId
+---@field damageSourceKind? string
+---@field statusEffects? (string|{effect:string, duration:number?})[]
+
+---@class Drawable
+---@field line? [Vec2F, Vec2F]
+---@field width? number
+---@field poly? PolyF
+---@field image? string
+---@field transformation? Mat3F
+---@field position? Vec2F
+---@field color? Color
+---@field fullbright? boolean
+---@field centered? boolean
+---@field rotation? number
+---@field mirrored? boolean
+---@field scale? number
+
+---@class Collection
+---@field name string
+---@field type string
+---@field title string
+
+---@class Collectable
+---@field name string
+---@field order number
+---@field title string
+---@field description string
+---@field icon string
+
+---@class RpcPromise<T>
+---@field finished fun(self:RpcPromise):boolean
+---@field succeeded fun(self:RpcPromise):boolean
+---@field result fun(self:RpcPromise):T?
+---@field error fun(self:RpcPromise):string?
+
+---@class PlatformerPathFinder
+---@field explore fun(self:PlatformerPathFinder, nodeLimit?:integer):boolean?
+---@field result fun(self:PlatformerPathFinder):PlatformerPath?
+
+---@class BehaviorState
+---@field run fun(self:BehaviorState, dt:number):boolean?
+---@field clear fun(self:BehaviorState)
+---@field blackboard fun(self:BehaviorState):Blackboard
+
+---@class Blackboard
+---@field get fun(self:Blackboard, type:string, key:string):any
+---@field set fun(self:Blackboard, type:string, key:string, value:any)
+---@field getEntity fun(self:Blackboard, key:string):EntityId?
+---@field getPosition fun(self:Blackboard, key:string):Vec2F?
+---@field getVec2 fun(self:Blackboard, key:string):Vec2F?
+---@field getNumber fun(self:Blackboard, key:string):number?
+---@field getBool fun(self:Blackboard, key:string):boolean?
+---@field getList fun(self:Blackboard, key:string):table?
+---@field getTable fun(self:Blackboard, key:string):table?
+---@field getString fun(self:Blackboard, key:string):string?
+---@field setEntity fun(self:Blackboard, key:string, value:EntityId?)
+---@field setPosition fun(self:Blackboard, key:string, value:Vec2F?)
+---@field setVec2 fun(self:Blackboard, key:string, value:Vec2F?)
+---@field setNumber fun(self:Blackboard, key:string, value:number?)
+---@field setBool fun(self:Blackboard, key:string, value:boolean?)
+---@field setList fun(self:Blackboard, key:string, value:table?)
+---@field setTable fun(self:Blackboard, key:string, value:table?)
+---@field setString fun(self:Blackboard, key:string, value:string?)
+
+---@class RandomSource
+---@field init fun(self:RandomSource, seed?:integer)
+---@field addEntropy fun(self:RandomSource, seed?:integer)
+---@field randu32 fun(self:RandomSource):integer
+---@field randu64 fun(self:RandomSource):integer
+---@field randi32 fun(self:RandomSource):integer
+---@field randi64 fun(self:RandomSource):integer
+---@field randf fun(self:RandomSource, min?:number, max?:number):number
+---@field randd fun(self:RandomSource, min?:number, max?:number):number
+---@field randb fun(self:RandomSource):boolean
+---@field randInt fun(self:RandomSource, minOrMax:integer, max?:integer):integer
+---@field randUInt fun(self:RandomSource, minOrMax:integer, max?:integer):integer
+
+---@class PerlinSource
+---@field get fun(self:PerlinSource, x:number, y?:number, z?:number):number
+
+---@class Image
+---@field size fun(self:Image):Vec2U
+---@field drawInto fun(self:Image, position:Vec2U, image:Image)
+---@field copyInto fun(self:Image, position:Vec2U, image:Image)
+---@field set fun(self:Image, x:integer, y:integer, color:Color)
+---@field get fun(self:Image, x:integer, y:integer):Color
+---@field subImage fun(self:Image, min:Vec2U, size:Vec2U):Image
+---@field process fun(self:Image, directives:string):Image
+
+---@class CanvasWidget
+---@field size fun(self:CanvasWidget):Vec2I
+---@field mousePosition fun(self:CanvasWidget):Vec2I
+---@field clear fun(self:CanvasWidget)
+---@field drawDrawable fun(self:CanvasWidget, drawable:Drawable, position?:Vec2F)
+---@field drawDrawables fun(self:CanvasWidget, drawables:Drawable[], position?:Vec2F)
+---@field drawJsonDrawable fun(self:CanvasWidget, drawable:Json, position?:Vec2F)
+---@field drawJsonDrawables fun(self:CanvasWidget, drawables:JsonArray, position?:Vec2F)
+---@field drawImage fun(self:CanvasWidget, image:string, position:Vec2F, scale?:number, color?:Color, centered?:boolean)
+---@field drawImageDrawable fun(self:CanvasWidget, image:string, position:Vec2F, scale?:Vec2F|number, color?:Color, rotation?:number)
+---@field drawImageRect fun(self:CanvasWidget, image:string, texCoords:RectF, screenCoords:RectF, color?:Color)
+---@field drawTiledImage fun(self:CanvasWidget, image:string, offset:Vec2F, screenCoords:RectF, scale?:number, color?:Color)
+---@field drawLine fun(self:CanvasWidget, startPoint:Vec2F, endPoint:Vec2F, color?:Color, width?:number)
+---@field drawRect fun(self:CanvasWidget, rect:RectF, color?:Color)
+---@field drawPoly fun(self:CanvasWidget, poly:PolyF, color?:Color, width?:number)
+---@field drawTriangles fun(self:CanvasWidget, triangles:PolyF[], color?:Color)
+---@field drawText fun(self:CanvasWidget, text:string, positioning:Json, fontSize:integer, color?:Color, lineSpacing?:number, font?:string, directives?:string)

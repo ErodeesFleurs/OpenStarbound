@@ -6,7 +6,7 @@
 --  end
 --end
 
-function patch(object, path)
+function patch(object, _path)
   if object.pointLight ~= true and (object.lightColor or object.lightColors) then
     object.lightType = "PointAsSpread"
     return object

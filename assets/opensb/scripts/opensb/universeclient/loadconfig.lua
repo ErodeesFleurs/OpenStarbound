@@ -6,7 +6,6 @@ modules.config_loader = module
 function module.init()
 	local shaderConfig = root.getConfiguration("postProcessGroups") or {}
 	local postProcessGroups = renderer.postProcessGroups()
-	local changes = false
 	for gname,group in next, postProcessGroups do
 		local cfg = shaderConfig[gname] or {enabled=group.enabledDefault}
 		if group.enabledParameter then

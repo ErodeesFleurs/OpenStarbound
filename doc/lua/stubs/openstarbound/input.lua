@@ -7,7 +7,7 @@ input = {}
 --- If this bind was pressed this frame, returns how many times it has been pressed. Returns `nil` otherwise. ---
 ---@param categoryId string
 ---@param bindId string
----@return Maybe<unsigned>
+---@return unsigned?
 function input.bindDown(categoryId, bindId) end
 
 --- Returns `true` if this bind is currently held. ---
@@ -19,36 +19,33 @@ function input.bindHeld(categoryId, bindId) end
 --- If this bind was released this frame, returns how many times it has been released. Returns `nil` otherwise. ---
 ---@param categoryId string
 ---@param bindId string
----@return Maybe<unsigned>
-function input.bindDown(categoryId, bindId) end
+---@return unsigned?
+function input.bindUp(categoryId, bindId) end
 
 --- If this key was pressed this frame, returns how many times it has been pressed. Returns `nil` otherwise or if the specified modifier keys are not held. ---
 ---@param keyName string
----@param modNames StringList
----@return Maybe<unsigned>
+---@param modNames? StringList
+---@return unsigned?
 function input.keyDown(keyName, modNames) end
 
---- Returns true if the specified key and all specified modifier keys (like Ctrl and Shift) are held. ---
+--- Returns true if the specified key is held. ---
 ---@param keyName string
----@param modNames StringList
 ---@return boolean
-function input.keyHeld(keyName, modNames) end
+function input.keyHeld(keyName) end
 
 --- Same as `input.keyHeld`. ---
 ---@param keyName string
----@param modNames StringList
 ---@return boolean
-function input.key(keyName, modNames) end
+function input.key(keyName) end
 
---- If this key was released this frame, returns how many times it has been released. Returns `nil` otherwise or if the specified modifier keys are not held. ---
+--- If this key was released this frame, returns how many times it has been released. Returns `nil` otherwise. ---
 ---@param keyName string
----@param modNames StringList
----@return Maybe<unsigned>
-function input.keyUp(keyName, modNames) end
+---@return unsigned?
+function input.keyUp(keyName) end
 
---- If this mouse button was pressed this frame, returns how many times it has been pressed. Returns `nil` otherwise. ---
+--- If this mouse button was pressed this frame, returns the positions of the presses. Returns `nil` otherwise. ---
 ---@param buttonName string
----@return Maybe<unsigned>
+---@return Vec2F[]?
 function input.mouseDown(buttonName) end
 
 --- Returns true if the specified mouse button is held. ---
@@ -61,38 +58,36 @@ function input.mouseHeld(buttonName) end
 ---@return boolean
 function input.mouse(buttonName) end
 
---- If this mouse button was released this frame, returns how many times it has been released. Returns `nil` otherwise. ---
+--- If this mouse button was released this frame, returns the positions of the releases. Returns `nil` otherwise. ---
 ---@param buttonName string
----@return Maybe<unsigned>
+---@return Vec2F[]?
 function input.mouseUp(buttonName) end
 
 --- Resets this bind to its default keys. ---
 ---@param categoryId string
 ---@param bindId string
----@return void
 function input.resetBinds(categoryId, bindId) end
 
 --- Sets this bind to the specified keys. ---
 ---@param categoryId string
 ---@param bindId string
 ---@param binds Json
----@return void
 function input.setBinds(categoryId, bindId, binds) end
 
 --- Returns the default keys for this bind. ---
 ---@param categoryId string
 ---@param bindId string
----@return Json
+---@return JsonArray
 function input.getDefaultBinds(categoryId, bindId) end
 
 --- Returns the keys for this bind. ---
 ---@param categoryId string
 ---@param bindId string
----@return Json
+---@return JsonArray
 function input.getBinds(categoryId, bindId) end
 
 --- Returns all input events for this frame. ---
----@return Json
+---@return {type: string, data: JsonObject, processed: boolean}[]
 function input.events() end
 
 --- Returns the mouse position in pixels relative to the bottom left of the screen. ---

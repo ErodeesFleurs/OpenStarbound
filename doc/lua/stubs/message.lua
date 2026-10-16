@@ -4,8 +4,7 @@
 ---@class message
 message = {}
 
---- Messages of the specified message type received by this script context will call the specified function. The first two arguments passed to the handler function will be the `String` messageName and a `bool` indicating whether the message is from a local entity, followed by any arguments sent with the message.
----@param messageName string
----@param handler LuaFunction
----@return void
+--- Messages of the specified message type received by this script context will call the specified function. For a string message name, the first two handler arguments are the message name and a boolean indicating a local sender, followed by the message arguments. A configuration table can set `localOnly` and `passName`; `passName` defaults to false for the table form. Passing nil as the handler removes it.
+---@param messageName string|{name: string, passName?: boolean, localOnly?: boolean}
+---@param handler? LuaFunction
 function message.setHandler(messageName, handler) end

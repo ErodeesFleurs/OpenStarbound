@@ -1,5 +1,5 @@
 function patch(data)
-  data.sounds.someup = jarray{"/sfx/interface/inventory_someup.ogg"}  
+  data.sounds.someup = jarray{"/sfx/interface/inventory_someup.ogg"}
   data.sounds.somedown = jarray{"/sfx/interface/inventory_somedown.ogg"}
   local layout = data.paneLayout
 
@@ -42,7 +42,7 @@ function patch(data)
     createCosmeticSlot(layout.chestCosmetic, offset, i + 4)
     createCosmeticSlot(layout.headCosmetic, offset, i + 8)
   end
-  
+
   addHiddenIndicator(layout.legs)
   addHiddenIndicator(layout.chest)
   addHiddenIndicator(layout.head)
@@ -51,7 +51,7 @@ function patch(data)
   addHiddenIndicator(layout.chestCosmetic)
   addHiddenIndicator(layout.headCosmetic)
   addHiddenIndicator(layout.backCosmetic)
-  
+
   layout.portrait.renderHumanoid = true
   return data
 end

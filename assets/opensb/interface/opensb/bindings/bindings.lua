@@ -4,13 +4,13 @@ local CATEGORY_LIST_WIDGET = "categories.list"
 local BINDS_WIDGET       = "binds"
 
 local fmt = string.format
-local log = function() end
 
 --SNARE
 
 local snared = false
+local snareFinished
 
-function snare(key) end
+function snare(_key) end
 
 local mods = {}
 for i, mod in ipairs{"LShift", "RShift", "LCtrl", "RCtrl", "LAlt", "RAlt", "LGui", "RGui", "AltGr", "Scroll"} do
@@ -21,7 +21,7 @@ end
 
 local function getMods(key)
   local bindMods = jarray()
-  for i, mod in ipairs(mods) do
+  for _, mod in ipairs(mods) do
     if mod.active and mod.name ~= key then
       bindMods[#bindMods + 1] = mod.name
     end
@@ -36,7 +36,7 @@ local function finishBind(a, b)
     snareFinished(a)
   else
     snareFinished{ type = a, value = b, mods = getMods(b) }
-    for i, mod in ipairs(mods) do
+    for _, mod in ipairs(mods) do
       mod.active = false
     end
   end
@@ -44,7 +44,7 @@ end
 
 local function scanInputEvents()
   local events = input.events()
-  for i, event in pairs(events) do
+  for _, event in pairs(events) do
     local type, data = event.type, event.data
     if type == "KeyDown" then
       local key = data.key
@@ -66,7 +66,7 @@ function update()
     if snared and not widget.hasFocus("snare") then
       snared = false
       snareFinished()
-      for i, mod in ipairs(mods) do
+      for _, mod in ipairs(mods) do
         mod.active = false
       end
     end
@@ -81,7 +81,6 @@ end
 -- BINDING
 
 
-local function alphabeticalNameSortGreater(a, b) return a.name > b.name end
 local function alphabeticalNameSortLesser(a, b)  return a.name < b.name end
 local sortedCategories = {}
 local categories = {}
@@ -92,14 +91,14 @@ local allBinds = {}
 local function addCategoryToList(data)
   local name = widget.addListItem(CATEGORY_LIST_WIDGET)
   widget.setText(fmt("%s.%s.button", CATEGORY_LIST_WIDGET, name), data.name)
-  log("Added category ^cyan;%s^reset; to list", data.name)
   return name
 end
 
 local function parseBinds()
-  for i, path in pairs(root.assetsByExtension("binds")) do
-    local data = root.assetJson(path)
-    for categoryId, data in pairs(data) do
+  for _, path in pairs(root.assetsByExtension("binds")) do
+    local assetBinds = root.assetJson(path)
+    ---@cast assetBinds JsonObject
+    for categoryId, data in pairs(assetBinds) do
       if not data.name then data.name = categoryId end
       data.categoryId = categoryId
       local existing = categories[categoryId]
@@ -107,7 +106,7 @@ local function parseBinds()
     end
   end
 
-  for categoryId, data in pairs(categories) do
+  for _, data in pairs(categories) do
     sortedCategories[#sortedCategories + 1] = data
   end
   table.sort(sortedCategories, alphabeticalNameSortLesser)
@@ -121,16 +120,16 @@ local function parseBinds()
   if sortedCategories[1] then
     local first = sortedCategories[1].widget
     widget.setListSelected(CATEGORY_LIST_WIDGET, first)
-    selectCategory(first)
+    selectCategory()
   end
 end
 
-function bindsToString(binds)
+local function bindsToString(binds)
   local t = {}
   for i, bind in pairs(binds) do
     local str = ""
     if bind.mods then
-      for i, v in pairs(bind.mods) do
+      for _, v in pairs(bind.mods) do
         str = str .. v .. " + "
       end
     end
@@ -148,8 +147,8 @@ function bindsToString(binds)
   return table.concat(t)
 end
 
-function setButtonsEnabled(state)
-  for i, bind in pairs(allBinds) do
+local function setButtonsEnabled(state)
+  for _, bind in pairs(allBinds) do
     widget.setButtonEnabled(fmt("%s.apply_%s", BINDS_WIDGET, bind.bindId), state)
     widget.setButtonEnabled(fmt("%s.erase_%s", BINDS_WIDGET, bind.bindId), state)
     widget.setButtonEnabled(fmt("%s.reset_%s", BINDS_WIDGET, bind.bindId), state)
@@ -163,12 +162,12 @@ end
 local activeBind
 local activeCategory
 
-function snareFinished(newBind)
+snareFinished = function(newBind)
   setButtonsEnabled(true)
   if not newBind or not activeBind or not activeCategory then return end
   local currentBinds = input.getBinds(activeCategory, activeBind)
   local replace = false
-  for i, v in pairs(currentBinds) do
+  for _, v in pairs(currentBinds) do
     if sb.printJson(v) == sb.printJson(newBind) then
       --equal, replace all binds
       currentBinds = {newBind}
@@ -178,10 +177,8 @@ function snareFinished(newBind)
   end
   if replace then
     currentBinds = {newBind}
-    log("Replaced %s with %s", activeBind, sb.printJson(newBind))
   else
     currentBinds[#currentBinds + 1] = newBind
-    log("Added %s to %s", sb.printJson(newBind), activeBind)
   end
   input.setBinds(activeCategory, activeBind, currentBinds)
   widget.setText(fmt("%s.apply_%s", BINDS_WIDGET, activeBind), bindsToString(currentBinds))
@@ -208,7 +205,6 @@ end
 
 function applyBind(bind)
   bind = bind:sub(7)
-  log("Modifying bind %s", bind)
   setButtonsEnabled(false)
   activeBind = bind
   beginSnare()
@@ -299,12 +295,12 @@ function selectCategory()
   local selected = widget.getListSelected(CATEGORY_LIST_WIDGET)
   local category = widgetsToCategories[selected]
   local dataFromPrev = widget.getData(BINDS_WIDGET)
+  ---@cast dataFromPrev string[]?
   if dataFromPrev then
-    for i, v in pairs(dataFromPrev) do
+    for _, v in pairs(dataFromPrev) do
       widget.removeChild(BINDS_WIDGET, v)
     end
   end
-  widgetsToBinds = {}
 
   local groups = category.groups or {}
   if not groups.unsorted then
@@ -331,7 +327,7 @@ function selectCategory()
   activeCategory = category.categoryId
   table.sort(sortedGroups, alphabeticalNameSortLesser)
 
-  for groupId, data in pairs(groups) do
+  for _, data in pairs(groups) do
     table.sort(data.sortedBinds, alphabeticalNameSortLesser)
   end
 
@@ -369,7 +365,6 @@ local function initCallbacks()
 end
 
 function init()
-  --log = chat and chat.addMessage or sb.logInfo
 
   widget.clearListItems(CATEGORY_LIST_WIDGET)
   initCallbacks()

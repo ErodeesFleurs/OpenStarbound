@@ -43,7 +43,6 @@ function assets.exists(path) end
 --- Adds a new asset at the specified path with the specified data. If an asset already exists here, it is overwritten. ---
 ---@param path string
 ---@param data LuaValue
----@return void
 function assets.add(path, data) end
 
 --- Patches the specified asset with the specified patch file. Returns true if successful. ---

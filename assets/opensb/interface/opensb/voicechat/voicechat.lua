@@ -3,7 +3,7 @@ local fmt = string.format
 --constants
 local PATH = "/interface/opensb/voicechat/"
 local SFX = {}
-for i, v in pairs{"SWITCH", "SWITCH_OFF", "ON", "OFF"} do
+for _, v in pairs{"SWITCH", "SWITCH_OFF", "ON", "OFF"} do
 	SFX[v] = fmt("/sfx/interface/voice_%s.ogg", v:lower())
 end
 local DEVICE_LIST_WIDGET = "devices.list"
@@ -122,8 +122,8 @@ local function updateVolumeCanvas(canvas, volume, multiplier)
 
 	canvas:drawLine({1, MID}, {lineEnd, MID}, lineColor, 60)
 	canvas:drawLine({lineEnd - 0.5, MID}, {lineEnd + 0.5, MID}, {255, 255, 255, 200}, 60)
-	local str = volume == 0 and str("^#f00,shadow;", "Muted") or fmt("^shadow;%s%%", math.floor(volume * multiplier * 1000) * 0.1)
-	canvas:drawText(str, {position = {92.5, MID}, horizontalAnchor = "mid", verticalAnchor = "mid"}, 16, {255, 255, 255, 255})
+	local label = volume == 0 and str("^#f00,shadow;", "Muted") or fmt("^shadow;%s%%", math.floor(volume * multiplier * 1000) * 0.1)
+	canvas:drawText(label, {position = {92.5, MID}, horizontalAnchor = "mid", verticalAnchor = "mid"}, 16, {255, 255, 255, 255})
 end
 
 local thresholdCanvas = nil
@@ -146,13 +146,17 @@ local function updateThresholdCanvas(canvas, dB)
 		canvas:drawLine({1, MID}, {loudnessEnd, MID}, lineColor, 4 * scale)
 	end
 
-	local str = fmt("^shadow;%sdB", math.floor(dB * 10) * 0.1)
-	canvas:drawText(str, {position = {92.5, MID}, horizontalAnchor = "mid", verticalAnchor = "mid"}, 16, {255, 255, 255, 255})
+	local label = fmt("^shadow;%sdB", math.floor(dB * 10) * 0.1)
+	canvas:drawText(label, {position = {92.5, MID}, horizontalAnchor = "mid", verticalAnchor = "mid"}, 16, {255, 255, 255, 255})
 end
 
 function init()
-  localization = root.assetJson(PATH .. "locale.json")
-  for name, thing in pairs(root.assetJson(PATH .. "voicechat.config:gui")) do
+  local locale = root.assetJson(PATH .. "locale.json")
+  ---@cast locale JsonObject
+  localization = locale
+  local gui = root.assetJson(PATH .. "voicechat.config:gui")
+  ---@cast gui JsonObject
+  for name, thing in pairs(gui) do
   	if thing.type == "label" then
   		widget.setText(name, str(thing.value))
   	end
@@ -170,7 +174,7 @@ function displayed()
 	initCallbacks()
 
 	widget.setText(addDeviceToList(DEFAULT_DEVICE_NAME), str("UseSystemDefault"))
-	for i, v in pairs(voice.devices()) do addDeviceToList(v) end
+	for _, v in pairs(voice.devices()) do addDeviceToList(v) end
 
 	nullWidget = widget.addListItem(DEVICE_LIST_WIDGET)
 	local nullWidgetPath = fmt("%s.%s", DEVICE_LIST_WIDGET, nullWidget)

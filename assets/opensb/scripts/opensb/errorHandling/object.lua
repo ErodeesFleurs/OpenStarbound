@@ -1,5 +1,5 @@
 -- invoked when an Object loaded from disk fails to deserialize properly
 
-function error(diskStore, e)
+function error(_diskStore, _e)
     return nil
 end

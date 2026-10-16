@@ -15,7 +15,6 @@ function camera.pixelRatio() end
 --- Sets the pixel ratio (zoom level) of the camera. If smooth is `true`, the camera will smoothly transition to the new zoom level. ---
 ---@param pixelRatio Float
 ---@param smooth Bool
----@return void
 function camera.setPixelRatio(pixelRatio, smooth) end
 
 --- Returns the screen size in pixels as a Vec2U. ---

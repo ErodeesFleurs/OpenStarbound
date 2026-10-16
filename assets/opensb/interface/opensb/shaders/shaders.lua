@@ -4,25 +4,21 @@ local GROUP_LIST_WIDGET = "groups.list"
 local OPTIONS_WIDGET       = "options"
 
 local fmt = string.format
-local log = function() end
 
 function update()
 end
 
 
-local function alphabeticalNameSortGreater(a, b) return a.name > b.name end
 local function alphabeticalNameSortLesser(a, b)  return a.name < b.name end
 local sortedGroups = {}
 local groups = {}
 
 local widgetsToGroups = {}
-local allSettings = {}
 local shaderConfig
 
 local function addGroupToList(data)
   local name = widget.addListItem(GROUP_LIST_WIDGET)
   widget.setText(fmt("%s.%s.button", GROUP_LIST_WIDGET, name), data.friendlyName)
-  log("Added group ^cyan;%s^reset; to list", data.friendlyName)
   return name
 end
 
@@ -41,7 +37,7 @@ local function parseGroups()
     end
   end
 
-  for groupId, data in pairs(groups) do
+  for _, data in pairs(groups) do
     sortedGroups[#sortedGroups + 1] = data
   end
   table.sort(sortedGroups, alphabeticalNameSortLesser)
@@ -55,34 +51,13 @@ local function parseGroups()
   if sortedGroups[1] then
     local first = sortedGroups[1].widget
     widget.setListSelected(GROUP_LIST_WIDGET, first)
-    selectGroup(first)
+    selectGroup()
   end
   updateNoShadersMessage()
 end
 
 local activeGroup
 
-local function addOptionGroup(data, i, added)
-  local y = (i - 1) * -14
-  local bg = {
-    type = "image",
-    file = PATH .. "groupname.png",
-    position = {-12, y}
-  }
-  local name = "group_" .. i
-  widget.addChild(BINDS_WIDGET, bg, name)
-  added[#added + 1] = name
-  local label = {
-    type = "label",
-    value = data.label,
-    wrapWidth = 120,
-    fontSize = 8,
-    hAnchor = "mid",
-    vAnchor = "mid",
-    position = {120, 6}
-  }
-  widget.addChild(fmt("%s.%s", BINDS_WIDGET, name), label, "text")
-end
 
 local function digitRegex(n)
   local i = 0
@@ -124,14 +99,14 @@ local function addOption(data, i, added)
   if shaderConfig[activeGroup].parameters[data.name] ~= nil then
     value = shaderConfig[activeGroup].parameters[data.name]
   end
-  
+
   if data.type == "slider" then
     local range = data.range or {0,1}
     local delta = data.delta or 0.01
     local min = range[1]/delta
     -- for some reason ranges require ints so
     local r = {0, range[2]/delta-min, 1}
-    
+
     local slider = {
       type = "slider",
       callback = "sliderOptionModified",
@@ -142,7 +117,7 @@ local function addOption(data, i, added)
     name = optionPrefix..data.name
     added[#added + 1] = name
     widget.addChild(OPTIONS_WIDGET, slider, name)
-    
+
     widget.setSliderValue(fmt("%s.%s",OPTIONS_WIDGET,name), value/delta-min)
     local valLabel = {
       type = "label",
@@ -156,27 +131,27 @@ local function addOption(data, i, added)
     local width = math.floor(118/n)
     local by = y
     local buttons = {}
-    for i=0,n-1 do
+    for choiceIndex=0,n-1 do
       local img = fmt("%sselect.png?crop=0;0;%.0f;13",PATH,width)
       local button = {
         type = "button",
         callback="selectOptionPressed",
-        caption = data.values[i+1],
+        caption = data.values[choiceIndex+1],
         base = img,
         hover = img.."?brightness=-25",
         baseImageChecked = img.."?multiply=00ff00",
         hoverImageChecked = img.."?multiply=00ff00?brightness=-25",
-        position = {110+width*i, by},
+        position = {110+width*choiceIndex, by},
         pressedOffset = {0, 0},
         checkable = true,
-        checked = (value == i)
+        checked = (value == choiceIndex)
       }
-      name = "select_"..data.name.."_"..i
+      name = "select_"..data.name.."_"..choiceIndex
       added[#added + 1] = name
       widget.addChild(OPTIONS_WIDGET, button, name)
-      table.insert(buttons,{widget=fmt("%s.%s",OPTIONS_WIDGET,name),index=i})
+      table.insert(buttons,{widget=fmt("%s.%s",OPTIONS_WIDGET,name),index=choiceIndex})
     end
-    for k,v in next, buttons do
+    for _,v in next, buttons do
       widget.setData(v.widget,{option=data,index=v.index,buttons=buttons})
     end
     --[[local bge = {
@@ -192,42 +167,42 @@ end
 
 local function updateParameter(parameter,oname,value)
   if parameter.isPasses then
-    for k,v in next, parameter.layers do
+    for _,v in next, parameter.layers do
       renderer.setPostProcessLayerPasses(v, value)
     end
   else
-    for k,v in next, parameter.effects do
+    for _,v in next, parameter.effects do
       renderer.setEffectParameter(v, oname, value)
     end
   end
 end
 
-function sliderOptionModified(option, odata)
+function sliderOptionModified(option, _odata)
   local oname = string.sub(option, optionOffset)
   local parameter = groups[activeGroup].parameters[oname]
   local min = parameter.range[1]/parameter.delta
   local value = (widget.getSliderValue(fmt("%s.%s",OPTIONS_WIDGET,option))+min)*parameter.delta
-  
+
   widget.setText(fmt("%s.%s",OPTIONS_WIDGET,option.."_value"), fmt(digitRegex(parameter.delta),value))
-  
+
   updateParameter(parameter,oname,value)
   shaderConfig[activeGroup].parameters[oname] = value
   root.setConfiguration("postProcessGroups",shaderConfig)
 end
 
-function selectOptionPressed(button,bdata)
-  
-  for k,v in next, bdata.buttons do
+function selectOptionPressed(_button,bdata)
+
+  for _,v in next, bdata.buttons do
     if v.index ~= bdata.index then
       widget.setChecked(v.widget, false)
     end
   end
-  
-  value = bdata.index
-  
+
+  local value = bdata.index
+
   local oname = bdata.option.name
   local parameter = groups[activeGroup].parameters[oname]
-  
+
   updateParameter(parameter,oname,value)
   shaderConfig[activeGroup].parameters[oname] = value
   root.setConfiguration("postProcessGroups",shaderConfig)
@@ -270,10 +245,10 @@ local function addEnabled(groupname, i, added)
   widget.addChild(OPTIONS_WIDGET, checkbox, name)
 end
 
-function toggleGroupEnabled(checkbox, cdata)
+function toggleGroupEnabled(checkbox, _cdata)
   local checked = widget.getChecked(fmt("%s.%s",OPTIONS_WIDGET,checkbox))
   renderer.setPostProcessGroupEnabled(activeGroup, checked, true)
-  
+
   local ep = groups[activeGroup].enabledParameter
   if ep then
       -- this group might need to handle enable/disabling itself, since maybe it patches another shader that can't be disabled
@@ -281,7 +256,7 @@ function toggleGroupEnabled(checkbox, cdata)
         renderer.setEffectParameter(e,ep,checked)
       end
   end
-  
+
   shaderConfig = root.getConfiguration("postProcessGroups")
 end
 
@@ -289,26 +264,26 @@ function selectGroup()
   local selected = widget.getListSelected(GROUP_LIST_WIDGET)
   local group = widgetsToGroups[selected]
   local dataFromPrev = widget.getData(OPTIONS_WIDGET)
+  ---@cast dataFromPrev string[]?
   if dataFromPrev then
-    for i, v in pairs(dataFromPrev) do
+    for _, v in pairs(dataFromPrev) do
       widget.removeChild(OPTIONS_WIDGET, v)
     end
   end
-  widgetsToOptions = {}
-  
+
   activeGroup = group.groupId
-  
+
   local bannerOptions = widget.bindCanvas("banner")
   bannerOptions:clear()
 
   local bannerName = tostring(group.bannerName or group.name or group.groupId)
   bannerOptions:drawText(bannerName, {position = {127, 13}, horizontalAnchor = "mid", verticalAnchor = "mid"}, 16)
-  
+
   local added = {}
   local index = 0
   addEnabled(group.groupId,index,added)
   if group.categories then
-  
+
   elseif group.parameters then
     local sortedParams = {}
     for k,v in next, group.parameters do
@@ -316,8 +291,8 @@ function selectGroup()
       sortedParams[#sortedParams+1] = v
     end
     table.sort(sortedParams, alphabeticalNameSortLesser)
-    
-    for k,v in next, sortedParams do
+
+    for _,v in next, sortedParams do
       index = index + 1
       addOption(v, index, added)
     end
@@ -358,7 +333,7 @@ function selectGroup()
     end
   end
   ]]
-  
+
   widget.setData(OPTIONS_WIDGET, added)
 end
 
@@ -369,7 +344,6 @@ end
 
 function init()
   shaderConfig = root.getConfiguration("postProcessGroups")
-  --log = chat and chat.addMessage or sb.logInfo
 
   widget.clearListItems(GROUP_LIST_WIDGET)
   initCallbacks()

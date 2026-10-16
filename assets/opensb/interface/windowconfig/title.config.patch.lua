@@ -1,5 +1,5 @@
 function patch(data)
-  for i, v in pairs(data.mainMenuButtons) do
+  for _, v in pairs(data.mainMenuButtons) do
     if not v.rightAnchored then
       v.offset[2] = v.offset[2] + (v.key == "quit" and -5 or 15)
     end
@@ -11,7 +11,7 @@ function patch(data)
   local logo = terry or ((barst or "starb") .. "ound.png")
   data.backdropImages = jarray{
     jarray{
-      jarray{0, 0}, 
+      jarray{0, 0},
       "/interface/title/" .. logo,
       terry and 0.75 or 0.5,
       jarray{0.5, terry and 0.75 or 0.5},

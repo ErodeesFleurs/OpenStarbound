@@ -35,6 +35,7 @@ commands.register("identity", function(args)
     player.setHumanoidIdentity(identity)
     return string.format("Set %s to %s", arg1, type(arg2) == "string" and arg2 or sb.printJson(arg2, 1))
   elseif method == "randomize" then
+    ---@cast arg1 string?
     local newIdentity, newParameters = root.generateHumanoidIdentity(arg1 or player.species(), nil, player.gender())
     player.setHumanoidParameters(newParameters)
     player.setHumanoidIdentity(newIdentity)
@@ -76,6 +77,7 @@ commands.register("humanoidParameters", function (args)
   local method, arg1, arg2 = chat.parseArguments(args)
   if not method or method == "get" or method == "" then
     if arg1 then
+      ---@cast arg1 string
       return sb.printJson(player.getHumanoidParameter(arg1))
     end
     return sb.printJson(player.getHumanoidParameters(), 1)
@@ -84,6 +86,7 @@ commands.register("humanoidParameters", function (args)
       player.setHumanoidParameters(arg1)
       return sb.printJson(player.getHumanoidParameters(), 1)
     end
+    ---@cast arg1 string
     player.setHumanoidParameter(arg1, arg2)
     return string.format("Set %s to %s", arg1, type(arg2) == "string" and arg2 or sb.printJson(arg2, 1))
   else

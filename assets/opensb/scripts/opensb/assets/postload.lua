@@ -11,6 +11,7 @@ if assets.image("/cursors/cursors.png"):size()[1] == 64 then
   assets.patch("/cursors/cursors.frames", path)
 else
   local cursors = assets.json("/cursors/cursors.frames:frameGrid.names")
+  ---@cast cursors string[][]
   local path = "/cursors/%s.cursor.patch"
   for i = 1, #cursors do
     for j = 1, #cursors[i] do
@@ -21,9 +22,9 @@ end
 
 -- Add object patches
 local objects = assets.byExtension("object")
-local path = "/objects/opensb/object.patch.lua"
+local objectPatchPath = "/objects/opensb/object.patch.lua"
 for i = 1, #objects do
-  assets.patch(objects[i], path)
+  assets.patch(objects[i], objectPatchPath)
 end
 
 assets.patch(

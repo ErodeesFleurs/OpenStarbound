@@ -12,34 +12,43 @@ These stub files provide:
 
 ## Usage
 
-### With VS Code + Lua Language Server
+### In this repository
 
-1. Install the [Lua](https://marketplace.visualstudio.com/items?itemName=sumneko.lua) extension
-2. Add this to your workspace settings (`.vscode/settings.json`):
+Open the repository root in an editor using Lua Language Server (LuaLS), including Zed or VS Code's [Lua extension](https://marketplace.visualstudio.com/items?itemName=sumneko.lua). The root `.luarc.json` configures Lua 5.3 and Starbound's `/path/to/script.lua` asset imports. Stubs are indexed automatically; do not execute or `require` them.
+
+Only known engine entrypoints and JSON-configured UI callbacks are listed as diagnostic globals. Unused callback parameters are explicitly named with an `_` prefix and excluded from unused-local reports. Undefined globals, missing fields and argument type checks remain enabled.
+
+### From another mod workspace
+
+Add the entire stub directory, including `openstarbound/`, to that workspace's `.luarc.json`:
+
 ```json
 {
-  "Lua.workspace.library": [
-    "/path/to/OpenStarbound/doc/lua/stubs"
-  ]
+  "runtime.version": "Lua 5.3",
+  "workspace.library": ["/path/to/OpenStarbound/doc/lua/stubs"]
 }
 ```
 
-### With Other IDEs
+Configure asset import paths relative to your mod's own asset root. The repository's asset root is `assets/opensb`; external mods should not copy that path unchanged.
 
-Most modern Lua IDEs support EmmyLua annotations. Refer to your IDE's documentation for how to add external library definitions.
+### Command-line diagnostics
 
-## Contents
+From the repository root, with `lua-language-server` installed:
 
-This directory contains stub files for:
+```sh
+lua-language-server --check=. --checklevel=Hint --logpath=/tmp/openstarbound-luals
+```
 
+On Nix, prefix the command with `nix shell nixpkgs#lua-language-server --command`.
 
 ## Contributing
 
-If you find missing functions or incorrect type annotations, please:
-1. Update the corresponding markdown documentation file in `doc/lua/openstarbound/`
-2. Submit a pull request
+Update the corresponding stub and Markdown API documentation when changing an engine API. Check signatures against the C++ callback registrations and Lua converters, not just the prose: optional arguments, variadic arguments and multiple return values must use their Lua representations.
 
 ## Notes
 
-- Type annotations use EmmyLua/LuaLS syntax
-- Optional parameters are marked with `?`
+- `types.lua` defines shared value and userdata types; `runtime.lua` describes injected globals and the subset of commercial asset helpers used by the bundled scripts.
+- Annotations use LuaLS syntax: `T?`, `T[]`, unions, tuple tables and multiple returns, rather than C++ `Maybe<T>`, `List<T>` or `Tuple<T...>` spellings.
+- JSON input types remain constrained to JSON values. Scripts annotate known asset schemas and command argument contracts at their use sites; arbitrary JSON is not globally treated as `any`.
+- Base and OpenStarbound extension files describe one API table, not separate runtime implementations.
+- These declarations cover multiple script contexts. An API's presence in completion does not make it available in every context; consult its documentation.
