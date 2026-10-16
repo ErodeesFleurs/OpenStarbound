@@ -151,8 +151,8 @@ struct WorldGeneratorFacade {
 // WorldStorage is designed so that once constructed, any exceptions triggered
 // during loading, unloading, or generation that would result in an
 // indeterminate world state cause the underlying database to be rolled back
-// and then immediately closed.  The underlying database committed only when
-// destructed without error, or a manual call to sync().
+// and then immediately closed.  The underlying database is committed by
+// explicit close() or sync(); destruction never commits.
 class WorldStorage {
 public:
   typedef ServerTileSectorArray::Sector Sector;
@@ -169,6 +169,8 @@ public:
   // Read an in-memory world.
   WorldStorage(WorldChunks const& chunks, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade);
   ~WorldStorage();
+  // Unload and save all sectors, reporting persistence errors to the caller.
+  void close();
 
   VersionedJson worldMetadata();
   void setWorldMetadata(VersionedJson const& metadata);

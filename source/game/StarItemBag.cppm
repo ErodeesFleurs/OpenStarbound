@@ -42,10 +42,9 @@ public:
   // Clears all item slots, does not change ItemBag size
   void clearItems();
 
-  // Force a cleanup of any empty items from the ItemBag.  Even though no
-  // methods should ever return a null item, it can be usefull to force cleanup
-  // to remove empty items from memory.  If any action was done, will return
-  // true.
+  // Normalize empty item stacks to null slots, including during const reads.
+  // This does not change the bag's logical contents.  Returns true if any
+  // empty stack was released.
   bool cleanup() const;
 
   // Direct access to item list
@@ -116,7 +115,8 @@ private:
   std::size_t bestSlotAvailable(std::shared_ptr<Item const> const& item, bool stacksOnly, std::function<bool(std::size_t)> test) const;
   std::size_t bestSlotAvailable(std::shared_ptr<Item const> const& item, bool stacksOnly) const;
 
-  List<std::shared_ptr<Item>> m_items;
+  // Empty stacks and null slots represent the same logical contents.
+  mutable List<std::shared_ptr<Item>> m_items;
 };
 
 }

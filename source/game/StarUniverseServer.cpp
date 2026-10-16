@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 import star.json;
 import star.xx_hash;
 import star.json_extra;
@@ -251,6 +253,14 @@ UniverseServer::~UniverseServer() {
   // are shutdown before other member destruction.
   m_clients.clear();
   m_worlds.clear();
+  m_retiringWorlds.clear();
+  try {
+    m_celestialDatabase->close();
+  } catch (std::exception const& e) {
+    std::fprintf(stderr, "UniverseServer: final celestial save failed: %s\n", e.what());
+  } catch (...) {
+    std::fprintf(stderr, "UniverseServer: unknown final celestial save failure\n");
+  }
 }
 
 void UniverseServer::setListeningTcp(bool listenTcp) {
@@ -806,6 +816,16 @@ void UniverseServer::run() {
     saveSettings();
     saveTempWorldIndex();
     locker.unlock();
+    for (auto& world : leftoverWorlds) {
+      if (world.second && world.second->done()) {
+        if (auto server = world.second->get())
+          server->close();
+      }
+    }
+    for (auto const& world : m_retiringWorlds)
+      world->close();
+    m_retiringWorlds.clear();
+    m_celestialDatabase->close();
   } catch (std::exception const& e) {
     Logger::error("UniverseServer: exception caught cleaning up: {}", outputException(e, true));
   }
@@ -1619,6 +1639,11 @@ void UniverseServer::shutdownInactiveWorlds() {
           }
         }
 
+        if (world->noClients())
+          world->close();
+        else
+          m_retiringWorlds.append(world);
+
         m_worlds.remove(worldId);
         // Once a world is shutdown, mark its shutdown time in m_tempWorldIndex
         if (auto instanceWorldId = worldId.maybe<InstanceWorldId>()) {
@@ -1627,6 +1652,19 @@ void UniverseServer::shutdownInactiveWorlds() {
         }
       }
       clientsLocker.unlock();
+    }
+  }
+
+  // A queued warp is not a completed departure: warpPlayers() must first
+  // remove the client and send its GiveItem/WorldStop (and other final) packets.
+  // Keep only ownership here, not routing by ID, so an errored ship can be
+  // recreated while clients still reference its stopped predecessor.
+  for (std::size_t i = 0; i < m_retiringWorlds.size();) {
+    if (m_retiringWorlds[i]->noClients()) {
+      m_retiringWorlds[i]->close();
+      m_retiringWorlds.eraseAt(i);
+    } else {
+      ++i;
     }
   }
 

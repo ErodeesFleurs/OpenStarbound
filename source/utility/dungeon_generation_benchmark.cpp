@@ -164,6 +164,7 @@ int main(int argc, char** argv) {
       std::shared_ptr<::Star::VisitableWorldParameters> worldParameters = generateFloatingDungeonWorldParameters(dungeonWorldName);
       auto worldTemplate = std::make_shared<WorldTemplate>(worldParameters, SkyParameters(), 1234);
       WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile());
+      worldServer.close();
     }
 
     coutf("Finished {} generations of dungeonWorld {} in {} seconds", repetitions, dungeonWorldName, Time::monotonicTime() - start);

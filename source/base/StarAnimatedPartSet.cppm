@@ -102,9 +102,10 @@ public:
     JsonObject stateTypeProperties;
     OrderedHashMap<String, std::shared_ptr<State const>> states;
 
-    ActiveStateInformation activeState;
+    // Lazily refreshed frame information; state changes still require nonconst access.
+    mutable ActiveStateInformation activeState;
     State const* activeStatePointer;
-    bool activeStateDirty;
+    mutable bool activeStateDirty;
   };
 
   struct PartState {
@@ -116,8 +117,9 @@ public:
     JsonObject partProperties;
     StringMap<StringMap<PartState>> partStates;
 
-    ActivePartInformation activePart;
-    bool activePartDirty;
+    // Derived from part properties and the currently active state.
+    mutable ActivePartInformation activePart;
+    mutable bool activePartDirty;
   };
 
   AnimatedPartSet();
@@ -184,8 +186,8 @@ public:
 private:
   static AnimationMode stringToAnimationMode(String const& string);
 
-  void freshenActiveState(StateType& stateType);
-  void freshenActivePart(Part& part);
+  void freshenActiveState(StateType const& stateType) const;
+  void freshenActivePart(Part const& part) const;
 
   OrderedHashMap<String, StateType> m_stateTypes;
   StringMap<Part> m_parts;

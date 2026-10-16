@@ -89,9 +89,10 @@ public:
   bool operator<(SmallVector const& other) const;
 
 private:
-  typename std::aligned_storage<MaxStackSize * sizeof(Element), alignof(Element)>::type m_stackElements;
+  alignas(Element) std::byte m_stackElements[MaxStackSize ? MaxStackSize * sizeof(Element) : alignof(Element)];
 
   bool isHeapAllocated() const;
+  static void freeHeapElements(Element* elements, std::size_t capacity);
 
   Element* m_begin;
   Element* m_end;
@@ -100,7 +101,7 @@ private:
 
 template <typename Element, std::size_t MaxStackSize>
 SmallVector<Element, MaxStackSize>::SmallVector() {
-  m_begin = (Element*)&m_stackElements;
+  m_begin = reinterpret_cast<Element*>(m_stackElements);
   m_end = m_begin;
   m_capacity = m_begin + MaxStackSize;
 }
@@ -109,7 +110,7 @@ template <typename Element, std::size_t MaxStackSize>
 SmallVector<Element, MaxStackSize>::~SmallVector() {
   clear();
   if (isHeapAllocated()) {
-    free(m_begin, (m_capacity - m_begin) * sizeof(Element));
+    freeHeapElements(m_begin, m_capacity - m_begin);
   }
 }
 
@@ -208,31 +209,38 @@ void SmallVector<Element, MaxStackSize>::reserve(std::size_t newCapacity) {
   std::size_t oldCapacity = m_capacity - m_begin;
   if (newCapacity > oldCapacity) {
     newCapacity = std::max(oldCapacity * 2, newCapacity);
-    auto newMem = (Element*)Star::malloc(newCapacity * sizeof(Element));
-    if (!newMem)
-      throw MemoryException::format("Could not set new SmallVector capacity {}\n", newCapacity);
+    Element* newMem;
+    if constexpr (alignof(Element) > alignof(std::max_align_t)) {
+      newMem = std::allocator<Element>{}.allocate(newCapacity);
+    } else {
+      newMem = static_cast<Element*>(Star::malloc(newCapacity * sizeof(Element)));
+      if (!newMem)
+        throw MemoryException::format("Could not set new SmallVector capacity {}\n", newCapacity);
+    }
 
     std::size_t size = m_end - m_begin;
     auto oldMem = m_begin;
     auto oldHeapAllocated = isHeapAllocated();
 
-    // We assume that move constructors can never throw.
-    for (std::size_t i = 0; i < size; ++i) {
-      new (&newMem[i]) Element(std::move(oldMem[i]));
+    // Copy when a throwing move can be avoided.  A throwing move-only type
+    // keeps its original storage and live elements, but may be moved-from.
+    std::size_t constructed = 0;
+    try {
+      for (; constructed < size; ++constructed)
+        std::construct_at(newMem + constructed, std::move_if_noexcept(oldMem[constructed]));
+    } catch (...) {
+      std::destroy_n(newMem, constructed);
+      freeHeapElements(newMem, newCapacity);
+      throw;
     }
 
     m_begin = newMem;
     m_end = m_begin + size;
     m_capacity = m_begin + newCapacity;
 
-    auto freeOldMem = finally([=]() {
-      if (oldHeapAllocated)
-          Star::free(oldMem, oldCapacity * sizeof(Element));
-    });
-
-    for (std::size_t i = 0; i < size; ++i) {
-      oldMem[i].~Element();
-    }
+    std::destroy_n(oldMem, size);
+    if (oldHeapAllocated)
+      freeHeapElements(oldMem, oldCapacity);
   }
 }
 
@@ -326,7 +334,7 @@ void SmallVector<Element, MaxStackSize>::pop_back() {
   if (m_begin == m_end)
     throw OutOfRangeException("SmallVector::pop_back called on empty SmallVector");
   --m_end;
-  m_end->~Element();
+  std::destroy_at(m_end);
 }
 
 template <typename Element, std::size_t MaxStackSize>
@@ -374,7 +382,7 @@ template <typename... Args>
 void SmallVector<Element, MaxStackSize>::emplace_back(Args&&... args) {
   if (m_end == m_capacity)
     reserve(size() + 1);
-  new (m_end) Element(std::forward<Args>(args)...);
+  std::construct_at(m_end, std::forward<Args>(args)...);
   ++m_end;
 }
 
@@ -444,7 +452,15 @@ bool SmallVector<Element, MaxStackSize>::operator<(SmallVector const& other) con
 
 template <typename Element, std::size_t MaxStackSize>
 bool SmallVector<Element, MaxStackSize>::isHeapAllocated() const {
-  return m_begin != (Element*)&m_stackElements;
+  return m_begin != reinterpret_cast<Element const*>(m_stackElements);
+}
+
+template <typename Element, std::size_t MaxStackSize>
+void SmallVector<Element, MaxStackSize>::freeHeapElements(Element* elements, std::size_t capacity) {
+  if constexpr (alignof(Element) > alignof(std::max_align_t))
+    std::allocator<Element>{}.deallocate(elements, capacity);
+  else
+    Star::free(elements, capacity * sizeof(Element));
 }
 
 }

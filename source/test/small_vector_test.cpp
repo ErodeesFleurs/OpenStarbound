@@ -59,3 +59,158 @@ TEST(SmallVectorTest, Destructors) {
   v.clear();
   EXPECT_EQ(i.use_count(), 1);
 }
+
+namespace {
+struct SmallVectorLifetime {
+  int alive = 0;
+  int copies = 0;
+  int moves = 0;
+  int failCopy = -1;
+  int failMove = -1;
+};
+
+struct CopyableVectorValue {
+  SmallVectorLifetime* state;
+  int value;
+
+  CopyableVectorValue(SmallVectorLifetime& state, int value) : state(&state), value(value) {
+    ++state.alive;
+  }
+  CopyableVectorValue(CopyableVectorValue const& other) : state(other.state), value(other.value) {
+    if (state->copies++ == state->failCopy)
+      throw std::runtime_error("copy");
+    ++state->alive;
+  }
+  CopyableVectorValue(CopyableVectorValue&& other) : state(other.state), value(other.value) {
+    ++state->moves;
+    other.value = -1;
+    ++state->alive;
+  }
+  ~CopyableVectorValue() {
+    --state->alive;
+  }
+};
+
+struct MoveOnlyVectorValue {
+  SmallVectorLifetime* state;
+  int value;
+
+  MoveOnlyVectorValue(SmallVectorLifetime& state, int value) : state(&state), value(value) {
+    ++state.alive;
+  }
+  MoveOnlyVectorValue(MoveOnlyVectorValue const&) = delete;
+  MoveOnlyVectorValue(MoveOnlyVectorValue&& other) : state(other.state), value(other.value) {
+    if (state->moves++ == state->failMove)
+      throw std::runtime_error("move");
+    other.value = -1;
+    ++state->alive;
+  }
+  ~MoveOnlyVectorValue() {
+    --state->alive;
+  }
+};
+}
+
+TEST(SmallVectorTest, FailedGrowthCopiesAndReclaimsPrefix) {
+  SmallVectorLifetime state;
+  {
+    SmallVector<CopyableVectorValue, 2> values;
+    values.emplace_back(state, 10);
+    values.emplace_back(state, 20);
+    auto original = values.ptr();
+    state.failCopy = 1;
+    EXPECT_THROW(values.reserve(3), std::runtime_error);
+    EXPECT_EQ(values.ptr(), original);
+    EXPECT_EQ(values.size(), 2u);
+    EXPECT_EQ(values[0].value, 10);
+    EXPECT_EQ(values[1].value, 20);
+    EXPECT_EQ(state.alive, 2);
+    EXPECT_EQ(state.moves, 0);
+    state.failCopy = state.copies + 1;
+    EXPECT_THROW(values.emplace_back(state, 30), std::runtime_error);
+    EXPECT_EQ(state.alive, 2);
+    EXPECT_EQ(values.size(), 2u);
+    state.failCopy = -1;
+    values.emplace_back(state, 30);
+    EXPECT_EQ(state.alive, 3);
+    EXPECT_EQ(state.moves, 0);
+    original = values.ptr();
+    state.failCopy = state.copies + 1;
+    EXPECT_THROW(values.reserve(9), std::runtime_error);
+    EXPECT_EQ(values.ptr(), original);
+    EXPECT_EQ(values.size(), 3u);
+    EXPECT_EQ(values[0].value, 10);
+    EXPECT_EQ(values[1].value, 20);
+    EXPECT_EQ(values[2].value, 30);
+    EXPECT_EQ(state.alive, 3);
+  }
+  EXPECT_EQ(state.alive, 0);
+}
+
+TEST(SmallVectorTest, ThrowingMoveOnlyGrowthKeepsLiveOriginalStorage) {
+  SmallVectorLifetime state;
+  {
+    SmallVector<MoveOnlyVectorValue, 2> values;
+    values.emplace_back(state, 10);
+    values.emplace_back(state, 20);
+    auto original = values.ptr();
+    state.failMove = 1;
+    EXPECT_THROW(values.reserve(3), std::runtime_error);
+    EXPECT_EQ(values.ptr(), original);
+    EXPECT_EQ(values.size(), 2u);
+    EXPECT_EQ(state.alive, 2);
+    EXPECT_EQ(values[0].value, -1);
+    state.failMove = -1;
+    values.reserve(3);
+    EXPECT_EQ(values.size(), 2u);
+    EXPECT_EQ(state.alive, 2);
+    values.clear();
+    EXPECT_EQ(state.alive, 0);
+    values.emplace_back(state, 42);
+    EXPECT_EQ(values[0].value, 42);
+  }
+  EXPECT_EQ(state.alive, 0);
+}
+
+TEST(SmallVectorTest, ZeroCapacityAndOveralignedStorage) {
+  struct alignas(64) Value {
+    int value;
+  };
+  static_assert(alignof(SmallVector<Value, 1>) == alignof(Value));
+  static_assert(sizeof(SmallVector<Value, 1>) == 2 * sizeof(Value));
+  static_assert(sizeof(SmallVector<Value, 0>) == 2 * sizeof(Value));
+  static_assert(sizeof(SmallVector<int, 2>) == 2 * sizeof(int) + 3 * sizeof(int*));
+  SmallVector<Value, 0> empty;
+  EXPECT_NE(empty.ptr(), nullptr);
+  EXPECT_TRUE(empty.empty());
+  empty.emplace_back(42);
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(empty.ptr()) % alignof(Value), 0u);
+  EXPECT_EQ(empty[0].value, 42);
+  SmallVector<Value, 1> values;
+  values.emplace_back(1);
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(values.ptr()) % alignof(Value), 0u);
+  values.emplace_back(2);
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(values.ptr()) % alignof(Value), 0u);
+  EXPECT_EQ(values[0].value, 1);
+  EXPECT_EQ(values[1].value, 2);
+}
+
+TEST(SmallVectorTest, NothrowMoveIsPreferredToCopy) {
+  struct Value {
+    int* moves;
+
+    explicit Value(int& moves) : moves(&moves) {}
+    Value(Value const&) {
+      throw std::runtime_error("unexpected copy");
+    }
+    Value(Value&& other) noexcept : moves(other.moves) {
+      ++*moves;
+    }
+  };
+  int moves = 0;
+  SmallVector<Value, 1> values;
+  values.emplace_back(moves);
+  values.reserve(2);
+  EXPECT_EQ(moves, 1);
+  EXPECT_EQ(values.size(), 1u);
+}

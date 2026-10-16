@@ -73,13 +73,13 @@ public:
 
   String();
   String(String const& s);
-  String(String&& s);
+  String(String&& s) noexcept;
 
   // These assume utf8 input
   String(char const* s);
   String(char const* s, std::size_t n);
   String(std::string const& s);
-  String(std::string&& s);
+  String(std::string&& s) noexcept;
 
   String(std::wstring const& s);
   String(Char const* s);
@@ -234,7 +234,7 @@ public:
   String replaceTags(MapType const& tags, bool replaceWithDefault = false, String defaultValue = "") const;
 
   String& operator=(String const& s);
-  String& operator=(String&& s);
+  String& operator=(String&& s) noexcept;
 
   String& operator+=(String const& s);
   String& operator+=(std::string const& s);
@@ -438,7 +438,7 @@ String String::lookupTags(Lookup&& lookup) const {
 
 template <typename Lookup>
 Maybe<String> String::maybeLookupTagsView(Lookup&& lookup) const {
-  List<std::string_view> finalViews = {};
+  std::string finalString;
   std::string_view view(utf8());
 
   std::size_t start = 0;
@@ -452,26 +452,19 @@ Maybe<String> String::maybeLookupTagsView(Lookup&& lookup) const {
 
     std::size_t endTag = view.find_first_of('>', beginTag);
     if (beginTag != NPos && endTag != NPos) {
-      finalViews.append(view.substr(start, beginTag - start));
-      finalViews.append(lookup(view.substr(beginTag + 1, endTag - beginTag - 1)).takeUtf8());
+      if (!start)
+        finalString.reserve(view.size());
+      finalString.append(view.substr(start, beginTag - start));
+      decltype(auto) replacement = lookup(view.substr(beginTag + 1, endTag - beginTag - 1));
+      finalString.append(replacement.utf8());
       start = endTag + 1;
     } else {
-      finalViews.append(view.substr(start));
+      finalString.append(view.substr(start));
       break;
     }
   }
 
-  std::string finalString;
-  std::size_t finalSize = 0;
-  for (auto& view : finalViews)
-    finalSize += view.size();
-
-  finalString.reserve(finalSize);
-
-  for (auto& view : finalViews)
-    finalString += view;
-
-  return String(finalString);
+  return String(std::move(finalString));
 }
 
 template <typename Lookup>

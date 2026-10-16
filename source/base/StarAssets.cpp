@@ -130,7 +130,6 @@ Assets::Assets(Settings settings, StringList assetSources) {
   const char* AssetsLuaPatchSuffix = ".patch.lua";
 
   m_settings = std::move(settings);
-  m_stopThreads = false;
   m_assetSources = std::move(assetSources);
 
   auto luaEngine = LuaEngine::create();
@@ -398,37 +397,65 @@ Assets::Assets(Settings settings, StringList assetSources) {
 
   m_digest = digest.compute();
 
-  int workerPoolSize = m_settings.workerPoolSize;
-  for (int i = 0; i < workerPoolSize; i++)
-    m_workerThreads.append(Thread::invoke("Assets::workerMain", std::mem_fn(&Assets::workerMain), this));
+  try {
+    // Allocate the handle storage before starting any worker. A failed append
+    // must not destroy a running temporary handle before shutdown can signal it.
+    m_workerThreads.reserve(m_settings.workerPoolSize);
+    for (unsigned i = 0; i < m_settings.workerPoolSize; ++i)
+      m_workerThreads.append(Thread::invoke("Assets::workerMain", std::mem_fn(&Assets::workerMain), this));
 
-  // preload.config contains an array of files which will be loaded and then told to persist
-  Json preload = json("/preload.config");
-  Logger::info("Preloading assets");
-  for (auto script : preload.iterateArray()) {
-    auto type = AssetTypeNames.getLeft(script.getString("type"));
-    auto path = script.getString("path");
-    auto components = AssetPath::split(path);
-    validatePath(components, type == AssetType::Json || type == AssetType::Image, type == AssetType::Image);
+    // preload.config contains files which will be loaded and then told to persist.
+    Json preload = json("/preload.config");
+    Logger::info("Preloading assets");
+    for (auto script : preload.iterateArray()) {
+      auto type = AssetTypeNames.getLeft(script.getString("type"));
+      auto path = script.getString("path");
+      auto components = AssetPath::split(path);
+      validatePath(components, type == AssetType::Json || type == AssetType::Image, type == AssetType::Image);
 
-    auto asset = getAsset(AssetId{type, std::move(components)});
-    // make this asset never unload
-    asset->forcePersist = true;
+      auto asset = getAsset(AssetId{type, std::move(components)});
+      asset->forcePersist = true;
+    }
+  } catch (...) {
+    // The destructor is not called for a failed constructor. Join while every
+    // mutex, condition variable, source and Lua context is still alive.
+    stopWorkers();
+    throw;
   }
 }
 
 Assets::~Assets() {
-  m_stopThreads = true;
+  if (auto error = stopWorkers()) {
+    try {
+      std::rethrow_exception(error);
+    } catch (std::exception const& e) {
+      Logger::error("Asset worker failed during shutdown: {}", e.what());
+    } catch (...) {
+      Logger::error("Asset worker failed during shutdown with an unknown exception");
+    }
+  }
+}
 
+std::exception_ptr Assets::stopWorkers() {
   {
-    // Should lock associated mutex to prevent loss of wakeups,
     MutexLocker locker(m_assetsMutex);
-    // Notify all worker threads to allow them to stop
+    m_stopThreads = true;
     m_assetsQueued.broadcast();
+    m_assetsDone.broadcast();
   }
 
-  // Join them all
+  std::exception_ptr error;
+  for (auto& worker : m_workerThreads) {
+    try {
+      worker.finish();
+    } catch (...) {
+      if (!error)
+        error = std::current_exception();
+    }
+  }
+  // finish() consumes the stored exception, so no handle destructor can throw.
   m_workerThreads.clear();
+  return error;
 }
 
 void Assets::hotReload() const {
@@ -844,6 +871,8 @@ std::shared_ptr<Assets::AssetData> Assets::getAsset(AssetId const& id) const {
   MutexLocker assetsLocker(m_assetsMutex);
 
   while (true) {
+    if (m_stopThreads)
+      throw AssetException("Asset loading stopped");
     auto j = m_assetsCache.find(id);
     if (j != m_assetsCache.end()) {
       if (j->second) {
@@ -856,7 +885,7 @@ std::shared_ptr<Assets::AssetData> Assets::getAsset(AssetId const& id) const {
     } else {
       // Try to load the asset in-thread, if we cannot, then the asset has been
       // queued so wait for a worker thread to finish it.
-      if (!doLoad(id))
+      if (!doLoad(id) && !m_stopThreads)
         m_assetsDone.wait(m_assetsMutex);
     }
   }
@@ -864,15 +893,15 @@ std::shared_ptr<Assets::AssetData> Assets::getAsset(AssetId const& id) const {
 
 void Assets::workerMain() {
   while (true) {
-    if (m_stopThreads)
-      break;
-
+    // Do not hold the asset mutex while collecting Lua garbage.
     {
       RecursiveMutexLocker luaLocker(m_luaMutex);
       as<LuaEngine>(m_luaEngine.get())->collectGarbage();
     }
 
     MutexLocker assetsLocker(m_assetsMutex);
+    if (m_stopThreads)
+      break;
 
     AssetId assetId;
     QueuePriority queuePriority = QueuePriority::None;
@@ -899,7 +928,7 @@ void Assets::workerMain() {
     else
       workIsBlocking = !doLoad(assetId);
 
-    if (workIsBlocking) {
+    if (workIsBlocking && !m_stopThreads) {
       // We are blocking on some sort of busy asset, so need to wait on
       // something to complete here, rather than spinning and burning cpu.
       m_assetsDone.wait(m_assetsMutex);

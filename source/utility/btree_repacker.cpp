@@ -64,10 +64,10 @@ int main(int argc, char** argv) {
     db.recoverAll(visitor, errorHandler);
 
     //close the old db
-    db.close();
+    db.close(true);
     //commit and close the new db
     newDb.commit();
-    newDb.close();
+    newDb.close(true);
 
     coutf("Repacked BTree to {} in {:.6f}s\n({} inserts, {} overwritten)\n", outputFilename, Time::monotonicTime() - startTime, count, overwritten);
     return 0;

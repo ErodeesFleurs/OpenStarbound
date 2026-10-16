@@ -201,6 +201,7 @@ int main(int argc, char** argv) {
       coutf("Finished run of running dungeon world '{}' with seed {} for {} steps in {} seconds, average FPS: {}\n",
             dungeon, worldSeed, steps, totalTime, steps / totalTime);
       sumTime += totalTime;
+      worldServer.close();
     }
 
     if (times != 1) {

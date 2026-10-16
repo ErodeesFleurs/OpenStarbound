@@ -117,6 +117,7 @@ void PackedAssetSource::build(DirectoryAssetSource& directorySource, String cons
 
   ds.seek(8);
   ds.write(indexStart);
+  file->close();
 }
 
 PackedAssetSource::PackedAssetSource(String const& filename) {

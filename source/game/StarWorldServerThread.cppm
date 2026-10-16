@@ -47,6 +47,9 @@ public:
   void start();
   // Signals the WorldServerThread to stop and then joins it
   void stop();
+  // Final teardown after client migration and chunk export have completed.
+  // Unlike stop(), this removes clients and closes storage.
+  void close();
   void setPause(std::shared_ptr<const std::atomic<bool>> pause);
 
   // An exception occurred from the actual WorldServer itself and the

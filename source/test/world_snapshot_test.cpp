@@ -98,6 +98,7 @@ import star.sky_parameters;
 import star.system_world;
 import star.damage_manager;
 import star.net_packets;
+import star.net_packet_socket;
 import star.cellular_light_array;
 import star.cellular_lighting;
 import star.cellular_liquid;
@@ -112,6 +113,7 @@ import star.interpolation_tracker;
 import star.spawn_type_database;
 import star.spawner;
 import star.world_server;
+import star.world_server_thread;
 import star.world_structure;
 import star.world_template;
 
@@ -195,6 +197,9 @@ TEST(WorldSnapshot, FixedCoordinateGenerationIsDeterministic) {
 
   EXPECT_EQ(firstHash, secondHash);
   EXPECT_EQ(firstHash, 0x801745d507acfcaaull) << "update the expected hash (printed above)";
+  firstWorld->close();
+  secondWorld->close();
+  celestialDatabase->close();
 }
 
 TEST(WorldSnapshot, ShipWorldIsDeterministic) {
@@ -234,4 +239,62 @@ TEST(WorldSnapshot, ShipWorldIsDeterministic) {
   EXPECT_GT(nonEmptyTiles, 0u) << "the sampled region does not contain any ship structure";
   EXPECT_EQ(firstHash, secondHash);
   EXPECT_EQ(firstHash, 0x96a3df5c62832b0bull) << "update the expected hash (printed above)";
+  firstWorld->close();
+  secondWorld->close();
+}
+
+TEST(WorldSnapshot, StoppedWorldRetainsClientsAndExportsRecoverableChunks) {
+  auto storage = File::temporaryFile();
+  auto path = storage->fileName();
+  auto cleanup = finally([&]() { storage->close(); File::remove(path); });
+  auto world = std::make_shared<WorldServer>(Vec2U(2048, 2048), storage);
+  auto speciesShips = Root::singleton().assets()->json("/universe_server.config:speciesShips");
+  world->setCentralStructure(WorldStructure(jsonToStringList(speciesShips.get("human"))[0]));
+  world->setProperty("stopSaveRegression", Json(42));
+
+  WorldServerThread thread(world, ClientShipWorldId(Uuid()));
+  ASSERT_TRUE(thread.addClient(MinClientConnectionId, SpawnTargetPosition(Vec2F(1024, 1024)),
+      true, false, NetCompatibilityRules{}, MainClientWorldId));
+  thread.start();
+  thread.stop();
+
+  // UniverseServer still needs this list to migrate players after joining.
+  ASSERT_TRUE(thread.hasClient(MinClientConnectionId));
+  EXPECT_EQ(thread.clients().size(), 1u);
+  EXPECT_FALSE(thread.serverErrorOccurred());
+  auto finalItem = std::make_shared<GiveItemPacket>(ItemDescriptor("money", 7, Json()));
+  ASSERT_TRUE(world->sendPacket(MinClientConnectionId, finalItem));
+
+  // An asynchronous warp may wait for its destination.  Merely queueing it
+  // must leave the stopped source alive, with its final outgoing queue intact.
+  auto waitingChunks = thread.readChunks();
+  ASSERT_FALSE(waitingChunks.empty());
+  ASSERT_TRUE(thread.hasClient(MinClientConnectionId));
+  ASSERT_TRUE(storage->isOpen());
+
+  // Ship/custom-world snapshots are exported after stop, before final close.
+  thread.unloadAll(true);
+  auto chunks = thread.readChunks();
+  ASSERT_FALSE(chunks.empty());
+  ASSERT_FALSE(thread.serverErrorOccurred());
+  auto finalPackets = thread.removeClient(MinClientConnectionId);
+  ASSERT_FALSE(finalPackets.empty());
+  auto transport = LocalPacketSocket::openPair();
+  transport.first->sendPackets(std::move(finalPackets));
+  auto delivered = transport.second->receivePackets();
+  EXPECT_TRUE(delivered.contains(finalItem));
+  ASSERT_FALSE(delivered.empty());
+  EXPECT_EQ(delivered.back()->type(), PacketType::WorldStop);
+  EXPECT_TRUE(thread.noClients());
+  thread.close();
+  thread.close();
+  EXPECT_FALSE(thread.serverErrorOccurred());
+
+  WorldServer fromChunks(chunks);
+  EXPECT_EQ(fromChunks.getProperty("stopSaveRegression", Json()), Json(42));
+  fromChunks.close();
+
+  WorldServer fromFile(File::open(path, IOMode::ReadWrite));
+  EXPECT_EQ(fromFile.getProperty("stopSaveRegression", Json()), Json(42));
+  fromFile.close();
 }

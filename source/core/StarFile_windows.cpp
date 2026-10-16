@@ -362,7 +362,8 @@ void File::fsync(void* f) {
 
 void File::fclose(void* f) {
   HANDLE file = (HANDLE)f;
-  CloseHandle(file);
+  if (!CloseHandle(file))
+    throw IOException::format("Close error {}", GetLastError());
 }
 
 StreamOffset File::fsize(void* f) {

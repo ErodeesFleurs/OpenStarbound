@@ -182,7 +182,9 @@ int main(int argc, char** argv) {
       }
     }
 
-    outputImage->writePng(File::open("mapgen.png", IOMode::Write));
+    auto outputFile = File::open("mapgen.png", IOMode::Write);
+    outputImage->writePng(outputFile);
+    outputFile->close();
     return 0;
   } catch (std::exception const& e) {
     cerrf("exception caught: {}\n", outputException(e, true));

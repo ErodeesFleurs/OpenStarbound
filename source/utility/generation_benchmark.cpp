@@ -189,6 +189,7 @@ int main(int argc, char** argv) {
     }
 
     coutf("Finished generating {} regions with size {}x{} in world '{}' in {} seconds", regionsToGenerate, regionSize, regionSize, coordinate, Time::monotonicTime() - start);
+    worldServer.close();
 
     return 0;
 

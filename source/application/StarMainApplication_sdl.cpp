@@ -508,6 +508,7 @@ public:
     if (!SDL_Init(0))
       throw ApplicationException(strf("Couldn't initialize SDL: {}", SDL_GetError()));
 
+    try {
     if (auto basePath = SDL_GetBasePath())
       File::changeDirectory(basePath);
 
@@ -672,7 +673,9 @@ public:
     m_cursorCache.setTimeToLive(30000);
 
     IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
+    m_imguiContext = ImGui::CreateContext();
+    if (!m_imguiContext)
+      throw ApplicationException("Application: Could not create ImGui context");
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigNavCaptureKeyboard = false;
 
@@ -681,29 +684,21 @@ public:
     float main_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
     style.ScaleAllSizes(main_scale);
 
-    ImGui_ImplSDL3_InitForOpenGL(m_sdlWindow, m_sdlGlContext);
-    ImGui_ImplOpenGL3_Init(nullptr);
+    m_imguiSdlInitialized = ImGui_ImplSDL3_InitForOpenGL(m_sdlWindow, m_sdlGlContext);
+    if (!m_imguiSdlInitialized)
+      throw ApplicationException::format("Application: Could not initialize ImGui SDL backend: {}", SDL_GetError());
+    m_imguiOpenGlInitialized = ImGui_ImplOpenGL3_Init(nullptr);
+    if (!m_imguiOpenGlInitialized)
+      throw ApplicationException("Application: Could not initialize ImGui OpenGL backend");
 
+    } catch (...) {
+      releaseResources();
+      throw;
+    }
   }
 
   ~SdlPlatform() {
-
-    if (m_sdlAudioOutputStream)
-      SDL_CloseAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioOutputStream));
-
-    closeAudioInputDevice();
-
-    m_renderer.reset();
-
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL3_Shutdown();
-    ImGui::DestroyContext();
-
-    Logger::info("Application: Destroying SDL Window");
-    SDL_GL_DestroyContext(m_sdlGlContext);
-    SDL_DestroyWindow(m_sdlWindow);
-
-    SDL_Quit();
+    releaseResources();
   }
 
   typedef std::function<void(std::uint8_t*, int)> AudioCallback;
@@ -716,8 +711,11 @@ public:
       if (len > 0) {
         auto sdlPlatform = ((SdlPlatform*)(userdata));
         sdlPlatform->m_audioInputData.resize(len);
-        SDL_GetAudioStreamData(stream, sdlPlatform->m_audioInputData.data(), len);
-        sdlPlatform->m_audioInputCallback(sdlPlatform->m_audioInputData.data(), len);
+        int received = SDL_GetAudioStreamData(stream, sdlPlatform->m_audioInputData.data(), len);
+        if (received > 0)
+          sdlPlatform->m_audioInputCallback(sdlPlatform->m_audioInputData.data(), received);
+        else if (received < 0)
+          Logger::error("Could not read audio input stream: {}", SDL_GetError());
       }
     }, this);
 
@@ -725,8 +723,10 @@ public:
         Logger::info("Opened audio input device '{}'", SDL_GetAudioDeviceName(SDL_GetAudioStreamDevice(m_sdlAudioInputStream)));
       SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioInputStream));
     }
-    else
+    else {
+      m_audioInputCallback = {};
       Logger::info("Failed to open audio input device: {}", SDL_GetError());
+    }
 
     return m_sdlAudioInputStream != 0;
   }
@@ -734,8 +734,10 @@ public:
   bool closeAudioInputDevice() {
     if (m_sdlAudioInputStream) {
       Logger::info("Closing audio input device");
-      SDL_CloseAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioInputStream));
-      m_sdlAudioInputStream = 0;
+      // Detaching takes the stream lock and waits for an in-flight callback.
+      SDL_SetAudioStreamPutCallback(m_sdlAudioInputStream, nullptr, nullptr);
+      SDL_DestroyAudioStream(std::exchange(m_sdlAudioInputStream, nullptr));
+      m_audioInputCallback = {};
       return true;
     }
     return false;
@@ -823,6 +825,9 @@ public:
       fatalException(e, true);
     }
 
+    closeAudioOutputDevice();
+    closeAudioInputDevice();
+
     try {
       Logger::info("Application: shutdown...");
       m_application->shutdown();
@@ -830,7 +835,6 @@ public:
       Logger::error("Application: threw exception during shutdown: {}", outputException(e, true));
     }
 
-    SDL_CloseAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioOutputStream));
     m_SdlControllers.clear();
 
     SDL_SetCursor(NULL);
@@ -840,6 +844,36 @@ public:
   }
 
 private:
+  void closeAudioOutputDevice() {
+    if (m_sdlAudioOutputStream) {
+      SDL_SetAudioStreamGetCallback(m_sdlAudioOutputStream, nullptr, nullptr);
+      SDL_DestroyAudioStream(std::exchange(m_sdlAudioOutputStream, nullptr));
+    }
+  }
+
+  void releaseResources() {
+    // Stop callbacks before destroying their application/userdata and buffers.
+    closeAudioOutputDevice();
+    closeAudioInputDevice();
+    m_application.reset();
+    m_renderer.reset();
+    if (std::exchange(m_imguiOpenGlInitialized, false))
+      ImGui_ImplOpenGL3_Shutdown();
+    if (std::exchange(m_imguiSdlInitialized, false))
+      ImGui_ImplSDL3_Shutdown();
+    if (m_imguiContext)
+      ImGui::DestroyContext(std::exchange(m_imguiContext, nullptr));
+    m_SdlControllers.clear();
+    SDL_SetCursor(nullptr);
+    m_cursorCache.clear();
+    m_platformServices.reset();
+    if (m_sdlGlContext)
+      SDL_GL_DestroyContext(std::exchange(m_sdlGlContext, nullptr));
+    if (m_sdlWindow)
+      SDL_DestroyWindow(std::exchange(m_sdlWindow, nullptr));
+    SDL_Quit();
+  }
+
   struct Controller : public ApplicationController {
     Controller(SdlPlatform* parent)
       : parent(parent) {}
@@ -1357,6 +1391,9 @@ private:
 
   SDL_Window* m_sdlWindow = nullptr;
   SDL_GLContext m_sdlGlContext = nullptr;
+  ImGuiContext* m_imguiContext = nullptr;
+  bool m_imguiSdlInitialized = false;
+  bool m_imguiOpenGlInitialized = false;
   SDL_AudioStream* m_sdlAudioOutputStream = 0;
   SDL_AudioStream* m_sdlAudioInputStream = 0;
   AudioCallback m_audioInputCallback;

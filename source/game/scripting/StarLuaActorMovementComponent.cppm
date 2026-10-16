@@ -305,15 +305,15 @@ void LuaActorMovementComponent<Base>::performControls() {
     m_movementController->controlAcceleration(m_controlAcceleration);
     m_movementController->controlForce(m_controlForce);
     if (m_controlApproachVelocity)
-      tupleUnpackFunction(std::bind(&ActorMovementController::controlApproachVelocity, m_movementController, std::placeholders::_1, std::placeholders::_2), *m_controlApproachVelocity);
+      std::apply(std::bind(&ActorMovementController::controlApproachVelocity, m_movementController, std::placeholders::_1, std::placeholders::_2), *m_controlApproachVelocity);
     if (m_controlApproachVelocityAlongAngle)
-      tupleUnpackFunction(std::bind(&ActorMovementController::controlApproachVelocityAlongAngle, m_movementController, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), *m_controlApproachVelocityAlongAngle);
+      std::apply(std::bind(&ActorMovementController::controlApproachVelocityAlongAngle, m_movementController, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), *m_controlApproachVelocityAlongAngle);
     if (m_controlParameters)
       m_movementController->controlParameters(*m_controlParameters);
     if (m_controlModifiers)
       m_movementController->controlModifiers(*m_controlModifiers);
     if (m_controlMove)
-      tupleUnpackFunction(std::bind(&ActorMovementController::controlMove, m_movementController, std::placeholders::_1, std::placeholders::_2), *m_controlMove);
+      std::apply(std::bind(&ActorMovementController::controlMove, m_movementController, std::placeholders::_1, std::placeholders::_2), *m_controlMove);
     if (m_controlFace)
       m_movementController->controlFace(*m_controlFace);
     if (m_controlDown)

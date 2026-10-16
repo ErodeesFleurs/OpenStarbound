@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 import star.json;
 import star.xx_hash;
 import star.id_map;
@@ -165,12 +167,13 @@ WorldServerThread::WorldServerThread(std::shared_ptr<WorldServer> server, WorldI
 }
 
 WorldServerThread::~WorldServerThread() {
-  m_stop = true;
-  join();
-
-  RecursiveMutexLocker locker(m_mutex);
-  for (auto clientId : m_worldServer->clientIds())
-    removeClient(clientId);
+  try {
+    close();
+  } catch (std::exception const& e) {
+    std::fprintf(stderr, "Error stopping world thread during destruction: %s\n", e.what());
+  } catch (...) {
+    std::fprintf(stderr, "Unknown error stopping world thread during destruction\n");
+  }
 }
 
 WorldId WorldServerThread::worldId() const {
@@ -186,6 +189,19 @@ void WorldServerThread::start() {
 void WorldServerThread::stop() {
   m_stop = true;
   Thread::join();
+}
+
+void WorldServerThread::close() {
+  stop();
+  try {
+    RecursiveMutexLocker locker(m_mutex);
+    for (auto clientId : m_worldServer->clientIds())
+      removeClient(clientId);
+    m_worldServer->close();
+  } catch (std::exception const& e) {
+    m_errorOccurred = true;
+    Logger::error("WorldServerThread final save failed: {}", outputException(e, true));
+  }
 }
 
 void WorldServerThread::setPause(std::shared_ptr<const std::atomic<bool>> pause) {

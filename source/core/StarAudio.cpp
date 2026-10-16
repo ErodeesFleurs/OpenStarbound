@@ -68,51 +68,51 @@ namespace {
   }
 
   bool isUncompressed(std::shared_ptr<IODevice> device) {
-    const std::size_t sigLength = 4;
-    std::unique_ptr<char[]> riffSig(new char[sigLength + 1]()); // RIFF\0
-    std::unique_ptr<char[]> waveSig(new char[sigLength + 1]()); // WAVE\0
+    constexpr std::size_t sigLength = 4;
+    std::array<char, sigLength + 1> riffSig{}; // RIFF\0
+    std::array<char, sigLength + 1> waveSig{}; // WAVE\0
 
     StreamOffset previousOffset = device->pos();
     device->seek(0);
-    device->readFull(riffSig.get(), sigLength);
+    device->readFull(riffSig.data(), sigLength);
     device->seek(4, IOSeek::Relative);
-    device->readFull(waveSig.get(), sigLength);
+    device->readFull(waveSig.data(), sigLength);
     device->seek(previousOffset);
-    if (std::strcmp(riffSig.get(), "RIFF") == 0 && std::strcmp(waveSig.get(), "WAVE") == 0) { // bytes are magic
+    if (std::strcmp(riffSig.data(), "RIFF") == 0 && std::strcmp(waveSig.data(), "WAVE") == 0) { // bytes are magic
       return true;
     }
     return false;
   }
 
   WaveData parseWav(std::shared_ptr<IODevice> device) {
-    const std::size_t sigLength = 4;
-    std::unique_ptr<char[]> riffSig(new char[sigLength + 1]()); // RIFF\0
-    std::unique_ptr<char[]> waveSig(new char[sigLength + 1]()); // WAVE\0
-    std::unique_ptr<char[]> fmtSig(new char[sigLength + 1]()); // fmt \0
-    std::unique_ptr<char[]> dataSig(new char[sigLength + 1]()); // data\0
+    constexpr std::size_t sigLength = 4;
+    std::array<char, sigLength + 1> riffSig{}; // RIFF\0
+    std::array<char, sigLength + 1> waveSig{}; // WAVE\0
+    std::array<char, sigLength + 1> fmtSig{}; // fmt \0
+    std::array<char, sigLength + 1> dataSig{}; // data\0
 
     // RIFF Chunk Descriptor
     device->seek(0);
-    device->readFull(riffSig.get(), sigLength);
+    device->readFull(riffSig.data(), sigLength);
 
     std::uint32_t fileSize = readLEType<std::uint32_t>(device);
     fileSize += sigLength + sizeof(fileSize);
     if (fileSize != device->size())
       throw AudioException(strf("Wav file is wrong size, reports {} is actually {}", fileSize, device->size()));
 
-    device->readFull(waveSig.get(), sigLength);
+    device->readFull(waveSig.data(), sigLength);
 
-    if ((std::strcmp(riffSig.get(), "RIFF") != 0) || (std::strcmp(waveSig.get(), "WAVE") != 0)) { // bytes are not magic
-      auto p = [](char a) { return std::isprint(a) ? a : '?'; };
+    if ((std::strcmp(riffSig.data(), "RIFF") != 0) || (std::strcmp(waveSig.data(), "WAVE") != 0)) { // bytes are not magic
+      auto p = [](char a) { return std::isprint(static_cast<unsigned char>(a)) ? a : '?'; };
       throw AudioException(strf("Wav file has wrong magic bytes, got `{:c}{:c}{:c}{:c}' and `{:c}{:c}{:c}{:c}' but expected `RIFF' and `WAVE'",
               p(riffSig[0]), p(riffSig[1]), p(riffSig[2]), p(riffSig[3]), p(waveSig[0]), p(waveSig[1]), p(waveSig[2]), p(waveSig[3])));
     }
 
     // fmt subchunk
 
-    device->readFull(fmtSig.get(), sigLength);
-    if (std::strcmp(fmtSig.get(), "fmt ") != 0) { // friendship is magic
-      auto p = [](char a) { return std::isprint(a) ? a : '?'; };
+    device->readFull(fmtSig.data(), sigLength);
+    if (std::strcmp(fmtSig.data(), "fmt ") != 0) { // friendship is magic
+      auto p = [](char a) { return std::isprint(static_cast<unsigned char>(a)) ? a : '?'; };
       throw AudioException(strf("Wav file fmt subchunk has wrong magic bytes, got `{:c}{:c}{:c}{:c}' but expected `fmt '",
           p(fmtSig[0]),
           p(fmtSig[1]),
@@ -146,9 +146,9 @@ namespace {
 
     // data subchunk
 
-    device->readFull(dataSig.get(), sigLength);
-    if (std::strcmp(dataSig.get(), "data") != 0) { // magic or more magic?
-      auto p = [](char a) { return std::isprint(a) ? a : '?'; };
+    device->readFull(dataSig.data(), sigLength);
+    if (std::strcmp(dataSig.data(), "data") != 0) { // magic or more magic?
+      auto p = [](char a) { return std::isprint(static_cast<unsigned char>(a)) ? a : '?'; };
       throw AudioException(strf("Wav file data subchunk has wrong magic bytes, got `{:c}{:c}{:c}{:c}' but expected `data'",
           p(dataSig[0]), p(dataSig[1]), p(dataSig[2]), p(dataSig[3])));
     }

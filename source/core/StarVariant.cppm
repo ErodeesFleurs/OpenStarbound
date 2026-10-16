@@ -23,37 +23,7 @@ inline constexpr VariantTypeIndex InvalidVariantType = 255;
 
 namespace detail {
   template <typename T, typename... Args>
-  struct HasType;
-
-  template <typename T>
-  struct HasType<T> : std::false_type {};
-
-  template <typename T, typename Head, typename... Args>
-  struct HasType<T, Head, Args...> {
-    static constexpr bool value = std::is_same<T, Head>::value || HasType<T, Args...>::value;
-  };
-
-  template <typename... Args>
-  struct IsNothrowMoveConstructible;
-
-  template <>
-  struct IsNothrowMoveConstructible<> : std::true_type {};
-
-  template <typename Head, typename... Args>
-  struct IsNothrowMoveConstructible<Head, Args...> {
-    static constexpr bool value = std::is_nothrow_move_constructible<Head>::value && IsNothrowMoveConstructible<Args...>::value;
-  };
-
-  template <typename... Args>
-  struct IsNothrowMoveAssignable;
-
-  template <>
-  struct IsNothrowMoveAssignable<> : std::true_type {};
-
-  template <typename Head, typename... Args>
-  struct IsNothrowMoveAssignable<Head, Args...> {
-    static constexpr bool value = std::is_nothrow_move_assignable<Head>::value && IsNothrowMoveAssignable<Args...>::value;
-  };
+  struct HasType : std::bool_constant<(std::is_same_v<T, Args> || ...)> {};
 }
 
 // Stack based variant type container that can be inhabited by one of a limited
@@ -80,7 +50,7 @@ public:
     typename std::enable_if< std::is_constructible<T, Args...>::value, int >::type = 0
   >
   Variant(std::in_place_type_t<T>, Args&&... args) {
-    new (&m_buffer) T(std::forward<Args>(args)...);
+    std::construct_at(reinterpret_cast<T*>(&m_buffer), std::forward<Args>(args)...);
     m_typeIndex = TypeIndex<T>::value;
   }
 
@@ -88,19 +58,20 @@ public:
     typename std::enable_if< std::is_constructible<T, std::initializer_list<U>&, Args...>::value, int >::type = 0
   >
   Variant(std::in_place_type_t<T>, std::initializer_list<U> il, Args&&... args) {
-    new (&m_buffer) T(il, std::forward<Args>(args)...);
+    std::construct_at(reinterpret_cast<T*>(&m_buffer), il, std::forward<Args>(args)...);
     m_typeIndex = TypeIndex<T>::value;
   }
 
   Variant(Variant const& x);
-  Variant(Variant&& x) noexcept(detail::IsNothrowMoveConstructible<FirstType, RestTypes...>::value);
+  // An invalid source throws BadVariantType, even for nothrow alternatives.
+  Variant(Variant&& x);
 
   ~Variant();
 
   // Implementations of operator= may invalidate the Variant if the copy or
   // move constructor of the assigned value throws.
   Variant& operator=(Variant const& x);
-  Variant& operator=(Variant&& x) noexcept(detail::IsNothrowMoveAssignable<FirstType, RestTypes...>::value);
+  Variant& operator=(Variant&& x);
   template <typename T, typename = ValidateType<T>>
   Variant& operator=(T const& x);
   template <typename T, typename = ValidateType<T>>
@@ -209,7 +180,10 @@ private:
   template <typename First, typename Second, typename... Rest>
   void doMakeType(VariantTypeIndex typeIndex);
 
-  typename std::aligned_union<0, FirstType, RestTypes...>::type m_buffer;
+  struct alignas(std::max({alignof(FirstType), alignof(RestTypes)...})) Storage {
+    std::byte bytes[std::max({sizeof(FirstType), sizeof(RestTypes)...})];
+  };
+  Storage m_buffer;
   VariantTypeIndex m_typeIndex = InvalidVariantType;
 };
 
@@ -401,8 +375,7 @@ Variant<FirstType, RestTypes...>::Variant(Variant const& x) {
 }
 
 template <typename FirstType, typename... RestTypes>
-Variant<FirstType, RestTypes...>::Variant(Variant&& x)
-  noexcept(detail::IsNothrowMoveConstructible<FirstType, RestTypes...>::value) {
+Variant<FirstType, RestTypes...>::Variant(Variant&& x) {
   x.call([&](auto& t) {
       assign(std::move(t));
     });
@@ -426,8 +399,7 @@ Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(Va
 }
 
 template <typename FirstType, typename... RestTypes>
-Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(Variant&& x)
-  noexcept(detail::IsNothrowMoveAssignable<FirstType, RestTypes...>::value) {
+Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(Variant&& x) {
   if (&x == this)
     return *this;
 
@@ -457,7 +429,7 @@ template <typename T, typename>
 T const& Variant<FirstType, RestTypes...>::get() const {
   if (!is<T>())
     throw BadVariantCast();
-  return *(T*)(&m_buffer);
+  return *std::launder(reinterpret_cast<T const*>(&m_buffer));
 }
 
 template <typename FirstType, typename... RestTypes>
@@ -465,7 +437,7 @@ template <typename T, typename>
 T& Variant<FirstType, RestTypes...>::get() {
   if (!is<T>())
     throw BadVariantCast();
-  return *(T*)(&m_buffer);
+  return *std::launder(reinterpret_cast<T*>(&m_buffer));
 }
 
 template <typename FirstType, typename... RestTypes>
@@ -473,7 +445,7 @@ template <typename T, typename>
 Maybe<T> Variant<FirstType, RestTypes...>::maybe() const {
   if (!is<T>())
     return {};
-  return *(T*)(&m_buffer);
+  return *ptr<T>();
 }
 
 template <typename FirstType, typename... RestTypes>
@@ -481,7 +453,7 @@ template <typename T, typename>
 T const* Variant<FirstType, RestTypes...>::ptr() const {
   if (!is<T>())
     return nullptr;
-  return (T*)(&m_buffer);
+  return std::launder(reinterpret_cast<T const*>(&m_buffer));
 }
 
 template <typename FirstType, typename... RestTypes>
@@ -489,7 +461,7 @@ template <typename T, typename>
 T* Variant<FirstType, RestTypes...>::ptr() {
   if (!is<T>())
     return nullptr;
-  return (T*)(&m_buffer);
+  return std::launder(reinterpret_cast<T*>(&m_buffer));
 }
 
 template <typename FirstType, typename... RestTypes>
@@ -580,7 +552,7 @@ template <typename FirstType, typename... RestTypes>
 template <typename T, typename>
 bool Variant<FirstType, RestTypes...>::operator<(T const& x) const {
   if (auto p = ptr<T>())
-    return *p == x;
+    return *p < x;
   return m_typeIndex < TypeIndex<T>::value;
 }
 
@@ -589,8 +561,7 @@ void Variant<FirstType, RestTypes...>::destruct() {
   if (m_typeIndex != InvalidVariantType) {
     try {
       call([](auto& t) {
-          typedef typename std::decay<decltype(t)>::type T;
-          t.~T();
+          std::destroy_at(std::addressof(t));
         });
       m_typeIndex = InvalidVariantType;
     } catch (...) {
@@ -608,7 +579,7 @@ void Variant<FirstType, RestTypes...>::assign(T&& x) {
     *p = std::forward<T>(x);
   } else {
     destruct();
-    new (&m_buffer) AssignType(std::forward<T>(x));
+    std::construct_at(reinterpret_cast<AssignType*>(&m_buffer), std::forward<T>(x));
     m_typeIndex = TypeIndex<AssignType>::value;
   }
 }
@@ -975,7 +946,5 @@ export namespace Star {
 
   namespace detail {
     using ::Star::detail::HasType;
-    using ::Star::detail::IsNothrowMoveConstructible;
-    using ::Star::detail::IsNothrowMoveAssignable;
   }
 }

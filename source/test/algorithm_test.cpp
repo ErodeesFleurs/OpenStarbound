@@ -6,6 +6,9 @@ import std;
 
 import star.algorithm;
 import star.pythonic;
+import star.data_stream;
+import star.data_stream_devices;
+import star.data_stream_extra;
 using namespace Star;
 
 TEST(any, allTests) {
@@ -80,22 +83,7 @@ struct Add {
   }
 };
 
-struct AddTogether {
-  int operator()(std::int8_t& a, std::int64_t& b) {
-    return a + b;
-  }
-};
-
-TEST(TupleOperators, allTests) {
-  std::tuple<std::int8_t, std::int64_t> t1{3, 5};
-  std::tuple<std::int8_t, std::int64_t> t2{6, 10};
-
-  auto t3 = tupleApplyFunction(Times<2>(), t1);
-  EXPECT_EQ(t2, t3);
-
-  int r = tupleUnpackFunction(AddTogether(), t2);
-  EXPECT_EQ(r, 16);
-
+TEST(Compose, All) {
   auto f = compose(Times<2>(), Add<1>(), Times<2>(), Add<3>());
   EXPECT_EQ(f(5), 34);
 }
@@ -127,10 +115,74 @@ TEST(ZipWith, All) {
   EXPECT_EQ(c, d);
 }
 
-TEST(TupleFunctions, All) {
-  std::vector<int> a;
-  std::vector<int> b = {1, 2, 3, 4, 5, 6, 7, 8};
-  tupleCallFunction(std::make_tuple(1, 2, 3, 4, 5, 6, 7, 8), [&a](int i) { a.push_back(i); });
 
-  EXPECT_EQ(a, b);
+TEST(PythonicPredicates, NoncopyableExplicitBoolShortCircuit) {
+  struct Truth {
+    Truth(bool value, int& visits) : value(value), visits(visits) {}
+    Truth(Truth const&) = delete;
+    explicit operator bool() const {
+      ++visits;
+      return value;
+    }
+    bool value;
+    int& visits;
+  };
+
+  int visits = 0;
+  Truth values[] = {{false, visits}, {true, visits}, {false, visits}};
+  EXPECT_TRUE(any(std::begin(values), std::end(values)));
+  EXPECT_EQ(visits, 2);
+  visits = 0;
+  EXPECT_FALSE(all(std::begin(values), std::end(values)));
+  EXPECT_EQ(visits, 1);
+  visits = 0;
+  EXPECT_TRUE(any(values));
+  EXPECT_EQ(visits, 2);
+  visits = 0;
+  EXPECT_FALSE(all(values));
+  EXPECT_EQ(visits, 1);
+  visits = 0;
+  EXPECT_FALSE(any(std::begin(values), std::begin(values)));
+  EXPECT_TRUE(all(std::begin(values), std::begin(values)));
+  EXPECT_EQ(visits, 0);
+
+  int calls = 0;
+  auto predicate = [&](Truth const& value) {
+    ++calls;
+    return static_cast<bool>(value);
+  };
+  EXPECT_TRUE(any(values, predicate));
+  EXPECT_EQ(calls, 2);
+  calls = 0;
+  EXPECT_FALSE(all(values, predicate));
+  EXPECT_EQ(calls, 1);
+  calls = 0;
+  EXPECT_FALSE(any(std::begin(values), std::begin(values), predicate));
+  EXPECT_TRUE(all(std::begin(values), std::begin(values), predicate));
+  EXPECT_EQ(calls, 0);
+}
+
+TEST(TupleSerialization, OrderedWireAndEnumWidths) {
+  enum class Signed : std::int8_t { Negative = -2 };
+  enum class Unsigned : std::uint32_t { High = 0x89abcdefu };
+  auto values = std::tuple{Signed::Negative, std::uint16_t{0x1234}, Unsigned::High};
+  DataStreamBuffer stream;
+  stream << values;
+  std::array<unsigned char, 7> expected{0xfe, 0x12, 0x34, 0x89, 0xab, 0xcd, 0xef};
+  ASSERT_EQ(stream.size(), expected.size());
+  for (std::size_t i = 0; i < expected.size(); ++i)
+    EXPECT_EQ(static_cast<unsigned char>(stream.ptr()[i]), expected[i]);
+
+  stream.seek(0);
+  decltype(values) restored{};
+  stream >> restored;
+  EXPECT_EQ(restored, values);
+  EXPECT_TRUE(stream.atEnd());
+
+  DataStreamBuffer empty;
+  std::tuple<> emptyTuple;
+  empty << emptyTuple;
+  EXPECT_TRUE(empty.empty());
+  empty >> emptyTuple;
+  EXPECT_EQ(empty.pos(), 0u);
 }

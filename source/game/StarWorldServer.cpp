@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 import star.xx_hash;
 import star.json;
 import star.json_extra;
@@ -252,13 +254,27 @@ WorldServer::WorldServer(WorldChunks const& chunks) {
 }
 
 WorldServer::~WorldServer() {
+  try {
+    close();
+  } catch (std::exception const& e) {
+    std::fprintf(stderr, "Error closing world '%s' during destruction: %s\n", m_worldId.utf8Ptr(), e.what());
+  } catch (...) {
+    std::fprintf(stderr, "Unknown error closing world '%s' during destruction\n", m_worldId.utf8Ptr());
+  }
+}
+
+void WorldServer::close() {
+  // A failed save must be reported once, not retried by the destructor while
+  // another exception is unwinding.
+  if (std::exchange(m_closeAttempted, true))
+    return;
   for (auto& p : m_scriptContexts)
     p.second->uninit();
 
   m_scriptContexts.clear();
   m_spawner.uninit();
   writeMetadata();
-  m_worldStorage->unloadAll(true);
+  m_worldStorage->close();
 }
 
 void WorldServer::setWorldId(String worldId) {

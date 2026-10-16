@@ -1,6 +1,7 @@
 import std;
 import star.memory;
 import star.string;
+import star.string_view;
 import star.list;
 import star.unicode;
 import star.format;
@@ -229,6 +230,22 @@ TEST(StringTest, tags) {
   StringMap<String> tags = {{"foo", "hello"}, {"bar", "there"}};
 
   EXPECT_EQ(testString.replaceTags(tags), "hello:there");
+}
+
+TEST(StringTest, TagViewsPreserveOwningAndBorrowedReplacementBytes) {
+  String source("a<x>b<x>");
+  String replacement(std::string(4096, 'R') + std::string("\0中", 4));
+  String expected = String("a") + replacement + "b" + replacement;
+  auto owning = source.maybeLookupTagsView([&](StringView) { return replacement; });
+  auto borrowed = source.maybeLookupTagsView([&](StringView) { return StringView(replacement); });
+  ASSERT_TRUE(owning);
+  ASSERT_TRUE(borrowed);
+  EXPECT_EQ(owning.get(), expected);
+  EXPECT_EQ(borrowed.get(), expected);
+  EXPECT_FALSE(String("plain").maybeLookupTagsView([](StringView) { return String("unused"); }));
+  auto unmatched = String("a<x").maybeLookupTagsView([](StringView) { return String("unused"); });
+  ASSERT_TRUE(unmatched);
+  EXPECT_EQ(unmatched.get(), "a<x");
 }
 
 TEST(StringTest, CaseInsensitive) {

@@ -44,11 +44,8 @@ struct VoiceAudioChunk {
   std::size_t remaining;
   std::size_t offset = 0;
 
-  VoiceAudioChunk(std::int16_t* ptr, std::size_t size) {
-    data.reset(ptr);
-    remaining = size;
-    offset = 0;
-  }
+  VoiceAudioChunk(std::unique_ptr<std::int16_t[]> ptr, std::size_t size)
+    : data(std::move(ptr)), remaining(size) {}
 
   inline std::size_t takeSamples(std::vector<std::int16_t>& out, std::size_t count) {
     std::size_t toRead = std::min<std::size_t>(count, remaining);
@@ -212,15 +209,6 @@ private:
 
   std::shared_ptr<ApplicationController> m_applicationController;
 
-  struct EncodedChunk {
-    std::unique_ptr<unsigned char[]> data;
-    std::size_t size;
-
-    EncodedChunk(unsigned char* _data, std::size_t len) {
-      data.reset(_data);
-      size = len;
-    }
-  };
 
   Mutex m_encodeMutex;
   std::vector<ByteArray> m_encodedChunks;

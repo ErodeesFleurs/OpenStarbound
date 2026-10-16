@@ -10,6 +10,7 @@ import star.data_stream_devices;
 import star.thread;
 import star.btree_database;
 import star.file;
+import star.buffer;
 import star.random;
 
 #include "gtest/gtest.h"
@@ -20,6 +21,29 @@ import star.algorithm;
 using namespace Star;
 
 namespace {
+  // Fault injection at the actual IO boundary; all database writes, root
+  // selection, recovery and serialization still use the production code.
+  struct FailingSyncBuffer : Buffer {
+    bool failSync = false;
+    unsigned syncCalls = 0;
+
+    void sync() override {
+      ++syncCalls;
+      if (failSync)
+        throw IOException("Injected sync failure");
+    }
+  };
+
+  struct FailingCloseBuffer : Buffer {
+    unsigned closeCalls = 0;
+
+    void close() override {
+      ++closeCalls;
+      IODevice::close();
+      throw IOException("Injected close failure");
+    }
+  };
+
   std::size_t const RandFactor = 0xd5a2f037;
   std::size_t const MaxSize = 400;
   std::uint32_t const MaxKey = 100000;
@@ -265,5 +289,83 @@ TEST(BTreeDatabaseTest, Threading) {
           }));
     }
   }
+  db.close();
 }
 
+
+TEST(BTreeDatabaseTest, FailedCommitIsReportedWithoutDestructorRetry) {
+  auto device = std::make_shared<FailingSyncBuffer>();
+  auto db = std::make_unique<BTreeDatabase>("TestDB", 4);
+  db->setAutoCommit(false);
+  db->setIODevice(device);
+  db->open();
+  db->insert(toByteArray(0), genBlock(0));
+  db->commit();
+  db->insert(toByteArray(1), genBlock(1));
+  device->failSync = true;
+
+  EXPECT_THROW(db->commit(), IOException);
+  EXPECT_TRUE(db->isOpen());
+  unsigned callsAfterFailure = device->syncCalls;
+  db.reset();
+  EXPECT_EQ(device->syncCalls, callsAfterFailure);
+
+  // sync() failure reports uncertain durability, not an undo of writes that
+  // already reached the device.  The existing allocator may reuse a freed
+  // leaf block before writeRoot(), so even the old root selector can expose
+  // the new complete leaf.  Require a consistent, usable recovery, not a
+  // particular visibility outcome for the failed transaction.
+  device->failSync = false;
+  BTreeDatabase recovered;
+  recovered.setIODevice(device);
+  recovered.open();
+  auto committed = recovered.find(toByteArray(0));
+  ASSERT_TRUE(committed);
+  EXPECT_EQ(*committed, genBlock(0));
+  auto uncertain = recovered.find(toByteArray(1));
+  if (uncertain)
+    EXPECT_EQ(*uncertain, genBlock(1));
+  auto recoveredCount = uncertain ? 2u : 1u;
+  EXPECT_EQ(recovered.recordCount(), recoveredCount);
+  EXPECT_EQ(recovered.totalBlockCount(),
+      recovered.freeBlockCount() + recovered.indexBlockCount() + recovered.leafBlockCount());
+
+  recovered.insert(toByteArray(2), genBlock(2));
+  recovered.close();
+  recovered.open();
+  auto subsequent = recovered.find(toByteArray(2));
+  ASSERT_TRUE(subsequent);
+  EXPECT_EQ(*subsequent, genBlock(2));
+  EXPECT_EQ(recovered.recordCount(), recoveredCount + 1);
+  recovered.close();
+}
+
+TEST(BTreeDatabaseTest, FailedCloseIsReportedWithoutDestructorRetry) {
+  auto device = std::make_shared<FailingSyncBuffer>();
+  auto db = std::make_unique<BTreeDatabase>("TestDB", 4);
+  db->setAutoCommit(false);
+  db->setIODevice(device);
+  db->open();
+  db->insert(toByteArray(1), genBlock(1));
+  device->failSync = true;
+
+  EXPECT_THROW(db->close(true), IOException);
+  EXPECT_TRUE(db->isOpen());
+  EXPECT_TRUE(device->isOpen());
+  unsigned callsAfterFailure = device->syncCalls;
+  db.reset();
+  EXPECT_EQ(device->syncCalls, callsAfterFailure);
+}
+
+TEST(BTreeDatabaseTest, FailedDeviceCloseIsConsumedOnce) {
+  auto device = std::make_shared<FailingCloseBuffer>();
+  BTreeDatabase db("TestDB", 4);
+  db.setIODevice(device);
+  db.open();
+
+  EXPECT_THROW(db.close(true), IOException);
+  EXPECT_FALSE(db.isOpen());
+  EXPECT_FALSE(device->isOpen());
+  EXPECT_NO_THROW(db.close(true));
+  EXPECT_EQ(device->closeCalls, 1u);
+}

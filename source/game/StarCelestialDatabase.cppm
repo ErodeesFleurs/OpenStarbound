@@ -109,6 +109,8 @@ public:
   // Unload data that has not been used in the configured TTL time, and
   // periodically commit to the underlying database if it is in use.
   void cleanupAndCommit();
+  // Commit remaining changes and close persistent storage at server shutdown.
+  void close();
 
   // Does this coordinate point to a valid existing object?
   bool coordinateValid(CelestialCoordinate const& coordinate);
@@ -210,6 +212,7 @@ protected:
 
   HashTtlCache<Vec2I, CelestialChunk> m_chunkCache;
   BTreeSha256Database m_database;
+  bool m_closeAttempted = false;
 
   float m_commitInterval;
   Timer m_commitTimer;

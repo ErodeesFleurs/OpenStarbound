@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 import star.file;
 import star.io_device;
 import star.string;
@@ -76,6 +78,7 @@ void File::copy(String const& source, String const& target) {
     std::size_t r = sourceFile->read(buf, 1024);
     targetFile->writeFull(buf, r);
   }
+  targetFile->close();
 }
 
 std::shared_ptr<File> File::open(const String& filename, IOMode mode) {
@@ -116,6 +119,7 @@ StreamOffset File::fileSize(String const& filename) {
 void File::writeFile(char const* data, std::size_t len, String const& filename) {
   std::shared_ptr<File> file = File::open(filename, IOMode::Write | IOMode::Truncate);
   file->writeFull(data, len);
+  file->close();
 }
 
 void File::writeFile(ByteArray const& data, String const& filename) {
@@ -158,8 +162,15 @@ File::File()
 File::File(String filename)
   : IODevice(IOMode::Closed), m_filename(std::move(filename)), m_file(0) {}
 
-File::~File() {
-  close();
+File::~File() noexcept {
+  try {
+    close();
+  } catch (std::exception const& e) {
+    // Logging may itself own a File or throw.  Cleanup diagnostics must not.
+    std::fprintf(stderr, "Error closing file '%s' during destruction: %s\n", m_filename.utf8Ptr(), e.what());
+  } catch (...) {
+    std::fprintf(stderr, "Unknown error closing file '%s' during destruction\n", m_filename.utf8Ptr());
+  }
 }
 
 StreamOffset File::pos() {
@@ -262,10 +273,12 @@ void File::open(IOMode m) {
 }
 
 void File::close() {
-  if (m_file)
-    fclose(m_file);
-  m_file = 0;
+  // Consume ownership before the system call: an error (including EINTR on
+  // Unix) must never cause a later close to target a reused descriptor.
+  auto file = std::exchange(m_file, nullptr);
   setMode(IOMode::Closed);
+  if (file)
+    fclose(file);
 }
 
 String File::deviceName() const {

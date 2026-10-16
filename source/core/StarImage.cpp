@@ -13,17 +13,173 @@ import star.math_common;
 import star.algorithm;
 namespace Star {
 
-void logPngError(png_structp png_ptr, png_const_charp c) {
-  Logger::debug("PNG error in file: '{}', {}", ((IODevice*)png_get_error_ptr(png_ptr))->deviceName(), c);
+namespace {
+
+struct PngState {
+  IODevice* device;
+  bool writing;
+  png_structp png = nullptr;
+  png_infop info = nullptr;
+  png_infop end = nullptr;
+  std::exception_ptr exception{};
+
+  ~PngState() {
+    if (writing)
+      png_destroy_write_struct(&png, &info);
+    else
+      png_destroy_read_struct(&png, &info, &end);
+  }
+
+  void check(bool success, char const* message) const {
+    if (exception)
+      std::rethrow_exception(exception);
+    if (!success)
+      throw ImageException(message);
+  }
 };
 
-void logPngWarning(png_structp png_ptr, png_const_charp c) {
-  Logger::debug("PNG warning in file: '{}', {}", ((IODevice*)png_get_error_ptr(png_ptr))->deviceName(), c);
+void logPngMessage(PngState& state, char const* kind, png_const_charp message) noexcept {
+  try {
+    Logger::debug("PNG {} in file: '{}', {}", kind, state.device->deviceName(), message);
+  } catch (...) {
+    state.exception = std::current_exception();
+  }
+}
+
+void pngError(png_structp png, png_const_charp message) noexcept {
+  auto& state = *static_cast<PngState*>(png_get_error_ptr(png));
+  logPngMessage(state, "error", message);
+  png_longjmp(png, 1);
+}
+
+void pngWarning(png_structp png, png_const_charp message) noexcept {
+  auto& state = *static_cast<PngState*>(png_get_error_ptr(png));
+  logPngMessage(state, "warning", message);
+  if (state.exception)
+    png_longjmp(png, 1);
+}
+
+void readPngData(png_structp png, png_bytep data, png_size_t length) noexcept {
+  auto& state = *static_cast<PngState*>(png_get_io_ptr(png));
+  try {
+    state.device->readFull(reinterpret_cast<char*>(data), length);
+  } catch (...) {
+    state.exception = std::current_exception();
+  }
+  // Leave the catch scope before jumping: no C++ exception unwinding crosses C.
+  if (state.exception)
+    png_longjmp(png, 1);
+}
+
+void writePngData(png_structp png, png_bytep data, png_size_t length) noexcept {
+  auto& state = *static_cast<PngState*>(png_get_io_ptr(png));
+  try {
+    state.device->writeFull(reinterpret_cast<char*>(data), length);
+  } catch (...) {
+    state.exception = std::current_exception();
+  }
+  if (state.exception)
+    png_longjmp(png, 1);
+}
+
+void flushPngData(png_structp) noexcept {}
+
+// Each jump target lives in a separate frame with only trivial locals. Owners,
+// Images, row arrays and exception_ptrs live in the caller, never across a jump.
+bool createPngInfo(PngState& state) {
+  if (setjmp(png_jmpbuf(state.png)))
+    return false;
+  state.info = png_create_info_struct(state.png);
+  if (!state.info)
+    return false;
+  if (!state.writing) {
+    state.end = png_create_info_struct(state.png);
+    if (!state.end)
+      return false;
+  }
+  return true;
+}
+
+void initializePng(PngState& state) {
+  if (state.writing)
+    state.png = png_create_write_struct(PNG_LIBPNG_VER_STRING, &state, pngError, pngWarning);
+  else
+    state.png = png_create_read_struct(PNG_LIBPNG_VER_STRING, &state, pngError, pngWarning);
+  state.check(state.png != nullptr, "Internal libPNG error");
+  state.check(createPngInfo(state), "Internal libPNG error");
+}
+
+struct PngMetadata {
+  png_uint_32 width;
+  png_uint_32 height;
+  png_uint_32 bitdepth;
+  png_uint_32 channels;
 };
 
-void readPngData(png_structp pngPtr, png_bytep data, png_size_t length) {
-  ((IODevice*)png_get_io_ptr(pngPtr))->readFull((char*)data, length);
-};
+bool readPngInfo(PngState& state, PngMetadata& metadata, bool strip16) {
+  if (setjmp(png_jmpbuf(state.png)))
+    return false;
+  png_set_read_fn(state.png, &state, readPngData);
+  png_set_sig_bytes(state.png, 8);
+  png_read_info(state.png, state.info);
+
+  metadata.width = png_get_image_width(state.png, state.info);
+  metadata.height = png_get_image_height(state.png, state.info);
+  metadata.bitdepth = png_get_bit_depth(state.png, state.info);
+  metadata.channels = png_get_channels(state.png, state.info);
+  auto colorType = png_get_color_type(state.png, state.info);
+
+  if (colorType == PNG_COLOR_TYPE_PALETTE) {
+    png_set_palette_to_rgb(state.png);
+    metadata.channels = 3;
+    metadata.bitdepth = 8;
+  }
+  if (colorType == PNG_COLOR_TYPE_GRAY || colorType == PNG_COLOR_TYPE_GRAY_ALPHA) {
+    if (metadata.bitdepth < 8) {
+      png_set_expand_gray_1_2_4_to_8(state.png);
+      metadata.bitdepth = 8;
+    }
+    png_set_gray_to_rgb(state.png);
+    metadata.channels = colorType == PNG_COLOR_TYPE_GRAY_ALPHA ? 4 : 3;
+  }
+  if (png_get_valid(state.png, state.info, PNG_INFO_tRNS)) {
+    png_set_tRNS_to_alpha(state.png);
+    metadata.channels += 1;
+  }
+  if (strip16 && metadata.bitdepth == 16) {
+    png_set_strip_16(state.png);
+    metadata.bitdepth = 8;
+  }
+  return true;
+}
+
+bool readPngRows(PngState& state, png_bytepp rows) {
+  if (setjmp(png_jmpbuf(state.png)))
+    return false;
+  png_read_image(state.png, rows);
+  return true;
+}
+
+bool writePngRows(PngState& state, unsigned width, unsigned height, unsigned channels, png_bytepp rows) {
+  if (setjmp(png_jmpbuf(state.png)))
+    return false;
+  png_set_IHDR(state.png, state.info, width, height, 8,
+      channels == 3 ? PNG_COLOR_TYPE_RGB : PNG_COLOR_TYPE_RGBA,
+      PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+  png_set_write_fn(state.png, &state, writePngData, flushPngData);
+  png_set_rows(state.png, state.info, rows);
+  png_write_png(state.png, state.info, PNG_TRANSFORM_IDENTITY, nullptr);
+  return true;
+}
+
+void readPngSignature(IODevice& device) {
+  png_byte header[8]{};
+  device.readFull(reinterpret_cast<char*>(header), sizeof(header));
+  if (png_sig_cmp(header, 0, sizeof(header)))
+    throw ImageException(strf("File {} is not a png image!", device.deviceName()));
+}
+
+}
 
 bool Image::isPng(std::shared_ptr<IODevice> device) {
   png_byte header[8]{};
@@ -31,178 +187,32 @@ bool Image::isPng(std::shared_ptr<IODevice> device) {
 }
 
 Image Image::readPng(std::shared_ptr<IODevice> device) {
-  png_byte header[8]{};
-  device->readFull((char*)header, sizeof(header));
+  readPngSignature(*device);
+  PngState state{device.get(), false};
+  initializePng(state);
+  PngMetadata metadata{};
+  state.check(readPngInfo(state, metadata, true), "Internal error reading png.");
 
-  if (png_sig_cmp(header, 0, sizeof(header)))
-    throw ImageException(strf("File {} is not a png image!", device->deviceName()));
-
-  png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-  if (!png_ptr)
-    throw ImageException("Internal libPNG error");
-
-  // Use custom warning function to suppress cerr warnings
-  png_set_error_fn(png_ptr, (png_voidp)device.get(), logPngError, logPngWarning);
-
-  png_infop info_ptr = png_create_info_struct(png_ptr);
-  if (!info_ptr) {
-    png_destroy_read_struct(&png_ptr, nullptr, nullptr);
-    throw ImageException("Internal libPNG error");
-  }
-
-  png_infop end_info = png_create_info_struct(png_ptr);
-  if (!end_info) {
-    png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-    throw ImageException("Internal libPNG error");
-  }
-
-  if (setjmp(png_jmpbuf(png_ptr))) {
-    png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-    throw ImageException("Internal error reading png.");
-  }
-
-  png_set_read_fn(png_ptr, device.get(), readPngData);
-
-  // Tell libPNG that we read some of the header.
-  png_set_sig_bytes(png_ptr, sizeof(header));
-
-  png_read_info(png_ptr, info_ptr);
-
-  png_uint_32 img_width = png_get_image_width(png_ptr, info_ptr);
-  png_uint_32 img_height = png_get_image_height(png_ptr, info_ptr);
-
-  png_uint_32 bitdepth = png_get_bit_depth(png_ptr, info_ptr);
-  png_uint_32 channels = png_get_channels(png_ptr, info_ptr);
-
-  // Color type. (RGB, RGBA, Luminance, luminance alpha... palette... etc)
-  png_uint_32 color_type = png_get_color_type(png_ptr, info_ptr);
-
-  if (color_type == PNG_COLOR_TYPE_PALETTE) {
-    png_set_palette_to_rgb(png_ptr);
-    channels = 3;
-    bitdepth = 8;
-  }
-
-  if (color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_GRAY_ALPHA) {
-    if (bitdepth < 8) {
-      png_set_expand_gray_1_2_4_to_8(png_ptr);
-      bitdepth = 8;
-    }
-    png_set_gray_to_rgb(png_ptr);
-    if (color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
-      channels = 4;
-    else
-      channels = 3;
-  }
-
-  // If the image has a transperancy set, convert it to a full alpha channel
-  if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) {
-    png_set_tRNS_to_alpha(png_ptr);
-    channels += 1;
-  }
-
-  // We don't support 16 bit precision.. so if the image Has 16 bits per channel
-  // precision... round it down to 8.
-  if (bitdepth == 16) {
-    png_set_strip_16(png_ptr);
-    bitdepth = 8;
-  }
-
-  if (bitdepth != 8 || (channels != 3 && channels != 4)) {
-    png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+  if (metadata.bitdepth != 8 || (metadata.channels != 3 && metadata.channels != 4))
     throw ImageException(strf("Unsupported PNG pixel format in file {}", device->deviceName()));
-  }
 
-  Image image(img_width, img_height, channels == 3 ? PixelFormat::RGB24 : PixelFormat::RGBA32);
-
-  std::unique_ptr<png_bytep[]> row_ptrs(new png_bytep[img_height]);
-  std::size_t stride = img_width * channels;
-  for (std::size_t i = 0; i < img_height; ++i)
-    row_ptrs[i] = (png_bytep)image.data() + (img_height - i - 1) * stride;
-
-  png_read_image(png_ptr, row_ptrs.get());
-  png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-
+  Image image(metadata.width, metadata.height, metadata.channels == 3 ? PixelFormat::RGB24 : PixelFormat::RGBA32);
+  auto rows = std::make_unique<png_bytep[]>(metadata.height);
+  std::size_t stride = static_cast<std::size_t>(metadata.width) * metadata.channels;
+  for (std::size_t i = 0; i < metadata.height; ++i)
+    rows[i] = image.data() + (metadata.height - i - 1) * stride;
+  state.check(readPngRows(state, rows.get()), "Internal error reading png.");
   return image;
 }
 
 std::tuple<Vec2U, PixelFormat> Image::readPngMetadata(std::shared_ptr<IODevice> device) {
-  png_byte header[8];
-  device->readFull((char*)header, sizeof(header));
-
-  if (png_sig_cmp(header, 0, sizeof(header)))
-    throw ImageException(strf("File {} is not a png image!", device->deviceName()));
-
-  png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-  if (!png_ptr)
-    throw ImageException("Internal libPNG error");
-
-  // Use custom warning function to suppress cerr warnings
-  png_set_error_fn(png_ptr, (png_voidp)device.get(), logPngError, logPngWarning);
-
-  png_infop info_ptr = png_create_info_struct(png_ptr);
-  if (!info_ptr) {
-    png_destroy_read_struct(&png_ptr, nullptr, nullptr);
-    throw ImageException("Internal libPNG error");
-  }
-
-  png_infop end_info = png_create_info_struct(png_ptr);
-  if (!end_info) {
-    png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-    throw ImageException("Internal libPNG error");
-  }
-
-  if (setjmp(png_jmpbuf(png_ptr))) {
-    png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-    throw ImageException("Internal error reading png.");
-  }
-
-  png_set_read_fn(png_ptr, device.get(), readPngData);
-
-  // Tell libPNG that we read some of the header.
-  png_set_sig_bytes(png_ptr, sizeof(header));
-
-  png_read_info(png_ptr, info_ptr);
-
-  png_uint_32 img_width = png_get_image_width(png_ptr, info_ptr);
-  png_uint_32 img_height = png_get_image_height(png_ptr, info_ptr);
-
-  png_uint_32 bitdepth = png_get_bit_depth(png_ptr, info_ptr);
-  png_uint_32 channels = png_get_channels(png_ptr, info_ptr);
-
-  // Color type. (RGB, RGBA, Luminance, luminance alpha... palette... etc)
-  png_uint_32 color_type = png_get_color_type(png_ptr, info_ptr);
-
-  if (color_type == PNG_COLOR_TYPE_PALETTE) {
-    png_set_palette_to_rgb(png_ptr);
-    channels = 3;
-    bitdepth = 8;
-  }
-
-  if (color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_GRAY_ALPHA) {
-    if (bitdepth < 8) {
-      png_set_expand_gray_1_2_4_to_8(png_ptr);
-      bitdepth = 8;
-    }
-    png_set_gray_to_rgb(png_ptr);
-    if (color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
-      channels = 4;
-    else
-      channels = 3;
-  }
-
-  // If the image has a transperancy set, convert it to a full alpha channel
-  if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) {
-    png_set_tRNS_to_alpha(png_ptr);
-    channels += 1;
-  }
-
-  png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-
-  Vec2U imageSize{img_width, img_height};
-  PixelFormat pixelFormat = channels == 3 ? PixelFormat::RGB24 : PixelFormat::RGBA32;
-
-  return std::make_tuple(imageSize, pixelFormat);
+  readPngSignature(*device);
+  PngState state{device.get(), false};
+  initializePng(state);
+  PngMetadata metadata{};
+  state.check(readPngInfo(state, metadata, false), "Internal error reading png.");
+  return std::make_tuple(Vec2U{metadata.width, metadata.height},
+      metadata.channels == 3 ? PixelFormat::RGB24 : PixelFormat::RGBA32);
 }
 
 Image Image::filled(Vec2U size, Vec4B color, PixelFormat pf) {
@@ -480,55 +490,14 @@ Image Image::convert(PixelFormat pixelFormat) const {
 }
 
 void Image::writePng(std::shared_ptr<IODevice> device) const {
-  auto writePngData = [](png_structp pngPtr, png_bytep data, png_size_t length) {
-    IODevice* device = (IODevice*)png_get_io_ptr(pngPtr);
-    device->writeFull((char*)data, length);
-  };
-
-  auto flushPngData = [](png_structp) {};
-
-  png_structp png_ptr = nullptr;
-  png_infop info_ptr = nullptr;
-
-  png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-  if (!png_ptr)
-    throw ImageException("Internal libPNG error");
-
-  info_ptr = png_create_info_struct(png_ptr);
-  if (!info_ptr) {
-    png_destroy_write_struct(&png_ptr, nullptr);
-    throw ImageException("Internal libPNG error");
-  }
-
-  if (setjmp(png_jmpbuf(png_ptr))) {
-    png_destroy_write_struct(&png_ptr, &info_ptr);
-    throw ImageException("Internal error reading png.");
-  }
-
+  PngState state{device.get(), true};
+  initializePng(state);
   unsigned channels = m_pixelFormat == PixelFormat::RGB24 ? 3 : 4;
-
-  png_set_IHDR(png_ptr,
-      info_ptr,
-      m_width,
-      m_height,
-      8,
-      channels == 3 ? PNG_COLOR_TYPE_RGB : PNG_COLOR_TYPE_RGBA,
-      PNG_INTERLACE_NONE,
-      PNG_COMPRESSION_TYPE_DEFAULT,
-      PNG_FILTER_TYPE_DEFAULT);
-
-  std::unique_ptr<png_bytep[]> row_ptrs(new png_bytep[m_height]);
-  std::size_t stride = m_width * 8 * channels / 8;
-  for (std::size_t i = 0; i < m_height; ++i) {
-    std::size_t q = (m_height - i - 1) * stride;
-    row_ptrs[i] = (png_bytep)m_data + q;
-  }
-
-  png_set_write_fn(png_ptr, device.get(), writePngData, flushPngData);
-  png_set_rows(png_ptr, info_ptr, row_ptrs.get());
-  png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, nullptr);
-
-  png_destroy_write_struct(&png_ptr, &info_ptr);
+  auto rows = std::make_unique<png_bytep[]>(m_height);
+  std::size_t stride = static_cast<std::size_t>(m_width) * channels;
+  for (std::size_t i = 0; i < m_height; ++i)
+    rows[i] = m_data + (m_height - i - 1) * stride;
+  state.check(writePngRows(state, m_width, m_height, channels, rows.get()), "Internal error writing png.");
 }
 
 ImageView::ImageView(Image const& image) {

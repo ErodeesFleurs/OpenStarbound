@@ -11,6 +11,7 @@ namespace Star {
 // std::list, std::map, std::set etc.
 template <typename T, std::size_t BlockSize>
 class BlockAllocator {
+  static_assert(BlockSize > 0);
 public:
   typedef T value_type;
 
@@ -74,7 +75,13 @@ private:
     ChunkIndex next;
   };
 
-  typedef std::aligned_union_t<0, T, Unallocated> Chunk;
+  struct alignas(T) alignas(Unallocated) Chunk {
+    std::byte bytes[std::max(sizeof(T), sizeof(Unallocated))];
+
+    Unallocated* unallocated() {
+      return std::launder(reinterpret_cast<Unallocated*>(bytes));
+    }
+  };
 
   struct Block {
     T* allocate();
@@ -132,11 +139,11 @@ T* BlockAllocator<T, BlockSize>::allocate(std::size_t n) {
 
       if (!m_data->unfilledBlock) {
         auto block = std::make_unique<Block>();
-        m_data->unfilledBlock = block.get();
         auto sortedPosition = std::lower_bound(m_data->blocks.begin(), m_data->blocks.end(), block.get(), [](std::unique_ptr<Block> const& a, Block* b) {
-            return a.get() < b;
+            return std::less<void const*>{}(a->chunkPointer(0), b->chunkPointer(0));
           });
-        m_data->blocks.insert(sortedPosition, std::move(block));
+        auto inserted = m_data->blocks.insert(sortedPosition, std::move(block));
+        m_data->unfilledBlock = inserted->get();
       }
     }
 
@@ -157,7 +164,7 @@ void BlockAllocator<T, BlockSize>::deallocate(T* p, std::size_t n) {
     }
 
     auto i = std::upper_bound(m_data->blocks.begin(), m_data->blocks.end(), p, [](T* a, std::unique_ptr<Block> const& b) {
-        return a < (T*)b->chunkPointer(0);
+        return std::less<void const*>{}(a, b->chunkPointer(0));
       });
 
     if constexpr (Star::DebugEnabled) {
@@ -181,12 +188,12 @@ void BlockAllocator<T, BlockSize>::deallocate(T* p, std::size_t n) {
 template <typename T, std::size_t BlockSize>
 template <typename... Args>
 void BlockAllocator<T, BlockSize>::construct(pointer p, Args&&... args) const {
-  new (p) T(std::forward<Args>(args)...);
+  std::construct_at(p, std::forward<Args>(args)...);
 }
 
 template <typename T, std::size_t BlockSize>
 void BlockAllocator<T, BlockSize>::destroy(pointer p) const {
-  p->~T();
+  std::destroy_at(p);
 }
 
 template <typename T, std::size_t BlockSize>
@@ -209,16 +216,18 @@ T* BlockAllocator<T, BlockSize>::Block::allocate() {
 
   T* allocated;
   if (firstUnallocated == NullChunkIndex) {
-    allocated = (T*)chunkPointer(allocationCount);
+    allocated = reinterpret_cast<T*>(chunkPointer(allocationCount));
   } else {
-    void* chunk = chunkPointer(firstUnallocated);
+    auto chunk = chunkPointer(firstUnallocated);
+    auto unallocated = chunk->unallocated();
     if constexpr (Star::DebugEnabled) {
-      Star::starAssertFailed((((Unallocated*)chunk)->prev == NullChunkIndex));
+      Star::starAssertFailed((unallocated->prev == NullChunkIndex));
     }
-    firstUnallocated = ((Unallocated*)chunk)->next;
+    firstUnallocated = unallocated->next;
+    std::destroy_at(unallocated);
     if (firstUnallocated != NullChunkIndex)
-      ((Unallocated*)chunkPointer(firstUnallocated))->prev = NullChunkIndex;
-    allocated = (T*)chunk;
+      chunkPointer(firstUnallocated)->unallocated()->prev = NullChunkIndex;
+    allocated = reinterpret_cast<T*>(chunk);
   }
 
   ++allocationCount;
@@ -231,16 +240,17 @@ void BlockAllocator<T, BlockSize>::Block::deallocate(T* ptr) {
     Star::starAssertFailed((allocationCount > 0));
   }
 
-  ChunkIndex chunkIndex = ptr - (T*)chunkPointer(0);
+  // The stride is sizeof(Chunk), not sizeof(T), and the T objects are not an
+  // array.  Use byte addresses rather than subtracting unrelated T pointers.
+  auto offset = reinterpret_cast<std::uintptr_t>(ptr) - reinterpret_cast<std::uintptr_t>(chunks.data());
   if constexpr (Star::DebugEnabled) {
-    Star::starAssertFailed(((T*)chunkPointer(chunkIndex) == ptr));
+    Star::starAssertFailed((offset < sizeof(chunks) && offset % sizeof(Chunk) == 0));
   }
-
-  auto c = (Unallocated*)chunkPointer(chunkIndex);
-  c->prev = NullChunkIndex;
-  c->next = firstUnallocated;
+  auto chunkIndex = static_cast<ChunkIndex>(offset / sizeof(Chunk));
+  std::construct_at(reinterpret_cast<Unallocated*>(chunkPointer(chunkIndex)),
+    Unallocated{NullChunkIndex, firstUnallocated});
   if (firstUnallocated != NullChunkIndex)
-    ((Unallocated*)chunkPointer(firstUnallocated))->prev = chunkIndex;
+    chunkPointer(firstUnallocated)->unallocated()->prev = chunkIndex;
   firstUnallocated = chunkIndex;
   --allocationCount;
 }

@@ -38,6 +38,7 @@ import star.root;
 
 
 import star.item_database;
+import star.item_bag;
 
 using namespace Star;
 
@@ -190,4 +191,35 @@ TEST(ItemTest, ConstructItems) {
 
   for (auto itemName : itemDatabase->allItems())
     std::shared_ptr<::Star::Item> item = itemDatabase->item(ItemDescriptor(itemName, 1));
+}
+
+TEST(ItemTest, ConstBagNormalizesEmptyStacks) {
+  auto itemDatabase = Root::singleton().itemDatabase();
+  auto makeEmptyBag = [&] {
+    ItemBag bag(2);
+    bag.setItem(0, itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1)));
+    bag.setItem(1, itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1)));
+    return bag;
+  };
+
+  ItemBag const indexedBag = makeEmptyBag();
+  auto first = indexedBag.at(0);
+  auto second = indexedBag.at(1);
+  first->setCount(0);
+  second->setCount(0);
+  EXPECT_FALSE(indexedBag.at(0));
+  EXPECT_EQ(indexedBag.size(), 2u);
+  EXPECT_TRUE(indexedBag.cleanup());
+  EXPECT_FALSE(indexedBag.at(1));
+  EXPECT_FALSE(indexedBag.cleanup());
+
+  ItemBag const listedBag = makeEmptyBag();
+  auto emptyItem = listedBag.at(0);
+  auto liveItem = listedBag.at(1);
+  emptyItem->setCount(0);
+  auto const& slots = listedBag.items();
+  ASSERT_EQ(slots.size(), 2u);
+  EXPECT_FALSE(slots[0]);
+  EXPECT_EQ(slots[1], liveItem);
+  EXPECT_FALSE(listedBag.cleanup());
 }

@@ -175,7 +175,9 @@ void Tileset::exportTilesetImages(String const& exportDir) const {
     File::makeDirectoryRecursive(imageDir);
     String imageName = unixFileJoin(imageDir, tile->name + ".png");
     Logger::info("Updating image {}", imageName);
-    tile->image->writePng(File::open(imageName, IOMode::Write));
+    auto outputFile = File::open(imageName, IOMode::Write);
+    tile->image->writePng(outputFile);
+    outputFile->close();
   }
 }
 

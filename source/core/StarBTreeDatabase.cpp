@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 import std;
 import star.time;
 import star.string;
@@ -43,8 +45,12 @@ BTreeDatabase::BTreeDatabase(String const& contentIdentifier, std::size_t keySiz
   setKeySize(keySize);
 }
 
-BTreeDatabase::~BTreeDatabase() {
-  close();
+BTreeDatabase::~BTreeDatabase() noexcept {
+  // Destruction cannot report a failed transaction to its caller.  In
+  // particular, never retry a failed close/commit while unwinding.
+  if (m_open && (!m_availableBlocks.empty() || !m_uncommitted.empty() || !m_uncommittedWrites.empty()))
+    std::fprintf(stderr, "BTreeDatabase '%s' destroyed with uncommitted changes; call commit() or close() explicitly\n",
+        m_contentIdentifier.utf8Ptr());
 }
 
 std::uint32_t BTreeDatabase::blockSize() const {

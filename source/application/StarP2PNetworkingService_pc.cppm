@@ -162,6 +162,13 @@ private:
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
 
+  // Core dispatch, token access and service teardown are serialized by
+  // PcPlatformServicesState::discordMutex (always before m_mutex).
+  // SDK callbacks retain only this token, never the service or its Core owner.
+  struct DiscordCallbackLifetime {
+    PcP2PNetworkingService* service = nullptr;
+  };
+
   enum class DiscordSocketMode {
     Startup,
     Connected,
@@ -177,7 +184,9 @@ private:
     Maybe<ByteArray> receiveMessage() override;
 
     Mutex mutex;
-    PcP2PNetworkingService* parent = nullptr;
+    std::shared_ptr<PcPlatformServicesState> state;
+    std::shared_ptr<DiscordCallbackLifetime> lifetime;
+    std::uint64_t connectionGeneration = 0;
     DiscordSocketMode mode = DiscordSocketMode::Disconnected;
     discord::LobbyId lobbyId = {};
     discord::UserId remoteUserId;
@@ -186,6 +195,7 @@ private:
 
   std::unique_ptr<P2PSocket> discordConnectRemote(discord::UserId remoteUserId, discord::LobbyId lobbyId, String const& lobbySecret);
   void discordCloseSocket(DiscordP2PSocket* socket);
+  void discordDisconnectCallbacks();
 
   void discordOnReceiveMessage(discord::LobbyId lobbyId, discord::UserId userId, discord::NetworkChannelId channel, std::uint8_t* data, std::uint32_t size);
   void discordOnLobbyMemberConnect(discord::LobbyId lobbyId, discord::UserId userId);
@@ -217,6 +227,9 @@ private:
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
 
+  std::shared_ptr<DiscordCallbackLifetime> m_discordLifetime = std::make_shared<DiscordCallbackLifetime>();
+  std::uint64_t m_discordLobbyGeneration = 0;
+  std::uint64_t m_discordConnectionGeneration = 0;
   
   List<std::pair<discord::UserId, String>> m_discordJoinRequests;
   List<std::pair<discord::UserId, RpcPromise<P2PJoinRequestReply>>> m_pendingDiscordJoinRequests;
@@ -228,14 +241,15 @@ private:
   Maybe<std::pair<std::uint16_t, std::uint16_t>> m_discordPartySize;
   bool m_discordForceUpdateActivity = false;
   bool m_discordUpdatingActivity = false;
+  // Hosted lobbies retain their secret; a remote membership has an empty secret.
   Maybe<std::pair<discord::LobbyId, String>> m_discordServerLobby = {};
 
-  int m_discordOnActivityJoinToken = 0;
-  int m_discordOnActivityRequestToken = 0;
-  int m_discordOnReceiveMessage = 0;
-  int m_discordOnLobbyMemberConnect = 0;
-  int m_discordOnLobbyMemberUpdate = 0;
-  int m_discordOnLobbyMemberDisconnect = 0;
+  int m_discordOnActivityJoinToken = -1;
+  int m_discordOnActivityRequestToken = -1;
+  int m_discordOnReceiveMessage = -1;
+  int m_discordOnLobbyMemberConnect = -1;
+  int m_discordOnLobbyMemberUpdate = -1;
+  int m_discordOnLobbyMemberDisconnect = -1;
 
 #endif
 };

@@ -161,14 +161,14 @@ void AnimatedPartSet::restartState(String const& stateTypeName) {
 }
 
 AnimatedPartSet::ActiveStateInformation const& AnimatedPartSet::activeState(String const& stateTypeName) const {
-  auto& stateType = const_cast<StateType&>(m_stateTypes.get(stateTypeName));
-  const_cast<AnimatedPartSet*>(this)->freshenActiveState(stateType);
+  auto const& stateType = m_stateTypes.get(stateTypeName);
+  freshenActiveState(stateType);
   return stateType.activeState;
 }
 
 AnimatedPartSet::ActivePartInformation const& AnimatedPartSet::activePart(String const& partName) const {
-  auto& part = const_cast<Part&>(m_parts.get(partName));
-  const_cast<AnimatedPartSet*>(this)->freshenActivePart(part);
+  auto const& part = m_parts.get(partName);
+  freshenActivePart(part);
   return part.activePart;
 }
 
@@ -186,14 +186,14 @@ StringMap<AnimatedPartSet::Part>& AnimatedPartSet::parts() {
 
 void AnimatedPartSet::forEachActiveState(std::function<void(String const&, ActiveStateInformation const&)> callback) const {
   for (auto const& p : m_stateTypes) {
-    const_cast<AnimatedPartSet*>(this)->freshenActiveState(const_cast<StateType&>(p.second));
+    freshenActiveState(p.second);
     callback(p.first, p.second.activeState);
   }
 }
 
 void AnimatedPartSet::forEachActivePart(std::function<void(String const&, ActivePartInformation const&)> callback) const {
   for (auto const& p : m_parts) {
-    const_cast<AnimatedPartSet*>(this)->freshenActivePart(const_cast<Part&>(p.second));
+    freshenActivePart(p.second);
     callback(p.first, p.second.activePart);
   }
 }
@@ -275,7 +275,7 @@ AnimatedPartSet::AnimationMode AnimatedPartSet::stringToAnimationMode(String con
   }
 }
 
-void AnimatedPartSet::freshenActiveState(StateType& stateType) {
+void AnimatedPartSet::freshenActiveState(StateType const& stateType) const {
   if (stateType.activeStateDirty) {
     auto const& state = *stateType.activeStatePointer;
     auto& activeState = stateType.activeState;
@@ -315,7 +315,7 @@ void AnimatedPartSet::freshenActiveState(StateType& stateType) {
   }
 }
 
-void AnimatedPartSet::freshenActivePart(Part& part) {
+void AnimatedPartSet::freshenActivePart(Part const& part) const {
   if (part.activePartDirty) {
     // First reset all the active part information assuming that no state type
     // x state match exists.
@@ -326,9 +326,9 @@ void AnimatedPartSet::freshenActivePart(Part& part) {
 
     // Then go through each of the state types and states and look for a part
     // state match in order of priority.
-    for (auto& stateTypePair : m_stateTypes) {
+    for (auto const& stateTypePair : m_stateTypes) {
       auto const& stateTypeName = stateTypePair.first;
-      auto& stateType = stateTypePair.second;
+      auto const& stateType = stateTypePair.second;
 
       // Skip disabled state types
       if (!stateType.enabled)

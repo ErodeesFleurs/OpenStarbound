@@ -392,10 +392,10 @@ void Voice::readAudioData(std::uint8_t* stream, int len) {
 
   MutexLocker captureLock(m_captureMutex);
   if (active) {
+    auto data = std::make_unique_for_overwrite<std::int16_t[]>(sampleCount);
+    std::memcpy(data.get(), stream, sampleCount * sizeof(std::int16_t));
+    m_capturedChunks.emplace(std::move(data), sampleCount);
     m_capturedChunksFrames += sampleCount / m_deviceChannels;
-    auto data = (opus_int16*)malloc(len);
-    std::memcpy(data, stream, len);
-    m_capturedChunks.emplace(data, sampleCount); // takes ownership
     m_threadCond.signal();
   }
   else { // Clear out any residual data so they don't manifest at the start of the next encode, whenever that is

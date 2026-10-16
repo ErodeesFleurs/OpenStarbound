@@ -9,17 +9,16 @@ namespace Star {
 
 template <typename Iterator, typename Functor>
 bool any(Iterator iterBegin, Iterator iterEnd, Functor const& f) {
-  for (; iterBegin != iterEnd; iterBegin++)
-    if (f(*iterBegin))
-      return true;
-  return false;
+  return std::any_of(iterBegin, iterEnd, [&f](auto&& value) {
+    return static_cast<bool>(f(std::forward<decltype(value)>(value)));
+  });
 }
 
 template <typename Iterator>
 bool any(Iterator const& iterBegin, Iterator const& iterEnd) {
-  typedef typename std::iterator_traits<Iterator>::value_type IteratorValue;
-  std::function<bool(IteratorValue)> compare = [](IteratorValue const& i) { return (bool)i; };
-  return any(iterBegin, iterEnd, compare);
+  return std::any_of(iterBegin, iterEnd, [](auto&& value) {
+    return static_cast<bool>(value);
+  });
 }
 
 template <typename Iterable, typename Functor>
@@ -29,24 +28,21 @@ bool any(Iterable const& iter, Functor const& f) {
 
 template <typename Iterable>
 bool any(Iterable const& iter) {
-  typedef decltype(*std::begin(iter)) IteratorValue;
-  std::function<bool(IteratorValue)> compare = [](IteratorValue const& i) { return (bool)i; };
-  return any(std::begin(iter), std::end(iter), compare);
+  return any(std::begin(iter), std::end(iter));
 }
 
 template <typename Iterator, typename Functor>
 bool all(Iterator iterBegin, Iterator iterEnd, Functor const& f) {
-  for (; iterBegin != iterEnd; iterBegin++)
-    if (!f(*iterBegin))
-      return false;
-  return true;
+  return std::all_of(iterBegin, iterEnd, [&f](auto&& value) {
+    return static_cast<bool>(f(std::forward<decltype(value)>(value)));
+  });
 }
 
 template <typename Iterator>
 bool all(Iterator const& iterBegin, Iterator const& iterEnd) {
-  typedef typename std::iterator_traits<Iterator>::value_type IteratorValue;
-  std::function<bool(IteratorValue)> compare = [](IteratorValue const& i) { return (bool)i; };
-  return all(iterBegin, iterEnd, compare);
+  return std::all_of(iterBegin, iterEnd, [](auto&& value) {
+    return static_cast<bool>(value);
+  });
 }
 
 template <typename Iterable, typename Functor>
@@ -56,9 +52,7 @@ bool all(Iterable const& iter, Functor const& f) {
 
 template <typename Iterable>
 bool all(Iterable const& iter) {
-  typedef decltype(*std::begin(iter)) IteratorValue;
-  std::function<bool(IteratorValue)> compare = [](IteratorValue const& i) { return (bool)i; };
-  return all(std::begin(iter), std::end(iter), compare);
+  return all(std::begin(iter), std::end(iter));
 }
 
 // Python style container slicing

@@ -239,6 +239,13 @@ void CelestialMasterDatabase::cleanupAndCommit() {
   }
 }
 
+void CelestialMasterDatabase::close() {
+  RecursiveMutexLocker locker(m_mutex);
+  if (std::exchange(m_closeAttempted, true))
+    return;
+  m_database.close(true);
+}
+
 bool CelestialMasterDatabase::coordinateValid(CelestialCoordinate const& coordinate) {
   RecursiveMutexLocker locker(m_mutex);
 

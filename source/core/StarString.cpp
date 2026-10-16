@@ -74,11 +74,11 @@ String String::joinWith(String const& join, String const& left, String const& ri
 
 String::String() {}
 String::String(String const& s) : m_string(s.m_string) {}
-String::String(String&& s) : m_string(std::move(s.m_string)) {}
+String::String(String&& s) noexcept : m_string(std::move(s.m_string)) {}
 String::String(char const* s) : m_string(s) {}
 String::String(char const* s, std::size_t n) : m_string(s, n) {}
 String::String(std::string const& s) : m_string(s) {}
-String::String(std::string&& s) : m_string(std::move(s)) {}
+String::String(std::string&& s) noexcept : m_string(std::move(s)) {}
 
 String::String(std::wstring const& s) {
   reserve(s.length());
@@ -814,7 +814,7 @@ String& String::operator=(String const& s) {
   return *this;
 }
 
-String& String::operator=(String&& s) {
+String& String::operator=(String&& s) noexcept {
   m_string = std::move(s.m_string);
   return *this;
 }

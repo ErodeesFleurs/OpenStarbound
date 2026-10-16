@@ -30,11 +30,11 @@ namespace Star {
 
 namespace {
   int fdFromHandle(void* ptr) {
-    return (int)(std::intptr_t)ptr;
+    return (int)((std::intptr_t)ptr - 1);
   }
 
   void* handleFromFd(int handle) {
-    return (void*)(std::intptr_t)handle;
+    return (void*)((std::intptr_t)handle + 1);
   }
 }
 
@@ -142,8 +142,11 @@ std::shared_ptr<File> File::ephemeralFile() {
   auto res = mkstemp(path.ptr());
   if (res < 0)
     throw IOException::format("tmpfile error: {}", std::strerror(errno));
-  if (::unlink(path.ptr()) < 0)
-    throw IOException::format("Could not remove mkstemp file when creating ephemeralFile: {}", std::strerror(errno));
+  if (::unlink(path.ptr()) < 0) {
+    auto error = errno;
+    ::close(res);
+    throw IOException::format("Could not remove mkstemp file when creating ephemeralFile: {}", std::strerror(error));
+  }
   file->m_file = handleFromFd(res);
   file->setMode(IOMode::ReadWrite);
   return file;
@@ -213,8 +216,11 @@ void* File::fopen(char const* filename, IOMode mode) {
     throw IOException::format("Error opening file '{}', error: {}", filename, std::strerror(errno));
 
   if (mode & IOMode::Append) {
-    if (lseek(fd, 0, SEEK_END) < 0)
-      throw IOException::format("Error opening file '{}', cannot seek: {}", filename, std::strerror(errno));
+    if (lseek(fd, 0, SEEK_END) < 0) {
+      auto error = errno;
+      ::close(fd);
+      throw IOException::format("Error opening file '{}', cannot seek: {}", filename, std::strerror(error));
+    }
   }
 
   return handleFromFd(fd);
@@ -271,10 +277,12 @@ std::size_t File::fwrite(void* file, char const* data, std::size_t len) {
 void File::fsync(void* file) {
   auto fd = fdFromHandle(file);
 #ifdef STAR_SYSTEM_LINUX
-  ::fdatasync(fd);
+  auto result = ::fdatasync(fd);
 #else
-  ::fsync(fd);
+  auto result = ::fsync(fd);
 #endif
+  if (result < 0)
+    throw IOException::format("Sync error: {}", std::strerror(errno));
 }
 
 void File::fclose(void* file) {

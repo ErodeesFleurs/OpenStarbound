@@ -288,6 +288,7 @@ private:
   std::shared_ptr<AssetData> getAsset(AssetId const& id) const;
 
   void workerMain();
+  std::exception_ptr stopWorkers();
 
   // All methods below assume that the asset mutex is locked when calling.
 
@@ -364,8 +365,9 @@ private:
 
   ByteArray m_digest;
 
+  // Protected by m_assetsMutex; outlives the joining thread handles.
+  bool m_stopThreads = false;
   List<ThreadFunction<void>> m_workerThreads;
-  std::atomic<bool> m_stopThreads;
 };
 
 }

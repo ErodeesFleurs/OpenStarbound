@@ -199,23 +199,23 @@ void CanvasWidget::renderImpl() {
 
   for (auto const& op : m_renderOps) {
     if (auto args = op.ptr<ImageOp>())
-      tupleUnpackFunction(std::bind(&CanvasWidget::renderImage, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), *args);
+      std::apply(std::bind(&CanvasWidget::renderImage, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), *args);
     if (auto args = op.ptr<ImageRectOp>())
-      tupleUnpackFunction(std::bind(&CanvasWidget::renderImageRect, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), *args);
+      std::apply(std::bind(&CanvasWidget::renderImageRect, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), *args);
     if (auto args = op.ptr<DrawableOp>())
-      tupleUnpackFunction(std::bind(&CanvasWidget::renderDrawable, this, renderingOffset, std::placeholders::_1, std::placeholders::_2), *args);
+      std::apply(std::bind(&CanvasWidget::renderDrawable, this, renderingOffset, std::placeholders::_1, std::placeholders::_2), *args);
     if (auto args = op.ptr<TiledImageOp>())
-      tupleUnpackFunction(std::bind(&CanvasWidget::renderTiledImage, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), *args);
+      std::apply(std::bind(&CanvasWidget::renderTiledImage, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), *args);
     if (auto args = op.ptr<LineOp>())
-      tupleUnpackFunction(std::bind(&CanvasWidget::renderLine, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), *args);
+      std::apply(std::bind(&CanvasWidget::renderLine, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), *args);
     if (auto args = op.ptr<RectOp>())
-      tupleUnpackFunction(std::bind(&CanvasWidget::renderRect, this, renderingOffset, std::placeholders::_1, std::placeholders::_2), *args);
+      std::apply(std::bind(&CanvasWidget::renderRect, this, renderingOffset, std::placeholders::_1, std::placeholders::_2), *args);
     if (auto args = op.ptr<PolyOp>())
-      tupleUnpackFunction(std::bind(&CanvasWidget::renderPoly, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), *args);
+      std::apply(std::bind(&CanvasWidget::renderPoly, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), *args);
     if (auto args = op.ptr<TrianglesOp>())
-      tupleUnpackFunction(std::bind(&CanvasWidget::renderTriangles, this, renderingOffset, std::placeholders::_1, std::placeholders::_2), *args);
+      std::apply(std::bind(&CanvasWidget::renderTriangles, this, renderingOffset, std::placeholders::_1, std::placeholders::_2), *args);
     if (auto args = op.ptr<TextOp>())
-      tupleUnpackFunction(std::bind(&CanvasWidget::renderText, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), *args);
+      std::apply(std::bind(&CanvasWidget::renderText, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), *args);
   }
 }
 

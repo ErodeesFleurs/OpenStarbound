@@ -103,7 +103,7 @@ public:
 
   File();
   File(String filename);
-  virtual ~File();
+  virtual ~File() noexcept;
 
   String fileName() const;
   void setFilename(String filename);
@@ -127,6 +127,8 @@ public:
   std::size_t writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len) override;
 
   void open(IOMode mode) override;
+  // Consumes the handle even on error.  Call explicitly after writing so that
+  // delayed close errors can be reported to the caller; destruction only logs.
   void close() override;
 
   void sync() override;

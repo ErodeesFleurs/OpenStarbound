@@ -1,5 +1,10 @@
 #include <stdio.h>
 #include "vorbis/vorbisfile.h"
+#ifdef STAR_SYSTEM_LINUX
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
 
 import star.file;
 import star.io_device;
@@ -159,3 +164,64 @@ TEST(FileTest, OggDeviceCallbacksReadAndSeek) {
   EXPECT_EQ(ByteArray(output, 4), ByteArray::fromCString("cdef"));
   EXPECT_EQ(callbacks.read_func(output, 2, 2, &adapter), 0u);
 }
+
+#ifdef STAR_SYSTEM_LINUX
+namespace {
+  int descriptorForFile(String const& path) {
+    for (auto const& entry : std::filesystem::directory_iterator("/proc/self/fd")) {
+      std::error_code ec;
+      auto target = std::filesystem::read_symlink(entry.path(), ec);
+      if (!ec && target == fsPath(path))
+        return std::stoi(entry.path().filename().string());
+    }
+    return -1;
+  }
+
+  std::size_t descriptorCount() {
+    auto entries = std::filesystem::directory_iterator("/proc/self/fd");
+    return std::distance(entries, std::filesystem::directory_iterator());
+  }
+}
+
+TEST(FileTest, AppendSeekFailureReleasesDescriptor) {
+  auto dir = File::temporaryDirectory();
+  auto cleanup = finally([&]() { removeTree(dir); });
+  auto path = File::relativeTo(dir, "pipe");
+  ASSERT_EQ(::mkfifo(path.utf8Ptr(), 0600), 0);
+  auto before = descriptorCount();
+  for (unsigned i = 0; i < 8; ++i)
+    EXPECT_THROW(File::open(path, IOMode::ReadWrite | IOMode::Append), IOException);
+  EXPECT_EQ(descriptorCount(), before);
+}
+
+TEST(FileTest, FailedCloseConsumesDescriptorOwnership) {
+  auto file = File::temporaryFile();
+  auto path = file->fileName();
+  auto cleanup = finally([&]() { File::remove(path); });
+  int descriptor = descriptorForFile(path);
+  ASSERT_GE(descriptor, 0);
+  ASSERT_EQ(::close(descriptor), 0);
+
+  EXPECT_THROW(file->close(), IOException);
+  EXPECT_FALSE(file->isOpen());
+  EXPECT_NO_THROW(file->close());
+  // No destructor retry of the invalid or potentially reused descriptor.
+  file.reset();
+}
+
+TEST(FileTest, DestructorReportsCloseFailureWithoutTerminating) {
+  auto file = File::temporaryFile();
+  auto path = file->fileName();
+  auto cleanup = finally([&]() { File::remove(path); });
+  int descriptor = descriptorForFile(path);
+  ASSERT_GE(descriptor, 0);
+  ASSERT_EQ(::close(descriptor), 0);
+  file.reset();
+}
+
+TEST(FileTest, SyncFailureReachesCaller) {
+  auto file = File::open("/dev/full", IOMode::Write);
+  EXPECT_THROW(file->sync(), IOException);
+  file->close();
+}
+#endif

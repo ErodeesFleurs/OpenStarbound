@@ -488,85 +488,6 @@ FinallyGuard<typename std::decay<Functor>::type> finally(Functor&& f) {
   return FinallyGuard<Functor>(std::forward<Functor>(f));
 }
 
-// Generates compile time sequences of indexes from MinIndex to MaxIndex
-
-template <std::size_t...>
-struct IndexSequence {};
-
-template <std::size_t Min, std::size_t N, std::size_t... S>
-struct GenIndexSequence : GenIndexSequence<Min, N - 1, N - 1, S...> {};
-
-template <std::size_t Min, std::size_t... S>
-struct GenIndexSequence<Min, Min, S...> {
-  typedef IndexSequence<S...> type;
-};
-
-// Apply a tuple as individual arguments to a function
-
-template <typename Function, typename Tuple, std::size_t... Indexes>
-decltype(auto) tupleUnpackFunctionIndexes(Function&& function, Tuple&& args, IndexSequence<Indexes...> const&) {
-  return function(std::get<Indexes>(std::forward<Tuple>(args))...);
-}
-
-template <typename Function, typename Tuple>
-decltype(auto) tupleUnpackFunction(Function&& function, Tuple&& args) {
-  return tupleUnpackFunctionIndexes<Function, Tuple>(std::forward<Function>(function), std::forward<Tuple>(args),
-      typename GenIndexSequence<0, std::tuple_size<typename std::decay<Tuple>::type>::value>::type());
-}
-
-// Apply a function to every element of a tuple.  This will NOT happen in a
-// predictable order!
-
-template <typename Function, typename Tuple, std::size_t... Indexes>
-decltype(auto) tupleApplyFunctionIndexes(Function&& function, Tuple&& args, IndexSequence<Indexes...> const&) {
-  return std::make_tuple(function(std::get<Indexes>(std::forward<Tuple>(args)))...);
-}
-
-template <typename Function, typename Tuple>
-decltype(auto) tupleApplyFunction(Function&& function, Tuple&& args) {
-  return tupleApplyFunctionIndexes<Function, Tuple>(std::forward<Function>(function), std::forward<Tuple>(args),
-      typename GenIndexSequence<0, std::tuple_size<typename std::decay<Tuple>::type>::value>::type());
-}
-
-// Use this version if you do not care about the return value of the function
-// or your function returns void.  This version DOES happen in a predictable
-// order, first argument first, last argument last.
-
-template <typename Function, typename Tuple>
-void tupleCallFunctionCaller(Function&&, Tuple&&) {}
-
-template <typename Tuple, typename Function, typename First, typename... Rest>
-void tupleCallFunctionCaller(Tuple&& t, Function&& function) {
-  tupleCallFunctionCaller<Tuple, Function, Rest...>(std::forward<Tuple>(t), std::forward<Function>(function));
-  function(std::get<sizeof...(Rest)>(std::forward<Tuple>(t)));
-}
-
-template <typename Tuple, typename Function, typename... T>
-void tupleCallFunctionExpander(Tuple&& t, Function&& function, std::tuple<T...> const&) {
-  tupleCallFunctionCaller<Tuple, Function, T...>(std::forward<Tuple>(t), std::forward<Function>(function));
-}
-
-template <typename Tuple, typename Function>
-void tupleCallFunction(Tuple&& t, Function&& function) {
-  tupleCallFunctionExpander<Tuple, Function>(std::forward<Tuple>(t), std::forward<Function>(function), std::forward<Tuple>(t));
-}
-
-// Get a subset of a tuple
-
-template <typename Tuple, std::size_t... Indexes>
-decltype(auto) subTupleIndexes(Tuple&& t, IndexSequence<Indexes...> const&) {
-  return std::make_tuple(std::get<Indexes>(std::forward<Tuple>(t))...);
-}
-
-template <std::size_t Min, std::size_t Size, typename Tuple>
-decltype(auto) subTuple(Tuple&& t) {
-  return subTupleIndexes(std::forward<Tuple>(t), GenIndexSequence<Min, Size>::type());
-}
-
-template <std::size_t Trim, typename Tuple>
-decltype(auto) trimTuple(Tuple&& t) {
-  return subTupleIndexes(std::forward<Tuple>(t), typename GenIndexSequence<Trim, std::tuple_size<typename std::decay<Tuple>::type>::value>::type());
-}
 
 // Unpack a parameter expansion into a container
 
@@ -605,8 +526,8 @@ struct VariadicTypedef<> {};
 
 template <typename FirstT, typename... RestT>
 struct VariadicTypedef<FirstT, RestT...> {
-  typedef FirstT First;
-  typedef VariadicTypedef<RestT...> Rest;
+  using First = FirstT;
+  using Rest = VariadicTypedef<RestT...>;
 };
 
 // For generic types, directly use the result of the signature of its
@@ -619,16 +540,16 @@ struct FunctionTraits<ReturnType(ArgsTypes...)> {
   // arity is the number of arguments.
   static constexpr std::size_t Arity = sizeof...(ArgsTypes);
 
-  typedef ReturnType Return;
+  using Return = ReturnType;
 
-  typedef VariadicTypedef<ArgsTypes...> Args;
-  typedef std::tuple<ArgsTypes...> ArgTuple;
+  using Args = VariadicTypedef<ArgsTypes...>;
+  using ArgTuple = std::tuple<ArgsTypes...>;
 
   template <std::size_t i>
   struct Arg {
     // the i-th argument is equivalent to the i-th tuple element of a tuple
     // composed of those arguments.
-    typedef typename std::tuple_element<i, ArgTuple>::type type;
+    using type = std::tuple_element_t<i, ArgTuple>;
   };
 };
 
@@ -640,12 +561,12 @@ struct FunctionTraits<std::function<FunctionType>> : public FunctionTraits<Funct
 
 template <typename ClassType, typename ReturnType, typename... Args>
 struct FunctionTraits<ReturnType (ClassType::*)(Args...)> : public FunctionTraits<ReturnType(Args...)> {
-  typedef ClassType& OwnerType;
+  using OwnerType = ClassType&;
 };
 
 template <typename ClassType, typename ReturnType, typename... Args>
 struct FunctionTraits<ReturnType (ClassType::*)(Args...) const> : public FunctionTraits<ReturnType(Args...)> {
-  typedef const ClassType& OwnerType;
+  using OwnerType = ClassType const&;
 };
 
 template <typename T>
@@ -705,18 +626,6 @@ export namespace Star {
   using ::Star::reverseIterate;
   using ::Star::FinallyGuard;
   using ::Star::finally;
-  using ::Star::IndexSequence;
-  using ::Star::GenIndexSequence;
-  using ::Star::tupleUnpackFunctionIndexes;
-  using ::Star::tupleUnpackFunction;
-  using ::Star::tupleApplyFunctionIndexes;
-  using ::Star::tupleApplyFunction;
-  using ::Star::tupleCallFunctionCaller;
-  using ::Star::tupleCallFunctionExpander;
-  using ::Star::tupleCallFunction;
-  using ::Star::subTupleIndexes;
-  using ::Star::subTuple;
-  using ::Star::trimTuple;
   using ::Star::unpackVariadicImpl;
   using ::Star::unpackVariadic;
   using ::Star::callFunctionVariadic;

@@ -121,6 +121,7 @@ void WorldStorage::applyWorldChunksUpdateToFile(String const& file, WorldChunks 
     else
       db.remove(p.first);
   }
+  db.close(true);
 }
 
 WorldChunks WorldStorage::getWorldChunksFromFile(String const& file) {
@@ -129,6 +130,7 @@ WorldChunks WorldStorage::getWorldChunksFromFile(String const& file) {
 
   WorldChunks chunks;
   db.forAll([&chunks](ByteArray key, ByteArray value) { chunks.add(std::move(key), std::move(value)); });
+  db.close(true);
   return chunks;
 }
 
@@ -175,10 +177,12 @@ WorldStorage::WorldStorage(WorldChunks const& chunks, std::shared_ptr<WorldGener
   m_entityMap = std::make_shared<EntityMap>(worldSize, MinServerEntityId, MaxServerEntityId);
 }
 
-WorldStorage::~WorldStorage() {
+WorldStorage::~WorldStorage() = default;
+
+void WorldStorage::close() {
   if (m_db.isOpen()) {
     unloadAll(true);
-    m_db.close();
+    m_db.close(true);
   }
 }
 

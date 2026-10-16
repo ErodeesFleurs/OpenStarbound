@@ -34,14 +34,12 @@ public:
   StringView(std::string_view&& s) noexcept;
   StringView(std::string const& s);
 
-  StringView(Char const* s);
-  StringView(Char const* s, std::size_t n);
 
   // const& to internal utf8 data
   std::string_view const& utf8() const;
   std::string_view takeUtf8();
   ByteArray utf8Bytes() const;
-  // Pointer to internal utf8 data, null-terminated.
+  // Pointer to the viewed bytes; not necessarily null-terminated.
   char const* utf8Ptr() const;
   std::size_t utf8Size() const;
 

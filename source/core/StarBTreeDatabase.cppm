@@ -27,7 +27,8 @@ public:
 
   BTreeDatabase();
   BTreeDatabase(String const& contentIdentifier, std::size_t keySize);
-  ~BTreeDatabase();
+  // Never commits.  Call commit()/close() explicitly to report save failures.
+  ~BTreeDatabase() noexcept;
 
   // The underlying device will be allocated in "blocks" of this size.
   // The larger the block size, the larger that index and leaf nodes can be
@@ -99,6 +100,8 @@ public:
   void commit();
   void rollback();
 
+  // Commits pending changes and optionally closes the device.  A commit
+  // failure leaves the database open so the caller can report it or roll back.
   void close(bool closeDevice = false);
 
 private:

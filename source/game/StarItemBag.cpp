@@ -101,7 +101,7 @@ void ItemBag::clearItems() {
 
 bool ItemBag::cleanup() const {
   bool cleanupDone = false;
-  for (auto& items : const_cast<ItemBag*>(this)->m_items) {
+  for (auto& items : m_items) {
     if (items && items->empty()) {
       cleanupDone = true;
       items = {};
@@ -120,11 +120,15 @@ List<std::shared_ptr<Item>>& ItemBag::items() {
 }
 
 List<std::shared_ptr<Item>> const& ItemBag::items() const {
-  return const_cast<ItemBag*>(this)->items();
+  cleanup();
+  return m_items;
 }
 
 std::shared_ptr<Item> const& ItemBag::at(std::size_t i) const {
-  return const_cast<ItemBag*>(this)->at(i);
+  auto& item = m_items.at(i);
+  if (item && item->empty())
+    item = {};
+  return item;
 }
 
 std::shared_ptr<Item>& ItemBag::at(std::size_t i) {

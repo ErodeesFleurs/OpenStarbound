@@ -29,6 +29,9 @@ struct DbgHelpLock {
   DbgHelpLock() {
     InitializeCriticalSection(&criticalSection);
   }
+  ~DbgHelpLock() {
+    DeleteCriticalSection(&criticalSection);
+  }
 
   void lock() {
     EnterCriticalSection(&criticalSection);
@@ -97,7 +100,7 @@ inline StackCapture captureStack() {
 
 #endif
 
-  g_dbgHelpLock.lock();
+  std::lock_guard lock(g_dbgHelpLock);
 
   Array<DWORD64, StackLimit> addresses;
   std::size_t count = 0;
@@ -110,15 +113,13 @@ inline StackCapture captureStack() {
     ++count;
   }
 
-  g_dbgHelpLock.unlock();
-
   return {addresses, count};
 }
 
 OutputProxy outputStack(StackCapture stack) {
   return OutputProxy([stack = std::move(stack)](std::ostream & os) {
     HANDLE process = GetCurrentProcess();
-    g_dbgHelpLock.lock();
+    std::lock_guard lock(g_dbgHelpLock);
     for (std::size_t i = 0; i < stack.second; ++i) {
       char buffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
       PSYMBOL_INFO symbol = (PSYMBOL_INFO)buffer;
@@ -147,7 +148,6 @@ OutputProxy outputStack(StackCapture stack) {
     if (stack.second == StackLimit)
       os << std::endl << "[Stack Output Limit Reached]";
 
-    g_dbgHelpLock.unlock();
   });
 }
 

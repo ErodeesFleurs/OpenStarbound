@@ -393,6 +393,9 @@ private:
   std::shared_ptr<std::atomic<bool>> m_pause;
   bool m_secureWarps;
   Map<WorldId, Maybe<WorldServerPromise>> m_worlds;
+  // Stopped instances awaiting the existing warp/disconnect paths to deliver
+  // their clients' final packets.  They must not block same-ID recreation.
+  List<std::shared_ptr<WorldServerThread>> m_retiringWorlds;
   Map<InstanceWorldId, std::pair<std::int64_t, std::int64_t>> m_tempWorldIndex;
   Map<Vec3I, std::shared_ptr<SystemWorldServerThread>> m_systemWorlds;
   std::shared_ptr<UniverseConnectionServer> m_connectionServer;

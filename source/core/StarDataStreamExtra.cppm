@@ -367,33 +367,20 @@ DataStream& operator<<(DataStream& ds, std::tuple<T> const& t) {
   return ds;
 }
 
-struct DataStreamReader {
-  DataStream& ds;
-
-  template <typename RT>
-  void operator()(RT& t) {
-    ds >> t;
-  }
-};
-
-struct DataStreamWriter {
-  DataStream& ds;
-
-  template <typename RT>
-  void operator()(RT const& t) {
-    ds << t;
-  }
-};
 
 template <typename... T>
 DataStream& operator>>(DataStream& ds, std::tuple<T...>& t) {
-  tupleCallFunction(t, DataStreamReader{ds});
+  std::apply([&ds](auto&... values) {
+    (static_cast<void>(ds >> values), ...);
+  }, t);
   return ds;
 }
 
 template <typename... T>
 DataStream& operator<<(DataStream& ds, std::tuple<T...> const& t) {
-  tupleCallFunction(t, DataStreamWriter{ds});
+  std::apply([&ds](auto const&... values) {
+    (static_cast<void>(ds << values), ...);
+  }, t);
   return ds;
 }
 
@@ -404,8 +391,6 @@ export module star.data_stream_extra;
 export namespace Star {
   using ::Star::DataStreamWriteFunctor;
   using ::Star::DataStreamReadFunctor;
-  using ::Star::DataStreamReader;
-  using ::Star::DataStreamWriter;
   using ::Star::operator<<;
   using ::Star::operator>>;
   using ::Star::writeMaybe;

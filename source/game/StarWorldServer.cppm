@@ -155,6 +155,8 @@ public:
   WorldServer(WorldChunks const& chunks);
   // Load an existing world from an in-memory representation
   ~WorldServer();
+  // Final save and teardown; idempotent, including after a reported failure.
+  void close();
 
   void setWorldId(String worldId);
   String const& worldId() const;
@@ -486,6 +488,7 @@ private:
   std::shared_ptr<ServerTileSectorArray> m_tileArray;
   ServerTileGetter m_tileGetterFunction;
   std::shared_ptr<WorldStorage> m_worldStorage;
+  bool m_closeAttempted = false;
   WorldServerFidelity m_fidelity;
   Json m_fidelityConfig;
 
