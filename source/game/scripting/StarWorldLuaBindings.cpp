@@ -1238,7 +1238,7 @@ namespace LuaBindings {
         Vec2F bodyCenter = body.center();
         for (auto& cp : collisions)
           cp.sortingDistance = vmagSquared(bodyCenter - cp.center);
-        sort(collisions, [](auto const& a, auto const& b) { return a.sortingDistance < b.sortingDistance; });
+        std::sort(collisions.begin(), collisions.end(), [](auto const& a, auto const& b) { return a.sortingDistance < b.sortingDistance; });
 
         bool anyIntersects = false;
         for (auto const& cp : collisions) {
@@ -1276,7 +1276,7 @@ namespace LuaBindings {
     // Then, try direction-limiting SAT in cardinals, then 45 degs, then in
     // between, for 16 total angles in a circle.
     for (int i : {4, 8, 12, 0, 2, 6, 10, 14, 1, 3, 7, 5, 15, 13, 9, 11}) {
-      float angle = i * Constants::pi / 8;
+      float angle = i * std::numbers::pi / 8;
       Vec2F dir = Vec2F::withAngle(angle, 1.0f);
       if (auto resolution = resolveCollision(dir, maximumCorrection, 1))
         return position + *resolution;

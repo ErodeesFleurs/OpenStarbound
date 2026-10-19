@@ -2859,7 +2859,7 @@ void Player::dropSelectedItems(std::function<bool(std::shared_ptr<Item>)> filter
 
   m_inventory->forEveryItem([&](InventorySlot const&, std::shared_ptr<Item>& item) {
       if (item && (!filter || filter(item)))
-        world()->addEntity(ItemDrop::throwDrop(take(item), position(), velocity(), Vec2F::withAngle(Random::randf(-Constants::pi, Constants::pi)), true));
+        world()->addEntity(ItemDrop::throwDrop(take(item), position(), velocity(), Vec2F::withAngle(Random::randf(-std::numbers::pi, std::numbers::pi)), true));
     });
 }
 

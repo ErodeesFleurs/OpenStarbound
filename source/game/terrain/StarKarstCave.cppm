@@ -118,15 +118,15 @@ KarstCaveSelector::Sector::Sector(KarstCaveSelector const* parent, Vec2I sector)
       // carve out cave layer
       for (int x = sector[0]; x < sector[0] + parent->m_sectorSize; x++) {
         // use wrapping noise
-        float noiseAngle = 2 * Constants::pi * x / parent->m_worldWidth;
-        float noiseX = (std::cos(noiseAngle) * parent->m_worldWidth) / (2 * Constants::pi);
-        float noiseY = (std::sin(noiseAngle) * parent->m_worldWidth) / (2 * Constants::pi);
+        float noiseAngle = 2 * std::numbers::pi * x / parent->m_worldWidth;
+        float noiseX = (std::cos(noiseAngle) * parent->m_worldWidth) / (2 * std::numbers::pi);
+        float noiseY = (std::sin(noiseAngle) * parent->m_worldWidth) / (2 * std::numbers::pi);
 
         // determine where caves be at
         float isThereACaveHere = layerPerlins.caveDecision.get(noiseX, noiseY);
         if (isThereACaveHere > 0) {
           float taperFactor = isThereACaveHere < parent->m_caveTaperPoint
-              ? std::sin((0.5 * Constants::pi * isThereACaveHere) / parent->m_caveTaperPoint)
+              ? std::sin((0.5 * std::numbers::pi * isThereACaveHere) / parent->m_caveTaperPoint)
               : 1.0f;
 
           int baseY = y + layerPerlins.layerHeightVariation.get(noiseX, noiseY);

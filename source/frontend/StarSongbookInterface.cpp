@@ -189,7 +189,7 @@ void SongbookInterface::refresh(bool reloadFiles) {
       }
       return false;
     });
-    sort(m_files, [](String const& a, String const& b) -> bool { return b.compare(a, String::CaseInsensitive) > 0; });
+    std::sort(m_files.begin(), m_files.end(), [](String const& a, String const& b) -> bool { return b.compare(a, String::CaseInsensitive) > 0; });
   }
   auto& search = fetchChild<TextBoxWidget>("search")->getText();
   if (m_lastSearch != search || reloadFiles) {

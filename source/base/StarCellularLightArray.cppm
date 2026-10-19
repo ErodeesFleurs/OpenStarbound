@@ -357,8 +357,8 @@ void CellularLightArray<LightTraits>::calculateLightSpread(std::size_t xMin, std
 
   float dropoffAir = 1.0f / m_spreadMaxAir;
   float dropoffObstacle = 1.0f / m_spreadMaxObstacle;
-  float dropoffAirDiag = 1.0f / m_spreadMaxAir * Constants::sqrt2;
-  float dropoffObstacleDiag = 1.0f / m_spreadMaxObstacle * Constants::sqrt2;
+  float dropoffAirDiag = 1.0f / m_spreadMaxAir * std::numbers::sqrt2;
+  float dropoffObstacleDiag = 1.0f / m_spreadMaxObstacle * std::numbers::sqrt2;
 
   // enlarge x/y min/max taking into ambient spread of light
   xMin = xMin - std::min(xMin, (std::size_t)std::ceil(m_spreadMaxAir));

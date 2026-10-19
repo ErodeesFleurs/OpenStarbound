@@ -164,7 +164,7 @@ Maybe<std::pair<WarpAction, WarpMode>> SystemWorldServer::clientWarpAction(Conne
 
       if (auto parameters = m_celestialDatabase->parameters(planet)) {
         if (auto awp = as<AsteroidsWorldParameters>(parameters->visitableParameters())) {
-          float targetX = (position->angle() / (2 * Constants::pi)) * awp->worldSize[0];
+          float targetX = (position->angle() / (2 * std::numbers::pi)) * awp->worldSize[0];
           return std::pair<WarpAction, WarpMode>(WarpAction(WarpToWorld(CelestialWorldId(planet), SpawnTargetX(targetX))),
             WarpMode::DeployOnly);
         }
@@ -271,7 +271,11 @@ void SystemWorldServer::removeObject(Uuid objectUuid) {
 bool SystemWorldServer::addObject(std::shared_ptr<SystemObject> object, bool doRangeCheck) {
   if (doRangeCheck) {
     CelestialCoordinate system = CelestialCoordinate(m_location);
-    CelestialCoordinate outer = system.child(m_celestialDatabase->childOrbits(system).sorted().last());
+    auto childOrbits = m_celestialDatabase->childOrbits(system);
+    auto outerOrbit = std::ranges::max_element(childOrbits);
+    if (outerOrbit == childOrbits.end())
+      throw OutOfRangeException("last() called on empty list");
+    CelestialCoordinate outer = system.child(*outerOrbit);
     List<std::pair<float, float>> orbitDistances;
     for (auto planet : planets()) {
       orbitDistances.append({planetOrbitDistance(planet), clusterSize(planet) / 2.0});
@@ -453,8 +457,7 @@ void SystemWorldServer::spawnObjects() {
     if (time() > m_lastSpawn + m_objectSpawnTime && objectConfig.moving) {
       // if this is not the last object we're spawning, and it's moving, immediately put it in orbit around a planet
       auto targets = planets().filtered([this](CelestialCoordinate const& p) {
-        auto objectsAtPlanet = objects().filtered([p](std::shared_ptr<SystemObject> const& o) { return o->orbitTarget() == p; });
-        return objectsAtPlanet.size() == 0;
+        return std::ranges::none_of(objects(), [&p](std::shared_ptr<SystemObject> const& o) { return o->orbitTarget() == p; });
       });
       if (targets.size() > 0) {
         auto target = Random::randFrom(targets);
@@ -495,7 +498,7 @@ Vec2F SystemWorldServer::randomObjectSpawnPosition(RandomSource& rand) const {
   spawnRanges.append(Vec2F(rim, rim + config.objectSpawnPadding));
 
   auto range = rand.randFrom(spawnRanges);
-  return Vec2F::withAngle(rand.randf() * Constants::pi * 2.0, range[0] + (rand.randf() * (range[1] - range[0])));
+  return Vec2F::withAngle(rand.randf() * std::numbers::pi * 2.0, range[0] + (rand.randf() * (range[1] - range[0])));
 }
 
 SkyParameters SystemWorldServer::locationSkyParameters(SystemLocation const& location) const {

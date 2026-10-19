@@ -249,7 +249,7 @@ bool Widget::sendEvent(InputEvent const& event) {
   if (!m_visible)
     return false;
 
-  for (auto child : reverseIterate(m_members)) {
+  for (auto child : std::views::reverse(m_members)) {
     if (child->sendEvent(event))
       return true;
   }
@@ -456,7 +456,7 @@ std::shared_ptr<Widget> Widget::childPtr(Widget const* child) const {
 }
 
 std::shared_ptr<Widget> Widget::getChildAt(Vec2I const& pos) {
-  for (auto child : reverseIterate(m_members)) {
+  for (auto child : std::views::reverse(m_members)) {
     if (child->inMember(pos)) {
       auto res = child->getChildAt(pos);
       if (res) {

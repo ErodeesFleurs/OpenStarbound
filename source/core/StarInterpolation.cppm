@@ -28,7 +28,7 @@ T2 angleLerp(T1 const& offset, T2 const& f0, T2 const& f1) {
 
 template <typename T1, typename T2>
 T2 sinEase(T1 const& offset, T2 const& f0, T2 const& f1) {
-  T1 w = (std::sin(offset * Constants::pi - Constants::pi / 2) + 1) / 2;
+  T1 w = (std::sin(offset * std::numbers::pi - std::numbers::pi / 2) + 1) / 2;
   return f0 * (1 - w) + f1 * w;
 }
 
@@ -119,7 +119,7 @@ struct SinWeightOperator {
   typedef Array<Weight, 2> WeightVec;
 
   WeightVec operator()(Weight x) const {
-    Weight w = (std::sin(x * Constants::pi - Constants::pi / 2) + 1) / 2;
+    Weight w = (std::sin(x * std::numbers::pi - std::numbers::pi / 2) + 1) / 2;
     return {1 - w, w};
   }
 };

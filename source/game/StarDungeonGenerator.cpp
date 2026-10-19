@@ -1213,7 +1213,7 @@ namespace Dungeon {
         // Once we have found no more blocks in the unpressurized set to add to
         // the open set, then we have taken a contiguous region out of the
         // unpressurized set.  Pressurize it based on the highest point.
-        int highestPoint = lowest<int>();
+        int highestPoint = std::numeric_limits<int>::lowest();
         for (auto const& p : contiguousRegion)
           highestPoint = std::max(highestPoint, p[1]);
         for (auto const& p : contiguousRegion)

@@ -456,7 +456,7 @@ void MovementController::rotate(float rotationRate) {
     return;
 
   m_resting = false;
-  m_rotation.set(std::fmod(rotation() + rotationRate * m_timeStep, 2 * Constants::pi));
+  m_rotation.set(std::fmod(rotation() + rotationRate * m_timeStep, 2 * std::numbers::pi));
 }
 
 void MovementController::accelerate(Vec2F const& acceleration) {
@@ -514,7 +514,7 @@ void MovementController::approachXVelocity(float targetXVelocity, float maxContr
 }
 
 void MovementController::approachYVelocity(float targetYVelocity, float maxControlForce) {
-  approachVelocityAlongAngle(Constants::pi / 2, targetYVelocity, maxControlForce, false);
+  approachVelocityAlongAngle(std::numbers::pi / 2, targetYVelocity, maxControlForce, false);
 }
 
 void MovementController::init(World* world) {
@@ -914,7 +914,7 @@ CollisionKind MovementController::maxOrNullCollision(CollisionKind a, CollisionK
 MovementController::CollisionResult MovementController::collisionMove(List<CollisionPoly>& collisionPolys, PolyF const& body, Vec2F const& movement,
     bool ignorePlatforms, bool enableSurfaceSlopeCorrection, float maximumCorrection, float maximumPlatformCorrection, Vec2F sortCenter, float dt) {
   unsigned const MaximumSeparationLoops = 3;
-  float const SlideAngle = Constants::pi / 3;
+  float const SlideAngle = std::numbers::pi / 3;
   float const SlideCorrectionLimit = 0.2f;
   float separationTolerance = 0.001f * (dt * 60.f);
   maximumPlatformCorrection *= (dt * 60.f);
@@ -1060,7 +1060,7 @@ MovementController::CollisionSeparation MovementController::collisionSeparate(Li
   for (auto& cp : collisionPolys)
     cp.sortDistance = vmagSquared(cp.sortPosition - sortCenter);
 
-  sort(collisionPolys, [](auto const& a, auto const& b) {
+  std::sort(collisionPolys.begin(), collisionPolys.end(), [](auto const& a, auto const& b) {
       return a.sortDistance < b.sortDistance;
     });
 

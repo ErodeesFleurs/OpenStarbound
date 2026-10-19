@@ -131,7 +131,7 @@ std::shared_ptr<ItemDrop> ItemDrop::createRandomizedDrop(std::shared_ptr<Item> c
   auto idconfig = Root::singleton().assets()->json("/itemdrop.config");
 
   std::shared_ptr<ItemDrop> itemDrop = std::make_shared<ItemDrop>(item);
-  auto offset = Vec2F(idconfig.getFloat("randomizedDistance"), 0).rotate(Constants::pi * 2.0 * Random::randf());
+  auto offset = Vec2F(idconfig.getFloat("randomizedDistance"), 0).rotate(std::numbers::pi * 2.0 * Random::randf());
   offset[1] = std::fabs(offset[1]);
   itemDrop->setPosition(position + offset / TilePixels);
   itemDrop->setVelocity(offset * idconfig.getFloat("randomizedSpeed"));
@@ -594,7 +594,7 @@ ItemDrop::ItemDrop() {
   m_velocity = m_config.getFloat("velocity");
   m_velocityApproach = m_config.getFloat("velocityApproach");
   m_overheadApproach = m_config.getFloat("overheadApproach");
-  m_overheadOffset = Vec2F(m_config.getFloat("overheadRandomizedDistance"), 0).rotate(Constants::pi * 2.0 * Random::randf());
+  m_overheadOffset = Vec2F(m_config.getFloat("overheadRandomizedDistance"), 0).rotate(std::numbers::pi * 2.0 * Random::randf());
 
   m_combineChance = m_config.getFloat("combineChance");
   m_combineRadius = m_config.getFloat("combineRadius");

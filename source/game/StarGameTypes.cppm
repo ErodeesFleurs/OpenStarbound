@@ -109,7 +109,7 @@ inline constexpr std::size_t WorldSectorSize = 32;
 typedef std::int32_t EntityId;
 inline constexpr EntityId NullEntityId = 0;
 inline constexpr EntityId MinServerEntityId = 1;
-inline constexpr EntityId MaxServerEntityId = highest<EntityId>();
+inline constexpr EntityId MaxServerEntityId = std::numeric_limits<EntityId>::max();
 
 // Whether this entity is controlled by it's world, or synced from a different
 // world.  Does not necessarily correspond to client / server world (player is
@@ -142,7 +142,7 @@ inline ConnectionId subWorldToMainConnectionId(ConnectionId const& id) {
 typedef std::uint16_t ClientSubWorldId;
 inline constexpr ConnectionId MainClientWorldId = 0;
 inline constexpr ConnectionId MinClientSubWorldId = 1;
-inline constexpr ConnectionId MaxClientSubWorldId = highest<ClientSubWorldId>();
+inline constexpr ConnectionId MaxClientSubWorldId = std::numeric_limits<ClientSubWorldId>::max();
 
 template <typename Vec2T>
 inline Vec2F centerOfTile(Vec2T const& tile) {

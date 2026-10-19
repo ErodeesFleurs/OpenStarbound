@@ -449,7 +449,7 @@ Mixer::EffectFunction Mixer::lowpass(std::size_t avgSize) const {
           filterChannel.append(buffer[f * channels + c] / 32767.0f);
           while (filterChannel.size() > avgSize)
             filterChannel.takeFirst();
-          buffer[f * channels + c] = sum(filterChannel) / (float)avgSize * 32767.0f;
+          buffer[f * channels + c] = std::ranges::fold_left_first(filterChannel, std::plus<float>()).value_or(0.0f) / (float)avgSize * 32767.0f;
         }
       }
     }

@@ -127,8 +127,8 @@ ConsumableItem::ConsumableItem(Json const& config, String const& directory, Json
   setWindupTime(0);
   setCooldownTime(0.25f);
   m_requireEdgeTrigger = true;
-  m_swingStart = config.getFloat("swingStart", -60) * Constants::pi / 180;
-  m_swingFinish = config.getFloat("swingFinish", 40) * Constants::pi / 180;
+  m_swingStart = config.getFloat("swingStart", -60) * std::numbers::pi / 180;
+  m_swingFinish = config.getFloat("swingFinish", 40) * std::numbers::pi / 180;
   m_swingAimFactor = config.getFloat("swingAimFactor", 0.2f);
   m_blockingEffects = jsonToStringSet(instanceValue("blockingEffects", JsonArray()));
   if (auto foodValue = instanceValue("foodValue")) {

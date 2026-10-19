@@ -203,7 +203,7 @@ void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementCon
 
     callbacks.registerCallback("controlApproachYVelocity", [this](float targetYVelocity, float maxControlForce) {
         m_controlApproachVelocityAlongAngle.set(
-            std::make_tuple(Constants::pi / 2.0f, targetYVelocity, maxControlForce, false));
+            std::make_tuple(std::numbers::pi / 2.0f, targetYVelocity, maxControlForce, false));
       });
 
     callbacks.registerCallback("controlParameters", [this](ActorMovementParameters const& arg1) {

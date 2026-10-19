@@ -571,7 +571,7 @@ std::shared_ptr<LoungeAnchor const> Vehicle::loungeAnchor(std::size_t positionIn
   loungePosition->direction = partTransformation.determinant() > 0 ? Direction::Right : Direction::Left;
   loungePosition->angle = partTransformation.transformAngle(0.0f);
   if (loungePosition->direction == Direction::Left)
-    loungePosition->angle += Constants::pi;
+    loungePosition->angle += std::numbers::pi;
   loungePosition->controllable = true;
   loungePosition->loungeRenderLayer = renderLayer(VehicleLayer::Passenger);
   loungePosition->orientation = positionConfig.orientation.get();

@@ -325,7 +325,7 @@ Maybe<BiomeItemPlacement> BiomeItemDistribution::itemToPlace(int x, int y) const
     BiomeItem const* biomeItem = nullptr;
     if (m_densityFunction.get(x, y) > 0) {
       if ((int)(x + m_modulusOffset + m_modulusDistortion.get(x, y)) % m_modulus == 0) {
-        float maxWeight = lowest<float>();
+        float maxWeight = std::numeric_limits<float>::lowest();
         for (auto const& weightedItem : m_weightedItems) {
           float weight = weightedItem.second.get(x, y);
           if (weight > maxWeight) {

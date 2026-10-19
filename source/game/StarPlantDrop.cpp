@@ -144,8 +144,8 @@ PlantDrop::PlantDrop(List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2
   m_movementController.setPosition(position);
   if (!upsideDown) {
     m_rotationRate = std::copysign(0.00001f, -strikeVector[0] + random);
-    m_rotationFallThreshold = Constants::pi / (3 + random);
-    m_rotationCap = Constants::pi - m_rotationFallThreshold;
+    m_rotationFallThreshold = std::numbers::pi / (3 + random);
+    m_rotationCap = std::numbers::pi - m_rotationFallThreshold;
   } else {
     m_rotationRate = 0;
     m_rotationFallThreshold = 0;

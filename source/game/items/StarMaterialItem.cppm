@@ -350,7 +350,7 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
 
 void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer) {
   if (m_blockSwap || m_collisionOverride != TileCollisionOverride::None) {
-    float pulse = (float)std::sin(2 * Constants::pi * 4.0 * Time::monotonicTime());
+    float pulse = (float)std::sin(2 * std::numbers::pi * 4.0 * Time::monotonicTime());
     float pulseA = 0.85 - pulse * 0.15f;
     float pulseB = 0.85 + pulse * 0.15f;
     Color color = owner()->favoriteColor().mix(Color::White);
@@ -422,7 +422,7 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
       magnitude = limit;
     }
 
-    steps = (unsigned)std::ceil(magnitude * (Constants::pi / 2));
+    steps = (unsigned)std::ceil(magnitude * (std::numbers::pi / 2));
   }
 
   CollisionKind collisionKind = m_collisionOverride != TileCollisionOverride::None

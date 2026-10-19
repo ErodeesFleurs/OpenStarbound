@@ -164,7 +164,7 @@ void EntityMap::updateAllEntities(EntityCallback const& callback, std::function<
       throw EntityMapException::format("Null entity id in EntityMap::setEntityInfo");
 
     auto rects = m_geometry.splitRect(boundBox, position);
-    if (!containersEqual(rects, entry.rects))
+    if (!std::ranges::equal(rects, entry.rects))
       m_spatialMap.set(entityId, rects);
 
     auto uniqueId = entity->uniqueId();

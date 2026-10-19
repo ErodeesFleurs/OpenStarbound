@@ -695,7 +695,7 @@ void ActorMovementController::controlApproachXVelocity(float targetXVelocity, fl
 }
 
 void ActorMovementController::controlApproachYVelocity(float targetYVelocity, float maxControlForce) {
-  controlApproachVelocityAlongAngle(Constants::pi / 2, targetYVelocity, maxControlForce, false);
+  controlApproachVelocityAlongAngle(std::numbers::pi / 2, targetYVelocity, maxControlForce, false);
 }
 
 void ActorMovementController::controlParameters(ActorMovementParameters const& parameters) {

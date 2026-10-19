@@ -393,7 +393,7 @@ void TeamBar::buildTeamBar() {
       auto direction = m_client->worldClient()->geometry().diff(mpos, player->position());
 
       auto compassImage = cell->fetchChild<ImageWidget>("compass");
-      compassImage->setRotation(direction.angle() - Constants::pi / 2.0f);
+      compassImage->setRotation(direction.angle() - std::numbers::pi / 2.0f);
       compassImage->show();
       cell->fetchChild<ImageWidget>("compassoffworld")->hide();
     } else {

@@ -200,7 +200,7 @@ Parallax::Parallax(String const& assetFile,
   }
 
   // sort with highest Z level first
-  stableSort(m_layers, [](ParallaxLayer const& a, ParallaxLayer const& b) { return a.zLevel > b.zLevel; });
+  std::stable_sort(m_layers.begin(), m_layers.end(), [](ParallaxLayer const& a, ParallaxLayer const& b) { return a.zLevel > b.zLevel; });
 }
 
 Parallax::Parallax(Json const& store) {
@@ -212,7 +212,7 @@ Parallax::Parallax(Json const& store) {
   m_imageDirectory = store.getString("imageDirectory");
   m_layers = store.getArray("layers").transformed(construct<ParallaxLayer>());
 
-  stableSort(m_layers, [](ParallaxLayer const& a, ParallaxLayer const& b) { return a.zLevel > b.zLevel; });
+  std::stable_sort(m_layers.begin(), m_layers.end(), [](ParallaxLayer const& a, ParallaxLayer const& b) { return a.zLevel > b.zLevel; });
 }
 
 Json Parallax::store() const {

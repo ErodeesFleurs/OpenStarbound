@@ -51,7 +51,7 @@ List<Vec2I> tileAreaBrush(float range, Vec2F const& centerOffset, bool squareMod
       }
     }
   }
-  sort(result, [](Vec2I const& a, Vec2I const& b) {
+  std::sort(result.begin(), result.end(), [](Vec2I const& a, Vec2I const& b) {
       auto ams = a.magnitudeSquared();
       auto bms = b.magnitudeSquared();
       return std::tie(ams, a) < std::tie(bms, b);

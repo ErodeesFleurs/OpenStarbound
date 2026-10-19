@@ -213,7 +213,7 @@ void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::forEach(Rec
   // is much faster to simply keep all encountered intersected entries and then
   // sort them later for all but the most massive and most populated searches,
   // due to the allocation cost of Set and HashSet.
-  sort(foundEntries);
+  std::sort(foundEntries.begin(), foundEntries.end(), std::less<Entry const*>());
 
   // Looping over the found entries in sorted order with potential duplication,
   // so need to skip over the entry if the previous entry is the same as the

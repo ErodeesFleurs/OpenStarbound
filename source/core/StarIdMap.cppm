@@ -83,7 +83,7 @@ using IdHashMap = IdMapWrapper<HashMap<Key, Value>>;
 
 template <typename BaseMap>
 IdMapWrapper<BaseMap>::IdMapWrapper()
-  : m_min(lowest<IdType>()), m_max(highest<IdType>()), m_nextId(m_min) {}
+  : m_min(std::numeric_limits<IdType>::lowest()), m_max(std::numeric_limits<IdType>::max()), m_nextId(m_min) {}
 
 template <typename BaseMap>
 IdMapWrapper<BaseMap>::IdMapWrapper(IdType min, IdType max)

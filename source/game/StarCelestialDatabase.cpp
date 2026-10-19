@@ -65,7 +65,6 @@ import star.static_random;
 import star.line;
 import star.math_common;
 import star.algorithm;
-import star.pythonic;
 namespace Star {
 
 CelestialDatabase::~CelestialDatabase() {}
@@ -585,8 +584,8 @@ Maybe<std::pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMa
   }
 
   HashMap<int, CelestialPlanet> systemObjects;
-  for (auto planetPair : enumerateIterator(planetaryOrbits)) {
-    auto systemOrbitRegion = orbitRegion(systemType.orbitRegions, planetPair.first);
+  for (auto [planetIndex, planetOrbit] : std::views::enumerate(planetaryOrbits)) {
+    auto systemOrbitRegion = orbitRegion(systemType.orbitRegions, planetOrbit);
 
     auto planetaryTypeName = systemOrbitRegion->planetaryTypes.select(random);
     if (m_generationInformation.planetaryTypes.contains(planetaryTypeName)) {
@@ -594,9 +593,9 @@ Maybe<std::pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMa
       auto planetaryParameters =
           jsonMerge(planetaryType.baseParameters, random.randValueFrom(planetaryType.variationParameters));
 
-      CelestialCoordinate planetCoordinate(location, planetPair.first);
+      CelestialCoordinate planetCoordinate(location, planetOrbit);
       std::uint64_t planetarySeed = random.randu64();
-      String planetaryName = strf("{} {}", systemName, m_generationInformation.planetarySuffixes.at(planetPair.second));
+      String planetaryName = strf("{} {}", systemName, m_generationInformation.planetarySuffixes.at(static_cast<std::size_t>(planetIndex)));
 
       CelestialPlanet planet;
       planet.planetParameters =
@@ -609,7 +608,7 @@ Maybe<std::pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMa
           satelliteOrbits.append(i);
       }
 
-      for (auto satellitePair : enumerateIterator(satelliteOrbits)) {
+      for (auto [satelliteIndex, satelliteOrbit] : std::views::enumerate(satelliteOrbits)) {
         auto satelliteTypeName = systemOrbitRegion->satelliteTypes.select(random);
         if (m_generationInformation.satelliteTypes.contains(satelliteTypeName)) {
           auto satelliteType = m_generationInformation.satelliteTypes.get(satelliteTypeName);
@@ -618,17 +617,17 @@ Maybe<std::pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMa
               random.randValueFrom(
                   satelliteType.orbitParameters.value(systemOrbitRegion->regionName, JsonArray()).toArray()));
 
-          CelestialCoordinate satelliteCoordinate(location, planetPair.first, satellitePair.first);
+          CelestialCoordinate satelliteCoordinate(location, planetOrbit, satelliteOrbit);
           std::uint64_t satelliteSeed = random.randu64();
           String satelliteName =
-              strf("{} {}", planetaryName, m_generationInformation.satelliteSuffixes.at(satellitePair.second));
+              strf("{} {}", planetaryName, m_generationInformation.satelliteSuffixes.at(static_cast<std::size_t>(satelliteIndex)));
 
-          planet.satelliteParameters[satellitePair.first] =
+          planet.satelliteParameters[satelliteOrbit] =
               CelestialParameters(satelliteCoordinate, satelliteSeed, satelliteName, satelliteParameters);
         }
       }
 
-      systemObjects[planetPair.first] = std::move(planet);
+      systemObjects[planetOrbit] = std::move(planet);
     }
   }
 

@@ -121,7 +121,7 @@ ParametricTable<IndexType, ValueType>::ParametricTable(PairContainer indexValueP
   if (indexValuePairs.empty())
     return;
 
-  sort(indexValuePairs,
+  std::sort(indexValuePairs.begin(), indexValuePairs.end(),
       [](typename PairContainer::value_type const& a, typename PairContainer::value_type const& b) {
         return std::get<0>(a) < std::get<0>(b);
       });

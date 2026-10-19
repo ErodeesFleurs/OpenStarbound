@@ -67,7 +67,7 @@ MaxSelector::MaxSelector(
 }
 
 float MaxSelector::get(int x, int y) const {
-  float value = lowest<float>();
+  float value = std::numeric_limits<float>::lowest();
   for (auto const& source : m_sources)
     value = std::max(value, source->get(x, y));
   return value;

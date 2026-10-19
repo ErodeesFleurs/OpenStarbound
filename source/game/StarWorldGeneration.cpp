@@ -544,7 +544,7 @@ void DungeonGeneratorWorld::placePlant(std::shared_ptr<Plant> const& plant, Vec2
 
 void DungeonGeneratorWorld::placeBiomeItems(Vec2I const& pos, List<BiomeItemPlacement>& potentialItems) {
   m_worldServer->signalRegion(RectI::withSize(pos, {1, 1}));
-  sort(potentialItems);
+  std::sort(potentialItems.begin(), potentialItems.end(), std::less<BiomeItemPlacement>());
   for (auto const& placement : potentialItems) {
     auto seed = m_worldServer->worldTemplate()->seedFor(placement.position[0], placement.position[1]);
     if (placement.item.is<GrassVariant>()) {
@@ -1028,7 +1028,7 @@ void WorldGenerator::generateMicroDungeons(WorldStorage* worldStorage, ServerTil
     }
   }
 
-  sort(placementQueue);
+  std::sort(placementQueue.begin(), placementQueue.end(), std::less<std::pair<BiomeItemPlacement, QueuedPlacement*>>());
   for (auto const& p : placementQueue) {
     auto& placement = p.first;
     auto queued = p.second;
@@ -1058,9 +1058,10 @@ void WorldGenerator::generateMicroDungeons(WorldStorage* worldStorage, ServerTil
     }
   }
   
-  m_queuedPlacements = m_queuedPlacements.filtered([&](QueuedPlacement& p) {
-      return !p.fulfilled;
-    });
+  // placementQueue's pointers are no longer used once compaction begins.
+  std::erase_if(m_queuedPlacements, [](QueuedPlacement const& p) {
+    return p.fulfilled;
+  });
 }
 
 void WorldGenerator::generateCaveLiquid(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
@@ -1253,7 +1254,7 @@ void WorldGenerator::prepareSector(WorldStorage* worldStorage, ServerTileSectorA
     }
   }
 
-  sort(placementQueue);
+  std::sort(placementQueue.begin(), placementQueue.end(), std::less<BiomeItemPlacement>());
   for (auto const& placement : placementQueue) {
     auto seed = m_worldServer->worldTemplate()->seedFor(placement.position[0], placement.position[1]);
     if (placement.item.is<GrassVariant>()) {

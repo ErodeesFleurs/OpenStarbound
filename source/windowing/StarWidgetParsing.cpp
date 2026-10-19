@@ -177,7 +177,7 @@ void WidgetParser::construct(Json const& config, Widget* widget) {
 void WidgetParser::constructImpl(Json const& config, Widget* widget) {
   List<WidgetConstructResult> widgets = constructor(config);
 
-  sort(widgets,
+  std::sort(widgets.begin(), widgets.end(),
       [&](WidgetConstructResult const& a, WidgetConstructResult const& b) -> bool {
         if (a.zlevel == b.zlevel)
           return a.obj->position() < b.obj->position();

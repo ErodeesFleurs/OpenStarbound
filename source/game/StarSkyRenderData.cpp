@@ -107,7 +107,7 @@ List<SkyOrbiter> SkyRenderData::frontOrbiters(Vec2F const& viewSize) const {
 
     int numClouds = staticRandomI32Range(cloudCountRange[0], cloudCountRange[1], "HorizonCloudCount");
     for (int i = 0; i < numClouds; ++i) {
-      horizonClouds.append({staticRandomFloatRange(0, 2 * Constants::pi, i, "CloudStartAngle"),
+      horizonClouds.append({staticRandomFloatRange(0, 2 * std::numbers::pi, i, "CloudStartAngle"),
           staticRandomFrom(cloudList, i, "Cloud"),
           staticRandomFloatRange(cloudSpeedRange[0], cloudSpeedRange[1], i, "CloudSpeed"),
           staticRandomFloatRange(cloudRadiusRange[0], cloudRadiusRange[1], i, "CloudRadius")});
@@ -128,7 +128,7 @@ List<SkyOrbiter> SkyRenderData::frontOrbiters(Vec2F const& viewSize) const {
         Vec2F::withAngle(orbitAngle, settings.queryFloat("sun.radius")) + viewSize / 2});
   } else if (type == SkyType::Orbital) {
     auto planetCenter = Vec2F(viewSize[0] / 2, 0)
-        - Vec2F::withAngle(worldRotation - Constants::pi / 2, settings.queryFloat("planetHorizon.yCenter")) - worldOffset;
+        - Vec2F::withAngle(worldRotation - std::numbers::pi / 2, settings.queryFloat("planetHorizon.yCenter")) - worldOffset;
 
     float scale = settings.queryFloat("planetHorizon.scale");
 

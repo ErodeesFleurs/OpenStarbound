@@ -332,8 +332,8 @@ void PaneManager::render() {
     m_backgroundWidget->render(RectI(Vec2I(), windowSize()));
   }
 
-  for (auto const& layerPair : reverseIterate(m_displayedPanes)) {
-    for (auto const& panePair : reverseIterate(layerPair.second)) {
+  for (auto const& layerPair : std::views::reverse(m_displayedPanes)) {
+    for (auto const& panePair : std::views::reverse(layerPair.second)) {
       if (panePair.first->active()) {
         if (m_prevInterfaceScale != m_context->interfaceScale())
           panePair.first->setPosition(
@@ -399,8 +399,8 @@ void PaneManager::update(float dt) {
     }
   }
 
-  for (auto const& layerPair : reverseIterate(m_displayedPanes)) {
-    for (auto const& panePair : reverseIterate(layerPair.second)) {
+  for (auto const& layerPair : std::views::reverse(m_displayedPanes)) {
+    for (auto const& panePair : std::views::reverse(layerPair.second)) {
       panePair.first->tick(dt);
       if (panePair.first->active())
         panePair.first->update(dt);

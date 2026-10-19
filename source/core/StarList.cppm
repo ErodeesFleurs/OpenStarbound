@@ -542,6 +542,8 @@ bool ListMixin<BaseList>::contains(const_reference e) const {
 
 template <typename BaseList>
 std::size_t ListMixin<BaseList>::remove(const_reference e) {
+  // Erase immediately: e may alias an element, and subsequent comparisons can
+  // observe each erase's moves and destructions, even if a later operation throws.
   std::size_t removed = 0;
   auto i = Base::begin();
   while (i != Base::end()) {
@@ -636,17 +638,17 @@ bool ListMixin<BaseList>::all() const {
 template <typename BaseList>
 template <typename Comparator>
 void RandomAccessListMixin<BaseList>::sort(Comparator&& comparator) {
-  Star::sort(*this, std::forward<Comparator>(comparator));
+  std::sort(Base::begin(), Base::end(), std::forward<Comparator>(comparator));
 }
 
 template <typename BaseList>
 void RandomAccessListMixin<BaseList>::sort() {
-  Star::sort(*this);
+  std::sort(Base::begin(), Base::end(), std::less<typename Base::value_type>());
 }
 
 template <typename BaseList>
 void RandomAccessListMixin<BaseList>::reverse() {
-  Star::reverse(*this);
+  std::reverse(Base::begin(), Base::end());
 }
 
 template <typename BaseList>
@@ -1133,7 +1135,7 @@ std::size_t ListHasher<List>::operator()(List const& l) const {
 template <typename... Containers>
 typename ListZipTypes<Containers...>::Result zip(Containers&&... args) {
   typename ListZipTypes<Containers...>::Result res;
-  for (auto el : zipIterator(args...))
+  for (auto el : std::views::zip(args...))
     res.push_back(std::move(el));
 
   return res;
@@ -1142,8 +1144,8 @@ typename ListZipTypes<Containers...>::Result zip(Containers&&... args) {
 template <typename Container>
 typename ListEnumerateTypes<Container>::Result enumerate(Container&& container) {
   typename ListEnumerateTypes<Container>::Result res;
-  for (auto el : enumerateIterator(container))
-    res.push_back(std::move(el));
+  for (auto [index, value] : std::views::enumerate(container))
+    res.emplace_back(value, static_cast<std::size_t>(index));
 
   return res;
 }

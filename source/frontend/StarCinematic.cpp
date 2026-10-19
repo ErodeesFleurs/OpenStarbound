@@ -184,7 +184,7 @@ void Cinematic::load(Json const& definition) {
     timeSkip.skipToTime = timeSkipDefinition.getFloat("skipTo");
     m_timeSkips.append(timeSkip);
   }
-  sort(m_timeSkips, [](TimeSkip const& a, TimeSkip const& b) -> bool {
+  std::sort(m_timeSkips.begin(), m_timeSkips.end(), [](TimeSkip const& a, TimeSkip const& b) -> bool {
       return a.availableTime < b.availableTime;
     });
 

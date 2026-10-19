@@ -122,8 +122,8 @@ Particle::Particle(Json const& config, String const& path) {
   flip = config.getBool("flip", false);
   flippable = config.getBool("flippable", true);
 
-  rotation = config.getFloat("rotation", 0.0f) * Constants::pi / 180.0f;
-  angularVelocity = config.getFloat("angularVelocity", 0.0f) * Constants::pi / 180.0f;
+  rotation = config.getFloat("rotation", 0.0f) * std::numbers::pi / 180.0f;
+  angularVelocity = config.getFloat("angularVelocity", 0.0f) * std::numbers::pi / 180.0f;
   length = config.getFloat("length", 10.0f);
 
   destructionAction = DestructionActionNames.getLeft(config.getString("destructionAction", "None"));
@@ -162,8 +162,8 @@ Json Particle::toJson() const {
       {"approach", jsonFromVec2F(approach)},
       {"flip", flip},
       {"flippable", flippable},
-      {"rotation", rotation * 180.0f / Constants::pi},
-      {"angularVelocity", angularVelocity * 180.0f / Constants::pi},
+      {"rotation", rotation * 180.0f / std::numbers::pi},
+      {"angularVelocity", angularVelocity * 180.0f / std::numbers::pi},
       {"length", length},
       {"destructionAction", DestructionActionNames.getRight(destructionAction)},
       {"destructionImage", AssetPath::join(destructionImage)},

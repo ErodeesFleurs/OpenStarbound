@@ -772,8 +772,8 @@ void PlayerInventory::addCurrency(String const& currencyType, std::uint64_t amou
   std::uint64_t previousTotal = m_currencies[currencyType];
   std::uint64_t newTotal = previousTotal + amount;
   if (newTotal < previousTotal)
-    newTotal = highest<std::uint64_t>();
-  m_currencies[currencyType] = std::min(Root::singleton().assets()->json("/currencies.config").get(currencyType).getUInt("playerMax", highest<std::uint64_t>()), newTotal);
+    newTotal = std::numeric_limits<std::uint64_t>::max();
+  m_currencies[currencyType] = std::min(Root::singleton().assets()->json("/currencies.config").get(currencyType).getUInt("playerMax", std::numeric_limits<std::uint64_t>::max()), newTotal);
 }
 
 bool PlayerInventory::consumeCurrency(String const& currencyType, std::uint64_t amount) {

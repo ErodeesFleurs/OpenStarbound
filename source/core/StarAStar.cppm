@@ -100,7 +100,7 @@ namespace AStar {
     Maybe<Path<Edge>> m_result;
   };
 
-  inline Score::Score() : gScore(highest<double>()), hScore(0), fScore(highest<double>()) {}
+  inline Score::Score() : gScore(std::numeric_limits<double>::max()), hScore(0), fScore(std::numeric_limits<double>::max()) {}
 
   template <class Edge, class Node>
   Search<Edge, Node>::Search(HeuristicFunction heuristicCost,
@@ -153,7 +153,7 @@ namespace AStar {
         // target,
         // or return nothing.
         if (m_returnBestIfFailed) {
-          double bestScore = highest<double>();
+          double bestScore = std::numeric_limits<double>::max();
           Maybe<Node> bestNode;
           for (Node node : m_closedSet) {
             NodeMeta const& nodeMeta = m_nodeMeta[node];

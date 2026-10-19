@@ -108,7 +108,7 @@ EnvironmentPainter::EnvironmentPainter(std::shared_ptr<Renderer> renderer) {
 void EnvironmentPainter::update(float dt) {
   // Allows the rays to change alpha with time.
   m_timer += dt;
-  m_timer = std::fmod(m_timer, Constants::pi * 100000.0);
+  m_timer = std::fmod(m_timer, std::numbers::pi * 100000.0);
 }
 
 void EnvironmentPainter::renderStars(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky) {
@@ -203,7 +203,7 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
       biggest = biggest.piecewiseMax(texture->size());  
     }  
   
-    float screenBuffer = std::ceil((float)biggest.max() * (float)Constants::sqrt2);  
+    float screenBuffer = std::ceil((float)biggest.max() * (float)std::numbers::sqrt2);
     PolyD field = PolyD(RectD::withSize(viewMin + velocityOffset, Vec2D(viewSize)).padded(screenBuffer));  
     Vec2F debrisAngularVelocityRange = jsonToVec2F(debrisField.query("angularVelocityRange"));  
     auto debrisItems = m_debrisGenerators[i]->generate(field,  
@@ -218,7 +218,7 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
   
     for (auto& debrisItem : debrisItems) {  
       Vec2F debrisPosition = rotMatrix.transformVec2(Vec2F(debrisItem.first - debrisPositionOffset));  
-      float debrisAngle = std::fmod(Constants::deg2rad * debrisItem.second.second * sky.epochTime, Constants::pi * 2) + sky.starRotation;  
+      float debrisAngle = std::fmod(Constants::deg2rad * debrisItem.second.second * sky.epochTime, std::numbers::pi * 2) + sky.starRotation;
       drawOrbiter(pixelRatio, screenSize, sky, {SkyOrbiterType::SpaceDebris, 1.0f, debrisAngle, debrisItem.second.first, debrisPosition});  
     }  
   }  
@@ -433,7 +433,7 @@ void EnvironmentPainter::drawRays(
     float pixelRatio, SkyRenderData const& sky, Vec2F start, float length, double time, float alpha) {
   // All magic constants are either 2PI or arbritrary to allow the Perlin to act
   // as a PRNG
-  float sectorWidth = 2 * Constants::pi / RayCount; // Radians
+  float sectorWidth = 2 * std::numbers::pi / RayCount; // Radians
   Vec3B color = sky.topRectColor.toRgb();
 
   for (int i = 0; i < RayCount; i++)

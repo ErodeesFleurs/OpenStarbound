@@ -1069,11 +1069,11 @@ void MainInterface::update(float dt) {
     m_messageOverflow++;
     m_overflowMessage->message = m_config->overflowMessageText.replace("<count>", toString(m_messageOverflow));
     m_overflowMessage->cooldown = m_config->messageTime;
-    if (auto oldest = m_messages.sorted([](std::shared_ptr<GuiMessage> a, std::shared_ptr<GuiMessage> b) { return a->cooldown < b->cooldown; }).maybeFirst())
-      m_overflowMessage->cooldown = oldest.value()->cooldown;
+    if (auto oldest = std::ranges::min_element(m_messages, {}, &GuiMessage::cooldown); oldest != m_messages.end())
+      m_overflowMessage->cooldown = (*oldest)->cooldown;
 
-    if (auto bottom = m_messages.filtered([this](std::shared_ptr<GuiMessage> m) { return m != m_overflowMessage; }).maybeFirst())
-      bottom.value()->cooldown = 0;
+    if (auto bottom = std::ranges::find_if(m_messages, [this](auto const& m) { return m != m_overflowMessage; }); bottom != m_messages.end())
+      (*bottom)->cooldown = 0;
   }
 
   for (auto it = m_messages.begin(); it != m_messages.end();) {

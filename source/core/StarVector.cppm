@@ -144,7 +144,7 @@ public:
   template <std::size_t P = N>
   Enable2D<P, Vector> rotate(T angle) const;
 
-  // Faster than rotate(Constants::pi/2).
+  // Faster than rotate(std::numbers::pi/2).
   template <std::size_t P = N>
   Enable2D<P, Vector> rot90() const;
 
@@ -724,7 +724,7 @@ auto Vector<T, N>::theta() const -> Enable3D<P, T> {
   Vector<T, N> vn = norm(*this);
   T tmp = std::fabs(vn.z());
   if (tmp > 0.99999) {
-    return tmp > 0.0 ? T(-Constants::pi / 2) : T(Constants::pi / 2);
+    return tmp > 0.0 ? T(-std::numbers::pi / 2) : T(std::numbers::pi / 2);
   } else {
     return std::asin(-vn.z());
   }
@@ -748,7 +748,7 @@ auto Vector<T, N>::thetaEnu() const -> Enable3D<P, T> {
   Vector<T, N> vn = norm(*this);
   T tmp = std::fabs(vn.z());
   if (tmp > 0.99999) {
-    return tmp > 0.0 ? -Constants::pi / 2 : Constants::pi / 2;
+    return tmp > 0.0 ? -std::numbers::pi / 2 : std::numbers::pi / 2;
   } else {
     return std::asin(vn.z());
   }
@@ -774,7 +774,7 @@ auto Vector<T, N>::eulers() const -> Enable3D<P, Vector<T, 2>> {
   T tmp = std::fabs(vn.z());
   if (tmp > 0.99999) {
     psi = 0.0;
-    theta = tmp > 0.0 ? -Constants::pi / 2 : Constants::pi / 2;
+    theta = tmp > 0.0 ? -std::numbers::pi / 2 : std::numbers::pi / 2;
   } else {
     psi = std::atan2(vn.y(), vn.x());
     theta = std::asin(-vn.z());

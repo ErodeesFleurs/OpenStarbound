@@ -222,7 +222,7 @@ float SystemWorld::planetOrbitDistance(CelestialCoordinate const& coordinate) co
 float SystemWorld::orbitInterval(float distance, bool isMoon) const {
   float gravityConstant = isMoon ? m_config.planetGravitationalConstant : m_config.starGravitationalConstant;
   float speed =  std::sqrt(gravityConstant / distance);
-  return (distance * 2 * Constants::pi) / speed;
+  return (distance * 2 * std::numbers::pi) / speed;
 }
 
 Vec2F SystemWorld::orbitPosition(CelestialOrbit const& orbit) const {
@@ -231,15 +231,15 @@ Vec2F SystemWorld::orbitPosition(CelestialOrbit const& orbit) const {
   float interval = orbitInterval(distance, false);
 
   float timeOffset = std::fmod(time() - orbit.enterTime, interval) / interval;
-  float angle = (orbit.enterPosition * -1).angle() + (orbit.direction * timeOffset * (Constants::pi * 2));
+  float angle = (orbit.enterPosition * -1).angle() + (orbit.direction * timeOffset * (std::numbers::pi * 2));
   return targetPosition + Vec2F::withAngle(angle, distance);
 }
 
 float SystemWorld::clusterSize(CelestialCoordinate const& coordinate) const {
   if (coordinate.isPlanetaryBody() && m_celestialDatabase->childOrbits(coordinate.parent()).contains(coordinate.orbitNumber())) {
-    auto childOrbits = m_celestialDatabase->childOrbits(coordinate).sorted();
-    if (childOrbits.size() > 0) {
-      CelestialCoordinate outer = coordinate.child(childOrbits.get(childOrbits.size() - 1));
+    auto childOrbits = m_celestialDatabase->childOrbits(coordinate);
+    if (auto outerOrbit = std::ranges::max_element(childOrbits); outerOrbit != childOrbits.end()) {
+      CelestialCoordinate outer = coordinate.child(*outerOrbit);
       return (planetOrbitDistance(outer) * 2) + planetSize(outer);
     } else {
       return planetSize(coordinate);
@@ -291,7 +291,7 @@ Vec2F SystemWorld::planetPosition(CelestialCoordinate const& coordinate) const {
   double start = random.randf();
   double offset = (std::fmod(m_universeClock->time(), interval) / interval);
   int direction = random.randf() > 0.5 ? 1 : -1;
-  float angle = (start + direction * offset) * (Constants::pi * 2);
+  float angle = (start + direction * offset) * (std::numbers::pi * 2);
 
   return parentPosition + Vec2F(std::cos(angle), std::sin(angle)) * distance;
 }
@@ -347,7 +347,7 @@ Maybe<Vec2F> SystemWorld::systemLocationPosition(SystemLocation const& location)
 Vec2F SystemWorld::randomArrivalPosition() const {
   RandomSource rand;
   float range = m_config.arrivalRange[0] + (rand.randf() * (m_config.arrivalRange[1] - m_config.arrivalRange[0]));
-  float angle = rand.randf() * Constants::pi * 2;
+  float angle = rand.randf() * std::numbers::pi * 2;
   return Vec2F::withAngle(angle, range);
 }
 
@@ -499,8 +499,7 @@ void SystemObject::serverUpdate(SystemWorldServer* system, float dt) {
     }
   } else {
     auto planets = system->planets().filtered([system](CelestialCoordinate const& p) {
-        auto objectsAtPlanet = system->objects().filtered([p](std::shared_ptr<SystemObject> const& o) { return o->orbitTarget() == p; });
-        return objectsAtPlanet.size() == 0;
+        return std::ranges::none_of(system->objects(), [&p](std::shared_ptr<SystemObject> const& o) { return o->orbitTarget() == p; });
       });
 
     if (planets.size() > 0)

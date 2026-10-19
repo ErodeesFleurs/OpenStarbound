@@ -885,7 +885,7 @@ List<std::pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F co
     parts.append(std::make_tuple(&activePart, &partName, maybeZLevel.value(0.0f)));
   });
 
-  sort(parts, [](auto const& a, auto const& b) { return std::get<2>(a) < std::get<2>(b); });
+  std::sort(parts.begin(), parts.end(), [](auto const& a, auto const& b) { return std::get<2>(a) < std::get<2>(b); });
 
   List<std::pair<Drawable, float>> drawables;
   drawables.reserve(partCount + drawableCount);
@@ -1036,9 +1036,9 @@ List<LightSource> NetworkedAnimator::lightSources(Vec2F const& translate) const 
     position = globalTransformation().transformVec2(position);
     if (m_flipped.get()) {
       if (pointAngle > 0)
-        pointAngle = Constants::pi / 2 + constrainAngle(Constants::pi / 2 - pointAngle);
+        pointAngle = std::numbers::pi / 2 + constrainAngle(std::numbers::pi / 2 - pointAngle);
       else
-        pointAngle = -Constants::pi / 2 - constrainAngle(pointAngle + Constants::pi / 2);
+        pointAngle = -std::numbers::pi / 2 - constrainAngle(pointAngle + std::numbers::pi / 2);
     }
 
     Color color = pair.second.color.get();
@@ -1153,7 +1153,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
         } else if (action == "rotate") {
           mat.rotate(v.getFloat(1), jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
         } else if (action == "rotateDegrees") { // because radians are fucking annoying
-          mat.rotate(v.getFloat(1) * Star::Constants::pi / 180, jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
+          mat.rotate(v.getFloat(1) * std::numbers::pi / 180, jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
         } else if (action == "scale") {
           mat.scale(jsonToVec2F(v.getArray(1)), jsonToVec2F(v.getArray(2, properties.maybe("scalingCenter").value(JsonArray({0,0})).toArray())));
         } else if (action == "transform") {
@@ -1213,7 +1213,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
 
         if (transformation.determinant() < 0) {
           particle.flip = !particle.flip;
-          particle.rotation += Constants::pi;
+          particle.rotation += std::numbers::pi;
         }
 
         dynamicTarget->pendingParticles.append(std::move(particle));

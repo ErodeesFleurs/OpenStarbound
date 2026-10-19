@@ -255,7 +255,7 @@ void Sky::update(double dt) {
   stateUpdate();
 
   if (!flying())
-    m_starRotation = constrainAngle(m_starRotation + dt / dayLength() * 2 * Constants::pi);
+    m_starRotation = constrainAngle(m_starRotation + dt / dayLength() * 2 * std::numbers::pi);
   else
     m_starRotation = 0;
 }
@@ -386,7 +386,7 @@ float Sky::spaceLevel() const {
 float Sky::orbitAngle() const {
   // TODO: What should we do here?  Used to divide by zero.  Now is saved by
   // DefaultDayLength, but it's a hack
-  return 2 * Constants::pi * timeOfDay() / dayLength();
+  return 2 * std::numbers::pi * timeOfDay() / dayLength();
 }
 
 bool Sky::isDayTime() const {

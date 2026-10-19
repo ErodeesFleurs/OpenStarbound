@@ -1138,7 +1138,7 @@ void WorldServer::update(float dt) {
     m_worldStorage->generateQueue(m_fidelityConfig.optUInt("worldStorageGenerationLevelLimit"), [this](WorldStorage::Sector a, WorldStorage::Sector b) {
         auto distanceToClosestPlayer = [this](WorldStorage::Sector sector) {
           Vec2F sectorCenter = RectF(*m_worldStorage->regionForSector(sector)).center();
-          float distance = highest<float>();
+          float distance = std::numeric_limits<float>::max();
           for (auto const& pair : m_clientInfo) {
             if (auto player = get<Player>(pair.second->clientState.playerId()))
               distance = std::min(vmag(sectorCenter - player->position()), distance);
@@ -1802,7 +1802,7 @@ std::size_t WorldServer::setTileProtection(List<DungeonId> const& dungeonIds, bo
     pair.second->outgoingPackets.appendAll(updates);
 
   auto newDungeonIds = m_protectedDungeonIds.values();
-  sort(newDungeonIds);
+  std::sort(newDungeonIds.begin(), newDungeonIds.end(), std::less<DungeonId>());
   Logger::info("Protected dungeonIds for world set to {}", newDungeonIds);
   return updates.size();
 }
@@ -2965,7 +2965,7 @@ Vec2F WorldServer::findPlayerSpaceStart(float targetX) {
 
   CollisionSet collideWithAnything{CollisionKind::Null, CollisionKind::Block, CollisionKind::Dynamic, CollisionKind::Platform, CollisionKind::Slippery};
   for (int t = 0; t < maximumTries; ++t) {
-    Vec2F testPos = m_geometry.limit(basePos + Vec2F::withAngle(Random::randf() * 2 * Constants::pi, t * distanceIncrement));
+    Vec2F testPos = m_geometry.limit(basePos + Vec2F::withAngle(Random::randf() * 2 * std::numbers::pi, t * distanceIncrement));
     RectF testRect = RectF::withCenter(testPos, testRectSize);
     generateRegion(RectI::integral(testRect));
     if (!rectTileCollision(RectI::integral(testRect), collideWithAnything))

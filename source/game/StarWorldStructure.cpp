@@ -192,7 +192,7 @@ WorldStructure::WorldStructure(String const& configPath) {
 
     // Objects put into the list are from top to bottom, need to place them
     // from bottom to top for objects on top of other objects.
-    reverse(m_objects);
+    std::reverse(m_objects.begin(), m_objects.end());
   }
 }
 

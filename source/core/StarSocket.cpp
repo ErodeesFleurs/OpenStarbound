@@ -31,7 +31,6 @@ import star.logging;
 import star.net_impl;
 import star.list;
 
-import star.pythonic;
 namespace Star {
 
 Maybe<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned timeout) {
@@ -98,14 +97,14 @@ Maybe<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned time
 #else
   std::unique_ptr<pollfd[]> pollfds(new pollfd[query.size()]);
   int ret = 0;
-  for (auto p : enumerateIterator(query)) {
-    if (p.first.first->isOpen()) {
-      auto& pfd = pollfds[p.second];
-      pfd.fd = p.first.first->m_impl->socketDesc;
+  for (auto [index, p] : std::views::enumerate(query)) {
+    if (p.first->isOpen()) {
+      auto& pfd = pollfds[static_cast<std::size_t>(index)];
+      pfd.fd = p.first->m_impl->socketDesc;
       pfd.events = 0;
-      if (p.first.second.readable)
+      if (p.second.readable)
         pfd.events |= POLLIN;
-      if (p.first.second.writable)
+      if (p.second.writable)
         pfd.events |= POLLOUT;
     }
   }
@@ -117,16 +116,16 @@ Maybe<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned time
   if (ret == 0)
     return {};
 
-  for (auto p : enumerateIterator(query)) {
-    if (p.first.first->isOpen()) {
-      auto& pfd = pollfds[p.second];
+  for (auto [index, p] : std::views::enumerate(query)) {
+    if (p.first->isOpen()) {
+      auto& pfd = pollfds[static_cast<std::size_t>(index)];
       SocketPollResultEntry pr;
       pr.readable = pfd.revents & POLLIN;
       pr.writable = pfd.revents & POLLOUT;
       pr.exception = pfd.revents & POLLHUP || pfd.revents & POLLNVAL || pfd.revents & POLLERR;
       if (pfd.revents & POLLHUP)
-        p.first.first->doShutdown();
-      result.add(p.first.first, std::move(pr));
+        p.first->doShutdown();
+      result.add(p.first, std::move(pr));
     }
   }
 #endif

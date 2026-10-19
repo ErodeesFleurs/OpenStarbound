@@ -253,7 +253,7 @@ String CommandProcessor::help(ConnectionId connectionId, String const& argumentS
 
   auto commandDescriptions = [&](Json const& commandConfig) {
       StringList commandList = commandConfig.toObject().keys();
-      sort(commandList);
+      std::sort(commandList.begin(), commandList.end(), std::less<String>());
       return "/" + commandList.join(", /");
     };
 

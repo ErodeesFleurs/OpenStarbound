@@ -86,7 +86,6 @@ import star.ambient;
 
 import star.static_random;
 import star.algorithm;
-import star.pythonic;
 namespace Star {
 
 WorldTemplate::WorldTemplate(Vec2U const& size) : WorldTemplate() {
@@ -339,8 +338,8 @@ List<WorldTemplate::Dungeon> WorldTemplate::dungeons() const {
       if (layer.dungeons.size() > 0) {
         int dungeonSpacing = std::floor(m_geometry.width() / layer.dungeons.size());
         std::uint32_t dungeonOffset = staticRandomU32Range(0, m_geometry.width(), m_seed, layer.layerBaseHeight);
-        for (auto const& dp : enumerateIterator(layer.dungeons)) {
-          dungeonList.append({dp.first, layer.layerBaseHeight, (int)dungeonOffset, layer.dungeonXVariance, false, true});
+        for (auto const& dungeon : layer.dungeons) {
+          dungeonList.append({dungeon, layer.layerBaseHeight, (int)dungeonOffset, layer.dungeonXVariance, false, true});
           dungeonOffset = (dungeonOffset + dungeonSpacing) % m_geometry.width();
         }
       }
@@ -748,7 +747,7 @@ void WorldTemplate::setupWeatherDomains() {
 std::pair<float, float> WorldTemplate::customTerrainWeighting(int x, int y) const {
   auto assets = Root::singleton().assets();
 
-  float minimumDistance = highest<float>();
+  float minimumDistance = std::numeric_limits<float>::max();
   float finalSolidWeight = 0.0f;
   float totalWeight = 0.0f;
 

@@ -85,7 +85,7 @@ void VerticalLayout::update(float) {
   auto bounds = contentBoundRect();
 
   int verticalPos = m_fillDown ? bounds.yMax() : bounds.yMin();
-  for (auto const& child : reverseIterate(m_members)) {
+  for (auto const& child : std::views::reverse(m_members)) {
     auto childSize = child->size();
 
     Vec2I targetPosition;

@@ -63,7 +63,7 @@ public:
   // Put items into the given slot.  Returns number of items left over
   std::shared_ptr<Item> putItems(std::size_t pos, std::shared_ptr<Item> items);
   // Take a maximum number of items from the given position, defaults to all.
-  std::shared_ptr<Item> takeItems(std::size_t pos, std::uint64_t count = highest<std::uint64_t>());
+  std::shared_ptr<Item> takeItems(std::size_t pos, std::uint64_t count = std::numeric_limits<std::uint64_t>::max());
   // Put items in the slot by combining, or swap the current items with the
   // given items.
   std::shared_ptr<Item> swapItems(std::size_t pos, std::shared_ptr<Item> items, bool tryCombine = true);
@@ -88,7 +88,7 @@ public:
   std::uint64_t itemsCanStack(std::shared_ptr<Item const> const& items) const;
 
   // Returns where the items would fit if inserted, including any splitting up
-  ItemsFitWhereResult itemsFitWhere(std::shared_ptr<Item const> const& items, std::uint64_t max = highest<std::uint64_t>()) const;
+  ItemsFitWhereResult itemsFitWhere(std::shared_ptr<Item const> const& items, std::uint64_t max = std::numeric_limits<std::uint64_t>::max()) const;
 
   // Add items anywhere in the bag. Tries to stack items first.  If any items
   // are left over, addItems returns them, otherwise null.

@@ -173,7 +173,7 @@ Polygon<DataType> Polygon<DataType>::convexHull(VertexList points) {
   auto cross = [](Vertex o, Vertex a, Vertex b) {
     return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
   };
-  sort(points);
+  std::sort(points.begin(), points.end(), std::less<Vertex>());
 
   VertexList lower;
   for (auto const& point : points) {
@@ -183,7 +183,7 @@ Polygon<DataType> Polygon<DataType>::convexHull(VertexList points) {
   }
 
   VertexList upper;
-  for (auto const& point : reverseIterate(points)) {
+  for (auto const& point : std::views::reverse(points)) {
     while (upper.size() >= 2 && cross(upper[upper.size() - 2], upper[upper.size() - 1], point) <= 0)
       upper.removeLast();
     upper.append(point);
@@ -353,7 +353,7 @@ DataType Polygon<DataType>::distance(Vertex const& c) const {
   if (contains(c))
     return 0;
 
-  DataType dist = highest<DataType>();
+  DataType dist = std::numeric_limits<DataType>::max();
   for (std::size_t i = 0; i < m_vertexes.size(); ++i)
     dist = std::min(dist, sideAt(i).distanceTo(c));
 

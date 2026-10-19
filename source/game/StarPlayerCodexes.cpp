@@ -57,7 +57,7 @@ List<PlayerCodexes::CodexEntry> PlayerCodexes::codexes() const {
   List<CodexEntry> result;
   for (auto pair : m_codexes)
     result.append(pair.second);
-  sort(result,
+  std::sort(result.begin(), result.end(),
       [](CodexEntry const& left, CodexEntry const& right) -> bool {
         return std::make_tuple(left.second, left.first->title()) < std::make_tuple(right.second, right.first->title());
       });

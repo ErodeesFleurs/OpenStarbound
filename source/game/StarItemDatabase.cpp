@@ -395,7 +395,7 @@ std::uint64_t ItemDatabase::maxCraftableInBag(List<std::shared_ptr<Item>> const&
 }
 
 std::uint64_t ItemDatabase::maxCraftableInBag(HashMap<ItemDescriptor, std::uint64_t> const& bag, StringMap<std::uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const {
-  std::uint64_t res = highest<std::uint64_t>();
+  std::uint64_t res = std::numeric_limits<std::uint64_t>::max();
 
   for (auto const& p : recipe.currencyInputs) {
     std::uint64_t available = availableCurrencies.value(p.first, 0);

@@ -466,7 +466,7 @@ Plant::Plant(TreeVariant const& config, std::uint64_t seed) : Plant() {
     }
   }
 
-  sort(m_pieces, [](PlantPiece const& a, PlantPiece const& b) { return a.zLevel < b.zLevel; });
+  std::sort(m_pieces.begin(), m_pieces.end(), [](PlantPiece const& a, PlantPiece const& b) { return a.zLevel < b.zLevel; });
   validatePieces();
   setupNetStates();
 }
@@ -1017,8 +1017,8 @@ bool Plant::damageTiles(List<Vec2I> const& positions, Vec2F const& sourcePositio
 void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) {
   auto geometry = world()->geometry();
   Vec2I internalPos = geometry.diff(position, tilePosition());
-  std::size_t idx = highest<std::size_t>();
-  int segmentIdx = highest<int>();
+  std::size_t idx = std::numeric_limits<std::size_t>::max();
+  int segmentIdx = std::numeric_limits<int>::max();
   for (std::size_t i = 0; i < m_pieces.size(); ++i) {
     auto& piece = m_pieces[i];
     if (piece.structuralSegment && piece.spaces.contains(internalPos)) {
@@ -1097,7 +1097,7 @@ void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) 
       segmentOrder.append(piece.segmentIdx);
     segments[piece.segmentIdx].append(piece);
   }
-  reverse(segmentOrder);
+  std::reverse(segmentOrder.begin(), segmentOrder.end());
   float random = Random::randf(-0.3f, 0.3f);
   auto fallVector = (worldSpaceBreakPoint - sourcePosition).normalized();
   bool first = true;

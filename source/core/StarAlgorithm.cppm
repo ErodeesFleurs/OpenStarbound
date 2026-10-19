@@ -65,36 +65,6 @@ decltype(auto) compose(FirstFunction firstFunction, SecondFunction secondFunctio
   return compose(std::forward<FirstFunction>(firstFunction), compose(std::forward<SecondFunction>(secondFunction), compose(std::forward<ThirdFunction>(thirdFunction), std::forward<RestFunctions>(restFunctions)...)));
 }
 
-template <typename Container, typename Value, typename Function>
-Value fold(Container const& l, Value v, Function f) {
-  auto i = l.begin();
-  auto e = l.end();
-  while (i != e) {
-    v = f(v, *i);
-    ++i;
-  }
-  return v;
-}
-
-// Like fold, but returns default value when container is empty.
-template <typename Container, typename Function>
-typename Container::value_type fold1(Container const& l, Function f) {
-  typename Container::value_type res = {};
-  typename Container::const_iterator i = l.begin();
-  typename Container::const_iterator e = l.end();
-
-  if (i == e)
-    return res;
-
-  res = *i;
-  ++i;
-  while (i != e) {
-    res = f(res, *i);
-    ++i;
-  }
-  return res;
-}
-
 // Return intersection of sorted containers.
 template <typename Container>
 Container intersect(Container const& a, Container const& b) {
@@ -169,50 +139,30 @@ void eraseWhere(Container& container, Cond&& cond) {
 }
 
 template <typename Container, typename Compare>
-void sort(Container& c, Compare comp) {
-  std::sort(c.begin(), c.end(), comp);
-}
-
-template <typename Container, typename Compare>
-void stableSort(Container& c, Compare comp) {
-  std::stable_sort(c.begin(), c.end(), comp);
-}
-
-template <typename Container>
-void sort(Container& c) {
-  std::sort(c.begin(), c.end(), std::less<typename Container::value_type>());
-}
-
-template <typename Container>
-void stableSort(Container& c) {
-  std::stable_sort(c.begin(), c.end(), std::less<typename Container::value_type>());
-}
-
-template <typename Container, typename Compare>
 Container sorted(Container const& c, Compare comp) {
   auto c2 = c;
-  sort(c2, comp);
+  std::sort(c2.begin(), c2.end(), comp);
   return c2;
 }
 
 template <typename Container, typename Compare>
 Container stableSorted(Container const& c, Compare comp) {
   auto c2 = c;
-  sort(c2, comp);
+  std::sort(c2.begin(), c2.end(), comp);
   return c2;
 }
 
 template <typename Container>
 Container sorted(Container const& c) {
   auto c2 = c;
-  sort(c2);
+  std::sort(c2.begin(), c2.end(), std::less<typename Container::value_type>());
   return c2;
 }
 
 template <typename Container>
 Container stableSorted(Container const& c) {
   auto c2 = c;
-  sort(c2);
+  std::sort(c2.begin(), c2.end(), std::less<typename Container::value_type>());
   return c2;
 }
 
@@ -240,9 +190,9 @@ void sortByComputedValue(Container& container, Getter&& valueGetter, bool stable
 
   // Sort the comptued values and the associated indexes
   if (stable)
-    stableSort(work, compare);
+    std::stable_sort(work.begin(), work.end(), compare);
   else
-    sort(work, compare);
+    std::sort(work.begin(), work.end(), compare);
 
   Container result(containerSize);
   for (std::size_t i = 0; i < containerSize; ++i) {
@@ -264,29 +214,14 @@ void stableSortByComputedValue(Container& container, Getter&& valueGetter) {
 }
 
 template <typename Container>
-void reverse(Container& c) {
-  std::reverse(c.begin(), c.end());
-}
-
-template <typename Container>
 Container reverseCopy(Container c) {
-  reverse(c);
+  std::reverse(c.begin(), c.end());
   return c;
 }
 
 template <typename T>
 T copy(T c) {
   return c;
-}
-
-template <typename Container>
-typename Container::value_type sum(Container const& cont) {
-  return fold1(cont, std::plus<typename Container::value_type>());
-}
-
-template <typename Container>
-typename Container::value_type product(Container const& cont) {
-  return fold1(cont, std::multiplies<typename Container::value_type>());
 }
 
 template <typename OutContainer, typename InContainer, typename Function>
@@ -331,14 +266,6 @@ T take(T& t) {
   T t2 = std::move(t);
   t = T();
   return t2;
-}
-
-template <typename Container1, typename Container2>
-bool containersEqual(Container1 const& cont1, Container2 const& cont2) {
-  if (cont1.size() != cont2.size())
-    return false;
-  else
-    return std::equal(cont1.begin(), cont1.end(), cont2.begin());
 }
 
 // Wraps a unary function to produce an output iterator
@@ -424,28 +351,6 @@ private:
 template <typename NullaryFunction>
 FunctionInputIterator<NullaryFunction> makeFunctionInputIterator(NullaryFunction f) {
   return FunctionInputIterator<NullaryFunction>(std::move(f));
-}
-
-template <typename Iterable>
-struct ReverseWrapper {
-private:
-  Iterable& m_iterable;
-
-public:
-  ReverseWrapper(Iterable& iterable) : m_iterable(iterable) {}
-
-  decltype(auto) begin() const {
-    return std::rbegin(m_iterable);
-  }
-
-  decltype(auto) end() const {
-    return std::rend(m_iterable);
-  }
-};
-
-template <typename Iterable>
-ReverseWrapper<Iterable> reverseIterate(Iterable& list) {
-  return ReverseWrapper<Iterable>(list);
 }
 
 template <typename Functor>
@@ -588,36 +493,26 @@ export namespace Star {
   using ::Star::Empty;
   using ::Star::FunctionComposer;
   using ::Star::compose;
-  using ::Star::fold;
-  using ::Star::fold1;
   using ::Star::intersect;
   using ::Star::mapMerge;
   using ::Star::mapsEqual;
   using ::Star::filter;
   using ::Star::filtered;
   using ::Star::eraseWhere;
-  using ::Star::sort;
-  using ::Star::stableSort;
   using ::Star::sorted;
   using ::Star::stableSorted;
   using ::Star::sortByComputedValue;
   using ::Star::stableSortByComputedValue;
-  using ::Star::reverse;
   using ::Star::reverseCopy;
   using ::Star::copy;
-  using ::Star::sum;
-  using ::Star::product;
   using ::Star::transformInto;
   using ::Star::transform;
   using ::Star::zipWith;
   using ::Star::take;
-  using ::Star::containersEqual;
   using ::Star::FunctionOutputIterator;
   using ::Star::makeFunctionOutputIterator;
   using ::Star::FunctionInputIterator;
   using ::Star::makeFunctionInputIterator;
-  using ::Star::ReverseWrapper;
-  using ::Star::reverseIterate;
   using ::Star::FinallyGuard;
   using ::Star::finally;
   using ::Star::unpackVariadicImpl;

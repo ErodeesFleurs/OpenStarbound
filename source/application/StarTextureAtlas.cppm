@@ -362,7 +362,7 @@ void TextureAtlasSet<AtlasTextureHandle>::setAtlasRegionUsed(TextureAtlas* textu
 
 template <typename AtlasTextureHandle>
 void TextureAtlasSet<AtlasTextureHandle>::sortAtlases() {
-  sort(m_atlases, [](auto const& a1, auto const& a2) {
+  std::sort(m_atlases.begin(), m_atlases.end(), [](auto const& a1, auto const& a2) {
       return a1->usedCellCount > a2->usedCellCount;
     });
 }

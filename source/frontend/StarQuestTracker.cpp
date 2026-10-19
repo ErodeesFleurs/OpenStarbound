@@ -209,14 +209,14 @@ void QuestTrackerPane::update(float dt) {
       else
         m_compassFrame->setImage(m_compassFrameImage);
 
-      float compassDiff = pfmod(*compassDirection - m_compassDirection, (float)Constants::pi * 2);
+      float compassDiff = pfmod(*compassDirection - m_compassDirection, (float)std::numbers::pi * 2);
       if (std::abs(compassDiff) < m_compassAcceleration && std::abs(m_compassSpeed) < m_compassAcceleration) {
         m_compassSpeed = 0;
         m_compassDirection = *compassDirection;
       } else {
-        if (std::abs(compassDiff) > Constants::pi)
-          compassDiff -= std::copysign(2 * Constants::pi, compassDiff);
-        float diffRatio = std::abs(compassDiff) / Constants::pi;
+        if (std::abs(compassDiff) > std::numbers::pi)
+          compassDiff -= std::copysign(2 * std::numbers::pi, compassDiff);
+        float diffRatio = std::abs(compassDiff) / std::numbers::pi;
         float speedChange = m_compassAcceleration * diffRatio;
 
         m_compassSpeed += std::copysign(speedChange, compassDiff);

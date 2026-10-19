@@ -785,7 +785,7 @@ void Humanoid::refreshWearables(Fashion& fashion) {
     }
   }
   if (wornChestsLegsChanged) {
-    sort(fashion.wornChestsLegs, [](std::uint8_t a, std::uint8_t b) {
+    std::sort(fashion.wornChestsLegs.begin(), fashion.wornChestsLegs.end(), [](std::uint8_t a, std::uint8_t b) {
       return ChestLegsSortOrder[a] < ChestLegsSortOrder[b];
     });
   }
@@ -1056,10 +1056,10 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     }
     if (m_headRotation != 0.f) {
       float dir = numericalDirection(m_facingDirection);
-      float headX = (m_headRotation / ((float)Constants::pi * 2.f));
+      float headX = (m_headRotation / ((float)std::numbers::pi * 2.f));
       Vec2F translate = {
         -(state() == State::Run ? (std::fmaxf(headX, 0.f) * 2.f) : headX),
-        -(std::fabsf(m_headRotation / ((float)Constants::pi * 4.f)))
+        -(std::fabsf(m_headRotation / ((float)std::numbers::pi * 4.f)))
       };
       auto rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_headRotationPoint.first, m_headRotationPoint.second));
       auto bodyHeadRotationCenter = networkedAnimator()->partTransformation(m_headRotationPoint.first).transformVec2(rotationCenter);
@@ -1212,10 +1212,10 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
         float dir = numericalDirection(m_facingDirection);
         Vec2F rotationPoint = headPosition + m_headRotationCenter;
         rotationPoint[0] *= dir;
-        float headX = (m_headRotation / ((float)Constants::pi * 2.f));
+        float headX = (m_headRotation / ((float)std::numbers::pi * 2.f));
         drawable.rotate(m_headRotation, rotationPoint);
         drawable.position[0] -= state() == State::Run ? (std::fmaxf(headX * dir, 0.f) * 2.f) * dir : headX;
-        drawable.position[1] -= std::fabsf(m_headRotation / ((float)Constants::pi * 4.f));
+        drawable.position[1] -= std::fabsf(m_headRotation / ((float)std::numbers::pi * 4.f));
       }
     };
 

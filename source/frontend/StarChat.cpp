@@ -603,11 +603,11 @@ bool Chat::sendEvent(InputEvent const& event) {
 }
 
 void Chat::scrollUp() {
-  auto shownMessages = m_receivedMessages.filtered([this](LogMessage msg) {
+  auto shownMessageCount = std::ranges::count_if(m_receivedMessages, [this](LogMessage const& msg) {
       return (m_modeFilter.empty() || m_modeFilter.contains(msg.mode));
     });
 
-  m_historyOffset = std::max(0, std::min((int)shownMessages.size() - 1, m_historyOffset + 1));
+  m_historyOffset = std::max(0, std::min((int)shownMessageCount - 1, m_historyOffset + 1));
   m_timeChatLastActive = Time::monotonicMilliseconds();
   updateBottomButton();
 }

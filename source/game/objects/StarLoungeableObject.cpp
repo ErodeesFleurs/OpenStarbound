@@ -170,7 +170,7 @@ void LoungeableObject::setOrientationIndex(std::size_t orientationIndex) {
     }
     m_sitFlipDirection = configValue("sitFlipDirection", false).toBool();
     m_sitOrientation = LoungeOrientationNames.getLeft(configValue("sitOrientation", "sit").toString());
-    m_sitAngle = configValue("sitAngle", 0).toFloat() * Constants::pi / 180.0f;
+    m_sitAngle = configValue("sitAngle", 0).toFloat() * std::numbers::pi / 180.0f;
     m_sitCoverImage = configValue("sitCoverImage", "").toString();
     m_flipImages = configValue("flipImages", false).toBool();
     m_sitStatusEffects = configValue("sitStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);

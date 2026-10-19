@@ -1193,7 +1193,7 @@ bool BTreeDatabase::tryFlatten() {
     } while (indexBlockIndex != InvalidBlockIndex);
     m_headFreeIndexBlock = InvalidBlockIndex;
 
-    sort(availableBlocksList);
+    std::sort(availableBlocksList.begin(), availableBlocksList.end(), std::less<BlockIndex>());
     for (auto& availableBlock : availableBlocksList)
       m_availableBlocks.insert(m_availableBlocks.end(), availableBlock);
   }

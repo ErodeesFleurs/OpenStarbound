@@ -132,153 +132,6 @@ T slice(T const& r, SliceIndex a, SliceIndex b = SliceIndex(), int j = 1) {
   return slice<T, T>(r, a, b, j);
 }
 
-// ZIP
-
-// Wraps a regular iterator and returns a singleton tuple, as well as
-// supporting the iterator protocol that the zip iterator code expects.
-template <typename IteratorT>
-class ZipWrapperIterator {
-private:
-  IteratorT current;
-  IteratorT last;
-  bool atEnd;
-
-public:
-  typedef IteratorT Iterator;
-  typedef decltype(*std::declval<Iterator>()) IteratorValue;
-  typedef std::tuple<IteratorValue> value_type;
-
-  ZipWrapperIterator() : atEnd(true) {}
-
-  ZipWrapperIterator(Iterator current, Iterator last) : current(current), last(last) {
-    atEnd = current == last;
-  }
-
-  ZipWrapperIterator operator++() {
-    if (!atEnd) {
-      ++current;
-      atEnd = current == last;
-    }
-
-    return *this;
-  }
-
-  value_type operator*() const {
-    return std::tuple<IteratorValue>(*current);
-  }
-
-  bool operator==(ZipWrapperIterator const& rhs) const {
-    return (atEnd && rhs.atEnd) || (!atEnd && !rhs.atEnd && current == rhs.current && last == rhs.last);
-  }
-
-  bool operator!=(ZipWrapperIterator const& rhs) const {
-    return !(*this == rhs);
-  }
-
-  explicit operator bool() const {
-    return !atEnd;
-  }
-
-  ZipWrapperIterator begin() const {
-    return *this;
-  }
-
-  ZipWrapperIterator end() const {
-    return ZipWrapperIterator();
-  }
-};
-template <typename IteratorT>
-ZipWrapperIterator<IteratorT> makeZipWrapperIterator(IteratorT current, IteratorT end) {
-  return ZipWrapperIterator<IteratorT>(current, end);
-}
-
-// Takes two ZipIterators / ZipTupleIterators and concatenates them into a
-// single iterator that returns the concatenated tuple.
-template <typename TailIteratorT, typename HeadIteratorT>
-class ZipTupleIterator {
-private:
-  TailIteratorT tailIterator;
-  HeadIteratorT headIterator;
-  bool atEnd;
-
-public:
-  typedef TailIteratorT TailIterator;
-  typedef HeadIteratorT HeadIterator;
-
-  typedef decltype(*TailIterator()) TailType;
-  typedef decltype(*HeadIterator()) HeadType;
-
-  typedef decltype(std::tuple_cat(std::declval<TailType>(), std::declval<HeadType>())) value_type;
-
-  ZipTupleIterator() : atEnd(true) {}
-
-  ZipTupleIterator(TailIterator tailIterator, HeadIterator headIterator)
-    : tailIterator(tailIterator), headIterator(headIterator) {
-    atEnd = tailIterator == TailIterator() || headIterator == HeadIterator();
-  }
-
-  ZipTupleIterator operator++() {
-    if (!atEnd) {
-      ++tailIterator;
-      ++headIterator;
-      atEnd = tailIterator == TailIterator() || headIterator == HeadIterator();
-    }
-
-    return *this;
-  }
-
-  value_type operator*() const {
-    return std::tuple_cat(*tailIterator, *headIterator);
-  }
-
-  bool operator==(ZipTupleIterator const& rhs) const {
-    return (atEnd && rhs.atEnd)
-        || (!atEnd && !rhs.atEnd && tailIterator == rhs.tailIterator && headIterator == rhs.headIterator);
-  }
-
-  bool operator!=(ZipTupleIterator const& rhs) const {
-    return !(*this == rhs);
-  }
-
-  explicit operator bool() const {
-    return !atEnd;
-  }
-
-  ZipTupleIterator begin() const {
-    return *this;
-  }
-
-  ZipTupleIterator end() const {
-    return ZipTupleIterator();
-  }
-};
-template <typename HeadIteratorT, typename TailIteratorT>
-ZipTupleIterator<HeadIteratorT, TailIteratorT> makeZipTupleIterator(HeadIteratorT head, TailIteratorT tail) {
-  return ZipTupleIterator<HeadIteratorT, TailIteratorT>(head, tail);
-}
-
-template <typename Container, typename... Rest>
-struct zipIteratorReturn {
-  typedef ZipTupleIterator<typename zipIteratorReturn<Container>::type, typename zipIteratorReturn<Rest...>::type> type;
-};
-
-template <typename Container>
-struct zipIteratorReturn<Container> {
-  typedef ZipWrapperIterator<decltype(std::declval<Container>().begin())> type;
-};
-
-template <typename Container>
-typename zipIteratorReturn<Container>::type zipIterator(Container& container) {
-  return makeZipWrapperIterator(container.begin(), container.end());
-}
-
-template <typename Container, typename... Rest>
-typename zipIteratorReturn<Container, Rest...>::type zipIterator(Container& container, Rest&... rest) {
-  return makeZipTupleIterator(makeZipWrapperIterator(container.begin(), container.end()), zipIterator(rest...));
-}
-
-// END ZIP
-
 // RANGE
 
 namespace RangeHelper {
@@ -529,72 +382,11 @@ RangeIterator<Numeric, Diff> rangeInclusive(Numeric min, Numeric max) {
 
 // END RANGE
 
-// Wraps a forward-iterator to produce {value, index} pairs, similar to
-// python's enumerate()
-template <typename Iterator>
-struct EnumerateIterator {
-private:
-  Iterator current;
-  Iterator last;
-  std::size_t index;
-  bool atEnd;
-
-public:
-  typedef decltype(*std::declval<Iterator>()) IteratorValue;
-  typedef std::pair<IteratorValue&, std::size_t> value_type;
-
-  EnumerateIterator() : index(0), atEnd(true) {}
-
-  EnumerateIterator(Iterator begin, Iterator end) : current(begin), last(end), index(0) {
-    atEnd = current == last;
-  }
-
-  EnumerateIterator begin() const {
-    return *this;
-  }
-
-  EnumerateIterator end() const {
-    return EnumerateIterator();
-  }
-
-  EnumerateIterator operator++() {
-    if (!atEnd) {
-      ++current;
-      ++index;
-
-      atEnd = current == last;
-    }
-
-    return *this;
-  }
-
-  value_type operator*() const {
-    return {*current, index};
-  }
-
-  bool operator==(EnumerateIterator const& rhs) const {
-    return (atEnd && rhs.atEnd) || (!atEnd && !rhs.atEnd && current == rhs.current && last == rhs.last);
-  }
-
-  bool operator!=(EnumerateIterator const& rhs) const {
-    return !(*this == rhs);
-  }
-
-  explicit operator bool() const {
-    return !atEnd;
-  }
-};
-
-template <typename Iterable>
-EnumerateIterator<decltype(std::declval<Iterable>().begin())> enumerateIterator(Iterable& list) {
-  return EnumerateIterator<decltype(std::declval<Iterable>().begin())>(list.begin(), list.end());
-}
-
 template <typename ResultContainer, typename Iterable>
 ResultContainer enumerateConstruct(Iterable&& list) {
   ResultContainer res;
-  for (auto el : enumerateIterator(list))
-    res.push_back(std::move(el));
+  for (auto [index, value] : std::views::enumerate(list))
+    res.push_back(std::pair<decltype(value), std::size_t>(value, static_cast<std::size_t>(index)));
 
   return res;
 }
@@ -609,19 +401,11 @@ export namespace Star {
   using ::Star::SliceIndex;
   using ::Star::SliceNil;
   using ::Star::slice;
-  using ::Star::ZipWrapperIterator;
-  using ::Star::makeZipWrapperIterator;
-  using ::Star::ZipTupleIterator;
-  using ::Star::makeZipTupleIterator;
-  using ::Star::zipIteratorReturn;
-  using ::Star::zipIterator;
   using ::Star::RangeExceptionTag;
   using ::Star::RangeException;
   using ::Star::RangeIterator;
   using ::Star::range;
   using ::Star::rangeInclusive;
-  using ::Star::EnumerateIterator;
-  using ::Star::enumerateIterator;
   using ::Star::enumerateConstruct;
 }
 

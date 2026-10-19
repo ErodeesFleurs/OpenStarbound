@@ -154,7 +154,7 @@ bool Pane::sendEvent(InputEvent const& event) {
       List<std::shared_ptr<Widget>> validWidgets;
       // gather valid widgets into our own list because any of them could mutate
       // m_members while processing the event and fuck everything up
-      for (auto const& widget : reverseIterate(m_members)) {
+      for (auto const& widget : std::views::reverse(m_members)) {
         if (widget->inMember(mousePos) && widget->active() && widget->interactive())
           validWidgets.append(widget);
       }

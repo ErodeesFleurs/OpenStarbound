@@ -12,19 +12,16 @@ struct MathExceptionTag {
 using MathException = StarError<MathExceptionTag, StarException>;
 
 namespace Constants {
-  inline constexpr double pi = 3.14159265358979323846;
   inline double constexpr rad2deg = 57.2957795130823208768;
   inline double constexpr deg2rad = 1 / rad2deg;
-  inline constexpr double sqrt2 = 1.41421356237309504880;
-  inline double constexpr log2e = 1.44269504088896340736;
 }
 
 inline float log2(float f) {
-  return std::log(f) * (float)Constants::log2e;
+  return std::log(f) * (float)std::numbers::log2e;
 }
 
 inline double log2(double d) {
-  return std::log(d) * Constants::log2e;
+  return std::log(d) * std::numbers::log2e;
 }
 
 // Count the number of '1' bits in the given unsigned integer
@@ -80,16 +77,6 @@ template <typename T>
   requires std::numeric_limits<T>::is_integer
 bool nearZero(T x) {
   return x == 0;
-}
-
-template <typename T>
-constexpr T lowest() {
-  return std::numeric_limits<T>::lowest();
-}
-
-template <typename T>
-constexpr T highest() {
-  return std::numeric_limits<T>::max();
 }
 
 template <typename T>
@@ -221,20 +208,20 @@ Float ppow(Float val, Float pow) {
 // Returns angle wrapped around to the range [-pi, pi).
 template <typename Float>
 Float constrainAngle(Float angle) {
-  angle = std::fmod((Float)(angle + Constants::pi), (Float)(Constants::pi * 2));
+  angle = std::fmod((Float)(angle + std::numbers::pi), (Float)(std::numbers::pi * 2));
   if (angle < 0)
-    angle += Constants::pi * 2;
-  return angle - Constants::pi;
+    angle += std::numbers::pi * 2;
+  return angle - std::numbers::pi;
 }
 
 // Returns the closest angle movement to go from the given angle to the target
 // angle, in radians.
 template <typename Float>
 Float angleDiff(Float angle, Float targetAngle) {
-  double diff = std::fmod((Float)(targetAngle - angle + Constants::pi), (Float)(Constants::pi * 2));
+  double diff = std::fmod((Float)(targetAngle - angle + std::numbers::pi), (Float)(std::numbers::pi * 2));
   if (diff < 0)
-    diff += Constants::pi * 2;
-  return diff - Constants::pi;
+    diff += std::numbers::pi * 2;
+  return diff - std::numbers::pi;
 }
 
 // Approach the given goal value from the current value, at a maximum rate of
@@ -297,8 +284,6 @@ export namespace Star {
   using ::Star::countSetBits;
   using ::Star::nearEqual;
   using ::Star::nearZero;
-  using ::Star::lowest;
-  using ::Star::highest;
   using ::Star::square;
   using ::Star::cube;
   using ::Star::ipart;
@@ -325,9 +310,6 @@ export namespace Star {
 }
 
 export namespace Star::Constants {
-  using ::Star::Constants::pi;
   using ::Star::Constants::rad2deg;
   using ::Star::Constants::deg2rad;
-  using ::Star::Constants::sqrt2;
-  using ::Star::Constants::log2e;
 }

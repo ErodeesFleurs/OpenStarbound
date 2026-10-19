@@ -812,11 +812,11 @@ void Projectile::processAction(Json const& action) {
       float angle = m_movementController->rotation();
       float angleAdjust = 0;
       if (parameters.contains("angle"))
-        angle = parameters.getFloat("angle") * Constants::pi / 180.0f;
+        angle = parameters.getFloat("angle") * std::numbers::pi / 180.0f;
       if (parameters.contains("fuzzAngle"))
-        angleAdjust += Random::randf(-1, 1) * parameters.getFloat("fuzzAngle") * Constants::pi / 180.0f;
+        angleAdjust += Random::randf(-1, 1) * parameters.getFloat("fuzzAngle") * std::numbers::pi / 180.0f;
       if (parameters.contains("angleAdjust"))
-        angleAdjust += parameters.getFloat("angleAdjust") * Constants::pi / 180.0f;
+        angleAdjust += parameters.getFloat("angleAdjust") * std::numbers::pi / 180.0f;
       if (parameters.contains("autoFlipAdjust") && parameters.getBool("autoFlipAdjust")) {
         if (Vec2F::withAngle(m_movementController->rotation())[0] < 0)
           angleAdjust = -angleAdjust;

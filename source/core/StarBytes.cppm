@@ -74,13 +74,9 @@ inline ByteOrder platformByteOrder() {
 }
 
 inline void swapByteOrder(void* ptr, std::size_t len) {
-  std::uint8_t* data = static_cast<std::uint8_t*>(ptr);
-  std::uint8_t spare;
-  for (std::size_t i = 0; i < len / 2; ++i) {
-    spare = data[len - 1 - i];
-    data[len - 1 - i] = data[i];
-    data[i] = spare;
-  }
+  if (len < 2)
+    return;
+  std::ranges::reverse(std::span{static_cast<std::uint8_t*>(ptr), len});
 }
 
 inline void swapByteOrder(void* dest, const void* src, std::size_t len) {

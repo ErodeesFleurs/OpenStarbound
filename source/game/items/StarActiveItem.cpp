@@ -372,9 +372,9 @@ List<LightSource> ActiveItem::lights() const {
     light.beamAngle += m_armAngle.get();
     if (owner()->facingDirection() == Direction::Left) {
       if (light.beamAngle > 0)
-        light.beamAngle = Constants::pi / 2 + constrainAngle(Constants::pi / 2 - light.beamAngle);
+        light.beamAngle = std::numbers::pi / 2 + constrainAngle(std::numbers::pi / 2 - light.beamAngle);
       else
-        light.beamAngle = -Constants::pi / 2 - constrainAngle(light.beamAngle + Constants::pi / 2);
+        light.beamAngle = -std::numbers::pi / 2 - constrainAngle(light.beamAngle + std::numbers::pi / 2);
     }
     result.append(std::move(light));
   }

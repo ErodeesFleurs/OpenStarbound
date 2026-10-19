@@ -108,7 +108,7 @@ LuaCallbacks LuaBindings::makeNetworkedAnimatorCallbacks(NetworkedAnimator* netw
       });
   callbacks.registerCallback("rotateDegreesTransformationGroup",
       [networkedAnimator](String const& transformationGroup, float rotation, Maybe<Vec2F> const& rotationCenter) {
-        networkedAnimator->rotateTransformationGroup(transformationGroup, rotation * Star::Constants::pi / 180, rotationCenter.value());
+        networkedAnimator->rotateTransformationGroup(transformationGroup, rotation * std::numbers::pi / 180, rotationCenter.value());
       });
   callbacks.registerCallback("scaleTransformationGroup",
       [networkedAnimator](LuaEngine& engine, String const& transformationGroup, LuaValue scale, Maybe<Vec2F> const& scaleCenter) {
@@ -135,7 +135,7 @@ LuaCallbacks LuaBindings::makeNetworkedAnimatorCallbacks(NetworkedAnimator* netw
       });
   callbacks.registerCallback("rotateDegreesLocalTransformationGroup",
       [networkedAnimator](String const& transformationGroup, float rotation, Maybe<Vec2F> const& rotationCenter) {
-        networkedAnimator->rotateLocalTransformationGroup(transformationGroup, rotation * Star::Constants::pi / 180, rotationCenter.value());
+        networkedAnimator->rotateLocalTransformationGroup(transformationGroup, rotation * std::numbers::pi / 180, rotationCenter.value());
       });
   callbacks.registerCallback("scaleLocalTransformationGroup",
       [networkedAnimator](LuaEngine& engine, String const& transformationGroup, LuaValue scale, Maybe<Vec2F> const& scaleCenter) {

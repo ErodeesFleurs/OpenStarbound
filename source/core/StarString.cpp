@@ -333,7 +333,7 @@ StringList String::rsplit(String const& pattern, std::size_t maxSplit) const {
   for (auto& s : l)
     s = s.reverse();
 
-  Star::reverse(l);
+  std::reverse(l.begin(), l.end());
   return l;
 }
 
@@ -363,7 +363,7 @@ StringList String::rsplitAny(String const& chars, std::size_t maxSplit) const {
   for (auto& s : l)
     s = s.reverse();
 
-  Star::reverse(l);
+  std::reverse(l.begin(), l.end());
   return l;
 }
 

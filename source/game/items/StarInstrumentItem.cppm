@@ -130,7 +130,7 @@ InstrumentItem::InstrumentItem(Json const& config, String const& directory, Json
   position = jsonToVec2F(instanceValue("activeHandPosition", JsonArray{0, 0}));
   m_activeDrawables.append(Drawable::makeImage(image, 1.0f / TilePixels, true, position));
 
-  m_activeAngle = (instanceValue("activeAngle").toFloat() / 180.0f) * Constants::pi;
+  m_activeAngle = (instanceValue("activeAngle").toFloat() / 180.0f) * std::numbers::pi;
 
   m_activeStatusEffects = instanceValue("activeStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
   m_inactiveStatusEffects = instanceValue("inactiveStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);

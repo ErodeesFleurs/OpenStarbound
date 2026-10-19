@@ -74,7 +74,7 @@ WormCaveSector::WormCaveSector(int sectorSize, Vec2I sector, Json const& config,
 
   float wormSpeed = config.getFloat("wormSpeed", 1);
 
-  float twoPi = Constants::pi * 2;
+  float twoPi = std::numbers::pi * 2;
 
   m_maxValue = wormSizeRange[1] / 2;
 
@@ -112,9 +112,9 @@ WormCaveSector::WormCaveSector(int sectorSize, Vec2I sector, Json const& config,
       float wormRadius = worm.size / 2;
       float taperFactor = 1.0f;
       if (worm.length < wormTaperDistance)
-        taperFactor = std::sin(0.5 * Constants::pi * worm.length / wormTaperDistance);
+        taperFactor = std::sin(0.5 * std::numbers::pi * worm.length / wormTaperDistance);
       else if (worm.goalLength - worm.length < wormTaperDistance)
-        taperFactor = std::sin(0.5 * Constants::pi * (worm.goalLength - worm.length) / wormTaperDistance);
+        taperFactor = std::sin(0.5 * std::numbers::pi * (worm.goalLength - worm.length) / wormTaperDistance);
       wormRadius *= taperFactor;
 
       // carve out worm area

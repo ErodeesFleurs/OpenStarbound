@@ -64,14 +64,14 @@ IslandSurfaceSelector::IslandSurfaceSelector(Json const& config, TerrainSelector
 }
 
 IslandColumn IslandSurfaceSelector::generateColumn(int x) const {
-  float noiseAngle = 2 * Constants::pi * x / worldWidth;
-  float noiseX = (std::cos(noiseAngle) * worldWidth) / (2 * Constants::pi);
-  float noiseY = (std::sin(noiseAngle) * worldWidth) / (2 * Constants::pi);
+  float noiseAngle = 2 * std::numbers::pi * x / worldWidth;
+  float noiseX = (std::cos(noiseAngle) * worldWidth) / (2 * std::numbers::pi);
+  float noiseY = (std::sin(noiseAngle) * worldWidth) / (2 * std::numbers::pi);
 
   IslandColumn newCol;
   float thisIslandDecision = islandDecision.get(noiseX, noiseY);
   if (thisIslandDecision > 0) {
-    float taperFactor = thisIslandDecision < islandTaperPoint ? std::sin((0.5 * Constants::pi * thisIslandDecision) / islandTaperPoint) : 1.0f;
+    float taperFactor = thisIslandDecision < islandTaperPoint ? std::sin((0.5 * std::numbers::pi * thisIslandDecision) / islandTaperPoint) : 1.0f;
     newCol.topLevel = islandElevation + layerBaseHeight + taperFactor * islandHeight.get(noiseX, noiseY);
     newCol.bottomLevel = islandElevation + layerBaseHeight - taperFactor * islandDepth.get(noiseX, noiseY);
   } else {

@@ -88,12 +88,12 @@ ConnectionId connectionForEntity(EntityId entityId) {
 std::pair<float, Direction> getAngleSide(float angle, bool ccRotation) {
   angle = constrainAngle(angle);
   Direction direction = Direction::Right;
-  if (angle > Constants::pi / 2) {
+  if (angle > std::numbers::pi / 2) {
     direction = Direction::Left;
-    angle = Constants::pi - angle;
-  } else if (angle < -Constants::pi / 2) {
+    angle = std::numbers::pi - angle;
+  } else if (angle < -std::numbers::pi / 2) {
     direction = Direction::Left;
-    angle = -Constants::pi - angle;
+    angle = -std::numbers::pi - angle;
   }
 
   if (direction == Direction::Left && ccRotation)

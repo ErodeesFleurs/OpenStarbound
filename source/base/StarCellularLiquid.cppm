@@ -301,7 +301,7 @@ void LiquidCellEngine<LiquidId>::setup() {
     }
   }
 
-  sort(m_currentActiveCells, [](WorkingCell* lhs, WorkingCell* rhs) {
+  std::sort(m_currentActiveCells.begin(), m_currentActiveCells.end(), [](WorkingCell* lhs, WorkingCell* rhs) {
       return lhs->position[1] < rhs->position[1];
     });
 }

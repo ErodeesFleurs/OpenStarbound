@@ -155,7 +155,7 @@ private:
   bool m_interpolationEnabled = false;
   float m_extrapolationHint = 0.0f;
 
-  ElementMap m_idMap = ElementMap(1, highest<ElementId>());
+  ElementMap m_idMap = ElementMap(1, std::numeric_limits<ElementId>::max());
 
   Deque<std::pair<std::uint64_t, ElementChange>> m_changeData;
   std::uint64_t m_changeDataLastVersion = 0;

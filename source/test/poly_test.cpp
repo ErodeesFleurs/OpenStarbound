@@ -12,7 +12,7 @@ using namespace Star;
 TEST(PolyTest, ConvexHull) {
   PolyF::VertexList inputVertexes;
   for (unsigned i = 0; i < 1000; ++i) {
-    float angle = Random::randf() * 2 * Constants::pi;
+    float angle = Random::randf() * 2 * std::numbers::pi;
     inputVertexes.append({std::sin(angle), std::cos(angle)});
   }
 
@@ -20,7 +20,7 @@ TEST(PolyTest, ConvexHull) {
 
   PolyF::VertexList testVertexes;
   for (unsigned i = 0; i < 1000; ++i) {
-    float angle = Random::randf() * 2 * Constants::pi;
+    float angle = Random::randf() * 2 * std::numbers::pi;
     testVertexes.append({std::sin(angle) * 0.75f, std::cos(angle) * 0.75f});
   }
 
@@ -31,7 +31,7 @@ TEST(PolyTest, ConvexHull) {
 TEST(PolyTest, Distance) {
   PolyF square = {{-1.0f, -1.0f}, {1.0f, -1.0f}, {1.0f, 1.0f}, {-1.0f, 1.0f}};
 
-  EXPECT_TRUE(std::fabs(square.distance({-2.0f, -2.0f}) - Constants::sqrt2) < 0.00001f);
+  EXPECT_TRUE(std::fabs(square.distance({-2.0f, -2.0f}) - std::numbers::sqrt2) < 0.00001f);
 }
 
 TEST(PolyTest, LineCollision) {

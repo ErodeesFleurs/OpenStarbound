@@ -277,7 +277,7 @@ void WirePane::renderImpl() {
   auto region = RectF(m_worldClient->clientWindow());
 
   auto const& camera = m_worldPainter->camera();
-  auto badWire = Color::rgbf(0.6f + (float)std::sin(Time::monotonicTime() * Constants::pi * 2.0) * 0.4f, 0.0f, 0.0f);
+  auto badWire = Color::rgbf(0.6f + (float)std::sin(Time::monotonicTime() * std::numbers::pi * 2.0) * 0.4f, 0.0f, 0.0f);
   auto white = Color::White.toRgba();
   float phase = 0.5f + 0.5f * std::sin((double)Time::monotonicMilliseconds() / 100.0);
   auto drawLineColor = Color::Red.mix(Color::White, phase);

@@ -319,7 +319,7 @@ void ServerWeather::spawnWeatherProjectiles(float dt) {
 
     // Sort the split spawn regions by leftmost point then height, preparing to
     // remove the lower overlapping sections.
-    sort(splitSpawnRegions,
+    std::sort(splitSpawnRegions.begin(), splitSpawnRegions.end(),
         [](std::pair<Vec2I, int> const& lhs, std::pair<Vec2I, int> rhs) {
           return std::tie(lhs.first[0], lhs.second) < std::tie(rhs.first[0], rhs.second);
         });

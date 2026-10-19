@@ -76,7 +76,6 @@ import star.biome_database;
 import star.static_random;
 import star.math_common;
 import star.algorithm;
-import star.pythonic;
 namespace Star {
 
 WorldRegion::WorldRegion()
@@ -160,9 +159,9 @@ Json WorldLayout::BlockNoise::toJson() const {
 }
 
 Vec2I WorldLayout::BlockNoise::apply(Vec2I const& input, Vec2U const& worldSize) const {
-  float angle = (input[0] / (float)worldSize[0]) * 2 * Constants::pi;
-  float xc = std::sin(angle) / (2 * Constants::pi) * worldSize[0];
-  float zc = std::cos(angle) / (2 * Constants::pi) * worldSize[0];
+  float angle = (input[0] / (float)worldSize[0]) * 2 * std::numbers::pi;
+  float xc = std::sin(angle) / (2 * std::numbers::pi) * worldSize[0];
+  float zc = std::cos(angle) / (2 * std::numbers::pi) * worldSize[0];
 
   Vec2I noisePos = Vec2I(
       std::floor(input[0] + horizontalNoise.get(input[1]) + xNoise.get(xc, input[1], zc)),
@@ -288,7 +287,7 @@ WorldLayout WorldLayout::buildTerrestrialLayout(TerrestrialWorldParameters const
   };
 
   addLayer(terrestrialParameters.coreLayer);
-  for (auto const& undergroundLayer : reverseIterate(terrestrialParameters.undergroundLayers))
+  for (auto const& undergroundLayer : std::views::reverse(terrestrialParameters.undergroundLayers))
     addLayer(undergroundLayer);
 
   addLayer(terrestrialParameters.subsurfaceLayer);
@@ -550,7 +549,7 @@ List<WorldLayout::RegionWeighting> WorldLayout::getWeighting(int x, int y) const
   }
 
   // Need to return weighting in order of greatest to least
-  sort(weighting, [](RegionWeighting const& lhs, RegionWeighting const& rhs) {
+  std::sort(weighting.begin(), weighting.end(), [](RegionWeighting const& lhs, RegionWeighting const& rhs) {
       return lhs.weight > rhs.weight;
     });
 
@@ -914,16 +913,16 @@ WorldRegion WorldLayout::buildRegion(std::uint64_t seed, RegionParams const& reg
       }
     }
 
-    for (auto const& p : enumerateIterator(biome->ores)) {
-      auto oreSelectorTerrainParameters = terrainSelectorParameters.withCommonality(p.first.second);
+    for (auto const& [index, ore] : std::views::enumerate(biome->ores)) {
+      auto oreSelectorTerrainParameters = terrainSelectorParameters.withCommonality(ore.second);
 
       if (regionParams.fgOreSelector) {
-        auto fgSelector = terrainDatabase->createNamedSelector(*regionParams.fgOreSelector, oreSelectorTerrainParameters.withSeed(staticRandomU64(seed, p.second, "FGOreSelector")));
+        auto fgSelector = terrainDatabase->createNamedSelector(*regionParams.fgOreSelector, oreSelectorTerrainParameters.withSeed(staticRandomU64(seed, static_cast<std::size_t>(index), "FGOreSelector")));
         region.foregroundOreSelectorIndexes.append(registerTerrainSelector(fgSelector));
       }
 
       if (regionParams.bgOreSelector) {
-        auto bgSelector = terrainDatabase->createNamedSelector(*regionParams.bgOreSelector, oreSelectorTerrainParameters.withSeed(staticRandomU64(seed, p.second, "BGOreSelector")));
+        auto bgSelector = terrainDatabase->createNamedSelector(*regionParams.bgOreSelector, oreSelectorTerrainParameters.withSeed(staticRandomU64(seed, static_cast<std::size_t>(index), "BGOreSelector")));
         region.backgroundOreSelectorIndexes.append(registerTerrainSelector(bgSelector));
       }
     }
@@ -1029,7 +1028,7 @@ void WorldLayout::addLayer(std::uint64_t seed, int yStart, int yBase, String con
 }
 
 void WorldLayout::finalize(Color mainSkyColor) {
-  sort(m_layers, [](WorldLayer const& a, WorldLayer const& b) { return a.yStart < b.yStart; });
+  std::sort(m_layers.begin(), m_layers.end(), [](WorldLayer const& a, WorldLayer const& b) { return a.yStart < b.yStart; });
 
   // Post-process all parallaxes
   for (auto const& biome : m_biomes) {

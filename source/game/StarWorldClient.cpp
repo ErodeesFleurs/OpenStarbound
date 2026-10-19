@@ -781,7 +781,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
   float pulseAmount = Root::singleton().assets()->json("/highlights.config:interactivePulseAmount").toFloat();
   float pulseRate = Root::singleton().assets()->json("/highlights.config:interactivePulseRate").toFloat();
-  float pulseLevel = 1 - pulseAmount * 0.5 * (std::sin(2 * Constants::pi * pulseRate * Time::monotonicMilliseconds() / 1000.0) + 1);
+  float pulseLevel = 1 - pulseAmount * 0.5 * (std::sin(2 * std::numbers::pi * pulseRate * Time::monotonicMilliseconds() / 1000.0) + 1);
 
   bool inspecting = m_mainPlayer->inspecting();
   float inspectionFlickerMultiplier = Random::randf(1 - Root::singleton().assets()->json("/highlights.config:inspectionFlickerAmount").toFloat(), 1);
@@ -819,7 +819,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
           Logger::error("WorldClient: Exception caught in {}::render ({}): {}", EntityTypeNames.getRight(entity->entityType()), entity->entityId(), issue);
           auto toolUser = as<ToolUserEntity>(entity);
           String image = toolUser ? strf("/rendering/sprites/error_{}.png", DirectionNames.getRight(toolUser->facingDirection())) : "/rendering/sprites/error.png";
-          Color color = Color::rgbf(0.8f + (float)std::sin(m_currentTime * Constants::pi * 2.0) * 0.2f, 0.0f, 0.0f);
+          Color color = Color::rgbf(0.8f + (float)std::sin(m_currentTime * std::numbers::pi * 2.0) * 0.2f, 0.0f, 0.0f);
           auto drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, entity->position(), color);
           drawable.fullbright = true;
           renderCallback.addDrawable(std::move(drawable), RenderLayerMiddleParticle);
@@ -1037,7 +1037,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       layer.alpha *= clamp((float)functionDatabase->function(layer.timeOfDayCorrelation)->evaluate(m_sky->timeOfDay() / m_sky->dayLength()), 0.0f, 1.0f);
   }
 
-  stableSort(renderData.parallaxLayers, [](ParallaxLayer const& a, ParallaxLayer const& b) {
+  std::stable_sort(renderData.parallaxLayers.begin(), renderData.parallaxLayers.end(), [](ParallaxLayer const& a, ParallaxLayer const& b) {
       return std::tie(a.zLevel, a.verticalOrigin) > std::tie(b.zLevel, b.verticalOrigin);
     });
 
