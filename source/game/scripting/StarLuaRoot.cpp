@@ -41,7 +41,7 @@ LuaRoot::LuaRoot() {
   m_rootReloadListener = std::make_shared<CallbackListener>([cache = m_scriptCache]() {
       cache->clear();
     });
-  root.registerReloadListener(m_rootReloadListener);
+  m_rootReloadSubscription = root.registerReloadListener(m_rootReloadListener);
 
   m_storageDirectory = root.toStoragePath("lua");
 }

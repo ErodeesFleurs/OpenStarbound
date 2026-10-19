@@ -1,6 +1,6 @@
 module;
 import std;
-import star.thread;
+
 
 namespace Star {
 
@@ -34,18 +34,44 @@ private:
   std::atomic<bool> triggered;
 };
 
+struct ListenerRegistration;
+
+// Scoped cancellation. Disconnect prevents subsequent invocations and waits for
+// a callback already in progress, except when called by that callback itself.
+// Duplicate registrations share cancellation, identified by shared owner identity.
+class ListenerSubscription {
+public:
+  ListenerSubscription() = default;
+  ListenerSubscription(ListenerSubscription const&) = delete;
+  ListenerSubscription& operator=(ListenerSubscription const&) = delete;
+  ListenerSubscription(ListenerSubscription&& other) noexcept;
+  ListenerSubscription& operator=(ListenerSubscription&& other) noexcept;
+  ~ListenerSubscription();
+
+  void disconnect();
+
+private:
+  friend class ListenerGroup;
+  explicit ListenerSubscription(std::shared_ptr<ListenerRegistration> registration);
+  std::shared_ptr<ListenerRegistration> m_registration;
+};
+
 class ListenerGroup {
 public:
-  void addListener(std::weak_ptr<Listener> listener);
-  void removeListener(std::weak_ptr<Listener> listener);
+  ~ListenerGroup();
+  [[nodiscard]] ListenerSubscription addListener(std::weak_ptr<Listener> listener);
   void clearExpiredListeners();
   void clearAllListeners();
 
   void trigger();
 
 private:
-  Mutex m_mutex;
-  std::set<std::weak_ptr<Listener>, std::owner_less<std::weak_ptr<Listener>>> m_listeners;
+  // Registry access never invokes callbacks. Dispatch is serial within a group,
+  // but permits a callback to trigger that same group recursively.
+  std::mutex m_mutex;
+  std::recursive_mutex m_dispatchMutex;
+  std::map<std::weak_ptr<Listener>, std::shared_ptr<ListenerRegistration>,
+      std::owner_less<std::weak_ptr<Listener>>> m_listeners;
 };
 
 inline bool TrackerListener::pullTriggered() {
@@ -64,5 +90,6 @@ export namespace Star {
   using ::Star::Listener;
   using ::Star::CallbackListener;
   using ::Star::TrackerListener;
+  using ::Star::ListenerSubscription;
   using ::Star::ListenerGroup;
 }

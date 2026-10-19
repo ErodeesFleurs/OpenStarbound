@@ -73,7 +73,7 @@ target_sources (star_modules PUBLIC FILE_SET CXX_MODULES
           StarBytes.cppm StarStaticRandom.cppm
           StarArray.cppm StarStaticVector.cppm StarSmallVector.cppm
           StarMultiArray.cppm StarMathCommon.cppm StarBlockAllocator.cppm
-          StarAlgorithm.cppm StarIterator.cppm StarPythonic.cppm
+          StarAlgorithm.cppm StarPythonic.cppm
           StarVector.cppm StarMatrix3.cppm StarLine.cppm
           StarRect.cppm StarPoly.cppm StarInterpolation.cppm
           StarAudio.cppm

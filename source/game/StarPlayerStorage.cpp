@@ -35,7 +35,6 @@ import star.asset_path;
 import star.variant;
 import star.file;
 import star.logging;
-import star.iterator;
 import star.time;
 import star.format;
 import star.version;
@@ -172,11 +171,10 @@ PlayerStorage::PlayerStorage(String const& storageDir) {
 
     // Remove all the player entries that are missing player data or fail to
     // load.
-    auto it = makeSMutableMapIterator(m_savedPlayersCache);
-    while (it.hasNext()) {
-      auto& entry = it.next();
+    for (auto it = m_savedPlayersCache.begin(); it != m_savedPlayersCache.end();) {
+      auto& entry = *it;
       if (entry.second.isNull()) {
-        it.remove();
+        it = m_savedPlayersCache.erase(it);
       } else {
         try {
           auto entityFactory = Root::singleton().entityFactory();
@@ -190,8 +188,10 @@ PlayerStorage::PlayerStorage(String const& storageDir) {
             Logger::error("Failed to validate player with uuid {} : {}", uuidHex, outputException(e, true));
           else
             Logger::error("Failed to validate player with uuid {} ({}.player) : {}", uuidHex, fileName, outputException(e, true));
-          it.remove();
+          it = m_savedPlayersCache.erase(it);
+          continue;
         }
+        ++it;
       }
     }
   }

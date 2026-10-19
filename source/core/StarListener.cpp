@@ -1,9 +1,61 @@
 import std;
-import star.thread;
 import star.listener;
 
-import star.algorithm;
 namespace Star {
+
+struct ListenerRegistration {
+  std::mutex mutex;
+  std::condition_variable idle;
+  bool active = true;
+  std::size_t running = 0;
+  std::thread::id invokingThread;
+
+  bool connected() {
+    std::lock_guard lock(mutex);
+    return active;
+  }
+
+  void deactivate() {
+    std::lock_guard lock(mutex);
+    active = false;
+  }
+
+  void disconnect() {
+    std::unique_lock lock(mutex);
+    active = false;
+    // Dispatch is serial per group. Nested invocations run on the same thread;
+    // self-disconnection cannot wait for its own stack frames to return.
+    if (running && invokingThread == std::this_thread::get_id())
+      return;
+    idle.wait(lock, [&] { return running == 0; });
+  }
+
+  void invoke(std::weak_ptr<Listener> const& weakListener) {
+    std::shared_ptr<Listener> listener;
+    {
+      std::lock_guard lock(mutex);
+      if (!active || !(listener = weakListener.lock()))
+        return;
+      ++running;
+      invokingThread = std::this_thread::get_id();
+    }
+    try {
+      listener->trigger();
+    } catch (...) {
+      listener.reset();
+      complete();
+      throw;
+    }
+    listener.reset();
+    complete();
+  }
+
+  void complete() {
+    std::lock_guard lock(mutex);
+    if (--running == 0)
+      idle.notify_all();
+  }
+};
 
 Listener::~Listener() {}
 
@@ -17,36 +69,71 @@ void CallbackListener::trigger() {
 
 TrackerListener::TrackerListener() : triggered(false) {}
 
-void ListenerGroup::addListener(std::weak_ptr<Listener> listener) {
-  MutexLocker locker(m_mutex);
-  m_listeners.insert(std::move(listener));
+ListenerSubscription::ListenerSubscription(std::shared_ptr<ListenerRegistration> registration)
+  : m_registration(std::move(registration)) {}
+
+ListenerSubscription::ListenerSubscription(ListenerSubscription&& other) noexcept = default;
+
+ListenerSubscription& ListenerSubscription::operator=(ListenerSubscription&& other) noexcept {
+  if (this != &other) {
+    disconnect();
+    m_registration = std::move(other.m_registration);
+  }
+  return *this;
 }
 
-void ListenerGroup::removeListener(std::weak_ptr<Listener> listener) {
-  MutexLocker locker(m_mutex);
-  m_listeners.erase(std::move(listener));
+ListenerSubscription::~ListenerSubscription() {
+  disconnect();
+}
+
+void ListenerSubscription::disconnect() {
+  // Keep the handle itself intact: concurrent disconnect calls on a subscription
+  // synchronize through the registration, without racing a shared_ptr reset.
+  if (m_registration)
+    m_registration->disconnect();
+}
+
+ListenerGroup::~ListenerGroup() {
+  clearAllListeners();
+}
+
+ListenerSubscription ListenerGroup::addListener(std::weak_ptr<Listener> listener) {
+  std::lock_guard lock(m_mutex);
+  auto existing = m_listeners.find(listener);
+  if (existing != m_listeners.end() && existing->second->connected())
+    return ListenerSubscription(existing->second);
+  auto registration = std::make_shared<ListenerRegistration>();
+  m_listeners.insert_or_assign(std::move(listener), registration);
+  return ListenerSubscription(std::move(registration));
 }
 
 void ListenerGroup::clearExpiredListeners() {
-  MutexLocker locker(m_mutex);
-  eraseWhere(m_listeners, std::mem_fn(&std::weak_ptr<Listener>::expired));
-};
+  std::lock_guard lock(m_mutex);
+  std::erase_if(m_listeners, [](auto const& entry) { return entry.first.expired(); });
+}
 
 void ListenerGroup::clearAllListeners() {
-  MutexLocker locker(m_mutex);
-  m_listeners.clear();
+  decltype(m_listeners) listeners;
+  {
+    std::lock_guard lock(m_mutex);
+    for (auto const& entry : m_listeners)
+      entry.second->deactivate();
+    listeners.swap(m_listeners);
+  }
+  for (auto const& entry : listeners)
+    entry.second->disconnect();
 }
 
 void ListenerGroup::trigger() {
-  MutexLocker locker(m_mutex);
-  filter(m_listeners, [](std::weak_ptr<Listener> const& wl) {
-      if (auto lock = wl.lock()) {
-        lock->trigger();
-        return true;
-      } else {
-        return false;
-      }
-    });
+  std::lock_guard dispatchLock(m_dispatchMutex);
+  std::vector<std::pair<std::weak_ptr<Listener>, std::shared_ptr<ListenerRegistration>>> listeners;
+  {
+    std::lock_guard registryLock(m_mutex);
+    std::erase_if(m_listeners, [](auto const& entry) { return entry.first.expired(); });
+    listeners.assign(m_listeners.begin(), m_listeners.end());
+  }
+  for (auto const& entry : listeners)
+    entry.second->invoke(entry.first);
 }
 
 }

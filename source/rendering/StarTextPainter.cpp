@@ -80,7 +80,7 @@ TextPainter::TextPainter(std::shared_ptr<Renderer> renderer, std::shared_ptr<Tex
     m_savedRenderSettings() {
   reloadFonts();
   m_reloadTracker = std::make_shared<TrackerListener>();
-  Root::singleton().registerReloadListener(m_reloadTracker);
+  m_reloadSubscription = Root::singleton().registerReloadListener(m_reloadTracker);
 }
 
 RectF TextPainter::renderText(StringView s, TextPositioning const& position) {

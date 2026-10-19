@@ -65,6 +65,7 @@ private:
   std::shared_ptr<ScriptCache> m_scriptCache;
 
   std::shared_ptr<Listener> m_rootReloadListener;
+  ListenerSubscription m_rootReloadSubscription;
 
   String m_storageDirectory;
 };

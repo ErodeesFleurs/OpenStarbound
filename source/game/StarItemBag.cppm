@@ -42,16 +42,17 @@ public:
   // Clears all item slots, does not change ItemBag size
   void clearItems();
 
-  // Normalize empty item stacks to null slots, including during const reads.
-  // This does not change the bag's logical contents.  Returns true if any
-  // empty stack was released.
+  // Normalize empty item stacks to null slots. Direct item-list access also
+  // performs this normalization, including through the const overload.
+  // Returns true if any empty stack was released.
   bool cleanup() const;
 
   // Direct access to item list
   List<std::shared_ptr<Item>>& items();
   List<std::shared_ptr<Item>> const& items() const;
 
-  std::shared_ptr<Item> const& at(std::size_t i) const;
+  // Pure query: an externally exhausted stack is observed as an empty slot.
+  std::shared_ptr<Item> at(std::size_t i) const;
   std::shared_ptr<Item>& at(std::size_t i);
 
   // Returns all non-empty items and clears container contents

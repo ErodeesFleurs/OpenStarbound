@@ -33,6 +33,7 @@ set (star_core_tests_SOURCES
       poly_test.cpp
       random_test.cpp
       rect_test.cpp
+      rpc_promise_test.cpp
       serialization_test.cpp
       static_vector_test.cpp
       small_vector_test.cpp
@@ -107,6 +108,10 @@ target_include_directories (game_tests PRIVATE
   )
 target_link_libraries (game_tests PRIVATE star_base_modules star_game_modules star_build_config
   $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  target_compile_definitions (game_tests PRIVATE STAR_TEST_WRAP_PTHREAD_CREATE=1)
+  target_link_options (game_tests PRIVATE "LINKER:--wrap=pthread_create")
+endif ()
 set_target_properties (game_tests PROPERTIES CXX_SCAN_FOR_MODULES ON)
 add_test (NAME game_tests WORKING_DIRECTORY $<TARGET_FILE_DIR:game_tests> COMMAND game_tests)
 

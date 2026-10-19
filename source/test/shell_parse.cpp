@@ -5,6 +5,10 @@ import star.encode;
 import star.bytes;
 import star.format;
 import star.shell_parser;
+import star.option_parser;
+import star.list;
+import star.ordered_map;
+import star.ordered_set;
 
 #include "gtest/gtest.h"
 
@@ -88,4 +92,34 @@ TEST(ShellParser, EscapedUnicode) {
   EXPECT_EQ(tokenSet10.size(), 2u);
   EXPECT_EQ(tokenSet10.at(0).token, "☃☃☃");
   EXPECT_EQ(tokenSet10.at(1).token, "☃");
+}
+
+TEST(OptionParser, ConsumesParameterValueBeforeRecognizingFlags) {
+  Star::OptionParser parser;
+  parser.addParameter("value", "text", Star::OptionParser::Optional);
+  parser.addSwitch("quiet");
+  parser.addArgument("arguments", Star::OptionParser::Multiple);
+
+  auto [options, errors] = parser.parseOptions({"-value", "--", "-quiet", "--", "-quiet", "tail"});
+
+  EXPECT_TRUE(errors.empty());
+  EXPECT_EQ(options.parameters.get("value"), (Star::StringList{"--"}));
+  EXPECT_TRUE(options.switches.contains("quiet"));
+  EXPECT_EQ(options.arguments, (Star::StringList{"-quiet", "tail"}));
+}
+
+TEST(OptionParser, DuplicateParameterStillConsumesItsValue) {
+  Star::OptionParser parser;
+  parser.addParameter("value", "text", Star::OptionParser::Optional);
+  parser.addSwitch("quiet");
+  parser.addArgument("arguments", Star::OptionParser::Multiple);
+
+  auto [options, errors] = parser.parseOptions({"-value", "first", "-value", "-quiet", "tail", "-value"});
+
+  EXPECT_EQ(errors, (Star::StringList{
+      "Option with argument '-value' specified multiple times",
+      "Option '-value' must be followed by an argument"}));
+  EXPECT_EQ(options.parameters.get("value"), (Star::StringList{"first"}));
+  EXPECT_TRUE(options.switches.empty());
+  EXPECT_EQ(options.arguments, (Star::StringList{"tail"}));
 }

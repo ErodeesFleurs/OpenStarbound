@@ -8,7 +8,6 @@ import star.map;
 import star.set;
 import star.spatial_hash_2d;
 import star.casting;
-import star.iterator;
 import star.list;
 import star.bi_map;
 import star.game_types;
@@ -292,13 +291,14 @@ namespace WorldImpl {
     if (includeEdges)
       return res;
 
-    SMutableIterator<List<Vec2I>> tileIt{res};
-    while (tileIt.hasNext()) {
-      auto tileRect = RectF::withSize(Vec2F(worldGeometry.xwrap(tileIt.next())), Vec2F::filled(1.0f));
+    for (auto tileIt = res.begin(); tileIt != res.end();) {
+      auto tileRect = RectF::withSize(Vec2F(worldGeometry.xwrap(*tileIt)), Vec2F::filled(1.0f));
       Line2F line{worldGeometry.xwrap(begin), worldGeometry.xwrap(end)};
       auto lineSet = worldGeometry.splitLine(line);
       if (any(lineSet, [&](Line2F const& line) { return tileRect.edgeIntersection(line).glances; }))
-        tileIt.remove();
+        tileIt = res.erase(tileIt);
+      else
+        ++tileIt;
     }
     return res;
   }

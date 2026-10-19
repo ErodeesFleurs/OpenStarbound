@@ -3,6 +3,7 @@ import star.set;
 import star.string;
 import star.color;
 import star.list;
+import star.maybe;
 import star.image_processing;
 import star.hash;
 import star.data_stream;
@@ -39,6 +40,11 @@ import star.root;
 
 import star.item_database;
 import star.item_bag;
+import star.player_inventory;
+import star.inventory_types;
+import star.armors;
+import star.net_element_top;
+import star.format;
 
 using namespace Star;
 
@@ -193,7 +199,7 @@ TEST(ItemTest, ConstructItems) {
     std::shared_ptr<::Star::Item> item = itemDatabase->item(ItemDescriptor(itemName, 1));
 }
 
-TEST(ItemTest, ConstBagNormalizesEmptyStacks) {
+TEST(ItemTest, ConstBagObservesEmptyStacksWithoutReleasingThem) {
   auto itemDatabase = Root::singleton().itemDatabase();
   auto makeEmptyBag = [&] {
     ItemBag bag(2);
@@ -207,7 +213,12 @@ TEST(ItemTest, ConstBagNormalizesEmptyStacks) {
   auto second = indexedBag.at(1);
   first->setCount(0);
   second->setCount(0);
+  auto firstOwners = first.use_count();
   EXPECT_FALSE(indexedBag.at(0));
+  EXPECT_EQ(first.use_count(), firstOwners);
+  first->setCount(1);
+  EXPECT_EQ(indexedBag.at(0), first);
+  first->setCount(0);
   EXPECT_EQ(indexedBag.size(), 2u);
   EXPECT_TRUE(indexedBag.cleanup());
   EXPECT_FALSE(indexedBag.at(1));
@@ -222,4 +233,215 @@ TEST(ItemTest, ConstBagNormalizesEmptyStacks) {
   EXPECT_FALSE(slots[0]);
   EXPECT_EQ(slots[1], liveItem);
   EXPECT_FALSE(listedBag.cleanup());
+}
+
+namespace {
+
+std::shared_ptr<Item> inventoryTestHeadArmor() {
+  auto itemDatabase = Root::singleton().itemDatabase();
+  for (auto const& name : itemDatabase->allItems()) {
+    if (itemDatabase->itemType(name) == ItemType::HeadArmor)
+      return itemDatabase->item(ItemDescriptor(name, 1));
+  }
+  throw ItemException("Inventory tests require a head armor item");
+}
+
+BagSlot inventoryTestBagSlot(PlayerInventory const& inventory, std::shared_ptr<Item> const& item) {
+  // The perfectly generic item is an ObjectItem, not a main-bag generic item.
+  // Use the real configured filters rather than forcing it into a fixed bag.
+  auto bags = Root::singleton().assets()->json("/player.config:inventory").get("itemBags");
+  for (auto const& name : bags.toObject().keys()) {
+    auto bag = inventory.bagContents(name);
+    if (bag && bag->size() != 0 && PlayerInventory::itemAllowedInBag(item, name))
+      return BagSlot(name, 0);
+  }
+  throw ItemException("Inventory tests require a bag accepting the fixture item");
+}
+
+}
+
+TEST(ItemTest, ConstInventoryObservesExternallyConsumedItemsWithoutMutation) {
+  auto itemDatabase = Root::singleton().itemDatabase();
+  PlayerInventory inventory;
+  auto const& view = std::as_const(inventory);
+  auto bagItem = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1));
+  auto bagSlot = inventoryTestBagSlot(view, bagItem);
+
+  List<std::pair<InventorySlot, std::shared_ptr<Item>>> items{
+    {EquipmentSlot::Head, inventoryTestHeadArmor()},
+    {bagSlot, bagItem},
+    {SwapSlot(), itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1))},
+    {TrashSlot(), itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1))}
+  };
+  for (auto const& entry : items)
+    ASSERT_TRUE(inventory.setItem(entry.first, entry.second));
+  inventory.setCustomBarPrimarySlot(0, InventorySlot(bagSlot));
+  inventory.selectActionBarLocation(CustomBarIndex(0));
+
+  List<long> owners;
+  for (auto const& entry : items) {
+    ASSERT_TRUE(entry.second->consume(1));
+    owners.append(entry.second.use_count());
+    EXPECT_FALSE(view.itemsAt(entry.first));
+  }
+
+  EXPECT_FALSE(view.headArmor());
+  EXPECT_FALSE(view.equipment(EquipmentSlot::Head));
+  EXPECT_FALSE(view.bagContents(bagSlot.first)->at(bagSlot.second));
+  EXPECT_FALSE(view.swapSlotItem());
+  EXPECT_FALSE(view.primaryHeldItem());
+  EXPECT_FALSE(view.secondaryHeldItem());
+  EXPECT_EQ(view.primaryHeldSlot(), Maybe<InventorySlot>(InventorySlot(bagSlot)));
+  EXPECT_TRUE(view.allItems().empty());
+  EXPECT_TRUE(view.itemSummary().empty());
+  EXPECT_TRUE(view.availableItems().empty());
+  std::size_t visited = 0;
+  view.forEveryItem([&](InventorySlot const&, std::shared_ptr<Item> const&) { ++visited; });
+  EXPECT_EQ(visited, 0u);
+
+  // Restoring a shared alias makes the same slots visible again: no getter
+  // released the inventory's ownership of the exhausted items.
+  for (std::size_t i = 0; i < items.size(); ++i) {
+    auto const& entry = items[i];
+    EXPECT_EQ(entry.second.use_count(), owners[i]);
+    entry.second->setCount(1);
+    EXPECT_EQ(view.itemsAt(entry.first), entry.second);
+  }
+  EXPECT_EQ(view.allItems().size(), items.size());
+
+  for (auto const& entry : items)
+    ASSERT_TRUE(entry.second->consume(1));
+  inventory.cleanup();
+  for (std::size_t i = 0; i < items.size(); ++i)
+    EXPECT_EQ(items[i].second.use_count(), owners[i] - 1);
+  EXPECT_FALSE(view.customBarPrimarySlot(0));
+}
+
+TEST(ItemTest, InventoryMutationNormalizesEmptySlots) {
+  auto itemDatabase = Root::singleton().itemDatabase();
+  PlayerInventory inventory;
+  auto makeItems = [&](std::uint64_t count) {
+    return itemDatabase->item(ItemDescriptor("perfectlygenericitem", count));
+  };
+
+  auto items = makeItems(2);
+  auto bagSlot = inventoryTestBagSlot(inventory, items);
+  ASSERT_TRUE(inventory.setItem(bagSlot, items));
+  EXPECT_TRUE(inventory.consumeSlot(bagSlot, 2));
+  EXPECT_FALSE(inventory.itemsAt(bagSlot));
+  EXPECT_EQ(items.use_count(), 1);
+  EXPECT_FALSE(inventory.consumeSlot(bagSlot));
+  EXPECT_TRUE(inventory.consumeSlot(bagSlot, 0));
+
+  auto externallyConsumed = makeItems(1);
+  ASSERT_TRUE(inventory.setItem(bagSlot, externallyConsumed));
+  ASSERT_TRUE(externallyConsumed->consume(1));
+  EXPECT_FALSE(inventory.stackWith(bagSlot, makeItems(3)));
+  ASSERT_TRUE(inventory.itemsAt(bagSlot));
+  EXPECT_EQ(inventory.itemsAt(bagSlot)->count(), 3u);
+  EXPECT_EQ(externallyConsumed.use_count(), 1);
+  EXPECT_FALSE(inventory.stackWith(bagSlot, makeItems(2)));
+  EXPECT_EQ(inventory.itemsAt(bagSlot)->count(), 5u);
+  EXPECT_TRUE(inventory.consumeItems(ItemDescriptor("perfectlygenericitem", 5)));
+  EXPECT_FALSE(inventory.itemsAt(bagSlot));
+
+  auto armor = inventoryTestHeadArmor();
+  auto armorDescriptor = armor->descriptor();
+  ASSERT_TRUE(inventory.setItem(EquipmentSlot::Head, armor));
+  EXPECT_TRUE(inventory.exchangeItems(EquipmentSlot::Head, TrashSlot()));
+  EXPECT_FALSE(inventory.itemsAt(EquipmentSlot::Head));
+  EXPECT_EQ(inventory.itemsAt(TrashSlot()), armor);
+  EXPECT_TRUE(inventory.exchangeItems(EquipmentSlot::Head, TrashSlot()));
+  EXPECT_EQ(inventory.itemsAt(EquipmentSlot::Head), armor);
+  ASSERT_TRUE(inventory.setItem(TrashSlot(), makeItems(1)));
+  EXPECT_FALSE(inventory.exchangeItems(EquipmentSlot::Head, TrashSlot()));
+  EXPECT_EQ(inventory.itemsAt(EquipmentSlot::Head), armor);
+
+  ASSERT_TRUE(inventory.setItem(SwapSlot(), makeItems(1)));
+  ASSERT_TRUE(inventory.consumeSlot(SwapSlot()));
+  EXPECT_FALSE(inventory.swapSlotItem());
+  inventory.shiftSwap(EquipmentSlot::Head);
+  EXPECT_EQ(inventory.swapSlotItem(), armor);
+  EXPECT_FALSE(inventory.headArmor());
+  EXPECT_TRUE(inventory.clearSwap());
+  auto equippedArmor = inventory.itemsAt(EquipmentSlot::Head);
+  ASSERT_TRUE(equippedArmor);
+  EXPECT_EQ(equippedArmor->descriptor(), armorDescriptor);
+  EXPECT_TRUE(armor->empty());
+
+  ASSERT_TRUE(inventory.consumeItems(armorDescriptor));
+  EXPECT_FALSE(inventory.headArmor());
+  EXPECT_TRUE(equippedArmor->empty());
+  EXPECT_EQ(equippedArmor.use_count(), 1);
+  EXPECT_EQ(armor.use_count(), 1);
+  ASSERT_TRUE(inventory.consumeItems(ItemDescriptor("perfectlygenericitem", 1)));
+  EXPECT_FALSE(inventory.itemsAt(TrashSlot()));
+  auto takenEmpty = makeItems(1);
+  ASSERT_TRUE(inventory.setItem(TrashSlot(), takenEmpty));
+  ASSERT_TRUE(takenEmpty->consume(1));
+  EXPECT_FALSE(inventory.takeSlot(TrashSlot()));
+  EXPECT_EQ(takenEmpty.use_count(), 1);
+
+  auto empty = makeItems(1);
+  ASSERT_TRUE(empty->consume(1));
+  EXPECT_TRUE(inventory.setItem(EquipmentSlot::Head, empty));
+  EXPECT_TRUE(inventory.setItem(bagSlot, empty));
+  EXPECT_TRUE(inventory.setItem(TrashSlot(), empty));
+  inventory.setSwapSlotItem(empty);
+  EXPECT_EQ(empty.use_count(), 1);
+  EXPECT_TRUE(inventory.allItems().empty());
+  EXPECT_TRUE(inventory.exchangeItems(EquipmentSlot::Head, TrashSlot()));
+
+  EXPECT_THROW(std::as_const(inventory).itemsAt(BagSlot("missingInventoryTestBag", 0)), ItemException);
+  EXPECT_THROW(inventory.takeSlot(BagSlot("missingInventoryTestBag", 0)), ItemException);
+  auto bagSize = inventory.bagContents(bagSlot.first)->size();
+  ASSERT_LE(bagSize, std::numeric_limits<std::uint8_t>::max());
+  BagSlot pastEnd(bagSlot.first, static_cast<std::uint8_t>(bagSize));
+  EXPECT_THROW(std::as_const(inventory).itemsAt(pastEnd), OutOfRangeException);
+  EXPECT_THROW(inventory.takeSlot(pastEnd), OutOfRangeException);
+}
+
+TEST(ItemTest, InventoryMutableTraversalAndNetworkNormalizeConsumption) {
+  auto itemDatabase = Root::singleton().itemDatabase();
+  NetElementTop<PlayerInventory> master;
+  NetElementTop<PlayerInventory> slave;
+  auto item = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 2));
+  auto bagSlot = inventoryTestBagSlot(master, item);
+  ASSERT_TRUE(master.setItem(bagSlot, item));
+  ASSERT_TRUE(master.setItem(TrashSlot(), itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1))));
+  master.setCustomBarPrimarySlot(0, InventorySlot(bagSlot));
+
+  auto initial = master.writeNetState();
+  slave.readNetState(initial.first);
+  ASSERT_TRUE(slave.itemsAt(bagSlot));
+  EXPECT_EQ(slave.itemsAt(bagSlot)->count(), 2u);
+  EXPECT_TRUE(slave.itemsAt(TrashSlot()));
+
+  std::size_t visited = 0;
+  master.forEveryItem([&](InventorySlot const&, std::shared_ptr<Item>& current) {
+    ++visited;
+    EXPECT_TRUE(current->consume(current->count()));
+  });
+  EXPECT_EQ(visited, 2u);
+  EXPECT_EQ(item.use_count(), 1);
+  EXPECT_TRUE(master.allItems().empty());
+  auto delta = master.writeNetState(initial.second);
+  slave.readNetState(delta.first);
+  EXPECT_TRUE(slave.allItems().empty());
+  EXPECT_FALSE(slave.customBarPrimarySlot(0));
+
+  ASSERT_TRUE(master.setItem(SwapSlot(), itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1))));
+  auto liveSwap = master.writeNetState(delta.second);
+  slave.readNetState(liveSwap.first);
+  EXPECT_TRUE(slave.swapSlotItem());
+  auto swapAlias = master.swapSlotItem();
+  ASSERT_TRUE(swapAlias->consume(1));
+  auto emptySwap = master.writeNetState(liveSwap.second);
+  slave.readNetState(emptySwap.first);
+  EXPECT_FALSE(slave.swapSlotItem());
+  EXPECT_EQ(swapAlias.use_count(), 1);
+
+  PlayerInventory restored;
+  restored.load(master.store());
+  EXPECT_TRUE(restored.allItems().empty());
 }

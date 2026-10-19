@@ -1,6 +1,5 @@
 import star.memory;
 import star.json;
-import star.iterator;
 import star.data_stream_extra;
 import star.ordered_map;
 import star.rect;
@@ -329,14 +328,12 @@ void ServerWeather::spawnWeatherProjectiles(float dt) {
     // overlapping point, then they totally overlap.  The lower region (which
     // should come before in the list) is totally redundant and should be
     // removed.
-    auto sit = makeSMutableIterator(splitSpawnRegions);
-    while (sit.hasNext()) {
-      auto const& leftRegion = sit.next();
-      if (sit.hasNext()) {
-        auto const& rightRegion = sit.peekNext();
-        if (leftRegion.first[0] == rightRegion.first[0])
-          sit.remove();
-      }
+    for (auto sit = splitSpawnRegions.begin(); sit != splitSpawnRegions.end();) {
+      auto right = std::next(sit);
+      if (right != splitSpawnRegions.end() && sit->first[0] == right->first[0])
+        sit = splitSpawnRegions.erase(sit);
+      else
+        ++sit;
     }
 
     for (auto const& spawnRegion : splitSpawnRegions) {

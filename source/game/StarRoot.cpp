@@ -490,8 +490,8 @@ void Root::fullyLoad() {
   }
 }
 
-void Root::registerReloadListener(std::weak_ptr<Listener> reloadListener) {
-  m_reloadListeners.addListener(std::move(reloadListener));
+ListenerSubscription Root::registerReloadListener(std::weak_ptr<Listener> reloadListener) {
+  return m_reloadListeners.addListener(std::move(reloadListener));
 }
 
 void Root::hotReload() {

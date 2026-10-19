@@ -56,8 +56,6 @@ WorkerPool::~WorkerPool() {
   stop();
 }
 
-WorkerPool::WorkerPool(WorkerPool&&) = default;
-WorkerPool& WorkerPool::operator=(WorkerPool&&) = default;
 
 void WorkerPool::start(unsigned threadCount) {
   MutexLocker threadLock(m_threadMutex);

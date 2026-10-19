@@ -55,6 +55,10 @@ public:
   // automatically shut down the socket.
   static Maybe<SocketPollResult> poll(SocketPollQuery const& query, unsigned timeout);
 
+  // Wait for native read/write readiness or shutdown until a steady deadline.
+  // Retains the native handle, not m_mutex, so close can shut down and wake it.
+  void waitForData(bool writable, std::chrono::steady_clock::time_point deadline) const;
+
   ~Socket();
 
   void bind(HostAddressWithPort const& address);
@@ -81,6 +85,8 @@ public:
   void close();
 
 protected:
+  friend struct SocketTestAccess;
+
   enum class SocketType {
     Tcp,
     Udp

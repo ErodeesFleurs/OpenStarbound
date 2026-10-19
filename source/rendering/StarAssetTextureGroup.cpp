@@ -38,7 +38,7 @@ namespace Star {
 AssetTextureGroup::AssetTextureGroup(std::shared_ptr<TextureGroup> textureGroup)
   : m_textureGroup(std::move(textureGroup)) {
   m_reloadTracker = std::make_shared<TrackerListener>();
-  Root::singleton().registerReloadListener(m_reloadTracker);
+  m_reloadSubscription = Root::singleton().registerReloadListener(m_reloadTracker);
 }
 
 TexturePtr AssetTextureGroup::loadTexture(AssetPath const& imagePath) {

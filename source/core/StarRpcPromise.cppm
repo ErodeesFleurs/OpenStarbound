@@ -2,12 +2,8 @@ module;
 import std;
 import star.maybe;
 import star.format;
-import star.variant;
-import star.either;
 import star.string;
 import star.thread;
-
-// TODO: improve this
 
 namespace Star {
 
@@ -33,8 +29,7 @@ private:
   template <typename ResultT, typename ErrorT>
   friend class RpcPromise;
 
-  std::function<void(Variant<Result,RpcPromise<Result,Error>>)> m_fulfill;
-  std::function<void(Error)> m_fail;
+  std::shared_ptr<typename RpcPromise<Result, Error>::State> m_state;
 };
 
 // Wraps an RpcPromiseKeeper, best used as a shared_ptr. Fails the promise on destruction.
@@ -61,7 +56,7 @@ public:
   static RpcPromise createFulfilled(Result result);
   static RpcPromise createFailed(Error error);
 
-  // Has the respoonse either failed or succeeded?
+  // Has the response either failed or succeeded?
   bool finished() const;
   // Has the response finished with success?
   bool succeeded() const;
@@ -77,7 +72,8 @@ public:
   Maybe<Error> error() const;
 
   // Wrap this RpcPromise into another promise which returns instead the result
-  // of this function when fulfilled
+  // of this function when fulfilled. Evaluation is lazy and its successful
+  // result is cached for every observer. A throwing function leaves it unevaluated.
   template <typename Function>
   decltype(auto) wrap(Function function);
 
@@ -85,29 +81,92 @@ private:
   template <typename ResultT, typename ErrorT>
   friend class RpcPromise;
 
-  struct Value {
+  friend class RpcPromiseKeeper<Result, Error>;
+
+  // Tagged outcomes keep pending, fulfilled, failed and delegated promises
+  // mutually exclusive, including when Result and Error are the same type.
+  struct Pending {};
+  struct Fulfilled { Result value; };
+  struct Failed { Error value; };
+  struct Chained { RpcPromise promise; };
+
+  struct State {
+    virtual ~State() = default;
+    virtual void poll() {}
+
+    bool pending() const {
+      return std::holds_alternative<Pending>(outcome) || outcome.valueless_by_exception();
+    }
+
+    void fulfill(Result&& result) {
+      outcome.template emplace<Fulfilled>(std::move(result));
+    }
+
+    void fail(Error&& error) {
+      outcome.template emplace<Failed>(std::move(error));
+    }
+
     Mutex mutex;
-    
-    MVariant<Result,RpcPromise<Result,Error>> result;
-    Maybe<Error> error;
+    std::variant<Pending, Fulfilled, Failed, Chained> outcome;
   };
 
-  std::function<Value*()> m_getValue;
+  template <typename SourceResult, typename Function>
+  struct WrappedState : State {
+    WrappedState(Function function, RpcPromise<SourceResult, Error> other)
+      : function(std::move(function)), other(std::move(other)) {}
+
+    void poll() override {
+      if (!this->pending())
+        return;
+      // Do not commit an outcome until the wrapper returns successfully.
+      // A throwing wrapper remains lazy and is called by the next query.
+      if (other.succeeded())
+        this->outcome.template emplace<Fulfilled>(function(*other.result()));
+      else if (other.failed())
+        this->fail(std::move(*other.error()));
+    }
+
+    Function const function;
+    RpcPromise<SourceResult, Error> other;
+  };
+
+  State& state() const {
+    if (!m_state)
+      throw std::bad_function_call();
+    return *m_state;
+  }
+
+  std::shared_ptr<State> m_state;
 };
 
 template <typename Result, typename Error>
 void RpcPromiseKeeper<Result, Error>::chain(RpcPromise<Result,Error> promise) {
-  m_fulfill(std::move(promise));
+  if (!m_state)
+    throw std::bad_function_call();
+  MutexLocker lock(m_state->mutex);
+  if (!m_state->pending())
+    throw RpcPromiseException("fulfill called on already finished RpcPromise");
+  m_state->outcome.template emplace<typename RpcPromise<Result, Error>::Chained>(std::move(promise));
 }
 
 template <typename Result, typename Error>
 void RpcPromiseKeeper<Result, Error>::fulfill(Result result) {
-  m_fulfill(std::move(result));
+  if (!m_state)
+    throw std::bad_function_call();
+  MutexLocker lock(m_state->mutex);
+  if (!m_state->pending())
+    throw RpcPromiseException("fulfill called on already finished RpcPromise");
+  m_state->fulfill(std::move(result));
 }
 
 template <typename Result, typename Error>
 void RpcPromiseKeeper<Result, Error>::fail(Error error) {
-  m_fail(std::move(error));
+  if (!m_state)
+    throw std::bad_function_call();
+  MutexLocker lock(m_state->mutex);
+  if (!m_state->pending())
+    throw RpcPromiseException("fail called on already finished RpcPromise");
+  m_state->fail(std::move(error));
 }
 
 template <typename Result, typename Error>
@@ -140,120 +199,92 @@ AutoFailRpcPromiseKeeper<Result, Error>::~AutoFailRpcPromiseKeeper() {
 
 template <typename Result, typename Error>
 std::pair<RpcPromise<Result, Error>, RpcPromiseKeeper<Result, Error>> RpcPromise<Result, Error>::createPair() {
-  auto valuePtr = std::make_shared<Value>();
-
+  auto state = std::make_shared<State>();
   RpcPromise promise;
-  promise.m_getValue = [valuePtr]() {
-    return valuePtr.get();
-  };
-
+  promise.m_state = state;
   RpcPromiseKeeper<Result, Error> keeper;
-  keeper.m_fulfill = [valuePtr](Variant<Result,RpcPromise<Result,Error>> result) {
-    MutexLocker lock(valuePtr->mutex);
-    if (valuePtr->result || valuePtr->error)
-      throw RpcPromiseException("fulfill called on already finished RpcPromise");
-    valuePtr->result = std::move(result);
-  };
-  keeper.m_fail = [valuePtr](Error error) {
-    MutexLocker lock(valuePtr->mutex);
-    if (valuePtr->result || valuePtr->error)
-      throw RpcPromiseException("fail called on already finished RpcPromise");
-    valuePtr->error = std::move(error);
-  };
+  keeper.m_state = std::move(state);
 
   return {std::move(promise), std::move(keeper)};
 }
 
 template <typename Result, typename Error>
 RpcPromise<Result, Error> RpcPromise<Result, Error>::createFulfilled(Result result) {
-  auto valuePtr = std::make_shared<Value>();
-  valuePtr->result = std::move(result);
-
-  RpcPromise<Result, Error> promise;
-  promise.m_getValue = [valuePtr]() {
-    return valuePtr.get();
-  };
+  RpcPromise promise;
+  promise.m_state = std::make_shared<State>();
+  promise.m_state->fulfill(std::move(result));
   return promise;
 }
 
 template <typename Result, typename Error>
 RpcPromise<Result, Error> RpcPromise<Result, Error>::createFailed(Error error) {
-  auto valuePtr = std::make_shared<Value>();
-  valuePtr->error = std::move(error);
-
-  RpcPromise<Result, Error> promise;
-  promise.m_getValue = [valuePtr]() {
-    return valuePtr.get();
-  };
+  RpcPromise promise;
+  promise.m_state = std::make_shared<State>();
+  promise.m_state->fail(std::move(error));
   return promise;
 }
 
 template <typename Result, typename Error>
 bool RpcPromise<Result, Error>::finished() const {
-  auto val = m_getValue();
-  MutexLocker lock(val->mutex);
-  if (val->result.template is<RpcPromise<Result,Error>>()) {
-    return val->result.template get<RpcPromise<Result,Error>>().finished();
-  }
-  return val->result || val->error;
+  auto& val = state();
+  MutexLocker lock(val.mutex);
+  val.poll();
+  if (auto chained = std::get_if<Chained>(&val.outcome))
+    return chained->promise.finished();
+  return std::holds_alternative<Fulfilled>(val.outcome) || std::holds_alternative<Failed>(val.outcome);
 }
 
 template <typename Result, typename Error>
 bool RpcPromise<Result, Error>::succeeded() const {
-  auto val = m_getValue();
-  MutexLocker lock(val->mutex);
-  if (val->result.template is<RpcPromise<Result,Error>>()) {
-    return val->result.template get<RpcPromise<Result,Error>>().succeeded();
-  }
-  return !val->result.empty();
+  auto& val = state();
+  MutexLocker lock(val.mutex);
+  val.poll();
+  if (auto chained = std::get_if<Chained>(&val.outcome))
+    return chained->promise.succeeded();
+  return std::holds_alternative<Fulfilled>(val.outcome);
 }
 
 template <typename Result, typename Error>
 bool RpcPromise<Result, Error>::failed() const {
-  auto val = m_getValue();
-  MutexLocker lock(val->mutex);
-  if (val->result.template is<RpcPromise<Result,Error>>()) {
-    return val->result.template get<RpcPromise<Result,Error>>().failed();
-  }
-  return val->error.isValid();
+  auto& val = state();
+  MutexLocker lock(val.mutex);
+  val.poll();
+  if (auto chained = std::get_if<Chained>(&val.outcome))
+    return chained->promise.failed();
+  return std::holds_alternative<Failed>(val.outcome);
 }
 
 template <typename Result, typename Error>
 Maybe<Result> RpcPromise<Result, Error>::result() const {
-  auto val = m_getValue();
-  MutexLocker lock(val->mutex);
-  if (val->result.template is<RpcPromise<Result,Error>>()) {
-    return val->result.template get<RpcPromise<Result,Error>>().result();
-  }
-  return val->result.template maybe<Result>();
+  auto& val = state();
+  MutexLocker lock(val.mutex);
+  val.poll();
+  if (auto chained = std::get_if<Chained>(&val.outcome))
+    return chained->promise.result();
+  if (auto fulfilled = std::get_if<Fulfilled>(&val.outcome))
+    return fulfilled->value;
+  return {};
 }
 
 template <typename Result, typename Error>
 Maybe<Error> RpcPromise<Result, Error>::error() const {
-  auto val = m_getValue();
-  MutexLocker lock(val->mutex);
-  if (val->result.template is<RpcPromise<Result,Error>>()) {
-    return val->result.template get<RpcPromise<Result,Error>>().error();
-  }
-  return val->error;
+  auto& val = state();
+  MutexLocker lock(val.mutex);
+  val.poll();
+  if (auto chained = std::get_if<Chained>(&val.outcome))
+    return chained->promise.error();
+  if (auto failed = std::get_if<Failed>(&val.outcome))
+    return failed->value;
+  return {};
 }
 
 template <typename Result, typename Error>
 template <typename Function>
 decltype(auto) RpcPromise<Result, Error>::wrap(Function function) {
-  typedef RpcPromise<typename std::decay<decltype(function(std::declval<Result>()))>::type, Error> WrappedPromise;
+  using WrappedPromise = RpcPromise<std::decay_t<decltype(function(std::declval<Result>()))>, Error>;
   WrappedPromise wrappedPromise;
-  wrappedPromise.m_getValue = [wrapper = std::move(function), valuePtr = std::make_shared<typename WrappedPromise::Value>(), other = *this]() {
-    MutexLocker lock(valuePtr->mutex);
-    if (!valuePtr->result && !valuePtr->error) {
-      if (other.succeeded())
-        valuePtr->result = wrapper(*other.result());
-      else if (other.failed()) {
-        valuePtr->error = other.error();
-      }
-    }
-    return valuePtr.get();
-  };
+  wrappedPromise.m_state = std::make_shared<typename WrappedPromise::template WrappedState<Result, Function>>(
+      std::move(function), *this);
   return wrappedPromise;
 }
 

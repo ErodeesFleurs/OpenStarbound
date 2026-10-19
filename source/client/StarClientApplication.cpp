@@ -379,6 +379,10 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
     }
   )JSON");
 
+ClientApplication::~ClientApplication() {
+  m_reloadSubscription.disconnect();
+}
+
 void ClientApplication::startup(StringList const& cmdLineArgs) {
   RootLoader rootLoader({AdditionalAssetsSettings, AdditionalDefaultConfiguration, String("starbound.log"), LogLevel::Info, false, String("starbound.config")});
   rootLoader.setVersionName("Client");  
@@ -390,6 +394,7 @@ void ClientApplication::startup(StringList const& cmdLineArgs) {
 }
 
 void ClientApplication::shutdown() {
+  m_reloadSubscription.disconnect();
   // Clear HTTP trust request callback
   LuaBindings::clearHttpTrustRequestCallback();
 
@@ -496,7 +501,9 @@ void ClientApplication::applicationInit(std::shared_ptr<ApplicationController> a
 void ClientApplication::renderInit(std::shared_ptr<Renderer> renderer) {
   Application::renderInit(renderer);
   renderReload();
-  m_root->registerReloadListener(m_reloadListener = std::make_shared<CallbackListener>([this]() { renderReload(); }));
+  m_reloadSubscription.disconnect();
+  m_reloadSubscription = m_root->registerReloadListener(
+      m_reloadListener = std::make_shared<CallbackListener>([this]() { renderReload(); }));
 
   if (m_root->configuration()->get("limitTextureAtlasSize").optBool().value(false))
     renderer->setSizeLimitEnabled(true);

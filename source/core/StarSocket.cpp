@@ -135,6 +135,55 @@ Maybe<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned time
   return result;
 }
 
+void Socket::waitForData(bool writable, std::chrono::steady_clock::time_point deadline) const {
+  ReadLocker locker(m_mutex);
+  if (!isActive())
+    return;
+  auto impl = m_impl;
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+  auto wakeSocket = impl->prepareWait();
+#endif
+  locker.unlock();
+  // Shutdown may race wake-channel initialization before native waiting begins.
+  if (!isActive())
+    return;
+
+  while (true) {
+    auto now = std::chrono::steady_clock::now();
+    auto remaining = std::chrono::ceil<std::chrono::milliseconds>(deadline - now).count();
+    auto timeout = std::clamp<std::int64_t>(remaining, 0, std::numeric_limits<int>::max());
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+    fd_set reads;
+    fd_set writes;
+    fd_set exceptions;
+    FD_ZERO(&reads);
+    FD_ZERO(&writes);
+    FD_ZERO(&exceptions);
+    FD_SET(wakeSocket, &reads);
+    if (writable)
+      FD_SET(impl->socketDesc, &writes);
+    else
+      FD_SET(impl->socketDesc, &reads);
+    FD_SET(impl->socketDesc, &exceptions);
+    timeval time;
+    time.tv_sec = static_cast<long>(timeout / 1000);
+    time.tv_usec = static_cast<long>((timeout % 1000) * 1000);
+    int result = ::select(0, &reads, &writes, &exceptions, &time);
+#else
+    pollfd descriptor{};
+    descriptor.fd = impl->socketDesc;
+    descriptor.events = writable ? POLLOUT : POLLIN;
+    int result = ::poll(&descriptor, 1, static_cast<int>(timeout));
+#endif
+    if (result >= 0)
+      return;
+    if (!netErrorInterrupt())
+      throw NetworkException::format("Error waiting for socket readiness: {}", netErrorString());
+    if (!isActive() || std::chrono::steady_clock::now() >= deadline)
+      return;
+  }
+}
+
 Socket::~Socket() {
   close();
 }
@@ -157,6 +206,12 @@ void Socket::bind(HostAddressWithPort const& addressWithPort) {
   setNativeFromAddress(m_localAddress, &sockAddr, &sockAddrLen);
   if (::bind(m_impl->socketDesc, (struct sockaddr*)&sockAddr, sockAddrLen) < 0)
     throw NetworkException(strf("Cannot bind socket to {}: {}", m_localAddress, netErrorString()));
+  if (addressWithPort.port() == 0) {
+    sockAddrLen = sizeof(sockAddr);
+    if (::getsockname(m_impl->socketDesc, (struct sockaddr*)&sockAddr, &sockAddrLen) != 0)
+      throw NetworkException::format("Cannot query bound socket address: {}", netErrorString());
+    setAddressFromNative(m_localAddress, m_networkMode, &sockAddr);
+  }
 
   m_socketMode = SocketMode::Bound;
 
@@ -271,8 +326,9 @@ void Socket::doShutdown() {
   // handlers know the socket is being shut down.
   m_socketMode = SocketMode::Shutdown;
 
-  if (m_impl->socketDesc > 0) {
+  if (m_impl && !invalidSocketDescriptor(m_impl->socketDesc)) {
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
+    m_impl->signalWaiters();
     ::shutdown(m_impl->socketDesc, SD_BOTH);
 #else
     ::shutdown(m_impl->socketDesc, SHUT_RDWR);
@@ -288,14 +344,9 @@ void Socket::doClose() {
   // handlers know the socket is being closed.
   m_socketMode = SocketMode::Closed;
 
-  if (m_impl->socketDesc > 0) {
-#ifdef STAR_SYSTEM_FAMILY_WINDOWS
-    ::closesocket(m_impl->socketDesc);
-#else
-    ::close(m_impl->socketDesc);
-#endif
-    m_impl->socketDesc = 0;
-  }
+  // A readiness waiter keeps the descriptor alive until its native wait exits.
+  // doShutdown above wakes it without waiting for the waiter or risking fd reuse.
+  m_impl.reset();
 }
 
 }

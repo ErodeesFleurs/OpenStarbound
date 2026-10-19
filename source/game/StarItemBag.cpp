@@ -126,11 +126,9 @@ List<std::shared_ptr<Item>> const& ItemBag::items() const {
   return m_items;
 }
 
-std::shared_ptr<Item> const& ItemBag::at(std::size_t i) const {
-  auto& item = m_items.at(i);
-  if (item && item->empty())
-    item = {};
-  return item;
+std::shared_ptr<Item> ItemBag::at(std::size_t i) const {
+  auto const& item = m_items.at(i);
+  return item && !item->empty() ? item : std::shared_ptr<Item>();
 }
 
 std::shared_ptr<Item>& ItemBag::at(std::size_t i) {

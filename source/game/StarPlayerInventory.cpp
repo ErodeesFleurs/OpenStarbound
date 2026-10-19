@@ -133,7 +133,7 @@ namespace Star {
 
 bool PlayerInventory::itemAllowedInBag(std::shared_ptr<Item> const& items, String const& bagType) {
   // any inventory type can have empty slots
-  if (!items)
+  if (!items || items->empty())
     return true;
 
   return checkInventoryFilter(items, bagType);
@@ -141,7 +141,7 @@ bool PlayerInventory::itemAllowedInBag(std::shared_ptr<Item> const& items, Strin
 
 bool PlayerInventory::itemAllowedAsEquipment(std::shared_ptr<Item> const& item, EquipmentSlot equipmentSlot) {
   // any equipment slot can be empty
-  if (!item)
+  if (!item || item->empty())
     return true;
 
   if (equipmentSlot == EquipmentSlot::Head || equipmentSlot == EquipmentSlot::HeadCosmetic)
@@ -221,15 +221,16 @@ std::shared_ptr<Item> PlayerInventory::stackWith(InventorySlot const& slot, std:
     return {};
 
   if (auto es = slot.ptr<EquipmentSlot>()) {
-    auto& itemSlot = retrieve(slot);
+    auto& itemSlot = retrieveForMutation(slot);
     if (!itemSlot && itemAllowedAsEquipment(items, *es))
       m_equipment[*es] = items->take(1);
   } else {
-    auto& dest = retrieve(slot);
+    auto& dest = retrieveForMutation(slot);
     if (dest && dest->stackableWith(items))
       dest->stackWith(items);
     if (!dest)
       dest = items->take(items->count());
+    normalizeItem(dest);
   }
 
   if (items->empty())
@@ -241,20 +242,20 @@ std::shared_ptr<Item> PlayerInventory::stackWith(InventorySlot const& slot, std:
 std::shared_ptr<Item> PlayerInventory::takeSlot(InventorySlot const& slot) {
   if (slot.is<SwapSlot>())
     m_swapReturnSlot = {};
-  return take(retrieve(slot));
+  return take(retrieveForMutation(slot));
 }
 
 bool PlayerInventory::exchangeItems(InventorySlot const& first, InventorySlot const& second) {
-  auto& firstItems = retrieve(first);
-  auto& secondItems = retrieve(second);
+  auto& firstItems = retrieveForMutation(first);
+  auto& secondItems = retrieveForMutation(second);
 
   if (first.is<BagSlot>() && !itemAllowedInBag(secondItems, first.get<BagSlot>().first))
     return false;
   if (second.is<BagSlot>() && !itemAllowedInBag(firstItems, second.get<BagSlot>().first))
     return false;
-  if (first.is<EquipmentSlot>() && (secondItems->count() > 1 || !itemAllowedAsEquipment(secondItems, first.get<EquipmentSlot>())))
+  if (first.is<EquipmentSlot>() && (itemSafeCount(secondItems) > 1 || !itemAllowedAsEquipment(secondItems, first.get<EquipmentSlot>())))
     return false;
-  if (second.is<EquipmentSlot>() && (firstItems->count() > 1 || !itemAllowedAsEquipment(firstItems, second.get<EquipmentSlot>())))
+  if (second.is<EquipmentSlot>() && (itemSafeCount(firstItems) > 1 || !itemAllowedAsEquipment(firstItems, second.get<EquipmentSlot>())))
     return false;
 
   std::swap(firstItems, secondItems);
@@ -264,6 +265,9 @@ bool PlayerInventory::exchangeItems(InventorySlot const& first, InventorySlot co
 }
 
 bool PlayerInventory::setItem(InventorySlot const& slot, std::shared_ptr<Item> const& item) {
+  if (item && item->empty())
+    return setItem(slot, {});
+
   if (auto currencyItem = as<CurrencyItem>(item)) {
     m_currencies[currencyItem->currencyType()] += currencyItem->totalValue();
     return true;
@@ -293,13 +297,12 @@ bool PlayerInventory::consumeSlot(InventorySlot const& slot, std::uint64_t count
   if (count == 0)
     return true;
 
-  auto& item = retrieve(slot);
+  auto& item = retrieveForMutation(slot);
   if (!item)
     return false;
 
   bool consumed = item->consume(count);
-  if (item->empty())
-    item = {};
+  normalizeItem(item);
 
   return consumed;
 }
@@ -472,10 +475,11 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
   if (quantity > 0) {
     auto leftoverQuantity = quantity;
     ((void)(leftoverQuantity));
-    for (auto const& p : m_equipment) {
+    for (auto& p : m_equipment) {
       if (p.second && p.second->matches(one, exactMatch)) {
         auto toConsume = std::min(p.second->count(), quantity);
         auto res = p.second->consume(toConsume);
+        normalizeItem(p.second);
         ((void)(res));
         if constexpr (Star::DebugEnabled) {
           Star::starAssertFailed((res));
@@ -495,6 +499,7 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
     if (m_swapSlot && m_swapSlot->matches(one, exactMatch)) {
       auto toConsume = std::min(m_swapSlot->count(), quantity);
       auto res = m_swapSlot->consume(toConsume);
+      normalizeItem(m_swapSlot);
       ((void)(res));
       if constexpr (Star::DebugEnabled) {
         Star::starAssertFailed((res));
@@ -513,6 +518,7 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
     if (m_trashSlot && m_trashSlot->matches(one, exactMatch)) {
       auto toConsume = std::min(m_trashSlot->count(), quantity);
       auto res = m_trashSlot->consume(toConsume);
+      normalizeItem(m_trashSlot);
       ((void)(res));
       if constexpr (Star::DebugEnabled) {
         Star::starAssertFailed((res));
@@ -549,46 +555,42 @@ HashMap<ItemDescriptor, std::uint64_t> PlayerInventory::availableItems() const {
 }
 
 std::shared_ptr<HeadArmor> PlayerInventory::headArmor() const {
-  return as<HeadArmor>(m_equipment.value(EquipmentSlot::Head));
+  return as<HeadArmor>(retrieve(EquipmentSlot::Head));
 }
 
 std::shared_ptr<ChestArmor> PlayerInventory::chestArmor() const {
-  return as<ChestArmor>(m_equipment.value(EquipmentSlot::Chest));
+  return as<ChestArmor>(retrieve(EquipmentSlot::Chest));
 }
 
 std::shared_ptr<LegsArmor> PlayerInventory::legsArmor() const {
-  return as<LegsArmor>(m_equipment.value(EquipmentSlot::Legs));
+  return as<LegsArmor>(retrieve(EquipmentSlot::Legs));
 }
 
 std::shared_ptr<BackArmor> PlayerInventory::backArmor() const {
-  return as<BackArmor>(m_equipment.value(EquipmentSlot::Back));
+  return as<BackArmor>(retrieve(EquipmentSlot::Back));
 }
 
 std::shared_ptr<HeadArmor> PlayerInventory::headCosmetic() const {
-  return as<HeadArmor>(m_equipment.value(EquipmentSlot::HeadCosmetic));
+  return as<HeadArmor>(retrieve(EquipmentSlot::HeadCosmetic));
 }
 
 std::shared_ptr<ChestArmor> PlayerInventory::chestCosmetic() const {
-  return as<ChestArmor>(m_equipment.value(EquipmentSlot::ChestCosmetic));
+  return as<ChestArmor>(retrieve(EquipmentSlot::ChestCosmetic));
 }
 
 std::shared_ptr<LegsArmor> PlayerInventory::legsCosmetic() const {
-  return as<LegsArmor>(m_equipment.value(EquipmentSlot::LegsCosmetic));
+  return as<LegsArmor>(retrieve(EquipmentSlot::LegsCosmetic));
 }
 
 std::shared_ptr<BackArmor> PlayerInventory::backCosmetic() const {
-  return as<BackArmor>(m_equipment.value(EquipmentSlot::BackCosmetic));
+  return as<BackArmor>(retrieve(EquipmentSlot::BackCosmetic));
 }
 
 std::shared_ptr<ArmorItem> PlayerInventory::equipment(EquipmentSlot slot, bool testMask) const {
   if (testMask && !equipmentVisibility(slot))
     return {};
 
-  if (auto item = m_equipment.ptr(slot))
-    if (auto armor = as<ArmorItem>(*item))
-      return armor;
-
-  return {};
+  return as<ArmorItem>(retrieve(slot));
 }
 
 std::shared_ptr<ItemBag const> PlayerInventory::bagContents(String const& type) const {
@@ -680,9 +682,10 @@ void PlayerInventory::sortBag(String const& bagType) {
 }
 
 void PlayerInventory::shiftSwap(InventorySlot const& slot) {
+  normalizeItem(m_swapSlot);
   if (auto es = slot.ptr<EquipmentSlot>()) {
     if (itemAllowedAsEquipment(m_swapSlot, *es)) {
-      auto& equipSlot = m_equipment[*es];
+      auto& equipSlot = retrieveForMutation(slot);
       if (itemSafeCount(m_swapSlot) <= 1) {
         std::swap(m_swapSlot, equipSlot);
         swapCustomBarLinks(SwapSlot(), slot);
@@ -691,6 +694,7 @@ void PlayerInventory::shiftSwap(InventorySlot const& slot) {
       }
     }
   } else if (slot.is<TrashSlot>()) {
+    normalizeItem(m_trashSlot);
     std::swap(m_swapSlot, m_trashSlot);
     swapCustomBarLinks(SwapSlot(), slot);
   } else if (auto bs = slot.ptr<BagSlot>()) {
@@ -699,6 +703,7 @@ void PlayerInventory::shiftSwap(InventorySlot const& slot) {
       swapCustomBarLinks(SwapSlot(), slot);
     }
   }
+  normalizeItem(m_swapSlot);
 
   if (!m_swapSlot)
     m_swapReturnSlot = {};
@@ -707,6 +712,7 @@ void PlayerInventory::shiftSwap(InventorySlot const& slot) {
 }
 
 bool PlayerInventory::clearSwap() {
+  normalizeItem(m_swapSlot);
   auto trySlot = [&](InventorySlot slot) {
     if (!m_swapSlot)
       return;
@@ -739,7 +745,7 @@ bool PlayerInventory::clearSwap() {
 }
 
 std::shared_ptr<Item> PlayerInventory::swapSlotItem() const {
-  return m_swapSlot;
+  return retrieve(SwapSlot());
 }
 
 void PlayerInventory::setSwapSlotItem(std::shared_ptr<Item> const& items) {
@@ -748,6 +754,7 @@ void PlayerInventory::setSwapSlotItem(std::shared_ptr<Item> const& items) {
     m_swapSlot = {};
   } else {
     m_swapSlot = items;
+    normalizeItem(m_swapSlot);
     autoAddToCustomBar(SwapSlot());
   }
 }
@@ -866,8 +873,8 @@ void PlayerInventory::selectActionBarLocation(SelectedActionBarLocation location
 }
 
 std::shared_ptr<Item> PlayerInventory::primaryHeldItem() const {
-  if (m_swapSlot)
-    return m_swapSlot;
+  if (auto swapItem = swapSlotItem())
+    return swapItem;
 
   if (m_selectedActionBar.is<EssentialItem>())
     return m_essential.value(m_selectedActionBar.get<EssentialItem>());
@@ -882,7 +889,7 @@ std::shared_ptr<Item> PlayerInventory::primaryHeldItem() const {
 
 std::shared_ptr<Item> PlayerInventory::secondaryHeldItem() const {
   auto pri = primaryHeldItem();
-  if (itemSafeTwoHanded(pri) || m_swapSlot || !m_selectedActionBar || m_selectedActionBar.is<EssentialItem>())
+  if (itemSafeTwoHanded(pri) || swapSlotItem() || !m_selectedActionBar || m_selectedActionBar.is<EssentialItem>())
     return {};
 
   auto const& cbl = m_customBar.at(m_customBarGroup, m_selectedActionBar.get<CustomBarIndex>());
@@ -897,7 +904,7 @@ std::shared_ptr<Item> PlayerInventory::secondaryHeldItem() const {
 }
 
 Maybe<InventorySlot> PlayerInventory::primaryHeldSlot() const {
-  if (m_swapSlot)
+  if (swapSlotItem())
     return InventorySlot(SwapSlot());
   if (m_selectedActionBar.is<CustomBarIndex>())
     return customBarPrimarySlot(m_selectedActionBar.get<CustomBarIndex>());
@@ -905,7 +912,7 @@ Maybe<InventorySlot> PlayerInventory::primaryHeldSlot() const {
 }
 
 Maybe<InventorySlot> PlayerInventory::secondaryHeldSlot() const {
-  if (m_swapSlot || itemSafeTwoHanded(primaryHeldItem()))
+  if (swapSlotItem() || itemSafeTwoHanded(primaryHeldItem()))
     return {};
   if (m_selectedActionBar.is<CustomBarIndex>())
     return customBarSecondarySlot(m_selectedActionBar.get<CustomBarIndex>());
@@ -933,6 +940,7 @@ void PlayerInventory::load(Json const& store) {
   for (auto slot : EquipmentSlotNames) {
     auto jItem = store.get(strf("{}Slot", slot.second), Json());
     m_equipment[slot.first] = itemDatabase->diskLoad(jItem);
+    normalizeItem(m_equipment[slot.first]);
   }
 
   //reuse ItemBags so the Inventory pane still works after load()'ing into the same PlayerInventory again (from swap)
@@ -941,6 +949,7 @@ void PlayerInventory::load(Json const& store) {
   for (auto const& p : itemBags) {
     auto& bagType = p.first;
     auto newBag = ItemBag::loadStore(p.second);
+    newBag.cleanup();
     if (m_bags.contains(bagType)) {
       auto& bag = m_bags.at(bagType);
       m_inventoryLoadOverflow.appendAll(newBag.resize(bag->size()));
@@ -952,6 +961,8 @@ void PlayerInventory::load(Json const& store) {
 
   m_swapSlot = itemDatabase->diskLoad(store.get("swapSlot"));
   m_trashSlot = itemDatabase->diskLoad(store.get("trashSlot"));
+  normalizeItem(m_swapSlot);
+  normalizeItem(m_trashSlot);
 
   m_currencies = jsonToMapV<StringMap<std::uint64_t>>(store.get("currencies"), std::mem_fn(&Json::toUInt));
 
@@ -1030,9 +1041,12 @@ Json PlayerInventory::store() const {
 }
 
 void PlayerInventory::forEveryItem(std::function<void(InventorySlot const&, std::shared_ptr<Item>&)> function) {
-  auto checkedFunction = [function = std::move(function)](InventorySlot const& slot, std::shared_ptr<Item>& item) {
-    if (item)
+  auto checkedFunction = [&function](InventorySlot const& slot, std::shared_ptr<Item>& item) {
+    normalizeItem(item);
+    if (item) {
       function(slot, item);
+      normalizeItem(item);
+    }
   };
 
   for (auto& p : m_equipment)
@@ -1046,9 +1060,20 @@ void PlayerInventory::forEveryItem(std::function<void(InventorySlot const&, std:
 }
 
 void PlayerInventory::forEveryItem(std::function<void(InventorySlot const&, std::shared_ptr<Item> const&)> function) const {
-  return const_cast<PlayerInventory*>(this)->forEveryItem([function = std::move(function)](InventorySlot const& slot, std::shared_ptr<Item>& item) {
+  auto checkedFunction = [&function](InventorySlot const& slot, std::shared_ptr<Item> const& item) {
+    if (item && !item->empty())
       function(slot, item);
-    });
+  };
+
+  for (auto const& p : m_equipment)
+    checkedFunction(p.first, p.second);
+  for (auto const& p : m_bags) {
+    auto const& bag = std::as_const(*p.second);
+    for (std::size_t i = 0; i < bag.size(); ++i)
+      checkedFunction(BagSlot(p.first, i), bag.at(i));
+  }
+  checkedFunction(SwapSlot(), m_swapSlot);
+  checkedFunction(TrashSlot(), m_trashSlot);
 }
 
 List<std::shared_ptr<Item>> PlayerInventory::allItems() const {
@@ -1072,14 +1097,10 @@ void PlayerInventory::cleanup() {
     pair.second->cleanup();
 
   for (auto& p : m_equipment)
-    if (p.second && p.second->empty())
-      p.second = std::shared_ptr<Item>();
+    normalizeItem(p.second);
 
-  if (m_swapSlot && m_swapSlot->empty())
-    m_swapSlot = std::shared_ptr<Item>();
-
-  if (m_trashSlot && m_trashSlot->empty())
-    m_trashSlot = std::shared_ptr<Item>();
+  normalizeItem(m_swapSlot);
+  normalizeItem(m_trashSlot);
 
   m_customBar.forEach([this](Array2S const&, CustomBarLink& p) {
       std::shared_ptr<Item> primary = p.first ? retrieve(*p.first) : std::shared_ptr<Item>();
@@ -1186,26 +1207,41 @@ bool PlayerInventory::checkInventoryFilter(std::shared_ptr<Item> const& items, S
   return true;
 }
 
-std::shared_ptr<Item> const& PlayerInventory::retrieve(InventorySlot const& slot) const {
-  return const_cast<PlayerInventory*>(this)->retrieve(slot);
+void PlayerInventory::normalizeItem(std::shared_ptr<Item>& item) {
+  if (item && item->empty())
+    item.reset();
 }
 
-std::shared_ptr<Item>& PlayerInventory::retrieve(InventorySlot const& slot) {
-  auto guardEmpty = [](std::shared_ptr<Item>& item) -> std::shared_ptr<Item>& {
-    if (item && item->empty())
-      item = {};
+std::shared_ptr<Item> PlayerInventory::retrieve(InventorySlot const& slot) const {
+  if (auto es = slot.ptr<EquipmentSlot>()) {
+    auto const* item = m_equipment.ptr(*es);
+    return item && *item && !(*item)->empty() ? *item : std::shared_ptr<Item>();
+  } else if (auto bs = slot.ptr<BagSlot>()) {
+    if (auto bag = m_bags.ptr(bs->first))
+      return std::as_const(**bag).at(bs->second);
+  } else {
+    auto const& item = slot.is<SwapSlot>() ? m_swapSlot : m_trashSlot;
+    return item && !item->empty() ? item : std::shared_ptr<Item>();
+  }
+
+  throw ItemException::format("Invalid inventory slot {}", jsonFromInventorySlot(slot));
+}
+
+std::shared_ptr<Item>& PlayerInventory::retrieveForMutation(InventorySlot const& slot) {
+  auto normalized = [](std::shared_ptr<Item>& item) -> std::shared_ptr<Item>& {
+    normalizeItem(item);
     return item;
   };
 
   if (auto es = slot.ptr<EquipmentSlot>())
-    return guardEmpty(m_equipment[*es]);
+    return normalized(m_equipment[*es]);
   else if (auto bs = slot.ptr<BagSlot>()) {
     if (auto bag = m_bags.ptr(bs->first))
-      return guardEmpty((*bag)->at(bs->second));
+      return normalized((*bag)->at(bs->second));
   } else if (slot.is<SwapSlot>())
-    return guardEmpty(m_swapSlot);
+    return normalized(m_swapSlot);
   else
-    return guardEmpty(m_trashSlot);
+    return normalized(m_trashSlot);
 
   throw ItemException::format("Invalid inventory slot {}", jsonFromInventorySlot(slot));
 }

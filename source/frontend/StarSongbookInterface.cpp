@@ -149,13 +149,17 @@ SongbookInterface::SongbookInterface(std::shared_ptr<Player> player) {
 
   reader.construct(assets->json("/interface/windowconfig/songbook.config:paneLayout"), this);
 
-  Root::singleton().registerReloadListener(
+  m_reloadSubscription = Root::singleton().registerReloadListener(
     m_reloadListener = std::make_shared<CallbackListener>([this]() {
       refresh(true);
     })
   );
 
   refresh(true);
+}
+
+SongbookInterface::~SongbookInterface() {
+  m_reloadSubscription.disconnect();
 }
 
 void SongbookInterface::update(float dt) {

@@ -22,7 +22,6 @@ import star.io_device;
 import star.string;
 import star.json_parser;
 import star.json_builder;
-import star.iterator;
 import star.logging;
 import star.random;
 import star.font;
@@ -673,12 +672,13 @@ void Assets::clearCache() {
   MutexLocker assetsLocker(m_assetsMutex);
 
   // Clear all assets that are not queued or broken.
-  auto it = makeSMutableMapIterator(m_assetsCache);
-  while (it.hasNext()) {
-    auto const& pair = it.next();
+  for (auto it = m_assetsCache.begin(); it != m_assetsCache.end();) {
+    auto const& pair = *it;
     // Don't clean up queued, persistent, or broken assets.
     if (pair.second && !pair.second->shouldPersist() && !m_queue.contains(pair.first))
-      it.remove();
+      it = m_assetsCache.erase(it);
+    else
+      ++it;
   }
 }
 
@@ -687,9 +687,8 @@ void Assets::cleanup() {
 
   double time = Time::monotonicTime();
 
-  auto it = makeSMutableMapIterator(m_assetsCache);
-  while (it.hasNext()) {
-    auto pair = it.next();
+  for (auto it = m_assetsCache.begin(); it != m_assetsCache.end();) {
+    auto pair = *it;
     // Don't clean up broken assets or queued assets.
     if (pair.second && !m_queue.contains(pair.first)) {
       double liveTime = time - pair.second->time;
@@ -697,10 +696,13 @@ void Assets::cleanup() {
         // If the asset should persist, just refresh the access time.
         if (pair.second->shouldPersist())
           pair.second->time = time;
-        else
-          it.remove();
+        else {
+          it = m_assetsCache.erase(it);
+          continue;
+        }
       }
     }
+    ++it;
   }
 }
 

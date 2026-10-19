@@ -25,6 +25,8 @@ public:
 
   SmallVector();
   SmallVector(SmallVector const& other);
+  // Successful moves leave the source empty and reusable. Heap storage is
+  // transferred even when its current size fits on the stack.
   SmallVector(SmallVector&& other);
   template <typename OtherElement, std::size_t OtherMaxStackSize>
   SmallVector(SmallVector<OtherElement, OtherMaxStackSize> const& other);
@@ -123,8 +125,18 @@ SmallVector<Element, MaxStackSize>::SmallVector(SmallVector const& other)
 template <typename Element, std::size_t MaxStackSize>
 SmallVector<Element, MaxStackSize>::SmallVector(SmallVector&& other)
   : SmallVector() {
+  if (other.isHeapAllocated()) {
+    m_begin = other.m_begin;
+    m_end = other.m_end;
+    m_capacity = other.m_capacity;
+    other.m_begin = reinterpret_cast<Element*>(other.m_stackElements);
+    other.m_end = other.m_begin;
+    other.m_capacity = other.m_begin + MaxStackSize;
+  } else {
     for (auto& e : other)
       emplace_back(std::move(e));
+    other.clear();
+  }
 }
 
 template <typename Element, std::size_t MaxStackSize>
@@ -160,27 +172,57 @@ auto SmallVector<Element, MaxStackSize>::operator=(SmallVector const& other) -> 
   if (this == &other)
     return *this;
 
-  resize(other.size());
-  for (std::size_t i = 0; i < size(); ++i)
+  reserve(other.size());
+  auto overlap = std::min(size(), other.size());
+  for (std::size_t i = 0; i < overlap; ++i)
     operator[](i) = other[i];
+  while (size() < other.size())
+    emplace_back(other[size()]);
+  while (size() > other.size())
+    pop_back();
 
   return *this;
 }
 
 template <typename Element, std::size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::operator=(SmallVector&& other) -> SmallVector& {
-  resize(other.size());
-  for (std::size_t i = 0; i < size(); ++i)
-    operator[](i) = std::move(other[i]);
+  if (this == &other)
+    return *this;
+
+  if (other.isHeapAllocated()) {
+    clear();
+    if (isHeapAllocated())
+      freeHeapElements(m_begin, m_capacity - m_begin);
+    m_begin = other.m_begin;
+    m_end = other.m_end;
+    m_capacity = other.m_capacity;
+    other.m_begin = reinterpret_cast<Element*>(other.m_stackElements);
+    other.m_end = other.m_begin;
+    other.m_capacity = other.m_begin + MaxStackSize;
+  } else {
+    auto overlap = std::min(size(), other.size());
+    for (std::size_t i = 0; i < overlap; ++i)
+      operator[](i) = std::move(other[i]);
+    while (size() < other.size())
+      emplace_back(std::move(other[size()]));
+    while (size() > other.size())
+      pop_back();
+    other.clear();
+  }
 
   return *this;
 }
 
 template <typename Element, std::size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::operator=(std::initializer_list<Element> list) -> SmallVector& {
-  resize(list.size());
-  for (std::size_t i = 0; i < size(); ++i)
-    operator[](i) = std::move(list[i]);
+  reserve(list.size());
+  auto overlap = std::min(size(), list.size());
+  for (std::size_t i = 0; i < overlap; ++i)
+    operator[](i) = list.begin()[i];
+  while (size() < list.size())
+    emplace_back(list.begin()[size()]);
+  while (size() > list.size())
+    pop_back();
   return *this;
 }
 
@@ -412,9 +454,12 @@ auto SmallVector<Element, MaxStackSize>::erase(iterator begin, iterator end) -> 
   std::size_t startIndex = begin - ptr();
   std::size_t endIndex = end - ptr();
   std::size_t toRemove = endIndex - startIndex;
+  if (toRemove == 0)
+    return begin;
   for (std::size_t i = endIndex; i < size(); ++i)
     operator[](startIndex + (i - endIndex)) = std::move(operator[](i));
-  resize(size() - toRemove);
+  while (toRemove--)
+    pop_back();
   return begin;
 }
 

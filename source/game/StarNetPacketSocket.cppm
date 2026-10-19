@@ -86,6 +86,11 @@ public:
   // actually received.
   virtual bool readData() = 0;
 
+  // Called after a nonblocking I/O attempt found no complete packet / pending
+  // output. May return spuriously; callers retry I/O before checking the deadline.
+  // Safe concurrently with close(), and never holds the caller's connection lock.
+  virtual void waitForData(bool writable, std::chrono::steady_clock::time_point deadline) = 0;
+
   // Should return incoming / outgoing packet stats, if they are tracked.
   // Default implementations return nothing.
   virtual Maybe<PacketStats> incomingStats() const;
@@ -115,6 +120,7 @@ protected:
 class LocalPacketSocket : public PacketSocket {
 public:
   static std::pair<std::unique_ptr<LocalPacketSocket>, std::unique_ptr<LocalPacketSocket>> openPair();
+  ~LocalPacketSocket() override;
 
   bool isOpen() const override;
   void close() override;
@@ -128,16 +134,19 @@ public:
   // packets directly in the incoming queue of the paired local socket.
   bool writeData() override;
   bool readData() override;
+  void waitForData(bool writable, std::chrono::steady_clock::time_point deadline) override;
 
 private:
   struct Pipe {
-    Mutex mutex;
+    std::mutex mutex;
+    std::condition_variable ready;
     Deque<std::shared_ptr<Packet>> queue;
+    bool open = true;
+    bool peerOpen = true;
   };
 
   LocalPacketSocket(std::shared_ptr<Pipe> incomingPipe, std::weak_ptr<Pipe> outgoingPipe);
 
-  // Ubuntu 22.04's libstdc++ lacks std::atomic<shared_ptr<T>>.
   std::shared_ptr<Pipe> m_incomingPipe;
   std::weak_ptr<Pipe> m_outgoingPipe;
 };
@@ -157,6 +166,7 @@ public:
 
   bool writeData() override;
   bool readData() override;
+  void waitForData(bool writable, std::chrono::steady_clock::time_point deadline) override;
 
   Maybe<PacketStats> incomingStats() const override;
   Maybe<PacketStats> outgoingStats() const override;
@@ -187,6 +197,7 @@ public:
 
   bool writeData() override;
   bool readData() override;
+  void waitForData(bool writable, std::chrono::steady_clock::time_point deadline) override;
 
   Maybe<PacketStats> incomingStats() const override;
   Maybe<PacketStats> outgoingStats() const override;
@@ -195,6 +206,9 @@ private:
   P2PPacketSocket(std::shared_ptr<P2PSocket> socket);
 
   std::shared_ptr<P2PSocket> m_socket;
+  std::mutex m_waitMutex;
+  std::condition_variable m_waitCondition;
+  bool m_closed = false;
 
   PacketStatCollector m_incomingStats;
   PacketStatCollector m_outgoingStats;

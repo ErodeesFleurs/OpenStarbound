@@ -54,6 +54,7 @@ private:
   HashMap<AssetPath, std::pair<TexturePtr, std::int64_t>> m_textureMap;
   HashMap<std::shared_ptr<Image const>, TexturePtr> m_textureDeduplicationMap;
   std::shared_ptr<TrackerListener> m_reloadTracker;
+  ListenerSubscription m_reloadSubscription;
 };
 
 }

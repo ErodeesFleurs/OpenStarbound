@@ -47,7 +47,6 @@ typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 import star.net_compatibility;
-import star.iterator;
 import star.logging;
 
 import star.host_address;
@@ -180,12 +179,33 @@ std::pair<std::unique_ptr<LocalPacketSocket>, std::unique_ptr<LocalPacketSocket>
   };
 }
 
+LocalPacketSocket::~LocalPacketSocket() {
+  close();
+}
+
 bool LocalPacketSocket::isOpen() const {
-  return std::atomic_load(&m_incomingPipe) && !m_outgoingPipe.expired();
+  auto incomingPipe = std::atomic_load(&m_incomingPipe);
+  if (!incomingPipe)
+    return false;
+  std::lock_guard locker(incomingPipe->mutex);
+  return incomingPipe->open && incomingPipe->peerOpen;
 }
 
 void LocalPacketSocket::close() {
-  std::atomic_store(&m_incomingPipe, std::shared_ptr<Pipe>());
+  if (auto incomingPipe = std::atomic_exchange(&m_incomingPipe, std::shared_ptr<Pipe>())) {
+    {
+      std::lock_guard locker(incomingPipe->mutex);
+      incomingPipe->open = false;
+    }
+    incomingPipe->ready.notify_all();
+    if (auto outgoingPipe = m_outgoingPipe.lock()) {
+      {
+        std::lock_guard locker(outgoingPipe->mutex);
+        outgoingPipe->peerOpen = false;
+      }
+      outgoingPipe->ready.notify_all();
+    }
+  }
 }
 
 void LocalPacketSocket::sendPackets(List<std::shared_ptr<Packet>> packets) {
@@ -193,7 +213,9 @@ void LocalPacketSocket::sendPackets(List<std::shared_ptr<Packet>> packets) {
     return;
 
   if (auto outgoingPipe = m_outgoingPipe.lock()) {
-    MutexLocker locker(outgoingPipe->mutex);
+    std::lock_guard locker(outgoingPipe->mutex);
+    if (!outgoingPipe->open)
+      return;
 
 #ifndef NDEBUG
     // Self test the serialization when assertions are enabled, but forward the
@@ -218,6 +240,7 @@ void LocalPacketSocket::sendPackets(List<std::shared_ptr<Packet>> packets) {
 #endif
 
     outgoingPipe->queue.appendAll(std::move(packets));
+    outgoingPipe->ready.notify_all();
   }
 }
 
@@ -228,7 +251,7 @@ List<std::shared_ptr<Packet>> LocalPacketSocket::receivePackets() {
   if (!incomingPipe)
     return {};
 
-  MutexLocker locker(incomingPipe->mutex);
+  std::lock_guard locker(incomingPipe->mutex);
   List<std::shared_ptr<Packet>> packets;
   packets.appendAll(take(incomingPipe->queue));
   return packets;
@@ -244,6 +267,18 @@ bool LocalPacketSocket::writeData() {
 
 bool LocalPacketSocket::readData() {
   return false;
+}
+
+void LocalPacketSocket::waitForData(bool writable, std::chrono::steady_clock::time_point deadline) {
+  if (writable)
+    return;
+  auto incomingPipe = std::atomic_load(&m_incomingPipe);
+  if (!incomingPipe)
+    return;
+  std::unique_lock locker(incomingPipe->mutex);
+  incomingPipe->ready.wait_until(locker, deadline, [&] {
+    return !incomingPipe->queue.empty() || !incomingPipe->open || !incomingPipe->peerOpen;
+  });
 }
 
 LocalPacketSocket::LocalPacketSocket(std::shared_ptr<Pipe> incomingPipe, std::weak_ptr<Pipe> outgoingPipe)
@@ -264,11 +299,11 @@ void TcpPacketSocket::close() {
 }
 
 void TcpPacketSocket::sendPackets(List<std::shared_ptr<Packet>> packets) {
-  auto it = makeSMutableIterator(packets);
+  auto it = packets.begin();
   if (compressionStreamEnabled()) {
     DataStreamBuffer outBuffer;
-    while (it.hasNext()) {
-      std::shared_ptr<Packet>& packet = it.next();
+    while (it != packets.end()) {
+      std::shared_ptr<Packet>& packet = *it++;
       auto packetType = packet->type();
       DataStreamBuffer packetBuffer;
       packetBuffer.setStreamCompatibilityVersion(netRules());
@@ -280,16 +315,16 @@ void TcpPacketSocket::sendPackets(List<std::shared_ptr<Packet>> packets) {
     }
     m_outputBuffer.append(outBuffer.ptr(), outBuffer.size());
   } else {
-    while (it.hasNext()) {
-      PacketType currentType = it.peekNext()->type();
-      PacketCompressionMode currentCompressionMode = it.peekNext()->compressionMode();
+    while (it != packets.end()) {
+      PacketType currentType = (*it)->type();
+      PacketCompressionMode currentCompressionMode = (*it)->compressionMode();
 
       DataStreamBuffer packetBuffer;
       packetBuffer.setStreamCompatibilityVersion(netRules());
-      while (it.hasNext()
-             && it.peekNext()->type() == currentType
-             && it.peekNext()->compressionMode() == currentCompressionMode) {
-          it.next()->write(packetBuffer, netRules());
+      while (it != packets.end()
+             && (*it)->type() == currentType
+             && (*it)->compressionMode() == currentCompressionMode) {
+          (*it++)->write(packetBuffer, netRules());
       }
 
       // Packets must read and write actual data, because this is used to
@@ -388,7 +423,7 @@ List<std::shared_ptr<Packet>> TcpPacketSocket::receivePackets() {
 }
 
 bool TcpPacketSocket::sentPacketsPending() const {
-  return !m_outputBuffer.empty() || (compressionStreamEnabled() && !m_compressedOutputBuffer.empty());
+  return !m_outputBuffer.empty() || !m_compressedOutputBuffer.empty();
 }
 
 bool TcpPacketSocket::writeData() {
@@ -397,29 +432,25 @@ bool TcpPacketSocket::writeData() {
 
   bool dataSent = false;
   try {
-    if (!m_outputBuffer.empty() || !m_compressedOutputBuffer.empty()) {
-      if (compressionStreamEnabled()) {
-        if (!m_outputBuffer.empty()) {
-          m_compressionStream.compress(m_outputBuffer, m_compressedOutputBuffer);
-          m_outputBuffer.clear();
-        }
-        do {
-          std::size_t written = m_socket->send(m_compressedOutputBuffer.ptr(), m_compressedOutputBuffer.size());
-          if (written == 0)
-            break;
-          dataSent = true;
-          m_compressedOutputBuffer.trimLeft(written);
-          m_outgoingStats.mix(written);
-        } while (!m_compressedOutputBuffer.empty());
-      } else {
-        do {
-          std::size_t written = m_socket->send(m_outputBuffer.ptr(), m_outputBuffer.size());
-          if (written == 0)
-            break;
-          dataSent = true;
-          m_outputBuffer.trimLeft(written);
-        } while (!m_outputBuffer.empty());
-      }
+    if (compressionStreamEnabled() && !m_outputBuffer.empty()) {
+      m_compressionStream.compress(m_outputBuffer, m_compressedOutputBuffer);
+      m_outputBuffer.clear();
+    }
+    // A previously compressed tail must be drained even if the mode changed.
+    while (!m_compressedOutputBuffer.empty()) {
+      std::size_t written = m_socket->send(m_compressedOutputBuffer.ptr(), m_compressedOutputBuffer.size());
+      if (written == 0)
+        return dataSent;
+      dataSent = true;
+      m_compressedOutputBuffer.trimLeft(written);
+      m_outgoingStats.mix(written);
+    }
+    while (!m_outputBuffer.empty()) {
+      std::size_t written = m_socket->send(m_outputBuffer.ptr(), m_outputBuffer.size());
+      if (written == 0)
+        break;
+      dataSent = true;
+      m_outputBuffer.trimLeft(written);
     }
   } catch (SocketClosedException const& e) {
     Logger::debug("TcpPacketSocket socket closed: {}", outputException(e, false));
@@ -455,6 +486,10 @@ bool TcpPacketSocket::readData() {
   return dataReceived;
 }
 
+void TcpPacketSocket::waitForData(bool writable, std::chrono::steady_clock::time_point deadline) {
+  m_socket->waitForData(writable, deadline);
+}
+
 Maybe<PacketStats> TcpPacketSocket::incomingStats() const {
   return m_incomingStats.stats();
 }
@@ -474,20 +509,25 @@ bool P2PPacketSocket::isOpen() const {
 }
 
 void P2PPacketSocket::close() {
+  {
+    std::lock_guard locker(m_waitMutex);
+    m_closed = true;
+  }
+  m_waitCondition.notify_all();
   m_socket.reset();
 }
 
 void P2PPacketSocket::sendPackets(List<std::shared_ptr<Packet>> packets) {
-  auto it = makeSMutableIterator(packets);
+  auto it = packets.begin();
 
   if (compressionStreamEnabled()) {
     DataStreamBuffer outBuffer;
-    while (it.hasNext()) {
-      PacketType currentType = it.peekNext()->type();
+    while (it != packets.end()) {
+      PacketType currentType = (*it)->type();
       DataStreamBuffer packetBuffer;
       packetBuffer.setStreamCompatibilityVersion(netRules());
-      while (it.hasNext() && it.peekNext()->type() == currentType)
-        it.next()->write(packetBuffer, netRules());
+      while (it != packets.end() && (*it)->type() == currentType)
+        (*it++)->write(packetBuffer, netRules());
       outBuffer.write(currentType);
       outBuffer.write<bool>(false);
       outBuffer.writeData(packetBuffer.ptr(), packetBuffer.size());
@@ -495,16 +535,16 @@ void P2PPacketSocket::sendPackets(List<std::shared_ptr<Packet>> packets) {
       m_outputMessages.append(m_compressionStream.compress(outBuffer.takeData()));
     }
   } else {
-    while (it.hasNext()) {
-      PacketType currentType = it.peekNext()->type();
-      PacketCompressionMode currentCompressionMode = it.peekNext()->compressionMode();
+    while (it != packets.end()) {
+      PacketType currentType = (*it)->type();
+      PacketCompressionMode currentCompressionMode = (*it)->compressionMode();
 
       DataStreamBuffer packetBuffer;
       packetBuffer.setStreamCompatibilityVersion(netRules());
-      while (it.hasNext()
-             && it.peekNext()->type() == currentType
-             && it.peekNext()->compressionMode() == currentCompressionMode) {
-          it.next()->write(packetBuffer, netRules());
+      while (it != packets.end()
+             && (*it)->type() == currentType
+             && (*it)->compressionMode() == currentCompressionMode) {
+          (*it++)->write(packetBuffer, netRules());
       }
 
       // Packets must read and write actual data, because this is used to
@@ -614,6 +654,16 @@ bool P2PPacketSocket::readData() {
   }
 
   return workDone;
+}
+
+void P2PPacketSocket::waitForData(bool, std::chrono::steady_clock::time_point deadline) {
+  // Steam/Discord expose no socket readiness event here. Retry their actual
+  // sendMessage/receiveMessage operations at most 1 ms later, interruptible by
+  // local close; this is a bounded polling fallback, not a network notification.
+  std::unique_lock locker(m_waitMutex);
+  m_waitCondition.wait_until(locker,
+      std::min(deadline, std::chrono::steady_clock::now() + std::chrono::milliseconds(1)),
+      [&] { return m_closed; });
 }
 
 Maybe<PacketStats> P2PPacketSocket::incomingStats() const {

@@ -8,6 +8,7 @@ import star.maybe;
 import star.lua;
 import star.lua_converters;
 import star.lexical_cast;
+import star.rpc_promise;
 
 #include "gtest/gtest.h"
 
@@ -855,4 +856,69 @@ TEST(LuaTest, ProfilingTest) {
   EXPECT_TRUE(names.contains("function1"));
   EXPECT_TRUE(names.contains("function2"));
   EXPECT_TRUE(names.contains("function3"));
+}
+
+TEST(LuaTest, PromiseUserdataObservesSharedOutcome) {
+  auto engine = LuaEngine::create();
+  auto context = engine->createContext();
+  auto [promise, keeper] = RpcPromise<Json>::createPair();
+  context.setPath("promise", promise);
+  context.setPath("keeper", std::make_shared<AutoFailRpcPromiseKeeper<Json>>(keeper));
+  EXPECT_FALSE(context.eval<bool>("promise:finished()"));
+  EXPECT_FALSE(context.eval<bool>("promise:succeeded()"));
+  EXPECT_TRUE(context.eval<bool>("promise:result() == nil and promise:error() == nil"));
+  context.load("keeper:fulfill({answer = 42})");
+  EXPECT_TRUE(context.eval<bool>("promise:finished() and promise:succeeded()"));
+  EXPECT_EQ(context.eval<Json>("promise:result()"), JsonObject({{"answer", 42}}));
+  EXPECT_TRUE(context.eval<bool>("promise:error() == nil"));
+  EXPECT_EQ(promise.result()->getInt("answer"), 42);
+  EXPECT_THROW(context.load("keeper:fail('second resolution')"), LuaException);
+  context.load("keeper = nil promise = nil");
+  engine->collectGarbage();
+  EXPECT_TRUE(promise.succeeded());
+}
+
+TEST(LuaTest, PromiseKeeperGarbageCollectionFailsOnlyLastOwner) {
+  auto engine = LuaEngine::create();
+  engine->setAutoGarbageCollection(false);
+  auto context = engine->createContext();
+  auto [promise, keeper] = RpcPromise<Json>::createPair();
+  auto automatic = std::make_shared<AutoFailRpcPromiseKeeper<Json>>(keeper);
+  context.setPath("keeper", automatic);
+  context.setPath("promise", promise);
+  context.load("alias = keeper keeper = nil");
+  automatic.reset();
+  engine->collectGarbage();
+  EXPECT_FALSE(promise.finished());
+  context.load("alias = nil");
+  engine->collectGarbage();
+  EXPECT_TRUE(promise.failed());
+  EXPECT_EQ(*promise.error(), "Keeper destroyed");
+  EXPECT_TRUE(context.eval<bool>("promise:finished() and not promise:succeeded()"));
+  EXPECT_EQ(context.eval<String>("promise:error()"), "Keeper destroyed");
+  context.load("promise = nil");
+  engine->collectGarbage();
+}
+
+TEST(LuaTest, PromiseKeeperCollectionPreservesChainAndFailure) {
+  auto engine = LuaEngine::create();
+  auto context = engine->createContext();
+  auto [source, sourceKeeper] = RpcPromise<Json>::createPair();
+  auto [promise, keeper] = RpcPromise<Json>::createPair();
+  context.setPath("source", source);
+  context.setPath("promise", promise);
+  context.setPath("keeper", std::make_shared<AutoFailRpcPromiseKeeper<Json>>(keeper));
+  context.load("keeper:chain(source) keeper = nil");
+  engine->collectGarbage();
+  EXPECT_FALSE(promise.finished());
+  sourceKeeper.fulfill(JsonArray{1, 2, 3});
+  EXPECT_EQ(context.eval<Json>("promise:result()"), JsonArray({1, 2, 3}));
+
+  auto [failed, failedKeeper] = RpcPromise<Json>::createPair();
+  context.setPath("failedKeeper", std::make_shared<AutoFailRpcPromiseKeeper<Json>>(failedKeeper));
+  context.load("failedKeeper:fail('from Lua') failedKeeper = nil");
+  engine->collectGarbage();
+  EXPECT_EQ(*failed.error(), "from Lua");
+  context.load("source = nil promise = nil");
+  engine->collectGarbage();
 }

@@ -143,8 +143,22 @@ inline bool invalidSocketDescriptor(int socket) {
 #endif
 
 struct SocketImpl {
-  SocketImpl() {
-    socketDesc = 0;
+  SocketImpl() = default;
+  SocketImpl(SocketImpl const&) = delete;
+  SocketImpl& operator=(SocketImpl const&) = delete;
+
+  ~SocketImpl() {
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+    if (!invalidSocketDescriptor(socketDesc))
+      ::closesocket(socketDesc);
+    if (!invalidSocketDescriptor(wakeReader))
+      ::closesocket(wakeReader);
+    if (!invalidSocketDescriptor(wakeWriter))
+      ::closesocket(wakeWriter);
+#else
+    if (!invalidSocketDescriptor(socketDesc))
+      ::close(socketDesc);
+#endif
   }
 
   void setSockOpt(int level, int optname, const void* optval, socklen_t len) {
@@ -158,9 +172,54 @@ struct SocketImpl {
   }
 
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
-  SOCKET socketDesc;
+  SOCKET prepareWait() {
+    std::lock_guard locker(waitMutex);
+    if (invalidSocketDescriptor(wakeReader)) {
+      // select does not reliably wake when a retained data socket is shut down.
+      // A persistent readable socket is a level-triggered wake for every waiter.
+      SocketImpl reader;
+      SocketImpl writer;
+      reader.socketDesc = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+      writer.socketDesc = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+      if (invalidSocketDescriptor(reader.socketDesc) || invalidSocketDescriptor(writer.socketDesc))
+        throw NetworkException::format("Cannot create socket readiness wake channel: {}", netErrorString());
+      sockaddr_in address{};
+      address.sin_family = AF_INET;
+      address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+      if (::bind(reader.socketDesc, reinterpret_cast<sockaddr*>(&address), sizeof(address)) != 0)
+        throw NetworkException::format("Cannot bind socket readiness wake channel: {}", netErrorString());
+      int length = sizeof(address);
+      if (::getsockname(reader.socketDesc, reinterpret_cast<sockaddr*>(&address), &length) != 0
+          || ::connect(writer.socketDesc, reinterpret_cast<sockaddr*>(&address), length) != 0)
+        throw NetworkException::format("Cannot connect socket readiness wake channel: {}", netErrorString());
+      unsigned long nonblocking = 1;
+      if (::ioctlsocket(reader.socketDesc, FIONBIO, &nonblocking) != 0
+          || ::ioctlsocket(writer.socketDesc, FIONBIO, &nonblocking) != 0)
+        throw NetworkException::format("Cannot configure socket readiness wake channel: {}", netErrorString());
+      wakeReader = std::exchange(reader.socketDesc, INVALID_SOCKET);
+      wakeWriter = std::exchange(writer.socketDesc, INVALID_SOCKET);
+    }
+    return wakeReader;
+  }
+
+  void signalWaiters() {
+    std::lock_guard locker(waitMutex);
+    if (!invalidSocketDescriptor(wakeWriter)) {
+      // Never drain the byte: shutdown is permanent, and all concurrent waits
+      // must wake. A full send buffer already has a wake queued.
+      ::send(wakeWriter, "", 1, 0);
+    }
+  }
+
+  std::mutex waitMutex;
+  SOCKET wakeReader = INVALID_SOCKET;
+  SOCKET wakeWriter = INVALID_SOCKET;
+#endif
+
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+  SOCKET socketDesc = INVALID_SOCKET;
 #else
-  int socketDesc;
+  int socketDesc = -1;
 #endif
 };
 

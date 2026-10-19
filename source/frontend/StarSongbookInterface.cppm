@@ -44,6 +44,7 @@ class Player;
 class SongbookInterface : public Pane {
 public:
   SongbookInterface(std::shared_ptr<Player> player);
+  ~SongbookInterface() override;
 
   void update(float dt) override;
 
@@ -52,6 +53,7 @@ private:
   StringList m_files;
   String m_lastSearch;
   std::shared_ptr<CallbackListener> m_reloadListener;
+  ListenerSubscription m_reloadSubscription;
   bool play();
   void refresh(bool reloadFiles = false);
 };

@@ -101,8 +101,9 @@ public:
   WorkerPool(String name, unsigned threadCount);
   ~WorkerPool();
 
-  WorkerPool(WorkerPool&&);
-  WorkerPool& operator=(WorkerPool&&);
+  // Workers borrow this object's locks and queues; its address must stay stable.
+  WorkerPool(WorkerPool&&) = delete;
+  WorkerPool& operator=(WorkerPool&&) = delete;
 
   // Start the thread pool with the given thread count range, or if it is
   // already started, reconfigure the thread counts.

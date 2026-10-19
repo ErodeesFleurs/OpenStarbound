@@ -6,7 +6,6 @@ import star.variant;
 import star.ordered_map;
 import star.ordered_set;
 import star.option_parser;
-import star.iterator;
 
 namespace Star {
 
@@ -41,9 +40,9 @@ std::pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringLi
   StringList errors;
   bool endOfFlags = false;
 
-  auto it = makeSIterator(arguments);
-  while (it.hasNext()) {
-    auto const& arg = it.next();
+  auto it = arguments.begin();
+  while (it != arguments.end()) {
+    auto const& arg = *it++;
     if (arg == "--") {
       endOfFlags = true;
       continue;
@@ -61,11 +60,11 @@ std::pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringLi
         result.switches.add(std::move(flag));
       } else {
         auto const& parameter = option->get<Parameter>();
-        if (!it.hasNext()) {
+        if (it == arguments.end()) {
           errors.append(strf("Option '-{}' must be followed by an argument", flag));
           continue;
         }
-        String val = it.next();
+        String val = *it++;
         if (parameter.requirementMode != Multiple && result.parameters.contains(flag)) {
           errors.append(strf("Option with argument '-{}' specified multiple times", flag));
           continue;

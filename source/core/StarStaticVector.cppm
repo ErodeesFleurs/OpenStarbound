@@ -153,27 +153,44 @@ auto StaticVector<Element, MaxSize>::operator=(StaticVector const& other) -> Sta
   if (this == &other)
     return *this;
 
-  resize(other.size());
-  for (std::size_t i = 0; i < m_size; ++i)
+  auto overlap = std::min(m_size, other.size());
+  for (std::size_t i = 0; i < overlap; ++i)
     operator[](i) = other[i];
+  while (m_size < other.size())
+    emplace_back(other[m_size]);
+  while (m_size > other.size())
+    pop_back();
 
   return *this;
 }
 
 template <typename Element, std::size_t MaxSize>
 auto StaticVector<Element, MaxSize>::operator=(StaticVector&& other) -> StaticVector& {
-  resize(other.size());
-  for (std::size_t i = 0; i < m_size; ++i)
+  if (this == &other)
+    return *this;
+
+  auto overlap = std::min(m_size, other.size());
+  for (std::size_t i = 0; i < overlap; ++i)
     operator[](i) = std::move(other[i]);
+  while (m_size < other.size())
+    emplace_back(std::move(other[m_size]));
+  while (m_size > other.size())
+    pop_back();
 
   return *this;
 }
 
 template <typename Element, std::size_t MaxSize>
 auto StaticVector<Element, MaxSize>::operator=(std::initializer_list<Element> list) -> StaticVector& {
-  resize(list.size());
-  for (std::size_t i = 0; i < m_size; ++i)
-    operator[](i) = std::move(list[i]);
+  if (list.size() > MaxSize)
+    throw StaticVectorSizeException::format("StaticVector assignment size {} out of range {}", list.size(), MaxSize);
+  auto overlap = std::min(m_size, list.size());
+  for (std::size_t i = 0; i < overlap; ++i)
+    operator[](i) = list.begin()[i];
+  while (m_size < list.size())
+    emplace_back(list.begin()[m_size]);
+  while (m_size > list.size())
+    pop_back();
   return *this;
 }
 
@@ -361,7 +378,7 @@ auto StaticVector<Element, MaxSize>::erase(iterator pos) -> iterator {
   std::size_t index = pos - ptr();
   for (std::size_t i = index; i < m_size - 1; ++i)
     operator[](i) = std::move(operator[](i + 1));
-  resize(m_size - 1);
+  pop_back();
   return pos;
 }
 
@@ -370,9 +387,12 @@ auto StaticVector<Element, MaxSize>::erase(iterator begin, iterator end) -> iter
   std::size_t startIndex = begin - ptr();
   std::size_t endIndex = end - ptr();
   std::size_t toRemove = endIndex - startIndex;
+  if (toRemove == 0)
+    return begin;
   for (std::size_t i = endIndex; i < m_size; ++i)
     operator[](startIndex + (i - endIndex)) = std::move(operator[](i));
-  resize(m_size - toRemove);
+  while (toRemove--)
+    pop_back();
   return begin;
 }
 

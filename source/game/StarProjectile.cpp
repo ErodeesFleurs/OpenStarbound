@@ -19,7 +19,6 @@ import star.data_stream_extra;
 import star.parametric_function;
 import star.multi_array_interpolator;
 import star.multi_table;
-import star.iterator;
 import star.ordered_map;
 import star.lua;
 import star.maybe;
@@ -1001,18 +1000,19 @@ void Projectile::tickShared(float dt) {
       processAction(action);
   }
 
-  auto periodicActionIt = makeSMutableIterator(m_periodicActions);
-  while (periodicActionIt.hasNext()) {
-    auto& periodicAction = periodicActionIt.next();
+  for (auto periodicActionIt = m_periodicActions.begin(); periodicActionIt != m_periodicActions.end();) {
+    auto& periodicAction = *periodicActionIt;
     if (std::get<1>(periodicAction)) {
       if (std::get<0>(periodicAction).wrapTick())
         processAction(std::get<2>(periodicAction));
     } else {
       if (std::get<0>(periodicAction).tick(dt)) {
         processAction(std::get<2>(periodicAction));
-        periodicActionIt.remove();
+        periodicActionIt = m_periodicActions.erase(periodicActionIt);
+        continue;
       }
     }
+    ++periodicActionIt;
   }
 }
 

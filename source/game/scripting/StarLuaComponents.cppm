@@ -127,6 +127,7 @@ private:
   StringMap<LuaCallbacks> m_threadCallbacks;
   std::shared_ptr<LuaRoot> m_luaRoot;
   std::shared_ptr<TrackerListener> m_reloadTracker;
+  ListenerSubscription m_reloadSubscription;
   Maybe<LuaContext> m_context;
   Maybe<String> m_error;
   

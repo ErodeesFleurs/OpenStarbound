@@ -142,10 +142,10 @@ public:
   // loaded.
   void fullyLoad();
 
-  // Add a listener that will be called on Root reload.  Automatically managed,
-  // if the listener is destroyed then it will automatically be removed from
-  // the internal listener list.
-  void registerReloadListener(std::weak_ptr<Listener> reloadListener);
+  // Callbacks run synchronously on the reload/hotReload caller, not on the
+  // maintenance thread. Retain the subscription; owners of raw-this callbacks
+  // must disconnect before tearing down any state used by the callback.
+  [[nodiscard]] ListenerSubscription registerReloadListener(std::weak_ptr<Listener> reloadListener);
 
   void hotReload();
 

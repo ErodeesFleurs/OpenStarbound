@@ -12,7 +12,6 @@ import star.game_types;
 import star.poly;
 import star.strong_typedef;
 import star.data_stream_extra;
-import star.iterator;
 import star.logging;
 import star.color;
 import star.variant;
@@ -98,19 +97,21 @@ DamageManager::DamageManager(World* world, ConnectionId connectionId) : m_world(
 void DamageManager::update(float dt) {
   float const DefaultDamageTimeout = 1.0f;
 
-  auto damageIt = makeSMutableMapIterator(m_recentEntityDamages);
-  while (damageIt.hasNext()) {
-    auto& events = damageIt.next().second;
-    auto eventIt = makeSMutableIterator(events);
-    while (eventIt.hasNext()) {
-      auto& event = eventIt.next();
+  for (auto damageIt = m_recentEntityDamages.begin(); damageIt != m_recentEntityDamages.end();) {
+    auto& events = damageIt->second;
+    for (auto eventIt = events.begin(); eventIt != events.end();) {
+      auto& event = *eventIt;
       event.timeout -= dt;
       auto entityIdTimeoutGroup = event.timeoutGroup.maybe<EntityId>();
       if (event.timeout <= 0.0f || (entityIdTimeoutGroup && !m_world->entity(*entityIdTimeoutGroup)))
-        eventIt.remove();
+        eventIt = events.erase(eventIt);
+      else
+        ++eventIt;
     }
     if (events.empty())
-      damageIt.remove();
+      damageIt = m_recentEntityDamages.erase(damageIt);
+    else
+      ++damageIt;
   }
 
   m_world->forAllEntities([&](std::shared_ptr<Entity> const& causingEntity) {

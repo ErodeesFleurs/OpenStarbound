@@ -129,6 +129,7 @@ private:
 
   String m_nonRenderedCharacters;
   std::shared_ptr<TrackerListener> m_reloadTracker;
+  ListenerSubscription m_reloadSubscription;
 };
 
 }

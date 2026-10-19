@@ -40,7 +40,6 @@ import star.string;
 import star.map;
 import star.format;
 import star.version;
-import star.iterator;
 
 import star.celestial_coordinate;
 import star.sky_types;
@@ -748,25 +747,29 @@ List<CelestialRequest> CelestialSlaveDatabase::pullRequests() {
 
   List<CelestialRequest> requests;
 
-  auto chunkIt = makeSMutableMapIterator(m_pendingChunkRequests);
-  while (chunkIt.hasNext()) {
-    auto& pair = chunkIt.next();
+  for (auto chunkIt = m_pendingChunkRequests.begin(); chunkIt != m_pendingChunkRequests.end();) {
+    auto& pair = *chunkIt;
     if (!pair.second.running()) {
       requests.append(makeLeft(pair.first));
       pair.second.restart(m_requestTimeout);
+      ++chunkIt;
     } else if (pair.second.timeUp()) {
-      chunkIt.remove();
+      chunkIt = m_pendingChunkRequests.erase(chunkIt);
+    } else {
+      ++chunkIt;
     }
   }
 
-  auto systemIt = makeSMutableMapIterator(m_pendingSystemRequests);
-  while (systemIt.hasNext()) {
-    auto& pair = systemIt.next();
+  for (auto systemIt = m_pendingSystemRequests.begin(); systemIt != m_pendingSystemRequests.end();) {
+    auto& pair = *systemIt;
     if (!pair.second.running()) {
       requests.append(makeRight(pair.first));
       pair.second.restart(m_requestTimeout);
+      ++systemIt;
     } else if (pair.second.timeUp()) {
-      systemIt.remove();
+      systemIt = m_pendingSystemRequests.erase(systemIt);
+    } else {
+      ++systemIt;
     }
   }
 

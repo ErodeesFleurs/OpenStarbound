@@ -4,7 +4,6 @@ import star.flat_hash_set;
 import star.flat_hash_map;
 import star.random;
 import star.vector;
-import star.iterator;
 import star.map;
 import star.string;
 import star.string_view;
@@ -286,7 +285,7 @@ TEST(FlatHashMap, Random) {
   ASSERT_TRUE(testMap.empty());
 }
 
-TEST(FlatHashMap, Iterator) {
+TEST(FlatHashMap, EraseWhileIterating) {
   List<std::pair<Vec2I, int>> values;
   for (unsigned i = 0; i < 100000; ++i)
     values.append({Vec2I(i * 743202097, i * 205495087), i});
@@ -295,15 +294,23 @@ TEST(FlatHashMap, Iterator) {
   for (auto v : values)
     testMap.insert(v);
 
-  auto it = makeSMutableMapIterator(testMap);
-  while (it.hasNext()) {
-    if (it.next().second % 3 == 0)
-      it.remove();
+  for (auto it = testMap.begin(); it != testMap.end();) {
+    if (it->second % 3 == 0)
+      it = testMap.erase(it);
+    else
+      ++it;
   }
 
-  auto i = values.begin();
-  std::advance(i, values.size());
-  ASSERT_EQ(i, values.end());
+  ASSERT_EQ(testMap.size(), values.size() - (values.size() + 2) / 3);
+  for (auto const& value : values) {
+    auto found = testMap.find(value.first);
+    if (value.second % 3 == 0)
+      ASSERT_EQ(found, testMap.end());
+    else {
+      ASSERT_NE(found, testMap.end());
+      EXPECT_EQ(found->second, value.second);
+    }
+  }
 }
 
 TEST(FlatHashMap, NonDefaultAlignedValueLifetime) {

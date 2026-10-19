@@ -114,6 +114,8 @@ std::size_t TcpSocket::receive(char* data, std::size_t size) {
     } else {
       throw NetworkException(strf("tcp recv error: {}", netErrorString()));
     }
+  } else if (r == 0 && size != 0) {
+    doShutdown();
   }
 
   return r;

@@ -404,14 +404,15 @@ Input::Input() {
 
   reload();
 
-  m_rootReloadListener = std::make_shared<CallbackListener>([&]() {
+  m_rootReloadListener = std::make_shared<CallbackListener>([this]() {
     reload();
   });
 
-  Root::singletonPtr()->registerReloadListener(m_rootReloadListener);
+  m_rootReloadSubscription = Root::singletonPtr()->registerReloadListener(m_rootReloadListener);
 }
 
 Input::~Input() {
+  m_rootReloadSubscription.disconnect();
   s_singleton = nullptr;
 }
 

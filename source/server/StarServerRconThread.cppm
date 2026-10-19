@@ -53,7 +53,6 @@ import star.sector_array_2d;
 import star.color;
 import star.variant;
 import star.image;
-import star.iterator;
 
 
 import star.host_address;
@@ -383,14 +382,16 @@ ServerRconThread::~ServerRconThread() {
 }
 
 void ServerRconThread::clearClients(bool all) {
-  auto it = makeSMutableMapIterator(m_clients);
-  while (it.hasNext()) {
-    auto const& pair = it.next();
+  for (auto it = m_clients.begin(); it != m_clients.end();) {
+    auto const& pair = *it;
     auto client = pair.second;
     if (all)
       client->stop();
-    else if (!client->isRunning())
-      it.remove();
+    else if (!client->isRunning()) {
+      it = m_clients.erase(it);
+      continue;
+    }
+    ++it;
   }
 }
 

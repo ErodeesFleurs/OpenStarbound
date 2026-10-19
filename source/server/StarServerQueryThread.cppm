@@ -53,7 +53,6 @@ import star.sector_array_2d;
 import star.color;
 import star.variant;
 import star.image;
-import star.iterator;
 
 
 import star.host_address;
@@ -429,12 +428,11 @@ void ServerQueryThread::pruneChallenges() {
   }
 
   auto expire = now - challengeCheckInterval;
-  auto it = makeSMutableMapIterator(m_validChallenges);
-  while (it.hasNext()) {
-    auto const& pair = it.next();
-    if (pair.second->before(expire)) {
-      it.remove();
-    }
+  for (auto it = m_validChallenges.begin(); it != m_validChallenges.end();) {
+    if (it->second->before(expire))
+      it = m_validChallenges.erase(it);
+    else
+      ++it;
   }
   m_lastChallengeCheck = now;
 }

@@ -18,7 +18,6 @@ import star.format;
 import star.version;
 import star.data_stream;
 import star.logging;
-import star.iterator;
 import star.data_stream_extra;
 import star.perlin;
 import star.weighted_pool;
@@ -1969,11 +1968,12 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
 
   TileModificationList unapplied = modificationList;
   std::size_t unappliedSize = unapplied.size();
-  auto it = makeSMutableIterator(unapplied);
-  while (it.hasNext()) {
+  auto it = unapplied.begin();
+  while (it != unapplied.end()) {
+    auto current = it++;
     Vec2I pos;
     TileModification modification;
-    std::tie(pos, modification) = it.next();
+    std::tie(pos, modification) = *current;
 
     if (!ignoreTileProtection && isTileProtected(pos))
       continue;
@@ -2092,15 +2092,15 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
       m_fallingBlocksAgent->visitLocation(pos);
     }
 
-    it.remove();
+    it = unapplied.erase(current);
 
-    if (!it.hasNext()) {
+    if (it == unapplied.end()) {
       // If we are at the end, but have made progress by applying at least one
       // modification, then start over at the beginning and keep trying more
       // modifications until we can't make any more progress.
       if (unapplied.size() != unappliedSize) {
         unappliedSize = unapplied.size();
-        it.toFront();
+        it = unapplied.begin();
       }
     }
   }

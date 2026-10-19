@@ -159,7 +159,6 @@ private:
     List<std::shared_ptr<Packet>> sendQueue;
     Deque<std::shared_ptr<Packet>> receiveQueue;
     std::int64_t lastActivityTime;
-    std::size_t workerIndex;
   };
 
   struct WorkerStats {
@@ -187,12 +186,15 @@ private:
   PacketReceiveCallback const m_packetReceiver;
 
   mutable RecursiveMutex m_connectionsMutex;
-  HashMap<ConnectionId, std::shared_ptr<Connection>> m_connections;
+  // The registry itself is partitioned; workers never snapshot other shards.
+  List<HashMap<ConnectionId, std::shared_ptr<Connection>>> m_connections;
 
-  List<ThreadFunction<void>> m_processingThreads;
-  List<WorkerStats> m_workerStats;
   std::atomic<bool> m_shutdown;
   std::size_t m_numWorkerThreads;
+  std::mutex m_workMutex;
+  std::condition_variable m_workCondition;
+  List<WorkerStats> m_workerStats;
+  List<ThreadFunction<void>> m_processingThreads;
 };
 
 }// namespace Star

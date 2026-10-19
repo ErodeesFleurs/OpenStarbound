@@ -104,9 +104,10 @@ bool LuaBaseComponent::autoReInit() const {
 }
 
 void LuaBaseComponent::setAutoReInit(bool autoReInit) {
+  m_reloadSubscription.disconnect();
   if (autoReInit) {
     m_reloadTracker = std::make_shared<TrackerListener>();
-    Root::singleton().registerReloadListener(m_reloadTracker);
+    m_reloadSubscription = Root::singleton().registerReloadListener(m_reloadTracker);
   } else {
     m_reloadTracker.reset();
   }

@@ -15,12 +15,12 @@ import star.p2p_networking_service;
 import star.world_render_data;
 import star.key_bindings;
 import star.root;
+import star.listener;
 
 namespace Star {
 
 class Input;
 class Voice;
-class CallbackListener;
 class MainMixer;
 class GuiContext;
 class Cinematic;
@@ -36,6 +36,7 @@ class UniverseServer;
 
 class ClientApplication : public Application {
 public:
+  ~ClientApplication() override;
   void setPostProcessLayerPasses(String const& layer, unsigned const& passes);
   void setPostProcessGroupEnabled(String const& group, bool const& enabled, Maybe<bool> const& save);
   bool postProcessGroupEnabled(String const& group);
@@ -112,6 +113,7 @@ private:
   std::unique_ptr<Root> m_root;
   ThreadFunction<void> m_rootLoader;
   std::shared_ptr<CallbackListener> m_reloadListener;
+  ListenerSubscription m_reloadSubscription;
 
   MainAppState m_state = MainAppState::Startup;
 

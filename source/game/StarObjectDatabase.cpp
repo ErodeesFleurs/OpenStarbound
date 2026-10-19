@@ -25,7 +25,6 @@ import star.asset_path;
 import star.set;
 import star.vector;
 import star.strong_typedef;
-import star.iterator;
 import star.variant;
 import star.casting;
 import star.rpc_promise;
@@ -210,35 +209,36 @@ List<std::shared_ptr<ObjectOrientation>> ObjectDatabase::parseOrientations(Strin
   // Preprocess the orientation list for config format backwards compatibility.
   // If dualImage or left/right Image is set, generate two identical
   // orientations with the appropriate image directives.
-  auto it = makeSMutableIterator(configs);
-  while (it.hasNext()) {
-    JsonObject config = it.next().toObject();
+  for (auto it = configs.begin(); it != configs.end();) {
+    JsonObject config = it->toObject();
     if (config.contains("dualImage")) {
-      it.remove();
+      it = configs.erase(it);
 
       JsonObject configLeft = config;
       configLeft["image"] = config["dualImage"];
       configLeft["flipImages"] = true;
       configLeft["direction"] = "left";
-      it.insert(configLeft);
+      it = std::next(configs.insert(it, configLeft));
 
       JsonObject configRight = config;
       configRight["image"] = config["dualImage"];
       configRight["direction"] = "right";
-      it.insert(configRight);
+      it = std::next(configs.insert(it, configRight));
 
     } else if (config.contains("leftImage")) {
-      it.remove();
+      it = configs.erase(it);
 
       JsonObject configLeft = config;
       configLeft["image"] = config["leftImage"];
       configLeft["direction"] = "left";
-      it.insert(configLeft);
+      it = std::next(configs.insert(it, configLeft));
 
       JsonObject configRight = config;
       configRight["image"] = config["rightImage"];
       configRight["direction"] = "right";
-      it.insert(configRight);
+      it = std::next(configs.insert(it, configRight));
+    } else {
+      ++it;
     }
   }
 

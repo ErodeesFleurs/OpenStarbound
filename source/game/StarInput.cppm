@@ -224,6 +224,7 @@ private:
   HashMap<InputVariant, List<BindRef>> m_bindMappings;
 
   std::shared_ptr<Listener> m_rootReloadListener;
+  ListenerSubscription m_rootReloadSubscription;
 
   // Per-frame input event storage for Lua.
   List<std::pair<InputEvent, bool>> m_inputEvents;

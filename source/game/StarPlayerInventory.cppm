@@ -61,6 +61,8 @@ public:
 
   PlayerInventory();
 
+  // Items may be consumed through shared aliases. Queries observe exhausted
+  // stacks as empty without releasing the inventory's ownership.
   std::shared_ptr<Item> itemsAt(InventorySlot const& slot) const;
 
   // Attempts to combine the items with the given slot, and returns the items
@@ -194,9 +196,9 @@ public:
   void load(Json const& store);
   Json store() const;
 
-  // Loop over every manageable item and potentially mutate it.
+  // Loop over every non-empty manageable item and normalize mutations to null.
   void forEveryItem(std::function<void(InventorySlot const&, std::shared_ptr<Item>&)> function);
-  // Loop over every manageable item.
+  // Pure traversal of every non-empty manageable item.
   void forEveryItem(std::function<void(InventorySlot const&, std::shared_ptr<Item> const&)> function) const;
   // Return every manageable item
   List<std::shared_ptr<Item>> allItems() const;
@@ -221,8 +223,9 @@ private:
 
   static bool checkInventoryFilter(std::shared_ptr<Item> const& items, String const& filterName);
 
-  std::shared_ptr<Item> const& retrieve(InventorySlot const& slot) const;
-  std::shared_ptr<Item>& retrieve(InventorySlot const& slot);
+  static void normalizeItem(std::shared_ptr<Item>& item);
+  std::shared_ptr<Item> retrieve(InventorySlot const& slot) const;
+  std::shared_ptr<Item>& retrieveForMutation(InventorySlot const& slot);
 
   void swapCustomBarLinks(InventorySlot a, InventorySlot b);
   void autoAddToCustomBar(InventorySlot slot);

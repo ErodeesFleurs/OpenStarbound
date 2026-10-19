@@ -142,3 +142,250 @@ TEST(StaticVectorTest, CapacityFailureDoesNotConsumeEmplaceArgument) {
   EXPECT_EQ(*candidate, 9);
   EXPECT_EQ(*values[0], 7);
 }
+
+namespace {
+struct StaticVectorLifetime {
+  int alive = 0;
+  int copies = 0;
+  int moves = 0;
+  int assignments = 0;
+  int destroyed = 0;
+  int failCopy = -1;
+  int failMove = -1;
+  int failAssignment = -1;
+};
+
+struct NondefaultStaticValue {
+  StaticVectorLifetime* state;
+  int value;
+
+  NondefaultStaticValue(StaticVectorLifetime& state, int value) : state(&state), value(value) {
+    ++state.alive;
+  }
+  NondefaultStaticValue(NondefaultStaticValue const& other) : state(other.state), value(other.value) {
+    if (state->copies++ == state->failCopy)
+      throw std::runtime_error("copy");
+    ++state->alive;
+  }
+  NondefaultStaticValue(NondefaultStaticValue&& other) : state(other.state), value(other.value) {
+    if (state->moves++ == state->failMove)
+      throw std::runtime_error("move");
+    other.value = -1;
+    ++state->alive;
+  }
+  NondefaultStaticValue& operator=(NondefaultStaticValue const& other) {
+    if (state->assignments++ == state->failAssignment)
+      throw std::runtime_error("copy assignment");
+    value = other.value;
+    return *this;
+  }
+  NondefaultStaticValue& operator=(NondefaultStaticValue&& other) {
+    if (state->assignments++ == state->failAssignment)
+      throw std::runtime_error("move assignment");
+    value = std::exchange(other.value, -1);
+    return *this;
+  }
+  ~NondefaultStaticValue() {
+    ++state->destroyed;
+    --state->alive;
+  }
+};
+}
+
+TEST(StaticVectorTest, NondefaultAssignmentConstructsOnlyNewElements) {
+  StaticVectorLifetime state;
+  {
+    StaticVector<NondefaultStaticValue, 4> source;
+    source.emplace_back(state, 10);
+    source.emplace_back(state, 20);
+    source.emplace_back(state, 30);
+    StaticVector<NondefaultStaticValue, 4> target;
+    target.emplace_back(state, 1);
+    target = source;
+    EXPECT_EQ(state.assignments, 1);
+    EXPECT_EQ(state.copies, 2);
+    EXPECT_EQ(state.alive, 6);
+    ASSERT_EQ(target.size(), 3u);
+    EXPECT_EQ(target[0].value, 10);
+    EXPECT_EQ(target[2].value, 30);
+    source.pop_back();
+    source.pop_back();
+    auto destroyed = state.destroyed;
+    target = source;
+    EXPECT_EQ(target.size(), 1u);
+    EXPECT_EQ(state.assignments, 2);
+    EXPECT_EQ(state.copies, 2);
+    EXPECT_EQ(state.destroyed - destroyed, 2);
+    EXPECT_EQ(state.alive, 2);
+    auto& alias = target;
+    target = alias;
+    target = std::move(alias);
+    EXPECT_EQ(state.assignments, 2);
+    EXPECT_EQ(target[0].value, 10);
+
+    target = {NondefaultStaticValue(state, 40), NondefaultStaticValue(state, 50)};
+    ASSERT_EQ(target.size(), 2u);
+    EXPECT_EQ(target[0].value, 40);
+    EXPECT_EQ(target[1].value, 50);
+    EXPECT_EQ(state.assignments, 3);
+    EXPECT_EQ(state.copies, 3);
+    EXPECT_EQ(state.alive, 3);
+    target = {};
+    EXPECT_TRUE(target.empty());
+    EXPECT_EQ(state.alive, 1);
+  }
+  EXPECT_EQ(state.alive, 0);
+}
+
+TEST(StaticVectorTest, MoveOnlyAssignmentAndEraseNeedNoCopyOrDefault) {
+  struct Value {
+    int* alive;
+    int value;
+    Value(int& alive, int value) : alive(&alive), value(value) { ++alive; }
+    Value(Value const&) = delete;
+    Value(Value&& other) : alive(other.alive), value(std::exchange(other.value, -1)) { ++*alive; }
+    Value& operator=(Value&& other) {
+      value = std::exchange(other.value, -1);
+      return *this;
+    }
+    ~Value() { --*alive; }
+  };
+  int alive = 0;
+  {
+    StaticVector<Value, 4> source;
+    source.emplace_back(alive, 10);
+    source.emplace_back(alive, 20);
+    source.emplace_back(alive, 30);
+    StaticVector<Value, 4> target;
+    target.emplace_back(alive, 1);
+    target = std::move(source);
+    ASSERT_EQ(target.size(), 3u);
+    EXPECT_EQ(target[0].value, 10);
+    EXPECT_EQ(target[2].value, 30);
+    EXPECT_EQ(alive, 6);
+    EXPECT_EQ(target.erase(target.begin() + 1, target.begin() + 1), target.begin() + 1);
+    EXPECT_EQ(target[1].value, 20);
+    EXPECT_EQ(target.erase(target.begin()), target.begin());
+    EXPECT_EQ(target[0].value, 20);
+    EXPECT_EQ(alive, 5);
+    EXPECT_EQ(target.erase(target.begin(), target.end()), target.begin());
+    EXPECT_TRUE(target.empty());
+    EXPECT_EQ(alive, 3);
+    target.emplace_back(alive, 40);
+    target.emplace_back(alive, 50);
+    source.clear();
+    source.emplace_back(alive, 60);
+    target = std::move(source);
+    EXPECT_EQ(target.size(), 1u);
+    EXPECT_EQ(target[0].value, 60);
+    EXPECT_EQ(alive, 2);
+  }
+  EXPECT_EQ(alive, 0);
+}
+
+TEST(StaticVectorTest, ThrowingAssignmentAndConstructionKeepLivePrefixes) {
+  StaticVectorLifetime state;
+  {
+    StaticVector<NondefaultStaticValue, 4> source;
+    source.emplace_back(state, 10);
+    source.emplace_back(state, 20);
+    source.emplace_back(state, 30);
+    StaticVector<NondefaultStaticValue, 4> target;
+    target.emplace_back(state, 1);
+    state.failAssignment = 0;
+    EXPECT_THROW(target = source, std::runtime_error);
+    EXPECT_EQ(target.size(), 1u);
+    EXPECT_EQ(target[0].value, 1);
+    EXPECT_EQ(state.alive, 4);
+    state.failAssignment = -1;
+    state.failCopy = 1;
+    EXPECT_THROW(target = source, std::runtime_error);
+    EXPECT_EQ(target.size(), 2u);
+    EXPECT_EQ(target[0].value, 10);
+    EXPECT_EQ(target[1].value, 20);
+    EXPECT_EQ(state.alive, 5);
+    target.clear();
+    target.emplace_back(state, 40);
+    state.failMove = 1;
+    EXPECT_THROW(target = std::move(source), std::runtime_error);
+    EXPECT_EQ(target.size(), 2u);
+    EXPECT_EQ(source.size(), 3u);
+    EXPECT_EQ(state.alive, 5);
+    state.failMove = -1;
+    target = std::move(source);
+    EXPECT_EQ(target.size(), 3u);
+    EXPECT_EQ(state.alive, 6);
+  }
+  EXPECT_EQ(state.alive, 0);
+}
+
+TEST(StaticVectorTest, InitializerAssignmentChecksCapacityBeforeMutation) {
+  StaticVector<int, 2> values{1};
+  EXPECT_THROW((values = {2, 3, 4}), StaticVectorSizeException);
+  EXPECT_EQ(values, (StaticVector<int, 2>{1}));
+}
+
+TEST(StaticVectorTest, ResizePreservesDefaultTemporaryCopyAndDestructionOrder) {
+  struct Value {
+    static std::vector<char>& events() {
+      static std::vector<char> log;
+      return log;
+    }
+    Value() { events().push_back('D'); }
+    Value(Value const&) { events().push_back('C'); }
+    ~Value() { events().push_back('X'); }
+  };
+  StaticVector<Value, 4> values;
+  Value::events().clear();
+  values.resize(2);
+  EXPECT_EQ(Value::events(), (std::vector<char>{'D', 'C', 'C', 'X'}));
+  Value::events().clear();
+  values.resize(2);
+  EXPECT_EQ(Value::events(), (std::vector<char>{'D', 'X'}));
+  Value::events().clear();
+  values.resize(0);
+  EXPECT_EQ(Value::events(), (std::vector<char>{'D', 'X', 'X', 'X'}));
+}
+
+TEST(StaticVectorTest, AliasedEmplaceStagesValueAndRangeFailureRollsBack) {
+  StaticVector<std::string, 4> text{"first", "second"};
+  text.emplace(text.begin() + 1, text[0]);
+  EXPECT_EQ(text, (StaticVector<std::string, 4>{"first", "first", "second"}));
+  StaticVectorLifetime state;
+  {
+    StaticVector<NondefaultStaticValue, 4> values;
+    values.emplace_back(state, 10);
+    StaticVector<NondefaultStaticValue, 4> more;
+    more.emplace_back(state, 20);
+    more.emplace_back(state, 30);
+    state.failCopy = 1;
+    EXPECT_THROW(values.insert(values.begin(), more.begin(), more.end()), std::runtime_error);
+    EXPECT_EQ(values.size(), 1u);
+    EXPECT_EQ(values[0].value, 10);
+    EXPECT_EQ(state.alive, 3);
+    EXPECT_EQ(state.destroyed, 1);
+  }
+  EXPECT_EQ(state.alive, 0);
+}
+
+TEST(StaticVectorTest, ThrowingEraseDoesNotDestroyAnUnshiftedTail) {
+  StaticVectorLifetime state;
+  {
+    StaticVector<NondefaultStaticValue, 4> values;
+    values.emplace_back(state, 10);
+    values.emplace_back(state, 20);
+    values.emplace_back(state, 30);
+    state.failAssignment = 1;
+    EXPECT_THROW(values.erase(values.begin()), std::runtime_error);
+    EXPECT_EQ(values.size(), 3u);
+    EXPECT_EQ(state.alive, 3);
+    EXPECT_EQ(state.destroyed, 0);
+    state.failAssignment = -1;
+    values.erase(values.begin() + 1, values.end());
+    EXPECT_EQ(values.size(), 1u);
+    EXPECT_EQ(state.alive, 1);
+    EXPECT_EQ(state.destroyed, 2);
+  }
+  EXPECT_EQ(state.alive, 0);
+  EXPECT_EQ(state.destroyed, 3);
+}
