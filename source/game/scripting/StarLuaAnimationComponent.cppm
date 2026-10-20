@@ -34,7 +34,7 @@ using LuaAnimationComponentException = StarError<LuaAnimationComponentExceptionT
 template <typename Base>
 class LuaAnimationComponent : public Base {
 public:
-  LuaAnimationComponent();
+  explicit LuaAnimationComponent(Root& root);
 
   List<std::pair<Drawable, Maybe<EntityRenderLayer>>> const& drawables();
   List<LightSource> const& lightSources();
@@ -56,10 +56,10 @@ private:
 };
 
 template <typename Base>
-LuaAnimationComponent<Base>::LuaAnimationComponent() {
+LuaAnimationComponent<Base>::LuaAnimationComponent(Root& root) : Base(root) {
   LuaCallbacks animationCallbacks;
   animationCallbacks.registerCallback("playAudio", [this](String const& sound, Maybe<int> loops, Maybe<float> volume) -> std::shared_ptr<AudioInstance> {
-      auto audio = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(sound));
+      auto audio = std::make_shared<AudioInstance>(*this->root().assets()->audio(sound));
       audio->setLoops(loops.value(0));
       audio->setVolume(volume.value(1.0f));
       m_pendingAudios.append(audio);
@@ -67,7 +67,7 @@ LuaAnimationComponent<Base>::LuaAnimationComponent() {
       return audio;
     });
   animationCallbacks.registerCallback("spawnParticle", [this](Json const& particleConfig, Maybe<Vec2F> const& position) {
-      auto particle = Root::singleton().particleDatabase()->particle(particleConfig);
+      auto particle = this->root().particleDatabase()->particle(particleConfig);
       particle.translate(position.value());
       m_pendingParticles.append(particle);
     });
@@ -86,7 +86,7 @@ LuaAnimationComponent<Base>::LuaAnimationComponent() {
     });
   animationCallbacks.registerCallback("addJsonDrawable", [this](Json drawableConfig, Maybe<String> renderLayerName) {
       Maybe<EntityRenderLayer> renderLayer;
-      Drawable drawable(drawableConfig);
+      Drawable drawable(*this->root().imageMetadataDatabase(), drawableConfig);
       if (renderLayerName)
         renderLayer = parseRenderLayer(*renderLayerName);
 

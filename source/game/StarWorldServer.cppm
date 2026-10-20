@@ -109,6 +109,8 @@ import star.spawner;
 import star.byte_array;
 namespace Star {
 
+class Root;
+
 class Player;
 class WorldTemplate;
 class Sky;
@@ -146,13 +148,13 @@ public:
   typedef std::function<void(Json const&)> WorldPropertyListener;
 
   // Create a new world with the given template, writing new storage file.
-  WorldServer(std::shared_ptr<WorldTemplate> const& worldTemplate, std::shared_ptr<IODevice> storage);
+  WorldServer(Root& root, std::shared_ptr<WorldTemplate> const& worldTemplate, std::shared_ptr<IODevice> storage);
   // Synonym for WorldServer(make_shared<WorldTemplate>(size), storage);
-  WorldServer(Vec2U const& size, std::shared_ptr<IODevice> storage);
+  WorldServer(Root& root, Vec2U const& size, std::shared_ptr<IODevice> storage);
   // Load an existing world from the given storage files
-  WorldServer(std::shared_ptr<IODevice> const& storage);
+  WorldServer(Root& root, std::shared_ptr<IODevice> const& storage);
   // Load an existing world from the given in-memory chunks
-  WorldServer(WorldChunks const& chunks);
+  WorldServer(Root& root, WorldChunks const& chunks);
   // Load an existing world from an in-memory representation
   ~WorldServer();
   // Final save and teardown; idempotent, including after a reported failure.
@@ -392,7 +394,7 @@ public:
 
 private:
   struct ClientInfo {
-    ClientInfo(ConnectionId clientId, InterpolationTracker const trackerInit);
+    ClientInfo(Root& root, ConnectionId clientId, InterpolationTracker const trackerInit);
 
     List<RectI> monitoringRegions(std::shared_ptr<EntityMap> const& entityMap) const;
 

@@ -68,14 +68,14 @@ import star.image_widget;
 
 namespace Star {
 
-JoinRequestDialog::JoinRequestDialog() : m_confirmed(false) {}
+JoinRequestDialog::JoinRequestDialog(GuiContext& guiContext) : Pane(guiContext), m_confirmed(false) {}
 
 void JoinRequestDialog::displayRequest(String const& userName, std::function<void(P2PJoinRequestReply)> callback) {
-  auto assets = Root::singleton().assets();
+  auto assets = context()->root().assets();
 
   removeAllChildren();
 
-  GuiReader reader;
+  GuiReader reader(*context());
 
   m_callback = std::move(callback);
 

@@ -102,7 +102,7 @@ public:
     Maybe<EntityId> entityId = {};
   };
 
-  InspectionTool(Json const& config, String const& directory, Json const& parameters = JsonObject());
+  InspectionTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   std::shared_ptr<Item> clone() const override;
 
@@ -154,8 +154,8 @@ private:
 
 namespace Star {
 
-InspectionTool::InspectionTool(Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters) {
+InspectionTool::InspectionTool(Root& root, Json const& config, String const& directory, Json const& parameters)
+  : Item(root, config, directory, parameters) {
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_handPosition = jsonToVec2F(instanceValue("handPosition"));
   m_lightPosition = jsonToVec2F(instanceValue("lightPosition"));
@@ -191,7 +191,7 @@ std::shared_ptr<Item> InspectionTool::clone() const {
 void InspectionTool::update(float, FireMode fireMode, bool, HashSet<MoveControlType> const&) {
   m_currentAngle = world()->geometry().diff(owner()->aimPosition(), owner()->position()).angle();
   m_currentPosition = owner()->position() + owner()->handPosition(hand(), m_lightPosition - m_handPosition);
-  SpatialLogger::logPoint("world", m_currentPosition, {0, 0, 255, 255});
+  root().spatialLogger().logPoint("world", m_currentPosition, {0, 0, 255, 255});
 
   if (fireMode != m_lastFireMode) {
     if (fireMode != FireMode::None)
@@ -202,7 +202,7 @@ void InspectionTool::update(float, FireMode fireMode, bool, HashSet<MoveControlT
 }
 
 List<Drawable> InspectionTool::drawables() const {
-  return {Drawable::makeImage(m_image, 1.0f / TilePixels, true, -m_handPosition)};
+  return {Drawable::makeImage(*root().imageMetadataDatabase(), m_image, 1.0f / TilePixels, true, -m_handPosition)};
 }
 
 List<LightSource> InspectionTool::lightSources() const {
@@ -277,7 +277,7 @@ bool InspectionTool::hasLineOfSight(Vec2I const& position, Set<Vec2I> const& tar
 }
 
 InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) {
-  auto assets = Root::singleton().assets();
+  auto assets = root().assets();
   auto species = owner()->species();
 
   // if there's a candidate InspectableEntity at the position, make sure that entity's total inspection level
@@ -322,7 +322,7 @@ InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) 
   // check the tile for foreground mod or material
   MaterialId fgMaterial = world()->material(Vec2I::floor(position), TileLayer::Foreground);
   MaterialId fgMod = world()->mod(Vec2I(position.floor()), TileLayer::Foreground);
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabase = root().materialDatabase();
   if (isRealMaterial(fgMaterial)) {
     if (isRealMod(fgMod))
       return {materialDatabase->modDescription(fgMod, species), {}};
@@ -332,7 +332,7 @@ InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) 
 
   // check for liquid at the tile
   auto liquidLevel = world()->liquidLevel(Vec2I::floor(position));
-  auto liquidsDatabase = Root::singleton().liquidsDatabase();
+  auto liquidsDatabase = root().liquidsDatabase();
   if (liquidLevel.liquid != EmptyLiquidId)
     return {liquidsDatabase->liquidDescription(liquidLevel.liquid, species), {}};
 
@@ -357,7 +357,7 @@ String InspectionTool::inspectionFailureText(String const& failureType, String c
     textOptions = nothingThere.getArray(species);
   else
     textOptions = nothingThere.getArray("default");
-  return textOptions.wrap(Random::randu64()).toString();
+  return textOptions.wrap(root().random().randu64()).toString();
 }
 
 }

@@ -51,8 +51,8 @@ namespace Star {
 
 class ImageWidget : public Widget {
 public:
-  ImageWidget();
-  ImageWidget(String const& image);
+  ImageWidget(GuiContext& context);
+  ImageWidget(GuiContext& context, String const& image);
 
   bool interactive() const override;
   void setImage(String const& image);

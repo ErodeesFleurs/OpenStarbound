@@ -108,7 +108,7 @@ export namespace Star {
 
 class BlueprintItem : public Item, public SwingableItem {
 public:
-  BlueprintItem(Json const& config, String const& directory, Json const& data);
+  BlueprintItem(Root& root, Json const& config, String const& directory, Json const& data);
   virtual std::shared_ptr<Item> clone() const override;
 
   virtual List<Drawable> drawables() const override;
@@ -116,7 +116,7 @@ public:
   virtual void fireTriggered() override;
 
   virtual List<Drawable> iconDrawables() const override;
-  virtual List<Drawable> dropDrawables() const override;
+  virtual List<Drawable> dropDrawables(TileDrawer*) const override;
 
 private:
   ItemDescriptor m_recipe;
@@ -128,21 +128,22 @@ private:
 
 namespace Star {
 
-BlueprintItem::BlueprintItem(Json const& config, String const& directory, Json const& data)
-  : Item(config, directory, data), SwingableItem(config) {
+BlueprintItem::BlueprintItem(Root& root, Json const& config, String const& directory, Json const& data)
+  : Item(root, config, directory, data), SwingableItem(config) {
   setWindupTime(0.2f);
   setCooldownTime(0.1f);
   m_requireEdgeTrigger = true;
   m_recipe = ItemDescriptor(instanceValue("recipe"));
 
-  m_recipeIconUnderlay = Drawable(Root::singleton().assets()->json("/blueprint.config:iconUnderlay"));
+  m_recipeIconUnderlay = Drawable(*root.imageMetadataDatabase(), root.assets()->json("/blueprint.config:iconUnderlay"));
   m_inHandDrawable = {Drawable::makeImage(
-      Root::singleton().assets()->json("/blueprint.config:inHandImage").toString(),
+      *root.imageMetadataDatabase(),
+      root.assets()->json("/blueprint.config:inHandImage").toString(),
       1.0f / TilePixels,
       true,
       Vec2F())};
 
-  setPrice(int(price() * Root::singleton().assets()->json("/items/defaultParameters.config:blueprintPriceFactor").toFloat()));
+  setPrice(int(price() * root.assets()->json("/items/defaultParameters.config:blueprintPriceFactor").toFloat()));
 }
 
 std::shared_ptr<Item> BlueprintItem::clone() const {
@@ -167,7 +168,7 @@ List<Drawable> BlueprintItem::iconDrawables() const {
   return result;
 }
 
-List<Drawable> BlueprintItem::dropDrawables() const {
+List<Drawable> BlueprintItem::dropDrawables(TileDrawer*) const {
   return m_inHandDrawable;
 }
 

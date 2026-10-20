@@ -1,4 +1,5 @@
 import star.json;
+import star.native_runtime;
 import star.file;
 import star.xx_hash;
 import star.ordered_map;
@@ -124,6 +125,7 @@ import star.lexical_cast;
 using namespace Star;
 
 int main(int argc, char** argv) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   try {
     RootLoader rootLoader({{}, {}, {}, LogLevel::Error, false, {}});
     rootLoader.addParameter("coordinate", "coordinate", OptionParser::Optional, "world coordinate to test");
@@ -139,7 +141,7 @@ int main(int argc, char** argv) {
     root->fullyLoad();
     coutf(" done\n");
 
-    CelestialMasterDatabase celestialDatabase;
+    CelestialMasterDatabase celestialDatabase(*root);
 
     CelestialCoordinate coordinate;
     if (auto coordinateOption = options.parameters.maybe("coordinate")) {
@@ -165,11 +167,11 @@ int main(int argc, char** argv) {
     coutf("testing generation on coordinate {}\n", coordinate);
 
     auto worldParameters = celestialDatabase.parameters(coordinate).take();
-    auto worldTemplate = std::make_shared<WorldTemplate>(worldParameters.visitableParameters(), SkyParameters(), worldParameters.seed());
+    auto worldTemplate = std::make_shared<WorldTemplate>(*root, worldParameters.visitableParameters(), SkyParameters(), worldParameters.seed());
 
     auto rand = RandomSource(worldTemplate->worldSeed());
 
-    WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile());
+    WorldServer worldServer(*root, std::move(worldTemplate), File::ephemeralFile(root->random()));
     Vec2U worldSize = worldServer.geometry().size();
 
     double start = Time::monotonicTime();

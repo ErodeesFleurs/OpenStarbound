@@ -24,13 +24,14 @@ import star.weather_types;
 import star.sky_types;
 
 namespace Star {
+class Root;
 
 struct Biome;
 struct BiomePlaceables;
 
 class BiomeDatabase {
 public:
-  BiomeDatabase();
+  explicit BiomeDatabase(Root& root);
 
   StringList biomeNames() const;
 
@@ -51,6 +52,7 @@ public:
   Json biomeConfig(String const& biomeName) const;
 
 private:
+  Root& m_root;
   struct Config {
     String path;
     String name;

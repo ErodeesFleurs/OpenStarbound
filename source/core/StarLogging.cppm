@@ -58,74 +58,107 @@ private:
   Mutex m_logMutex;
 };
 
-// A basic loging system that logs to multiple streams.  Can log at Debug,
-// Info, Warn, and Error logging levels.  By default logs to stdout.
+// A fixed-address log domain. Its sinks never affect another owner.
 class Logger {
 public:
-  static void addSink(std::shared_ptr<LogSink> s);
-  static void removeSink(std::shared_ptr<LogSink> s);
-
-  // Default LogSink that outputs to stdout.
-  static std::shared_ptr<LogSink> stdoutSink();
-  // Don't use the stdout sink.
-  static void removeStdoutSink();
-
-  static void log(LogLevel level, char const* msg);
+  Logger();
+  void addSink(std::shared_ptr<LogSink> s);
+  void removeSink(std::shared_ptr<LogSink> s);
+  std::shared_ptr<LogSink> stdoutSink();
+  void removeStdoutSink();
+  void log(LogLevel level, char const* msg);
 
   template <typename... Args>
-  static void logf(LogLevel level, std::format_string<Args...> msg, Args const&... args);
-  template <typename S, typename... Args>
-  requires RuntimeFormatString<S>
-  static void logf(LogLevel level, S const& msg, Args const&... args);
+  void logf(LogLevel level, std::format_string<Args...> msg, Args const&... args);
+  template <typename S, typename... Args> requires RuntimeFormatString<S>
+  void logf(LogLevel level, S const& msg, Args const&... args);
+  template <typename... Args>
+  void debug(std::format_string<Args...> msg, Args const&... args);
+  template <typename S, typename... Args> requires RuntimeFormatString<S>
+  void debug(S const& msg, Args const&... args);
+  template <typename... Args>
+  void info(std::format_string<Args...> msg, Args const&... args);
+  template <typename S, typename... Args> requires RuntimeFormatString<S>
+  void info(S const& msg, Args const&... args);
+  template <typename... Args>
+  void warn(std::format_string<Args...> msg, Args const&... args);
+  template <typename S, typename... Args> requires RuntimeFormatString<S>
+  void warn(S const& msg, Args const&... args);
+  template <typename... Args>
+  void error(std::format_string<Args...> msg, Args const&... args);
+  template <typename S, typename... Args> requires RuntimeFormatString<S>
+  void error(S const& msg, Args const&... args);
+  bool loggable(LogLevel level);
 
-  template <typename... Args>
-  static void debug(std::format_string<Args...> msg, Args const&... args);
-  template <typename S, typename... Args>
-  requires RuntimeFormatString<S>
-  static void debug(S const& msg, Args const&... args);
-  template <typename... Args>
-  static void info(std::format_string<Args...> msg, Args const&... args);
-  template <typename S, typename... Args>
-  requires RuntimeFormatString<S>
-  static void info(S const& msg, Args const&... args);
-  template <typename... Args>
-  static void warn(std::format_string<Args...> msg, Args const&... args);
-  template <typename S, typename... Args>
-  requires RuntimeFormatString<S>
-  static void warn(S const& msg, Args const&... args);
-  template <typename... Args>
-  static void error(std::format_string<Args...> msg, Args const&... args);
-  template <typename S, typename... Args>
-  requires RuntimeFormatString<S>
-  static void error(S const& msg, Args const&... args);
-
-  static bool loggable(LogLevel level);
-  static void refreshLoggable();
 private:
+  std::shared_ptr<StdoutLogSink> s_stdoutSink;
+  HashSet<std::shared_ptr<LogSink>> s_sinks;
+  Mutex s_mutex;
+};
 
-  static std::shared_ptr<StdoutLogSink> s_stdoutSink;
-  static HashSet<std::shared_ptr<LogSink>> s_sinks;
-  static Array<bool, 4> s_loggable;
-  static Mutex s_mutex;
+// Stateless diagnostics for process/bootstrap code without a business owner.
+// This path has no registry, sink configuration, or shared mutable cache.
+class EmergencyLog {
+public:
+  static void log(LogLevel level, char const* message);
+  template <typename... Args>
+  static void debug(std::format_string<Args...> format, Args const&... args) {
+    auto message = strfChecked(format, args...);
+    log(LogLevel::Debug, message.c_str());
+  }
+  template <typename S, typename... Args> requires RuntimeFormatString<S>
+  static void debug(S const& format, Args const&... args) {
+    auto message = strf(format, args...);
+    log(LogLevel::Debug, message.c_str());
+  }
+  template <typename... Args>
+  static void info(std::format_string<Args...> format, Args const&... args) {
+    auto message = strfChecked(format, args...);
+    log(LogLevel::Info, message.c_str());
+  }
+  template <typename S, typename... Args> requires RuntimeFormatString<S>
+  static void info(S const& format, Args const&... args) {
+    auto message = strf(format, args...);
+    log(LogLevel::Info, message.c_str());
+  }
+  template <typename... Args>
+  static void warn(std::format_string<Args...> format, Args const&... args) {
+    auto message = strfChecked(format, args...);
+    log(LogLevel::Warn, message.c_str());
+  }
+  template <typename S, typename... Args> requires RuntimeFormatString<S>
+  static void warn(S const& format, Args const&... args) {
+    auto message = strf(format, args...);
+    log(LogLevel::Warn, message.c_str());
+  }
+  template <typename... Args>
+  static void error(std::format_string<Args...> format, Args const&... args) {
+    auto message = strfChecked(format, args...);
+    log(LogLevel::Error, message.c_str());
+  }
+  template <typename S, typename... Args> requires RuntimeFormatString<S>
+  static void error(S const& format, Args const&... args) {
+    auto message = strf(format, args...);
+    log(LogLevel::Error, message.c_str());
+  }
 };
 
 // For logging data that is very high frequency. It is a map of debug values to
 // be displayed every frame, or in a debug output window, etc.
 class LogMap {
 public:
-  static String getValue(String const& key);
-  static void setValue(String const& key, String const& value);
+  String getValue(String const& key);
+  void setValue(String const& key, String const& value);
 
-  // Shorthand, converts given type to string using std::ostream.
   template <typename T>
-  static void set(String const& key, T const& t);
+  void set(String const& key, T const& t);
 
-  static Map<String, String> getValues();
-  static void clear();
+  Map<String, String> getValues();
+  void clear();
 
 private:
-  static HashMap<String, String> s_logMap;
-  static Mutex s_logMapMutex;
+  HashMap<String, String> s_logMap;
+  Mutex s_logMapMutex;
 };
 
 // Logging for spatial data.  Divided into multiple named coordinate spaces.
@@ -153,27 +186,25 @@ public:
     Vec4B color;
   };
 
-  static void logPoly(char const* space, PolyF const& poly, Vec4B const& color);
-  static void logLine(char const* space, Line2F const& line, Vec4B const& color);
-  static void logLine(char const* space, Vec2F const& begin, Vec2F const& end, Vec4B const& color);
-  static void logPoint(char const* space, Vec2F const& position, Vec4B const& color);
-  static void logText(char const* space, String text, Vec2F const& position, Vec4B const& color);
+  void logPoly(char const* space, PolyF const& poly, Vec4B const& color);
+  void logLine(char const* space, Line2F const& line, Vec4B const& color);
+  void logLine(char const* space, Vec2F const& begin, Vec2F const& end, Vec4B const& color);
+  void logPoint(char const* space, Vec2F const& position, Vec4B const& color);
+  void logText(char const* space, String text, Vec2F const& position, Vec4B const& color);
 
-  static Deque<Line> getLines(char const* space, bool andClear);
-  static Deque<Point> getPoints(char const* space, bool andClear);
-  static Deque<LogText> getText(char const* space, bool andClear);
-
-  static void clear();
-
-  static bool observed();
-  static void setObserved(bool observed);
+  Deque<Line> getLines(char const* space, bool andClear);
+  Deque<Point> getPoints(char const* space, bool andClear);
+  Deque<LogText> getText(char const* space, bool andClear);
+  void clear();
+  bool observed();
+  void setObserved(bool observed);
 
 private:
-  static Mutex s_mutex;
-  static StringMap<Deque<Line>> s_lines;
-  static StringMap<Deque<Point>> s_points;
-  static StringMap<Deque<LogText>> s_logText;
-  static bool s_observed;
+  Mutex s_mutex;
+  StringMap<Deque<Line>> s_lines;
+  StringMap<Deque<Point>> s_points;
+  StringMap<Deque<LogText>> s_logText;
+  std::atomic<bool> s_observed{false};
 };
 
 template <typename... Args>
@@ -263,6 +294,7 @@ export namespace Star {
   using ::Star::StdoutLogSink;
   using ::Star::FileLogSink;
   using ::Star::Logger;
+  using ::Star::EmergencyLog;
   using ::Star::LogMap;
   using ::Star::SpatialLogger;
 }

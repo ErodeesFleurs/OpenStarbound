@@ -147,9 +147,9 @@ import star.material_database;
 
 namespace Star {
 
-MiningTool::MiningTool(Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters), SwingableItem(config) {
-  auto assets = Root::singleton().assets();
+MiningTool::MiningTool(Root& root, Json const& config, String const& directory, Json const& parameters)
+  : Item(root, config, directory, parameters), SwingableItem(config) {
+  auto assets = this->root().assets();
 
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_frames = instanceValue("frames", 1).toInt();
@@ -175,10 +175,10 @@ std::shared_ptr<Item> MiningTool::clone() const {
 
 List<Drawable> MiningTool::drawables() const {
   if (m_frameTiming == 0) {
-    return {Drawable::makeImage(m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels)};
+    return {Drawable::makeImage(*root().imageMetadataDatabase(), m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels)};
   } else {
     int frame = std::max(0, std::min(m_frames - 1, (int)std::floor((m_frameTiming / m_frameCycle) * m_frames)));
-    return {Drawable::makeImage(m_animationFrame[frame], 1.0f / TilePixels, true, -handPosition() / TilePixels)};
+    return {Drawable::makeImage(*root().imageMetadataDatabase(), m_animationFrame[frame], 1.0f / TilePixels, true, -handPosition() / TilePixels)};
   }
 }
 
@@ -190,7 +190,7 @@ void MiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   if (!ready())
     return;
 
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabase = root().materialDatabase();
 
   if (initialized()) {
     bool used = false;
@@ -210,7 +210,7 @@ void MiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
         for (auto pos : brushArea) {
           blockSound = materialDatabase->footstepSound(world()->material(pos, layer), world()->mod(pos, layer));
           if (!blockSound.empty()
-              && blockSound != Root::singleton().assets()->json("/client.config:defaultFootstepSound").toString())
+              && blockSound != root().assets()->json("/client.config:defaultFootstepSound").toString())
             break;
         }
       }
@@ -234,12 +234,12 @@ void MiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
       }
 
       if (damageResult == TileDamageResult::Protected) {
-        blockSound = Root::singleton().assets()->json("/client.config:defaultDingSound").toString();
+        blockSound = root().assets()->json("/client.config:defaultDingSound").toString();
       }
     }
 
     if (used) {
-      owner()->addSound(Random::randValueFrom(m_strikeSounds), m_toolVolume);
+      owner()->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
       owner()->addSound(blockSound, m_blockVolume);
       List<Particle> miningParticles;
       for (auto pos : brushArea) {
@@ -283,9 +283,9 @@ void MiningTool::changeDurability(float amount) {
   }
 }
 
-HarvestingTool::HarvestingTool(Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters), SwingableItem(config) {
-  auto assets = Root::singleton().assets();
+HarvestingTool::HarvestingTool(Root& root, Json const& config, String const& directory, Json const& parameters)
+  : Item(root, config, directory, parameters), SwingableItem(config) {
+  auto assets = this->root().assets();
 
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_frames = instanceValue("frames", 1).toInt();
@@ -307,10 +307,10 @@ std::shared_ptr<Item> HarvestingTool::clone() const {
 
 List<Drawable> HarvestingTool::drawables() const {
   if (m_frameTiming == 0)
-    return {Drawable::makeImage(m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels)};
+    return {Drawable::makeImage(*root().imageMetadataDatabase(), m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels)};
   else {
     int frame = std::max(0, std::min(m_frames - 1, (int)std::floor((m_frameTiming / m_frameCycle) * m_frames)));
-    return {Drawable::makeImage(m_animationFrame[frame], 1.0f / TilePixels, true, -handPosition() / TilePixels)};
+    return {Drawable::makeImage(*root().imageMetadataDatabase(), m_animationFrame[frame], 1.0f / TilePixels, true, -handPosition() / TilePixels)};
   }
 }
 
@@ -331,7 +331,7 @@ void HarvestingTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     }
 
     if (used) {
-      owner()->addSound(Random::randValueFrom(m_strikeSounds), m_toolVolume);
+      owner()->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
       SwingableItem::fire(mode, shifting, edgeTriggered);
     }
   }
@@ -353,9 +353,9 @@ float HarvestingTool::getAngle(float aimAngle) {
 }
 
 
-WireTool::WireTool(Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters), FireableItem(config), BeamItem(config.setAll(parameters.toObject())) {
-  auto assets = Root::singleton().assets();
+WireTool::WireTool(Root& root, Json const& config, String const& directory, Json const& parameters)
+  : Item(root, config, directory, parameters), FireableItem(config), BeamItem(root, config.setAll(parameters.toObject())) {
+  auto assets = this->root().assets();
 
   m_handPosition = jsonToVec2F(instanceValue("handPosition"));
   m_strikeSounds = jsonToStringList(instanceValue("strikeSounds"));
@@ -409,10 +409,10 @@ void WireTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     if (ownerp->isAdmin() || ownerp->inToolRange()) {
       auto swingResult = m_wireConnector->swing(worldp->geometry(), pos, mode);
       if (swingResult == WireConnector::Connect) {
-        ownerp->addSound(Random::randValueFrom(m_strikeSounds), m_toolVolume);
+        ownerp->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
         FireableItem::fire(mode, shifting, edgeTriggered);
       } else if (swingResult == WireConnector::Mismatch || swingResult == WireConnector::Protected) {
-        auto wireErrorSound = Root::singleton().assets()->json("/client.config:wireFailSound").toString();
+        auto wireErrorSound = root().assets()->json("/client.config:wireFailSound").toString();
         ownerp->addSound(wireErrorSound, m_toolVolume);
         FireableItem::fire(mode, shifting, edgeTriggered);
       }
@@ -428,9 +428,9 @@ void WireTool::setConnector(WireConnector* connector) {
   m_wireConnector = connector;
 }
 
-BeamMiningTool::BeamMiningTool(Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters), FireableItem(config), BeamItem(config.setAll(parameters.toObject())) {
-  auto assets = Root::singleton().assets();
+BeamMiningTool::BeamMiningTool(Root& root, Json const& config, String const& directory, Json const& parameters)
+  : Item(root, config, directory, parameters), FireableItem(config), BeamItem(root, config.setAll(parameters.toObject())) {
+  auto assets = this->root().assets();
 
   m_blockRadius = instanceValue("blockRadius").toFloat();
   m_altBlockRadius = instanceValue("altBlockRadius").toFloat();
@@ -513,7 +513,7 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   if (!ready())
     return;
 
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabase = root().materialDatabase();
 
   auto worldp = world();
   auto ownerp = owner();
@@ -537,7 +537,7 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
         for (auto pos : brushArea) {
           blockSound = materialDatabase->footstepSound(worldp->material(pos, layer), worldp->mod(pos, layer));
           if (!blockSound.empty()
-              && blockSound != Root::singleton().assets()->json("/client.config:defaultFootstepSound").toString())
+              && blockSound != root().assets()->json("/client.config:defaultFootstepSound").toString())
             break;
         }
       }
@@ -546,7 +546,7 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
       used = damageResult != TileDamageResult::None;
 
       if (damageResult == TileDamageResult::Protected) {
-        blockSound = Root::singleton().assets()->json("/client.config:defaultDingSound").toString();
+        blockSound = root().assets()->json("/client.config:defaultDingSound").toString();
       }
 
       if (!used && m_canCollectLiquid && layer == TileLayer::Foreground && worldp->material(aimPosition, TileLayer::Foreground) == EmptyMaterialId) {
@@ -569,12 +569,12 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
           }
         }
 
-        float bucketSize = Root::singleton().assets()->json("/items/defaultParameters.config:liquidItems.bucketSize").toUInt();
+        float bucketSize = root().assets()->json("/items/defaultParameters.config:liquidItems.bucketSize").toUInt();
         if (totalLiquid >= bucketSize) {
           if (auto clientWorld = as<WorldClient>(worldp))
             clientWorld->collectLiquid(drainTiles, targetLiquid);
 
-          blockSound = Root::singleton().assets()->json("/items/defaultParameters.config:liquidBlockSound").toString();
+          blockSound = root().assets()->json("/items/defaultParameters.config:liquidBlockSound").toString();
 
           used = true;
         }
@@ -582,7 +582,7 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     }
 
     if (used) {
-      ownerp->addSound(Random::randValueFrom(m_strikeSounds), m_toolVolume);
+      ownerp->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
       ownerp->addSound(blockSound, m_blockVolume);
       List<Particle> miningParticles;
       for (auto pos : brushArea) {
@@ -603,9 +603,9 @@ float BeamMiningTool::getAngle(float angle) {
 }
 
 
-PaintingBeamTool::PaintingBeamTool(Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters), FireableItem(config), BeamItem(config) {
-  auto assets = Root::singleton().assets();
+PaintingBeamTool::PaintingBeamTool(Root& root, Json const& config, String const& directory, Json const& parameters)
+  : Item(root, config, directory, parameters), FireableItem(config), BeamItem(root, config) {
+  auto assets = this->root().assets();
 
   m_blockRadius = instanceValue("blockRadius").toFloat();
   m_altBlockRadius = instanceValue("altBlockRadius").toFloat();
@@ -727,7 +727,7 @@ void PaintingBeamTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
       }
 
       if (used) {
-        ownerp->addSound(Random::randValueFrom(m_strikeSounds), m_toolVolume);
+        ownerp->addSound(root().random().randValueFrom(m_strikeSounds), m_toolVolume);
         FireableItem::fire(mode, shifting, edgeTriggered);
       }
     }

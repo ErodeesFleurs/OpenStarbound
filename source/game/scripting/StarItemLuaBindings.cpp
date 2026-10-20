@@ -253,7 +253,7 @@ Json LuaBindings::ItemCallbacks::iconDrawables(Item* item) {
 // @return List of tables containing the serialized drop drawables for this
 // item.
 Json LuaBindings::ItemCallbacks::dropDrawables(Item* item) {
-  return jsonFromList<Drawable>(item->dropDrawables(), [](Drawable const& drawable) { return drawable.toJson(); });
+  return jsonFromList<Drawable>(item->dropDrawables(nullptr), [](Drawable const& drawable) { return drawable.toJson(); });
 }
 
 // Returns the large image for this item as displayed on mouseover in the

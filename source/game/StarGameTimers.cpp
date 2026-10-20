@@ -2,7 +2,6 @@ import std;
 import star.data_stream;
 import star.json;
 import star.json_extra;
-import star.game_types;
 import star.data_stream_extra;
 
 import star.game_timers;
@@ -81,14 +80,14 @@ void SlidingWindow::reset(float initialValue) {
   std::fill(window.begin(), window.end(), initialValue);
 }
 
-void SlidingWindow::update(std::function<float()> sampleFunction) {
-  if (sampleTimer.wrapTick(GlobalTimestep)) {
+void SlidingWindow::update(float dt, std::function<float()> sampleFunction) {
+  if (sampleTimer.wrapTick(dt)) {
     processUpdate(sampleFunction());
   }
 }
 
-void SlidingWindow::update(float newValue) {
-  if (sampleTimer.wrapTick(GlobalTimestep)) {
+void SlidingWindow::update(float dt, float newValue) {
+  if (sampleTimer.wrapTick(dt)) {
     processUpdate(newValue);
   }
 }

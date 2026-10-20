@@ -35,9 +35,6 @@ import star.cellular_liquid;
 import star.item_descriptor;
 import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
-import star.root;
 
 import star.liquids_database;
 import star.material_database;
@@ -48,9 +45,7 @@ namespace Star {
 
 LiquidSettings::LiquidSettings() : id(EmptyLiquidId) {}
 
-LiquidsDatabase::LiquidsDatabase() {
-  auto assets = Root::singleton().assets();
-  auto materialDatabase = Root::singleton().materialDatabase();
+LiquidsDatabase::LiquidsDatabase(std::shared_ptr<Assets const> const& assets, std::shared_ptr<MaterialDatabase const> const& materialDatabase) {
 
   auto config = assets->json("/liquids.config");
 

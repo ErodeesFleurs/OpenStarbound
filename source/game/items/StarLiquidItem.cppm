@@ -91,7 +91,7 @@ export namespace Star {
 
 class LiquidItem : public Item, public FireableItem, public PreviewTileTool, public BeamItem {
 public:
-  LiquidItem(Json const& config, String const& directory, Json const& settings);
+  LiquidItem(Root& root, Json const& config, String const& directory, Json const& settings);
   virtual ~LiquidItem() {}
 
   std::shared_ptr<Item> clone() const override;
@@ -125,13 +125,13 @@ private:
 
 namespace Star {
 
-LiquidItem::LiquidItem(Json const& config, String const& directory, Json const& settings)
-  : Item(config, directory, settings), FireableItem(config), BeamItem(config) {
-  m_liquidId = Root::singleton().liquidsDatabase()->liquidId(config.getString("liquid"));
+LiquidItem::LiquidItem(Root& root, Json const& config, String const& directory, Json const& settings)
+  : Item(root, config, directory, settings), FireableItem(config), BeamItem(root, config) {
+  m_liquidId = this->root().liquidsDatabase()->liquidId(config.getString("liquid"));
 
   setTwoHanded(config.getBool("twoHanded", true));
 
-  auto assets = Root::singleton().assets();
+  auto assets = this->root().assets();
   m_quantity = assets->json("/items/defaultParameters.config:liquidItems.bucketSize").toUInt();
   setCooldownTime(assets->json("/items/defaultParameters.config:liquidItems.cooldown").toFloat());
   m_blockRadius = assets->json("/items/defaultParameters.config:blockRadius").toFloat();

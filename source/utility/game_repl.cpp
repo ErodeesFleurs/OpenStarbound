@@ -1,4 +1,5 @@
 import star.json;
+import star.native_runtime;
 import star.lua;
 import star.string;
 import star.variant;
@@ -32,19 +33,25 @@ import star.root_loader;
 import star.utility_lua_bindings;
 
 import star.root_lua_bindings;
+import star.lua_root;
 
 using namespace Star;
 
 int main(int argc, char** argv) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   RootLoader rootLoader({{}, {}, {}, LogLevel::Error, false, {}});
   std::unique_ptr<::Star::Root> root;
   OptionParser::Options options;
   std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
   auto engine = LuaEngine::create(true);
+  engine->setExecutionHost(std::make_unique<LuaExecutionScope>(*root));
+  engine->setImageResolver([root = root.get()](String const& path) {
+    return root->assets()->image(path);
+  });
   auto context = engine->createContext();
-  context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
-  context.setCallbacks("root", LuaBindings::makeRootCallbacks());
+  context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks(root->random(), root->logger(), root->logMap()));
+  context.setCallbacks("root", LuaBindings::makeRootCallbacks(*root));
 
   String code;
   bool continuation = false;

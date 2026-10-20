@@ -201,12 +201,12 @@ import star.humanoid;
 
 namespace Star {
 
-OptionsMenu::OptionsMenu(PaneManager* manager, std::shared_ptr<UniverseClient> client)
-  : m_sfxRange(0, 100), m_musicRange(0, 100), m_paneManager(manager) {
-  auto root = Root::singletonPtr();
+OptionsMenu::OptionsMenu(GuiContext& guiContext, PaneManager* manager, std::shared_ptr<UniverseClient> client)
+  : Pane(guiContext), m_sfxRange(0, 100), m_musicRange(0, 100), m_paneManager(manager) {
+  auto root = &context()->root();
   auto assets = root->assets();
 
-  GuiReader reader;
+  GuiReader reader(*context());
 
   reader.registerCallback("instrumentSlider", [this](Widget*) {
     updateInstrumentVol();
@@ -279,10 +279,10 @@ OptionsMenu::OptionsMenu(PaneManager* manager, std::shared_ptr<UniverseClient> c
   m_sfxSlider->setRange(m_sfxRange, assets->json("/interface/optionsmenu/optionsmenu.config:sfxDelta").toInt());
   m_musicSlider->setRange(m_musicRange, assets->json("/interface/optionsmenu/optionsmenu.config:musicDelta").toInt());
 
-  m_voiceSettingsMenu = std::make_shared<VoiceSettingsMenu>(assets->json(config.getString("voiceSettingsPanePath", "/interface/opensb/voicechat/voicechat.config")));
-  m_modBindingsMenu = std::make_shared<BindingsMenu>(assets->json(config.getString("bindingsPanePath", "/interface/opensb/bindings/bindings.config")));
-  m_keybindingsMenu = std::make_shared<KeybindingsMenu>();
-  m_graphicsMenu = std::make_shared<GraphicsMenu>(manager,client);
+  m_voiceSettingsMenu = std::make_shared<VoiceSettingsMenu>(*context(), assets->json(config.getString("voiceSettingsPanePath", "/interface/opensb/voicechat/voicechat.config")));
+  m_modBindingsMenu = std::make_shared<BindingsMenu>(*context(), assets->json(config.getString("bindingsPanePath", "/interface/opensb/bindings/bindings.config")));
+  m_keybindingsMenu = std::make_shared<KeybindingsMenu>(*context());
+  m_graphicsMenu = std::make_shared<GraphicsMenu>(*context(), manager,client);
 
   initConfig();
 }
@@ -312,7 +312,7 @@ StringList const OptionsMenu::ConfigKeys = {
 };
 
 void OptionsMenu::initConfig() {
-  auto configuration = Root::singleton().configuration();
+  auto configuration = context()->root().configuration();
 
   for (auto k : ConfigKeys) {
     m_origConfig[k] = configuration->get(k);
@@ -322,47 +322,47 @@ void OptionsMenu::initConfig() {
 
 void OptionsMenu::updateInstrumentVol() {
   m_localChanges.set("instrumentVol", m_instrumentSlider->val());
-  Root::singleton().configuration()->set("instrumentVol", m_instrumentSlider->val());
+  context()->root().configuration()->set("instrumentVol", m_instrumentSlider->val());
   m_instrumentLabel->setText(toString(m_instrumentSlider->val()));
 }
 
 void OptionsMenu::updateSFXVol() {
   m_localChanges.set("sfxVol", m_sfxSlider->val());
-  Root::singleton().configuration()->set("sfxVol", m_sfxSlider->val());
+  context()->root().configuration()->set("sfxVol", m_sfxSlider->val());
   m_sfxLabel->setText(toString(m_sfxSlider->val()));
 }
 
 void OptionsMenu::updateMusicVol() {
   m_localChanges.set("musicVol", {m_musicSlider->val()});
-  Root::singleton().configuration()->set("musicVol", m_musicSlider->val());
+  context()->root().configuration()->set("musicVol", m_musicSlider->val());
   m_musicLabel->setText(toString(m_musicSlider->val()));
 }
 
 
 void OptionsMenu::updateTutorialMessages() {
   m_localChanges.set("tutorialMessages", m_tutorialMessagesButton->isChecked());
-  Root::singleton().configuration()->set("tutorialMessages", m_tutorialMessagesButton->isChecked());
+  context()->root().configuration()->set("tutorialMessages", m_tutorialMessagesButton->isChecked());
 }
 
 void OptionsMenu::updateClientIPJoinable() {
   m_localChanges.set("clientIPJoinable", m_clientIPJoinableButton->isChecked());
-  Root::singleton().configuration()->set("clientIPJoinable", m_clientIPJoinableButton->isChecked());
+  context()->root().configuration()->set("clientIPJoinable", m_clientIPJoinableButton->isChecked());
 }
 
 void OptionsMenu::updateClientP2PJoinable() {
   m_localChanges.set("clientP2PJoinable", m_clientP2PJoinableButton->isChecked());
-  Root::singleton().configuration()->set("clientP2PJoinable", m_clientP2PJoinableButton->isChecked());
+  context()->root().configuration()->set("clientP2PJoinable", m_clientP2PJoinableButton->isChecked());
 }
 
 void OptionsMenu::updateAllowAssetsMismatch() {
   m_localChanges.set("allowAssetsMismatch", m_allowAssetsMismatchButton->isChecked());
-  Root::singleton().configuration()->set("allowAssetsMismatch", m_allowAssetsMismatchButton->isChecked());
+  context()->root().configuration()->set("allowAssetsMismatch", m_allowAssetsMismatchButton->isChecked());
 }
 
 void OptionsMenu::updateHeadRotation() {
   m_localChanges.set("humanoidHeadRotation", m_headRotationButton->isChecked());
-  Root::singleton().configuration()->set("humanoidHeadRotation", m_headRotationButton->isChecked());
-  Humanoid::globalHeadRotation() = m_headRotationButton->isChecked();
+  context()->root().configuration()->set("humanoidHeadRotation", m_headRotationButton->isChecked());
+  context()->root().humanoidHeadRotation() = m_headRotationButton->isChecked();
 }
 
 void OptionsMenu::syncGuiToConf() {
@@ -381,7 +381,7 @@ void OptionsMenu::syncGuiToConf() {
   m_allowAssetsMismatchButton->setChecked(m_localChanges.get("allowAssetsMismatch").toBool());
   m_headRotationButton->setChecked(m_localChanges.get("humanoidHeadRotation").optBool().value(true));
 
-  auto appController = GuiContext::singleton().applicationController();
+  auto appController = context()->applicationController();
   if (!appController->p2pNetworkingService()) {
     m_p2pJoinableLabel->setColor(Color::DarkGray);
     m_clientP2PJoinableButton->setEnabled(false);

@@ -35,15 +35,16 @@ import star.interface_cursor;
 
 import star.image_metadata_database;
 
+import star.gui_context;
 import star.vector;
 namespace Star {
 
-InterfaceCursor::InterfaceCursor() {
+InterfaceCursor::InterfaceCursor(GuiContext& context) : m_guiContext(&context) {
   resetCursor();
 }
 
 void InterfaceCursor::resetCursor() {
-  auto& root = Root::singleton();
+  auto& root = m_guiContext->root();
   auto assets = root.assets();
   setCursor(assets->json("/interface.config:defaultCursor").toString());
 }
@@ -54,7 +55,7 @@ void InterfaceCursor::setCursor(String const& configFile) {
 
   m_configFile = configFile;
 
-  auto& root = Root::singleton();
+  auto& root = m_guiContext->root();
   auto assets = root.assets();
   auto imageMetadata = root.imageMetadataDatabase();
 
@@ -65,8 +66,8 @@ void InterfaceCursor::setCursor(String const& configFile) {
     m_drawable = config.getString("image");
     m_size = Vec2I{imageMetadata->imageSize(config.getString("image"))};
   } else {
-    m_drawable = Animation(config.get("animation"), "/interface");
-    m_size = Vec2I(m_drawable.get<Animation>().drawable(1.0f).boundBox(false).size());
+    m_drawable = Animation(root, config.get("animation"), "/interface");
+    m_size = Vec2I(m_drawable.get<Animation>().drawable(1.0f).boundBox(*imageMetadata, false).size());
   }
 
   m_scale = config.getUInt("scale", 0);
@@ -74,7 +75,7 @@ void InterfaceCursor::setCursor(String const& configFile) {
 
 Drawable InterfaceCursor::drawable() const {
   if (m_drawable.is<String>())
-    return Drawable::makeImage(m_drawable.get<String>(), 1.0f, false, {});
+    return Drawable::makeImage(*m_guiContext->root().imageMetadataDatabase(), m_drawable.get<String>(), 1.0f, false, {});
   else
     return m_drawable.get<Animation>().drawable(1.0f);
 }

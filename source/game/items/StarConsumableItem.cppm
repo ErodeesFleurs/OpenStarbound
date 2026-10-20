@@ -94,7 +94,7 @@ export namespace Star {
 
 class ConsumableItem : public Item, public SwingableItem {
 public:
-  ConsumableItem(Json const& config, String const& directory, Json const& data);
+  ConsumableItem(Root& root, Json const& config, String const& directory, Json const& data);
 
   std::shared_ptr<Item> clone() const override;
 
@@ -122,8 +122,8 @@ private:
 
 namespace Star {
 
-ConsumableItem::ConsumableItem(Json const& config, String const& directory, Json const& data)
-  : Item(config, directory, data), SwingableItem(config) {
+ConsumableItem::ConsumableItem(Root& root, Json const& config, String const& directory, Json const& data)
+  : Item(root, config, directory, data), SwingableItem(config) {
   setWindupTime(0);
   setCooldownTime(0.25f);
   m_requireEdgeTrigger = true;
@@ -193,7 +193,7 @@ bool ConsumableItem::canUse() const {
 void ConsumableItem::triggerEffects() {
   auto options = instanceValue("effects", JsonArray()).toArray();
   if (options.size()) {
-    auto option = Random::randFrom(options).toArray().transformed(jsonToEphemeralStatusEffect);
+    auto option = root().random().randFrom(options).toArray().transformed(jsonToEphemeralStatusEffect);
     owner()->statusController()->addEphemeralEffects(option);
   }
 

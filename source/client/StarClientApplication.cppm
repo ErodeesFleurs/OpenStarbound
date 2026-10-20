@@ -16,6 +16,7 @@ import star.world_render_data;
 import star.key_bindings;
 import star.root;
 import star.listener;
+import star.logging;
 
 namespace Star {
 
@@ -33,9 +34,11 @@ class Player;
 class WorldPainter;
 class MainInterface;
 class UniverseServer;
+class LuaHttpSession;
 
 class ClientApplication : public Application {
 public:
+  Logger& logger() const override { return m_root->logger(); }
   ~ClientApplication() override;
   void setPostProcessLayerPasses(String const& layer, unsigned const& passes);
   void setPostProcessGroupEnabled(String const& group, bool const& enabled, Maybe<bool> const& save);
@@ -122,6 +125,7 @@ private:
   std::shared_ptr<GuiContext> m_guiContext;
   std::shared_ptr<Input> m_input;
   std::shared_ptr<Voice> m_voice;
+  std::shared_ptr<LuaHttpSession> m_httpSession;
 
   // Valid after renderInit is called the first time
   std::shared_ptr<Cinematic> m_cinematicOverlay;

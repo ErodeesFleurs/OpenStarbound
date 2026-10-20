@@ -54,7 +54,6 @@ import star.physics_entity;
 import star.movement_controller;
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.configuration;
 import star.root;
 
@@ -62,8 +61,8 @@ import star.math_common;
 import star.algorithm;
 namespace Star {
 
-MovementParameters MovementParameters::sensibleDefaults() {
-  return MovementParameters(Root::singleton().assets()->json("/default_movement.config").toObject());
+MovementParameters MovementParameters::sensibleDefaults(Root& root) {
+  return MovementParameters(root.assets()->json("/default_movement.config").toObject());
 }
 
 MovementParameters::MovementParameters() : MovementParameters(Json()) {}
@@ -223,12 +222,12 @@ DataStream& operator<<(DataStream& ds, MovementParameters const& movementParamet
   return ds;
 }
 
-MovementController::MovementController() : MovementController(MovementParameters()) {}
+MovementController::MovementController(Root& root) : MovementController(root, MovementParameters()) {}
 
-MovementController::MovementController(MovementParameters const& parameters) {
+MovementController::MovementController(Root& root, MovementParameters const& parameters) : m_root(root) {
   m_resting = false;
 
-  m_timeStep = GlobalTimestep;
+  m_timeStep = root.timing().timestep;
 
   m_liquidPercentage = 0.0f;
   m_liquidId = EmptyLiquidId;
@@ -279,7 +278,11 @@ void MovementController::applyParameters(MovementParameters const& parameters) {
 }
 
 void MovementController::resetParameters(MovementParameters const& parameters) {
-  updateParameters(MovementParameters::sensibleDefaults().merge(parameters));
+  updateParameters(MovementParameters::sensibleDefaults(m_root).merge(parameters));
+}
+
+Root& MovementController::root() const {
+  return m_root;
 }
 
 Json MovementController::storeState() const {

@@ -7,6 +7,7 @@ import star.format;
 import star.json;
 import star.byte_array;
 import star.rpc_promise;
+import star.logging;
 
 namespace Star {
 
@@ -31,7 +32,7 @@ public:
 // messages to be sent and received.
 class JsonRpc : public JsonRpcInterface {
 public:
-  JsonRpc();
+  explicit JsonRpc(Logger& logger);
 
   void registerHandler(String const& handler, JsonRpcRemoteFunction func);
   void registerHandlers(JsonRpcHandlers const& handlers);
@@ -46,6 +47,7 @@ public:
   void receive(ByteArray const& inbuffer);
 
 private:
+  Logger& m_logger;
   JsonRpcHandlers m_handlers;
   Map<std::uint64_t, RpcPromiseKeeper<Json>> m_pendingResponse;
   List<Json> m_pending;

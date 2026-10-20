@@ -145,7 +145,7 @@ namespace Tiled {
     return lexicalCast<std::uint64_t>(seed);
   }
 
-  std::shared_ptr<Dungeon::Brush const> getNpcBrush(String const& species, Tiled::Properties& properties) {
+  std::shared_ptr<Dungeon::Brush const> getNpcBrush(Root& root, String const& species, Tiled::Properties& properties) {
     JsonObject brush;
     brush["kind"] = "npc";
     brush["species"] = species; // this may be a single species or a comma
@@ -156,10 +156,10 @@ namespace Tiled {
     if (properties.contains("typeName"))
       brush["typeName"] = properties.get<String>("typeName");
     brush["parameters"] = properties.opt<Json>("parameters").value(JsonObject{});
-    return std::make_shared<const NpcBrush>(brush);
+    return std::make_shared<const NpcBrush>(root, brush);
   }
 
-  std::shared_ptr<Dungeon::Brush const> getMonsterBrush(String const& typeName, Tiled::Properties& properties) {
+  std::shared_ptr<Dungeon::Brush const> getMonsterBrush(Root& root, String const& typeName, Tiled::Properties& properties) {
     JsonObject brush;
     brush["kind"] = "monster";
     brush["typeName"] = typeName;
@@ -167,7 +167,7 @@ namespace Tiled {
       brush["seed"] = getSeed(properties);
     }
     brush["parameters"] = properties.opt<Json>("parameters").value(JsonObject{});
-    return std::make_shared<const NpcBrush>(brush);
+    return std::make_shared<const NpcBrush>(root, brush);
   }
 
   std::shared_ptr<Dungeon::Brush const> getStagehandBrush(String const& typeName, Tiled::Properties& properties) {
@@ -266,7 +266,7 @@ namespace Tiled {
     }
   };
 
-  Tile::Tile(Properties const& tileProperties, TileLayer layer, bool flipX)
+  Tile::Tile(Root& root, Properties const& tileProperties, TileLayer layer, bool flipX)
     : Dungeon::Tile(), properties(tileProperties) {
     JsonObject computedProperties;
     if (!properties.contains("layer")) {
@@ -294,8 +294,8 @@ namespace Tiled {
     br.optRead<String>(brushes, "object", getObjectBrush, properties);
     br.optRead<String>(brushes, "vehicle", getVehicleBrush, properties);
     br.optRead<String>(brushes, "wire", getWireBrush, properties);
-    br.optRead<String>(brushes, "npc", getNpcBrush, properties);
-    br.optRead<String>(brushes, "monster", getMonsterBrush, properties);
+    br.optRead<String>(brushes, "npc", std::bind_front(getNpcBrush, std::ref(root)), properties);
+    br.optRead<String>(brushes, "monster", std::bind_front(getMonsterBrush, std::ref(root)), properties);
     br.optRead<String>(brushes, "stagehand", getStagehandBrush, properties);
     br.optRead<String>(brushes, "dungeonid", getDungeonIdBrush, properties);
     br.optRead<String>(brushes, "biomeitems", getBiomeItemsBrush, properties);
@@ -327,7 +327,7 @@ namespace Tiled {
     }
   }
 
-  Tileset::Tileset(Json const& json) {
+  Tileset::Tileset(Root& root, Json const& json) {
     Properties tilesetProperties(json.opt("properties").value(JsonObject{}));
     Json tileProperties = json.opt("tileproperties").value(JsonObject{});
 
@@ -338,8 +338,8 @@ namespace Tiled {
       std::size_t index = lexicalCast<std::size_t>(entry.first);
       Properties properties = Properties(entry.second).inherit(tilesetProperties);
 
-      m_tilesBack[index] = std::make_shared<Tile>(properties, TileLayer::Background, false);
-      m_tilesFront[index] = std::make_shared<Tile>(properties, TileLayer::Foreground, false);
+      m_tilesBack[index] = std::make_shared<Tile>(root, properties, TileLayer::Background, false);
+      m_tilesFront[index] = std::make_shared<Tile>(root, properties, TileLayer::Foreground, false);
     }
   }
 
@@ -365,16 +365,16 @@ namespace Tiled {
   }
 }
 
-TilesetDatabase::TilesetDatabase() : m_cacheMutex(), m_tilesetCache() {}
+TilesetDatabase::TilesetDatabase(Root& root) : m_root(root), m_cacheMutex(), m_tilesetCache() {}
 
 std::shared_ptr<Tiled::Tileset const> TilesetDatabase::get(String const& path) const {
   MutexLocker locker(m_cacheMutex);
-  return m_tilesetCache.get(path, TilesetDatabase::readTileset);
+  return m_tilesetCache.get(path, [this](String const& path) { return readTileset(path); });
 }
 
-std::shared_ptr<Tiled::Tileset const> TilesetDatabase::readTileset(String const& path) {
-  auto assets = Root::singleton().assets();
-  return std::make_shared<Tiled::Tileset>(assets->json(path));
+std::shared_ptr<Tiled::Tileset const> TilesetDatabase::readTileset(String const& path) const {
+  auto assets = m_root.assets();
+  return std::make_shared<Tiled::Tileset>(m_root, assets->json(path));
 }
 
 namespace Tiled {

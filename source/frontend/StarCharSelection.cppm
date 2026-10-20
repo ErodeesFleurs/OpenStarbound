@@ -49,7 +49,7 @@ public:
   typedef std::function<void(std::shared_ptr<Player> const&)> SelectCharacterCallback;
   typedef std::function<void(Uuid)> DeleteCharacterCallback;
 
-  CharSelectionPane(std::shared_ptr<PlayerStorage> playerStorage, CreateCharCallback createCallback,
+  CharSelectionPane(GuiContext& guiContext, std::shared_ptr<PlayerStorage> playerStorage, CreateCharCallback createCallback,
       SelectCharacterCallback selectCallback, DeleteCharacterCallback deleteCallback);
 
   bool sendEvent(InputEvent const& event) override;

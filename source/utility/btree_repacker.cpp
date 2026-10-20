@@ -16,12 +16,16 @@ import std;
 import star.format;
 import star.version;
 import star.version_option_parser;
+import star.logging;
+import star.native_runtime;
 
 import star.byte_array;
 using namespace Star;
 
 int main(int argc, char** argv) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   try {
+    Logger logger;
     double startTime = Time::monotonicTime();
 
     VersionOptionParser optParse;
@@ -37,12 +41,12 @@ int main(int argc, char** argv) {
 
     outputFilename = File::relativeTo(File::fullPath(File::dirName(outputFilename)), File::baseName(outputFilename));
     //open the old db
-    BTreeDatabase db;
+    BTreeDatabase db(logger);
     db.setIODevice(File::open(bTreePath, IOMode::Read));
     db.open();
 
     //make a new db
-    BTreeDatabase newDb;
+    BTreeDatabase newDb(logger);
     newDb.setBlockSize(db.blockSize());
     newDb.setContentIdentifier(db.contentIdentifier());
     newDb.setKeySize(db.keySize());

@@ -57,8 +57,8 @@ class ItemBag;
 
 class ItemGridWidget : public Widget {
 public:
-  ItemGridWidget(std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& spacing, String const& backingImage, unsigned bagOffset);
-  ItemGridWidget(std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset);
+  ItemGridWidget(GuiContext& context, std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& spacing, String const& backingImage, unsigned bagOffset);
+  ItemGridWidget(GuiContext& context, std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset);
 
   std::shared_ptr<ItemBag const> bag() const;
 

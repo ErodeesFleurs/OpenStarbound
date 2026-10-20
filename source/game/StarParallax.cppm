@@ -20,6 +20,8 @@ import star.plant_database;
 
 namespace Star {
 
+class Root;
+
 struct ParallaxLayer {
   friend DataStream& operator>>(DataStream& ds, ParallaxLayer& parallaxLayer);
   friend DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer);
@@ -61,12 +63,12 @@ DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer);
 // Object managing and rendering the parallax for a World
 class Parallax {
 public:
-  Parallax(String const& assetFile,
+  Parallax(Root& root, String const& assetFile,
       std::uint64_t seed,
       float verticalOrigin,
       float hueShift,
       Maybe<TreeVariant> parallaxTreeVariant = {});
-  Parallax(Json const& store);
+  Parallax(Root& root, Json const& store);
 
   Json store() const;
 
@@ -78,6 +80,7 @@ public:
 private:
   void buildLayer(Json const& layerSettings, String const& kind);
 
+  Root& m_root;
   std::uint64_t m_seed;
   float m_verticalOrigin;
   Maybe<TreeVariant> m_parallaxTreeVariant;

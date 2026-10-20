@@ -10,6 +10,8 @@ import star.thread;
 
 namespace Star {
 
+class Logger;
+
 // Thrown when some call on a socket failed because the socket is *either*
 // closed or shutdown, for other errors sockets will throw NetworkException
 struct SocketClosedExceptionTag {
@@ -61,7 +63,7 @@ public:
 
   ~Socket();
 
-  void bind(HostAddressWithPort const& address);
+  void bind(Logger& logger, HostAddressWithPort const& address);
   void listen(int backlog);
 
   // Sockets default to blocking mode

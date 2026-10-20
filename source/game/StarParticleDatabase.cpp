@@ -32,10 +32,10 @@ import star.particle_database;
 
 namespace Star {
 
-ParticleConfig::ParticleConfig(Json const& config) {
+ParticleConfig::ParticleConfig(Root& root, Json const& config) : m_root(root) {
   m_kind = config.getString("kind");
-  m_particle = Particle(config.queryObject("definition"));
-  m_variance = Particle(config.queryObject("definition.variance", {}));
+  m_particle = Particle(root, config.queryObject("definition"));
+  m_variance = Particle(root, config.queryObject("definition.variance", {}));
 }
 
 String const& ParticleConfig::kind() {
@@ -44,16 +44,16 @@ String const& ParticleConfig::kind() {
 
 Particle ParticleConfig::instance() {
   auto particle = m_particle;
-  particle.applyVariance(m_variance);
+  particle.applyVariance(m_root, m_variance);
   return particle;
 }
 
-ParticleDatabase::ParticleDatabase() {
-  auto assets = Root::singleton().assets();
+ParticleDatabase::ParticleDatabase(Root& root) : m_root(root) {
+  auto assets = m_root.assets();
   auto& files = assets->scanExtension("particle");
   assets->queueJsons(files);
   for (auto& file : files) {
-    auto particleConfig = std::make_shared<ParticleConfig>(assets->json(file));
+    auto particleConfig = std::make_shared<ParticleConfig>(m_root, assets->json(file));
     if (m_configs.contains(particleConfig->kind()))
       throw StarException(strf("Duplicate particle asset kind Name {}. configfile {}", particleConfig->kind(), file));
     m_configs[particleConfig->kind()] = particleConfig;
@@ -72,9 +72,9 @@ ParticleVariantCreator ParticleDatabase::particleCreator(Json const& kindOrConfi
     auto pconfig = config(kindOrConfig.toString());
     return [pconfig]() { return pconfig->instance(); };
   } else {
-    Particle particle(kindOrConfig.toObject(), relativePath);
-    Particle variance(kindOrConfig.getObject("variance", {}), relativePath);
-    return makeParticleVariantCreator(std::move(particle), std::move(variance));
+    Particle particle(m_root, kindOrConfig.toObject(), relativePath);
+    Particle variance(m_root, kindOrConfig.getObject("variance", {}), relativePath);
+    return makeParticleVariantCreator(m_root, std::move(particle), std::move(variance));
   }
 }
 

@@ -40,6 +40,8 @@ import star.net_element_sync_group;
 
 namespace Star {
 
+class Root;
+
 struct NetworkedAnimatorExceptionTag {
   static constexpr char const* name() { return "NetworkedAnimatorException"; }
 };
@@ -94,10 +96,10 @@ public:
     HashMap<std::shared_ptr<AudioInstance>, Vec2F> currentAudioBasePositions;
   };
 
-  NetworkedAnimator();
+  NetworkedAnimator(Root& root);
   // If passed a string as config, NetworkedAnimator will interpret this as a
   // config path, otherwise it is interpreted as the literal config.
-  NetworkedAnimator(Json config, String relativePath = String());
+  NetworkedAnimator(Root& root, Json config, String relativePath = String());
 
   NetworkedAnimator(NetworkedAnimator&& animator);
   NetworkedAnimator(NetworkedAnimator const& animator);
@@ -389,8 +391,9 @@ private:
   void netElementsNeedLoad(bool full) override;
   void netElementsNeedStore() override;
 
-  Json mergeIncludes(Json config, Json includes, String relativePath);
+  Json mergeIncludes(Root& root, Json config, Json includes, String relativePath);
 
+  Root* m_root;
   String m_relativePath;
   std::uint8_t m_animatorVersion;
 

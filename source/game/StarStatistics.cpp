@@ -38,19 +38,18 @@ import star.statistics;
 
 namespace Star {
 
-Statistics::Statistics(String const& storageDirectory, std::shared_ptr<StatisticsService> service) {
+Statistics::Statistics(Root& root, String const& storageDirectory, std::shared_ptr<StatisticsService> service)
+  : m_root(root) {
   m_service = std::move(service);
   m_initialized = !m_service;
   m_storageDirectory = storageDirectory;
   readStatistics();
 
-  auto assets = Root::singleton().assets();
-
-  m_luaRoot = std::make_shared<LuaRoot>();
+  m_luaRoot = std::make_shared<LuaRoot>(m_root);
 }
 
 void Statistics::writeStatistics() {
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+  auto versioningDatabase = m_root.versioningDatabase();
   String filename = File::relativeTo(m_storageDirectory, "statistics");
 
   Json stats = JsonObject::from(m_stats.pairs().transformed([](auto const& entry) {
@@ -99,7 +98,7 @@ bool Statistics::reset() {
 void Statistics::update() {
   if (m_service) {
     if (auto error = m_service->error()) {
-      Logger::error("Statistics platform service error: {}", *error);
+      m_root.logger().error("Statistics platform service error: {}", *error);
       // Service failed. Continue with local stats and achievements only.
       m_service = {};
       m_initialized = true;
@@ -146,21 +145,21 @@ Json Statistics::Stat::toJson() const {
 void Statistics::processEvent(String const& name, Json const& fields) {
   if (m_service)
     m_service->reportEvent(name, fields);
-  Logger::debug("Event {} {}", name, fields);
+  m_root.logger().debug("Event {} {}", name, fields);
 
-  auto statisticsDatabase = Root::singleton().statisticsDatabase();
+  auto statisticsDatabase = m_root.statisticsDatabase();
   if (auto const& event = statisticsDatabase->event(name)) {
     runStatScript(event->scripts, event->config, "event", name, fields);
   }
 }
 
 void Statistics::setStat(String const& name, String const& type, Json const& value) {
-  Logger::debug("Stat {} ({}) : {}", name, type, value);
+  m_root.logger().debug("Stat {} ({}) : {}", name, type, value);
   m_stats[name] = Stat { type, value };
   if (m_service)
     m_service->setStat(name, type, value);
 
-  auto statisticsDatabase = Root::singleton().statisticsDatabase();
+  auto statisticsDatabase = m_root.statisticsDatabase();
   m_pendingAchievementChecks.addAll(statisticsDatabase->achievementsForStat(name));
 }
 
@@ -170,11 +169,11 @@ void Statistics::unlockAchievement(String const& name) {
   m_achievements.add(name);
   if (m_service)
     m_service->unlockAchievement(name);
-  Logger::debug("Achievement get {}", name);
+  m_root.logger().debug("Achievement get {}", name);
 }
 
 bool Statistics::checkAchievement(String const& achievementName) {
-  auto statisticsDatabase = Root::singleton().statisticsDatabase();
+  auto statisticsDatabase = m_root.statisticsDatabase();
   auto achievement = statisticsDatabase->achievement(achievementName);
   if (achievementUnlocked(achievement->name))
     return true;
@@ -184,7 +183,7 @@ bool Statistics::checkAchievement(String const& achievementName) {
 }
 
 void Statistics::readStatistics() {
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+  auto versioningDatabase = m_root.versioningDatabase();
   try {
     String filename = File::relativeTo(m_storageDirectory, "statistics");
     if (File::exists(filename)) {
@@ -197,7 +196,7 @@ void Statistics::readStatistics() {
 
     }
   } catch (std::exception const& e) {
-    Logger::warn("Error loading local player statistics file, resetting: {}", outputException(e, false));
+    m_root.logger().warn("Error loading local player statistics file, resetting: {}", outputException(e, false));
   }
 }
 
@@ -250,7 +249,7 @@ LuaCallbacks Statistics::makeStatisticsCallbacks() {
 
 template <typename Result, typename... V>
 Maybe<Result> Statistics::runStatScript(StringList const& scripts, Json const& config, String const& functionName, V&&... args) {
-  LuaBaseComponent script;
+  LuaBaseComponent script(m_root);
   script.setLuaRoot(m_luaRoot);
   script.setScripts(scripts);
   script.addCallbacks("config", LuaBindings::makeConfigCallbacks([config] (String const& name, Json const& def) {

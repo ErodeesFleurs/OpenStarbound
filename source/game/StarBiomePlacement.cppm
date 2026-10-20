@@ -45,6 +45,8 @@ import star.plant;
 import star.plant_database;
 
 namespace Star {
+class Root;
+class Assets;
 
 struct BiomeExceptionTag {
   static constexpr char const* name() { return "BiomeException"; }
@@ -128,7 +130,7 @@ struct MicroDungeonNamesWrapper : BaseType {
 typedef MicroDungeonNamesWrapper<StringSet> MicroDungeonNames;
 
 typedef Variant<GrassVariant, BushVariant, TreePair, ObjectPool, TreasureBoxSet, MicroDungeonNames> BiomeItem;
-BiomeItem variantToBiomeItem(Json const& store);
+BiomeItem variantToBiomeItem(Assets const& assets, Json const& store);
 Json variantFromBiomeItem(BiomeItem const& biomeItem);
 
 enum class BiomePlacementArea { Surface, Underground };
@@ -153,11 +155,11 @@ public:
     PerlinF weight;
   };
 
-  static Maybe<BiomeItem> createItem(Json const& itemSettings, RandomSource& rand, float biomeHueShift);
+  static Maybe<BiomeItem> createItem(Root& root, Json const& itemSettings, RandomSource& rand, float biomeHueShift);
 
   BiomeItemDistribution();
-  BiomeItemDistribution(Json const& config, std::uint64_t seed, float biomeHueShift = 0.0f);
-  BiomeItemDistribution(Json const& store);
+  BiomeItemDistribution(Root& root, Json const& config, std::uint64_t seed, float biomeHueShift = 0.0f);
+  BiomeItemDistribution(Assets const& assets, Json const& store);
 
   Json toJson() const;
 

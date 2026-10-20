@@ -87,6 +87,8 @@ import star.net_packets;
 
 namespace Star {
 
+class Root;
+
 class CelestialDatabase;
 class PlayerUniverseMap;
 class Celestial;
@@ -95,7 +97,7 @@ class ClientContext;
 
 class SystemWorldClient : public SystemWorld {
 public:
-  SystemWorldClient(std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase, std::shared_ptr<PlayerUniverseMap> clientContext);
+  SystemWorldClient(Root& root, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase, std::shared_ptr<PlayerUniverseMap> clientContext);
 
   CelestialCoordinate currentSystem() const;
 

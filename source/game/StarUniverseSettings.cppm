@@ -14,6 +14,8 @@ import star.game_types;
 
 namespace Star {
 
+class Root;
+
 struct PlaceDungeonFlagAction {
   String dungeonId;
   String targetInstance;
@@ -26,8 +28,8 @@ UniverseFlagAction parseUniverseFlagAction(Json const& json);
 
 class UniverseSettings {
 public:
-  UniverseSettings();
-  UniverseSettings(Json const& json);
+  explicit UniverseSettings(Root& root);
+  UniverseSettings(Root& root, Json const& json);
 
   Json toJson() const;
 
@@ -41,6 +43,8 @@ public:
 
 private:
   void loadFlagActions();
+
+  Root& m_root;
 
   mutable Mutex m_lock;
 

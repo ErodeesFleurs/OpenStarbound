@@ -61,7 +61,7 @@ namespace Star {
 
 class EditBookmarkDialog : public Pane {
 public:
-  EditBookmarkDialog(std::shared_ptr<PlayerUniverseMap> playerUniverseMap);
+  EditBookmarkDialog(GuiContext& guiContext, std::shared_ptr<PlayerUniverseMap> playerUniverseMap);
 
   virtual void show() override;
 

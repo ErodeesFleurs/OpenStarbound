@@ -15,9 +15,11 @@ import star.tile_sector_array;
 #include "gtest/gtest.h"
 
 import star.array;
+import star.game_test;
+import star.root;
 using namespace Star;
 
-TEST(TileSectorArrayTest, All) {
+const GameTestRegistration tileSectorArrayAll("TileSectorArrayTest", "All", [](GameTest& fixture) {
   typedef TileSectorArray<int, 32> TileArray;
   TileArray tileSectorArray({100, 100}, -1);
 
@@ -80,7 +82,7 @@ TEST(TileSectorArrayTest, All) {
   EXPECT_TRUE(found.contains(Vec2I(110, 101)));
   EXPECT_TRUE(found.contains(Vec2I(119, 101)));
 
-  auto res1 = tileSectorArray.tileEachResult(RectI(110, 110, 120, 120),
+  auto res1 = tileSectorArray.tileEachResult(fixture.root().workers(), RectI(110, 110, 120, 120),
       [](Vec2I const& pos, int tile) -> int {
         return (pos[0] >= 110 && pos[0] < 120 && pos[1] >= 110 && pos[1] < 120 && tile == -1) ? 1 : 0;
       });
@@ -89,7 +91,7 @@ TEST(TileSectorArrayTest, All) {
   EXPECT_TRUE(res1.size() == res1comp.size());
   res1.forEach([](Array2S const&, int elem) { EXPECT_TRUE(elem == 1); });
 
-  auto res2 = tileSectorArray.tileEachResult(RectI(32, 32, 64, 64),
+  auto res2 = tileSectorArray.tileEachResult(fixture.root().workers(), RectI(32, 32, 64, 64),
       [](Vec2I const& pos, int tile) -> int {
         return (pos[0] >= 32 && pos[0] < 64 && pos[1] >= 32 && pos[1] < 64 && tile == 2) ? 1 : 0;
       });
@@ -98,7 +100,7 @@ TEST(TileSectorArrayTest, All) {
   EXPECT_TRUE(res2.size() == res2comp.size());
   res2.forEach([](Array2S const&, int elem) { EXPECT_TRUE(elem == 1); });
 
-  auto res3 = tileSectorArray.tileEachResult(RectI(-10, -10, 1, 1),
+  auto res3 = tileSectorArray.tileEachResult(fixture.root().workers(), RectI(-10, -10, 1, 1),
       [](Vec2I const& pos, int tile) -> int {
         if (pos[1] < 0)
           return tile == -1;
@@ -109,4 +111,4 @@ TEST(TileSectorArrayTest, All) {
 
   EXPECT_TRUE(res3.size() == res3comp.size());
   res3.forEach([](Array2S const&, int elem) { EXPECT_TRUE(elem == 1); });
-}
+});

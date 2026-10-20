@@ -99,9 +99,11 @@ extern EnumMap<Rarity> const RarityNames;
 // distance (one tile).
 inline constexpr unsigned TilePixels = 8;
 
-extern float GlobalTimescale;
-extern float GlobalTimestep;
-extern float ServerGlobalTimestep;
+struct GameTiming {
+  float timescale = 1.0f;
+  float timestep = 1.0f / 60.0f;
+  float serverTimestep = 1.0f / 60.0f;
+};
 inline constexpr float SystemWorldTimestep = 1.0f / 20.0f;
 
 inline constexpr std::size_t WorldSectorSize = 32;
@@ -219,9 +221,7 @@ export namespace Star {
   using ::Star::Rarity;
   using ::Star::RarityNames;
   using ::Star::TilePixels;
-  using ::Star::GlobalTimescale;
-  using ::Star::GlobalTimestep;
-  using ::Star::ServerGlobalTimestep;
+  using ::Star::GameTiming;
   using ::Star::SystemWorldTimestep;
   using ::Star::WorldSectorSize;
   using ::Star::EntityId;

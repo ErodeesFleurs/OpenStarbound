@@ -14,7 +14,16 @@ namespace Star {
 template <typename BaseNetElement>
 class NetElementTop : public BaseNetElement {
 public:
-  NetElementTop();
+  NetElementTop() requires std::default_initializable<BaseNetElement>;
+
+  template <typename... Params>
+    requires (sizeof...(Params) > 0
+        && std::constructible_from<BaseNetElement, Params...>
+        && (!std::same_as<std::remove_cvref_t<Params>, NetElementTop> && ...))
+  explicit NetElementTop(Params&&... params)
+    : BaseNetElement(std::forward<Params>(params)...) {
+    BaseNetElement::initNetVersion(&m_netVersion);
+  }
 
   // Writes the state update to the given DataStream then returns the version
   // code that should be passed to the next call to writeState.  If
@@ -43,7 +52,7 @@ private:
 };
 
 template <typename BaseNetElement>
-NetElementTop<BaseNetElement>::NetElementTop() {
+NetElementTop<BaseNetElement>::NetElementTop() requires std::default_initializable<BaseNetElement> {
   BaseNetElement::initNetVersion(&m_netVersion);
 }
 

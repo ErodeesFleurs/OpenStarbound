@@ -56,7 +56,7 @@ class CanvasWidget;
 
 class Chat : public BaseScriptPane {
 public:
-  Chat(std::shared_ptr<UniverseClient> client, Json const&);
+  Chat(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, Json const&);
 
   void startChat();
   void startCommand();

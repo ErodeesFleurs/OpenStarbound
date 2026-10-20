@@ -69,10 +69,11 @@ import star.net_element_basic_fields;
 import star.net_element_float_fields;
 
 namespace Star {
+class Root;
 
 class ContainerObject : public Object, public virtual ContainerEntity {
 public:
-  ContainerObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters);
+  ContainerObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters);
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
 

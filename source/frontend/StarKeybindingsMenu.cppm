@@ -44,7 +44,7 @@ class ListWidget;
 
 class KeybindingsMenu : public Pane {
 public:
-  KeybindingsMenu();
+  KeybindingsMenu(GuiContext& guiContext);
 
   // We need to handle our own Esc dismissal
   KeyboardCaptureMode keyboardCaptureMode() const override;

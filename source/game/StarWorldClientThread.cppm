@@ -105,6 +105,7 @@ import star.game_timers;
 import star.world_client;
 
 namespace Star {
+class Root;
 
 class UniverseClient;
 
@@ -119,7 +120,7 @@ public:
 
   typedef std::function<void(WorldClientThread*, WorldClient*)> WorldClientAction;
 
-  WorldClientThread(ClientSubWorldId subWorldId, UniverseClient* universe);
+  WorldClientThread(Root& root, ClientSubWorldId subWorldId, UniverseClient* universe);
   ~WorldClientThread();
 
   ClientSubWorldId subWorldId() const;

@@ -118,7 +118,7 @@ import star.light_source;
 import star.array;
 namespace Star {
 
-ArmorWearer::ArmorWearer() : m_lastNude(true) {
+ArmorWearer::ArmorWearer(Root& root) : m_root(root), m_lastNude(true) {
   for (std::size_t i = 0; i != m_armors.size(); ++i) {
     auto& armor = m_armors[i];
     armor.isCosmetic = i >= 4;
@@ -260,7 +260,7 @@ Json ArmorWearer::diskStore() const {
   auto save = [&](std::uint8_t slot, String const& id) {
     auto& armor = m_armors[slot];
     if (armor.item)
-      res[id] = armor.item->descriptor().diskStore();
+      res[id] = armor.item->descriptor().diskStore(*m_root.versioningDatabase());
   };
 
   save(0, "headItem");
@@ -279,7 +279,7 @@ Json ArmorWearer::diskStore() const {
 }
 
 void ArmorWearer::diskLoad(Json const& diskStore) {
-  auto itemDb = Root::singleton().itemDatabase();
+  auto itemDb = m_root.itemDatabase();
   auto load = [&](std::uint8_t slot, String const& id) {
     if (auto item = as<ArmorItem>(itemDb->diskLoad(diskStore.get(id, {}))))
       setItem(slot, item);
@@ -425,7 +425,7 @@ ItemDescriptor ArmorWearer::cosmeticItemDescriptor(std::uint8_t slot) const {
 }
 
 void ArmorWearer::netElementsNeedLoad(bool) {
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto itemDatabase = m_root.itemDatabase();
 
   for (auto& armor : m_armors) {
     if (armor.netState.pullUpdated())
@@ -434,7 +434,7 @@ void ArmorWearer::netElementsNeedLoad(bool) {
 }
 
 void ArmorWearer::netElementsNeedStore() {
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto itemDatabase = m_root.itemDatabase();
   for (auto& armor : m_armors) {
     if (armor.needsStore) {
       armor.netState.set(armor.visible ? itemSafeDescriptor(armor.item) : ItemDescriptor());

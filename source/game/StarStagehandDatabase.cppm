@@ -7,6 +7,8 @@ import star.json;
 
 namespace Star {
 
+class Root;
+
 struct StagehandDatabaseExceptionTag {
   static constexpr char const* name() { return "StagehandDatabaseException"; }
 };
@@ -16,11 +18,12 @@ class Stagehand;
 
 class StagehandDatabase {
 public:
-  StagehandDatabase();
+  explicit StagehandDatabase(Root& root);
 
   std::shared_ptr<Stagehand> createStagehand(String const& stagehandType, Json const& extraConfig = Json()) const;
 
 private:
+  Root& m_root;
   StringMap<Json> m_stagehandTypes;
 };
 

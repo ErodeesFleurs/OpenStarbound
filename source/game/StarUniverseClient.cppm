@@ -126,6 +126,7 @@ import star.universe;
 
 namespace Star {
 
+class Root;
 class WorldTemplate;
 class ClientContext;
 class Sky;
@@ -148,8 +149,10 @@ class UniverseClient : public Universe {
 public:
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
   
-  UniverseClient(std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Statistics> statistics, String const& customWorldStorageDir);
+  UniverseClient(Root& root, std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Statistics> statistics, String const& customWorldStorageDir);
   ~UniverseClient() override;
+
+  Root& root() const;
 
   void setMainPlayer(std::shared_ptr<Player> player);
   std::shared_ptr<Player> mainPlayer() const;
@@ -258,6 +261,8 @@ private:
   void handlePackets(List<std::shared_ptr<Packet>> const& packets);
   void reset();
   
+  Root& m_root;
+
   mutable RecursiveMutex m_mutex;
 
   std::shared_ptr<PlayerStorage> m_playerStorage;

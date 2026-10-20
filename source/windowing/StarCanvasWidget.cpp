@@ -61,7 +61,7 @@ import star.math_common;
 import star.algorithm;
 namespace Star {
 
-CanvasWidget::CanvasWidget() {
+CanvasWidget::CanvasWidget(GuiContext& context) : Widget(context) {
   m_ignoreInterfaceScale = m_captureKeyboard = m_captureMouse = false;
 }
 
@@ -157,7 +157,7 @@ bool CanvasWidget::sendEvent(InputEvent const& event) {
   if (!m_visible)
     return false;
 
-  auto& context = GuiContext::singleton();
+  auto& context = (*this->context());
   auto interfaceScale = m_ignoreInterfaceScale ? 1 : context.interfaceScale();
   if (auto mouseButtonDown = event.ptr<MouseButtonDownEvent>()) {
     if (inMember(*context.mousePosition(event, interfaceScale)) && m_captureMouse) {
@@ -220,7 +220,7 @@ void CanvasWidget::renderImpl() {
 }
 
 void CanvasWidget::renderImage(Vec2F const& renderingOffset, String const& texName, Vec2F const& position, float scale, Vec4B const& color, bool centered) {
-  auto& context = GuiContext::singleton();
+  auto& context = (*this->context());
   auto texSize = Vec2F(context.textureSize(texName));
   Vec2F pos = centered ? (position - scale * texSize / 2.0f) : position;
 
@@ -234,7 +234,7 @@ void CanvasWidget::renderImage(Vec2F const& renderingOffset, String const& texNa
 }
 
 void CanvasWidget::renderImageRect(Vec2F const& renderingOffset, String const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color) {
-  auto& context = GuiContext::singleton();
+  auto& context = (*this->context());
   if (m_ignoreInterfaceScale)
     context.drawQuad(texName, texCoords, screenCoords.translated(renderingOffset), color);
   else
@@ -242,7 +242,7 @@ void CanvasWidget::renderImageRect(Vec2F const& renderingOffset, String const& t
 }
 
 void CanvasWidget::renderDrawable(Vec2F const& renderingOffset, Drawable drawable, Vec2F const& screenPos) {
-  auto& context = GuiContext::singleton();
+  auto& context = (*this->context());
   if (m_ignoreInterfaceScale)
     context.drawDrawable(std::move(drawable), renderingOffset + screenPos, 1);
   else {
@@ -252,7 +252,7 @@ void CanvasWidget::renderDrawable(Vec2F const& renderingOffset, Drawable drawabl
 }
 
 void CanvasWidget::renderTiledImage(Vec2F const& renderingOffset, String const& texName, float textureScale, Vec2D const& offset, RectF const& screenCoords, Vec4B const& color) {
-  auto& context = GuiContext::singleton();
+  auto& context = (*this->context());
 
   Vec2F texSize = Vec2F(context.textureSize(texName));
   Vec2F texScaledSize = texSize * textureScale;
@@ -284,7 +284,7 @@ void CanvasWidget::renderTiledImage(Vec2F const& renderingOffset, String const& 
 }
 
 void CanvasWidget::renderLine(Vec2F const& renderingOffset, Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth) {
-  auto& context = GuiContext::singleton();
+  auto& context = (*this->context());
   if (m_ignoreInterfaceScale)
     context.drawLine(renderingOffset + begin, renderingOffset + end, color, lineWidth);
   else {
@@ -296,7 +296,7 @@ void CanvasWidget::renderLine(Vec2F const& renderingOffset, Vec2F const& begin, 
 }
 
 void CanvasWidget::renderRect(Vec2F const& renderingOffset, RectF const& coords, Vec4B const& color) {
-  auto& context = GuiContext::singleton();
+  auto& context = (*this->context());
 
   if (m_ignoreInterfaceScale)
     context.drawQuad(coords.translated(renderingOffset), color);
@@ -305,7 +305,7 @@ void CanvasWidget::renderRect(Vec2F const& renderingOffset, RectF const& coords,
 }
 
 void CanvasWidget::renderPoly(Vec2F const& renderingOffset, PolyF poly, Vec4B const& color, float lineWidth) {
-  auto& context = GuiContext::singleton();
+  auto& context = (*this->context());
   poly.translate(renderingOffset);
   if (m_ignoreInterfaceScale)
     context.drawPolyLines(poly, color, lineWidth);
@@ -314,7 +314,7 @@ void CanvasWidget::renderPoly(Vec2F const& renderingOffset, PolyF poly, Vec4B co
 }
 
 void CanvasWidget::renderTriangles(Vec2F const& renderingOffset, List<std::tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color) {
-  auto& context = GuiContext::singleton();
+  auto& context = (*this->context());
   auto translated = triangles.transformed([&renderingOffset](std::tuple<Vec2F, Vec2F, Vec2F> const& poly) {
       return std::tuple<Vec2F, Vec2F, Vec2F>(std::get<0>(poly) + renderingOffset,
         std::get<1>(poly) + renderingOffset,
@@ -327,7 +327,7 @@ void CanvasWidget::renderTriangles(Vec2F const& renderingOffset, List<std::tuple
 }
 
 void CanvasWidget::renderText(Vec2F const& renderingOffset, String const& s, TextPositioning const& position, TextStyle const& style) {
-  auto& context = GuiContext::singleton();
+  auto& context = (*this->context());
   context.setTextStyle(style, m_ignoreInterfaceScale ? 1 : context.interfaceScale());
 
   TextPositioning translatedPosition = position;

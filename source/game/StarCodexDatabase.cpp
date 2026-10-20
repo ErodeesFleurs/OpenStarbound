@@ -22,16 +22,12 @@ import star.version;
 import star.codex;
 import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
-import star.root;
 
 import star.codex_database;
 
 namespace Star {
 
-CodexDatabase::CodexDatabase() {
-  auto assets = Root::singleton().assets();
+CodexDatabase::CodexDatabase(std::shared_ptr<Assets const> assets) {
   auto& files = assets->scanExtension("codex");
   auto codexConfig = assets->json("/codex.config");
   assets->queueJsons(files);

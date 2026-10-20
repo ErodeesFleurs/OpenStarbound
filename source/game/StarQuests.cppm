@@ -33,6 +33,8 @@ import star.system_world;
 
 namespace Star {
 
+class Root;
+
 class Player;
 class UniverseClient;
 class QuestTemplate;
@@ -55,9 +57,9 @@ extern EnumMap<QuestState> const QuestStateNames;
 
 class Quest {
 public:
-  Quest(QuestArcDescriptor const& questArc, std::size_t arcPos, Player* player);
+  Quest(Root& root, QuestArcDescriptor const& questArc, std::size_t arcPos, Player* player);
 
-  Quest(Json const& diskStore);
+  Quest(Root& root, Json const& diskStore);
   Json diskStore() const;
 
   std::shared_ptr<QuestTemplate> getTemplate() const;
@@ -150,6 +152,7 @@ public:
   bool hideCrossServer() const;
 
 private:
+  Root& m_root;
   struct DisplayParameters {
     bool ephemeral;
     bool showInLog;
@@ -215,7 +218,7 @@ private:
 // in with examples. Doesn't necessarily make a valid quest that can be completed, since
 // its purpose is for previewing dialogs only.
 std::shared_ptr<Quest> createPreviewQuest(
-    String const& templateId, String const& position, String const& questGiverSpecies, Player* player);
+    Root& root, String const& templateId, String const& position, String const& questGiverSpecies, Player* player);
 }
 
 export module star.quests;

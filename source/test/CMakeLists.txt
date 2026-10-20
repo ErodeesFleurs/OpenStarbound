@@ -77,6 +77,7 @@ set (star_game_tests_SOURCES
       game_tests_main.cpp
 
       StarTestUniverse.cpp
+      StarGameTest.cpp
       assets_test.cpp
       function_test.cpp
       item_test.cpp
@@ -97,7 +98,7 @@ set (star_game_tests_SOURCES
 add_executable (game_tests
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_game>
   ${star_game_tests_SOURCES})
-target_sources (game_tests PRIVATE FILE_SET CXX_MODULES FILES StarTestUniverse.cppm)
+target_sources (game_tests PRIVATE FILE_SET CXX_MODULES FILES StarTestUniverse.cppm StarGameTest.cppm)
 target_include_directories (game_tests PRIVATE
     ${STAR_EXTERN_INCLUDES}
     ${STAR_CORE_INCLUDES}

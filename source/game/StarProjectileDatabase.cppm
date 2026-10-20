@@ -36,6 +36,7 @@ import star.status_types;
 
 namespace Star {
 
+class Root;
 class Projectile;
 
 struct ProjectileDatabaseExceptionTag {
@@ -131,7 +132,7 @@ struct ProjectileConfig {
 
 class ProjectileDatabase {
 public:
-  ProjectileDatabase();
+  explicit ProjectileDatabase(Root& root);
 
   StringList allProjectileTypes() const;
   bool isProjectile(String const& typeName) const;
@@ -146,6 +147,8 @@ public:
 
 private:
   std::shared_ptr<ProjectileConfig> readConfig(String const& path);
+
+  Root& m_root;
 
   StringMap<std::shared_ptr<ProjectileConfig>> m_configs;
 };

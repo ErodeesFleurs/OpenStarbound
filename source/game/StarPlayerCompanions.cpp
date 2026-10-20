@@ -85,6 +85,7 @@ import star.lua_actor_movement_component;
 import star.lua_animation_component;
 import star.radio_message_database;
 import star.player;
+import star.root;
 
 import star.player_lua_bindings;
 import star.entity_lua_bindings;
@@ -94,8 +95,8 @@ import star.status_controller_lua_bindings;
 import star.algorithm;
 namespace Star {
 
-Companion::Companion(Json const& json) : m_json(json) {
-  m_portrait = json.getArray("portrait", JsonArray{}).transformed(construct<Drawable>());
+Companion::Companion(Root& root, Json const& json) : m_json(json) {
+  m_portrait = json.getArray("portrait", JsonArray{}).transformed([&root](Json const& drawable) { return Drawable(*root.imageMetadataDatabase(), drawable); });
 }
 
 Json Companion::toJson() const {
@@ -139,13 +140,13 @@ Maybe<float> Companion::stat(String const& statName) const {
   return {};
 }
 
-PlayerCompanions::PlayerCompanions(Json const& config) : m_config(config) {}
+PlayerCompanions::PlayerCompanions(Root& root, Json const& config) : m_root(root), m_config(config), m_scriptComponent(root) {}
 
 void PlayerCompanions::diskLoad(Json const& diskStore) {
   m_scriptComponent.setScriptStorage(diskStore.getObject("scriptStorage", JsonObject{}));
   m_companions = jsonToMapV<StringMap<List<std::shared_ptr<Companion>>>>(diskStore.getObject("companions", JsonObject{}),
-      [](Json const& companions) {
-        return companions.toArray().transformed([](Json const& json) { return std::make_shared<Companion>(json); });
+      [this](Json const& companions) {
+        return companions.toArray().transformed([this](Json const& json) { return std::make_shared<Companion>(m_root, json); });
       });
 }
 
@@ -170,7 +171,7 @@ void PlayerCompanions::init(Entity* player, World* world) {
   m_scriptComponent.setUpdateDelta(m_config.getInt("scriptDelta", 10));
 
   m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(player));
-  m_scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(as<Player>(player)));
+  m_scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_root, as<Player>(player)));
   m_scriptComponent.addCallbacks(
       "status", LuaBindings::makeStatusControllerCallbacks(as<Player>(player)->statusController()));
   m_scriptComponent.addCallbacks("playerCompanions", makeCompanionsCallbacks());
@@ -213,7 +214,7 @@ LuaCallbacks PlayerCompanions::makeCompanionsCallbacks() {
       });
   callbacks.registerCallback("setCompanions",
       [this](String const& category, JsonArray const& companions) {
-        m_companions[category] = companions.transformed([](Json const& json) { return std::make_shared<Companion>(json); });
+        m_companions[category] = companions.transformed([this](Json const& json) { return std::make_shared<Companion>(m_root, json); });
       });
 
   return callbacks;

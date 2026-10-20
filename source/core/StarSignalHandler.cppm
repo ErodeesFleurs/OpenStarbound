@@ -4,13 +4,13 @@ module;
 #include <dbghelp.h>
 #else
 #include <signal.h>
+#include <unistd.h>
 #endif
 import std;
 import star.format;
 
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
 import star.string;
-import star.logging;
 #endif
 
 export module star.signal_handler;
@@ -19,12 +19,15 @@ export namespace Star {
 
 struct SignalHandlerImpl;
 
-// Singleton signal handler that registers handlers for segfault, fpe,
-// illegal instructions etc as well as non-fatal interrupts.
+// Process-owned registration for fatal signals and non-fatal interrupts.
+// Only the native callbacks' minimal bridge state is process-wide.
 class SignalHandler {
 public:
   SignalHandler();
   ~SignalHandler();
+
+  SignalHandler(SignalHandler const&) = delete;
+  SignalHandler& operator=(SignalHandler const&) = delete;
 
   // If enabled, will catch segfault, fpe, and illegal instructions and output
   // error information before dying.
@@ -39,9 +42,7 @@ public:
   bool interruptCaught() const;
 
 private:
-  friend SignalHandlerImpl;
-
-  static std::unique_ptr<SignalHandlerImpl> s_singleton;
+  std::unique_ptr<SignalHandlerImpl> m_impl;
 };
 
 }
@@ -73,16 +74,26 @@ DWORD WINAPI writeMiniDump(void* ExceptionInfo) {
   return 0;
 }
 
-String g_sehMessage;
+// Native callbacks and the resumed trampoline may outlive registration removal.
+// Retain only the first fatal exception's native data for the process lifetime;
+// no callback borrows the SignalHandler, its Impl, or application services.
+struct FatalSignalBridge {
+  std::atomic_flag claimed{};
+  EXCEPTION_RECORD exceptionRecord{};
+  char const* message = nullptr;
+};
+static_assert(std::is_trivially_destructible_v<FatalSignalBridge>);
+static constinit FatalSignalBridge fatalSignalBridge;
+static std::atomic<bool> interruptSignalPending{false};
+static_assert(std::atomic<bool>::is_always_lock_free);
 
 struct SignalHandlerImpl {
-  bool handlingFatal;
-  bool handlingInterrupt;
-  bool interrupted;
+  bool handlingFatal = false;
+  bool handlingInterrupt = false;
+  bool interrupted = false;
+  // All callback-accessed state has process lifetime, not this object's lifetime.
 
-  PVOID handler;
-
-  SignalHandlerImpl() : handlingFatal(false), handlingInterrupt(false), interrupted(false) {}
+  PVOID handler = nullptr;
 
   ~SignalHandlerImpl() {
     setHandleFatal(false);
@@ -90,39 +101,43 @@ struct SignalHandlerImpl {
   }
 
   void setHandleFatal(bool b) {
-    handlingFatal = b;
+    if (handlingFatal == b)
+      return;
 
-    if (handler) {
+    if (b) {
+      handler = AddVectoredExceptionHandler(1, vectoredExceptionHandler);
+      if (!handler) {
+        throw StarException("Could not register fatal exception handler");
+      }
+      handlingFatal = true;
+    } else {
       RemoveVectoredExceptionHandler(handler);
       handler = nullptr;
+      handlingFatal = false;
     }
-
-    if (handlingFatal)
-      handler = AddVectoredExceptionHandler(1, vectoredExceptionHandler);
   }
 
   void setHandleInterrupt(bool b) {
-    handlingInterrupt = b;
-
-    SetConsoleCtrlHandler(nullptr, false);
-
-    if (handlingInterrupt)
-      SetConsoleCtrlHandler((PHANDLER_ROUTINE)consoleCtrlHandler, true);
+    if (handlingInterrupt == b)
+      return;
+    if (b) {
+      interruptSignalPending.store(false);
+      if (!SetConsoleCtrlHandler(consoleCtrlHandler, true))
+        throw StarException("Could not register console interrupt handler");
+      handlingInterrupt = true;
+    } else {
+      SetConsoleCtrlHandler(consoleCtrlHandler, false);
+      interrupted = interrupted || interruptSignalPending.load();
+      handlingInterrupt = false;
+    }
   }
 
   static void sehTrampoline() {
-    fatalError(g_sehMessage.utf8Ptr(), true);
-  }
-
-  static void handleFatalError(String const& msg, PEXCEPTION_POINTERS ExceptionInfo) {
-    static bool dumpWritten = false;
-    if (!dumpWritten) {
-      dumpWritten = true;
-      writeMiniDump(ExceptionInfo);
-    }
-    if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
+    auto const& exception = fatalSignalBridge.exceptionRecord;
+    String message;
+    if (exception.ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
       String mode;
-      DWORD modeFlag = ExceptionInfo->ExceptionRecord->ExceptionInformation[0];
+      auto modeFlag = exception.ExceptionInformation[0];
       if (modeFlag == 0)
         mode = "Read";
       else if (modeFlag == 1)
@@ -131,19 +146,31 @@ struct SignalHandlerImpl {
         mode = "Execute";
       else
         mode = strf("Mode({})", modeFlag);
-      g_sehMessage = strf("Access violation detected at {} ({} of address {})",
-          ExceptionInfo->ExceptionRecord->ExceptionAddress,
+      message = strf("Access violation detected at {} ({} of address {})",
+          exception.ExceptionAddress,
           mode,
-          (PVOID)ExceptionInfo->ExceptionRecord->ExceptionInformation[1]);
+          (PVOID)exception.ExceptionInformation[1]);
     } else {
-      g_sehMessage = msg;
-      g_sehMessage = strf("{} (0x{:08X} @ {})",
-          g_sehMessage,
-          ExceptionInfo->ExceptionRecord->ExceptionCode,
-          ExceptionInfo->ExceptionRecord->ExceptionAddress);
-      for (DWORD i = 0; i < ExceptionInfo->ExceptionRecord->NumberParameters; i++)
-        g_sehMessage = strf("{} [{}]", g_sehMessage, (PVOID)ExceptionInfo->ExceptionRecord->ExceptionInformation[i]);
+      message = strf("{} (0x{:08X} @ {})",
+          fatalSignalBridge.message,
+          exception.ExceptionCode,
+          exception.ExceptionAddress);
+      for (DWORD i = 0; i < exception.NumberParameters; i++)
+        message = strf("{} [{}]", message, (PVOID)exception.ExceptionInformation[i]);
     }
+    fatalError(message.utf8Ptr(), true);
+    TerminateProcess(GetCurrentProcess(), EXIT_FAILURE);
+  }
+
+  static LONG handleFatalError(char const* message, PEXCEPTION_POINTERS ExceptionInfo) {
+    // Never replace a snapshot already consumed by a resumed trampoline. A
+    // concurrent or recursive fault continues through native exception dispatch.
+    if (fatalSignalBridge.claimed.test_and_set(std::memory_order_relaxed))
+      return EXCEPTION_CONTINUE_SEARCH;
+    fatalSignalBridge.exceptionRecord = *ExceptionInfo->ExceptionRecord;
+    fatalSignalBridge.exceptionRecord.ExceptionRecord = nullptr;
+    fatalSignalBridge.message = message;
+    writeMiniDump(ExceptionInfo);
 
 // setup a hijack into our own trampoline as if the failure actually was a
 // function call
@@ -166,23 +193,19 @@ struct SignalHandlerImpl {
     ExceptionInfo->ContextRecord->Esp = esp;
     ExceptionInfo->ContextRecord->Eip = (DWORD)&sehTrampoline;
 #endif
+    return EXCEPTION_CONTINUE_EXECUTION;
   }
 
   static LONG CALLBACK vectoredExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo) {
     LONG result = EXCEPTION_CONTINUE_SEARCH;
 
-    if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
-      handleFatalError("Stack overflow detected", ExceptionInfo);
-      result = EXCEPTION_CONTINUE_EXECUTION;
-    }
-    if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
-      handleFatalError("Access violation detected", ExceptionInfo);
-      result = EXCEPTION_CONTINUE_EXECUTION;
-    }
+    if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW)
+      return handleFatalError("Stack overflow detected", ExceptionInfo);
+    if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION)
+      return handleFatalError("Access violation detected", ExceptionInfo);
     if ((ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_ILLEGAL_INSTRUCTION)
         || (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_PRIV_INSTRUCTION)) {
-      handleFatalError("Illegal instruction encountered", ExceptionInfo);
-      result = EXCEPTION_CONTINUE_EXECUTION;
+      return handleFatalError("Illegal instruction encountered", ExceptionInfo);
     }
 
     if ((ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_FLT_DENORMAL_OPERAND)
@@ -193,18 +216,15 @@ struct SignalHandlerImpl {
         || (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_FLT_STACK_CHECK)
         || (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_FLT_UNDERFLOW)
             ) {
-      handleFatalError("Floating point exception", ExceptionInfo);
-      result = EXCEPTION_CONTINUE_EXECUTION;
+      return handleFatalError("Floating point exception", ExceptionInfo);
     }
 
     if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_INT_DIVIDE_BY_ZERO) {
-      handleFatalError("Division by zero", ExceptionInfo);
-      result = EXCEPTION_CONTINUE_EXECUTION;
+      return handleFatalError("Division by zero", ExceptionInfo);
     }
 
     if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_INT_OVERFLOW) {
-      handleFatalError("Integer overflow", ExceptionInfo);
-      result = EXCEPTION_CONTINUE_EXECUTION;
+      return handleFatalError("Integer overflow", ExceptionInfo);
     }
 
     if ((ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_DATATYPE_MISALIGNMENT)
@@ -213,28 +233,31 @@ struct SignalHandlerImpl {
         || (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_NONCONTINUABLE_EXCEPTION)
         || (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_INVALID_DISPOSITION)
         || (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_INVALID_HANDLE)) {
-      handleFatalError("Error occurred", ExceptionInfo);
-      result = EXCEPTION_CONTINUE_EXECUTION;
+      return handleFatalError("Error occurred", ExceptionInfo);
     }
 
     return result;
   }
 
   static BOOL WINAPI consoleCtrlHandler(DWORD) {
-    if (SignalHandler::s_singleton)
-      SignalHandler::s_singleton->interrupted = true;
+    interruptSignalPending.store(true);
     return true;
   }
 };
 
 #else
 
-struct SignalHandlerImpl {
-  bool handlingFatal;
-  bool handlingInterrupt;
-  bool interrupted;
+// The POSIX callback may only communicate through async-signal-safe state.
+static volatile sig_atomic_t interruptSignalPending = 0;
 
-  SignalHandlerImpl() : handlingFatal(false), handlingInterrupt(false), interrupted(false) {}
+struct SignalHandlerImpl {
+  bool handlingFatal = false;
+  bool handlingInterrupt = false;
+  bool interrupted = false;
+  struct sigaction previousFatal[4]{};
+  struct sigaction previousInterrupt{};
+
+  static constexpr int FatalSignals[] = {SIGSEGV, SIGILL, SIGFPE, SIGBUS};
 
   ~SignalHandlerImpl() {
     setHandleFatal(false);
@@ -242,78 +265,95 @@ struct SignalHandlerImpl {
   }
 
   void setHandleFatal(bool b) {
-    handlingFatal = b;
-    if (handlingFatal) {
-      std::signal(SIGSEGV, handleFatal);
-      std::signal(SIGILL, handleFatal);
-      std::signal(SIGFPE, handleFatal);
-      std::signal(SIGBUS, handleFatal);
+    if (handlingFatal == b)
+      return;
+    if (b) {
+      struct sigaction action{};
+      action.sa_handler = handleFatal;
+      sigemptyset(&action.sa_mask);
+      unsigned installed = 0;
+      for (int signal : FatalSignals) {
+        if (sigaction(signal, &action, &previousFatal[installed]) != 0) {
+          for (unsigned i = 0; i < installed; ++i)
+            sigaction(FatalSignals[i], &previousFatal[i], nullptr);
+          throw StarException("Could not register fatal signal handler");
+        }
+        ++installed;
+      }
     } else {
-      std::signal(SIGSEGV, SIG_DFL);
-      std::signal(SIGILL, SIG_DFL);
-      std::signal(SIGFPE, SIG_DFL);
-      std::signal(SIGBUS, SIG_DFL);
+      for (unsigned i = 0; i < std::size(FatalSignals); ++i)
+        sigaction(FatalSignals[i], &previousFatal[i], nullptr);
     }
+    handlingFatal = b;
   }
 
   void setHandleInterrupt(bool b) {
+    if (handlingInterrupt == b)
+      return;
+    if (b) {
+      struct sigaction action{};
+      action.sa_handler = handleInterrupt;
+      sigemptyset(&action.sa_mask);
+      interruptSignalPending = 0;
+      if (sigaction(SIGINT, &action, &previousInterrupt) != 0)
+        throw StarException("Could not register interrupt signal handler");
+    } else {
+      sigaction(SIGINT, &previousInterrupt, nullptr);
+      interrupted = interrupted || interruptSignalPending != 0;
+    }
     handlingInterrupt = b;
-    if (handlingInterrupt)
-      std::signal(SIGINT, handleInterrupt);
-    else
-      std::signal(SIGINT, SIG_DFL);
   }
 
   static void handleFatal(int signum) {
-    if (signum == SIGSEGV)
-      fatalError("Segfault Encountered!", true);
-    else if (signum == SIGILL)
-      fatalError("Illegal Instruction Encountered!", true);
-    else if (signum == SIGFPE)
-      fatalError("Floating Point Exception Encountered!", true);
-    else if (signum == SIGBUS)
-      fatalError("Bus Error Encountered!", true);
+    // Logging, formatting and stack unwinding are not async-signal-safe.
+    char const* message;
+    std::size_t length;
+    if (signum == SIGSEGV) {
+      message = "Segfault Encountered!\n";
+      length = sizeof("Segfault Encountered!\n") - 1;
+    } else if (signum == SIGILL) {
+      message = "Illegal Instruction Encountered!\n";
+      length = sizeof("Illegal Instruction Encountered!\n") - 1;
+    } else if (signum == SIGFPE) {
+      message = "Floating Point Exception Encountered!\n";
+      length = sizeof("Floating Point Exception Encountered!\n") - 1;
+    } else {
+      message = "Bus Error Encountered!\n";
+      length = sizeof("Bus Error Encountered!\n") - 1;
+    }
+    (void)::write(STDERR_FILENO, message, length);
+    std::_Exit(128 + signum);
   }
 
   static void handleInterrupt(int) {
-    if (SignalHandler::s_singleton)
-      SignalHandler::s_singleton->interrupted = true;
+    interruptSignalPending = 1;
   }
 };
 
 #endif
 
-std::unique_ptr<SignalHandlerImpl> SignalHandler::s_singleton;
+SignalHandler::SignalHandler() : m_impl(std::make_unique<SignalHandlerImpl>()) {}
 
-SignalHandler::SignalHandler() {
-  if (s_singleton)
-    throw StarException("Singleton SignalHandler has been constructed twice!");
-
-  s_singleton = std::make_unique<SignalHandlerImpl>();
-}
-
-SignalHandler::~SignalHandler() {
-  s_singleton.reset();
-}
+SignalHandler::~SignalHandler() = default;
 
 void SignalHandler::setHandleFatal(bool handleFatal) {
-  s_singleton->setHandleFatal(handleFatal);
+  m_impl->setHandleFatal(handleFatal);
 }
 
 bool SignalHandler::handlingFatal() const {
-  return s_singleton->handlingFatal;
+  return m_impl->handlingFatal;
 }
 
 void SignalHandler::setHandleInterrupt(bool handleInterrupt) {
-  s_singleton->setHandleInterrupt(handleInterrupt);
+  m_impl->setHandleInterrupt(handleInterrupt);
 }
 
 bool SignalHandler::handlingInterrupt() const {
-  return s_singleton->handlingInterrupt;
+  return m_impl->handlingInterrupt;
 }
 
 bool SignalHandler::interruptCaught() const {
-  return s_singleton->interrupted;
+  return m_impl->interrupted || (m_impl->handlingInterrupt && interruptSignalPending);
 }
 
 }

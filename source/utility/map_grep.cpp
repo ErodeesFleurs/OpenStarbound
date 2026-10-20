@@ -1,4 +1,5 @@
 import star.json;
+import star.native_runtime;
 import star.maybe;
 import star.file;
 import star.logging;
@@ -93,8 +94,8 @@ void grepObjectGroup(SearchParameters const& search, std::shared_ptr<::Star::Dun
   }
 }
 
-void grepMap(SearchParameters const& search, String file) {
-  auto map = std::make_shared<TMXMap>(Json::parseJson(File::readFileString(file)));
+void grepMap(Root& root, SearchParameters const& search, String file) {
+  auto map = std::make_shared<TMXMap>(root, Json::parseJson(File::readFileString(file)));
 
   for (auto tileLayer : map->tileLayers())
     grepTileLayer(search, map, tileLayer, [&](String const& tileName, Vec2I const& pos) {
@@ -107,28 +108,28 @@ void grepMap(SearchParameters const& search, String file) {
       });
 }
 
-void grepDirectory(SearchParameters const& search, String directory) {
+void grepDirectory(Root& root, SearchParameters const& search, String directory) {
   for (std::pair<String, bool> entry : File::dirList(directory)) {
     String entryPath = File::relativeTo(directory, entry.first);
     // Never follow a symlinked directory: it can point outside of the tree, or
     // at one of its own parents (which would recurse until the OS errors out).
     if (entry.second && File::isSymlink(entryPath)) {
-      Logger::warn("map_grep: Not descending into '{}' because it is a symlink", entryPath);
+      root.logger().warn("map_grep: Not descending into '{}' because it is a symlink", entryPath);
       continue;
     }
 
     if (entry.second)
-      grepDirectory(search, entryPath);
+      grepDirectory(root, search, entryPath);
     else if (entry.first.endsWith(MapFilenameSuffix))
-      grepMap(search, entryPath);
+      grepMap(root, search, entryPath);
   }
 }
 
-void grepPath(SearchParameters const& search, String path) {
+void grepPath(Root& root, SearchParameters const& search, String path) {
   if (File::isFile(path)) {
-    grepMap(search, path);
+    grepMap(root, search, path);
   } else if (File::isDirectory(path)) {
-    grepDirectory(search, path);
+    grepDirectory(root, search, path);
   }
 }
 
@@ -141,6 +142,7 @@ MatchCriteria parseMatchCriteria(String const& criteriaStr) {
 }
 
 int main(int argc, char* argv[]) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   try {
     RootLoader rootLoader({{}, {}, {}, LogLevel::Warn, false, {}});
     rootLoader.setSummary("Search Tiled map files for specific materials or objects.");
@@ -155,7 +157,7 @@ int main(int argc, char* argv[]) {
     StringList files = options.arguments.slice(1);
 
     for (auto file : files)
-      grepPath(search, file);
+      grepPath(*root, search, file);
 
     return 0;
   } catch (std::exception const& e) {

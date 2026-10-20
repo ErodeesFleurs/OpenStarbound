@@ -7,6 +7,7 @@ import star.json_rpc;
 import star.byte_array;
 import star.data_stream_devices;
 import star.list;
+import star.logging;
 
 #include "gtest/gtest.h"
 
@@ -267,7 +268,8 @@ TEST(RpcPromiseTest, EmptyHandlesRetainBadFunctionCallContract) {
 }
 
 TEST(JsonRpcTest, RemoteFailureStillFulfillsNull) {
-  JsonRpc sender;
+  Logger logger;
+  JsonRpc sender(logger);
   auto response = sender.invokeRemote("remote", JsonArray{1, 2});
   EXPECT_FALSE(response.finished());
   DataStreamBuffer requestBuffer(sender.send());
@@ -287,8 +289,9 @@ TEST(JsonRpcTest, RemoteFailureStillFulfillsNull) {
 }
 
 TEST(JsonRpcTest, SuccessfulTransportPreservesStructuredResult) {
-  JsonRpc sender;
-  JsonRpc receiver;
+  Logger logger;
+  JsonRpc sender(logger);
+  JsonRpc receiver(logger);
   receiver.registerHandler("echo", [](Json const& arguments) { return arguments; });
   Json arguments = JsonObject{{"message", "round trip"}, {"values", JsonArray{1, false, Json()}}};
   auto response = sender.invokeRemote("echo", arguments);

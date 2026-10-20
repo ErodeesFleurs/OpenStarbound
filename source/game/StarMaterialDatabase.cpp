@@ -31,25 +31,21 @@ import star.material_render_profile;
 import star.item_descriptor;
 import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
-import star.root;
 
 import star.material_database;
 import star.particle_database;
+import star.image_metadata_database;
 
 import star.math_common;
 import star.algorithm;
 namespace Star {
 
-MaterialDatabase::MaterialDatabase() {
+MaterialDatabase::MaterialDatabase(std::shared_ptr<Assets const> const& assets, std::shared_ptr<ParticleDatabase const> const& pdb, ImageMetadataDatabase const& imageMetadata, Logger& logger, RandomService& random) : m_random(random) {
   m_metaModIndex = {
       {"metamod:none", NoModId},
       {"metamod:biome", BiomeModId},
       {"metamod:undergroundbiome", UndergroundBiomeModId}};
 
-  auto assets = Root::singleton().assets();
-  auto pdb = Root::singleton().particleDatabase();
 
   setMetaMaterial(EmptyMaterialId, MaterialDatabase::MetaMaterialInfo{"metamaterial:empty", EmptyMaterialId, CollisionKind::None, false});
   setMetaMaterial(NullMaterialId, MaterialDatabase::MetaMaterialInfo{"metamaterial:null", NullMaterialId, CollisionKind::Block, true});
@@ -68,16 +64,16 @@ MaterialDatabase::MaterialDatabase() {
   for (auto metaMaterial : metaMaterialConfig.iterateArray()) {
     auto matName = "metamaterial:" + metaMaterial.getString("name");
     if (isMaterialName(matName)) {
-      Logger::info("Metamaterial '{}' has duplicate material name!", matName);
+      logger.info("Metamaterial '{}' has duplicate material name!", matName);
       continue;
     }
 
     MaterialId matId = metaMaterial.getUInt("materialId");
     if (isRealMaterial(matId) || matId >= FirstEngineMetaMaterialId) {
-      Logger::info("Material id {} for metamaterial '{}' does not fall within the valid range!", matId, matName);
+      logger.info("Material id {} for metamaterial '{}' does not fall within the valid range!", matId, matName);
       continue;
     } else if (containsMetaMaterial(matId)) {
-      Logger::info("Material id {} for metamaterial '{}' conflicts with another metamaterial id!", matId, matName);
+      logger.info("Material id {} for metamaterial '{}' conflicts with another metamaterial id!", matId, matName);
       continue;
     }
 
@@ -136,11 +132,11 @@ MaterialDatabase::MaterialDatabase() {
       if (matConfig.contains("renderTemplate")) {
         auto renderTemplate = assets->fetchJson(matConfig.get("renderTemplate"), file);
         auto renderParameters = matConfig.get("renderParameters");
-        material.materialRenderProfile = std::make_shared<MaterialRenderProfile>(parseMaterialRenderProfile(jsonMerge(renderTemplate, renderParameters), file));
+        material.materialRenderProfile = std::make_shared<MaterialRenderProfile>(parseMaterialRenderProfile(imageMetadata, jsonMerge(renderTemplate, renderParameters), file));
       }
 
       material.damageParameters =
-          TileDamageParameters(assets->fetchJson(matConfig.get("damageTable", "/tiles/defaultDamage.config")),
+          TileDamageParameters(*assets, assets->fetchJson(matConfig.get("damageTable", "/tiles/defaultDamage.config")),
               matConfig.optFloat("health"),
               matConfig.optUInt("requiredHarvestLevel"));
 
@@ -212,11 +208,11 @@ MaterialDatabase::MaterialDatabase() {
       if (modConfig.contains("renderTemplate")) {
         auto renderTemplate = assets->fetchJson(modConfig.get("renderTemplate"));
         auto renderParameters = modConfig.get("renderParameters");
-        mod.modRenderProfile = std::make_shared<MaterialRenderProfile>(parseMaterialRenderProfile(jsonMerge(renderTemplate, renderParameters), file));
+        mod.modRenderProfile = std::make_shared<MaterialRenderProfile>(parseMaterialRenderProfile(imageMetadata, jsonMerge(renderTemplate, renderParameters), file));
       }
 
       mod.damageParameters =
-          TileDamageParameters(assets->fetchJson(modConfig.get("damageTable", "/tiles/defaultDamage.config")),
+          TileDamageParameters(*assets, assets->fetchJson(modConfig.get("damageTable", "/tiles/defaultDamage.config")),
               modConfig.optFloat("health"),
               modConfig.optUInt("harvestLevel"));
 
@@ -486,13 +482,13 @@ String MaterialDatabase::miningSound(MaterialId materialId, ModId modId) const {
   if (isRealMod(modId)) {
     auto const& modInfo = getModInfo(modId);
     if (!modInfo->miningSounds.empty())
-      return Random::randValueFrom(modInfo->miningSounds);
+      return m_random.randValueFrom(modInfo->miningSounds);
   }
 
   if (isRealMaterial(materialId)) {
     auto const& matInfo = getMaterialInfo(materialId);
     if (!matInfo->miningSounds.empty())
-      return Random::randValueFrom(matInfo->miningSounds);
+      return m_random.randValueFrom(matInfo->miningSounds);
   }
 
   return String();

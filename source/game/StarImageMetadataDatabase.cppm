@@ -19,13 +19,15 @@ import star.ttl_cache;
 
 import star.vector;
 namespace Star {
+class Root;
+
 
 // Caches image size, image spaces, and nonEmptyRegion completely until a
 // reload, does not expire cached values in a TTL based way like Assets,
 // because they are expensive to compute and cheap to keep around.
 class ImageMetadataDatabase {
 public:
-  ImageMetadataDatabase();
+  explicit ImageMetadataDatabase(Root& root);
   Vec2U imageSize(AssetPath const& path) const;
   List<Vec2I> imageSpaces(AssetPath const& path, Vec2F position, float fillLimit, bool flip) const;
   RectU nonEmptyRegion(AssetPath const& path) const;
@@ -41,6 +43,7 @@ private:
   // Path, position, fillLimit, and flip
   typedef std::tuple<AssetPath, Vec2I, float, bool> SpacesEntry;
 
+  Root& m_root;
   mutable Mutex m_mutex;
   mutable HashTtlCache<AssetPath, Vec2U> m_sizeCache;
   mutable HashTtlCache<SpacesEntry, List<Vec2I>> m_spacesCache;

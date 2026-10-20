@@ -62,6 +62,7 @@ import star.net_element_system;
 
 import star.line;
 namespace Star {
+class Root;
 
 class World;
 class RenderCallback;
@@ -70,8 +71,8 @@ class AudioInstance;
 
 class Projectile : public virtual MobileEntity, public virtual ScriptedEntity, public virtual PhysicsEntity, public virtual StatusEffectEntity {
 public:
-  Projectile(std::shared_ptr<ProjectileConfig> const& config, Json const& parameters);
-  Projectile(std::shared_ptr<ProjectileConfig> const& config, DataStreamBuffer& netState, NetCompatibilityRules rules = {});
+  Projectile(Root& rootContext, std::shared_ptr<ProjectileConfig> const& config, Json const& parameters);
+  Projectile(Root& rootContext, std::shared_ptr<ProjectileConfig> const& config, DataStreamBuffer& netState, NetCompatibilityRules rules = {});
 
   ByteArray netStore(NetCompatibilityRules rules = {}) const;
 
@@ -165,7 +166,7 @@ private:
     NetElementBool enabled;
   };
 
-  static List<Particle> sparkBlock(World* world, Vec2I const& position, Vec2F const& damageSource);
+  static List<Particle> sparkBlock(Root& rootContext, World* world, Vec2I const& position, Vec2F const& damageSource);
 
   int getFrame() const;
   void setFrame(int frame);

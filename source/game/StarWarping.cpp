@@ -18,12 +18,29 @@ import star.lexical_cast;
 
 namespace Star {
 
-EnumMap<WarpMode> WarpModeNames {
+extern EnumMap<WarpMode> const WarpModeNames {
   {WarpMode::None, "None"},
   {WarpMode::BeamOnly, "BeamOnly"},
   {WarpMode::DeployOnly, "DeployOnly"},
   {WarpMode::BeamOrDeploy, "BeamOrDeploy"}
 };
+
+template <>
+ClientShipWorldId DataStream::read<ClientShipWorldId>() {
+  return ClientShipWorldId(read<Uuid>());
+}
+
+template <>
+ClientCustomWorldId DataStream::read<ClientCustomWorldId>() {
+  auto uuid = read<Uuid>();
+  auto name = read<String>();
+  return ClientCustomWorldId(std::move(uuid), std::move(name));
+}
+
+template <>
+WarpToPlayer DataStream::read<WarpToPlayer>() {
+  return WarpToPlayer(read<Uuid>());
+}
 
 InstanceWorldId::InstanceWorldId() {}
 
@@ -56,7 +73,6 @@ DataStream& operator<<(DataStream& ds, InstanceWorldId const& instanceWorldId) {
   return ds;
 }
 
-ClientCustomWorldId::ClientCustomWorldId() {}
 
 ClientCustomWorldId::ClientCustomWorldId(Uuid uuid, String name)
   : uuid(std::move(uuid)), name(std::move(name)) {}

@@ -118,6 +118,8 @@ class QuestManager;
 class InteractiveEntity;
 class PlayerUniverseMap;
 class UniverseClient;
+class Root;
+class Input;
 
 class Player :
   public virtual ToolUserEntity,
@@ -146,11 +148,15 @@ public:
   };
   static EnumMap<State> const StateNames;
 
-  Player(std::shared_ptr<PlayerConfig> config, Uuid uuid = Uuid());
-  Player(std::shared_ptr<PlayerConfig> config, ByteArray const& netStore, NetCompatibilityRules rules = {});
-  Player(std::shared_ptr<PlayerConfig> config, Json const& diskStore);
+  Player(Root& root, std::shared_ptr<PlayerConfig> config);
+  Player(Root& root, std::shared_ptr<PlayerConfig> config, Uuid uuid);
+  Player(Root& root, std::shared_ptr<PlayerConfig> config, ByteArray const& netStore, NetCompatibilityRules rules = {});
+  Player(Root& root, std::shared_ptr<PlayerConfig> config, Json const& diskStore);
 
   void diskLoad(Json const& diskStore);
+
+  Input* input() const override { return m_input; }
+  void setInput(Input* input) { m_input = input; }
 
   std::shared_ptr<ClientContext> clientContext() const;
   void setClientContext(std::shared_ptr<ClientContext> clientContext);
@@ -622,6 +628,7 @@ private:
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
   NetworkedAnimator::DynamicTarget m_humanoidDynamicTarget;
 
+  Input* m_input = nullptr;
   std::shared_ptr<PlayerConfig> m_config;
 
   NetElementTopGroup m_netGroup;

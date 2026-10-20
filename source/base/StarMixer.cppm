@@ -13,6 +13,8 @@ import star.bi_map;
 
 namespace Star {
 
+class Logger;
+
 class Mixer;
 
 struct RampedValue {
@@ -102,7 +104,7 @@ public:
   typedef std::function<void(std::int16_t* buffer, std::size_t frames, unsigned channels)> EffectFunction;
   typedef std::function<float(unsigned, Vec2F, float)> PositionalAttenuationFunction;
 
-  Mixer(unsigned sampleRate, unsigned channels);
+  Mixer(Logger& logger, unsigned sampleRate, unsigned channels);
 
   unsigned sampleRate() const;
   unsigned channels() const;
@@ -151,6 +153,7 @@ private:
     List<float> positionalChannelVolumes;
   };
 
+  Logger& m_logger;
   Mutex m_mutex;
   unsigned m_sampleRate;
   unsigned m_channels;

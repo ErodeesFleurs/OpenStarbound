@@ -7,6 +7,7 @@ import star.byte_array;
 
 import star.array;
 import star.data_stream;
+import star.random;
 
 namespace Star {
 
@@ -23,7 +24,10 @@ public:
   friend DataStream& operator<<(DataStream& ds, Uuid const& uuid);
   friend struct hash<Uuid>;
 
-  Uuid();
+  // An explicitly unfilled identity for wire staging, never identity generation.
+  static Uuid nil() { return Uuid(NilTag{}); }
+
+  explicit Uuid(RandomService& random);
   explicit Uuid(ByteArray const& bytes);
   explicit Uuid(String const& hex);
 
@@ -39,6 +43,9 @@ public:
   bool operator>=(Uuid const& u) const;
 
 private:
+  struct NilTag {};
+  explicit Uuid(NilTag) : m_data() {}
+
   Array<char, UuidSize> m_data;
 };
 
@@ -50,6 +57,10 @@ struct hash<Uuid> {
 DataStream& operator>>(DataStream& ds, Uuid& uuid);
 DataStream& operator<<(DataStream& ds, Uuid const& uuid);
 
+// Decode directly without generating a throwaway random identity.
+template <>
+Uuid DataStream::read<Uuid>();
+
 }
 
 export module star.uuid;
@@ -57,6 +68,13 @@ export module star.uuid;
 export namespace Star {
   template <>
   struct hash<Uuid>;
+}
+
+export extern "C++" {
+namespace Star {
+  template <>
+  Uuid DataStream::read<Uuid>();
+}
 }
 
 

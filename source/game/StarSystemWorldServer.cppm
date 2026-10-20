@@ -36,14 +36,16 @@ import star.system_world;
 
 namespace Star {
 
+class Root;
+
 struct Packet;
 
 class SystemWorldServer : public SystemWorld {
 public:
   // create new system world server
-  SystemWorldServer(Vec3I location, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase);
+  SystemWorldServer(Root& root, Vec3I location, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase);
   // load system world server from storage
-  SystemWorldServer(Json const& diskStore, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase);
+  SystemWorldServer(Root& root, Json const& diskStore, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase);
 
   void setClientDestination(ConnectionId const& clientId, SystemLocation const& destination);
 

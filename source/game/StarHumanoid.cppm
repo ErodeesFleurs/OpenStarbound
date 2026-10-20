@@ -37,6 +37,8 @@ import star.net_element_sync_group;
 import star.net_compatibility;
 import star.array;
 namespace Star {
+class Root;
+class ItemDatabase;
 
 // Required for renderDummy
 class ArmorItem;
@@ -152,16 +154,14 @@ public:
   };
   static EnumMap<State> const StateNames;
 
-  static bool& globalHeadRotation();
-
-  Humanoid();
-  Humanoid(Json const& config);
-  Humanoid(HumanoidIdentity const& identity, JsonObject parameters = JsonObject(), Json config = Json());
+  Humanoid(Root& root);
+  Humanoid(Root& root, Json const& config);
+  Humanoid(Root& root, HumanoidIdentity const& identity, JsonObject parameters = JsonObject(), Json config = Json(), ItemDatabase const* itemCatalog = nullptr);
   Humanoid(Humanoid const&) = default;
 
   struct HumanoidTiming {
-    explicit HumanoidTiming();
-    explicit HumanoidTiming(Json config);
+    explicit HumanoidTiming(Root& root);
+    HumanoidTiming(Root& root, Json config);
 
     static bool cyclicState(State state);
     static bool cyclicEmoteState(HumanoidEmote state);
@@ -297,7 +297,7 @@ public:
 
   List<Drawable> renderSkull() const;
 
-  static std::shared_ptr<Humanoid> makeDummy(Gender gender);
+  static std::shared_ptr<Humanoid> makeDummy(Root& root, Gender gender);
   // Renders to centered drawables (centered on the normal image center for the
   // player graphics), (in pixels, not world space)
   List<Drawable> renderDummy(Gender gender, HeadArmor const* head = {}, ChestArmor const* chest = {},
@@ -356,6 +356,7 @@ public:
   static std::pair<Vec2F, Directives> extractScaleFromDirectives(Directives const& directives);
 
 private:
+  Root* m_root;
   struct HandDrawingInfo {
     List<Drawable> itemDrawables;
     List<Drawable> nonRotatedDrawables;
@@ -521,8 +522,8 @@ private:
 // therefore we need to have these in a dynamic group in players and NPCs for the sake of the networked animator not breaking the game
 class NetHumanoid : public NetElementSyncGroup {
 public:
-  NetHumanoid();
-  NetHumanoid(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json());
+  NetHumanoid(Root& root);
+  NetHumanoid(Root& root, HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json());
 
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
@@ -535,6 +536,7 @@ public:
   JsonObject humanoidParameters();
 
 private:
+  Root& m_root;
   void setupNetElements();
 
   Json m_config;

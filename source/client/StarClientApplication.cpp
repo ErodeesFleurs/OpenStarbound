@@ -23,6 +23,7 @@ import star.variant;
 import star.ordered_map;
 import star.ordered_set;
 import star.format;
+import star.native_runtime;
 import star.data_stream_devices;
 import star.interpolation;
 import star.bi_map;
@@ -387,16 +388,18 @@ void ClientApplication::startup(StringList const& cmdLineArgs) {
   RootLoader rootLoader({AdditionalAssetsSettings, AdditionalDefaultConfiguration, String("starbound.log"), LogLevel::Info, false, String("starbound.config")});
   rootLoader.setVersionName("Client");  
   m_root = rootLoader.initOrDie(cmdLineArgs).first;
-  Logger::info("{}", rootLoader.getVersionString());
+  m_root->logger().info("{}", rootLoader.getVersionString());
   #ifdef __clang__
-  Logger::info("Compiled with Clang {}", __clang_version__);
+  m_root->logger().info("Compiled with Clang {}", __clang_version__);
   #endif
 }
 
 void ClientApplication::shutdown() {
   m_reloadSubscription.disconnect();
-  // Clear HTTP trust request callback
-  LuaBindings::clearHttpTrustRequestCallback();
+  if (m_httpSession)
+    m_httpSession->stop();
+  if (m_player)
+    m_player->setInput(nullptr);
 
   m_mainInterface.reset();
 
@@ -416,6 +419,24 @@ void ClientApplication::shutdown() {
 
   m_universeClient.reset();
   m_statistics.reset();
+  m_httpSession.reset();
+  m_titleScreen.reset();
+  m_player.reset();
+  m_playerStorage.reset();
+  m_cinematicOverlay.reset();
+  m_errorScreen.reset();
+  if (m_guiContext)
+    m_guiContext->setTileDrawer(nullptr);
+  if (m_mainMixer) {
+    m_mainMixer->setVoice(nullptr);
+    m_mainMixer->setUniverseClient({});
+    m_mainMixer->setWorldPainter({});
+  }
+  m_worldPainter.reset();
+  m_voice.reset();
+  m_input.reset();
+  m_guiContext.reset();
+  m_mainMixer.reset();
 }
 
 void ClientApplication::applicationInit(std::shared_ptr<ApplicationController> appController) {
@@ -445,14 +466,14 @@ void ClientApplication::applicationInit(std::shared_ptr<ApplicationController> a
   else
     appController->setNormalWindow(windowedSize);
 
-  float updateRate = 1.0f / GlobalTimestep;
+  float updateRate = 1.0f / m_root->timing().timestep;
   if (auto jUpdateRate = configuration->get("updateRate")) {
     updateRate = jUpdateRate.toFloat();
-    GlobalTimestep = 1.0f / updateRate;
+    m_root->timing().timestep = 1.0f / updateRate;
   }
 
   if (auto jServerUpdateRate = configuration->get("serverUpdateRate"))
-    ServerGlobalTimestep = 1.0f / jServerUpdateRate.toFloat();
+    m_root->timing().serverTimestep = 1.0f / jServerUpdateRate.toFloat();
 
   appController->setTargetUpdateRate(updateRate);
   appController->setVSyncEnabled(vsync);
@@ -462,13 +483,16 @@ void ClientApplication::applicationInit(std::shared_ptr<ApplicationController> a
   loadMods();
   
   AudioFormat audioFormat = appController->enableAudio();
-  m_mainMixer = std::make_shared<MainMixer>(audioFormat.sampleRate, audioFormat.channels);
+  m_mainMixer = std::make_shared<MainMixer>(*m_root, audioFormat.sampleRate, audioFormat.channels);
   m_mainMixer->setVolume(0.5);
   
-  m_worldPainter = std::make_shared<WorldPainter>();
-  m_guiContext = std::make_shared<GuiContext>(m_mainMixer->mixer(), appController);
-  m_input = std::make_shared<Input>();
-  m_voice = std::make_shared<Voice>(appController);  
+  m_worldPainter = std::make_shared<WorldPainter>(*m_root);
+  m_guiContext = std::make_shared<GuiContext>(*m_root, m_mainMixer->mixer(), appController);
+  m_input = std::make_shared<Input>(*m_root);
+  m_voice = std::make_shared<Voice>(*m_root, appController);
+  m_guiContext->bindInput(*m_input);
+  m_guiContext->bindVoice(*m_voice);
+  m_mainMixer->setVoice(m_voice.get());
 
   auto assets = m_root->assets();
 
@@ -512,17 +536,19 @@ void ClientApplication::renderInit(std::shared_ptr<Renderer> renderer) {
 
   m_guiContext->renderInit(renderer);
 
-  m_cinematicOverlay = std::make_shared<Cinematic>();
-  m_errorScreen = std::make_shared<ErrorScreen>();
+  m_cinematicOverlay = std::make_shared<Cinematic>(*m_guiContext);
+  m_errorScreen = std::make_shared<ErrorScreen>(*m_guiContext);
 
   if (m_titleScreen)
     m_titleScreen->renderInit(renderer);
-  if (m_worldPainter)
+  if (m_worldPainter) {
     m_worldPainter->renderInit(renderer);
+    m_guiContext->setTileDrawer(m_worldPainter->tileDrawer());
+  }
 
   #ifdef STAR_ENABLE_STEAM_INTEGRATION
   #ifdef STAR_SYSTEM_LINUX
-  if (g_steamIsFlatpak) {
+  if (appController()->steamIsFlatpak()) {
     auto config = m_root->configuration();
     if (!config->get("steamFlatpakWarningShown").optBool().value()) {
       config->set("steamFlatpakWarningShown", true);
@@ -603,7 +629,7 @@ void ClientApplication::processInput(InputEvent const& event) {
 }
 
 void ClientApplication::update() {
-  float dt = GlobalTimestep * GlobalTimescale;
+  float dt = m_root->timing().timestep * m_root->timing().timescale;
   auto& app = appController();
   if (m_state >= MainAppState::Title) {
     if (auto p2pNetworkingService = app->p2pNetworkingService()) {
@@ -687,15 +713,15 @@ void ClientApplication::render() {
       auto totalStart = Time::monotonicMicroseconds();
       renderer->switchEffectConfig("world");
       auto clientStart = totalStart;
-      worldClient->render(m_renderData, TilePainter::BorderTileSize);
-      LogMap::set("client_render_world_client", strf("{:05d}\u00b5s", Time::monotonicMicroseconds() - clientStart));
+      worldClient->render(m_renderData, TilePainter::BorderTileSize, m_worldPainter->tileDrawer());
+      m_root->logMap().set("client_render_world_client", strf("{:05d}\u00b5s", Time::monotonicMicroseconds() - clientStart));
 
       auto paintStart = Time::monotonicMicroseconds();
       m_worldPainter->render(m_renderData, [&]() -> bool {
         return worldClient->waitForLighting(&m_renderData);
       });
-      LogMap::set("client_render_world_painter", strf("{:05d}\u00b5s", Time::monotonicMicroseconds() - paintStart));
-      LogMap::set("client_render_world_total", strf("{:05d}\u00b5s", Time::monotonicMicroseconds() - totalStart));
+      m_root->logMap().set("client_render_world_painter", strf("{:05d}\u00b5s", Time::monotonicMicroseconds() - paintStart));
+      m_root->logMap().set("client_render_world_total", strf("{:05d}\u00b5s", Time::monotonicMicroseconds() - totalStart));
       
       auto size = Vec2F(renderer->screenSize());
       auto quad = renderFlatRect(RectF::withSize(size / -2, size), Vec4B::filled(0), 0.0f);
@@ -715,7 +741,7 @@ void ClientApplication::render() {
     m_mainInterface->renderInWorldElements();
     m_mainInterface->render();
     m_cinematicOverlay->render();
-    LogMap::set("client_render_interface", strf("{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
+    m_root->logMap().set("client_render_interface", strf("{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
   }
 
   if (!m_errorScreen->accepted())
@@ -756,7 +782,7 @@ void ClientApplication::renderReload() {
 
       renderer->loadEffectConfig(name, config, shaders);
     } else
-      Logger::warn("No rendering config found for renderer with id '{}'", renderer->rendererId());
+      m_root->logger().warn("No rendering config found for renderer with id '{}'", renderer->rendererId());
   };
 
   renderer->loadConfig(assets->json("/rendering/opengl.config"));
@@ -856,8 +882,10 @@ void ClientApplication::changeState(MainAppState newState) {
     }
     m_cinematicOverlay->stop();
 
-    // Clear HTTP trust request callback
-    LuaBindings::clearHttpTrustRequestCallback();
+    if (m_httpSession)
+      m_httpSession->clearHttpTrustRequestCallback();
+    if (m_player)
+      m_player->setInput(nullptr);
 
     m_mainInterface.reset();
 
@@ -881,7 +909,10 @@ void ClientApplication::changeState(MainAppState newState) {
       m_statistics.reset();
     }
 
+    if (m_httpSession)
+      m_httpSession->stop();
     m_universeClient.reset();
+    m_httpSession.reset();
     m_mainMixer->setUniverseClient({});
     m_titleScreen.reset();
   }
@@ -892,21 +923,22 @@ void ClientApplication::changeState(MainAppState newState) {
 
     m_cinematicOverlay->stop();
 
-    m_playerStorage = std::make_shared<PlayerStorage>(m_root->toStoragePath("player"));
-    m_statistics = std::make_shared<Statistics>(m_root->toStoragePath("player"), app->statisticsService());
-    m_universeClient = std::make_shared<UniverseClient>(m_playerStorage, m_statistics, m_root->toStoragePath("universeclient"));
+    m_playerStorage = std::make_shared<PlayerStorage>(*m_root, m_root->toStoragePath("player"));
+    m_statistics = std::make_shared<Statistics>(*m_root, m_root->toStoragePath("player"), app->statisticsService());
+    m_universeClient = std::make_shared<UniverseClient>(*m_root, m_playerStorage, m_statistics, m_root->toStoragePath("universeclient"));
+    m_httpSession = std::make_shared<LuaHttpSession>(*m_root);
 
-    m_universeClient->setLuaCallbacks("universe", LuaBindings::makeUniverseClientCallbacks(m_universeClient.get()));
-    m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
-    m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks());
-    m_universeClient->setLuaCallbacks("camera", LuaBindings::makeCameraCallbacks(&m_worldPainter->camera()));
+    m_universeClient->setLuaCallbacks("universe", LuaBindings::makeUniverseClientCallbacks(*m_root, m_universeClient.get()));
+    m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks(*m_input));
+    m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks(*m_voice));
+    m_universeClient->setLuaCallbacks("camera", LuaBindings::makeCameraCallbacks(*m_root, &m_worldPainter->camera()));
     m_universeClient->setLuaCallbacks("renderer", LuaBindings::makeRenderingCallbacks(this));
 
     Json alwaysAllow = m_root->configuration()->getPath("safe.alwaysAllowClipboard");
-    m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(app, alwaysAllow && alwaysAllow.toBool()));
+    m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(*m_input, *m_root, m_root->logger(), app, alwaysAllow && alwaysAllow.toBool()));
     const bool luaHttpEnabled = m_root->configuration()->getPath("safe.luaHttp.enabled").optBool().value(false);
 
-    m_universeClient->setLuaCallbacks("http", LuaBindings::makeHttpCallbacks(luaHttpEnabled));
+    m_universeClient->setLuaCallbacks("http", LuaBindings::makeHttpCallbacks(m_httpSession, luaHttpEnabled));
 
     auto heldScriptPanes = std::make_shared<List<MainInterface::ScriptPaneInfo>>();
 
@@ -929,7 +961,7 @@ void ClientApplication::changeState(MainAppState newState) {
     };
 
     m_mainMixer->setUniverseClient(m_universeClient);
-    m_titleScreen = std::make_shared<TitleScreen>(m_playerStorage, m_mainMixer->mixer(), m_universeClient);
+    m_titleScreen = std::make_shared<TitleScreen>(*m_guiContext, m_playerStorage, m_mainMixer->mixer(), m_universeClient);
     if (auto renderer = Application::renderer())
       m_titleScreen->renderInit(renderer);
   }
@@ -968,6 +1000,7 @@ void ClientApplication::changeState(MainAppState newState) {
       }
     }
 
+    m_player->setInput(m_input.get());
     m_mainMixer->setUniverseClient(m_universeClient);
     m_universeClient->setMainPlayer(m_player);
     m_cinematicOverlay->setPlayer(m_player);
@@ -991,7 +1024,7 @@ void ClientApplication::changeState(MainAppState newState) {
 
       if (auto address = multiPlayerConnection.server.ptr<HostAddressWithPort>()) {
         try {
-          packetSocket = TcpPacketSocket::open(TcpSocket::connectTo(*address));
+          packetSocket = TcpPacketSocket::open(m_root->logger(), TcpSocket::connectTo(*address));
         } catch (StarException const& e) {
           setError(strf("Join failed! Error connecting to '{}'", *address), e);
           return;
@@ -1006,7 +1039,7 @@ void ClientApplication::changeState(MainAppState newState) {
             setError(strf("Cannot join peer: {}", result.left()));
             return;
           } else {
-            packetSocket = P2PPacketSocket::open(std::move(result.right()));
+            packetSocket = P2PPacketSocket::open(m_root->logger(), std::move(result.right()));
           }
         } else {
           setError("Internal error, no p2p networking service when joining p2p networking peer");
@@ -1029,7 +1062,7 @@ void ClientApplication::changeState(MainAppState newState) {
     } else {
       if (!m_universeServer) {
         try {
-          m_universeServer = std::make_shared<UniverseServer>(m_root->toStoragePath("universe"),true);
+          m_universeServer = std::make_shared<UniverseServer>(*m_root, m_root->toStoragePath("universe"),true);
           m_universeServer->start();
         } catch (StarException const& e) {
           setError("Unable to start local server", e);
@@ -1046,20 +1079,21 @@ void ClientApplication::changeState(MainAppState newState) {
     m_titleScreen->stopMusic();
 
     m_universeClient->restartLua();
-    m_mainInterface = std::make_shared<MainInterface>(m_universeClient, m_worldPainter, m_cinematicOverlay);
+    m_mainInterface = std::make_shared<MainInterface>(*m_guiContext, m_universeClient, m_worldPainter, m_cinematicOverlay);
     m_universeClient->setLuaCallbacks("interface", LuaBindings::makeInterfaceCallbacks(m_mainInterface.get()));
     m_universeClient->setLuaCallbacks("chat", LuaBindings::makeChatCallbacks(m_mainInterface.get(), m_universeClient.get()));
-    m_universeClient->setLuaCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_universeClient.get()));
+    m_universeClient->setLuaCallbacks("celestial", LuaBindings::makeCelestialCallbacks(*m_root, m_universeClient.get()));
     m_universeClient->setLuaCallbacks("team", LuaBindings::makeTeamClientCallbacks(m_universeClient->teamClient().get()));
-    m_universeClient->setLuaCallbacks("world", LuaBindings::makeWorldCallbacks(m_universeClient->worldClient().get()));
+    m_universeClient->setLuaCallbacks("world", LuaBindings::makeWorldCallbacks(*m_root, m_universeClient->worldClient().get()));
 
-    LuaBindings::setHttpTrustRequestCallback([mainInterface = m_mainInterface.get()](String const& domain) {
+    m_httpSession->setHttpTrustRequestCallback([session = std::weak_ptr<LuaHttpSession>(m_httpSession), mainInterface = m_mainInterface.get()](String const& domain) {
       const auto paneManager = mainInterface->paneManager();
       const auto httpTrustDialog = paneManager->registeredPane<HttpTrustDialog>(MainInterfacePanes::HttpTrustDialog);
 
-      httpTrustDialog->displayRequest(domain, [domain](const HttpTrustReply reply, bool) {
+      httpTrustDialog->displayRequest(domain, [session, domain](const HttpTrustReply reply, bool) {
         const bool allowed = (reply == HttpTrustReply::Allow);
-        LuaBindings::handleHttpTrustReply(domain, allowed);
+        if (auto owner = session.lock())
+          owner->handleHttpTrustReply(domain, allowed);
       });
       paneManager->displayRegisteredPane(MainInterfacePanes::HttpTrustDialog);
     });
@@ -1072,19 +1106,20 @@ void ClientApplication::changeState(MainAppState newState) {
 
     if (auto renderer = Application::renderer()) {
       m_worldPainter->renderInit(renderer);
+      m_guiContext->setTileDrawer(m_worldPainter->tileDrawer());
     }
   }
 }
 
 void ClientApplication::setError(String const& error) {
-  Logger::error(error.utf8Ptr());
+  m_root->logger().error(error.utf8Ptr());
   m_errorScreen->setMessage(error);
   m_titleScreen->resetState();
   changeState(MainAppState::Title);
 }
 
 void ClientApplication::setError(String const& error, std::exception const& e) {
-  Logger::error("{}\n{}", error, outputException(e, true));
+  m_root->logger().error("{}\n{}", error, outputException(e, true));
   m_errorScreen->setMessage(strf("{}\n{}", error, outputException(e, false)));
   m_titleScreen->resetState();
   changeState(MainAppState::Title);
@@ -1096,20 +1131,20 @@ void ClientApplication::loadMods() {
   bool includeUGC = configuration->get("includeUGC", m_root->settings().includeUGC).toBool();
   if (ugcService && includeUGC) {
     StringList modDirectories;
-    Logger::info("Checking for user generated content...");
+    m_root->logger().info("Checking for user generated content...");
     for (auto& contentId : ugcService->subscribedContentIds()) {
       if (auto contentDirectory = ugcService->contentDownloadDirectory(contentId)) {
-        Logger::info("Loading mods from user generated content with id '{}' from directory '{}'", contentId, *contentDirectory);
+        m_root->logger().info("Loading mods from user generated content with id '{}' from directory '{}'", contentId, *contentDirectory);
         modDirectories.append(*contentDirectory);
       } else {
-        Logger::warn("User generated content with id '{}' is not available", contentId);
+        m_root->logger().warn("User generated content with id '{}' is not available", contentId);
       }
     }
 
     if (modDirectories.empty()) {
-      Logger::info("No subscribed user generated content");
+      m_root->logger().info("No subscribed user generated content");
     } else {
-      Root::singleton().loadMods(modDirectories, false);
+      m_root->loadMods(modDirectories, false);
       auto assets = m_root->assets();
     }
   }
@@ -1128,7 +1163,7 @@ void ClientApplication::updateMods(float dt) {
   if (ugcService && includeUGC) {
     // Prevent unnecessary log spam when UGC needs to be downloaded
     if (!m_loggedUGCCheck) {
-      Logger::info("Checking for user generated content updates...");
+      m_root->logger().info("Checking for user generated content updates...");
       m_loggedUGCCheck = true;
     }
     
@@ -1136,22 +1171,22 @@ void ClientApplication::updateMods(float dt) {
       changeState(MainAppState::Splash);
     } else {
       if (ugcService->triggerContentDownload() == UserGeneratedContentService::UGCState::Finished) {
-        Logger::info("Loading updated user generated content...");
+        m_root->logger().info("Loading updated user generated content...");
         StringList modDirectories;
         for (auto& contentId : ugcService->subscribedContentIds()) {
           if (auto contentDirectory = ugcService->contentDownloadDirectory(contentId)) {
-            Logger::info("Loading mods from user generated content with id '{}' from directory '{}'", contentId, *contentDirectory);
+            m_root->logger().info("Loading mods from user generated content with id '{}' from directory '{}'", contentId, *contentDirectory);
             modDirectories.append(*contentDirectory);
           } else {
-            Logger::warn("User generated content with id '{}' is not available", contentId);
+            m_root->logger().warn("User generated content with id '{}' is not available", contentId);
           }
         }
 
         if (modDirectories.empty()) {
           changeState(MainAppState::Splash);
         } else {
-          Logger::info("Reloading to include updated user generated content");
-          Root::singleton().loadMods(modDirectories);
+          m_root->logger().info("Reloading to include updated user generated content");
+          m_root->loadMods(modDirectories);
 
           // We've just reloaded, so make sure to grab our config again!
           // If we don't do this, we'll be able to read modsWarningShown
@@ -1196,7 +1231,7 @@ void ClientApplication::updateTitle(float dt) {
 
   m_titleScreen->update(dt);
   m_mainMixer->update(dt);
-  m_mainMixer->setSpeed(GlobalTimescale);
+  m_mainMixer->setSpeed(m_root->timing().timescale);
 
   auto& app = appController();
   bool inputActive = m_titleScreen->textInputActive();
@@ -1490,7 +1525,7 @@ void ClientApplication::updateRunning(float dt) {
 
       if (worldClient->inWorld()) {
         if (needstoSendVoice) {
-          auto signature = Curve25519::sign(voiceData.ptr(), voiceData.size());
+          auto signature = m_root->identity().sign(voiceData.ptr(), voiceData.size());
           std::string_view signatureView((char*)signature.data(), signature.size());
           std::string_view audioDataView(voiceData.ptr(), voiceData.size());
           auto broadcast = strf(std::string("data\0voice\0{}{}", sizeof("data\0voice\0{}{}") - 1), signatureView, audioDataView);
@@ -1511,7 +1546,7 @@ void ClientApplication::updateRunning(float dt) {
     m_cinematicOverlay->update(dt);
     m_mainInterface->update(dt);
     m_mainMixer->update(dt, m_cinematicOverlay->muteSfx(), m_cinematicOverlay->muteMusic());
-    m_mainMixer->setSpeed(GlobalTimescale);
+    m_mainMixer->setSpeed(m_root->timing().timescale);
 
     bool inputActive = m_mainInterface->textInputActive();
     m_input->setTextInputActive(inputActive);
@@ -1527,7 +1562,7 @@ void ClientApplication::updateRunning(float dt) {
     if (m_universeServer) {
       if (auto p2pNetworkingService = app->p2pNetworkingService()) {
         for (auto& p2pClient : p2pNetworkingService->acceptP2PConnections())
-          m_universeServer->addClient(UniverseConnection(P2PPacketSocket::open(std::move(p2pClient))));
+          m_universeServer->addClient(UniverseConnection(P2PPacketSocket::open(m_root->logger(), std::move(p2pClient))));
       }
 
       m_universeServer->setPause(m_mainInterface->escapeDialogOpen());
@@ -1535,15 +1570,15 @@ void ClientApplication::updateRunning(float dt) {
 
     Vec2F aimPosition = m_player->aimPosition();
     float fps = app->renderFps();
-    LogMap::set("client_render_rate", strf("{:4.2f} FPS ({:4.2f}ms)", fps, (1.0f / app->renderFps()) * 1000.0f));
-    LogMap::set("client_update_rate", strf("{:4.2f}Hz", app->updateRate()));
-    LogMap::set("player_pos", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->position()[0], m_player->position()[1]));
-    LogMap::set("player_vel", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->velocity()[0], m_player->velocity()[1]));
-    LogMap::set("player_aim", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", aimPosition[0], aimPosition[1]));
+    m_root->logMap().set("client_render_rate", strf("{:4.2f} FPS ({:4.2f}ms)", fps, (1.0f / app->renderFps()) * 1000.0f));
+    m_root->logMap().set("client_update_rate", strf("{:4.2f}Hz", app->updateRate()));
+    m_root->logMap().set("player_pos", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->position()[0], m_player->position()[1]));
+    m_root->logMap().set("player_vel", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->velocity()[0], m_player->velocity()[1]));
+    m_root->logMap().set("player_aim", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", aimPosition[0], aimPosition[1]));
     if (auto world = m_universeClient->worldClient()) {
       auto aim = Vec2I::floor(aimPosition);
-      LogMap::set("tile_liquid_level", toString(world->liquidLevel(aim).level));
-      LogMap::set("tile_dungeon_id", world->isTileProtected(aim) ? strf("^red;{}", world->dungeonId(aim)) : toString(world->dungeonId(aim)));
+      m_root->logMap().set("tile_liquid_level", toString(world->liquidLevel(aim).level));
+      m_root->logMap().set("tile_dungeon_id", world->isTileProtected(aim) ? strf("^red;{}", world->dungeonId(aim)) : toString(world->dungeonId(aim)));
     }
 
     if (m_mainInterface->currentState() == MainInterface::ReturnToTitle)
@@ -1656,6 +1691,7 @@ void ClientApplication::updateCamera(float dt) {
 #if defined STAR_SYSTEM_WINDOWS
 
 int __stdcall WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   int nArgs;
   LPWSTR* argsList = CommandLineToArgvW(GetCommandLineW(), &nArgs);
   Star::StringList args;
@@ -1670,6 +1706,7 @@ int __stdcall WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 }
 #else
 int main(int argc, char** argv) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   return Star::runMainApplication(std::make_unique<Star::ClientApplication>(), Star::StringList(argc, argv));
 }
 #endif

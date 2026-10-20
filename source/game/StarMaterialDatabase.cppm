@@ -46,9 +46,15 @@ struct LiquidModInteraction {
   bool topOnly;
 };
 
+class Assets;
+class ParticleDatabase;
+class Logger;
+class RandomService;
+class ImageMetadataDatabase;
+
 class MaterialDatabase {
 public:
-  MaterialDatabase();
+  MaterialDatabase(std::shared_ptr<Assets const> const& assets, std::shared_ptr<ParticleDatabase const> const& particles, ImageMetadataDatabase const& imageMetadata, Logger& logger, RandomService& random);
 
   StringList materialNames() const;
   bool isMetaMaterialName(String const& name) const;
@@ -120,6 +126,7 @@ public:
   Maybe<LiquidModInteraction> liquidModInteraction(LiquidId liquid, ModId modId) const;
 
 private:
+  RandomService& m_random;
   struct MetaMaterialInfo {
     MetaMaterialInfo(String name, MaterialId id, CollisionKind collisionKind, bool blocksLiquidFlow);
 

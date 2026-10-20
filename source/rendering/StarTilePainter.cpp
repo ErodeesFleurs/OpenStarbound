@@ -98,11 +98,18 @@ import star.static_random;
 import star.matrix3;
 namespace Star {
 
-TilePainter::TilePainter(std::shared_ptr<Renderer> renderer) : TileDrawer() {
+TilePainter::TilePainter(Root& root, std::shared_ptr<Renderer> renderer)
+  : TileDrawer(root),
+    m_textureCache(root.random()),
+    m_terrainChunkCache(root.random()),
+    m_liquidChunkCache(root.random()) {
   m_renderer = std::move(renderer);
   m_textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
 
-  auto& root = Root::singleton();
+  constexpr std::size_t hashWidth = RenderChunkSize + 2 * MaterialRenderProfileMaxNeighborDistance;
+  m_terrainHashBuffer.reserve(hashWidth * hashWidth * offsetof(RenderTile, liquidId));
+  m_liquidHashBuffer.reserve(hashWidth * hashWidth * (sizeof(RenderTile::liquidId) + sizeof(RenderTile::liquidLevel)));
+
   auto assets = root.assets();
 
   m_terrainChunkCache.setTimeToLive(assets->json("/rendering.config:chunkCacheTimeout").toInt());
@@ -208,8 +215,7 @@ std::size_t TilePainter::TextureKeyHash::operator()(TextureKey const& key) const
 }
 
 TilePainter::ChunkHash TilePainter::terrainChunkHash(WorldRenderData& renderData, Vec2I chunkIndex) {
-  //XXHash3 hasher;
-  static ByteArray buffer;
+  auto& buffer = m_terrainHashBuffer;
   buffer.clear();
   RectI tileRange = RectI::withSize(chunkIndex * RenderChunkSize, Vec2I::filled(RenderChunkSize)).padded(MaterialRenderProfileMaxNeighborDistance);
   forEachRenderTile(renderData, tileRange, [&](Vec2I const&, RenderTile const& renderTile) {
@@ -222,9 +228,8 @@ TilePainter::ChunkHash TilePainter::terrainChunkHash(WorldRenderData& renderData
 }
 
 TilePainter::ChunkHash TilePainter::liquidChunkHash(WorldRenderData& renderData, Vec2I chunkIndex) {
-  ///XXHash3 hasher;
+  auto& buffer = m_liquidHashBuffer;
   RectI tileRange = RectI::withSize(chunkIndex * RenderChunkSize, Vec2I::filled(RenderChunkSize)).padded(MaterialRenderProfileMaxNeighborDistance);
-  static ByteArray buffer;
   buffer.clear();
 
   forEachRenderTile(renderData, tileRange, [&](Vec2I const&, RenderTile const& renderTile) {
@@ -310,9 +315,8 @@ std::shared_ptr<TilePainter::LiquidChunk const> TilePainter::getLiquidChunk(Worl
 
 bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimitive>>& primitives,
     TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData) {
-  auto& root = Root::singleton();
-  auto assets = Root::singleton().assets();
-  auto materialDatabase = root.materialDatabase();
+  auto assets = m_root.assets();
+  auto materialDatabase = m_root.materialDatabase();
 
   RenderTile const& tile = getRenderTile(renderData, pos);
 

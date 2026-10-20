@@ -78,7 +78,7 @@ bool SteamStatisticsService::reportEvent(String const&, Json const&) {
 
 bool SteamStatisticsService::unlockAchievement(String const& name) {
   if (!SteamAPI_ISteamUserStats_SetAchievement(SteamAPI_SteamUserStats(), name.utf8Ptr())) {
-    Logger::error("Cannot set Steam achievement {}", name);
+    m_state->logger.error("Cannot set Steam achievement {}", name);
     return false;
   }
   return true;
@@ -124,7 +124,7 @@ void SteamStatisticsService::onUserStatsReceived(UserStatsReceived_t* callback) 
     return;
   }
 
-  Logger::debug("Steam RequestCurrentStats successful");
+  m_state->logger.debug("Steam RequestCurrentStats successful");
   m_initialized = true;
 }
 
@@ -133,13 +133,13 @@ void SteamStatisticsService::onUserStatsStored(UserStatsStored_t* callback) {
     return;
 
   if (callback->m_eResult == k_EResultOK) {
-    Logger::debug("Steam StoreStats successful");
+    m_state->logger.debug("Steam StoreStats successful");
     return;
   }
 
   if (callback->m_eResult == k_EResultInvalidParam) {
     // A stat we set broke a constraint and was reverted on the service.
-    Logger::info("Steam StoreStats: Some stats failed validation");
+    m_state->logger.info("Steam StoreStats: Some stats failed validation");
     return;
   }
 
@@ -150,7 +150,7 @@ void SteamStatisticsService::onAchievementStored(UserAchievementStored_t* callba
   if (callback->m_nGameID != m_appId)
     return;
 
-  Logger::debug("Steam achievement {} stored successfully", callback->m_rgchAchievementName);
+  m_state->logger.debug("Steam achievement {} stored successfully", callback->m_rgchAchievementName);
 }
 
 }

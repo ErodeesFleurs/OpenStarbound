@@ -36,15 +36,6 @@ import star.host_address;
 
 namespace Star {
 
-#ifdef STAR_SYSTEM_FAMILY_WINDOWS
-struct WindowsSocketInitializer {
-  WindowsSocketInitializer() {
-    WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
-      fatalError("WSAStartup failed", false);
-  };
-};
-#endif
 
 inline String netErrorString() {
 #ifdef STAR_SYSTEM_WINDOWS
@@ -228,9 +219,6 @@ struct SocketImpl {
 export module star.net_impl;
 
 export namespace Star {
-#ifdef STAR_SYSTEM_FAMILY_WINDOWS
-  using ::Star::WindowsSocketInitializer;
-#endif
   using ::Star::netErrorString;
   using ::Star::netErrorConnectionReset;
   using ::Star::netErrorInterrupt;

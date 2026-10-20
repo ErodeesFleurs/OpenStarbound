@@ -22,6 +22,7 @@ import star.thread;
 import star.directives;
 
 namespace Star {
+class ImageMetadataDatabase;
 
 struct MaterialRenderProfileExceptionTag {
   static constexpr char const* name() { return "MaterialRenderProfileException"; }
@@ -130,7 +131,7 @@ struct MaterialRenderProfile {
   std::pair<String, Vec2F> const& damageImage(float damageLevel, TileDamageType damageType) const;
 };
 
-MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const& relativePath = "");
+MaterialRenderProfile parseMaterialRenderProfile(ImageMetadataDatabase const& imageMetadata, Json const& spec, String const& relativePath = "");
 
 }
 

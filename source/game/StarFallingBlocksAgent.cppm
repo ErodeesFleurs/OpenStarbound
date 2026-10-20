@@ -45,6 +45,7 @@ import star.collision_generator;
 import star.world_tiles;
 
 namespace Star {
+class Root;
 
 class MaterialDatabase;
 
@@ -65,7 +66,7 @@ public:
 
 class FallingBlocksAgent {
 public:
-  FallingBlocksAgent(std::shared_ptr<FallingBlocksFacade> worldFacade);
+  FallingBlocksAgent(Root& root, std::shared_ptr<FallingBlocksFacade> worldFacade);
 
   void update();
 

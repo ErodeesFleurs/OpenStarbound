@@ -31,8 +31,8 @@ import star.name_generator;
 
 namespace Star {
 
-PatternedNameGenerator::PatternedNameGenerator() {
-  auto assets = Root::singleton().assets();
+PatternedNameGenerator::PatternedNameGenerator(Root& root) : m_root(root) {
+  auto assets = m_root.assets();
   auto &files = assets->scanExtension("namesource");
   assets->queueJsons(files);
   for (auto& file : files) {
@@ -55,7 +55,7 @@ PatternedNameGenerator::PatternedNameGenerator() {
 }
 
 String PatternedNameGenerator::generateName(String const& rulesAsset) const {
-  RandomSource random;
+  RandomSource random(m_root.random().randu64());
   return generateName(rulesAsset, random);
 }
 
@@ -65,7 +65,7 @@ String PatternedNameGenerator::generateName(String const& rulesAsset, std::uint6
 }
 
 String PatternedNameGenerator::generateName(String const& rulesAsset, RandomSource& random) const {
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
   auto rules = assets->json(rulesAsset).arrayPtr();
   String res = "";
   int tries = 100;

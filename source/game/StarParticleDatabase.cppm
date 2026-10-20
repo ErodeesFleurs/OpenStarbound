@@ -18,14 +18,17 @@ import star.particle;
 
 namespace Star {
 
+class Root;
+
 class ParticleConfig {
 public:
-  ParticleConfig(Json const& config);
+  ParticleConfig(Root& root, Json const& config);
 
   String const& kind();
   Particle instance();
 
 private:
+  Root& m_root;
   String m_kind;
   Particle m_particle;
   Particle m_variance;
@@ -33,7 +36,7 @@ private:
 
 class ParticleDatabase {
 public:
-  ParticleDatabase();
+  explicit ParticleDatabase(Root& root);
 
   std::shared_ptr<ParticleConfig> config(String const& kind) const;
 
@@ -47,6 +50,7 @@ public:
   Particle particle(Json const& kindOrConfig, String const& relativePath = "") const;
 
 private:
+  Root& m_root;
   StringMap<std::shared_ptr<ParticleConfig>> m_configs;
 };
 

@@ -89,7 +89,7 @@ extern EnumMap<PaneAnchor> const PaneAnchorNames{
     {PaneAnchor::Center, "center"},
 };
 
-Pane::Pane() {
+Pane::Pane(GuiContext& context) : Widget(context) {
   m_dragActive = m_lockPosition = false;
   m_dismissed = true;
   m_centerOffset = Vec2I();
@@ -98,7 +98,7 @@ Pane::Pane() {
   m_visible = false;
   m_hasDisplayed = false;
 
-  auto assets = Root::singleton().assets();
+  auto assets = this->context()->root().assets();
   m_textStyle = assets->json("/interface.config:paneTextStyle");
   m_iconOffset = jsonToVec2I(assets->json("/interface.config:paneIconOffset"));
   m_titleOffset = jsonToVec2I(assets->json("/interface.config:paneTitleOffset"));
@@ -421,19 +421,19 @@ LuaCallbacks Pane::makePaneCallbacks() {
   LuaCallbacks callbacks;
 
   callbacks.registerCallback("toWidget", [this]() -> LuaCallbacks {
-    return LuaBindings::makeWidgetCallbacks(this, reader());
+    return LuaBindings::makeWidgetCallbacks(*context(), this, reader());
   });
 
   callbacks.registerCallback("dismiss", [this]() { dismiss(); });
 
   callbacks.registerCallback("playSound",
     [this](String const& audio, Maybe<int> loops, Maybe<float> volume) {
-      auto assets = Root::singleton().assets();
-      auto config = Root::singleton().configuration();
+      auto assets = this->context()->root().assets();
+      auto config = this->context()->root().configuration();
       auto audioInstance = std::make_shared<AudioInstance>(*assets->audio(audio));
       audioInstance->setVolume(volume.value(1.0));
       audioInstance->setLoops(loops.value(0));
-      auto& guiContext = GuiContext::singleton();
+      auto& guiContext = (*this->context());
       guiContext.playAudio(audioInstance);
       m_playingSounds.append({audio, std::move(audioInstance)});
     });
@@ -463,10 +463,10 @@ LuaCallbacks Pane::makePaneCallbacks() {
   callbacks.registerCallback("setSize", [this](Vec2I const& size) { setSize(size);   });
 
   callbacks.registerCallback("addWidget", [this](Json const& newWidgetConfig, Maybe<String> const& newWidgetName) -> Maybe<LuaCallbacks> {
-      String name = newWidgetName.value(toString(Random::randu64()));
+      String name = newWidgetName.value(toString(this->context()->root().random().randu64()));
       if (auto newWidget = reader()->makeSingle(name, newWidgetConfig)) {
         this->addChild(name, newWidget);
-        return LuaBindings::makeWidgetCallbacks(newWidget.get(), reader());
+        return LuaBindings::makeWidgetCallbacks(*this->context(), newWidget.get(), reader());
       } else {
         return {};
       }
@@ -475,7 +475,7 @@ LuaCallbacks Pane::makePaneCallbacks() {
   callbacks.registerCallback("removeWidget", [this](String const& widgetName) -> bool
     { return this->removeChild(widgetName); });
 
-  callbacks.registerCallback("scale", []() { return GuiContext::singleton().interfaceScale(); });
+  callbacks.registerCallback("scale", [this]() { return (*this->context()).interfaceScale(); });
   callbacks.registerCallback("isDisplayed", [this]() { return isDisplayed(); });
   callbacks.registerCallback("hasFocus", [this]() { return hasFocus(); });
   callbacks.registerCallback("show", [this]() { show(); });
@@ -569,7 +569,7 @@ LuaCallbacks Pane::makePaneCallbacks() {
 }
 
 std::shared_ptr<GuiReader> Pane::reader() {
-  return std::make_shared<GuiReader>();
+  return std::make_shared<GuiReader>(*this->context());
 }
 
 void Pane::renderImpl() {

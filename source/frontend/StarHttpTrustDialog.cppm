@@ -67,7 +67,7 @@ enum class HttpTrustReply {
 
 class HttpTrustDialog final : public Pane {
 public:
-  HttpTrustDialog();
+  HttpTrustDialog(GuiContext& guiContext);
 
   ~HttpTrustDialog() override;
 

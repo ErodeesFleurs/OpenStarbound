@@ -106,23 +106,23 @@ import star.algorithm;
 import star.pythonic;
 namespace Star {
 
-SystemWorldServer::SystemWorldServer(Vec3I location, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase)
-  : SystemWorld(std::move(universeClock), std::move(celestialDatabase)) {
+SystemWorldServer::SystemWorldServer(Root& root, Vec3I location, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase)
+  : SystemWorld(root, std::move(universeClock), std::move(celestialDatabase)) {
   m_location = std::move(location);
 
   placeInitialObjects();
 
   m_lastSpawn = time() - systemConfig().objectSpawnCycle;
-  m_objectSpawnTime = Random::randf(systemConfig().objectSpawnInterval[0], systemConfig().objectSpawnInterval[1]);
+  m_objectSpawnTime = this->root().random().randf(systemConfig().objectSpawnInterval[0], systemConfig().objectSpawnInterval[1]);
   spawnObjects();
 }
 
-SystemWorldServer::SystemWorldServer(Json const& diskStore, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase)
-  : SystemWorld(std::move(universeClock), std::move(celestialDatabase)) {
+SystemWorldServer::SystemWorldServer(Root& root, Json const& diskStore, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase)
+  : SystemWorld(root, std::move(universeClock), std::move(celestialDatabase)) {
   m_location = jsonToVec3I(diskStore.get("location"));
 
   for (auto objectStore : diskStore.getArray("objects")) {
-    auto object = std::make_shared<SystemObject>(this, objectStore);
+    auto object = std::make_shared<SystemObject>(this->root(), this, objectStore);
     m_objects.set(object->uuid(), object);
   }
 
@@ -387,9 +387,9 @@ void SystemWorldServer::queueUpdatePackets() {
 
 void SystemWorldServer::handleIncomingPacket(ConnectionId, std::shared_ptr<Packet> packet) {
   if (auto objectSpawn = as<SystemObjectSpawnPacket>(packet)) {
-    RandomSource rand = RandomSource();
+    RandomSource rand(this->root().random().randu64());
     Vec2F position = objectSpawn->position.value(randomObjectSpawnPosition(rand));
-    auto object = std::make_shared<SystemObject>(systemObjectConfig(objectSpawn->typeName, objectSpawn->uuid), objectSpawn->uuid, position, time(), objectSpawn->parameters);
+    auto object = std::make_shared<SystemObject>(this->root(), systemObjectConfig(objectSpawn->typeName, objectSpawn->uuid), objectSpawn->uuid, position, time(), objectSpawn->parameters);
     addObject(object, objectSpawn->position.isValid());
   }
 }
@@ -418,7 +418,7 @@ Json SystemWorldServer::diskStore() {
 }
 
 void SystemWorldServer::placeInitialObjects() {
-  auto config = Root::singleton().assets()->json("/systemworld.config");
+  auto config = this->root().assets()->json("/systemworld.config");
   RandomSource rand(staticRandomU64("SystemWorldGeneration", toString(m_location)));
 
   WeightedPool<JsonArray> spawnPools = jsonToWeightedPool<JsonArray>(config.getArray("initialObjectPools"));
@@ -427,11 +427,11 @@ void SystemWorldServer::placeInitialObjects() {
   if (count > 0) {
     WeightedPool<String> objectPool = jsonToWeightedPool<String>(spawn.get(1).toArray());
     for (int i = 0; i < count; i++) {
-      Uuid uuid = Uuid();
+      Uuid uuid = Uuid(this->root().random());
       auto objectConfig = systemObjectConfig(objectPool.select(rand), uuid);
       Vec2F position = randomObjectSpawnPosition(rand);
 
-      auto object = std::make_shared<SystemObject>(objectConfig, uuid, position, time());
+      auto object = std::make_shared<SystemObject>(this->root(), objectConfig, uuid, position, time());
       object->enterOrbit(CelestialCoordinate(m_location), { 0.0, 0.0 }, time()); // orbit center of system
       m_objects.set(uuid, object);
     }
@@ -443,16 +443,16 @@ void SystemWorldServer::spawnObjects() {
   m_lastSpawn = time() - diff;
   while (diff > m_objectSpawnTime) {
     m_lastSpawn += m_objectSpawnTime;
-    m_objectSpawnTime = Random::randf(systemConfig().objectSpawnInterval[0], systemConfig().objectSpawnInterval[1]);
+    m_objectSpawnTime = this->root().random().randf(systemConfig().objectSpawnInterval[0], systemConfig().objectSpawnInterval[1]);
     diff = time() - m_lastSpawn;
 
-    WeightedPool<String> spawnPool = jsonToWeightedPool<String>(Root::singleton().assets()->json("/systemworld.config:objectSpawnPool").toArray());
-    String name = spawnPool.select();
-    Uuid uuid = Uuid();
+    WeightedPool<String> spawnPool = jsonToWeightedPool<String>(this->root().assets()->json("/systemworld.config:objectSpawnPool").toArray());
+    String name = spawnPool.select(this->root().random());
+    Uuid uuid = Uuid(this->root().random());
     auto objectConfig = systemObjectConfig(name, uuid);
 
     std::shared_ptr<SystemObject> object;
-    RandomSource rand = RandomSource(Random::randu64());
+    RandomSource rand = RandomSource(this->root().random().randu64());
     Vec2F position = randomObjectSpawnPosition(rand);
     if (time() > m_lastSpawn + m_objectSpawnTime && objectConfig.moving) {
       // if this is not the last object we're spawning, and it's moving, immediately put it in orbit around a planet
@@ -460,18 +460,18 @@ void SystemWorldServer::spawnObjects() {
         return std::ranges::none_of(objects(), [&p](std::shared_ptr<SystemObject> const& o) { return o->orbitTarget() == p; });
       });
       if (targets.size() > 0) {
-        auto target = Random::randFrom(targets);
+        auto target = this->root().random().randFrom(targets);
 
         Vec2F targetPosition = planetPosition(target);
         Vec2F relativeOrbit = (position - targetPosition).normalized() * (clusterSize(target) / 2.0 + objectConfig.orbitDistance);
-        object = std::make_shared<SystemObject>(objectConfig, uuid, targetPosition + relativeOrbit, m_lastSpawn);
+        object = std::make_shared<SystemObject>(this->root(), objectConfig, uuid, targetPosition + relativeOrbit, m_lastSpawn);
 
         object->enterOrbit(target, planetPosition(target), m_lastSpawn);
       } else {
-        object = std::make_shared<SystemObject>(objectConfig, uuid, position, m_lastSpawn);
+        object = std::make_shared<SystemObject>(this->root(), objectConfig, uuid, position, m_lastSpawn);
       }
     } else {
-      object = std::make_shared<SystemObject>(objectConfig, uuid, position, m_lastSpawn);
+      object = std::make_shared<SystemObject>(this->root(), objectConfig, uuid, position, m_lastSpawn);
     }
     addObject(object, false);
   }
@@ -505,7 +505,7 @@ SkyParameters SystemWorldServer::locationSkyParameters(SystemLocation const& loc
   SkyParameters skyParameters = systemConfig().emptySkyParameters;
 
   if (auto coordinate = location.maybe<CelestialCoordinate>()) {
-    return SkyParameters(*coordinate, m_celestialDatabase);
+    return SkyParameters(this->root(), *coordinate, m_celestialDatabase);
   } else if (auto position = location.maybe<Vec2F>()) {
     for (auto planet : planets()) {
       if (std::abs(position->magnitude() - planetPosition(planet).magnitude()) > systemConfig().asteroidBeamDistance)
@@ -513,7 +513,7 @@ SkyParameters SystemWorldServer::locationSkyParameters(SystemLocation const& loc
 
       if (auto parameters = m_celestialDatabase->parameters(planet)) {
         if (auto asteroidsParameters = as<AsteroidsWorldParameters>(parameters->visitableParameters())) {
-          return SkyParameters(planet, m_celestialDatabase);
+          return SkyParameters(this->root(), planet, m_celestialDatabase);
         }
       }
     }
@@ -549,11 +549,11 @@ SkyParameters SystemWorldServer::locationSkyParameters(SystemLocation const& loc
               staticRandomFloat(seed, world.seed(), "y")
             };
             CelestialParameters parent = i > 0 ? worlds[0] : CelestialParameters();
-            skyParameters.nearbyMoons.append({CelestialGraphics::drawWorld(world, parent), pos});
+            skyParameters.nearbyMoons.append({CelestialGraphics::drawWorld(this->root(), world, parent), pos});
           }
         } else {
           // put orbited horizon behind existing horizon images
-          skyParameters.horizonImages.insertAllAt(0, CelestialGraphics::worldHorizonImages(*parameters));
+          skyParameters.horizonImages.insertAllAt(0, CelestialGraphics::worldHorizonImages(this->root(), *parameters));
         }
       }
     }

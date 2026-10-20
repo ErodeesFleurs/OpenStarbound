@@ -106,12 +106,12 @@ import star.byte_array;
 namespace Star {
 
 ObjectOrientation::ParticleEmissionEntry ObjectOrientation::parseParticleEmitter(
-    String const& path, Json const& config) {
+    Root& root, String const& path, Json const& config) {
   ObjectOrientation::ParticleEmissionEntry result;
   result.particleEmissionRate = config.getFloat("emissionRate", 0.0);
   result.particleEmissionRateVariance = config.getFloat("emissionVariance", 0.0);
-  result.particle = Particle(config.getObject("particle", {}), path);
-  result.particleVariance = Particle(config.getObject("particleVariance", {}), path);
+  result.particle = Particle(root, config.getObject("particle", {}), path);
+  result.particleVariance = Particle(root, config.getObject("particleVariance", {}), path);
   result.particle.position += jsonToVec2F(config.get("pixelOrigin", JsonArray{TilePixels / 2, TilePixels / 2})) / TilePixels;
   result.placeInSpaces = config.getBool("placeInSpaces", false);
   return result;
@@ -136,7 +136,7 @@ bool ObjectOrientation::anchorsValid(World const* world, Vec2I const& position) 
   if (anchors.size() == 0)
     return true;
 
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabase = world->root().materialDatabase();
 
   auto anchorValid = [&](Anchor const& anchor) -> bool {
       auto space = position + anchor.position;
@@ -190,19 +190,19 @@ std::size_t ObjectConfig::findValidOrientation(World const* world, Vec2I const& 
   return NPos;
 }
 
-Json ObjectDatabase::parseTouchDamage(String const& path, Json const& config) {
+Json ObjectDatabase::parseTouchDamage(Root& root, String const& path, Json const& config) {
   auto touchDamage = config.get("touchDamage", {});
   if (touchDamage.isType(Json::Type::String)) {
-    auto assets = Root::singleton().assets();
+    auto assets = root.assets();
     return assets->fetchJson(AssetPath::relativeTo(path, touchDamage.toString()));
   }
 
   return touchDamage;
 }
 
-List<std::shared_ptr<ObjectOrientation>> ObjectDatabase::parseOrientations(String const& path, Json const& configList, Json const& baseConfig) {
-  auto& root = Root::singleton();
+List<std::shared_ptr<ObjectOrientation>> ObjectDatabase::parseOrientations(Root& root, String const& path, Json const& configList, Json const& baseConfig) {
   auto materialDatabase = root.materialDatabase();
+  auto imageMetadata = root.imageMetadataDatabase();
   List<std::shared_ptr<ObjectOrientation>> res;
   JsonArray configs = configList.toArray();
 
@@ -250,12 +250,12 @@ List<std::shared_ptr<ObjectOrientation>> ObjectDatabase::parseOrientations(Strin
       for (Json layer : orientationSettings.get("imageLayers").iterateArray()) {
         if (auto image = layer.opt("image"))
           layer = layer.set("image", AssetPath::relativeTo(path, image->toString()));
-        Drawable drawable(layer.set("centered", layer.getBool("centered", false)));
+        Drawable drawable(*imageMetadata, layer.set("centered", layer.getBool("centered", false)));
         drawable.scale(1.0f / TilePixels);
         orientation->imageLayers.append(drawable);
       }
     } else {
-      Drawable drawable = Drawable::makeImage(
+      Drawable drawable = Drawable::makeImage(*imageMetadata,
           AssetPath::relativeTo(path, orientationSettings.getString("image")), 1.0 / TilePixels, false, {});
       drawable.fullbright = orientationSettings.getBool("fullbright", false);
       orientation->imageLayers.append(drawable);
@@ -389,13 +389,13 @@ List<std::shared_ptr<ObjectOrientation>> ObjectDatabase::parseOrientations(Strin
 
     if (orientationSettings.contains("particleEmitter"))
       orientation->particleEmitters.append(
-          ObjectOrientation::parseParticleEmitter(path, orientationSettings.get("particleEmitter")));
+          ObjectOrientation::parseParticleEmitter(root, path, orientationSettings.get("particleEmitter")));
     for (auto particleEmitterConfig : orientationSettings.getArray("particleEmitters", {}))
-      orientation->particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, particleEmitterConfig));
+      orientation->particleEmitters.append(ObjectOrientation::parseParticleEmitter(root, path, particleEmitterConfig));
 
     orientation->statusEffectArea = orientationSettings.opt("statusEffectArea").apply(jsonToPolyF);
 
-    orientation->touchDamageConfig = parseTouchDamage(path, orientationSettings);
+    orientation->touchDamageConfig = parseTouchDamage(root, path, orientationSettings);
 
     res.append(std::move(orientation));
   }
@@ -403,8 +403,9 @@ List<std::shared_ptr<ObjectOrientation>> ObjectDatabase::parseOrientations(Strin
   return res;
 }
 
-ObjectDatabase::ObjectDatabase() : m_rebuilder(std::make_shared<Rebuilder>("object")) {
-  auto assets = Root::singleton().assets();
+ObjectDatabase::ObjectDatabase(Root& root)
+  : m_root(root), m_configCache(root.random()), m_rebuilder(std::make_shared<Rebuilder>(root, "object")) {
+  auto assets = m_root.assets();
 
   auto& files = assets->scanExtension("object");
   assets->queueJsons(files);
@@ -412,11 +413,11 @@ ObjectDatabase::ObjectDatabase() : m_rebuilder(std::make_shared<Rebuilder>("obje
     try {
       String name = assets->json(file).getString("objectName");
       if (m_paths.contains(name))
-        Logger::error("Object {} defined twice, second time from {}", name, file);
+        m_root.logger().error("Object {} defined twice, second time from {}", name, file);
       else
         m_paths[name] = file;
     } catch (std::exception const& e) {
-      Logger::error("Error loading object file {}: {}", file, outputException(e, true));
+      m_root.logger().error("Error loading object file {}: {}", file, outputException(e, true));
     }
   }
 }
@@ -454,17 +455,17 @@ std::shared_ptr<Object> ObjectDatabase::createObject(String const& objectName, J
   auto config = getConfig(objectName);
 
   if (config->type == "object") {
-    return std::make_shared<Object>(config, parameters);
+    return std::make_shared<Object>(m_root, config, parameters);
   } else if (config->type == "loungeable") {
-    return std::make_shared<LoungeableObject>(config, parameters);
+    return std::make_shared<LoungeableObject>(m_root, config, parameters);
   } else if (config->type == "container") {
-    return std::make_shared<ContainerObject>(config, parameters);
+    return std::make_shared<ContainerObject>(m_root, config, parameters);
   } else if (config->type == "farmable") {
-    return std::make_shared<FarmableObject>(config, parameters);
+    return std::make_shared<FarmableObject>(m_root, config, parameters);
   } else if (config->type == "teleporter") {
-    return std::make_shared<TeleporterObject>(config, parameters);
+    return std::make_shared<TeleporterObject>(m_root, config, parameters);
   } else if (config->type == "physics") {
-    return std::make_shared<PhysicsObject>(config, parameters);
+    return std::make_shared<PhysicsObject>(m_root, config, parameters);
   } else {
     throw ObjectException(strf("Unknown objectType '{}' constructing object '{}'", config->type, objectName));
   }
@@ -498,10 +499,10 @@ std::shared_ptr<Object> ObjectDatabase::diskLoadObject(Json const& diskStore) co
 
     if (!success) {
       if (originalName == "perfectlygenericitem") {
-        Logger::error("Could not re-instantiate object '{}'. {}", diskStore, outputException(e, false));
+        m_root.logger().error("Could not re-instantiate object '{}'. {}", diskStore, outputException(e, false));
         object = createObject(originalName, originalParams);
       } else {
-        Logger::error("Could not instantiate object '{}'. {}", diskStore, outputException(e, false));
+        m_root.logger().error("Could not instantiate object '{}'. {}", diskStore, outputException(e, false));
         Json newParameters = JsonObject({
           {"genericItemStorage", diskStore},
           {"shortdescription", originalName},
@@ -538,9 +539,9 @@ std::shared_ptr<Object> ObjectDatabase::createForPlacement(World const* world, S
   return object;
 }
 
-std::shared_ptr<ObjectConfig> ObjectDatabase::readConfig(String const& path) {
+std::shared_ptr<ObjectConfig> ObjectDatabase::readConfig(String const& path) const {
   try {
-    auto assets = Root::singleton().assets();
+    auto assets = m_root.assets();
 
     Json config = assets->json(path);
 
@@ -609,7 +610,7 @@ std::shared_ptr<ObjectConfig> ObjectDatabase::readConfig(String const& path) {
     if (objectConfig->unbreakable)
       objectConfig->smashable = false;
 
-    objectConfig->tileDamageParameters = TileDamageParameters(
+    objectConfig->tileDamageParameters = TileDamageParameters(*assets,
         assets->fetchJson(config.get("damageTable", "/objects/defaultParameters.config:damageTable")),
         config.optFloat("health"),
         config.optUInt("harvestLevel"));
@@ -638,7 +639,7 @@ std::shared_ptr<ObjectConfig> ObjectDatabase::readConfig(String const& path) {
     objectConfig->beamAmbience = config.getFloat("beamAmbience", 0.0f);
 
     if (config.contains("flickerPeriod")) {
-      objectConfig->lightFlickering = PeriodicFunction<float>(config.getFloat("flickerPeriod"),
+      objectConfig->lightFlickering = PeriodicFunction<float>(m_root.random(), config.getFloat("flickerPeriod"),
           config.getFloat("flickerMinIntensity", 0.0),
           config.getFloat("flickerMaxIntensity", 0.0),
           config.getFloat("flickerPeriodVariance", 0.0),
@@ -649,7 +650,7 @@ std::shared_ptr<ObjectConfig> ObjectDatabase::readConfig(String const& path) {
     objectConfig->soundEffectRangeMultiplier = config.getFloat("soundEffectRangeMultiplier", 1.0f);
 
     objectConfig->statusEffects = config.getArray("statusEffects", {}).transformed(jsonToPersistentStatusEffect);
-    objectConfig->touchDamageConfig = parseTouchDamage(path, config);
+    objectConfig->touchDamageConfig = parseTouchDamage(m_root, path, config);
 
     objectConfig->minimumLiquidLevel = config.optFloat("minimumLiquidLevel");
     objectConfig->maximumLiquidLevel = config.optFloat("maximumLiquidLevel");
@@ -663,16 +664,16 @@ std::shared_ptr<ObjectConfig> ObjectDatabase::readConfig(String const& path) {
         objectConfig->animationConfig = jsonMerge(objectConfig->animationConfig, assets->fetchJson(customConfig, path));
     }
 
-    objectConfig->orientations = ObjectDatabase::parseOrientations(path, config.get("orientations"), config);
+    objectConfig->orientations = ObjectDatabase::parseOrientations(m_root, path, config.get("orientations"), config);
 
     // For compatibility, allow particle emitter specs in the base config as
     // well as in individual orientations.
 
     List<ObjectOrientation::ParticleEmissionEntry> particleEmitters;
     if (config.contains("particleEmitter"))
-      particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, config.get("particleEmitter")));
+      particleEmitters.append(ObjectOrientation::parseParticleEmitter(m_root, path, config.get("particleEmitter")));
     for (auto particleEmitterConfig : config.getArray("particleEmitters", {}))
-      particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, particleEmitterConfig));
+      particleEmitters.append(ObjectOrientation::parseParticleEmitter(m_root, path, particleEmitterConfig));
 
     for (auto orientation : objectConfig->orientations)
       orientation->particleEmitters.appendAll(particleEmitters);
@@ -693,11 +694,12 @@ List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String co
 
   auto config = getConfig(objectName);
   auto mergeConfig = jsonMerge(config->config, parameters);
+  auto imageMetadata = m_root.imageMetadataDatabase();
 
   if (auto placementImage = mergeConfig.optString("placementImage")) {
     if (direction == Direction::Left)
       *placementImage += "?flipx";
-    drawables = {Drawable::makeImage(AssetPath::relativeTo(config->path, *placementImage),
+    drawables = {Drawable::makeImage(*imageMetadata, AssetPath::relativeTo(config->path, *placementImage),
                                      1.0 / TilePixels, false, Vec2F(position) + jsonToVec2F(mergeConfig.get("placementImagePosition", jsonFromVec2F(Vec2F()))) / TilePixels)};
   } else {
     std::size_t orientationIndex = config->findValidOrientation(world, position, direction);
@@ -728,7 +730,7 @@ List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String co
 
       image = AssetPath::join(image).replaceTags(imageKeys, true, "default");
       if (orientation->flipImages)
-        drawable.scale(Vec2F(-1, 1), drawable.boundBox(false).center() - drawable.position);
+        drawable.scale(Vec2F(-1, 1), drawable.boundBox(*imageMetadata, false).center() - drawable.position);
       drawables.append(std::move(drawable));
     }
     Drawable::translateAll(drawables, Vec2F(position) + orientation->imagePosition);

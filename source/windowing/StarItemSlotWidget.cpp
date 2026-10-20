@@ -112,13 +112,13 @@ static String formatShortSize(std::uint64_t n) {
       return strf("{}.{:02d}{:c}", whole, frac / 10, suffix);
 }
 
-ItemSlotWidget::ItemSlotWidget(std::shared_ptr<Item> const& item, String const& backingImage)
-  : m_item(item), m_backingImage(backingImage) {
+ItemSlotWidget::ItemSlotWidget(GuiContext& context, std::shared_ptr<Item> const& item, String const& backingImage)
+  : Widget(context), m_item(item), m_backingImage(backingImage), m_newItemIndicator(context.root()), m_highlightAnimation(context.root()) {
   m_drawBackingImageWhenFull = false;
   m_drawBackingImageWhenEmpty = true;
   m_progress = 1;
 
-  auto assets = Root::singleton().assets();
+  auto assets = this->context()->root().assets();
   auto interfaceConfig = assets->json("/interface.config");
   m_countPosition = TextPositioning(jsonToVec2F(interfaceConfig.get("itemCountRightAnchor")), HorizontalAnchor::RightAnchor);
   m_countFontMode = FontMode::Normal;
@@ -127,22 +127,22 @@ ItemSlotWidget::ItemSlotWidget(std::shared_ptr<Item> const& item, String const& 
   m_durabilityOffset = jsonToVec2I(interfaceConfig.get("itemIconDurabilityOffset"));
 
   auto newItemIndicatorConfig = interfaceConfig.get("newItemAnimation");
-  m_newItemIndicator = Animation(newItemIndicatorConfig);
+  m_newItemIndicator = Animation(this->context()->root(), newItemIndicatorConfig);
   // End animation before it begins, only display when triggered
   m_newItemIndicator.update(newItemIndicatorConfig.getDouble("animationCycle") * newItemIndicatorConfig.getDouble("loops", 1.0f));
 
   Json highlightAnimationConfig = interfaceConfig.get("highlightAnimation");
-  m_highlightAnimation = Animation(highlightAnimationConfig);
+  m_highlightAnimation = Animation(this->context()->root(), highlightAnimationConfig);
   m_highlightEnabled = false;
 
   Vec2I backingImageSize;
   if (m_backingImage.size()) {
-    auto imgMetadata = Root::singleton().imageMetadataDatabase();
+    auto imgMetadata = this->context()->root().imageMetadataDatabase();
     backingImageSize = Vec2I(imgMetadata->imageSize(m_backingImage));
   }
   setSize(m_itemDraggableArea.max().piecewiseMax(backingImageSize));
 
-  WidgetParser parser;
+  WidgetParser parser(*this->context());
 
   parser.construct(assets->json("/interface/itemSlot.config").get("config"), this);
   m_durabilityBar = fetchChild<ProgressWidget>("durabilityBar");

@@ -38,14 +38,18 @@ import star.root_lua_bindings;
 
 namespace Star {
 
-LuaBaseComponent::LuaBaseComponent() {
-  addCallbacks("sb", LuaBindings::makeUtilityCallbacks());
-  addCallbacks("root", LuaBindings::makeRootCallbacks());
+LuaBaseComponent::LuaBaseComponent(Root& root) : m_root(root) {
+  addCallbacks("sb", LuaBindings::makeUtilityCallbacks(root.random(), root.logger(), root.logMap()));
+  addCallbacks("root", LuaBindings::makeRootCallbacks(root));
   setAutoReInit(true);
 }
 
 LuaBaseComponent::~LuaBaseComponent() {
   m_threads.clear();
+}
+
+Root& LuaBaseComponent::root() const {
+  return m_root;
 }
 
 StringList const& LuaBaseComponent::scripts() const {
@@ -107,13 +111,15 @@ void LuaBaseComponent::setAutoReInit(bool autoReInit) {
   m_reloadSubscription.disconnect();
   if (autoReInit) {
     m_reloadTracker = std::make_shared<TrackerListener>();
-    m_reloadSubscription = Root::singleton().registerReloadListener(m_reloadTracker);
+    m_reloadSubscription = m_root.registerReloadListener(m_reloadTracker);
   } else {
     m_reloadTracker.reset();
   }
 }
 
 void LuaBaseComponent::setLuaRoot(std::shared_ptr<LuaRoot> luaRoot) {
+  if (luaRoot && &luaRoot->root() != &m_root)
+    throw LuaComponentException("Lua component and LuaRoot must belong to the same Root");
   m_luaRoot = std::move(luaRoot);
 }
 
@@ -131,7 +137,7 @@ bool LuaBaseComponent::init() {
   try {
     m_context = m_luaRoot->createContext(m_scripts);
   } catch (LuaException const& e) {
-    Logger::error("Exception while creating lua context for scripts '{}': {}", m_scripts, outputException(e, true));
+    m_root.logger().error("Exception while creating lua context for scripts '{}': {}", m_scripts, outputException(e, true));
     m_error = String(printException(e, false));
     m_context.reset();
     return false;
@@ -142,7 +148,7 @@ bool LuaBaseComponent::init() {
     try {
       m_context->invokePath("init");
     } catch (LuaException const& e) {
-      Logger::error("Exception while calling script init: {}", outputException(e, true));
+      m_root.logger().error("Exception while calling script init: {}", outputException(e, true));
       m_error = String(printException(e, false));
       m_context.reset();
       return false;
@@ -158,7 +164,7 @@ void LuaBaseComponent::uninit() {
       try {
         m_context->invokePath("uninit");
       } catch (LuaException const& e) {
-        Logger::error("Exception while calling script uninit: {}", outputException(e, true));
+        m_root.logger().error("Exception while calling script uninit: {}", outputException(e, true));
         m_error = String(printException(e, false));
       }
     }
@@ -228,7 +234,7 @@ LuaCallbacks LuaBaseComponent::makeThreadsCallbacks() {
   
   callbacks.registerCallback("create", [this](Json parameters) {
     cleanThreads();
-    auto name = parameters.getString("name",Uuid().hex());
+    auto name = parameters.getString("name",Uuid(m_root.random()).hex());
     if (m_threads.contains(name)) {
       m_threads.get(name)->stop();
       m_threads.remove(name);

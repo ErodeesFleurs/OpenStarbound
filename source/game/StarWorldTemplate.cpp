@@ -72,7 +72,7 @@ import star.spawn_type_database;
 import star.biome;
 import star.asset_source;
 import star.assets;
-import star.root_base;
+
 import star.configuration;
 import star.root;
 import star.liquid_types;
@@ -88,12 +88,12 @@ import star.static_random;
 import star.algorithm;
 namespace Star {
 
-WorldTemplate::WorldTemplate(Vec2U const& size) : WorldTemplate() {
+WorldTemplate::WorldTemplate(Root& root, Vec2U const& size) : WorldTemplate(root) {
   m_geometry = size;
 }
 
-WorldTemplate::WorldTemplate(CelestialCoordinate const& celestialCoordinate, std::shared_ptr<CelestialDatabase> const& celestialDatabase)
-  : WorldTemplate() {
+WorldTemplate::WorldTemplate(Root& root, CelestialCoordinate const& celestialCoordinate, std::shared_ptr<CelestialDatabase> const& celestialDatabase)
+  : WorldTemplate(root) {
   auto celestialParameters = celestialDatabase->parameters(celestialCoordinate);
   if (!celestialParameters)
     throw StarException("Celestial parameters for constructing WorldTemplate not found!");
@@ -103,23 +103,23 @@ WorldTemplate::WorldTemplate(CelestialCoordinate const& celestialCoordinate, std
   if (!m_worldParameters)
     throw StarException("Cannot create WorldTemplate from non-visitable world");
 
-  m_skyParameters = SkyParameters(celestialCoordinate, celestialDatabase);
+  m_skyParameters = SkyParameters(root, celestialCoordinate, celestialDatabase);
   m_seed = m_celestialParameters->seed();
   m_geometry = WorldGeometry(m_worldParameters->worldSize);
 
   if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters))
-    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildTerrestrialLayout(*terrestrialParameters, m_seed));
+    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildTerrestrialLayout(root, *terrestrialParameters, m_seed));
   else if (auto asteroidsParameters = as<AsteroidsWorldParameters>(m_worldParameters))
-    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildAsteroidsLayout(*asteroidsParameters, m_seed));
+    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildAsteroidsLayout(root, *asteroidsParameters, m_seed));
   else if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters))
-    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(*floatingDungeonParameters, m_seed));
+    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(root, *floatingDungeonParameters, m_seed));
 
   determineWorldName();
   setupWeatherDomains();
 }
 
-WorldTemplate::WorldTemplate(std::shared_ptr<VisitableWorldParameters const> const& worldParameters, SkyParameters const& skyParameters, std::uint64_t seed)
-  : WorldTemplate() {
+WorldTemplate::WorldTemplate(Root& root, std::shared_ptr<VisitableWorldParameters const> const& worldParameters, SkyParameters const& skyParameters, std::uint64_t seed)
+  : WorldTemplate(root) {
   if (!worldParameters)
     throw StarException("Cannot create WorldTemplate from non-visitable world");
 
@@ -129,17 +129,17 @@ WorldTemplate::WorldTemplate(std::shared_ptr<VisitableWorldParameters const> con
   m_geometry = WorldGeometry(m_worldParameters->worldSize);
 
   if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters))
-    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildTerrestrialLayout(*terrestrialParameters, seed));
+    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildTerrestrialLayout(root, *terrestrialParameters, seed));
   else if (auto asteroidsParameters = as<AsteroidsWorldParameters>(m_worldParameters))
-    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildAsteroidsLayout(*asteroidsParameters, seed));
+    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildAsteroidsLayout(root, *asteroidsParameters, seed));
   else if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters))
-    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(*floatingDungeonParameters, m_seed));
+    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(root, *floatingDungeonParameters, m_seed));
 
   determineWorldName();
   setupWeatherDomains();
 }
 
-WorldTemplate::WorldTemplate(Json const& store) : WorldTemplate() {
+WorldTemplate::WorldTemplate(Root& root, Json const& store) : WorldTemplate(root) {
   m_celestialParameters = jsonToMaybe<CelestialParameters>(store.get("celestialParameters", {}));
   m_worldParameters = diskLoadVisitableWorldParameters(store.get("worldParameters", {}));
   m_skyParameters = SkyParameters(store.get("skyParameters"));
@@ -147,7 +147,7 @@ WorldTemplate::WorldTemplate(Json const& store) : WorldTemplate() {
   m_seed = store.getUInt("seed");
   m_geometry = WorldGeometry(jsonToVec2U(store.get("size")));
   if (auto regionData = store.opt("regionData"))
-    m_layout = std::make_shared<WorldLayout>(regionData.take());
+    m_layout = std::make_shared<WorldLayout>(root, regionData.take());
 
   m_customTerrainRegions = store.getArray("customTerrainRegions", JsonArray()).transformed([](Json const& config) {
       CustomTerrainRegion ctr = {jsonToPolyF(config.get("region")), {}, config.getBool("solid")};
@@ -251,8 +251,8 @@ Maybe<Vec2I> WorldTemplate::findSensiblePlayerStart() const {
   int playerStartFreeBlocksHeight = m_templateConfig.getInt("playerStartFreeBlocksHeight");
 
   for (int i = 0; i < playerStartSearchTries; ++i) {
-    RectI searchRegion = Random::randFrom(playerStartSearchRegions);
-    int x = Random::randInt(searchRegion.xMin(), searchRegion.xMax());
+    RectI searchRegion = this->root().random().randFrom(playerStartSearchRegions);
+    int x = this->root().random().randInt(searchRegion.xMin(), searchRegion.xMax());
 
     for (int y = searchRegion.yMax() - 1; y >= searchRegion.yMin(); --y) {
       if (getBlockInfo(x, y).terrain && !getBlockInfo(x, y + 1).terrain) {
@@ -288,7 +288,7 @@ List<RectI> WorldTemplate::previewAddBiomeRegion(Vec2I const& position, int widt
       });
     return regionRects;
   } else {
-    Logger::error("Cannot add biome region to non-terrestrial world!");
+    this->root().logger().error("Cannot add biome region to non-terrestrial world!");
     // throw StarException("Cannot add biome region to non-terrestrial world!");
     return List<RectI>();
   }
@@ -302,7 +302,7 @@ List<RectI> WorldTemplate::previewExpandBiomeRegion(Vec2I const& position, int n
       });
     return regionRects;
   } else {
-    Logger::error("Cannot expand biome region on non-terrestrial world!");
+    this->root().logger().error("Cannot expand biome region on non-terrestrial world!");
     // throw StarException("Cannot expand biome region on non-terrestrial world!");
     return List<RectI>();
   }
@@ -313,7 +313,7 @@ void WorldTemplate::addBiomeRegion(Vec2I const& position, String const& biomeNam
     m_layout->addBiomeRegion(*terrestrialParameters, m_seed, position, biomeName, subBlockSelector, width);
     m_blockCache.clear();
   } else {
-    Logger::error("Cannot add biome region to non-terrestrial world!");
+    this->root().logger().error("Cannot add biome region to non-terrestrial world!");
     // throw StarException("Cannot add biome region to non-terrestrial world!");
   }
 }
@@ -323,7 +323,7 @@ void WorldTemplate::expandBiomeRegion(Vec2I const& position, int newWidth) {
     m_layout->expandBiomeRegion(position, newWidth);
     m_blockCache.clear();
   } else {
-    Logger::error("Cannot expand biome region on non-terrestrial world!");
+    this->root().logger().error("Cannot expand biome region on non-terrestrial world!");
     // throw StarException("Cannot expand biome region on non-terrestrial world!");
   }
 }
@@ -671,22 +671,22 @@ std::uint64_t WorldTemplate::seedFor(int x, int y) const {
   return staticRandomU64(m_seed, m_geometry.xwrap(x), y, "Block");
 }
 
-WorldTemplate::WorldTemplate() {
-  auto assets = Root::singleton().assets();
-  m_templateConfig = Root::singleton().assets()->json("/world_template.config");
+WorldTemplate::WorldTemplate(Root& root) : m_root(root) {
+  auto assets = this->root().assets();
+  m_templateConfig = this->root().assets()->json("/world_template.config");
   m_customTerrainBlendSize = m_templateConfig.getFloat("customTerrainBlendSize");
   m_customTerrainBlendWeight = m_templateConfig.getFloat("customTerrainBlendWeight");
 
   m_blockCache.setMaxSize(m_templateConfig.getInt("blockCacheSize"));
   m_geometry = Vec2U(2048, 2048);
-  m_seed = Random::randu64();
+  m_seed = this->root().random().randu64();
 }
 
 void WorldTemplate::determineWorldName() {
   if (m_celestialParameters)
     m_worldName = m_celestialParameters->name();
   else if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters))
-    m_worldName = Root::singleton().dungeonDefinitions()->get(floatingDungeonParameters->primaryDungeon)->displayName();
+    m_worldName = this->root().dungeonDefinitions()->get(floatingDungeonParameters->primaryDungeon)->displayName();
   else
     m_worldName = "";
 }
@@ -716,7 +716,7 @@ void WorldTemplate::setupWeatherDomains() {
 
     m_weatherDomains.append({"surface", terrestrial->weatherPool, terrestrial->surfaceLayer.layerMinHeight});
 
-    auto biomeDatabase = Root::singleton().biomeDatabase();
+    auto biomeDatabase = this->root().biomeDatabase();
     for (std::size_t i = 0; i < definitions.size(); ++i) {
       auto const& definition = definitions[i];
       int minHeight = definition.layer->layerMinHeight;
@@ -745,7 +745,7 @@ void WorldTemplate::setupWeatherDomains() {
 }
 
 std::pair<float, float> WorldTemplate::customTerrainWeighting(int x, int y) const {
-  auto assets = Root::singleton().assets();
+  auto assets = this->root().assets();
 
   float minimumDistance = std::numeric_limits<float>::max();
   float finalSolidWeight = 0.0f;

@@ -221,7 +221,9 @@ import star.client_context;
 
 namespace Star {
 
-AiInterface::AiInterface(std::shared_ptr<UniverseClient> client, std::shared_ptr<Cinematic> cinematic, MainInterfacePaneManager* paneManager) {
+AiInterface::AiInterface(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<Cinematic> cinematic, MainInterfacePaneManager* paneManager)
+  : Pane(guiContext), m_staticAnimation(guiContext.root()), m_scanlineAnimation(guiContext.root()),
+    m_faceAnimation(std::piecewise_construct, std::tuple<>(), std::forward_as_tuple(guiContext.root())) {
   m_client = client;
   m_cinematic = cinematic;
   m_paneManager = paneManager;
@@ -229,10 +231,10 @@ AiInterface::AiInterface(std::shared_ptr<UniverseClient> client, std::shared_ptr
   m_textLength = 0.0;
   m_textMaxLength = 0.0;
 
-  m_aiDatabase = Root::singleton().aiDatabase();
-  auto assets = Root::singleton().assets();
+  m_aiDatabase = context()->root().aiDatabase();
+  auto assets = context()->root().assets();
 
-  GuiReader reader;
+  GuiReader reader(*context());
   reader.registerCallback("close", std::bind(std::mem_fn(&AiInterface::dismiss), this));
   reader.registerCallback("missionItemList", std::bind(std::mem_fn(&AiInterface::selectMission), this));
   reader.registerCallback("startMission", std::bind(std::mem_fn(&AiInterface::startMission), this));
@@ -306,10 +308,10 @@ void AiInterface::update(float dt) {
     if (m_textLength < m_textMaxLength) {
       setFaceAnimation(m_currentSpeech->animation);
       if (!m_chatterSound || m_chatterSound->finished()) {
-        auto assets = Root::singleton().assets();
+        auto assets = context()->root().assets();
         m_chatterSound = std::make_shared<AudioInstance>(*assets->audio(assets->json("/interface/ai/ai.config:chatterSound").toString()));
         m_chatterSound->setLoops(-1);
-        GuiContext::singleton().playAudio(m_chatterSound);
+        context()->playAudio(m_chatterSound);
       }
     } else {
       setFaceAnimation("idle");

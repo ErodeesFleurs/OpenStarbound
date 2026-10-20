@@ -68,7 +68,7 @@ class PaneManager;
 
 class TeleportDialog : public Pane {
 public:
-  TeleportDialog(std::shared_ptr<UniverseClient> client,
+  TeleportDialog(GuiContext& guiContext, std::shared_ptr<UniverseClient> client,
       PaneManager* paneManager,
       Json config,
       EntityId sourceEntityId,

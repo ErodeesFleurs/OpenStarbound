@@ -9,6 +9,8 @@ import star.json;
 
 namespace Star {
 
+class Root;
+
 struct RadioMessageDatabaseExceptionTag {
   static constexpr char const* name() { return "RadioMessageDatabaseException"; }
 };
@@ -40,12 +42,13 @@ struct RadioMessage {
 
 class RadioMessageDatabase {
 public:
-  RadioMessageDatabase();
+  explicit RadioMessageDatabase(Root& root);
 
   RadioMessage radioMessage(String const& messageName) const;
   RadioMessage createRadioMessage(Json const& config, Maybe<String> const& uniqueId = {}) const;
 
 private:
+  Root& m_root;
   StringMap<RadioMessage> m_radioMessages;
 };
 

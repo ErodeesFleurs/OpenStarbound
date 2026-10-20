@@ -68,8 +68,8 @@ import star.math_common;
 import star.pythonic;
 namespace Star {
 
-SliderBarWidget::SliderBarWidget(String const& grid, bool showSpinner)
-  : m_grid(std::make_shared<ImageWidget>(grid)),
+SliderBarWidget::SliderBarWidget(GuiContext& context, String const& grid, bool showSpinner)
+  : Widget(context), m_grid(std::make_shared<ImageWidget>(*this->context(), grid)),
     m_low(0),
     m_high(1),
     m_delta(1),
@@ -78,15 +78,15 @@ SliderBarWidget::SliderBarWidget(String const& grid, bool showSpinner)
     m_jogDragActive(false),
     m_enabled(true) {
 
-  auto assets = Root::singleton().assets();
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  auto assets = this->context()->root().assets();
+  auto imgMetadata = this->context()->root().imageMetadataDatabase();
 
-  m_jog = std::make_shared<ButtonWidget>();
+  m_jog = std::make_shared<ButtonWidget>(*this->context());
   m_jog->setImages(assets->json("/interface.config:slider.jog").toString());
   m_jog->setPressedOffset({0, 0});
 
   if (showSpinner) {
-    GuiReader guiReader;
+    GuiReader guiReader(*this->context());
     guiReader.registerCallback("spinner.down", std::bind(&SliderBarWidget::leftCallback, this));
     guiReader.registerCallback("spinner.up", std::bind(&SliderBarWidget::rightCallback, this));
 

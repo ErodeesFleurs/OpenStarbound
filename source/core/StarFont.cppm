@@ -15,13 +15,29 @@ struct FontExceptionTag {
 using FontException = StarError<FontExceptionTag, StarException>;
 
 struct FontImpl;
+struct FTContext;
+
+// Explicit FreeType library owner. Loaded fonts retain the library, including
+// when the originating asset catalog has been replaced.
+class FontLibrary {
+public:
+  FontLibrary();
+  ~FontLibrary();
+
+  FontLibrary(FontLibrary const&) = delete;
+  FontLibrary& operator=(FontLibrary const&) = delete;
+
+private:
+  friend class Font;
+  std::shared_ptr<FTContext> m_context;
+};
 
 class Font {
 public:
-  static std::shared_ptr<Font> loadFont(String const& fileName, unsigned pixelSize = 12);
-  static std::shared_ptr<Font> loadFont(std::shared_ptr<ByteArray const> const& bytes, unsigned pixelSize = 12);
+  static std::shared_ptr<Font> loadFont(FontLibrary const& library, String const& fileName, unsigned pixelSize = 12);
+  static std::shared_ptr<Font> loadFont(FontLibrary const& library, std::shared_ptr<ByteArray const> const& bytes, unsigned pixelSize = 12);
 
-  Font();
+  explicit Font(FontLibrary const& library);
   ~Font();
 
   Font(Font const&) = delete;
@@ -43,8 +59,11 @@ public:
   bool exists(String::Char c);
 
 private:
-  std::shared_ptr<FontImpl> m_fontImpl;
+  explicit Font(std::shared_ptr<FTContext> context);
+
+  std::shared_ptr<FTContext> m_context;
   std::shared_ptr<ByteArray const> m_fontBuffer;
+  std::shared_ptr<FontImpl> m_fontImpl;
   unsigned m_pixelSize;
   std::uint8_t m_alphaThreshold;
 
@@ -60,5 +79,7 @@ export namespace Star {
   using ::Star::FontExceptionTag;
   using ::Star::FontException;
   using ::Star::FontImpl;
+  using ::Star::FTContext;
+  using ::Star::FontLibrary;
   using ::Star::Font;
 }

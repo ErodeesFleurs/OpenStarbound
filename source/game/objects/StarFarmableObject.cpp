@@ -144,7 +144,7 @@ import star.material_database;
 
 namespace Star {
 
-FarmableObject::FarmableObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters) : Object(config, parameters) {
+FarmableObject::FarmableObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters) : Entity(rootContext), Object(rootContext, config, parameters) {
   m_stages = configValue("stages", JsonArray({JsonObject()})).toArray();
   m_stage = configValue("startingStage", 0).toInt();
 
@@ -153,7 +153,7 @@ FarmableObject::FarmableObject(std::shared_ptr<ObjectConfig const> config, Json 
   m_nextStageTime = 0.0;
   m_finalStage = false;
 
-  auto assets = Root::singleton().assets();
+  auto assets = this->root().assets();
   m_minImmersion = configValue("minImmersion", 0).toFloat();
   m_maxImmersion = configValue("maxImmersion", 2).toFloat();
   m_immersion = SlidingWindow(assets->json("/farming.config:immersionWindow").toFloat(),
@@ -180,7 +180,7 @@ void FarmableObject::update(float dt, std::uint64_t currentStep) {
     }
 
     // update immersion and check whether farmable should break
-    m_immersion.update(std::bind(&Object::liquidFillLevel, this));
+    m_immersion.update(root().timing().timestep, std::bind(&Object::liquidFillLevel, this));
     if (m_immersion.average() > m_maxImmersion || m_immersion.average() < m_minImmersion)
       breakObject(false);
   }
@@ -201,10 +201,10 @@ InteractAction FarmableObject::interact(InteractRequest const&) {
 bool FarmableObject::harvest() {
   if (isMaster() && m_stages.get(m_stage).contains("harvestPool")) {
     try {
-      for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(m_stages.get(m_stage).getString("harvestPool"), world()->threatLevel()))
-        world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+      for (auto const& treasureItem : this->root().treasureDatabase()->createTreasure(m_stages.get(m_stage).getString("harvestPool"), world()->threatLevel()))
+        world()->addEntity(ItemDrop::createRandomizedDrop(root(), treasureItem, position()));
     } catch (StarException const& e) {
-      Logger::warn("Failed to create treasure for farmable object '{}': {}", name(), outputException(e, false));
+      this->root().logger().warn("Failed to create treasure for farmable object '{}': {}", name(), outputException(e, false));
     }
 
     if (m_stages.get(m_stage).contains("resetToStage")) {
@@ -228,8 +228,8 @@ void FarmableObject::enterStage(int newStage) {
   // attempt to consume water from the soil if needed
   if (m_consumeSoilMoisture && newStage > m_stage) {
     if (auto orientation = currentOrientation()) {
-      auto assets = Root::singleton().assets();
-      auto materialDatabase = Root::singleton().materialDatabase();
+      auto assets = this->root().assets();
+      auto materialDatabase = this->root().materialDatabase();
       auto wetToDryMods = assets->json("/farming.config:wetToDryMods");
 
       // try to transform all anchor spaces, back out and reset stage time if
@@ -240,7 +240,7 @@ void FarmableObject::enterStage(int newStage) {
           world()->modifyTile(pos, PlaceMod{anchor.layer, materialDatabase->modId(*newMod), MaterialHue()}, true);
         } else {
           Vec2F durationRange = jsonToVec2F(m_stages.get(m_stage).get("duration", JsonArray({0, 0})));
-          m_nextStageTime = world()->epochTime() + Random::randf(durationRange[0], durationRange[1]);
+          m_nextStageTime = world()->epochTime() + this->root().random().randf(durationRange[0], durationRange[1]);
 
           return;
         }
@@ -257,13 +257,13 @@ void FarmableObject::enterStage(int newStage) {
     Vec2I position = tilePosition();
 
     TreeVariant tv;
-    auto plantDatabase = Root::singleton().plantDatabase();
+    auto plantDatabase = this->root().plantDatabase();
     if (!foliageName.empty())
       tv = plantDatabase->buildTreeVariant(stemName, stemHueShift, foliageName, foliageHueShift);
     else
       tv = plantDatabase->buildTreeVariant(stemName, stemHueShift);
 
-    auto plant = plantDatabase->createPlant(tv, Random::randi64());
+    auto plant = plantDatabase->createPlant(tv, this->root().random().randi64());
     plant->setTilePosition(position);
 
     if (anySpacesOccupied(plant->spaces()) || !allSpacesOccupied(plant->roots())) {
@@ -285,14 +285,14 @@ void FarmableObject::enterStage(int newStage) {
     m_finalStage = false;
     m_stageEnterTime = m_nextStageTime;
     Vec2F durationRange = jsonToVec2F(m_stages.get(newStage).get("duration", JsonArray({0, 0})));
-    m_nextStageTime += Random::randf(durationRange[0], durationRange[1]);
+    m_nextStageTime += this->root().random().randf(durationRange[0], durationRange[1]);
   }
 
   m_interactive.set(m_stages.get(newStage).contains("harvestPool"));
 
   // keep the same variant if stages have same number of alts
   if (m_stageAlt == -1 || m_stages.get(newStage).getInt("alts", 1) != m_stages.get(m_stage).getInt("alts", 1))
-    m_stageAlt = Random::randInt(m_stages.get(newStage).getInt("alts", 1) - 1);
+    m_stageAlt = this->root().random().randInt(m_stages.get(newStage).getInt("alts", 1) - 1);
 
   m_stage = newStage;
 

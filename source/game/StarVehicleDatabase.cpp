@@ -83,8 +83,8 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-VehicleDatabase::VehicleDatabase() : m_rebuilder(std::make_shared<Rebuilder>("vehicle")) {
-  auto assets = Root::singleton().assets();
+VehicleDatabase::VehicleDatabase(Root& root) : m_root(root), m_rebuilder(std::make_shared<Rebuilder>(root, "vehicle")) {
+  auto assets = m_root.assets();
   auto& files = assets->scanExtension("vehicle");
   assets->queueJsons(files);
   for (String file : files) {
@@ -106,7 +106,7 @@ std::shared_ptr<Vehicle> VehicleDatabase::create(String const& vehicleName, Json
   auto configPair = m_vehicles.ptr(vehicleName);
   if (!configPair)
     throw VehicleDatabaseException::format("No such vehicle named '{}'", vehicleName);
-  return std::make_shared<Vehicle>(configPair->second, configPair->first, extraConfig);
+  return std::make_shared<Vehicle>(m_root, configPair->second, configPair->first, extraConfig);
 }
 
 ByteArray VehicleDatabase::netStore(std::shared_ptr<Vehicle> const& vehicle, NetCompatibilityRules rules) const {

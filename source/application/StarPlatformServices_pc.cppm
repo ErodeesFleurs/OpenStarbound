@@ -17,6 +17,7 @@ import star.statistics_service;
 import star.p2p_networking_service;
 import star.user_generated_content_service;
 import star.desktop_service;
+import star.logging;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
 import star.steam_dispatch;
@@ -28,8 +29,10 @@ namespace Star {
 class PcPlatformServices;
 
 struct PcPlatformServicesState {
-  PcPlatformServicesState();
+  explicit PcPlatformServicesState(Logger& logger);
   ~PcPlatformServicesState();
+  Logger& logger;
+  bool steamIsFlatpak = false;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
   void onGameOverlayActivated(GameOverlayActivated_t* callback);
@@ -61,12 +64,13 @@ class PcPlatformServices {
 public:
   // Any command line arguments that start with '+platform' will be stripped
   // out and passed here
-  static std::unique_ptr<PcPlatformServices> create(String const& path, StringList platformArguments);
+  static std::unique_ptr<PcPlatformServices> create(Logger& logger, String const& path, StringList platformArguments);
 
   std::shared_ptr<StatisticsService> statisticsService() const;
   std::shared_ptr<P2PNetworkingService> p2pNetworkingService() const;
   std::shared_ptr<UserGeneratedContentService> userGeneratedContentService() const;
   std::shared_ptr<DesktopService> desktopService() const;
+  bool steamIsFlatpak() const;
 
   // Will return true if there is an in-game overlay active.  This is important
   // because the cursor must be visible when such an overlay is active,

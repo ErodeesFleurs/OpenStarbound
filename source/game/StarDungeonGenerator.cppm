@@ -25,6 +25,7 @@ import star.world_geometry;
 
 import star.rect;
 namespace Star {
+class Root;
 
 struct DungeonExceptionTag {
   static constexpr char const* name() { return "DungeonException"; }
@@ -76,8 +77,10 @@ namespace Dungeon {
   struct Tile;
 
   class DungeonGeneratorWriter {
+    Root& m_root;
   public:
-    DungeonGeneratorWriter(std::shared_ptr<DungeonGeneratorWorldFacade> facade, Maybe<int> terrainMarkingSurfaceLevel, Maybe<int> terrainSurfaceSpaceExtends);
+    Root& root() const { return m_root; }
+    DungeonGeneratorWriter(Root& root, std::shared_ptr<DungeonGeneratorWorldFacade> facade, Maybe<int> terrainMarkingSurfaceLevel, Maybe<int> terrainSurfaceSpaceExtends);
 
     Vec2I wrapPosition(Vec2I const& pos) const;
 
@@ -173,8 +176,8 @@ namespace Dungeon {
 
   class Rule {
   public:
-    static Maybe<std::shared_ptr<Rule const>> parse(Json const& rule);
-    static List<std::shared_ptr<Rule const>> readRules(Json const& rules);
+    static Maybe<std::shared_ptr<Rule const>> parse(Root& root, Json const& rule);
+    static List<std::shared_ptr<Rule const>> readRules(Root& root, Json const& rules);
 
     virtual ~Rule() {}
 
@@ -314,8 +317,8 @@ namespace Dungeon {
 
   class Brush {
   public:
-    static std::shared_ptr<Brush const> parse(Json const& brush);
-    static List<std::shared_ptr<Brush const>> readBrushes(Json const& brushes);
+    static std::shared_ptr<Brush const> parse(Root& root, Json const& brush);
+    static List<std::shared_ptr<Brush const>> readBrushes(Root& root, Json const& brushes);
 
     virtual ~Brush() {}
 
@@ -327,7 +330,7 @@ namespace Dungeon {
 
   class RandomBrush : public Brush {
   public:
-    RandomBrush(Json const& brush);
+    RandomBrush(Root& root, Json const& brush);
 
     virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
@@ -420,7 +423,7 @@ namespace Dungeon {
 
   class NpcBrush : public Brush {
   public:
-    NpcBrush(Json const& brush);
+    NpcBrush(Root& root, Json const& brush);
 
     virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
@@ -565,8 +568,10 @@ namespace Dungeon {
   };
 
   class Part {
+    Root& m_root;
   public:
-    Part(DungeonDefinition* dungeon, Json const& part, std::shared_ptr<PartReader> reader);
+    Root& root() const { return m_root; }
+    Part(Root& root, DungeonDefinition* dungeon, Json const& part, std::shared_ptr<PartReader> reader);
 
     String const& name() const;
     Vec2U size() const;
@@ -638,8 +643,10 @@ namespace Dungeon {
 }
 
 class DungeonDefinition {
+  Root& m_root;
 public:
-  DungeonDefinition(JsonObject const& definition, String const& directory);
+  Root& root() const { return m_root; }
+  DungeonDefinition(Root& root, JsonObject const& definition, String const& directory);
 
   JsonObject metadata() const;
   String directory() const;
@@ -679,14 +686,16 @@ private:
 };
 
 class DungeonDefinitions {
+  Root& m_root;
 public:
-  DungeonDefinitions();
+  Root& root() const { return m_root; }
+  DungeonDefinitions(Root& root);
 
   std::shared_ptr<DungeonDefinition const> get(String const& name) const;
   JsonObject getMetadata(String const& name) const;
 
 private:
-  static std::shared_ptr<DungeonDefinition> readDefinition(String const& path);
+  std::shared_ptr<DungeonDefinition> readDefinition(String const& path) const;
 
   StringMap<String> m_paths;
   mutable Mutex m_cacheMutex;
@@ -694,8 +703,10 @@ private:
 };
 
 class DungeonGenerator {
+  Root& m_root;
 public:
-  DungeonGenerator(String const& dungeonName, std::uint64_t seed, float threatLevel, Maybe<DungeonId> dungeonId);
+  Root& root() const { return m_root; }
+  DungeonGenerator(Root& root, String const& dungeonName, std::uint64_t seed, float threatLevel, Maybe<DungeonId> dungeonId);
 
   Maybe<std::pair<List<RectI>, Set<Vec2I>>> generate(std::shared_ptr<DungeonGeneratorWorldFacade> facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement);
 

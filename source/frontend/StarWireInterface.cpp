@@ -191,15 +191,15 @@ import star.tools;
 
 namespace Star {
 
-WirePane::WirePane(std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, std::shared_ptr<WorldPainter> worldPainter) {
+WirePane::WirePane(GuiContext& guiContext, std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, std::shared_ptr<WorldPainter> worldPainter) : Pane(guiContext) {
   m_worldClient = worldClient;
   m_player = player;
   m_worldPainter = worldPainter;
 
   m_connecting = false;
 
-  auto assets = Root::singleton().assets();
-  GuiReader reader;
+  auto assets = context()->root().assets();
+  GuiReader reader(*context());
   reader.construct(assets->json("/interface/wires/wires.config:gui"), this);
 
   m_nodeSize = Vec2F(1.8f, 1.8f);
@@ -251,7 +251,7 @@ void WirePane::renderWire(Vec2F from, Vec2F to, Color baseColor) {
   to = m_worldPainter->camera().worldToScreen(to);
 
   auto rangeRand = [&](float dev, float min, float max) {
-    return clamp<float>(Random::nrandf(dev, max), min, max);
+    return clamp<float>(context()->root().random().nrandf(dev, max), min, max);
   };
 
   float lineThickness = m_worldPainter->camera().pixelRatio() * rangeRand(m_beamWidthDev, m_minBeamWidth, m_maxBeamWidth);

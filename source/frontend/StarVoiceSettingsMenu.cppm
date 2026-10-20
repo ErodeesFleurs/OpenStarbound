@@ -47,7 +47,7 @@ namespace Star {
 
 class VoiceSettingsMenu : public BaseScriptPane {
 public:
-  VoiceSettingsMenu(Json const& config);
+  VoiceSettingsMenu(GuiContext& guiContext, Json const& config);
 
   virtual void show() override;
   void displayed() override;

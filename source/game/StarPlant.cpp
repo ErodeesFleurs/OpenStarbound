@@ -111,7 +111,7 @@ Plant::PlantPiece::PlantPiece() {
   flip = false;
 }
 
-Plant::Plant(TreeVariant const& config, std::uint64_t seed) : Plant() {
+Plant::Plant(Root& rootContext, TreeVariant const& config, std::uint64_t seed) : Plant(rootContext) {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_windTime = 0.0f;
@@ -146,7 +146,7 @@ Plant::Plant(TreeVariant const& config, std::uint64_t seed) : Plant() {
   float xOffset = 0;
   float yOffset = 0;
 
-  float roffset = Random::randf() * 0.5f;
+  float roffset = this->root().random().randf() * 0.5f;
 
   m_descriptions = config.descriptions;
   m_ephemeral = config.ephemeral;
@@ -154,7 +154,7 @@ Plant::Plant(TreeVariant const& config, std::uint64_t seed) : Plant() {
 
   int segment = 0;
 
-  auto assets = Root::singleton().assets();
+  auto assets = this->root().assets();
 
   // base
   {
@@ -181,7 +181,7 @@ Plant::Plant(TreeVariant const& config, std::uint64_t seed) : Plant() {
       piece.kind = PlantPieceKind::Stem;
       piece.zLevel = 0.0f;
       piece.rotationType = DontRotate;
-      piece.rotationOffset = Random::randf() + roffset;
+      piece.rotationOffset = this->root().random().randf() + roffset;
       m_pieces.append(piece);
     }
 
@@ -206,7 +206,7 @@ Plant::Plant(TreeVariant const& config, std::uint64_t seed) : Plant() {
         piece.kind = PlantPieceKind::Foliage;
         piece.zLevel = 3.0f;
         piece.rotationType = m_ceiling ? DontRotate : RotateLeaves;
-        piece.rotationOffset = Random::randf() + roffset;
+        piece.rotationOffset = this->root().random().randf() + roffset;
         m_pieces.append(piece);
       }
 
@@ -221,7 +221,7 @@ Plant::Plant(TreeVariant const& config, std::uint64_t seed) : Plant() {
         piece.kind = PlantPieceKind::Foliage;
         piece.zLevel = -1.0f;
         piece.rotationType = m_ceiling ? DontRotate : RotateLeaves;
-        piece.rotationOffset = Random::randf() + roffset;
+        piece.rotationOffset = this->root().random().randf() + roffset;
         m_pieces.append(piece);
       }
     }
@@ -267,7 +267,7 @@ Plant::Plant(TreeVariant const& config, std::uint64_t seed) : Plant() {
         piece.kind = PlantPieceKind::Stem;
         piece.zLevel = 1.0f;
         piece.rotationType = DontRotate;
-        piece.rotationOffset = Random::randf() + roffset;
+        piece.rotationOffset = this->root().random().randf() + roffset;
         m_pieces.append(piece);
       }
 
@@ -291,7 +291,7 @@ Plant::Plant(TreeVariant const& config, std::uint64_t seed) : Plant() {
           piece.kind = PlantPieceKind::Foliage;
           piece.zLevel = 3.0f;
           piece.rotationType = m_ceiling ? DontRotate : RotateLeaves;
-          piece.rotationOffset = Random::randf() + roffset;
+          piece.rotationOffset = this->root().random().randf() + roffset;
           m_pieces.append(piece);
         }
 
@@ -306,7 +306,7 @@ Plant::Plant(TreeVariant const& config, std::uint64_t seed) : Plant() {
           piece.kind = PlantPieceKind::Foliage;
           piece.zLevel = -1.0f;
           piece.rotationType = m_ceiling ? DontRotate : RotateLeaves;
-          piece.rotationOffset = Random::randf() + roffset;
+          piece.rotationOffset = this->root().random().randf() + roffset;
           m_pieces.append(piece);
         }
       }
@@ -328,7 +328,7 @@ Plant::Plant(TreeVariant const& config, std::uint64_t seed) : Plant() {
         float yO = branchYOffset + attachmentSettings.get("by").toDouble() / TilePixels;
 
         if (config.stemSettings.getBool("alwaysBranch", false) || rnd.randInt(2 + i) != 0) {
-          float boffset = Random::randf() + roffset;
+          float boffset = this->root().random().randf() + roffset;
           String branchFile = AssetPath::relativeTo(config.stemDirectory, branchSettings.get("image").toString());
           {
             PlantPiece piece;
@@ -406,7 +406,7 @@ Plant::Plant(TreeVariant const& config, std::uint64_t seed) : Plant() {
       xOffset += attachmentSettings.get("bx").toDouble() / TilePixels;
       yOffset += attachmentSettings.get("by").toDouble() / TilePixels;
 
-      float coffset = roffset + Random::randf();
+      float coffset = roffset + this->root().random().randf();
 
       String crownFile = AssetPath::relativeTo(config.stemDirectory, crownSettings.get("image").toString());
       {
@@ -505,7 +505,7 @@ ByteArray Plant::netStore(NetCompatibilityRules rules) const {
   return ds.takeData();
 }
 
-Plant::Plant(GrassVariant const& config, std::uint64_t seed) : Plant() {
+Plant::Plant(Root& rootContext, GrassVariant const& config, std::uint64_t seed) : Plant(rootContext) {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_ceiling = false;
@@ -526,7 +526,7 @@ Plant::Plant(GrassVariant const& config, std::uint64_t seed) : Plant() {
   // If this is a ceiling plant, offset the image so that the [0, 0] space is
   // at the top
   if (config.ceiling) {
-    auto imgMetadata = Root::singleton().imageMetadataDatabase();
+    auto imgMetadata = this->root().imageMetadataDatabase();
     float imageHeight = imgMetadata->imageSize(imageName)[1];
     offset = Vec2F(0.0f, 1.0f - imageHeight / TilePixels);
   }
@@ -544,7 +544,7 @@ Plant::Plant(GrassVariant const& config, std::uint64_t seed) : Plant() {
   setupNetStates();
 }
 
-Plant::Plant(BushVariant const& config, std::uint64_t seed) : Plant() {
+Plant::Plant(Root& rootContext, BushVariant const& config, std::uint64_t seed) : Plant(rootContext) {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_ceiling = false;
@@ -558,7 +558,7 @@ Plant::Plant(BushVariant const& config, std::uint64_t seed) : Plant() {
   m_piecesUpdated = true;
 
   RandomSource rand(seed);
-  auto assets = Root::singleton().assets();
+  auto assets = this->root().assets();
 
   auto shape = rand.randValueFrom(config.shapes);
   String shapeImageName = AssetPath::relativeTo(config.directory, shape.image);
@@ -595,7 +595,7 @@ Plant::Plant(BushVariant const& config, std::uint64_t seed) : Plant() {
   setupNetStates();
 }
 
-Plant::Plant(Json const& diskStore) : Plant() {
+Plant::Plant(Root& rootContext, Json const& diskStore) : Plant(rootContext) {
   m_tilePosition = jsonToVec2I(diskStore.get("tilePosition"));
   m_ceiling = diskStore.getBool("ceiling");
   m_stemDropConfig = diskStore.get("stemDropConfig");
@@ -603,14 +603,14 @@ Plant::Plant(Json const& diskStore) : Plant() {
   m_saplingDropConfig = diskStore.get("saplingDropConfig");
   m_descriptions = diskStore.get("descriptions");
   m_ephemeral = diskStore.getBool("ephemeral");
-  m_tileDamageParameters = TileDamageParameters(diskStore.get("tileDamageParameters"));
+  m_tileDamageParameters = TileDamageParameters(*root().assets(), diskStore.get("tileDamageParameters"));
   m_fallsWhenDead = diskStore.getBool("fallsWhenDead");
   readPiecesFromJson(diskStore.get("pieces"));
 
   setupNetStates();
 }
 
-Plant::Plant(ByteArray const& netStore, NetCompatibilityRules rules) : Plant() {
+Plant::Plant(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules rules) : Plant(rootContext) {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_ceiling = false;
@@ -638,7 +638,7 @@ Plant::Plant(ByteArray const& netStore, NetCompatibilityRules rules) : Plant() {
   setupNetStates();
 }
 
-Plant::Plant() {
+Plant::Plant(Root& rootContext) : Entity(rootContext) {
   m_ephemeral = false;
   m_piecesUpdated = true;
   m_ceiling = false;
@@ -750,7 +750,7 @@ RectF Plant::interactiveBoundBox() const {
 }
 
 void Plant::scanSpacesAndRoots() {
-  auto imageMetadataDatabase = Root::singleton().imageMetadataDatabase();
+  auto imageMetadataDatabase = this->root().imageMetadataDatabase();
 
   // build spaces
   Set<Vec2I> spaces;
@@ -815,7 +815,7 @@ void Plant::update(float dt, std::uint64_t) {
 }
 
 void Plant::render(RenderCallback* renderCallback) {
-  float damageXOffset = Random::randf(-0.1f, 0.1f) * m_tileDamageStatus.damageEffectPercentage();
+  float damageXOffset = this->root().random().randf(-0.1f, 0.1f) * m_tileDamageStatus.damageEffectPercentage();
 
   for (auto const& plantPiece : m_pieces) {
     auto size = Vec2F(plantPiece.imageSize) / TilePixels;
@@ -824,7 +824,7 @@ void Plant::render(RenderCallback* renderCallback) {
     if ((m_ceiling && offset[1] <= m_tileDamageY) || (!m_ceiling && offset[1] + size[1] >= m_tileDamageY))
       offset[0] += damageXOffset;
 
-    auto drawable = Drawable::makeImage(plantPiece.imagePath, 1.0f / TilePixels, false, offset);
+    auto drawable = Drawable::makeImage(*this->root().imageMetadataDatabase(), plantPiece.imagePath, 1.0f / TilePixels, false, offset);
     if (plantPiece.flip)
       drawable.scale(Vec2F(-1, 1));
 
@@ -846,24 +846,24 @@ void Plant::render(RenderCallback* renderCallback) {
       auto hueshift = m_stemDropConfig.getFloat("hueshift", 0) / 360.0f;
       auto density = particleConfig.getFloat("density", 1);
       while (density-- > 0) {
-        auto config = Random::randValueFrom(particleOptions, {});
+        auto config = this->root().random().randValueFrom(particleOptions, {});
         if (config.isNull() || config.size() == 0)
           continue;
-        auto particle = Root::singleton().particleDatabase()->particle(config);
+        auto particle = this->root().particleDatabase()->particle(config);
         particle.color.hueShift(hueshift);
         if (!particle.string.empty()) {
           particle.string = strf("{}?hueshift={}", particle.string, hueshift);
           particle.image = particle.string;
         }
-        particle.position = {m_tileDamageX + Random::randf(), m_tileDamageY + Random::randf()};
+        particle.position = {m_tileDamageX + this->root().random().randf(), m_tileDamageY + this->root().random().randf()};
         particle.translate(position());
         renderCallback->addParticle(std::move(particle));
       }
       JsonArray damageTreeSoundOptions = m_stemDropConfig.get("sounds", JsonObject()).getArray("damageTree", JsonArray());
       if (damageTreeSoundOptions.size()) {
-        auto sound = Random::randFrom(damageTreeSoundOptions);
-        Vec2F pos = position() + Vec2F(m_tileDamageX + Random::randf(), m_tileDamageY + Random::randf());
-        auto assets = Root::singleton().assets();
+        auto sound = this->root().random().randFrom(damageTreeSoundOptions);
+        Vec2F pos = position() + Vec2F(m_tileDamageX + this->root().random().randf(), m_tileDamageY + this->root().random().randf());
+        auto assets = this->root().assets();
         auto audioInstance = std::make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
         audioInstance->setPosition(pos);
         audioInstance->setVolume(sound.getFloat("volume", 1.0f));
@@ -1098,12 +1098,12 @@ void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) 
     segments[piece.segmentIdx].append(piece);
   }
   std::reverse(segmentOrder.begin(), segmentOrder.end());
-  float random = Random::randf(-0.3f, 0.3f);
+  float random = this->root().random().randf(-0.3f, 0.3f);
   auto fallVector = (worldSpaceBreakPoint - sourcePosition).normalized();
   bool first = true;
   for (auto segmentIdx : segmentOrder) {
     auto segment = segments[segmentIdx];
-    world()->addEntity(std::make_shared<PlantDrop>(segment,
+    world()->addEntity(std::make_shared<PlantDrop>(this->root(), segment,
         worldSpaceBreakPoint,
         fallVector,
         description(),

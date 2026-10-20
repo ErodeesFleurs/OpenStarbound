@@ -122,8 +122,8 @@ PlantDrop::PlantDropPiece::PlantDropPiece() {
   flip = false;
 }
 
-PlantDrop::PlantDrop(List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
-    bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig, bool master, float random) {
+PlantDrop::PlantDrop(Root& rootContext, List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
+    bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig, bool master, float random) : Entity(rootContext), m_movementController(rootContext) {
   m_netGroup.addNetElement(&m_movementController);
   m_netGroup.addNetElement(&m_spawnedDrops);
 
@@ -188,7 +188,7 @@ PlantDrop::PlantDrop(List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2
     m_collisionRect = fullBounds;
 }
 
-PlantDrop::PlantDrop(ByteArray const& netStore, NetCompatibilityRules rules) {
+PlantDrop::PlantDrop(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules rules) : Entity(rootContext), m_movementController(rootContext) {
   m_netGroup.addNetElement(&m_movementController);
   m_netGroup.addNetElement(&m_spawnedDrops);
 
@@ -312,7 +312,7 @@ void PlantDrop::update(float dt, std::uint64_t) {
         m_time = 0;
     }
 
-    auto imgMetadata = Root::singleton().imageMetadataDatabase();
+    auto imgMetadata = this->root().imageMetadataDatabase();
 
     if ((m_time <= 0 || world()->gravity(position()) == 0) && !m_spawnedDrops.get()) {
       m_spawnedDrops.set(true);
@@ -323,16 +323,16 @@ void PlantDrop::update(float dt, std::uint64_t) {
         if (plantPiece.kind == Plant::PlantPieceKind::Foliage)
           dropOptions = m_foliageConfig.getArray("drops", {});
         if (dropOptions.size()) {
-          auto option = Random::randFrom(dropOptions).toArray();
+          auto option = this->root().random().randFrom(dropOptions).toArray();
           for (auto drop : option) {
             auto size = imgMetadata->imageSize(plantPiece.image);
             Vec2F pos = Vec2F(plantPiece.offset + Vec2F(size) * .5f / TilePixels).rotate(m_movementController.rotation())
-                + Vec2F(Random::randf(-0.2f, 0.2f), Random::randf(-0.2f, 0.2f));
+                + Vec2F(this->root().random().randf(-0.2f, 0.2f), this->root().random().randf(-0.2f, 0.2f));
             if (drop.getString("item") == "sapling")
-              world()->addEntity(ItemDrop::createRandomizedDrop(
+              world()->addEntity(ItemDrop::createRandomizedDrop(this->root(), 
                   ItemDescriptor("sapling", (std::size_t)drop.getInt("count", 1), m_saplingConfig), position() + pos));
             else
-              world()->addEntity(ItemDrop::createRandomizedDrop(
+              world()->addEntity(ItemDrop::createRandomizedDrop(this->root(), 
                   {drop.getString("item"), (std::size_t)drop.getInt("count", 1)}, position() + pos));
           }
         }
@@ -364,7 +364,7 @@ void PlantDrop::particleForPlantPart(PlantDropPiece const& piece, String const& 
 
   Particle particle;
 
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  auto imgMetadata = this->root().imageMetadataDatabase();
 
   Vec2F imageSize = Vec2F(imgMetadata->imageSize(piece.image)) / TilePixels;
   float density = (imageSize.x() * imageSize.y()) / particleConfig.getFloat("density", 1);
@@ -374,14 +374,14 @@ void PlantDrop::particleForPlantPart(PlantDropPiece const& piece, String const& 
     return;
 
   while (density > 0) {
-    Vec2F particlePos = piece.offset + Vec2F(imageSize) / 2.0f + Vec2F(Random::nrandf(imageSize.x() / 8.0f, 0), Random::nrandf(imageSize.y() / 8.0f, 0));
+    Vec2F particlePos = piece.offset + Vec2F(imageSize) / 2.0f + Vec2F(this->root().random().nrandf(imageSize.x() / 8.0f, 0), this->root().random().nrandf(imageSize.y() / 8.0f, 0));
 
     if (!spaces.contains(Vec2I(particlePos.floor())))
       continue;
 
-    auto config = Random::randValueFrom(particleOptions, {});
+    auto config = this->root().random().randValueFrom(particleOptions, {});
 
-    particle = Root::singleton().particleDatabase()->particle(config);
+    particle = this->root().particleDatabase()->particle(config);
     particle.color.hueShift(mainConfig.getFloat("hueshift", 0) / 360.0f);
     for (Directives const& directives : piece.image.directives.list())
       particle.directives.append(directives);
@@ -395,7 +395,7 @@ void PlantDrop::particleForPlantPart(PlantDropPiece const& piece, String const& 
 }
 
 void PlantDrop::render(RenderCallback* renderCallback) {
-  auto assets = Root::singleton().assets();
+  auto assets = this->root().assets();
 
   if (m_firstTick) {
     m_firstTick = false;
@@ -405,7 +405,7 @@ void PlantDrop::render(RenderCallback* renderCallback) {
       auto playBreakSound = [&](Json const& config) {
         JsonArray breakTreeOptions = config.get("sounds", JsonObject()).getArray("breakTree", JsonArray());
         if (breakTreeOptions.size()) {
-          auto sound = Random::randFrom(breakTreeOptions);
+          auto sound = this->root().random().randFrom(breakTreeOptions);
           auto audioInstance = std::make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
           audioInstance->setPosition(collisionRect().center() + position());
           audioInstance->setVolume(sound.getFloat("volume", 1.0f));
@@ -431,7 +431,7 @@ void PlantDrop::render(RenderCallback* renderCallback) {
     auto playHitSound = [&](Json const& config) {
       JsonArray hitGroundOptions = config.get("sounds", JsonObject()).getArray("hitGround", JsonArray());
       if (hitGroundOptions.size()) {
-        auto sound = Random::randFrom(hitGroundOptions);
+        auto sound = this->root().random().randFrom(hitGroundOptions);
         auto audioInstance = std::make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
         audioInstance->setPosition(collisionRect().center() + position());
         audioInstance->setVolume(sound.getFloat("volume", 1.0f));
@@ -451,7 +451,7 @@ void PlantDrop::render(RenderCallback* renderCallback) {
 
   if (m_time > 0 && !m_spawnedDrops.get()) {
     for (auto const& plantPiece : m_pieces) {
-      auto drawable = Drawable::makeImage(plantPiece.image, 1.0f / TilePixels, false, plantPiece.offset);
+      auto drawable = Drawable::makeImage(*this->root().imageMetadataDatabase(), plantPiece.image, 1.0f / TilePixels, false, plantPiece.offset);
       if (plantPiece.flip)
         drawable.scale(Vec2F(-1, 1));
       drawable.rotate(m_movementController.rotation());

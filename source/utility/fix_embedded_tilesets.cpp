@@ -1,4 +1,5 @@
 import star.json;
+import star.native_runtime;
 import star.maybe;
 import star.file;
 import star.logging;
@@ -86,36 +87,37 @@ Maybe<Json> repair(Json mapJson, String const& mapPath, String const& tilesetPat
   return mapJson.set("tilesets", tilesets);
 }
 
-void forEachRecursiveFileMatch(String const& dirName, String const& filenameSuffix, std::function<void(String)> func) {
+void forEachRecursiveFileMatch(Logger& logger, String const& dirName, String const& filenameSuffix, std::function<void(String)> func) {
   for (std::pair<String, bool> entry : File::dirList(dirName)) {
     String entryPath = File::relativeTo(dirName, entry.first);
     // Never follow a symlinked directory: it can point outside of the tree (and
     // this walk writes to the files it finds), or at one of its own parents.
     if (entry.second && File::isSymlink(entryPath)) {
-      Logger::warn("fix_embedded_tilesets: Not descending into '{}' because it is a symlink", entryPath);
+      logger.warn("fix_embedded_tilesets: Not descending into '{}' because it is a symlink", entryPath);
       continue;
     }
 
     if (entry.second)
-      forEachRecursiveFileMatch(entryPath, filenameSuffix, func);
+      forEachRecursiveFileMatch(logger, entryPath, filenameSuffix, func);
     else if (entry.first.endsWith(filenameSuffix))
       func(entryPath);
   }
 }
 
-void fixEmbeddedTilesets(String const& searchRoot, String const& tilesetPath) {
-  forEachRecursiveFileMatch(searchRoot, ".json", [tilesetPath](String const& path) {
+void fixEmbeddedTilesets(Logger& logger, String const& searchRoot, String const& tilesetPath) {
+  forEachRecursiveFileMatch(logger, searchRoot, ".json", [&logger, tilesetPath](String const& path) {
       Json json = Json::parseJson(File::readFileString(path));
       if (json.contains("tilesets")) {
         if (Maybe<Json> fixed = repair(json, path, tilesetPath)) {
           File::writeFile(fixed->repr(2, true), path);
-          Logger::info("Repaired {}", path);
+          logger.info("Repaired {}", path);
         }
       }
     });
 }
 
 int main(int argc, char* argv[]) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   try {
     RootLoader rootLoader({{}, {}, {}, LogLevel::Info, false, {}});
     rootLoader.setSummary("Replaces embedded tilesets in Tiled JSON files with references to external tilesets. Assumes tilesets are available in the packed assets.");
@@ -129,7 +131,7 @@ int main(int argc, char* argv[]) {
     String searchRoot = options.arguments[0];
     String tilesetPath = options.arguments[1];
 
-    fixEmbeddedTilesets(searchRoot, tilesetPath);
+    fixEmbeddedTilesets(root->logger(), searchRoot, tilesetPath);
 
     return 0;
   } catch (std::exception const& e) {

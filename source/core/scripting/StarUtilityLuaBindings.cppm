@@ -4,21 +4,23 @@ import star.list;
 import star.json;
 import star.maybe;
 import star.lua;
+import star.random;
+import star.logging;
 
 namespace Star {
 
 namespace LuaBindings {
-  LuaCallbacks makeUtilityCallbacks();
+  LuaCallbacks makeUtilityCallbacks(RandomService& random, Logger& logger, LogMap& logMap);
 
   String formatLua(String const& string, List<LuaValue> const& args);
 
   namespace UtilityCallbacks {
-    double nrand(Maybe<double> const& stdev, Maybe<double> const& mean);
-    String makeUuid();
-    void logInfo(String const& str, LuaVariadic<LuaValue> const& args);
-    void logWarn(String const& str, LuaVariadic<LuaValue> const& args);
-    void logError(String const& str, LuaVariadic<LuaValue> const& args);
-    void setLogMap(String const& key, String const& value, LuaVariadic<LuaValue> const& args);
+    double nrand(RandomService& random, Maybe<double> const& stdev, Maybe<double> const& mean);
+    String makeUuid(RandomService& random);
+    void logInfo(Logger& logger, String const& str, LuaVariadic<LuaValue> const& args);
+    void logWarn(Logger& logger, String const& str, LuaVariadic<LuaValue> const& args);
+    void logError(Logger& logger, String const& str, LuaVariadic<LuaValue> const& args);
+    void setLogMap(LogMap& logMap, String const& key, String const& value, LuaVariadic<LuaValue> const& args);
     Json parseJson(String const& str);
     String printJson(Json const& arg, Maybe<int> pretty);
     String print(LuaValue const& arg);

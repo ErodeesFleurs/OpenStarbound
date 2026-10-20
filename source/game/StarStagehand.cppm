@@ -47,13 +47,14 @@ import star.net_element_float_fields;
 import star.net_element_system;
 
 namespace Star {
+class Root;
 
 class BehaviorState;
 
 class Stagehand : public virtual ScriptedEntity {
 public:
-  Stagehand(Json const& config);
-  Stagehand(ByteArray const& netStore, NetCompatibilityRules rules = {});
+  Stagehand(Root& rootContext, Json const& config);
+  Stagehand(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules rules = {});
 
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {});
@@ -92,7 +93,7 @@ public:
   using Entity::setUniqueId;
 
 private:
-  Stagehand();
+  Stagehand(Root& rootContext);
 
   void readConfig(Json config);
 

@@ -65,6 +65,7 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
+class Root;
 class LuaRoot;
 class Rebuilder;
 class RandomSource;
@@ -146,7 +147,7 @@ struct MonsterVariant {
 
 class MonsterDatabase {
 public:
-  MonsterDatabase();
+  explicit MonsterDatabase(Root& root);
 
   void cleanup();
 
@@ -235,6 +236,8 @@ private:
 
   // Reads common parameters out of parameters map
   static void readCommonParameters(MonsterVariant& monsterVariant);
+
+  Root& m_root;
 
   // Maps category name -> part type -> part name -> MonsterPart.  part name ->
   // MonsterPart needs to be be in a predictable order.

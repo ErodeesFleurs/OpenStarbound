@@ -46,11 +46,12 @@ namespace Star {
 // update this in the rare case that backwards compat code has to be set up in TeamClient
 extern VersionNumber const TeamManagerVersion = 0;
 
-TeamManager::TeamManager() {
+TeamManager::TeamManager(Root& root)
+  : m_root(root) {
   m_pvpTeamCounter = 1;
-  m_maxTeamSize = Root::singleton().configuration()->get("maxTeamSize").toUInt();
-  m_polledInvitationTimeout = Root::singleton().configuration()->getPath("teamInvitationTimeout", Json(600.0)).toDouble();
-  m_secureTeams = Root::singleton().configuration()->getPath("security.secureTeams").optBool().value(true);
+  m_maxTeamSize = m_root.configuration()->get("maxTeamSize").toUInt();
+  m_polledInvitationTimeout = m_root.configuration()->getPath("teamInvitationTimeout", Json(600.0)).toDouble();
+  m_secureTeams = m_root.configuration()->getPath("security.secureTeams").optBool().value(true);
 }
 
 JsonRpcHandlers TeamManager::rpcHandlers() {
@@ -94,7 +95,7 @@ void TeamManager::playerDisconnected(Uuid const& playerUuid) {
   purgeInvitationsFrom(playerUuid);
 
   for (auto teamUuid : m_teams.keys()) {
-    auto& team = m_teams[teamUuid];
+    auto& team = m_teams.get(teamUuid);
     if (team.members.contains(playerUuid))
       removeFromTeam(playerUuid, teamUuid);
   }
@@ -158,8 +159,8 @@ bool TeamManager::playerWithUuidExists(Uuid const& playerUuid) const {
 Uuid TeamManager::createTeam(Uuid const& leaderUuid) {
   RecursiveMutexLocker lock(m_mutex);
 
-  Uuid teamUuid;
-  auto& team = m_teams[teamUuid]; // create
+  Uuid teamUuid(m_root.random());
+  auto& team = m_teams.try_emplace(teamUuid, m_root.random()).first->second; // create
 
   int limiter = 256;
   while (true) {
@@ -168,7 +169,7 @@ Uuid TeamManager::createTeam(Uuid const& leaderUuid) {
       m_pvpTeamCounter = 1;
     bool done = true;
     for (auto k : m_teams.keys()) {
-      auto t = m_teams[k];
+      auto t = m_teams.get(k);
       if (t.pvpTeamNumber == team.pvpTeamNumber) {
         if (k != teamUuid)
           done = false;
@@ -234,7 +235,7 @@ bool TeamManager::removeFromTeam(Uuid const& playerUuid, Uuid const& teamUuid) {
   if (team.members.size() <= 1)
     m_teams.remove(teamUuid);
   else if (team.leaderUuid == playerUuid)
-    team.leaderUuid = Random::randFrom(team.members).first;
+    team.leaderUuid = m_root.random().randFrom(team.members).first;
 
   return true;
 }
@@ -245,7 +246,7 @@ Json TeamManager::fetchTeamStatus(Json const& arguments) {
 
   if (auto callerHex = arguments.optString("_callerUuid")) {
     if (m_secureTeams && Uuid(*callerHex) != playerUuid) {
-      Logger::warn("TeamManager: Rejected fetchTeamStatus from {} for {}", *callerHex, playerUuid.hex());
+      m_root.logger().warn("TeamManager: Rejected fetchTeamStatus from {} for {}", *callerHex, playerUuid.hex());
       return {};
     }
   }
@@ -291,7 +292,7 @@ Json TeamManager::updateStatus(Json const& arguments) {
 
   if (auto callerHex = arguments.optString("_callerUuid")) {
     if (m_secureTeams && Uuid(*callerHex) != playerUuid) {
-      Logger::warn("TeamManager: Rejected updateStatus from {} spoofing {}", *callerHex, playerUuid.hex());
+      m_root.logger().warn("TeamManager: Rejected updateStatus from {} spoofing {}", *callerHex, playerUuid.hex());
       return "unauthorized";
     }
   }
@@ -311,7 +312,9 @@ Json TeamManager::updateStatus(Json const& arguments) {
     if (arguments.contains("world"))
       entry.world = parseWorldId(arguments.getString("world"));
     if (arguments.contains("portrait"))
-      entry.portrait = jsonToList<Drawable>(arguments.get("portrait"));
+      entry.portrait = jsonToList<Drawable>(arguments.get("portrait"), [this](Json const& value) {
+        return Drawable(*m_root.imageMetadataDatabase(), value);
+      });
     if (arguments.contains("version"))
       entry.version = arguments.getInt("version");
     return {};
@@ -331,7 +334,7 @@ Json TeamManager::invite(Json const& arguments) {
 
   if (auto callerHex = arguments.optString("_callerUuid")) {
     if (m_secureTeams && Uuid(*callerHex) != inviterUuid) {
-      Logger::warn("TeamManager: Rejected invite from {} spoofing inviter {}", *callerHex, inviterUuid.hex());
+      m_root.logger().warn("TeamManager: Rejected invite from {} spoofing inviter {}", *callerHex, inviterUuid.hex());
       return "unauthorized";
     }
   }
@@ -342,10 +345,10 @@ Json TeamManager::invite(Json const& arguments) {
       continue;
 
     for (auto& inviteeUuid : entry.second) {
-      Invitation invitation;
+      Invitation invitation(m_root.random());
       invitation.inviterUuid = inviterUuid;
       invitation.inviterName = arguments.getString("inviterName");
-      m_invitations[inviteeUuid] = invitation;
+      m_invitations.try_emplace(inviteeUuid, m_root.random()).first->second = invitation;
       m_polledInvitations.remove(inviteeUuid);
       invited.append(JsonArray{entry.first, inviteeUuid.hex()});
     }
@@ -363,7 +366,7 @@ Json TeamManager::pollInvitation(Json const& arguments) {
 
   if (auto callerHex = arguments.optString("_callerUuid")) {
     if (m_secureTeams && Uuid(*callerHex) != playerUuid) {
-      Logger::warn("TeamManager: Rejected pollInvitation from {} for {}", *callerHex, playerUuid.hex());
+      m_root.logger().warn("TeamManager: Rejected pollInvitation from {} for {}", *callerHex, playerUuid.hex());
       return {};
     }
   }
@@ -372,7 +375,7 @@ Json TeamManager::pollInvitation(Json const& arguments) {
 
   if (m_invitations.contains(playerUuid)) {
     auto invite = m_invitations.take(playerUuid);
-    m_polledInvitations[playerUuid] = PolledInvitation{invite.inviterUuid, Time::monotonicTime()};
+    m_polledInvitations.try_emplace(playerUuid, m_root.random()).first->second = PolledInvitation{invite.inviterUuid, Time::monotonicTime()};
     JsonObject result;
     result["inviterUuid"] = invite.inviterUuid.hex();
     result["inviterName"] = invite.inviterName;
@@ -388,7 +391,7 @@ Json TeamManager::acceptInvitation(Json const& arguments) {
 
   if (auto callerHex = arguments.optString("_callerUuid")) {
     if (m_secureTeams && Uuid(*callerHex) != inviteeUuid) {
-      Logger::warn("TeamManager: Rejected acceptInvitation from {} spoofing invitee {}", *callerHex, inviteeUuid.hex());
+      m_root.logger().warn("TeamManager: Rejected acceptInvitation from {} spoofing invitee {}", *callerHex, inviteeUuid.hex());
       return "unauthorized";
     }
   }
@@ -400,7 +403,7 @@ Json TeamManager::acceptInvitation(Json const& arguments) {
 
   auto polledIt = m_polledInvitations.find(inviteeUuid);
   if (polledIt == m_polledInvitations.end() || polledIt->second.inviterUuid != inviterUuid) {
-    Logger::warn("TeamManager: Rejected acceptInvitation - no valid polled invitation from {} to {}", inviterUuid.hex(), inviteeUuid.hex());
+    m_root.logger().warn("TeamManager: Rejected acceptInvitation - no valid polled invitation from {} to {}", inviterUuid.hex(), inviteeUuid.hex());
     return "noInvitationPending";
   }
 
@@ -408,7 +411,7 @@ Json TeamManager::acceptInvitation(Json const& arguments) {
 
   purgeInvitationsFrom(inviteeUuid);
 
-  Uuid teamUuid;
+  Uuid teamUuid(m_root.random());
   if (auto existingTeamUuid = getTeam(inviterUuid))
     teamUuid = *existingTeamUuid;
   else
@@ -427,7 +430,7 @@ Json TeamManager::removeFromTeam(Json const& arguments) {
     Uuid callerUuid(*callerHex);
     if (m_secureTeams && callerUuid != playerUuid) {
       if (!m_teams.contains(teamUuid) || m_teams.get(teamUuid).leaderUuid != callerUuid) {
-        Logger::warn("TeamManager: Rejected removeFromTeam by non-leader {} targeting {}", callerUuid.hex(), playerUuid.hex());
+        m_root.logger().warn("TeamManager: Rejected removeFromTeam by non-leader {} targeting {}", callerUuid.hex(), playerUuid.hex());
         return "unauthorized";
       }
     }
@@ -449,7 +452,7 @@ Json TeamManager::makeLeader(Json const& arguments) {
 
   if (auto callerHex = arguments.optString("_callerUuid")) {
     if (m_secureTeams && Uuid(*callerHex) != team.leaderUuid) {
-      Logger::warn("TeamManager: Rejected makeLeader by non-leader {} in team {}", *callerHex, teamUuid.hex());
+      m_root.logger().warn("TeamManager: Rejected makeLeader by non-leader {} in team {}", *callerHex, teamUuid.hex());
       return "unauthorized";
     }
   }

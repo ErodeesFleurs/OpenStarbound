@@ -48,10 +48,12 @@ namespace Star {
 
 struct AmbientNoisesDescription;
 class Parallax;
+class Assets;
+class Root;
 
 struct BiomePlaceables {
   BiomePlaceables();
-  explicit BiomePlaceables(Json const& json);
+  BiomePlaceables(Assets const& assets, Json const& json);
 
   Json toJson() const;
 
@@ -69,7 +71,7 @@ struct BiomePlaceables {
 
 struct Biome {
   Biome();
-  explicit Biome(Json const& store);
+  Biome(Root& root, Json const& store);
 
   Json toJson() const;
 

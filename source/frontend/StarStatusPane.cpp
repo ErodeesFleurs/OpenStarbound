@@ -196,25 +196,24 @@ import star.image_metadata_database;
 
 namespace Star {
 
-StatusPane::StatusPane(MainInterfacePaneManager* paneManager, std::shared_ptr<UniverseClient> client) {
+StatusPane::StatusPane(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<UniverseClient> client) : Pane(guiContext) {
   m_paneManager = paneManager;
   m_client = client;
   m_player = m_client->mainPlayer();
 
-  m_guiContext = GuiContext::singletonPtr();
-  auto assets = Root::singleton().assets();
+  auto assets = context()->root().assets();
 
-  GuiReader reader;
+  GuiReader reader(*context());
   reader.construct(assets->json("/interface/windowconfig/statuspane.config:paneLayout"), this);
   disableScissoring();
 }
 
 std::shared_ptr<Pane> StatusPane::createTooltip(Vec2I const& screenPosition) {
-  auto interfaceScale = m_guiContext->interfaceScale();
+  auto interfaceScale = context()->interfaceScale();
   for (auto const& indicator : m_statusIndicators) {
     if (indicator.screenRect.contains(Vec2F(screenPosition * interfaceScale))) {
       if (!indicator.label.empty())
-        return SimpleTooltipBuilder::buildTooltip(indicator.label);
+        return SimpleTooltipBuilder::buildTooltip(*context(), indicator.label);
     }
   }
   return {};
@@ -223,9 +222,9 @@ std::shared_ptr<Pane> StatusPane::createTooltip(Vec2I const& screenPosition) {
 void StatusPane::renderImpl() {
   Pane::renderImpl();
 
-  auto assets = Root::singleton().assets();
-  auto interfaceScale = m_guiContext->interfaceScale();
-  auto imageMetadataDatabase = Root::singleton().imageMetadataDatabase();
+  auto assets = context()->root().assets();
+  auto interfaceScale = context()->interfaceScale();
+  auto imageMetadataDatabase = context()->root().imageMetadataDatabase();
 
   String statusIconDarkenImage = assets->json("/interface.config:statusIconDarkenImage").toString();
 
@@ -237,19 +236,19 @@ void StatusPane::renderImpl() {
       image += "?" + imageOperationToString(BlendImageOperation{
                          BlendImageOperation::Multiply, {statusIconDarkenImage}, Vec2I(0, yOffset)});
     }
-    m_guiContext->drawQuad(image, entry.screenRect.min(), interfaceScale);
+    context()->drawQuad(image, entry.screenRect.min(), interfaceScale);
   }
 }
 
 void StatusPane::update(float dt) {
   Pane::update(dt);
 
-  auto assets = Root::singleton().assets();
-  auto interfaceScale = m_guiContext->interfaceScale();
+  auto assets = context()->root().assets();
+  auto interfaceScale = context()->interfaceScale();
   int roundWindowHeight = std::ceil(windowHeight() / interfaceScale) * interfaceScale;
 
-  auto imageMetadataDatabase = Root::singleton().imageMetadataDatabase();
-  auto statusEffectDatabase = Root::singleton().statusEffectDatabase();
+  auto imageMetadataDatabase = context()->root().imageMetadataDatabase();
+  auto statusEffectDatabase = context()->root().statusEffectDatabase();
 
   Vec2I statusIconOffset = jsonToVec2I(assets->json("/interface.config:statusIconPos"));
   Vec2I statusIconPos = Vec2I(statusIconOffset[0] * interfaceScale, roundWindowHeight - statusIconOffset[1] * interfaceScale);

@@ -76,8 +76,8 @@ import star.item;
 import star.line;
 namespace Star {
 
-BeamItem::BeamItem(Json config) {
-  config = Root::singleton().assets()->json("/player.config:beamGunConfig").setAll(config.toObject());
+BeamItem::BeamItem(Root& root, Json config) : m_beamRoot(&root) {
+  config = root.assets()->json("/player.config:beamGunConfig").setAll(config.toObject());
 
   m_image = config.get("image").toString();
   m_endImages = jsonToStringList(config.get("endImages"));
@@ -166,7 +166,7 @@ float BeamItem::getAngle(float angle) {
 }
 
 List<Drawable> BeamItem::drawables() const {
-  return {Drawable::makeImage(m_image, 1.0f / TilePixels, true, -handPosition() / TilePixels)};
+  return {Drawable::makeImage(*beamRoot().imageMetadataDatabase(), m_image, 1.0f / TilePixels, true, -handPosition() / TilePixels)};
 }
 
 Vec2F BeamItem::handPosition() const {
@@ -187,7 +187,7 @@ float BeamItem::getAppropriateOpacity() const {
 
   auto projectOntoRange = [&](float min, float max) { return rangeEffect * (max - min) + min; };
   auto rangeRand = [&](float dev, float min, float max) {
-    return clamp<float>(Random::nrandf(dev, projectOntoRange(min, max)), min, max);
+    return clamp<float>(beamRoot().random().nrandf(dev, projectOntoRange(min, max)), min, max);
   };
 
   int numLines = projectOntoRange(m_minBeamLines, m_maxBeamLines);
@@ -211,7 +211,7 @@ List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
 
   auto projectOntoRange = [&](float min, float max) { return rangeEffect * (max - min) + min; };
   auto rangeRand = [&](float dev, float min, float max) {
-    return clamp<float>(Random::nrandf(dev, projectOntoRange(min, max)), min, max);
+    return clamp<float>(beamRoot().random().nrandf(dev, projectOntoRange(min, max)), min, max);
   };
 
   if (initialized()) {
@@ -242,7 +242,7 @@ List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
           endImage = strf("{}?{}", endImage, imageOperationToString(op));
         }
 
-        Drawable ball = Drawable::makeImage(endImage, 1.0f / TilePixels, true, m_beamCurve.dest());
+        Drawable ball = Drawable::makeImage(*beamRoot().imageMetadataDatabase(), endImage, 1.0f / TilePixels, true, m_beamCurve.dest());
         Color ballColor = Color::White;
         ballColor.setAlphaF(getAppropriateOpacity());
         ball.color = ballColor;
@@ -307,11 +307,11 @@ List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
           beamParticle.size = 1.0f;
 
           Color randomColor = m_lastUpdateColor;
-          randomColor.setValue(1 - (1 - randomColor.value()) / Random::randf(1, 4));
-          randomColor.setSaturation(randomColor.saturation() / Random::randf(1, 4));
+          randomColor.setValue(1 - (1 - randomColor.value()) / beamRoot().random().randf(1, 4));
+          randomColor.setSaturation(randomColor.saturation() / beamRoot().random().randf(1, 4));
 
           beamParticle.color = randomColor;
-          beamParticle.velocity = Vec2F::filled(Random::randf());
+          beamParticle.velocity = Vec2F::filled(beamRoot().random().randf());
           beamParticle.finalVelocity = Vec2F(0.0f, -20.0f);
           beamParticle.approach = Vec2F(0.0f, 5.0f);
           beamParticle.timeToLive = 0.25f;
@@ -326,6 +326,10 @@ List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
   }
 
   return res;
+}
+
+Root& BeamItem::beamRoot() const {
+  return *m_beamRoot;
 }
 
 }

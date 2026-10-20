@@ -71,10 +71,11 @@ import star.net_element_basic_fields;
 import star.net_element_float_fields;
 
 namespace Star {
+class Root;
 
 class PhysicsObject : public Object, public virtual PhysicsEntity {
 public:
-  PhysicsObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters = Json());
+  PhysicsObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters = Json());
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
   void disableInterpolation() override;

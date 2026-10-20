@@ -69,6 +69,7 @@ import star.light_source;
 import star.entity_rendering;
 import star.asset_source;
 import star.assets;
+import star.root;
 
 export module star.flashlight;
 
@@ -76,7 +77,7 @@ export namespace Star {
 
 class Flashlight : public Item, public PointableItem, public ToolUserItem {
 public:
-  Flashlight(Json const& config, String const& directory, Json const& parameters = JsonObject());
+  Flashlight(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   std::shared_ptr<Item> clone() const override;
 
@@ -97,8 +98,8 @@ private:
 
 namespace Star {
 
-Flashlight::Flashlight(Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters) {
+Flashlight::Flashlight(Root& root, Json const& config, String const& directory, Json const& parameters)
+  : Item(root, config, directory, parameters) {
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_handPosition = jsonToVec2F(instanceValue("handPosition"));
   m_lightPosition = jsonToVec2F(instanceValue("lightPosition"));
@@ -112,7 +113,7 @@ std::shared_ptr<Item> Flashlight::clone() const {
 }
 
 List<Drawable> Flashlight::drawables() const {
-  return {Drawable::makeImage(m_image, 1.0f / TilePixels, true, -m_handPosition / TilePixels)};
+  return {Drawable::makeImage(*root().imageMetadataDatabase(), m_image, 1.0f / TilePixels, true, -m_handPosition / TilePixels)};
 }
 
 List<LightSource> Flashlight::lightSources() const {

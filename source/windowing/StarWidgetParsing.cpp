@@ -151,7 +151,7 @@ WidgetConstructResult::WidgetConstructResult() : zlevel() {}
 WidgetConstructResult::WidgetConstructResult(std::shared_ptr<Widget> obj, String const& name, float zlevel)
   : obj(obj), name(name), zlevel(zlevel) {}
 
-WidgetParser::WidgetParser() {
+WidgetParser::WidgetParser(GuiContext& context) : m_context(&context) {
   // only the non-interactive ones by default
   m_constructors["widget"] = [this](String const& name, Json const& config) { return widgetHandler(name, config); };
   m_constructors["canvas"] = [this](String const& name, Json const& config) { return canvasHandler(name, config); };
@@ -211,7 +211,7 @@ List<WidgetConstructResult> WidgetParser::constructor(Json const& config) {
           "Malformed gui json: member configuration is either not a map, or does not specify a widget name and type");
     String type = memberConfig.getString("type");
     if (type == "include") {
-      widgets.appendAll(constructor(Root::singleton().assets()->json(memberConfig.getString("file"))));
+      widgets.appendAll(constructor(m_context->root().assets()->json(memberConfig.getString("file"))));
     } else {
       if (!m_constructors.contains(type)) {
         throw WidgetParserException(strf("Unknown type in gui json. {}", type));
@@ -267,7 +267,7 @@ WidgetConstructResult WidgetParser::buttonHandler(String const& name, Json const
     throw WidgetParserException::format("Failed to find callback named: {}", callback);
   WidgetCallbackFunc callbackFunc = m_callbacks.get(callback);
 
-  auto button = std::make_shared<ButtonWidget>(callbackFunc, baseImage, hoverImage, pressedImage, disabledImage);
+  auto button = std::make_shared<ButtonWidget>(*m_context, callbackFunc, baseImage, hoverImage, pressedImage, disabledImage);
   button->setCheckedImages(baseImageChecked, hoverImageChecked, pressedImageChecked, disabledImageChecked);
   common(button, config);
 
@@ -322,14 +322,14 @@ WidgetConstructResult WidgetParser::buttonHandler(String const& name, Json const
 }
 
 WidgetConstructResult WidgetParser::imageHandler(String const& name, Json const& config) {
-  auto image = std::make_shared<ImageWidget>();
+  auto image = std::make_shared<ImageWidget>(*m_context);
   common(image, config);
 
   if (config.contains("file"))
     image->setImage(config.getString("file"));
 
   if (config.contains("drawables"))
-    image->setDrawables(config.getArray("drawables").transformed([](Json const& d) { return Drawable(d); } ));
+    image->setDrawables(config.getArray("drawables").transformed([this](Json const& d) { return Drawable(*m_context->root().imageMetadataDatabase(), d); } ));
 
   if (config.contains("scale"))
     image->setScale(config.getFloat("scale"));
@@ -361,14 +361,14 @@ WidgetConstructResult WidgetParser::imageStretchHandler(String const& name, Json
   ImageStretchSet stretchSet = parseImageStretchSet(config.get("stretchSet"));
   GuiDirection direction = GuiDirectionNames.getLeft(config.getString("direction", "horizontal"));
 
-  auto imageStretch = std::make_shared<ImageStretchWidget>(stretchSet, direction);
+  auto imageStretch = std::make_shared<ImageStretchWidget>(*m_context, stretchSet, direction);
   common(imageStretch, config);
 
   return WidgetConstructResult(imageStretch, name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::spinnerHandler(String const& name, Json const& config) {
-  auto container = std::make_shared<Widget>();
+  auto container = std::make_shared<Widget>(*m_context);
   common(container, config);
 
   String callback = config.getString("callback", name);
@@ -381,8 +381,8 @@ WidgetConstructResult WidgetParser::spinnerHandler(String const& name, Json cons
   WidgetCallbackFunc callbackDown = m_callbacks.get(callback + ".down");
   WidgetCallbackFunc callbackUp = m_callbacks.get(callback + ".up");
 
-  auto assets = Root::singleton().assets();
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  auto assets = m_context->root().assets();
+  auto imgMetadata = m_context->root().imageMetadataDatabase();
 
   auto leftBase = assets->json("/interface.config:spinner.leftBase").toString();
   auto leftHover = assets->json("/interface.config:spinner.leftHover").toString();
@@ -394,9 +394,9 @@ WidgetConstructResult WidgetParser::spinnerHandler(String const& name, Json cons
 
   float upOffset = config.getFloat("upOffset", (float)imageSize[0] + padding);
 
-  auto down = std::make_shared<ButtonWidget>(
+  auto down = std::make_shared<ButtonWidget>(*m_context, 
       callbackDown, config.getString("leftBase", leftBase), config.getString("leftHover", leftHover));
-  auto up = std::make_shared<ButtonWidget>(
+  auto up = std::make_shared<ButtonWidget>(*m_context, 
       callbackUp, config.getString("rightBase", rightBase), config.getString("rightHover", rightHover));
   up->setPosition(up->position() + Vec2I(upOffset, 0));
 
@@ -410,7 +410,7 @@ WidgetConstructResult WidgetParser::spinnerHandler(String const& name, Json cons
 }
 
 WidgetConstructResult WidgetParser::radioGroupHandler(String const& name, Json const& config) {
-  auto buttonGroup = std::make_shared<ButtonGroupWidget>();
+  auto buttonGroup = std::make_shared<ButtonGroupWidget>(*m_context);
   common(buttonGroup, config);
   buttonGroup->markAsContainer();
   buttonGroup->disableScissoring();
@@ -444,7 +444,7 @@ WidgetConstructResult WidgetParser::radioGroupHandler(String const& name, Json c
       auto overlayImage = btnConfig.getString("image", "");
       auto id = btnConfig.getInt("id", ButtonGroup::NoButton);
 
-      auto button = std::make_shared<ButtonWidget>();
+      auto button = std::make_shared<ButtonWidget>(*m_context);
       button->setButtonGroup(buttonGroup, id);
 
       button->setImages(btnConfig.getString("baseImage", baseImage),
@@ -497,7 +497,7 @@ WidgetConstructResult WidgetParser::radioGroupHandler(String const& name, Json c
 }
 
 WidgetConstructResult WidgetParser::portraitHandler(String const& name, Json const& config) {
-  auto portrait = std::make_shared<PortraitWidget>();
+  auto portrait = std::make_shared<PortraitWidget>(*m_context);
 
   if (config.contains("portraitMode"))
     portrait->setMode(PortraitModeNames.getLeft(config.getString("portraitMode")));
@@ -521,7 +521,7 @@ WidgetConstructResult WidgetParser::textboxHandler(String const& name, Json cons
 
   String initialText = config.getString("value", "");
   String hintText = config.getString("hint", "");
-  auto textbox = std::make_shared<TextBoxWidget>(initialText, hintText, callbackFunc);
+  auto textbox = std::make_shared<TextBoxWidget>(*m_context, initialText, hintText, callbackFunc);
 
   if (config.contains("blur"))
     textbox->setOnBlurCallback(m_callbacks.get(config.getString("blur")));
@@ -576,7 +576,7 @@ WidgetConstructResult WidgetParser::labelHandler(String const& name, Json const&
   HorizontalAnchor hAnchor = HorizontalAnchorNames.getLeft(config.getString("hAnchor", "left"));
   VerticalAnchor vAnchor = VerticalAnchorNames.getLeft(config.getString("vAnchor", "bottom"));
 
-  auto label = std::make_shared<LabelWidget>(text, color, hAnchor, vAnchor);
+  auto label = std::make_shared<LabelWidget>(*m_context, text, color, hAnchor, vAnchor);
   common(label, config);
   if (config.contains("fontSize"))
     label->setFontSize(config.getInt("fontSize"));
@@ -604,7 +604,7 @@ WidgetConstructResult WidgetParser::itemSlotHandler(String const& name, Json con
   String middleClickCallback = callback.equals("null") ? callback : callback + ".middle";
   middleClickCallback = config.getString("middleClickCallback", middleClickCallback);
 
-  auto itemSlot = std::make_shared<ItemSlotWidget>(std::shared_ptr<Item>(), backingImage);
+  auto itemSlot = std::make_shared<ItemSlotWidget>(*m_context, std::shared_ptr<Item>(), backingImage);
 
   if (auto leftClickCallback = m_callbacks.ptr(callback))
     itemSlot->setCallback(*leftClickCallback);
@@ -656,7 +656,7 @@ WidgetConstructResult WidgetParser::itemGridHandler(String const& name, Json con
   unsigned slotOffset = config.getInt("slotOffset", 0);
   String backingImage = config.getString("backingImage", "");
 
-  auto itemGrid = std::make_shared<ItemGridWidget>(std::shared_ptr<ItemBag const>(), dimensions, rowSpacing, columnSpacing, backingImage, slotOffset);
+  auto itemGrid = std::make_shared<ItemGridWidget>(*m_context, std::shared_ptr<ItemBag const>(), dimensions, rowSpacing, columnSpacing, backingImage, slotOffset);
 
   itemGrid->setBackingImageAffinity(
     config.getBool("showBackingImageWhenFull", false), config.getBool("showBackingImageWhenEmpty", true));
@@ -689,7 +689,7 @@ WidgetConstructResult WidgetParser::listHandler(String const& name, Json const& 
         strf("Malformed gui json, missing a required value in the map. {}", outputException(e, false)));
   }
 
-  auto list = std::make_shared<ListWidget>(schema);
+  auto list = std::make_shared<ListWidget>(*m_context, schema);
   common(list, config);
 
   if (auto callback = m_callbacks.value(config.getString("callback", name)))
@@ -704,7 +704,7 @@ WidgetConstructResult WidgetParser::listHandler(String const& name, Json const& 
 WidgetConstructResult WidgetParser::sliderHandler(String const& name, Json const& config) {
   try {
     auto grid = config.getString("gridImage");
-    auto slider = std::make_shared<SliderBarWidget>(grid, config.getBool("showSpinner", true));
+    auto slider = std::make_shared<SliderBarWidget>(*m_context, grid, config.getBool("showSpinner", true));
     common(slider, config);
 
     if (auto callback = m_callbacks.value(config.getString("callback", name)))
@@ -739,7 +739,7 @@ WidgetConstructResult WidgetParser::largeCharPlateHandler(String const& name, Js
   if (!m_callbacks.contains(callback))
     throw WidgetParserException::format("Failed to find callback named: '{}'", name);
 
-  auto charPlate = std::make_shared<LargeCharPlateWidget>(m_callbacks.get(callback));
+  auto charPlate = std::make_shared<LargeCharPlateWidget>(*m_context, m_callbacks.get(callback));
   common(charPlate, config);
 
   return WidgetConstructResult(charPlate, name, config.getFloat("zlevel", 0));
@@ -759,17 +759,17 @@ WidgetConstructResult WidgetParser::tabSetHandler(String const& name, Json const
   tabSetConfig.tabButtonPressedImageSelected =
       config.getString("tabButtonPressedImageSelected", tabSetConfig.tabButtonHoverImageSelected);
 
-  Json defaultPressedOffset = Root::singleton().assets()->json("/interface.config:buttonPressedOffset");
+  Json defaultPressedOffset = m_context->root().assets()->json("/interface.config:buttonPressedOffset");
   tabSetConfig.tabButtonPressedOffset = jsonToVec2I(config.get("tabButtonPressedOffset", defaultPressedOffset));
   tabSetConfig.tabButtonTextOffset = config.opt("tabButtonTextOffset").apply(jsonToVec2I).value();
   tabSetConfig.tabButtonSpacing = config.opt("tabButtonSpacing").apply(jsonToVec2I).value();
 
-  auto tabSet = std::make_shared<TabSetWidget>(tabSetConfig);
+  auto tabSet = std::make_shared<TabSetWidget>(*m_context, tabSetConfig);
   common(tabSet, config);
 
   try {
     for (auto entry : config.get("tabs").iterateArray()) {
-      auto widget = std::make_shared<Widget>();
+      auto widget = std::make_shared<Widget>(*m_context);
       constructImpl(entry.get("children"), widget.get());
       widget->determineSizeFromChildren();
       tabSet->addTab(entry.getString("tabName"), widget, entry.getString("tabTitle"));
@@ -782,7 +782,7 @@ WidgetConstructResult WidgetParser::tabSetHandler(String const& name, Json const
 }
 
 WidgetConstructResult WidgetParser::widgetHandler(String const& name, Json const& config) {
-  auto widget = std::make_shared<Widget>();
+  auto widget = std::make_shared<Widget>(*m_context);
   common(widget, config);
 
   return WidgetConstructResult(widget, name, config.getFloat("zlevel", 0));
@@ -804,7 +804,7 @@ WidgetConstructResult WidgetParser::layoutHandler(String const& name, Json const
   }
   std::shared_ptr<Widget> widget;
   if (type == "flow") {
-    widget = std::make_shared<FlowLayout>();
+    widget = std::make_shared<FlowLayout>(*m_context);
     auto flow = convert<FlowLayout>(widget);
     try {
       flow->setSpacing(jsonToVec2I(config.get("spacing")));
@@ -812,14 +812,14 @@ WidgetConstructResult WidgetParser::layoutHandler(String const& name, Json const
       throw WidgetParserException(strf("Parameter \"spacing\" in FlowLayout specification is invalid: {}.", outputException(e, false)));
     }
   } else if (type == "vertical") {
-    widget = std::make_shared<VerticalLayout>();
+    widget = std::make_shared<VerticalLayout>(*m_context);
     auto vert = convert<VerticalLayout>(widget);
     vert->setHorizontalAnchor(HorizontalAnchorNames.getLeft(config.getString("hAnchor", "left")));
     vert->setVerticalAnchor(VerticalAnchorNames.getLeft(config.getString("vAnchor", "top")));
     vert->setVerticalSpacing(config.getInt("spacing", 0));
     vert->setFillDown(config.getBool("fillDown", false));
   } else if (type == "basic") {
-    widget = std::make_shared<Layout>();
+    widget = std::make_shared<Layout>(*m_context);
   } else {
     throw WidgetParserException(strf("Invalid layout type \"{}\".  Options are \"basic\", \"flow\", \"vertical\".", type));
   }
@@ -830,7 +830,7 @@ WidgetConstructResult WidgetParser::layoutHandler(String const& name, Json const
 }
 
 WidgetConstructResult WidgetParser::canvasHandler(String const& name, Json const& config) {
-  auto canvas = std::make_shared<CanvasWidget>();
+  auto canvas = std::make_shared<CanvasWidget>(*m_context);
   canvas->setCaptureKeyboardEvents(config.getBool("captureKeyboardEvents", false));
   canvas->setCaptureMouseEvents(config.getBool("captureMouseEvents", false));
   common(canvas, config);
@@ -839,7 +839,7 @@ WidgetConstructResult WidgetParser::canvasHandler(String const& name, Json const
 }
 
 WidgetConstructResult WidgetParser::fuelGaugeHandler(String const& name, Json const& config) {
-  auto fuelGauge = std::make_shared<FuelWidget>();
+  auto fuelGauge = std::make_shared<FuelWidget>(*m_context);
   common(fuelGauge, config);
 
   return WidgetConstructResult(fuelGauge, name, config.getFloat("zlevel", 0));
@@ -854,7 +854,7 @@ WidgetConstructResult WidgetParser::progressHandler(String const& name, Json con
   progressSet = parseImageStretchSet(config.get("progressSet"));
   GuiDirection direction = GuiDirectionNames.getLeft(config.getString("direction", "horizontal"));
 
-  auto progress = std::make_shared<ProgressWidget>(background, overlay, progressSet, direction);
+  auto progress = std::make_shared<ProgressWidget>(*m_context, background, overlay, progressSet, direction);
 
   common(progress, config);
 
@@ -871,12 +871,12 @@ WidgetConstructResult WidgetParser::progressHandler(String const& name, Json con
 }
 
 WidgetConstructResult WidgetParser::stackHandler(String const& name, Json const& config) {
-  auto stack = std::make_shared<StackWidget>();
+  auto stack = std::make_shared<StackWidget>(*m_context);
 
   if (config.contains("stack")) {
     auto stackList = config.getArray("stack");
     for (auto widgetCfg : stackList) {
-      auto widget = std::make_shared<Widget>();
+      auto widget = std::make_shared<Widget>(*m_context);
       constructImpl(widgetCfg, widget.get());
       widget->determineSizeFromChildren();
       stack->addChild(toString(stack->numChildren()), widget);
@@ -889,7 +889,7 @@ WidgetConstructResult WidgetParser::stackHandler(String const& name, Json const&
 }
 
 WidgetConstructResult WidgetParser::scrollAreaHandler(String const& name, Json const& config) {
-  auto scrollArea = std::make_shared<ScrollArea>();
+  auto scrollArea = std::make_shared<ScrollArea>(*m_context);
 
   if (config.contains("buttons"))
     scrollArea->setButtonImages(config.get("buttons"));

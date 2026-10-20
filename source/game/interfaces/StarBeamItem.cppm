@@ -77,6 +77,7 @@ import star.tool_user_entity;
 import star.tool_user_item;
 
 namespace Star {
+class Root;
 
 class Item;
 class ToolUserEntity;
@@ -86,7 +87,7 @@ class BeamItem : public virtual NonRotatedDrawablesItem, public virtual ToolUser
 public:
   enum class EndType { Invalid = -1, Object, Tile, TileGroup, Wire };
 
-  BeamItem(Json config);
+  BeamItem(Root& root, Json config);
   virtual ~BeamItem() = default;
 
   virtual void init(ToolUserEntity* owner, ToolHand hand) override;
@@ -103,6 +104,7 @@ public:
   virtual void setEnd(EndType type);
 
 protected:
+  Root& beamRoot() const;
   List<Drawable> beamDrawables(bool canPlace = true) const;
 
   String m_image;
@@ -139,6 +141,9 @@ protected:
   mutable float m_particleGenerateCooldown;
 
   CSplineF m_beamCurve;
+
+private:
+  Root* m_beamRoot;
 };
 
 }

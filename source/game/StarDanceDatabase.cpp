@@ -22,24 +22,20 @@ import star.version;
 
 import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
-import star.root;
 
 import star.dance_database;
 
 import star.vector;
 namespace Star {
 
-DanceDatabase::DanceDatabase() {
-  auto assets = Root::singleton().assets();
+DanceDatabase::DanceDatabase(std::shared_ptr<Assets const> assets, Logger& logger) : m_logger(logger) {
   auto& files = assets->scanExtension("dance");
   for (auto& file : files) {
     try {
-      std::shared_ptr<Dance> dance = readDance(file);
+      std::shared_ptr<Dance> dance = readDance(*assets, file);
       m_dances[dance->name] = dance;
     } catch (std::exception const& e) {
-      Logger::error("Error loading dance file {}: {}", file, outputException(e, true));
+      m_logger.error("Error loading dance file {}: {}", file, outputException(e, true));
     }
   }
 }
@@ -48,14 +44,13 @@ std::shared_ptr<Dance> DanceDatabase::getDance(String const& name) const {
   if (auto dance = m_dances.ptr(name))
     return *dance;
   else {
-    Logger::error("Invalid dance '{}', using default", name);
+    m_logger.error("Invalid dance '{}', using default", name);
     return m_dances.get("assetmissing");
   }
 }
 
-std::shared_ptr<Dance> DanceDatabase::readDance(String const& path) {
-  auto assets = Root::singleton().assets();
-  Json config = assets->json(path);
+std::shared_ptr<Dance> DanceDatabase::readDance(Assets const& assets, String const& path) {
+  Json config = assets.json(path);
 
   String name = config.getString("name");
   List<String> states = config.getArray("states").transformed([](Json const& state) { return state.toString(); });

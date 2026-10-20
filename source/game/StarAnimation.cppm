@@ -17,12 +17,13 @@ import star.vector;
 namespace Star {
 
 struct Drawable;
+class Root;
 
 class Animation {
 public:
   // config can be either a path to a config or a literal config.
-  Animation();
-  Animation(Json config, String const& directory = {});
+  Animation(Root& root);
+  Animation(Root& root, Json config, String const& directory = {});
 
   void setAngle(float angle);
 
@@ -42,7 +43,8 @@ public:
 
 private:
   enum AnimationMode { Stop, EndAndDisappear, LoopForever };
-  static EnumMap<AnimationMode> AnimationModeNames;
+  static EnumMap<AnimationMode> const AnimationModeNames;
+  Root* m_root;
 
   AnimationMode m_mode;
   String m_directory;

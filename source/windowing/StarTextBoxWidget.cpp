@@ -63,9 +63,9 @@ import star.text_box_widget;
 import star.math_common;
 namespace Star {
 
-TextBoxWidget::TextBoxWidget(String const& startingText, String const& hint, WidgetCallbackFunc callback)
-  : m_text(startingText), m_hint(hint), m_callback(callback) {
-  auto assets = Root::singleton().assets();
+TextBoxWidget::TextBoxWidget(GuiContext& context, String const& startingText, String const& hint, WidgetCallbackFunc callback)
+  : Widget(context), m_text(startingText), m_hint(hint), m_callback(callback) {
+  auto assets = this->context()->root().assets();
   m_textHidden = false;
   m_regex = "[\\s\\S]*";
   m_repeatKeyThreshold = 0;

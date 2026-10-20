@@ -62,16 +62,16 @@ import star.pane;
 export module star.simple_tooltip;
 
 export namespace Star::SimpleTooltipBuilder {
-  std::shared_ptr<Pane> buildTooltip(String const& text);
+  std::shared_ptr<Pane> buildTooltip(GuiContext& context, String const& text);
 }
 
 namespace Star {
 
-std::shared_ptr<Pane> SimpleTooltipBuilder::buildTooltip(String const& text) {
-  std::shared_ptr<Pane> tooltip = std::make_shared<Pane>();
+std::shared_ptr<Pane> SimpleTooltipBuilder::buildTooltip(GuiContext& context, String const& text) {
+  std::shared_ptr<Pane> tooltip = std::make_shared<Pane>(context);
   tooltip->removeAllChildren();
-  GuiReader reader;
-  reader.construct(Root::singleton().assets()->json("/interface/tooltips/simpletooltip.tooltip"), tooltip.get());
+  GuiReader reader(context);
+  reader.construct(context.root().assets()->json("/interface/tooltips/simpletooltip.tooltip"), tooltip.get());
   tooltip->setLabel("contentLabel", text);
 
   auto stretchBackground = tooltip->fetchChild<Widget>("stretchBackground");

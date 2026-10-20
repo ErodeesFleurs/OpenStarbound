@@ -28,9 +28,12 @@ import star.container_entity;
 
 
 import star.container_interactor;
+import star.root;
 
 import star.algorithm;
 namespace Star {
+
+ContainerInteractor::ContainerInteractor(Root& root) : m_root(&root) {}
 
 void ContainerInteractor::openContainer(std::shared_ptr<ContainerEntity> containerEntity) {
   if (m_openContainer && m_openContainer->inWorld())

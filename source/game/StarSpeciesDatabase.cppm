@@ -39,6 +39,8 @@ import star.lua_root;
 
 namespace Star {
 
+class Root;
+class ItemDatabase;
 class SpeciesDatabase;
 
 struct SpeciesCharCreationTooltip {
@@ -88,7 +90,7 @@ struct CharacterCreationResult {
 
 class SpeciesDefinition {
 public:
-  SpeciesDefinition(Json const& config);
+  SpeciesDefinition(Root& root, Json const& config);
 
   Json config() const;
   String kind() const;
@@ -108,6 +110,7 @@ public:
   SpeciesCharCreationTooltip const& tooltip() const;
 
 private:
+  Root& m_root;
   String m_kind;
   SpeciesCharCreationTooltip m_tooltip;
   bool m_playerSelectable;
@@ -133,17 +136,19 @@ private:
 
 class SpeciesDatabase {
 public:
-  SpeciesDatabase();
+  explicit SpeciesDatabase(Root& root);
 
   std::shared_ptr<SpeciesDefinition> species(String const& kind) const;
   StringMap<std::shared_ptr<SpeciesDefinition>> allSpecies() const;
 
-  Json humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json()) const;
-  CharacterCreationResult createHumanoid(String name, String speciesChoice, std::size_t genderChoice, std::size_t bodyColor, std::size_t alty, std::size_t hairChoice, std::size_t heady, std::size_t shirtChoice, std::size_t shirtColor, std::size_t pantsChoice, std::size_t pantsColor, std::size_t personality, LuaVariadic<LuaValue> ext = {}) const;
+  Json humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json(), ItemDatabase const* itemCatalog = nullptr) const;
+  CharacterCreationResult createHumanoid(String name, String speciesChoice, std::size_t genderChoice, std::size_t bodyColor, std::size_t alty, std::size_t hairChoice, std::size_t heady, std::size_t shirtChoice, std::size_t shirtColor, std::size_t pantsChoice, std::size_t pantsColor, std::size_t personality, LuaVariadic<LuaValue> ext = {}, ItemDatabase const* itemCatalog = nullptr) const;
 
-  CharacterCreationResult generateHumanoid(String species, std::int64_t seed, Maybe<Gender> = {}) const;
+  CharacterCreationResult generateHumanoid(String species, std::int64_t seed, Maybe<Gender> = {}, ItemDatabase const* itemCatalog = nullptr) const;
 
 private:
+  Root& m_root;
+
   StringMap<std::shared_ptr<SpeciesDefinition>> m_species;
 
   mutable RecursiveMutex m_luaMutex;

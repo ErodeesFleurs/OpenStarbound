@@ -3,6 +3,7 @@ import std;
 import star.format;
 import star.static_random;
 import star.byte_array;
+import star.thread;
 
 namespace Star {
 
@@ -17,17 +18,16 @@ using RandomException = StarError<RandomExceptionTag, StarException>;
 // values).
 class RandomSource {
 public:
-  // Generates a RandomSource with a seed from Random::randu64()
-  RandomSource();
+  // Consumes an explicit seed; no implicit shared random stream.
   RandomSource(std::uint64_t seed);
 
   // Re-initializes the random number generator using the given seed.  It is
   // exactly equivalent to constructing a new RandomSource, just using the same
   // buffer.
-  void init();
+  void init(RandomSource& source);
   void init(std::uint64_t seed);
 
-  void addEntropy();
+  void addEntropy(RandomSource& source);
   void addEntropy(std::uint64_t seed);
 
   std::uint32_t randu32();
@@ -87,10 +87,11 @@ private:
   std::uint8_t m_index;
 };
 
-// Global static versions of the methods in RandomSource.  It is not necessary
-// to initialize the global RandomSource manually, it will be automatically
-// initialized with a random seed on first use if it is not already initialized.
-namespace Random {
+// An independently owned, synchronized random stream.
+class RandomService {
+public:
+  RandomService();
+  explicit RandomService(std::uint64_t seed);
   void init();
   void init(std::uint64_t seed);
 
@@ -130,7 +131,10 @@ namespace Random {
 
   template <typename Container>
   void shuffle(Container& container);
-}
+private:
+  Mutex m_mutex;
+  RandomSource m_source;
+};
 
 template <typename Container>
 typename Container::value_type const& RandomSource::randFrom(Container const& container) {
@@ -153,22 +157,22 @@ typename Container::value_type& RandomSource::randFrom(Container& container) {
 }
 
 template <typename Container>
-typename Container::value_type const& Random::randFrom(Container const& container) {
+typename Container::value_type const& RandomService::randFrom(Container const& container) {
   if (container.empty())
     throw RandomException("Empty container in randFrom");
 
   auto i = container.begin();
-  std::advance(i, Random::randUInt(container.size() - 1));
+  std::advance(i, randUInt(container.size() - 1));
   return *i;
 }
 
 template <typename Container>
-typename Container::value_type& Random::randFrom(Container& container) {
+typename Container::value_type& RandomService::randFrom(Container& container) {
   if (container.empty())
     throw RandomException("Empty container in randFrom");
 
   auto i = container.begin();
-  std::advance(i, Random::randUInt(container.size() - 1));
+  std::advance(i, randUInt(container.size() - 1));
   return *i;
 }
 
@@ -195,24 +199,24 @@ void RandomSource::shuffle(Container& container) {
 }
 
 template <typename Container>
-typename Container::value_type Random::randValueFrom(Container const& container) {
+typename Container::value_type RandomService::randValueFrom(Container const& container) {
   return randValueFrom(container, typename Container::value_type());
 }
 
 template <typename Container>
-typename Container::value_type Random::randValueFrom(
+typename Container::value_type RandomService::randValueFrom(
     Container const& container, typename Container::value_type const& defaultVal) {
   if (container.empty())
     return defaultVal;
 
   auto i = container.begin();
-  std::advance(i, Random::randInt(container.size() - 1));
+  std::advance(i, randInt(container.size() - 1));
   return *i;
 }
 
 template <typename Container>
-void Random::shuffle(Container& container) {
-  RandomSource random;
+void RandomService::shuffle(Container& container) {
+  RandomSource random(randu64());
   std::shuffle(container.begin(), container.end(), URBG<std::size_t>([&]() { return static_cast<std::size_t>(random.randu64()); }));
 }
 
@@ -224,25 +228,6 @@ export namespace Star {
   using ::Star::RandomExceptionTag;
   using ::Star::RandomException;
   using ::Star::RandomSource;
+  using ::Star::RandomService;
 }
 
-export namespace Star::Random {
-  using ::Star::Random::init;
-  using ::Star::Random::addEntropy;
-  using ::Star::Random::randu32;
-  using ::Star::Random::randu64;
-  using ::Star::Random::randi32;
-  using ::Star::Random::randi64;
-  using ::Star::Random::randf;
-  using ::Star::Random::randd;
-  using ::Star::Random::randInt;
-  using ::Star::Random::randUInt;
-  using ::Star::Random::randb;
-  using ::Star::Random::nrandf;
-  using ::Star::Random::nrandd;
-  using ::Star::Random::stochasticRound;
-  using ::Star::Random::randBytes;
-  using ::Star::Random::randFrom;
-  using ::Star::Random::randValueFrom;
-  using ::Star::Random::shuffle;
-}

@@ -161,22 +161,8 @@ Json Voice::Speaker::toJson() const {
   };
 }
 
-Voice* Voice::s_singleton;
-
-Voice* Voice::singletonPtr() {
-  return s_singleton;
-}
-
-Voice& Voice::singleton() {
-  if (!s_singleton)
-    throw VoiceException("Voice::singleton() called with no Voice instance available");
-  else
-    return *s_singleton;
-}
-
-Voice::Voice(std::shared_ptr<ApplicationController> appController) : m_encoder(nullptr, opus_encoder_destroy) {
-  if (s_singleton)
-    throw VoiceException("Singleton Voice has been constructed twice");
+Voice::Voice(Root& root, std::shared_ptr<ApplicationController> appController)
+  : m_root(root), m_encoder(nullptr, opus_encoder_destroy) {
 
   m_clientSpeaker = std::make_shared<Speaker>(m_speakerId);
   m_inputMode = VoiceInputMode::PushToTalk;
@@ -185,11 +171,11 @@ Voice::Voice(std::shared_ptr<ApplicationController> appController) : m_encoder(n
 
   m_stopThread = false;
   m_thread = Thread::invoke("Voice::thread", std::mem_fn(&Voice::thread), this);
-
-  s_singleton = this;
 }
 
 Voice::~Voice() {
+  // Detach and finish capture callbacks before stopping their consumer.
+  closeDevice();
   m_stopThread = true;
 
   {
@@ -201,10 +187,6 @@ Voice::~Voice() {
 
   if (m_nextSaveTime)
     save();
-
-  closeDevice();
-
-  s_singleton = nullptr;
 }
 
 void Voice::init() {
@@ -298,10 +280,7 @@ Json Voice::saveJson() const {
 }
 
 void Voice::save() const {
-  if (Root* root = Root::singletonPtr()) {
-    if (auto config = root->configuration())
-      config->set("voice", saveJson());
-  }
+  m_root.configuration()->set("voice", saveJson());
 }
 
 void Voice::scheduleSave() {
@@ -408,8 +387,9 @@ void Voice::readAudioData(std::uint8_t* stream, int len) {
 
 void Voice::mix(std::int16_t* buffer, std::size_t frameCount, unsigned channels) {
   std::size_t samples = frameCount * channels;
-  static std::vector<std::int16_t> finalBuffer, speakerBuffer;
-  static std::vector<std::int32_t> sharedBuffer; //int32 to reduce clipping
+  auto& finalBuffer = m_mixFinalBuffer;
+  auto& speakerBuffer = m_mixSpeakerBuffer;
+  auto& sharedBuffer = m_mixSharedBuffer; // int32 to reduce clipping
   speakerBuffer.resize(samples);
   sharedBuffer.resize(samples);
 
@@ -600,8 +580,6 @@ bool Voice::receive(std::shared_ptr<Speaker> speaker, std::string_view view) {
         return true;
       }
 
-      //Logger::info("Voice: decoded Opus chunk {} bytes -> {} samples", opusLength, decodedSamples * channels);
-
       speaker->audioStream->resample(m_decodeBuffer.data(), (std::size_t)decodedSamples * channels, m_resampleBuffer, mono);
 
       {
@@ -637,7 +615,7 @@ bool Voice::receive(std::shared_ptr<Speaker> speaker, std::string_view view) {
     return true;
   }
   catch (StarException const& e) {
-    Logger::error("Voice: Error receiving voice data for speaker #{} ('{}'): {}", speaker->speakerId, speaker->name, e.what());
+    m_root.logger().error("Voice: Error receiving voice data for speaker #{} ('{}'): {}", speaker->speakerId, speaker->name, e.what());
     return false;
   }
 }
@@ -734,6 +712,8 @@ bool Voice::playSpeaker(std::shared_ptr<Speaker> const& speaker, int) {
 void Voice::thread() {
   while (true) {
     MutexLocker locker(m_threadMutex);
+    if (m_stopThread)
+      return;
 
     m_threadCond.wait(m_threadMutex);
     if (m_stopThread)
@@ -775,10 +755,9 @@ void Voice::thread() {
             encoded = ByteArray(VOICE_MAX_PACKET_SIZE, 0);
           }
 
-          //Logger::info("Voice: encoded Opus chunk {} samples -> {} bytes", frameSamples, encodedSize);
         }
         else if (encodedSize < 0)
-          Logger::error("Voice: Opus encode error {}", opus_strerror(encodedSize));
+          m_root.logger().error("Voice: Opus encode error {}", opus_strerror(encodedSize));
       }
     }
 

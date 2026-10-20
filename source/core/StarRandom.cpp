@@ -11,12 +11,8 @@ import star.time;
 
 namespace Star {
 
-RandomSource::RandomSource() {
-  init(Random::randu64());
-}
-
-void RandomSource::init() {
-  init(Random::randu64());
+void RandomSource::init(RandomSource& source) {
+  init(source.randu64());
 }
 
 RandomSource::RandomSource(std::uint64_t seed) {
@@ -43,8 +39,8 @@ void RandomSource::init(std::uint64_t seed) {
     gen32();
 }
 
-void RandomSource::addEntropy() {
-  addEntropy(Random::randu64());
+void RandomSource::addEntropy(RandomSource& source) {
+  addEntropy(source.randu64());
 }
 
 void RandomSource::addEntropy(std::uint64_t seed) {
@@ -194,159 +190,61 @@ std::uint32_t RandomSource::gen32() {
   return t;
 }
 
-namespace Random {
-  static Maybe<RandomSource> g_randSource;
-  static Mutex g_randMutex;
-
-  static std::uint64_t produceRandomSeed() {
-    std::int64_t seed = Time::monotonicTicks();
-    seed *= 1099511628211;
-    seed ^= (((std::int64_t)std::rand()) << 32) | ((std::int64_t)std::rand());
-    return seed;
-  }
-
-  void doInit(std::uint64_t seed) {
-    g_randSource = RandomSource(seed);
-    // Also set the C stdlib random seed
-    std::srand(seed);
-  }
-
-  void checkInit() {
-    // Mutex must already be held
-    if (!g_randSource) {
-      doInit(produceRandomSeed());
-    }
-  }
-
-  void init() {
-    MutexLocker locker(g_randMutex);
-    doInit(produceRandomSeed());
-  }
-
-  void init(std::uint64_t seed) {
-    MutexLocker locker(g_randMutex);
-    doInit(seed);
-  }
-
-  void addEntropy() {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    g_randSource->addEntropy(produceRandomSeed());
-  }
-
-  void addEntropy(std::uint64_t seed) {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    g_randSource->addEntropy(seed);
-  }
-
-  std::uint32_t randu32() {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randu32();
-  }
-
-  std::uint64_t randu64() {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randu64();
-  }
-
-  std::int32_t randi32() {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randi32();
-  }
-
-  std::int64_t randi64() {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randi64();
-  }
-
-  float randf() {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randf();
-  }
-
-  double randd() {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randd();
-  }
-
-  float randf(float min, float max) {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randf(min, max);
-  }
-
-  double randd(double min, double max) {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randd(min, max);
-  }
-
-  bool randb() {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randb();
-  }
-
-  long long randInt(long long max) {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randInt(max);
-  }
-
-  unsigned long long randUInt(unsigned long long max) {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randUInt(max);
-  }
-
-  long long randInt(long long min, long long max) {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randInt(min, max);
-  }
-
-  unsigned long long randUInt(unsigned long long min, unsigned long long max) {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randUInt(min, max);
-  }
-
-  float nrandf(float stddev, float mean) {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->nrandf(stddev, mean);
-  }
-
-  double nrandd(double stddev, double mean) {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->nrandd(stddev, mean);
-  }
-
-  std::int64_t stochasticRound(double val) {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->stochasticRound(val);
-  }
-
-  void randBytes(char* buf, std::size_t len) {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    g_randSource->randBytes(buf, len);
-  }
-
-  ByteArray randBytes(std::size_t len) {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randBytes(len);
-  }
+namespace {
+std::uint64_t produceRandomSeed() {
+  // Entropy is acquired without a process-global C random stream.
+  std::random_device entropy;
+  auto seed = static_cast<std::uint64_t>(Time::monotonicTicks()) * 1099511628211ULL;
+  return seed ^ (static_cast<std::uint64_t>(entropy()) << 32) ^ entropy();
 }
+}
+
+RandomService::RandomService() : m_source(produceRandomSeed()) {}
+RandomService::RandomService(std::uint64_t seed) : m_source(seed) {}
+
+void RandomService::init() {
+  init(produceRandomSeed());
+}
+
+void RandomService::init(std::uint64_t seed) {
+  MutexLocker locker(m_mutex);
+  m_source.init(seed);
+}
+
+void RandomService::addEntropy() {
+  addEntropy(produceRandomSeed());
+}
+
+void RandomService::addEntropy(std::uint64_t seed) {
+  MutexLocker locker(m_mutex);
+  m_source.addEntropy(seed);
+}
+
+#define STAR_RANDOM_METHOD(Type, Name, Parameters, Arguments) \
+  Type RandomService::Name Parameters { \
+    MutexLocker locker(m_mutex); \
+    return m_source.Name Arguments; \
+  }
+
+STAR_RANDOM_METHOD(std::uint32_t, randu32, (), ())
+STAR_RANDOM_METHOD(std::uint64_t, randu64, (), ())
+STAR_RANDOM_METHOD(std::int32_t, randi32, (), ())
+STAR_RANDOM_METHOD(std::int64_t, randi64, (), ())
+STAR_RANDOM_METHOD(float, randf, (), ())
+STAR_RANDOM_METHOD(double, randd, (), ())
+STAR_RANDOM_METHOD(bool, randb, (), ())
+STAR_RANDOM_METHOD(long long, randInt, (long long max), (max))
+STAR_RANDOM_METHOD(unsigned long long, randUInt, (unsigned long long max), (max))
+STAR_RANDOM_METHOD(long long, randInt, (long long min, long long max), (min, max))
+STAR_RANDOM_METHOD(unsigned long long, randUInt, (unsigned long long min, unsigned long long max), (min, max))
+STAR_RANDOM_METHOD(float, randf, (float min, float max), (min, max))
+STAR_RANDOM_METHOD(double, randd, (double min, double max), (min, max))
+STAR_RANDOM_METHOD(float, nrandf, (float stddev, float mean), (stddev, mean))
+STAR_RANDOM_METHOD(double, nrandd, (double stddev, double mean), (stddev, mean))
+STAR_RANDOM_METHOD(std::int64_t, stochasticRound, (double val), (val))
+STAR_RANDOM_METHOD(void, randBytes, (char* buf, std::size_t len), (buf, len))
+STAR_RANDOM_METHOD(ByteArray, randBytes, (std::size_t len), (len))
+
+#undef STAR_RANDOM_METHOD
 
 }

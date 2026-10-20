@@ -48,7 +48,7 @@ public:
 
 class UdpServer {
 public:
-  UdpServer(HostAddressWithPort const& address);
+  UdpServer(Logger& logger, HostAddressWithPort const& address);
   ~UdpServer();
 
   void close();
@@ -115,11 +115,11 @@ std::size_t UdpSocket::send(HostAddressWithPort const& address, char const* data
   return len;
 }
 
-UdpServer::UdpServer(HostAddressWithPort const& address)
+UdpServer::UdpServer(Logger& logger, HostAddressWithPort const& address)
   : m_hostAddress(address), m_listenSocket(std::make_shared<UdpSocket>(m_hostAddress.address().mode())) {
   m_listenSocket->setNonBlocking(true);
-  m_listenSocket->bind(m_hostAddress);
-  Logger::debug("UdpServer listening on: {}", m_hostAddress);
+  m_listenSocket->bind(logger, m_hostAddress);
+  logger.debug("UdpServer listening on: {}", m_hostAddress);
 }
 
 UdpServer::~UdpServer() {

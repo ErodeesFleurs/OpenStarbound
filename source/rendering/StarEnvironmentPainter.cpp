@@ -74,6 +74,7 @@ import star.ref_ptr;
 import star.renderer;
 import star.asset_texture_group;
 import star.environment_painter;
+import star.root;
 
 import star.world_camera;
 
@@ -98,11 +99,11 @@ float const EnvironmentPainter::RayUnscaledAlphaVariance = 2.0943f;
 float const EnvironmentPainter::RayMinUnscaledAlpha = 1;
 Vec3B const EnvironmentPainter::RayColor = Vec3B(255, 255, 200);
 
-EnvironmentPainter::EnvironmentPainter(std::shared_ptr<Renderer> renderer) {
+EnvironmentPainter::EnvironmentPainter(Root& root, std::shared_ptr<Renderer> renderer) : m_root(root) {
   m_renderer = std::move(renderer);
-  m_textureGroup = std::make_shared<AssetTextureGroup>(m_renderer->createTextureGroup(TextureGroupSize::Large));
+  m_textureGroup = std::make_shared<AssetTextureGroup>(root, m_renderer->createTextureGroup(TextureGroupSize::Large));
   m_timer = 0;
-  m_rayPerlin = PerlinF(1, RayPerlinFrequency, RayPerlinAmplitude, 0, 2.0f, 2.0f, Random::randu64());
+  m_rayPerlin = PerlinF(1, RayPerlinFrequency, RayPerlinAmplitude, 0, 2.0f, 2.0f, root.random().randu64());
 }
 
 void EnvironmentPainter::update(float dt) {
@@ -556,7 +557,7 @@ void EnvironmentPainter::setupStars(SkyRenderData const& sky) {
   int starCellSize = sky.settings.queryInt("stars.cellSize");
   Vec2I starCount = jsonToVec2I(sky.settings.query("stars.cellCount"));
 
-  m_starGenerator = std::make_shared<Random2dPointGenerator<std::pair<std::size_t, float>>>(sky.skyParameters.seed, starCellSize, starCount);
+  m_starGenerator = std::make_shared<Random2dPointGenerator<std::pair<std::size_t, float>>>(m_root.random(), sky.skyParameters.seed, starCellSize, starCount);
 
   JsonArray debrisFields = sky.settings.queryArray("spaceDebrisFields");
   m_debrisGenerators.resize(debrisFields.size());
@@ -564,7 +565,7 @@ void EnvironmentPainter::setupStars(SkyRenderData const& sky) {
     int debrisCellSize = debrisFields[i].getInt("cellSize");
     Vec2I debrisCountRange = jsonToVec2I(debrisFields[i].get("cellCountRange"));
     std::uint64_t debrisSeed = staticRandomU64(sky.skyParameters.seed, i, "DebrisFieldSeed");
-    m_debrisGenerators[i] = std::make_shared<Random2dPointGenerator<std::pair<String, float>, double>>(debrisSeed, debrisCellSize, debrisCountRange);
+    m_debrisGenerators[i] = std::make_shared<Random2dPointGenerator<std::pair<String, float>, double>>(m_root.random(), debrisSeed, debrisCellSize, debrisCountRange);
   }
 }
 

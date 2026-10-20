@@ -56,7 +56,7 @@ using GUIBuilderException = StarError<GUIBuilderExceptionTag, StarException>;
 
 class GuiReader : public WidgetParser {
 public:
-  GuiReader();
+  GuiReader(GuiContext& context);
 
 protected:
   WidgetConstructResult titleHandler(String const& _unused, Json const& config);

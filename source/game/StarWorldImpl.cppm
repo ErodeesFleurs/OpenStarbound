@@ -82,7 +82,6 @@ import star.cellular_light_array;
 import star.cellular_lighting;
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.configuration;
 import star.root;
 import star.tile_modification;
@@ -118,29 +117,29 @@ namespace WorldImpl {
   List<Vec2I> collidingTilesAlongLine(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
       Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet, std::size_t maxSize, bool includeEdges);
 
-  inline TileDamageParameters tileDamageParameters(WorldTile* tile, TileLayer layer, TileDamage const& tileDamage);
+  inline TileDamageParameters tileDamageParameters(Root& root, WorldTile* tile, TileLayer layer, TileDamage const& tileDamage);
   template <typename TileSectorArray>
-  bool damageWouldDestroy(std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage);
+  bool damageWouldDestroy(Root& root, std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage);
   
   template <typename GetTileFunction>
-  bool canPlaceMaterial(std::shared_ptr<EntityMap> const& entityMap,
+  bool canPlaceMaterial(Root& root, std::shared_ptr<EntityMap> const& entityMap,
       Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile);
   // returns true if this material could be placed if in the same batch other
   // tiles can be placed
   // that connect to it
   template <typename GetTileFunction>
-  bool perhapsCanPlaceMaterial(std::shared_ptr<EntityMap> const& entityMap,
+  bool perhapsCanPlaceMaterial(Root& root, std::shared_ptr<EntityMap> const& entityMap,
       Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile);
   template <typename GetTileFunction>
-  bool canPlaceMaterialColorVariant(Vec2I const& pos, TileLayer layer, MaterialColorVariant color, GetTileFunction& getTile);
+  bool canPlaceMaterialColorVariant(Root& root, Vec2I const& pos, TileLayer layer, MaterialColorVariant color, GetTileFunction& getTile);
   template <typename GetTileFunction>
-  bool canPlaceMod(Vec2I const& pos, TileLayer layer, ModId mod, GetTileFunction& getTile);
+  bool canPlaceMod(Root& root, Vec2I const& pos, TileLayer layer, ModId mod, GetTileFunction& getTile);
   template <typename GetTileFunction>
-  std::pair<bool, bool> validateTileModification(std::shared_ptr<EntityMap> const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile);
-  bool validateTileReplacement(TileModification const& modification);
+  std::pair<bool, bool> validateTileModification(Root& root, std::shared_ptr<EntityMap> const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile);
+  bool validateTileReplacement(Root& root, TileModification const& modification);
   // Split modification list into good and bad
   template <typename GetTileFunction>
-  std::pair<TileModificationList, TileModificationList> splitTileModifications(std::shared_ptr<EntityMap> const& entityMap, TileModificationList const& modificationList,
+  std::pair<TileModificationList, TileModificationList> splitTileModifications(Root& root, std::shared_ptr<EntityMap> const& entityMap, TileModificationList const& modificationList,
     bool allowEntityOverlap, GetTileFunction& getTile, std::function<bool(Vec2I pos, TileModification modification)> extraCheck = {});
 
   template <typename TileSectorArray>
@@ -151,10 +150,11 @@ namespace WorldImpl {
       std::shared_ptr<Sky const> const& sky, Vec2F const& pos);
 
   template <typename TileSectorArray>
-  bool breathable(World const* world, std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<WorldTemplate const> const& worldTemplate, Vec2F const& pos);
+  bool breathable(Root& root, World const* world, std::shared_ptr<TileSectorArray> const& tileSectorArray, HashMap<DungeonId, bool> const& breathableMap,
+      std::shared_ptr<WorldTemplate const> const& worldTemplate, Vec2F const& pos);
 
   template <typename TileSectorArray>
-  float lightLevel(std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<EntityMap> const& entityMap, WorldGeometry const& worldGeometry,
+  float lightLevel(Root& root, std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<EntityMap> const& entityMap, WorldGeometry const& worldGeometry,
       std::shared_ptr<WorldTemplate const> const& worldTemplate, std::shared_ptr<Sky const> const& sky, CellularLightIntensityCalculator& lighting, Vec2F pos);
 
   std::shared_ptr<InteractiveEntity> getInteractiveInRange(WorldGeometry const& geometry, std::shared_ptr<EntityMap> const& entityMap,
@@ -303,9 +303,9 @@ namespace WorldImpl {
     return res;
   }
 
-  inline TileDamageParameters tileDamageParameters(WorldTile* tile, TileLayer layer, TileDamage const& tileDamage) {
+  inline TileDamageParameters tileDamageParameters(Root& root, WorldTile* tile, TileLayer layer, TileDamage const& tileDamage) {
     bool foreground = layer == TileLayer::Foreground;
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = root.materialDatabase();
     auto target = foreground ? tile->foreground : tile->background;
     auto mod = foreground ? tile->foregroundMod : tile->backgroundMod;
 
@@ -322,9 +322,9 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  bool damageWouldDestroy(std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage) {
+  bool damageWouldDestroy(Root& root, std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage) {
     if (auto tile = tileSectorArray->modifyTile(pos)) {
-      auto damageParameters = tileDamageParameters(tile, layer, tileDamage);
+      auto damageParameters = tileDamageParameters(root, tile, layer, tileDamage);
       float percentageDelta = damageParameters.damageDone(tileDamage) / damageParameters.totalHealth();
       auto damage = layer == TileLayer::Foreground ? tile->foregroundDamage : tile->backgroundDamage;
       return percentageDelta + damage.damagePercentage() >= 1.0f;
@@ -334,9 +334,9 @@ namespace WorldImpl {
   }
 
   template <typename GetTileFunction>
-  bool canPlaceMaterial(std::shared_ptr<EntityMap> const& entityMap,
+  bool canPlaceMaterial(Root& root, std::shared_ptr<EntityMap> const& entityMap,
       Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile) {
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = root.materialDatabase();
 
     if (!isRealMaterial(material))
       return false;
@@ -391,9 +391,9 @@ namespace WorldImpl {
   }
 
   template <typename GetTileFunction>
-  bool perhapsCanPlaceMaterial(std::shared_ptr<EntityMap> const& entityMap,
+  bool perhapsCanPlaceMaterial(Root& root, std::shared_ptr<EntityMap> const& entityMap,
       Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile) {
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = root.materialDatabase();
 
     if (!isRealMaterial(material))
       return false;
@@ -420,8 +420,8 @@ namespace WorldImpl {
   }
 
   template <typename GetTileFunction>
-  bool canPlaceMaterialColorVariant(Vec2I const& pos, TileLayer layer, MaterialColorVariant color, GetTileFunction& getTile) {
-    auto materialDatabase = Root::singleton().materialDatabase();
+  bool canPlaceMaterialColorVariant(Root& root, Vec2I const& pos, TileLayer layer, MaterialColorVariant color, GetTileFunction& getTile) {
+    auto materialDatabase = root.materialDatabase();
     auto& tile = getTile(pos);
     auto mat = tile.material(layer);
     auto existingColor = tile.materialColor(layer);
@@ -430,11 +430,11 @@ namespace WorldImpl {
   }
 
   template <typename GetTileFunction>
-  bool canPlaceMod(Vec2I const& pos, TileLayer layer, ModId mod, GetTileFunction& getTile) {
+  bool canPlaceMod(Root& root, Vec2I const& pos, TileLayer layer, ModId mod, GetTileFunction& getTile) {
     if (!isRealMod(mod))
       return false;
 
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = root.materialDatabase();
     auto mat = getTile(pos).material(layer);
     auto existingMod = getTile(pos).mod(layer);
 
@@ -442,19 +442,19 @@ namespace WorldImpl {
   }
 
   template <typename GetTileFunction>
-  std::pair<bool, bool> validateTileModification(std::shared_ptr<EntityMap> const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile) {
+  std::pair<bool, bool> validateTileModification(Root& root, std::shared_ptr<EntityMap> const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile) {
     bool good = false;
     bool perhaps = false;
     
     if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
       bool allowTileOverlap = placeMaterial->collisionOverride != TileCollisionOverride::None && collisionKindFromOverride(placeMaterial->collisionOverride) < CollisionKind::Dynamic;
-      perhaps = WorldImpl::perhapsCanPlaceMaterial(entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, allowTileOverlap, getTile);
+      perhaps = WorldImpl::perhapsCanPlaceMaterial(root, entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, allowTileOverlap, getTile);
       if (perhaps)
-        good = WorldImpl::canPlaceMaterial(entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, allowTileOverlap, getTile);
+        good = WorldImpl::canPlaceMaterial(root, entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, allowTileOverlap, getTile);
     } else if (auto placeMod = modification.ptr<PlaceMod>()) {
-      good = WorldImpl::canPlaceMod(pos, placeMod->layer, placeMod->mod, getTile);
+      good = WorldImpl::canPlaceMod(root, pos, placeMod->layer, placeMod->mod, getTile);
     } else if (auto placeMaterialColor = modification.ptr<PlaceMaterialColor>()) {
-      good = WorldImpl::canPlaceMaterialColorVariant(pos, placeMaterialColor->layer, placeMaterialColor->color, getTile);
+      good = WorldImpl::canPlaceMaterialColorVariant(root, pos, placeMaterialColor->layer, placeMaterialColor->color, getTile);
     } else if (modification.is<PlaceLiquid>()) {
       good = getTile(pos).collision == CollisionKind::None;
     } else {
@@ -464,12 +464,12 @@ namespace WorldImpl {
     return { good, perhaps };
   }
 
-  inline bool validateTileReplacement(TileModification const& modification) {
+  inline bool validateTileReplacement(Root& root, TileModification const& modification) {
     if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
       if (!isRealMaterial(placeMaterial->material))
         return false;
       
-      auto materialDatabase = Root::singleton().materialDatabase();
+      auto materialDatabase = root.materialDatabase();
       if (!materialDatabase->canPlaceInLayer(placeMaterial->material, placeMaterial->layer))
         return false;
       
@@ -480,7 +480,7 @@ namespace WorldImpl {
   }
 
   template <typename GetTileFunction>
-  std::pair<TileModificationList, TileModificationList> splitTileModifications(std::shared_ptr<EntityMap> const& entityMap, TileModificationList const& modificationList,
+  std::pair<TileModificationList, TileModificationList> splitTileModifications(Root& root, std::shared_ptr<EntityMap> const& entityMap, TileModificationList const& modificationList,
     bool allowEntityOverlap, GetTileFunction& getTile, std::function<bool(Vec2I pos, TileModification modification)> extraCheck) {
     TileModificationList success;
     TileModificationList unknown;
@@ -489,7 +489,7 @@ namespace WorldImpl {
 
       bool good = false, perhaps = false;
       if (!extraCheck || extraCheck(pair.first, pair.second))
-        std::tie(good, perhaps) = validateTileModification(entityMap, pair.first, pair.second, allowEntityOverlap, getTile);
+        std::tie(good, perhaps) = validateTileModification(root, entityMap, pair.first, pair.second, allowEntityOverlap, getTile);
 
       if (good)
         success.append(pair);
@@ -518,12 +518,12 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  bool breathable(World const* world, std::shared_ptr<TileSectorArray> const& tileSectorArray, HashMap<DungeonId, bool> const& breathableMap,
+  bool breathable(Root& root, World const* world, std::shared_ptr<TileSectorArray> const& tileSectorArray, HashMap<DungeonId, bool> const& breathableMap,
       std::shared_ptr<WorldTemplate const> const& worldTemplate, Vec2F const& pos) {
     Vec2I ipos = Vec2I::floor(pos);
     float remainder = pos[1] - ipos[1];
-    auto materialDatabase = Root::singleton().materialDatabase();
-    auto liquidsDatabase = Root::singleton().liquidsDatabase();
+    auto materialDatabase = root.materialDatabase();
+    auto liquidsDatabase = root.liquidsDatabase();
 
     auto tile = tileSectorArray->tile(ipos);
     bool environmentBreathable = breathableMap.maybe(tile.dungeonId).value(worldTemplate->breathable(ipos[0], ipos[1]));
@@ -534,7 +534,7 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  float lightLevel(std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<EntityMap> const& entityMap, WorldGeometry const& worldGeometry,
+  float lightLevel(Root& root, std::shared_ptr<TileSectorArray> const& tileSectorArray, std::shared_ptr<EntityMap> const& entityMap, WorldGeometry const& worldGeometry,
       std::shared_ptr<WorldTemplate const> const& worldTemplate, std::shared_ptr<Sky const> const& sky, CellularLightIntensityCalculator& lighting, Vec2F pos) {
     if (pos[1] < 0 || pos[1] >= worldGeometry.height())
       return 0;
@@ -544,8 +544,8 @@ namespace WorldImpl {
 
     Vec3F environmentLight = sky->environmentLight().toRgbF();
     float undergroundLevel = worldTemplate->undergroundLevel();
-    auto materialDatabase = Root::singleton().materialDatabase();
-    auto liquidsDatabase = Root::singleton().liquidsDatabase();
+    auto materialDatabase = root.materialDatabase();
+    auto liquidsDatabase = root.liquidsDatabase();
 
     lighting.begin(pos);
 

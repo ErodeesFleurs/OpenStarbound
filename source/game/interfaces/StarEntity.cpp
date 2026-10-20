@@ -24,6 +24,8 @@ import star.byte_array;
 import star.rect;
 namespace Star {
 
+class Root;
+
 extern EnumMap<ClientEntityMode> const ClientEntityModeNames{
   {ClientEntityMode::ClientSlaveOnly, "ClientSlaveOnly"},
   {ClientEntityMode::ClientMasterAllowed, "ClientMasterAllowed"},
@@ -199,7 +201,11 @@ bool Entity::isSlave() const {
   return m_entityMode == EntityMode::Slave;
 }
 
-Entity::Entity() {
+Root& Entity::root() const {
+  return m_root;
+}
+
+Entity::Entity(Root& root) : m_root(root) {
   m_world = nullptr;
   m_entityId = NullEntityId;
   m_persistent = false;

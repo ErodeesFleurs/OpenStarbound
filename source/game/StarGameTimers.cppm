@@ -4,7 +4,6 @@ import std;
 import star.data_stream;
 import star.maybe;
 import star.json;
-import star.game_types;
 
 namespace Star {
 
@@ -17,8 +16,8 @@ struct GameTimer {
   float time;
   float timer;
 
-  bool tick(float dt = GlobalTimestep); // returns true if time is up
-  bool wrapTick(float dt = GlobalTimestep); // auto resets
+  bool tick(float dt); // returns true if time is up
+  bool wrapTick(float dt); // auto resets
   void reset();
   void setDone();
   void invert();
@@ -46,8 +45,8 @@ struct SlidingWindow {
   std::vector<float> window;
 
   void reset(float initialValue);
-  void update(std::function<float()> sampleFunction);
-  void update(float newValue);
+  void update(float dt, std::function<float()> sampleFunction);
+  void update(float dt, float newValue);
   void processUpdate(float newValue);
 
   float min();

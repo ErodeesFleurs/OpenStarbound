@@ -20,10 +20,10 @@ module star.input_lua_bindings;
 import star.vector;
 namespace Star {
 
-LuaCallbacks LuaBindings::makeInputCallbacks() {
+LuaCallbacks LuaBindings::makeInputCallbacks(Input& owner) {
   LuaCallbacks callbacks;
 
-  auto input = Input::singletonPtr();
+  auto input = &owner;
 
   callbacks.registerCallbackWithSignature<Maybe<unsigned>, String, String>("bindDown", std::bind(std::mem_fn(&Input::bindDown), input, std::placeholders::_1, std::placeholders::_2));
   callbacks.registerCallbackWithSignature<bool,            String, String>("bindHeld", std::bind(std::mem_fn(&Input::bindHeld), input, std::placeholders::_1, std::placeholders::_2));

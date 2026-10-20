@@ -22,9 +22,6 @@ import star.version;
 
 import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
-import star.root;
 
 import star.vector;
 namespace Star {
@@ -51,13 +48,14 @@ struct Dance {
 
 class DanceDatabase {
 public:
-  DanceDatabase();
+  DanceDatabase(std::shared_ptr<Assets const> assets, Logger& logger);
 
   std::shared_ptr<Dance> getDance(String const& name) const;
 
 private:
-  static std::shared_ptr<Dance> readDance(String const& path);
+  static std::shared_ptr<Dance> readDance(Assets const& assets, String const& path);
 
+  Logger& m_logger;
   StringMap<std::shared_ptr<Dance>> m_dances;
 };
 

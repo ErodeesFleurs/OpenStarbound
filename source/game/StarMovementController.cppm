@@ -35,6 +35,7 @@ import star.rect;
 namespace Star {
 
 class World;
+class Root;
 
 struct MovementControllerExceptionTag {
   static constexpr char const* name() { return "MovementControllerException"; }
@@ -48,7 +49,7 @@ struct MovementParameters {
   friend DataStream& operator>>(DataStream& ds, MovementParameters& value);
   friend DataStream& operator<<(DataStream& ds, MovementParameters const& value);
   // Load sensible defaults from a config file.
-  static MovementParameters sensibleDefaults();
+  static MovementParameters sensibleDefaults(Root& root);
 
   // Construct parameters from config with only those specified in the config
   // set, if any.
@@ -108,8 +109,8 @@ class MovementController : public NetElementGroup {
 public:
   // Constructs a MovementController with parameters loaded from sensible
   // defaults, and the given parameters (if any) applied on top of them.
-  explicit MovementController();
-  explicit MovementController(MovementParameters const& parameters);
+  explicit MovementController(Root& root);
+  MovementController(Root& root, MovementParameters const& parameters);
 
   MovementParameters const& parameters() const;
 
@@ -216,7 +217,7 @@ public:
   // Stores dt value for Lua calls.
   void setTimestep(float dt);
 
-  // Integrates the ActorMovementController one GlobalTimestep and applies all
+  // Integrates the ActorMovementController for dt and applies all
   // forces.
   void tickMaster(float dt);
 
@@ -245,6 +246,9 @@ protected:
   Vec2F surfaceVelocity() const;
 
   World* world();
+
+protected:
+  Root& root() const;
 
 private:
   struct CollisionResult {
@@ -287,6 +291,7 @@ private:
   float gravity();
 
   MovementParameters m_parameters;
+  Root& m_root;
 
   World* m_world;
 

@@ -204,9 +204,9 @@ extern EnumMap<QuestState> const QuestStateNames {
   {QuestState::Failed, "Failed"}
 };
 
-Quest::Quest(QuestArcDescriptor const& questArc, std::size_t arcPos, Player* player) {
-  m_trackedIndicator = Root::singleton().assets()->json("/quests/quests.config:trackedCustomIndicator").toString();
-  m_untrackedIndicator = Root::singleton().assets()->json("/quests/quests.config:untrackedCustomIndicator").toString();
+Quest::Quest(Root& root, QuestArcDescriptor const& questArc, std::size_t arcPos, Player* player) : m_root(root), m_scriptComponent(root) {
+  m_trackedIndicator = m_root.assets()->json("/quests/quests.config:trackedCustomIndicator").toString();
+  m_untrackedIndicator = m_root.assets()->json("/quests/quests.config:untrackedCustomIndicator").toString();
 
   m_money = 0;
   m_unread = true;
@@ -216,8 +216,8 @@ Quest::Quest(QuestArcDescriptor const& questArc, std::size_t arcPos, Player* pla
   m_arc = questArc;
   m_arcPos = arcPos;
 
-  auto itemDatabase = Root::singleton().itemDatabase();
-  auto templateDatabase = Root::singleton().questTemplateDatabase();
+  auto itemDatabase = m_root.itemDatabase();
+  auto templateDatabase = m_root.questTemplateDatabase();
   auto questTemplate = templateDatabase->questTemplate(templateId());
 
   m_parameters = questDescriptor().parameters;
@@ -232,8 +232,8 @@ Quest::Quest(QuestArcDescriptor const& questArc, std::size_t arcPos, Player* pla
   };
   setEntityParameter("player", player);
 
-  m_money = Random::randUInt(questTemplate->moneyRange[0], questTemplate->moneyRange[1]);
-  m_rewards = Random::randValueFrom(questTemplate->rewards, {}).transformed(
+  m_money = m_root.random().randUInt(questTemplate->moneyRange[0], questTemplate->moneyRange[1]);
+  m_rewards = m_root.random().randValueFrom(questTemplate->rewards, {}).transformed(
       [&itemDatabase](ItemDescriptor const& item) -> std::shared_ptr<Item const> { return itemDatabase->item(item); });
 
   for (String const& rewardParamName : questTemplate->rewardParameters) {
@@ -263,18 +263,18 @@ Quest::Quest(QuestArcDescriptor const& questArc, std::size_t arcPos, Player* pla
   m_inited = false;
 }
 
-Quest::Quest(Json const& spec) {
-  m_trackedIndicator = Root::singleton().assets()->json("/quests/quests.config:trackedCustomIndicator").toString();
-  m_untrackedIndicator = Root::singleton().assets()->json("/quests/quests.config:untrackedCustomIndicator").toString();
+Quest::Quest(Root& root, Json const& spec) : m_root(root), m_scriptComponent(root) {
+  m_trackedIndicator = m_root.assets()->json("/quests/quests.config:trackedCustomIndicator").toString();
+  m_untrackedIndicator = m_root.assets()->json("/quests/quests.config:untrackedCustomIndicator").toString();
 
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+  auto versioningDatabase = m_root.versioningDatabase();
   Json diskStore = versioningDatabase->loadVersionedJson(VersionedJson::fromJson(spec), "Quest");
 
   m_state = QuestStateNames.getLeft(diskStore.getString("state"));
 
-  m_arc = QuestArcDescriptor::diskLoad(diskStore.get("arc"));
+  m_arc = QuestArcDescriptor::diskLoad(m_root, diskStore.get("arc"));
   m_arcPos = diskStore.getUInt("arcPos");
-  m_parameters = questParamsDiskLoad(diskStore.get("parameters"));
+  m_parameters = questParamsDiskLoad(m_root, diskStore.get("parameters"));
   m_worldId = diskStore.optString("worldId").apply(parseWorldId);
   m_location = diskStore.opt("location").apply([](Json const& json) {
     return std::make_pair(jsonToVec3I(json.get("system")), jsonToSystemLocation(json.get("location")));
@@ -282,7 +282,7 @@ Quest::Quest(Json const& spec) {
   m_serverUuid = diskStore.optString("serverUuid").apply(construct<Uuid>());
   m_money = diskStore.getUInt("money");
 
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto itemDatabase = m_root.itemDatabase();
   m_rewards = diskStore.getArray("rewards").transformed(
       [&itemDatabase](Json const& json) -> std::shared_ptr<Item const> { return itemDatabase->diskLoad(json); });
 
@@ -292,7 +292,7 @@ Quest::Quest(Json const& spec) {
   m_indicators = jsonToStringSet(diskStore.get("indicators", JsonArray{}));
   m_scriptComponent.setScriptStorage(diskStore.getObject("scriptStorage", JsonObject{}));
 
-  auto templateDatabase = Root::singleton().questTemplateDatabase();
+  auto templateDatabase = m_root.questTemplateDatabase();
   auto questTemplate = templateDatabase->questTemplate(templateId());
   m_displayParameters = DisplayParameters{
     questTemplate->ephemeral,
@@ -309,8 +309,8 @@ Quest::Quest(Json const& spec) {
   m_completionText = diskStore.getString("completionText", questTemplate->completionText);
   m_failureText = diskStore.getString("failureText", questTemplate->failureText);
 
-  m_portraits = jsonToMapV<StringMap<List<Drawable>>>(diskStore.get("portraits", JsonObject{}), [](Json const& portrait) {
-      return portrait.toArray().transformed(construct<Drawable>());
+  m_portraits = jsonToMapV<StringMap<List<Drawable>>>(diskStore.get("portraits", JsonObject{}), [this](Json const& portrait) {
+      return portrait.toArray().transformed([this](Json const& drawable) { return Drawable(*m_root.imageMetadataDatabase(), drawable); });
     });
   m_portraitTitles = jsonToMapV<StringMap<String>>(diskStore.get("portraitTitles", JsonObject{}), std::mem_fn(&Json::toString));
   m_showDialog = diskStore.getBool("showDialog", false);
@@ -321,13 +321,13 @@ Quest::Quest(Json const& spec) {
 }
 
 Json Quest::diskStore() const {
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+  auto versioningDatabase = m_root.versioningDatabase();
 
   JsonObject result;
   result["state"] = QuestStateNames.getRight(m_state);
-  result["arc"] = m_arc.diskStore();
+  result["arc"] = m_arc.diskStore(m_root);
   result["arcPos"] = m_arcPos;
-  result["parameters"] = questParamsDiskStore(m_parameters);
+  result["parameters"] = questParamsDiskStore(m_root, m_parameters);
   result["money"] = m_money;
 
   result["worldId"] = jsonFromMaybe(m_worldId.apply(printWorldId));
@@ -336,7 +336,7 @@ Json Quest::diskStore() const {
     }));
   result["serverUuid"] = jsonFromMaybe(m_serverUuid.apply(std::mem_fn(&Uuid::hex)));
 
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto itemDatabase = m_root.itemDatabase();
   result["rewards"] =
       m_rewards.transformed([&itemDatabase](std::shared_ptr<Item const> const& item) { return itemDatabase->diskStore(item); });
 
@@ -361,7 +361,7 @@ Json Quest::diskStore() const {
 }
 
 std::shared_ptr<QuestTemplate> Quest::getTemplate() const {
-  return Root::singleton().questTemplateDatabase()->questTemplate(templateId());
+  return m_root.questTemplateDatabase()->questTemplate(templateId());
 }
 
 void Quest::init(Player* player, World* world, UniverseClient* client) {
@@ -452,7 +452,7 @@ void Quest::complete(Maybe<std::size_t> followupIndex) {
   bool trackNewQuest = m_player->questManager()->isTracked(questId());
   std::size_t nextArcPos = followupIndex.value(questArcPosition() + 1);
   if (nextArcPos < m_arc.quests.size()) {
-    auto followUp = std::make_shared<Quest>(m_arc, nextArcPos, m_player);
+    auto followUp = std::make_shared<Quest>(m_root, m_arc, nextArcPos, m_player);
     followUp->setWorldId(worldId());
     followUp->setLocation(location());
     followUp->setServerUuid(serverUuid());
@@ -611,7 +611,7 @@ String Quest::questReceiverIndicator() const {
   return getTemplate()->questReceiverIndicator;
 }
 
-bool hasItemIndicator(std::shared_ptr<Entity> const& entity, List<ItemDescriptor> indicatedItems) {
+bool hasItemIndicator(Root& root, std::shared_ptr<Entity> const& entity, List<ItemDescriptor> indicatedItems) {
   if (auto itemDrop = as<ItemDrop>(entity)) {
     for (auto const& itemDesc : indicatedItems) {
       if (itemDrop->item()->matches(itemDesc, true)) {
@@ -619,7 +619,7 @@ bool hasItemIndicator(std::shared_ptr<Entity> const& entity, List<ItemDescriptor
       }
     }
   } else if (auto object = as<Object>(entity)) {
-    std::shared_ptr<ObjectConfig> objectConfig = Root::singleton().objectDatabase()->getConfig(object->name());
+    std::shared_ptr<ObjectConfig> objectConfig = root.objectDatabase()->getConfig(object->name());
     if (!objectConfig->hasObjectItem)
       return false;
     for (auto const& itemDesc : indicatedItems) {
@@ -644,7 +644,7 @@ Maybe<String> Quest::customIndicator(std::shared_ptr<Entity> const& entity) cons
 
     } else if (param.detail.is<QuestItem>()) {
       QuestItem questItem = param.detail.get<QuestItem>();
-      if (hasItemIndicator(entity, {questItem.descriptor()}))
+      if (hasItemIndicator(m_root, entity, {questItem.descriptor()}))
         return param.indicator.value(defaultCustomIndicator());
 
     } else if (param.detail.is<QuestItemTag>()) {
@@ -656,7 +656,7 @@ Maybe<String> Quest::customIndicator(std::shared_ptr<Entity> const& entity) cons
 
     } else if (param.detail.is<QuestItemList>()) {
       QuestItemList questItemList = param.detail.get<QuestItemList>();
-      if (hasItemIndicator(entity, questItemList))
+      if (hasItemIndicator(m_root, entity, questItemList))
         return param.indicator.value(defaultCustomIndicator());
 
     } else if (param.detail.is<QuestMonsterType>()) {
@@ -751,8 +751,8 @@ void Quest::initScript() {
   m_scriptComponent.setUpdateDelta(questTemplate->updateDelta);
 
   m_scriptComponent.addCallbacks("quest", makeQuestCallbacks(m_player));
-  m_scriptComponent.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client));
-  m_scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_player));
+  m_scriptComponent.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_root, m_client));
+  m_scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_root, m_player));
   m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) {
       return Json(getTemplate()->scriptConfig).query(name, def);
     }));
@@ -864,7 +864,7 @@ LuaCallbacks Quest::makeQuestCallbacks(Player* player) {
 
   callbacks.registerCallbackWithSignature<void, String, Maybe<JsonArray>>("setPortrait", [this](String const& portraitName, Maybe<JsonArray> const& portrait) {
       if (portrait) {
-        m_portraits[portraitName] = portrait->transformed(construct<Drawable>());
+        m_portraits[portraitName] = portrait->transformed([this](Json const& drawable) { return Drawable(*m_root.imageMetadataDatabase(), drawable); });
       } else {
         m_portraits.remove(portraitName);
       }
@@ -910,7 +910,7 @@ void Quest::addReward(ItemDescriptor const& reward) {
     m_money += reward.count();
     return;
   }
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto itemDatabase = m_root.itemDatabase();
   m_rewards.append(itemDatabase->item(reward));
 }
 
@@ -919,8 +919,8 @@ String const& Quest::defaultCustomIndicator() const {
 }
 
 std::shared_ptr<Quest> createPreviewQuest(
-    String const& templateId, String const& position, String const& questGiverSpecies, Player* player) {
-  auto questTemplates = Root::singleton().questTemplateDatabase();
+    Root& root, String const& templateId, String const& position, String const& questGiverSpecies, Player* player) {
+  auto questTemplates = root.questTemplateDatabase();
   auto questTemplate = questTemplates->questTemplate(templateId);
   if (!questTemplate)
     return {};
@@ -933,7 +933,7 @@ std::shared_ptr<Quest> createPreviewQuest(
     paramJson[paramName] = paramJson[paramName].set("portrait", portrait);
   }
   StringMap<QuestParam> parameters = questParamsFromJson(paramJson);
-  QuestDescriptor questDesc = QuestDescriptor{"preview", templateId, parameters, Random::randu64()};
+  QuestDescriptor questDesc = QuestDescriptor{"preview", templateId, parameters, root.random().randu64()};
 
   List<QuestDescriptor> quests;
   if (!position.equalsIgnoreCase("next") && !position.equalsIgnoreCase("last") && !position.equalsIgnoreCase("first")) {
@@ -950,7 +950,7 @@ std::shared_ptr<Quest> createPreviewQuest(
     arcPos = 2;
   }
 
-  auto quest = std::make_shared<Quest>(arc, arcPos, player);
+  auto quest = std::make_shared<Quest>(root, arc, arcPos, player);
   quest->setParameter("questGiver", QuestParam{QuestEntity{{}, questGiverSpecies, {}}, {"Quest Giver"}, portrait, {}});
   return quest;
 }

@@ -173,7 +173,6 @@ import star.universe_server;
 import star.universe_settings;
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.root;
 import star.configuration;
 import star.item_drop;
@@ -202,17 +201,17 @@ import star.celestial_database;
 import star.algorithm;
 namespace Star {
 
-CommandProcessor::CommandProcessor(UniverseServer* universe)
-  : m_universe(universe) {
-  auto assets = Root::singleton().assets();
+CommandProcessor::CommandProcessor(Root& root, UniverseServer* universe)
+  : m_root(root), m_universe(universe), m_scriptComponent(root) {
+  auto assets = m_root.assets();
   auto universeConfig = assets->json("/universe_server.config");
   
-  m_luaRoot = std::make_shared<LuaRoot>();
+  m_luaRoot = std::make_shared<LuaRoot>(m_root);
   m_luaRoot->tuneAutoGarbageCollection(universeConfig.getFloat("luaGcPause"), universeConfig.getFloat("luaGcStepMultiplier"));
-  m_scriptComponent.addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(m_universe));
-  m_scriptComponent.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_universe));
-  m_scriptComponent.addThreadCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(m_universe));
-  m_scriptComponent.addThreadCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_universe));
+  m_scriptComponent.addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(m_root, m_universe));
+  m_scriptComponent.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_root, m_universe));
+  m_scriptComponent.addThreadCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(m_root, m_universe));
+  m_scriptComponent.addThreadCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_root, m_universe));
   m_scriptComponent.addCallbacks("CommandProcessor", makeCommandCallbacks());
   m_scriptComponent.setScripts(jsonToStringList(universeConfig.get("commandProcessorScripts")));
   m_luaRoot->luaEngine().setNullTerminated(false);
@@ -235,7 +234,7 @@ ServerCommandResult CommandProcessor::userCommand(ConnectionId connectionId, Str
 String CommandProcessor::help(ConnectionId connectionId, String const& argumentString) {
   auto arguments = m_parser.tokenizeToStringList(argumentString);
 
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
   auto basicCommands = assets->json("/help.config:basicCommands");
   auto openSbCommands = assets->json("/help.config:openSbCommands");
   auto adminCommands = assets->json("/help.config:adminCommands");
@@ -280,7 +279,7 @@ String CommandProcessor::help(ConnectionId connectionId, String const& argumentS
 }
 
 String CommandProcessor::admin(ConnectionId connectionId, String const& argumentString) {
-  auto config = Root::singleton().configuration();
+  auto config = m_root.configuration();
   auto arguments = m_parser.tokenizeToStringList(argumentString);
 
   ConnectionId targetClientId = connectionId;
@@ -358,7 +357,7 @@ String CommandProcessor::warp(ConnectionId connectionId, String const& argumentS
     m_universe->clientWarpPlayer(connectionId, parseWarpAction(argumentString));
     return "Lets do the space warp again";
   } catch (StarException const& e) {
-    Logger::warn("Could not parse warp target: {}", outputException(e, false));
+    m_root.logger().warn("Could not parse warp target: {}", outputException(e, false));
     return strf("Could not parse the argument {} as a warp target", argumentString);
   }
 }
@@ -382,7 +381,7 @@ String CommandProcessor::warpRandom(ConnectionId connectionId, String const& typ
 		};
 
 	while (target.isNothing()) {
-		RectI region = RectI::withSize(Vec2I(Random::randi32(), Random::randi32()), size);
+		RectI region = RectI::withSize(Vec2I(m_root.random().randi32(), m_root.random().randi32()), size);
 
 		while (!celestialDatabase->scanRegionFullyLoaded(region)) {
 			celestialDatabase->scanSystems(region);
@@ -441,7 +440,7 @@ String CommandProcessor::timescale(ConnectionId connectionId, String const& argu
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
 
   if (arguments.empty())
-    return strf("Current timescale is {:6.6f}x", GlobalTimescale);
+    return strf("Current timescale is {:6.6f}x", m_root.timing().timescale);
 
   float timescale = clamp(lexicalCast<float>(arguments[0]), 0.001f, 32.0f);
   m_universe->setTimescale(timescale);
@@ -455,7 +454,7 @@ String CommandProcessor::tickrate(ConnectionId connectionId, String const& argum
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
 
   if (arguments.empty())
-    return strf("Current tick rate is {:4.2f}Hz", 1.0f / ServerGlobalTimestep);
+    return strf("Current tick rate is {:4.2f}Hz", 1.0f / m_root.timing().serverTimestep);
 
   float tickRate = clamp(lexicalCast<float>(arguments[0]), 5.f, 500.f);
   m_universe->setTickRate(tickRate);
@@ -565,22 +564,22 @@ String CommandProcessor::spawnItem(ConnectionId connectionId, String const& argu
       seed = lexicalCast<std::uint64_t>(arguments.at(4));
 
     bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, std::shared_ptr<Player> const& player) {
-        auto itemDatabase = Root::singleton().itemDatabase();
-        world->addEntity(ItemDrop::createRandomizedDrop(itemDatabase->item(ItemDescriptor(kind, amount, parameters), level, seed, true), player->aimPosition()));
+        auto itemDatabase = m_root.itemDatabase();
+        world->addEntity(ItemDrop::createRandomizedDrop(m_root, itemDatabase->item(ItemDescriptor(kind, amount, parameters), level, seed, true), player->aimPosition()));
       });
 
     return done ? "" : "Invalid client state";
   } catch (JsonParsingException const& exception) {
-    Logger::warn("Error while processing /spawnitem '{}' command. Json parse problem: {}", arguments.at(0), outputException(exception, false));
+    m_root.logger().warn("Error while processing /spawnitem '{}' command. Json parse problem: {}", arguments.at(0), outputException(exception, false));
     return "Could not parse item parameters";
   } catch (ItemException const& exception) {
-    Logger::warn("Error while processing /spawnitem '{}' command. Item instantiation problem: {}", arguments.at(0), outputException(exception, false));
+    m_root.logger().warn("Error while processing /spawnitem '{}' command. Item instantiation problem: {}", arguments.at(0), outputException(exception, false));
     return strf("Could not load item '{}'", arguments.at(0));
   } catch (BadLexicalCast const& exception) {
-    Logger::warn("Error while processing /spawnitem command. Number expected. Got something else: {}", outputException(exception, false));
+    m_root.logger().warn("Error while processing /spawnitem command. Number expected. Got something else: {}", outputException(exception, false));
     return strf("Could not load item '{}'", arguments.at(0));
   } catch (StarException const& exception) {
-    Logger::warn("Error while processing /spawnitem command '{}', exception caught: {}", argumentString, outputException(exception, false));
+    m_root.logger().warn("Error while processing /spawnitem command '{}', exception caught: {}", argumentString, outputException(exception, false));
     return strf("Could not load item '{}'", arguments.at(0));
   }
 }
@@ -602,23 +601,23 @@ String CommandProcessor::spawnTreasure(ConnectionId connectionId, String const& 
       level = lexicalCast<float>(arguments.at(1));
 
     bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, std::shared_ptr<Player> const& player) {
-        auto treasureDatabase = Root::singleton().treasureDatabase();
-        for (auto const& treasureItem : treasureDatabase->createTreasure(treasurePool, level, Random::randu64()))
-          world->addEntity(ItemDrop::createRandomizedDrop(treasureItem, player->aimPosition()));
+        auto treasureDatabase = m_root.treasureDatabase();
+        for (auto const& treasureItem : treasureDatabase->createTreasure(treasurePool, level, m_root.random().randu64()))
+          world->addEntity(ItemDrop::createRandomizedDrop(m_root, treasureItem, player->aimPosition()));
       });
 
     return done ? "" : "Invalid client state";
   } catch (JsonParsingException const& exception) {
-    Logger::warn("Error while processing /spawntreasure '{}' command. Json parse problem: {}", arguments.at(0), outputException(exception, false));
+    m_root.logger().warn("Error while processing /spawntreasure '{}' command. Json parse problem: {}", arguments.at(0), outputException(exception, false));
     return "Could not parse item parameters";
   } catch (ItemException const& exception) {
-    Logger::warn("Error while processing /spawntreasure '{}' command. Item instantiation problem: {}", arguments.at(0), outputException(exception, false));
+    m_root.logger().warn("Error while processing /spawntreasure '{}' command. Item instantiation problem: {}", arguments.at(0), outputException(exception, false));
     return strf("Could not load item '{}'", arguments.at(0));
   } catch (BadLexicalCast const& exception) {
-    Logger::warn("Error while processing /spawntreasure command. Number expected. Got something else: {}", outputException(exception, false));
+    m_root.logger().warn("Error while processing /spawntreasure command. Number expected. Got something else: {}", outputException(exception, false));
     return strf("Could not load item '{}'", arguments.at(0));
   } catch (StarException const& exception) {
-    Logger::warn("Error while processing /spawntreasure command '{}', exception caught: {}", argumentString, outputException(exception, false));
+    m_root.logger().warn("Error while processing /spawntreasure command '{}', exception caught: {}", argumentString, outputException(exception, false));
     return strf("Could not load item '{}'", arguments.at(0));
   }
 }
@@ -630,7 +629,7 @@ String CommandProcessor::spawnMonster(ConnectionId connectionId, String const& a
   try {
     auto arguments = m_parser.tokenizeToStringList(argumentString);
 
-    auto monsterDatabase = Root::singleton().monsterDatabase();
+    auto monsterDatabase = m_root.monsterDatabase();
     std::shared_ptr<Monster> monster;
 
     float level = 1;
@@ -650,7 +649,7 @@ String CommandProcessor::spawnMonster(ConnectionId connectionId, String const& a
 
     return done ? "" : "Invalid client state";
   } catch (StarException const& exception) {
-    Logger::warn("Could not spawn Monster of type '{}', exception caught: {}", argumentString, outputException(exception, false));
+    m_root.logger().warn("Could not spawn Monster of type '{}', exception caught: {}", argumentString, outputException(exception, false));
     return strf("Could not spawn Monster of type '{}'", argumentString);
   }
 }
@@ -662,9 +661,9 @@ String CommandProcessor::spawnNpc(ConnectionId connectionId, String const& argum
   auto arguments = m_parser.tokenizeToStringList(argumentString);
 
   try {
-    auto npcDatabase = Root::singleton().npcDatabase();
+    auto npcDatabase = m_root.npcDatabase();
     float npcLevel = 1;
-    std::uint64_t seed = Random::randu64();
+    std::uint64_t seed = m_root.random().randu64();
     Json overrides;
 
     if (arguments.size() < 2)
@@ -685,7 +684,7 @@ String CommandProcessor::spawnNpc(ConnectionId connectionId, String const& argum
 
     return done ? "" : "Invalid client state";
   } catch (StarException const& exception) {
-    Logger::warn("Could not spawn NPC of species '{}', exception caught: {}", argumentString, outputException(exception, true));
+    m_root.logger().warn("Could not spawn NPC of species '{}', exception caught: {}", argumentString, outputException(exception, true));
     return strf("Could not spawn NPC of species '{}'", argumentString);
   }
 }
@@ -695,7 +694,7 @@ String CommandProcessor::spawnVehicle(ConnectionId connectionId, String const& a
     return *errorMsg;
 
   try {
-    auto vehicleDatabase = Root::singleton().vehicleDatabase();
+    auto vehicleDatabase = m_root.vehicleDatabase();
     auto arguments = m_parser.tokenizeToStringList(argumentString);
 
     std::shared_ptr<Vehicle> vehicle;
@@ -715,7 +714,7 @@ String CommandProcessor::spawnVehicle(ConnectionId connectionId, String const& a
 
     return done ? "" : "Invalid client state";
   } catch (StarException const& exception) {
-    Logger::warn("Could not spawn vehicle, exception caught: {}", outputException(exception, false));
+    m_root.logger().warn("Could not spawn vehicle, exception caught: {}", outputException(exception, false));
     return strf("Could not spawn vehicle");
   }
 }
@@ -727,7 +726,7 @@ String CommandProcessor::spawnStagehand(ConnectionId connectionId, String const&
   try {
     auto arguments = m_parser.tokenizeToStringList(argumentString);
 
-    auto stagehandDatabase = Root::singleton().stagehandDatabase();
+    auto stagehandDatabase = m_root.stagehandDatabase();
 
     Json parameters = JsonObject();
     if (arguments.size() >= 2)
@@ -741,7 +740,7 @@ String CommandProcessor::spawnStagehand(ConnectionId connectionId, String const&
 
     return done ? "" : "Invalid client state";
   } catch (StarException const& exception) {
-    Logger::warn("Could not spawn Stagehand of type '{}', exception caught: {}", argumentString, outputException(exception, false));
+    m_root.logger().warn("Could not spawn Stagehand of type '{}', exception caught: {}", argumentString, outputException(exception, false));
     return strf("Could not spawn Stagehand of type '{}'", argumentString);
   }
 }
@@ -769,7 +768,7 @@ String CommandProcessor::spawnLiquid(ConnectionId connectionId, String const& ar
   try {
     auto arguments = m_parser.tokenizeToStringList(argumentString);
 
-    auto liquidsDatabase = Root::singleton().liquidsDatabase();
+    auto liquidsDatabase = m_root.liquidsDatabase();
 
     if (!liquidsDatabase->isLiquidName(arguments.at(0)))
       return strf("No such liquid {}", arguments.at(0));
@@ -790,7 +789,7 @@ String CommandProcessor::spawnLiquid(ConnectionId connectionId, String const& ar
     return done ? "" : "Invalid client state";
 
   } catch (StarException const& exception) {
-    Logger::warn(
+    m_root.logger().warn(
         "Could not spawn liquid '{}', exception caught: {}", argumentString, outputException(exception, false));
     return "Could not spawn liquid.";
   }
@@ -909,7 +908,7 @@ String CommandProcessor::list(ConnectionId connectionId, String const&) {
 
   StringList res;
 
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
   for (auto cid : m_universe->clientIds())
     res.append(strf("${} : {} : $${}", cid, m_universe->clientNick(cid), m_universe->uuidForClient(cid)->hex()));
 
@@ -942,7 +941,7 @@ String CommandProcessor::serverReload(ConnectionId connectionId, String const&) 
   if (auto errorMsg = adminCheck(connectionId, "trigger root reload"))
     return *errorMsg;
 
-  auto& root = Root::singleton();
+  auto& root = m_root;
   root.reload();
   root.fullyLoad();
   return "";
@@ -1258,7 +1257,7 @@ Maybe<String> CommandProcessor::adminCheck(ConnectionId connectionId, String con
   if (connectionId == ServerConnectionId)
     return {};
 
-  auto config = Root::singleton().configuration();
+  auto config = m_root.configuration();
   if (!config->get("allowAdminCommands").toBool())
     return {"Admin commands disabled on this server."};
   if (!config->get("allowAdminCommandsFromAnyone").toBool()) {

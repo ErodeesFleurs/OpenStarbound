@@ -70,7 +70,6 @@ import star.physics_entity;
 import star.tool_user;
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.configuration;
 import star.root;
 import star.status_effect_item;
@@ -121,6 +120,7 @@ import star.flashlight;
 import star.object_item;
 import star.item_database;
 import star.object_database;
+import star.versioning_database;
 
 
 import star.effect_emitter;
@@ -132,11 +132,12 @@ import star.net_element;
 import star.algorithm;
 namespace Star {
 
-ToolUser::ToolUser()
-  : m_beamGunRadius(), m_beamGunGlowBorder(), m_objectPreviewInnerAlpha(), m_objectPreviewOuterAlpha(), m_user(nullptr),
+ToolUser::ToolUser(Root& root)
+  : m_root(&root), m_beamGunRadius(), m_beamGunGlowBorder(), m_objectPreviewInnerAlpha(), m_objectPreviewOuterAlpha(),
+    m_user(nullptr), m_primaryHandItem(root), m_altHandItem(root),
     m_fireMain(), m_fireAlt(), m_edgeTriggeredMain(), m_edgeTriggeredAlt(), m_edgeSuppressedMain(), m_edgeSuppressedAlt(),
     m_suppress() {
-  auto assets = Root::singleton().assets();
+  auto assets = root.assets();
   m_beamGunRadius = assets->json("/player.config:initialBeamGunRadius").toFloat();
   m_beamGunGlowBorder = assets->json("/player.config:previewGlowBorder").toInt();
   m_objectPreviewInnerAlpha = assets->json("/player.config:objectPreviewInnerAlpha").toFloat();
@@ -173,15 +174,15 @@ ToolUser::ToolUser()
 Json ToolUser::diskStore() const {
   JsonObject res;
   if (m_primaryHandItem.get())
-    res["primaryHandItem"] = m_primaryHandItem.get()->descriptor().diskStore();
+    res["primaryHandItem"] = m_primaryHandItem.get()->descriptor().diskStore(*m_root->versioningDatabase());
   if (m_altHandItem.get())
-    res["altHandItem"] = m_altHandItem.get()->descriptor().diskStore();
+    res["altHandItem"] = m_altHandItem.get()->descriptor().diskStore(*m_root->versioningDatabase());
 
   return res;
 }
 
 void ToolUser::diskLoad(Json const& diskStore) {
-  auto itemDb = Root::singleton().itemDatabase();
+  auto itemDb = m_root->itemDatabase();
   m_primaryHandItem.set(itemDb->diskLoad(diskStore.get("primaryHandItem", {})));
   m_altHandItem.set(itemDb->diskLoad(diskStore.get("altHandItem", {})));
 }
@@ -287,7 +288,7 @@ List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walki
     if ((aimPos == m_cachedObjectPreviewPosition) && (item == m_cachedObjectItem))
       return m_cachedObjectPreview;
 
-    auto objectDatabase = Root::singleton().objectDatabase();
+    auto objectDatabase = m_root->objectDatabase();
 
     auto drawables = objectDatabase->cursorHintDrawables(m_user->world(), item->objectName(),
         aimPos, walkingDirection, item->objectParameters());
@@ -305,9 +306,10 @@ List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walki
     nearWhite.setAlphaF(m_objectPreviewInnerAlpha);
     ImageOperation op = BorderImageOperation{m_beamGunGlowBorder, nearWhite.toRgba(), favoriteColorTrans.toRgba(), false, false};
 
+    auto imageMetadata = m_root->imageMetadataDatabase();
     for (Drawable& drawable : drawables) {
       if (drawable.isImage())
-        drawable.imagePart().addDirectives(imageOperationToString(op), true);
+        drawable.imagePart().addDirectives(*imageMetadata, imageOperationToString(op), true);
       drawable.color = opacityMask;
     }
     m_cachedObjectPreview = drawables;
@@ -723,6 +725,8 @@ float ToolUser::beamGunRadius() const {
   return m_beamGunRadius + m_user->statusController()->statusProperty("bonusBeamGunRadius", 0).toFloat();
 }
 
+ToolUser::NetItem::NetItem(Root& root) : m_root(&root) {}
+
 void ToolUser::NetItem::initNetVersion(NetElementVersion const* version) {
   m_netVersion = version;
   m_itemDescriptor.initNetVersion(m_netVersion);
@@ -742,7 +746,7 @@ void ToolUser::NetItem::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   if (!checkWithRules(rules)) return;
   m_itemDescriptor.netLoad(ds, rules);
 
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto itemDatabase = m_root->itemDatabase();
   if (itemDatabase->loadItem(m_itemDescriptor.get(), m_item)) {
     m_newItem = true;
     if (auto netItem = as<NetElement>(m_item.get())) {
@@ -815,7 +819,7 @@ void ToolUser::NetItem::readNetDelta(DataStream& ds, float interpolationTime, Ne
     } else if (code == 1) {
       m_itemDescriptor.readNetDelta(ds, 0.0f, rules);
       if (!m_item || !m_item->matches(m_itemDescriptor.get(), true)) {
-        auto itemDatabase = Root::singleton().itemDatabase();
+        auto itemDatabase = m_root->itemDatabase();
         if (itemDatabase->loadItem(m_itemDescriptor.get(), m_item)) {
           m_newItem = true;
           if (auto netItem = as<NetElement>(m_item.get())) {

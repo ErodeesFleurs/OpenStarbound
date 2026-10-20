@@ -51,7 +51,7 @@ class UniverseClient;
 
 class ScriptPane : public BaseScriptPane {
 public:
-  ScriptPane(std::shared_ptr<UniverseClient> client, Json config, EntityId sourceEntityId = NullEntityId);
+  ScriptPane(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, Json config, EntityId sourceEntityId = NullEntityId);
 
   void displayed() override;
   void dismissed() override;

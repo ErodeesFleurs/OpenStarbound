@@ -16,6 +16,8 @@ import star.celestial_coordinate;
 import star.rect;
 namespace Star {
 
+class Root;
+
 // Item name - always one single item. QuestItem and QuestItemList are
 // distinct due to how the surrounding text interacts with the parameter
 // in the quest text. For a single item we might want to say "the <bandage>" or
@@ -166,10 +168,10 @@ struct QuestParam {
   friend DataStream& operator<<(DataStream& ds, QuestParam const& param);
 
   static QuestParam fromJson(Json const& json);
-  static QuestParam diskLoad(Json const& json);
+  static QuestParam diskLoad(Root& root, Json const& json);
 
   Json toJson() const;
-  Json diskStore() const;
+  Json diskStore(Root& root) const;
 
   bool operator==(QuestParam const& rhs) const;
 
@@ -183,11 +185,11 @@ struct QuestDescriptor {
   friend DataStream& operator>>(DataStream& ds, QuestDescriptor& quest);
   friend DataStream& operator<<(DataStream& ds, QuestDescriptor const& quest);
 
-  static QuestDescriptor fromJson(Json const& json);
-  static QuestDescriptor diskLoad(Json const& json);
+  static QuestDescriptor fromJson(Root& root, Json const& json);
+  static QuestDescriptor diskLoad(Root& root, Json const& json);
 
   Json toJson() const;
-  Json diskStore() const;
+  Json diskStore(Root& root) const;
 
   bool operator==(QuestDescriptor const& rhs) const;
 
@@ -201,11 +203,11 @@ struct QuestArcDescriptor {
   friend DataStream& operator>>(DataStream& ds, QuestArcDescriptor& questArc);
   friend DataStream& operator<<(DataStream& ds, QuestArcDescriptor const& questArc);
 
-  static QuestArcDescriptor fromJson(Json const& json);
-  static QuestArcDescriptor diskLoad(Json const& json);
+  static QuestArcDescriptor fromJson(Root& root, Json const& json);
+  static QuestArcDescriptor diskLoad(Root& root, Json const& json);
 
   Json toJson() const;
-  Json diskStore() const;
+  Json diskStore(Root& root) const;
 
   bool operator==(QuestArcDescriptor const& rhs) const;
 
@@ -213,13 +215,13 @@ struct QuestArcDescriptor {
   Maybe<String> stagehandUniqueId;
 };
 
-String questParamText(QuestParam const& param);
-StringMap<String> questParamTags(StringMap<QuestParam> const& parameters);
+String questParamText(Root& root, QuestParam const& param);
+StringMap<String> questParamTags(Root& root, StringMap<QuestParam> const& parameters);
 
 StringMap<QuestParam> questParamsFromJson(Json const& json);
-StringMap<QuestParam> questParamsDiskLoad(Json const& json);
+StringMap<QuestParam> questParamsDiskLoad(Root& root, Json const& json);
 Json questParamsToJson(StringMap<QuestParam> const& parameters);
-Json questParamsDiskStore(StringMap<QuestParam> const& parameters);
+Json questParamsDiskStore(Root& root, StringMap<QuestParam> const& parameters);
 
 DataStream& operator>>(DataStream& ds, QuestItem& param);
 DataStream& operator<<(DataStream& ds, QuestItem const& param);

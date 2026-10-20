@@ -68,7 +68,10 @@ struct AmbientNoisesDescription;
 // Reference object that describes the generation of a single world, and all
 // of the world metadata.  Meant to remain static (or relatively static)
 // throughout the life of a World.
+class Root;
 class WorldTemplate {
+  Root& m_root;
+  Root& root() const { return m_root; }
 public:
   struct WeatherDomain {
     String name;
@@ -135,13 +138,13 @@ public:
   };
 
   // Creates a blank world with the given size
-  WorldTemplate(Vec2U const& size);
+  WorldTemplate(Root& root, Vec2U const& size);
   // Creates a world from the given visitable celestial object.
-  WorldTemplate(CelestialCoordinate const& celestialCoordinate, std::shared_ptr<CelestialDatabase> const& celestialDatabase);
+  WorldTemplate(Root& root, CelestialCoordinate const& celestialCoordinate, std::shared_ptr<CelestialDatabase> const& celestialDatabase);
   // Creates a world from a bare VisitableWorldParameters structure
-  WorldTemplate(std::shared_ptr<VisitableWorldParameters const> const& worldParameters, SkyParameters const& skyParameters, std::uint64_t seed);
+  WorldTemplate(Root& root, std::shared_ptr<VisitableWorldParameters const> const& worldParameters, SkyParameters const& skyParameters, std::uint64_t seed);
   // Load a world template from the given stored data.
-  WorldTemplate(Json const& store);
+  WorldTemplate(Root& root, Json const& store);
 
   Json store() const;
 
@@ -247,7 +250,7 @@ private:
     bool solid;
   };
 
-  WorldTemplate();
+  WorldTemplate(Root& root);
 
   void determineWorldName();
   void setupWeatherDomains();

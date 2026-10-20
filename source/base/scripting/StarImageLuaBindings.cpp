@@ -20,9 +20,6 @@ import star.asset_path;
 import star.ref_ptr;
 
 import star.image_lua_bindings;
-import star.asset_source;
-import star.assets;
-import star.root_base;
 
 import star.vector;
 namespace Star {
@@ -45,12 +42,15 @@ LuaMethods<Image> LuaUserDataMethods<Image>::make() {
     return image.subImage(min, size);
   });
 
-  methods.registerMethod("process", [](Image& image, String const& directives) {
-    return processImageOperations(parseImageOperations(directives), image, [](String const& path) -> Image const* {
-      if (auto root = RootBase::singletonPtr())
-        return root->assets()->image(path).get();
-      else
+  methods.registerMethod("process", [](Image& image, LuaEngine& engine, String const& directives) {
+    List<std::shared_ptr<Image const>> resolvedImages;
+    return processImageOperations(parseImageOperations(directives), image, [&](String const& path) -> Image const* {
+      if (!engine.imageResolver())
         return nullptr;
+      auto resolved = engine.imageResolver()(path);
+      auto ptr = resolved.get();
+      resolvedImages.append(std::move(resolved));
+      return ptr;
     });
   });
 

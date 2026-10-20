@@ -10,6 +10,7 @@ import star.io_device;
 import star.string;
 import star.either;
 import star.thread;
+import star.logging;
 import std;
 import star.id_map;
 import star.data_stream;
@@ -103,6 +104,8 @@ import star.damage_manager;
 import star.net_packets;
 import star.net_packet_socket;
 import star.universe_connection;
+import star.game_test;
+import star.root;
 
 #include "gtest/gtest.h"
 
@@ -182,7 +185,11 @@ public:
     start();
   }
 
-  virtual void run() {
+  ~ASyncClientThread() override {
+    join();
+  }
+
+  void run() override {
     try {
       unsigned read = 0;
       unsigned written = 0;
@@ -229,7 +236,11 @@ public:
     start();
   }
 
-  virtual void run() {
+  ~SyncClientThread() override {
+    join();
+  }
+
+  void run() override {
     try {
       for (unsigned i = 0; i < PacketCount; ++i) {
         m_connection.pushSingle(std::make_shared<ProtocolRequestPacket>(i));
@@ -254,16 +265,17 @@ private:
   UniverseConnection m_connection;
 };
 
-TEST(UniverseConnections, All) {
-  UniverseConnectionServer server([](UniverseConnectionServer* server, ConnectionId clientId, List<std::shared_ptr<::Star::Packet>> packets) {
+const GameTestRegistration universeConnectionsAll("UniverseConnections", "All", [](GameTest& fixture) {
+  auto& logger = fixture.root().logger();
+  UniverseConnectionServer server(logger, [](UniverseConnectionServer* server, ConnectionId clientId, List<std::shared_ptr<::Star::Packet>> packets) {
       server->sendPackets(clientId, packets);
     });
 
   ConnectionId clientId = ServerConnectionId;
-  TcpServer tcpServer(HostAddressWithPort(HostAddress::localhost(), ServerPort));
-  tcpServer.setAcceptCallback([&server, &clientId](std::shared_ptr<::Star::TcpSocket> socket) {
+  TcpServer tcpServer(logger, HostAddressWithPort(HostAddress::localhost(), ServerPort));
+  tcpServer.setAcceptCallback([&logger, &server, &clientId](std::shared_ptr<::Star::TcpSocket> socket) {
       socket->setNonBlocking(true);
-      auto conn = UniverseConnection(TcpPacketSocket::open(std::move(socket)));
+      auto conn = UniverseConnection(TcpPacketSocket::open(logger, std::move(socket)));
       server.addConnection(++clientId, std::move(conn));
     });
 
@@ -285,14 +297,14 @@ TEST(UniverseConnections, All) {
   for (unsigned i = 0; i < NumRemoteASyncConnections; ++i) {
     auto socket = TcpSocket::connectTo({HostAddress::localhost(), ServerPort});
     socket->setNonBlocking(true);
-    remoteASyncClients.emplaceAppend(UniverseConnection(TcpPacketSocket::open(std::move(socket))));
+    remoteASyncClients.emplaceAppend(UniverseConnection(TcpPacketSocket::open(logger, std::move(socket))));
   }
 
   LinkedList<SyncClientThread> remoteSyncClients;
   for (unsigned i = 0; i < NumRemoteSyncConnections; ++i) {
     auto socket = TcpSocket::connectTo({HostAddress::localhost(), ServerPort});
     socket->setNonBlocking(true);
-    remoteSyncClients.emplaceAppend(UniverseConnection(TcpPacketSocket::open(std::move(socket))));
+    remoteSyncClients.emplaceAppend(UniverseConnection(TcpPacketSocket::open(logger, std::move(socket))));
   }
 
   for (auto& c : localASyncClients)
@@ -308,16 +320,16 @@ TEST(UniverseConnections, All) {
     c.join();
 
   server.removeAllConnections();
-}
+});
 
 namespace {
 
-std::pair<std::shared_ptr<TcpSocket>, std::shared_ptr<TcpSocket>> connectionTestTcpPair() {
-  auto listener = TcpSocket::listen({HostAddress::localhost(), 0});
+std::pair<std::shared_ptr<TcpSocket>, std::shared_ptr<TcpSocket>> connectionTestTcpPair(Logger& logger) {
+  auto listener = TcpSocket::listen(logger, {HostAddress::localhost(), 0});
   listener->setNonBlocking(true);
   auto client = TcpSocket::connectTo(listener->localAddress());
   listener->waitForData(false, std::chrono::steady_clock::now() + std::chrono::seconds(2));
-  auto server = listener->accept();
+  auto server = listener->accept(logger);
   if (!server)
     throw std::runtime_error("Loopback connection was not accepted");
   return {std::move(client), std::move(server)};
@@ -336,7 +348,8 @@ ByteArray connectionTestFrame(VersionNumber version) {
 
 }
 
-TEST(UniverseConnections, LocalZeroDeadlineAndQueuedPacketAfterPeerClose) {
+const GameTestRegistration universeConnectionsLocalZeroDeadlineAndQueuedPacketAfterPeerClose(
+    "UniverseConnections", "LocalZeroDeadlineAndQueuedPacketAfterPeerClose", [](GameTest&) {
   auto pair = LocalPacketSocket::openPair();
   UniverseConnection sender(std::move(pair.first));
   UniverseConnection receiver(std::move(pair.second));
@@ -348,9 +361,10 @@ TEST(UniverseConnections, LocalZeroDeadlineAndQueuedPacketAfterPeerClose) {
   ASSERT_TRUE(receiver.receiveAny(0));
   EXPECT_EQ(convert<ProtocolRequestPacket>(receiver.pullSingle())->requestProtocolVersion, 41u);
   EXPECT_FALSE(receiver.receiveAny(0));
-}
+});
 
-TEST(UniverseConnections, LocalDeliveryAndPeerCloseWakeReadiness) {
+const GameTestRegistration universeConnectionsLocalDeliveryAndPeerCloseWakeReadiness(
+    "UniverseConnections", "LocalDeliveryAndPeerCloseWakeReadiness", [](GameTest&) {
   auto pair = LocalPacketSocket::openPair();
   UniverseConnection sender(std::move(pair.first));
   UniverseConnection receiver(std::move(pair.second));
@@ -371,9 +385,10 @@ TEST(UniverseConnections, LocalDeliveryAndPeerCloseWakeReadiness) {
   sender.close();
   EXPECT_EQ(closed.wait_for(std::chrono::milliseconds(500)), std::future_status::ready);
   EXPECT_FALSE(closed.get());
-}
+});
 
-TEST(UniverseConnections, LocalCloseDoesNotWaitForReceiveDeadline) {
+const GameTestRegistration universeConnectionsLocalCloseDoesNotWaitForReceiveDeadline(
+    "UniverseConnections", "LocalCloseDoesNotWaitForReceiveDeadline", [](GameTest&) {
   auto pair = LocalPacketSocket::openPair();
   UniverseConnection receiver(std::move(pair.first));
   std::promise<void> starting;
@@ -389,11 +404,12 @@ TEST(UniverseConnections, LocalCloseDoesNotWaitForReceiveDeadline) {
   EXPECT_LT(std::chrono::steady_clock::now() - before, std::chrono::milliseconds(500));
   EXPECT_EQ(received.wait_for(std::chrono::milliseconds(500)), std::future_status::ready);
   EXPECT_FALSE(received.get());
-}
+});
 
-TEST(UniverseConnections, TcpPartialHeaderBodyAndZeroDeadline) {
-  auto [sender, socket] = connectionTestTcpPair();
-  UniverseConnection receiver(TcpPacketSocket::open(socket));
+const GameTestRegistration universeConnectionsTcpPartialHeaderBodyAndZeroDeadline(
+    "UniverseConnections", "TcpPartialHeaderBodyAndZeroDeadline", [](GameTest& fixture) {
+  auto [sender, socket] = connectionTestTcpPair(fixture.root().logger());
+  UniverseConnection receiver(TcpPacketSocket::open(fixture.root().logger(), socket));
   auto frame = connectionTestFrame(43);
   ASSERT_GT(frame.size(), 2u);
   ASSERT_EQ(sender->send(frame.ptr(), 1), 1u);
@@ -407,12 +423,13 @@ TEST(UniverseConnections, TcpPartialHeaderBodyAndZeroDeadline) {
   ASSERT_TRUE(receiver.receiveAny(0));
   EXPECT_EQ(convert<ProtocolRequestPacket>(receiver.pullSingle())->requestProtocolVersion, 43u);
   EXPECT_FALSE(receiver.receiveAny(0));
-}
+});
 
-TEST(UniverseConnections, TcpCompletePacketBeforeEofAndTruncatedPacketAtEof) {
+const GameTestRegistration universeConnectionsTcpCompletePacketBeforeEofAndTruncatedPacketAtEof(
+    "UniverseConnections", "TcpCompletePacketBeforeEofAndTruncatedPacketAtEof", [](GameTest& fixture) {
   {
-    auto [sender, socket] = connectionTestTcpPair();
-    UniverseConnection receiver(TcpPacketSocket::open(socket));
+    auto [sender, socket] = connectionTestTcpPair(fixture.root().logger());
+    UniverseConnection receiver(TcpPacketSocket::open(fixture.root().logger(), socket));
     auto frame = connectionTestFrame(44);
     ASSERT_EQ(sender->send(frame.ptr(), frame.size()), frame.size());
     sender->close();
@@ -422,8 +439,8 @@ TEST(UniverseConnections, TcpCompletePacketBeforeEofAndTruncatedPacketAtEof) {
     EXPECT_FALSE(receiver.isOpen());
   }
   {
-    auto [sender, socket] = connectionTestTcpPair();
-    UniverseConnection receiver(TcpPacketSocket::open(socket));
+    auto [sender, socket] = connectionTestTcpPair(fixture.root().logger());
+    UniverseConnection receiver(TcpPacketSocket::open(fixture.root().logger(), socket));
     auto frame = connectionTestFrame(45);
     ASSERT_EQ(sender->send(frame.ptr(), frame.size() - 1), frame.size() - 1);
     sender->close();
@@ -431,11 +448,12 @@ TEST(UniverseConnections, TcpCompletePacketBeforeEofAndTruncatedPacketAtEof) {
     EXPECT_FALSE(receiver.isOpen());
     EXPECT_FALSE(receiver.pullSingle());
   }
-}
+});
 
-TEST(UniverseConnections, TcpCloseWakesNativeReadinessWithoutHoldingConnectionLock) {
-  auto [sender, socket] = connectionTestTcpPair();
-  UniverseConnection receiver(TcpPacketSocket::open(socket));
+const GameTestRegistration universeConnectionsTcpCloseWakesNativeReadinessWithoutHoldingConnectionLock(
+    "UniverseConnections", "TcpCloseWakesNativeReadinessWithoutHoldingConnectionLock", [](GameTest& fixture) {
+  auto [sender, socket] = connectionTestTcpPair(fixture.root().logger());
+  UniverseConnection receiver(TcpPacketSocket::open(fixture.root().logger(), socket));
   std::promise<void> starting;
   auto started = starting.get_future();
   auto received = std::async(std::launch::async, [&] {
@@ -449,10 +467,11 @@ TEST(UniverseConnections, TcpCloseWakesNativeReadinessWithoutHoldingConnectionLo
   EXPECT_LT(std::chrono::steady_clock::now() - before, std::chrono::milliseconds(500));
   EXPECT_EQ(received.wait_for(std::chrono::milliseconds(500)), std::future_status::ready);
   EXPECT_FALSE(received.get());
-}
+});
 
-TEST(UniverseConnections, TcpShutdownWakesEveryNativeReadinessWaiter) {
-  auto [sender, socket] = connectionTestTcpPair();
+const GameTestRegistration universeConnectionsTcpShutdownWakesEveryNativeReadinessWaiter(
+    "UniverseConnections", "TcpShutdownWakesEveryNativeReadinessWaiter", [](GameTest& fixture) {
+  auto [sender, socket] = connectionTestTcpPair(fixture.root().logger());
   auto wait = [&] {
     socket->waitForData(false, std::chrono::steady_clock::now() + std::chrono::seconds(2));
   };
@@ -470,20 +489,22 @@ TEST(UniverseConnections, TcpShutdownWakesEveryNativeReadinessWaiter) {
   before = std::chrono::steady_clock::now();
   socket->waitForData(false, before + std::chrono::seconds(2));
   EXPECT_LT(std::chrono::steady_clock::now() - before, std::chrono::milliseconds(500));
-}
+});
 
-TEST(UniverseConnections, TcpPeerCloseWakesReceiveDeadline) {
-  auto [sender, socket] = connectionTestTcpPair();
-  UniverseConnection receiver(TcpPacketSocket::open(socket));
+const GameTestRegistration universeConnectionsTcpPeerCloseWakesReceiveDeadline(
+    "UniverseConnections", "TcpPeerCloseWakesReceiveDeadline", [](GameTest& fixture) {
+  auto [sender, socket] = connectionTestTcpPair(fixture.root().logger());
+  UniverseConnection receiver(TcpPacketSocket::open(fixture.root().logger(), socket));
   auto received = std::async(std::launch::async, [&] { return receiver.receiveAny(2000); });
   EXPECT_EQ(received.wait_for(std::chrono::milliseconds(20)), std::future_status::timeout);
   sender->close();
   EXPECT_EQ(received.wait_for(std::chrono::milliseconds(500)), std::future_status::ready);
   EXPECT_FALSE(received.get());
   EXPECT_FALSE(receiver.isOpen());
-}
+});
 
-TEST(UniverseConnections, LocalAndTcpReadinessRespectFiniteDeadline) {
+const GameTestRegistration universeConnectionsLocalAndTcpReadinessRespectFiniteDeadline(
+    "UniverseConnections", "LocalAndTcpReadinessRespectFiniteDeadline", [](GameTest& fixture) {
   {
     auto pair = LocalPacketSocket::openPair();
     UniverseConnection receiver(std::move(pair.first));
@@ -494,24 +515,25 @@ TEST(UniverseConnections, LocalAndTcpReadinessRespectFiniteDeadline) {
     EXPECT_LT(elapsed, std::chrono::milliseconds(500));
   }
   {
-    auto [sender, socket] = connectionTestTcpPair();
-    UniverseConnection receiver(TcpPacketSocket::open(socket));
+    auto [sender, socket] = connectionTestTcpPair(fixture.root().logger());
+    UniverseConnection receiver(TcpPacketSocket::open(fixture.root().logger(), socket));
     auto before = std::chrono::steady_clock::now();
     EXPECT_FALSE(receiver.receiveAny(25));
     auto elapsed = std::chrono::steady_clock::now() - before;
     EXPECT_GE(elapsed, std::chrono::milliseconds(20));
     EXPECT_LT(elapsed, std::chrono::milliseconds(500));
   }
-}
+});
 
-TEST(UniverseConnections, TcpCompressedBackpressureRetainsAndDrainsPendingTail) {
-  auto [outgoing, incoming] = connectionTestTcpPair();
+const GameTestRegistration universeConnectionsTcpCompressedBackpressureRetainsAndDrainsPendingTail(
+    "UniverseConnections", "TcpCompressedBackpressureRetainsAndDrainsPendingTail", [](GameTest& fixture) {
+  auto [outgoing, incoming] = connectionTestTcpPair(fixture.root().logger());
   SocketTestAccess::setBufferSize(*outgoing, SO_SNDBUF, 16384);
   SocketTestAccess::setBufferSize(*incoming, SO_RCVBUF, 65536);
-  auto sendSocket = TcpPacketSocket::open(outgoing);
+  auto sendSocket = TcpPacketSocket::open(fixture.root().logger(), outgoing);
   auto* sendTransport = sendSocket.get();
   sendSocket->setCompressionStreamEnabled(true);
-  auto receiveSocket = TcpPacketSocket::open(incoming);
+  auto receiveSocket = TcpPacketSocket::open(fixture.root().logger(), incoming);
   receiveSocket->setCompressionStreamEnabled(true);
   UniverseConnection sender(std::move(sendSocket));
   UniverseConnection receiver(std::move(receiveSocket));
@@ -555,16 +577,17 @@ TEST(UniverseConnections, TcpCompressedBackpressureRetainsAndDrainsPendingTail) 
   EXPECT_TRUE(sender.sendAll(5000));
   EXPECT_TRUE(received.get());
   EXPECT_FALSE(sendTransport->sentPacketsPending());
-}
+});
 
-TEST(UniverseConnections, ShardCallbacksReenterAndRemovalReturnsUnprocessedQueues) {
+const GameTestRegistration universeConnectionsShardCallbacksReenterAndRemovalReturnsUnprocessedQueues(
+    "UniverseConnections", "ShardCallbacksReenterAndRemovalReturnsUnprocessedQueues", [](GameTest& fixture) {
   std::promise<void> entered;
   auto callbackEntered = entered.get_future();
   std::promise<void> release;
   auto callbackRelease = release.get_future().share();
   std::atomic<unsigned> calls = 0;
   std::atomic<unsigned> active = 0;
-  UniverseConnectionServer server([&](UniverseConnectionServer* server, ConnectionId id,
+  UniverseConnectionServer server(fixture.root().logger(), [&](UniverseConnectionServer* server, ConnectionId id,
       List<std::shared_ptr<Packet>> packets) {
     if (id == 2) {
       EXPECT_EQ(active.fetch_add(1), 0u);
@@ -621,13 +644,15 @@ TEST(UniverseConnections, ShardCallbacksReenterAndRemovalReturnsUnprocessedQueue
     ASSERT_TRUE(gateClient.receiveAny(1000));
     EXPECT_EQ(convert<ProtocolRequestPacket>(gateClient.pullSingle())->requestProtocolVersion, version);
   }
-}
+});
 
 #ifdef STAR_TEST_WRAP_PTHREAD_CREATE
-TEST(UniverseConnectionsDeathTest, StartupFailureJoinsEveryPreviouslyStartedWorker) {
+const GameTestRegistration universeConnectionsStartupFailureJoinsEveryPreviouslyStartedWorker(
+    "UniverseConnectionsDeathTest", "StartupFailureJoinsEveryPreviouslyStartedWorker", [](GameTest& fixture) {
+  auto& logger = fixture.root().logger();
   auto oldStyle = testing::GTEST_FLAG(death_test_style);
   testing::GTEST_FLAG(death_test_style) = "threadsafe";
-  EXPECT_EXIT(([] {
+  EXPECT_EXIT(([&logger] {
     // A regression must fail this subprocess, not hang the whole asset suite.
     alarm(5);
     for (int failAfter : {0, 1, 3}) {
@@ -636,7 +661,7 @@ TEST(UniverseConnectionsDeathTest, StartupFailureJoinsEveryPreviouslyStartedWork
       threadStartsBeforeFailure = failAfter;
       bool threw = false;
       try {
-        UniverseConnectionServer server([](auto*, auto, auto) {}, 4);
+        UniverseConnectionServer server(logger, [](auto*, auto, auto) {}, 4);
       } catch (StarException const&) {
         threw = true;
       }
@@ -647,10 +672,10 @@ TEST(UniverseConnectionsDeathTest, StartupFailureJoinsEveryPreviouslyStartedWork
     }
     // Injection resets on failure; a subsequent ordinary startup still works.
     {
-      UniverseConnectionServer server([](auto*, auto, auto) {}, 2);
+      UniverseConnectionServer server(logger, [](auto*, auto, auto) {}, 2);
     }
     std::_Exit(0);
   }()), testing::ExitedWithCode(0), "");
   testing::GTEST_FLAG(death_test_style) = oldStyle;
-}
+});
 #endif

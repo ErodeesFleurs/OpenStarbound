@@ -49,7 +49,7 @@ import star.plant_database;
 import star.biome_placement;
 import star.asset_source;
 import star.assets;
-import star.root_base;
+
 import star.configuration;
 import star.root;
 
@@ -59,14 +59,14 @@ import star.math_common;
 import star.algorithm;
 namespace Star {
 
-BiomeItem variantToBiomeItem(Json const& store) {
+BiomeItem variantToBiomeItem(Assets const& assets, Json const& store) {
   auto type = store.get(0);
   if (type == "grass") {
-    return GrassVariant(store.get(1));
+    return GrassVariant(assets, store.get(1));
   } else if (type == "bush") {
-    return BushVariant(store.get(1));
+    return BushVariant(assets, store.get(1));
   } else if (type == "treePair") {
-    return TreePair(TreeVariant(store.get(1).get(0)), TreeVariant(store.get(1).get(1)));
+    return TreePair(TreeVariant(assets, store.get(1).get(0)), TreeVariant(assets, store.get(1).get(1)));
   } else if (type == "objectPool") {
     return ObjectPool(store.getArray(1).transformed([](Json const& pair) {
         return std::make_pair(pair.getFloat(0), std::make_pair(pair.get(1).getString(0), pair.get(1).get(1)));
@@ -114,8 +114,8 @@ bool BiomeItemPlacement::operator<(BiomeItemPlacement const& rhs) const {
   return priority < rhs.priority;
 }
 
-Maybe<BiomeItem> BiomeItemDistribution::createItem(Json const& config, RandomSource& rand, float biomeHueShift) {
-  auto& root = Root::singleton();
+Maybe<BiomeItem> BiomeItemDistribution::createItem(Root& root, Json const& config, RandomSource& rand, float biomeHueShift) {
+  
 
   auto type = config.getString("type");
   if (type.equalsIgnoreCase("grass")) {
@@ -147,7 +147,7 @@ Maybe<BiomeItem> BiomeItemDistribution::createItem(Json const& config, RandomSou
     }
 
     if (matchingPairs.empty() && !stemList.empty() && !foliageList.empty())
-      Logger::warn("Specified stemList and foliageList, but no matching pairs found.");
+      root.logger().warn("Specified stemList and foliageList, but no matching pairs found.");
 
     auto chosenPair = rand.randValueFrom(matchingPairs);
     float treeStemHueShift = rand.randf(-1.0f, 1.0f) * config.getFloat("treeStemHueShiftMax", 0);
@@ -207,7 +207,7 @@ BiomeItemDistribution::BiomeItemDistribution() {
   m_priority = 0.0f;
 }
 
-BiomeItemDistribution::BiomeItemDistribution(Json const& config, std::uint64_t seed, float biomeHueShift) {
+BiomeItemDistribution::BiomeItemDistribution(Root& root, Json const& config, std::uint64_t seed, float biomeHueShift) {
   RandomSource rand(seed);
 
   m_mode = BiomePlacementModeNames.getLeft(config.getString("mode", "floor"));
@@ -224,7 +224,7 @@ BiomeItemDistribution::BiomeItemDistribution(Json const& config, std::uint64_t s
   // variant.
   auto distributionSettings = config.get("distribution", JsonObject());
   if (distributionSettings.type() == Json::Type::String) {
-    auto assets = Root::singleton().assets();
+    auto assets = root.assets();
     distributionSettings = assets->json(distributionSettings.toString());
   }
 
@@ -233,7 +233,7 @@ BiomeItemDistribution::BiomeItemDistribution(Json const& config, std::uint64_t s
     m_blockProbability = distributionSettings.getFloat("blockProbability");
     m_blockSeed = rand.randu64();
     for (int i = 0; i < variants; ++i) {
-      if (auto item = createItem(config, rand, biomeHueShift))
+      if (auto item = createItem(root, config, rand, biomeHueShift))
         m_randomItems.append(item.take());
     }
 
@@ -257,7 +257,7 @@ BiomeItemDistribution::BiomeItemDistribution(Json const& config, std::uint64_t s
     m_modulusDistortion = PerlinF(octaves, 1.0f / m_modulus, modulusVariance, modulusVariance * 2, alpha, beta, rand.randu64());
 
     for (int i = 0; i < variants; ++i) {
-      if (auto item = createItem(config, rand, biomeHueShift)) {
+      if (auto item = createItem(root, config, rand, biomeHueShift)) {
         PerlinF weight(octaves, 1.0f / typePeriod, 1.0, 0.0, alpha, beta, rand.randu64());
         m_weightedItems.append({item.take(), weight});
       }
@@ -265,19 +265,19 @@ BiomeItemDistribution::BiomeItemDistribution(Json const& config, std::uint64_t s
   }
 }
 
-BiomeItemDistribution::BiomeItemDistribution(Json const& store) {
+BiomeItemDistribution::BiomeItemDistribution(Assets const& assets, Json const& store) {
   m_mode = BiomePlacementModeNames.getLeft(store.getString("mode"));
   m_distribution = DistributionTypeNames.getLeft(store.getString("distribution"));
   m_priority = store.getFloat("priority");
   m_blockProbability = store.getFloat("blockProbability");
   m_blockSeed = store.getUInt("blockSeed");
-  m_randomItems = store.getArray("randomItems").transformed(variantToBiomeItem);
+  m_randomItems = store.getArray("randomItems").transformed([&assets](Json const& v) { return variantToBiomeItem(assets, v); });
   m_densityFunction = PerlinF(store.get("densityFunction"));
   m_modulusDistortion = PerlinF(store.get("modulusDistortion"));
   m_modulus = store.getInt("modulus");
   m_modulusOffset = store.getInt("modulusOffset");
-  m_weightedItems = store.getArray("weightedItems") .transformed([](Json const& v) {
-      return std::make_pair(variantToBiomeItem(v.get(0)), PerlinF(v.get(1)));
+  m_weightedItems = store.getArray("weightedItems") .transformed([&assets](Json const& v) {
+      return std::make_pair(variantToBiomeItem(assets, v.get(0)), PerlinF(v.get(1)));
     });
 }
 

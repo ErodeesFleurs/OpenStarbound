@@ -153,11 +153,10 @@ import star.image_metadata_database;
 import star.algorithm;
 namespace Star {
 
-ChatBubbleManager::ChatBubbleManager()
-  : m_textTemplate(Vec2F()), m_portraitTextTemplate(Vec2F()) {
-  auto assets = Root::singleton().assets();
+ChatBubbleManager::ChatBubbleManager(GuiContext& context)
+  : m_guiContext(&context), m_textTemplate(Vec2F()), m_portraitTextTemplate(Vec2F()) {
+  auto assets = context.root().assets();
 
-  m_guiContext = GuiContext::singletonPtr();
   m_cachedInterfaceScale = m_guiContext->interfaceScale();
 
   auto jsonData = assets->json("/interface/windowconfig/chatbubbles.config");
@@ -199,10 +198,10 @@ ChatBubbleManager::ChatBubbleManager()
   m_furthestVisibleTextDistance = jsonData.getFloat("furthestTextDistance");
 
   String textFadeFunctionName = jsonData.getString("textFadeFunction");
-  m_textFadeFunction = Root::singleton().functionDatabase()->function(textFadeFunctionName);
+  m_textFadeFunction = context.root().functionDatabase()->function(textFadeFunctionName);
 
   String bubbleFadeFunctionName = jsonData.getString("bubbleFadeFunction");
-  m_bubbleFadeFunction = Root::singleton().functionDatabase()->function(bubbleFadeFunctionName);
+  m_bubbleFadeFunction = context.root().functionDatabase()->function(bubbleFadeFunctionName);
 }
 
 void ChatBubbleManager::setCamera(WorldCamera const& camera) {
@@ -250,7 +249,8 @@ void ChatBubbleManager::update(float dt, std::shared_ptr<WorldClient> world) {
     }
   }
 
-  Map<EntityId, int> count;
+  auto& count = m_entityBubbleCounts;
+  count.clear();
   filter(m_portraitBubbles, [&](PortraitBubble const& portraitBubble) -> bool {
       count[portraitBubble.entity] += m_maxMessagePerEntity;
       if (count[portraitBubble.entity] > m_maxMessagePerEntity)
@@ -288,7 +288,7 @@ std::uint8_t ChatBubbleManager::calcDistanceFadeAlpha(Vec2F bubbleScreenPosition
 void ChatBubbleManager::render() {
   if (m_bubbles.empty() && m_portraitBubbles.empty())
     return;
-  if (!Root::singleton().configuration()->get("speechBubbles").toBool())
+  if (!m_guiContext->root().configuration()->get("speechBubbles").toBool())
     return;
 
   float pixelRatio = m_guiContext->interfaceScale();
@@ -322,7 +322,7 @@ void ChatBubbleManager::render() {
 }
 
 void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent) {
-  auto assets = Root::singleton().assets();
+  auto assets = m_guiContext->root().assets();
   auto config = assets->json("/interface/windowconfig/chatbubbles.config");
 
   float partSize = config.getFloat("partSize");
@@ -457,7 +457,7 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
 
     if (!silent) {
       if (auto sound = config.optString("sound")) {
-        auto assets = Root::singleton().assets();
+        auto assets = m_guiContext->root().assets();
         std::shared_ptr<AudioInstance> audioInstance = std::make_shared<AudioInstance>(*assets->audio(*sound));
         audioInstance->setPosition(position);
         audioInstance->setVolume(config.getFloat("volume", 1.0f));
@@ -469,7 +469,7 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
 }
 
 RectF ChatBubbleManager::bubbleImageRect(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio) {
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  auto imgMetadata = m_guiContext->root().imageMetadataDatabase();
   auto& image = std::get<0>(bubbleImage);
   return RectF::withSize(screenPos + std::get<1>(bubbleImage) * pixelRatio, Vec2F(imgMetadata->imageSize(image)) * pixelRatio);
 }

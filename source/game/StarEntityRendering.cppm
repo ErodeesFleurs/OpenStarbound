@@ -31,12 +31,16 @@ import star.light_source;
 
 namespace Star {
 
+class TileDrawer;
+
 // Callback interface for entities to produce light sources, particles,
 // drawables, and sounds on render.  Everything added is expected to already be
 // translated into world space.
 class RenderCallback {
 public:
   virtual ~RenderCallback();
+
+  virtual TileDrawer* tileDrawer() const;
 
   virtual void addDrawable(Drawable drawable, EntityRenderLayer renderLayer) = 0;
   virtual void addLightSource(LightSource lightSource) = 0;

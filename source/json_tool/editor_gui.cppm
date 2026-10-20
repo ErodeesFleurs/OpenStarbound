@@ -13,6 +13,7 @@ import star.string;
 import star.list;
 import star.formatted_json;
 import star.json_path;
+import star.logging;
 
 namespace Star {
 
@@ -53,7 +54,7 @@ private:
   FormattedJson m_currentJson;
 };
 
-int edit(int argc, char* argv[], std::shared_ptr<JsonPath::Path> const& path, Options const& options, List<Input> const& inputs);
+int edit(Logger& logger, int argc, char* argv[], std::shared_ptr<JsonPath::Path> const& path, Options const& options, List<Input> const& inputs);
 
 }
 

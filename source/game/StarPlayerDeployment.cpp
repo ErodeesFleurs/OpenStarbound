@@ -94,7 +94,9 @@ import star.status_controller_lua_bindings;
 
 namespace Star {
 
-PlayerDeployment::PlayerDeployment(Json const& config) : m_config(config) {
+class Root;
+
+PlayerDeployment::PlayerDeployment(Root& root, Json const& config) : m_root(root), m_config(config), m_scriptComponent(root) {
   m_deploying = false;
   m_deployed = false;
 }
@@ -123,7 +125,7 @@ void PlayerDeployment::init(Entity* player, World* world) {
   m_scriptComponent.setUpdateDelta(m_config.getInt("scriptDelta", 10));
 
   m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(player));
-  m_scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(as<Player>(player)));
+  m_scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_root, as<Player>(player)));
   m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(as<Player>(player)->statusController()));
   m_scriptComponent.addCallbacks("config",
       LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return m_config.query(name, def); }));

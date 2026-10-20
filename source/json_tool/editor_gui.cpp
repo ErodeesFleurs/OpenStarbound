@@ -20,6 +20,7 @@ import star.json_editor;
 import star.formatted_json;
 import star.json_path;
 import star.variant;
+import star.logging;
 
 using namespace Star;
 
@@ -207,12 +208,12 @@ void JsonEditor::updateImagePreview() {
   }
 }
 
-int Star::edit(int argc, char* argv[], std::shared_ptr<::Star::JsonPath::Path> const& path, Options const& options, List<Input> const& inputs) {
+int Star::edit(Logger& logger, int argc, char* argv[], std::shared_ptr<::Star::JsonPath::Path> const& path, Options const& options, List<Input> const& inputs) {
   QApplication app(argc, argv);
   StringList files;
   for (Input const& input : inputs) {
     if (input.is<FindInput>())
-      files.appendAll(findFiles(input.get<FindInput>()));
+      files.appendAll(findFiles(logger, input.get<FindInput>()));
     else
       files.append(input.get<FileInput>().filename);
   }

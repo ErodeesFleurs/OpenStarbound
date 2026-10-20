@@ -11,11 +11,13 @@ import star.string;
 
 namespace Star {
 
+class Logger;
+
 class DirectoryAssetSource : public AssetSource {
 public:
   // Any file that forms an asset path that matches any of the patterns in
   // 'ignorePatterns' is ignored.
-  DirectoryAssetSource(String const& baseDirectory, StringList const& ignorePatterns = {});
+  DirectoryAssetSource(Logger& logger, String const& baseDirectory, StringList const& ignorePatterns = {});
 
   JsonObject metadata() const override;
   StringList assetPaths() const override;
@@ -35,6 +37,7 @@ private:
   // skipped instead of being followed until the operating system errors out.
   void scanAll(String const& assetDirectory, StringList& output, List<String> const& ancestorDirectories) const;
 
+  Logger& m_logger;
   String m_baseDirectory;
   List<String> m_ignorePatterns;
   Maybe<String> m_metadataFile;

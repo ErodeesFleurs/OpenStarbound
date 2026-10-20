@@ -76,6 +76,7 @@ import star.versioning_database;
 
 import star.byte_array;
 namespace Star {
+class Logger;
 
 struct WorldStorageExceptionTag {
   static constexpr char const* name() { return "WorldStorageException"; }
@@ -153,21 +154,24 @@ struct WorldGeneratorFacade {
 // indeterminate world state cause the underlying database to be rolled back
 // and then immediately closed.  The underlying database is committed by
 // explicit close() or sync(); destruction never commits.
+class Root;
 class WorldStorage {
+  Root& m_root;
+  Root& root() const { return m_root; }
 public:
   typedef ServerTileSectorArray::Sector Sector;
   typedef ServerTileSectorArray::Array TileArray;
 
   static WorldChunks getWorldChunksUpdate(WorldChunks const& oldChunks, WorldChunks const& newChunks);
-  static void applyWorldChunksUpdateToFile(String const& file, WorldChunks const& update);
-  static WorldChunks getWorldChunksFromFile(String const& file);
+  static void applyWorldChunksUpdateToFile(Logger& logger, String const& file, WorldChunks const& update);
+  static WorldChunks getWorldChunksFromFile(Logger& logger, String const& file);
 
   // Create a new world of the given size.
-  WorldStorage(Vec2U const& worldSize, std::shared_ptr<IODevice> const& device, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade);
+  WorldStorage(Root& root, Vec2U const& worldSize, std::shared_ptr<IODevice> const& device, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade);
   // Read an existing world.
-  WorldStorage(std::shared_ptr<IODevice> const& device, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade);
+  WorldStorage(Root& root, std::shared_ptr<IODevice> const& device, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade);
   // Read an in-memory world.
-  WorldStorage(WorldChunks const& chunks, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade);
+  WorldStorage(Root& root, WorldChunks const& chunks, std::shared_ptr<WorldGeneratorFacade> const& generatorFacade);
   ~WorldStorage();
   // Unload and save all sectors, reporting persistence errors to the caller.
   void close();
@@ -300,7 +304,7 @@ private:
   static ByteArray writeEntitySector(EntitySectorStore const& store);
 
   static ByteArray tileSectorKey(Sector const& sector);
-  static TileSectorStore readTileSector(ByteArray const& data);
+  TileSectorStore readTileSector(ByteArray const& data);
   static ByteArray writeTileSector(TileSectorStore const& store);
 
   static ByteArray uniqueIndexKey(String const& uniqueId);
@@ -313,7 +317,7 @@ private:
 
   static void openDatabase(BTreeDatabase& db, std::shared_ptr<IODevice> device);
 
-  WorldStorage();
+  WorldStorage(Root& root);
 
   bool belongsInSector(Sector const& sector, Vec2F const& position) const;
 

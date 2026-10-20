@@ -112,7 +112,7 @@ import star.byte_array;
 import star.algorithm;
 namespace Star {
 
-Object::Object(std::shared_ptr<ObjectConfig const> config, Json const& parameters) {
+Object::Object(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters) : Entity(rootContext), m_scriptComponent(rootContext), m_scriptedAnimator(rootContext) {
   m_config = config;
   if (!parameters.isNull())
     m_parameters.reset(parameters.toObject());
@@ -123,7 +123,7 @@ Object::Object(std::shared_ptr<ObjectConfig const> config, Json const& parameter
     auto orientations = jOrientations->toArray();
     for (std::size_t i = 0; i != orientations.size(); ++i)
       base.set(i, jsonMergeNulling(base.get(i), orientations.get(i)));
-    m_orientations = ObjectDatabase::parseOrientations(m_config->path, base, m_config->config);
+    m_orientations = ObjectDatabase::parseOrientations(this->root(), m_config->path, base, m_config->config);
   }
 
   m_animationTimer = 0.0f;
@@ -146,9 +146,9 @@ Object::Object(std::shared_ptr<ObjectConfig const> config, Json const& parameter
   m_currentFrame = -1;
 
   if (m_config->animationConfig)
-    m_networkedAnimator = std::make_shared<NetworkedAnimator>(m_config->animationConfig, m_config->path);
+    m_networkedAnimator = std::make_shared<NetworkedAnimator>(this->root(), m_config->animationConfig, m_config->path);
   else
-    m_networkedAnimator = std::make_shared<NetworkedAnimator>();
+    m_networkedAnimator = std::make_shared<NetworkedAnimator>(this->root());
 
   if (m_config->damageTeam.type != TeamType::Null) {
     setTeam(m_config->damageTeam);
@@ -166,7 +166,7 @@ Object::Object(std::shared_ptr<ObjectConfig const> config, Json const& parameter
   for (std::size_t i = 0; i != outputNodes.size(); ++i)
     m_outputNodes.append(OutputNode(outputNodes.get(i), outputNodeConfigs.get(i, JsonObject())));
 
-  m_offeredQuests.set(configValue("offeredQuests", JsonArray()).toArray().transformed(&QuestArcDescriptor::fromJson));
+  m_offeredQuests.set(configValue("offeredQuests", JsonArray()).toArray().transformed([this](Json const& quest) { return QuestArcDescriptor::fromJson(root(), quest); }));
   m_turnInQuests.set(jsonToStringSet(configValue("turnInQuests", JsonArray())));
   if (!m_offeredQuests.get().empty() || !m_turnInQuests.get().empty())
     m_interactive.set(true);
@@ -336,7 +336,7 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
   m_animationPosition = jsonToVec2F(configValue("animationPosition", JsonArray{0, 0})) / TilePixels;
 
   m_networkedAnimator->setFlipped(false);
-  m_animationCenterLine = configValue("animationCenterLine", Drawable::boundBoxAll(m_networkedAnimator->drawables(), false).center()[0]).toFloat();
+  m_animationCenterLine = configValue("animationCenterLine", Drawable::boundBoxAll(*this->root().imageMetadataDatabase(), m_networkedAnimator->drawables(), false).center()[0]).toFloat();
   m_networkedAnimator->setFlipped(direction() == Direction::Left, m_animationCenterLine);
 
   // Don't animate the initial state when first spawned IF you're dumb, which by default
@@ -487,7 +487,7 @@ void Object::update(float dt, std::uint64_t) {
   if (isMaster()) {
     m_tileDamageStatus->recover(m_config->tileDamageParameters, dt);
 
-    if (m_liquidCheckTimer.wrapTick())
+    if (m_liquidCheckTimer.wrapTick(root().timing().timestep))
       checkLiquidBroken();
 
     if (auto orientation = currentOrientation()) {
@@ -588,24 +588,24 @@ void Object::destroy(RenderCallback* renderCallback) {
       if (doSmash) {
         auto smashDropPool = configValue("smashDropPool", "").toString();
         if (!smashDropPool.empty()) {
-          for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(smashDropPool, world()->threatLevel()))
-            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+          for (auto const& treasureItem : this->root().treasureDatabase()->createTreasure(smashDropPool, world()->threatLevel()))
+            world()->addEntity(ItemDrop::createRandomizedDrop(this->root(), treasureItem, position()));
         } else if (!m_config->smashDropOptions.empty()) {
           List<ItemDescriptor> drops;
-          auto dropOption = Random::randFrom(m_config->smashDropOptions);
+          auto dropOption = this->root().random().randFrom(m_config->smashDropOptions);
           for (auto o : dropOption)
-            world()->addEntity(ItemDrop::createRandomizedDrop(o, position()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(this->root(), o, position()));
         }
       } else {
         auto breakDropPool = configValue("breakDropPool", "").toString();
         if (!breakDropPool.empty()) {
-          for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(breakDropPool, world()->threatLevel()))
-            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+          for (auto const& treasureItem : this->root().treasureDatabase()->createTreasure(breakDropPool, world()->threatLevel()))
+            world()->addEntity(ItemDrop::createRandomizedDrop(this->root(), treasureItem, position()));
         } else if (!m_config->breakDropOptions.empty()) {
           List<ItemDescriptor> drops;
-          auto dropOption = Random::randFrom(m_config->breakDropOptions);
+          auto dropOption = this->root().random().randFrom(m_config->breakDropOptions);
           for (auto o : dropOption)
-            world()->addEntity(ItemDrop::createRandomizedDrop(o, position()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(this->root(), o, position()));
         } else if (m_config->hasObjectItem) {
           ItemDescriptor objectItem(m_config->name, 1);
           if (configValue("retainObjectParametersInItem", m_config->retainObjectParametersInItem).optBool().value()) {
@@ -614,21 +614,21 @@ void Object::destroy(RenderCallback* renderCallback) {
             parameters["scriptStorage"] = m_scriptComponent.getScriptStorage();
             objectItem = objectItem.applyParameters(parameters);
           }
-          world()->addEntity(ItemDrop::createRandomizedDrop(objectItem, position()));
+          world()->addEntity(ItemDrop::createRandomizedDrop(this->root(), objectItem, position()));
         }
       }
     } catch (StarException const& e) {
-      Logger::warn("Failed to create treasure for object '{}': {}", name(), outputException(e, false));
+      this->root().logger().warn("Failed to create treasure for object '{}': {}", name(), outputException(e, false));
     }
   }
 
   if (renderCallback && doSmash && !m_config->smashSoundOptions.empty()) {
-    auto audio = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(Random::randFrom(m_config->smashSoundOptions)));
+    auto audio = std::make_shared<AudioInstance>(*this->root().assets()->audio(this->root().random().randFrom(m_config->smashSoundOptions)));
     renderCallback->addAudios({std::move(audio)}, position());
   }
 
   if (renderCallback && doSmash && !m_config->smashParticles.empty()) {
-    auto& root = Root::singleton();
+    auto& root = this->root();
     List<Particle> particles;
     for (auto const& config : m_config->smashParticles) {
       auto creator = root.particleDatabase()->particleCreator(config.get("particle"), m_config->path);
@@ -698,7 +698,7 @@ List<Drawable> Object::cursorHintDrawables() const {
     String placementImage = configValue("placementImage").toString();
     if (m_direction.get() == Direction::Left)
       placementImage += "?flipx";
-    Drawable imageDrawable = Drawable::makeImage(AssetPath::relativeTo(m_config->path, placementImage),
+    Drawable imageDrawable = Drawable::makeImage(*this->root().imageMetadataDatabase(), AssetPath::relativeTo(m_config->path, placementImage),
         1.0 / TilePixels, false, jsonToVec2F(configValue("placementImagePosition", jsonFromVec2F(Vec2F()))) / TilePixels);
     return {imageDrawable};
   } else {
@@ -911,7 +911,7 @@ Color Object::nodeColor(WireNode wireNode) const { // only output nodes determin
 void Object::addNodeConnection(WireNode wireNode, WireConnection nodeConnection) {
   if (wireNode.direction == WireDirection::Input) {
     if (m_inputNodes.empty()) {
-      Logger::info("Tried to add wire connection to input node on object with no input nodes");
+      this->root().logger().info("Tried to add wire connection to input node on object with no input nodes");
       return;
     }
     m_inputNodes.at(wireNode.nodeIndex).connections.update([&](auto& list) {
@@ -922,7 +922,7 @@ void Object::addNodeConnection(WireNode wireNode, WireConnection nodeConnection)
       });
   } else {
     if (m_outputNodes.empty()) {
-      Logger::info("Tried to add wire connection to output node on object with no output nodes");
+      this->root().logger().info("Tried to add wire connection to output node on object with no output nodes");
       return;
     }
     m_outputNodes.at(wireNode.nodeIndex).connections.update([&](auto& list) {
@@ -1165,7 +1165,7 @@ LuaCallbacks Object::makeObjectCallbacks() {
     });
 
   callbacks.registerCallback("setOfferedQuests", [this](Maybe<JsonArray> const& offeredQuests) {
-      m_offeredQuests.set(offeredQuests.value().transformed(&QuestArcDescriptor::fromJson));
+      m_offeredQuests.set(offeredQuests.value().transformed([this](Json const& quest) { return QuestArcDescriptor::fromJson(root(), quest); }));
     });
 
   callbacks.registerCallback("setTurnInQuests", [this](Maybe<StringList> const& turnInQuests) {
@@ -1182,7 +1182,7 @@ LuaCallbacks Object::makeObjectCallbacks() {
 
   callbacks.registerCallback("setMaterialSpaces", [this](Maybe<JsonArray> const& newSpaces) {
       List<MaterialSpace> materialSpaces;
-      auto materialDatabase = Root::singleton().materialDatabase();
+      auto materialDatabase = this->root().materialDatabase();
       for (auto space : newSpaces.value())
         materialSpaces.append({jsonToVec2I(space.get(0)), materialDatabase->materialId(space.get(1).toString())});
       m_materialSpaces.set(materialSpaces);
@@ -1411,19 +1411,19 @@ List<Drawable> Object::orientationDrawables(std::size_t orientationIndex) const 
 
         imagePart.image.directives = layer.imagePart().image.directives;
         if (m_colorDirectives)
-          imagePart.addDirectives(m_colorDirectives);
+          imagePart.addDirectives(*this->root().imageMetadataDatabase(), m_colorDirectives);
         if (suffix != NPos)
-          imagePart.addDirectives(m_colorSuffix + String(image.substr(suffix)).replaceTags(m_imageKeys, true, "default"));
+          imagePart.addDirectives(*this->root().imageMetadataDatabase(), m_colorSuffix + String(image.substr(suffix)).replaceTags(m_imageKeys, true, "default"));
       }
       else {
         imagePart.image = imagePath.replaceTags(m_imageKeys, true, "default");
         imagePart.image.directives = layer.imagePart().image.directives;
       }
 
-      imagePart.addDirectives(m_directives);
+      imagePart.addDirectives(*this->root().imageMetadataDatabase(), m_directives);
 
       if (orientation->flipImages)
-        drawable.scale(Vec2F(-1, 1), drawable.boundBox(false).center() - drawable.position);
+        drawable.scale(Vec2F(-1, 1), drawable.boundBox(*this->root().imageMetadataDatabase(), false).center() - drawable.position);
 
       m_orientationDrawablesCache->second.append(std::move(drawable));
     }
@@ -1462,12 +1462,12 @@ void Object::renderParticles(RenderCallback* renderCallback) {
       auto& timer = m_emissionTimers.at(i);
       if (timer.ready()) {
         auto particle = particleEmitter.particle;
-        particle.applyVariance(particleEmitter.particleVariance);
+        particle.applyVariance(root(), particleEmitter.particleVariance);
         if (particleEmitter.placeInSpaces)
-          particle.translate(Vec2F(Random::randFrom(orientation->spaces)) + Vec2F(0.5, 0.5));
+          particle.translate(Vec2F(this->root().random().randFrom(orientation->spaces)) + Vec2F(0.5, 0.5));
         particle.translate(position());
         renderCallback->addParticle(std::move(particle));
-        timer = GameTimer(1.0f / (particleEmitter.particleEmissionRate + Random::randf(-particleEmitter.particleEmissionRateVariance, particleEmitter.particleEmissionRateVariance)));
+        timer = GameTimer(1.0f / (particleEmitter.particleEmissionRate + this->root().random().randf(-particleEmitter.particleEmissionRateVariance, particleEmitter.particleEmissionRateVariance)));
       }
     }
   }
@@ -1476,12 +1476,12 @@ void Object::renderParticles(RenderCallback* renderCallback) {
 void Object::renderSounds(RenderCallback* renderCallback) {
   if (m_soundEffectEnabled.get()) {
     if (!m_config->soundEffect.empty() && (!m_soundEffect || m_soundEffect->finished())) {
-      auto& root = Root::singleton();
+      auto& root = this->root();
 
       m_soundEffect = std::make_shared<AudioInstance>(*root.assets()->audio(m_config->soundEffect));
       m_soundEffect->setLoops(-1);
       // Randomize the start position of the looping persistent audio
-      m_soundEffect->seekTime(Random::randf() * m_soundEffect->totalTime());
+      m_soundEffect->seekTime(this->root().random().randf() * m_soundEffect->totalTime());
       m_soundEffect->setRangeMultiplier(m_config->soundEffectRangeMultiplier);
       m_soundEffect->setPosition(metaBoundBox().center() + position());
       // Fade the audio in slowly
@@ -1502,7 +1502,7 @@ List<std::shared_ptr<ObjectOrientation>> const& Object::getOrientations() const 
 
 Vec2F Object::damageShake() const {
   if (m_tileDamageStatus->damaged() && !m_tileDamageStatus->damageProtected())
-    return Vec2F(Random::randf(-1, 1), Random::randf(-1, 1)) * m_tileDamageStatus->damageEffectPercentage() * m_config->damageShakeMagnitude;
+    return Vec2F(this->root().random().randf(-1, 1), this->root().random().randf(-1, 1)) * m_tileDamageStatus->damageEffectPercentage() * m_config->damageShakeMagnitude;
   return Vec2F();
 }
 

@@ -188,7 +188,7 @@ bool AudioInstance::finished() const {
   return m_finished;
 }
 
-Mixer::Mixer(unsigned sampleRate, unsigned channels) {
+Mixer::Mixer(Logger& logger, unsigned sampleRate, unsigned channels) : m_logger(logger) {
   m_sampleRate = sampleRate;
   m_channels = channels;
 
@@ -381,7 +381,7 @@ void Mixer::read(std::int16_t* outBuffer, std::size_t frameCount, ExtraMixFuncti
           }
         }
       } catch (Star::AudioException const& e) {
-        Logger::error("Error reading audio '{}': {}", audioInstance->m_audio.name(), e.what());
+        m_logger.error("Error reading audio '{}': {}", audioInstance->m_audio.name(), e.what());
         finished = true;
       }
 

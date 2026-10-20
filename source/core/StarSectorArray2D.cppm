@@ -101,9 +101,9 @@ public:
   template <typename Function>
   bool evalColumns(std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty = false);
   template <typename Function>
-  bool evalColumnsParallel(std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty = false) const;
+  bool evalColumnsParallel(WorkerPool& workers, std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty = false) const;
   template <typename Function>
-  bool evalColumnsParallel(std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty = false);
+  bool evalColumnsParallel(WorkerPool& workers, std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty = false);
 
 private:
   typedef MultiArray<std::unique_ptr<Array>, 2> SectorArray;
@@ -113,9 +113,7 @@ private:
   template <typename Function>
   bool evalColumnsPriv(std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty);
   template <typename Function>
-  bool evalColumnsPrivPar(std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty);
-
-  WorkerPool& getWorkerPool() const;
+  bool evalColumnsPrivPar(WorkerPool& workers, std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty);
 
   SectorArray m_sectors;
   HashSet<Sector> m_loadedSectors;
@@ -314,16 +312,16 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumns(
 template <typename ElementT, std::size_t SectorSize>
 template <typename Function>
 bool SectorArray2D<ElementT, SectorSize>::evalColumnsParallel(
-    std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty) const {
+    WorkerPool& workers, std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty) const {
   return const_cast<SectorArray2D*>(this)->evalColumnsPrivPar(
-      minX, minY, width, height, std::forward<Function>(function), evalEmpty);
+      workers, minX, minY, width, height, std::forward<Function>(function), evalEmpty);
 }
 
 template <typename ElementT, std::size_t SectorSize>
 template <typename Function>
 bool SectorArray2D<ElementT, SectorSize>::evalColumnsParallel(
-    std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty) {
-  return evalColumnsPrivPar(minX, minY, width, height, std::forward<Function>(function), evalEmpty);
+    WorkerPool& workers, std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty) {
+  return evalColumnsPrivPar(workers, minX, minY, width, height, std::forward<Function>(function), evalEmpty);
 }
 
 template <typename ElementT, std::size_t SectorSize>
@@ -414,9 +412,11 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsPriv(
 template <typename ElementT, std::size_t SectorSize>
 template <typename Function>
 bool SectorArray2D<ElementT, SectorSize>::evalColumnsPrivPar(
-    std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty) {
+    WorkerPool& workers, std::size_t minX, std::size_t minY, std::size_t width, std::size_t height, Function&& function, bool evalEmpty) {
   if (width == 0 || height == 0)
     return true;
+  if (workers.isWorkerThread() || workers.getWorkerCount() == 0)
+    return evalColumnsPriv(minX, minY, width, height, std::forward<Function>(function), evalEmpty);
 
   std::size_t maxX = minX + width;
   std::size_t maxY = minY + height;
@@ -428,10 +428,11 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsPrivPar(
 
   std::size_t sectorCount = maxXSector - minXSector + 1;
 
-  auto& workerPool = getWorkerPool();
-  std::vector<WorkerPoolHandle> futures;
+  std::vector<WorkerPoolPromise<bool>> futures;
   futures.reserve(sectorCount);
 
+  std::exception_ptr exception;
+  try {
   for (std::size_t xSector = minXSector; xSector <= maxXSector; ++xSector) {
     std::size_t minXi = 0;
     if (xSector == minXSector)
@@ -443,7 +444,7 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsPrivPar(
 
     std::size_t x_ = xSector * SectorSize;
 
-    futures.push_back(workerPool.addWork([=, &function, this]() {
+    futures.push_back(workers.addProducer<bool>([=, &function, this]() {
       for (std::size_t ySector = minYSector; ySector <= maxYSector; ++ySector) {
         Array* array = m_sectors(xSector, ySector).get();
 
@@ -475,18 +476,25 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsPrivPar(
       return true;
       }));
   }
-  for (const auto& f : futures) {
-    f.finish();
+  } catch (...) {
+    exception = std::current_exception();
   }
-
-  return true;
+  bool result = true;
+  // Every worker borrows this array and function. Drain all jobs even after
+  // enqueue or callback failure before either borrowed object can disappear.
+  for (auto const& future : futures) {
+    try {
+      result = future.get() && result;
+    } catch (...) {
+      if (!exception)
+        exception = std::current_exception();
+    }
+  }
+  if (exception)
+    std::rethrow_exception(exception);
+  return result;
 }
 
-template <typename ElementT, std::size_t SectorSize>
-WorkerPool& SectorArray2D<ElementT, SectorSize>::getWorkerPool() const {
-  static WorkerPool pool("SectorArray2DWorkerPool", std::thread::hardware_concurrency());
-  return pool;
-}
 
 }
 

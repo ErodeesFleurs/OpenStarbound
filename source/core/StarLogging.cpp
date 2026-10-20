@@ -1,3 +1,4 @@
+#include <stdio.h>
 import std;
 import star.logging;
 import star.thread;
@@ -32,7 +33,6 @@ LogSink::~LogSink() {}
 
 void LogSink::setLevel(LogLevel level) {
   m_level = level;
-  Logger::refreshLoggable();
 }
 
 LogLevel LogSink::level() {
@@ -61,13 +61,11 @@ void FileLogSink::log(char const* msg, LogLevel level) {
 void Logger::addSink(std::shared_ptr<LogSink> s) {
   MutexLocker locker(s_mutex);
   s_sinks.insert(s);
-  refreshLoggable();
 }
 
 void Logger::removeSink(std::shared_ptr<LogSink> s) {
   MutexLocker locker(s_mutex);
   s_sinks.erase(s);
-  refreshLoggable();
 }
 
 std::shared_ptr<LogSink> Logger::stdoutSink() {
@@ -78,7 +76,6 @@ std::shared_ptr<LogSink> Logger::stdoutSink() {
 void Logger::removeStdoutSink() {
   MutexLocker locker(s_mutex);
   s_sinks.erase(s_stdoutSink);
-  refreshLoggable();
 }
 
 void Logger::log(LogLevel level, char const* msg) {
@@ -91,22 +88,22 @@ void Logger::log(LogLevel level, char const* msg) {
   }
 }
 
+Logger::Logger()
+  : s_stdoutSink(std::make_shared<StdoutLogSink>()), s_sinks{s_stdoutSink} {}
+
 bool Logger::loggable(LogLevel level) {
-  return s_loggable[(int)level];
-}
-
-void Logger::refreshLoggable() {
-  s_loggable = Array<bool, 4>::filled(false);
-  for (auto const& l : s_sinks) {
-    for (auto i = (std::size_t)l->level(); i != s_loggable.size(); ++i)
-      s_loggable[i] = true;
+  MutexLocker locker(s_mutex);
+  for (auto const& sink : s_sinks) {
+    if (sink->level() <= level)
+      return true;
   }
+  return false;
 }
 
-std::shared_ptr<StdoutLogSink> Logger::s_stdoutSink = std::make_shared<StdoutLogSink>();
-HashSet<std::shared_ptr<LogSink>> Logger::s_sinks{s_stdoutSink};
-Array<bool, 4> Logger::s_loggable = Array<bool, 4>{false, true, true, true};
-Mutex Logger::s_mutex;
+void EmergencyLog::log(LogLevel, char const* message) {
+  std::fputs(message, stderr);
+  std::fputc('\n', stderr);
+}
 
 String LogMap::getValue(String const& key) {
   MutexLocker locker(s_logMapMutex);
@@ -128,8 +125,6 @@ void LogMap::clear() {
   s_logMap.clear();
 }
 
-HashMap<String, String> LogMap::s_logMap;
-Mutex LogMap::s_logMapMutex;
 
 std::size_t const SpatialLogger::MaximumLines;
 std::size_t const SpatialLogger::MaximumPoints;
@@ -243,9 +238,4 @@ void SpatialLogger::setObserved(bool observed) {
 }
 
 
-Mutex SpatialLogger::s_mutex;
-StringMap<Deque<SpatialLogger::Line>> SpatialLogger::s_lines;
-StringMap<Deque<SpatialLogger::Point>> SpatialLogger::s_points;
-StringMap<Deque<SpatialLogger::LogText>> SpatialLogger::s_logText;
-bool SpatialLogger::s_observed = false;
 }

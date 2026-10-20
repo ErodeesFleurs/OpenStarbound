@@ -1,4 +1,5 @@
 import star.tileset_database;
+import star.native_runtime;
 import star.json_extra;
 import star.json;
 import star.list;
@@ -92,8 +93,7 @@ String const InboundNode = "/tilesets/inboundnode.png";
 String const OutboundNode = "/tilesets/outboundnode.png";
 Vec3B const SourceLiquidBorderColor(0x80, 0x80, 0x00);
 
-void scanMaterials(TilesetUpdater& updater) {
-  auto& root = Root::singleton();
+void scanMaterials(Root& root, TilesetUpdater& updater) {
   auto materials = root.materialDatabase();
 
   for (String materialName : materials->materialNames()) {
@@ -139,11 +139,10 @@ Vec2U objectPositionPadding(Vec2I imagePosition) {
   return Vec2U(padX, padY);
 }
 
-StringSet categorizeObject(String const& objectName, Vec2U imageSize) {
+StringSet categorizeObject(Root& root, String const& objectName, Vec2U imageSize) {
   if (imageSize[0] >= 256 || imageSize[1] >= 256)
     return StringSet{"huge-objects"};
 
-  auto& root = Root::singleton();
   auto assets = root.assets();
   auto objects = root.objectDatabase();
 
@@ -167,8 +166,8 @@ StringSet categorizeObject(String const& objectName, Vec2U imageSize) {
   return transform<StringSet>(categories, [](String const& category) { return category.toLower(); });
 }
 
-void drawNodes(std::shared_ptr<::Star::Image> const& image, Vec2I imagePosition, JsonArray nodes, String nodeImagePath) {
-  std::shared_ptr<::Star::Image const> nodeImage = Root::singleton().assets()->image(nodeImagePath);
+void drawNodes(Assets const& assets, std::shared_ptr<::Star::Image> const& image, Vec2I imagePosition, JsonArray nodes, String nodeImagePath) {
+  std::shared_ptr<::Star::Image const> nodeImage = assets.image(nodeImagePath);
   for (Json const& node : nodes) {
     Vec2I nodePos = jsonToVec2I(node) * TilePixels + Vec2I(0, TilePixels - nodeImage->height());
     Vec2U nodeImagePos = Vec2U(nodePos - imagePosition);
@@ -176,11 +175,10 @@ void drawNodes(std::shared_ptr<::Star::Image> const& image, Vec2I imagePosition,
   }
 }
 
-void defineObjectOrientation(TilesetUpdater& updater,
+void defineObjectOrientation(Root& root, TilesetUpdater& updater,
     String const& objectName,
     List<std::shared_ptr<::Star::ObjectOrientation>> const& orientations,
     int orientationIndex) {
-  auto& root = Root::singleton();
   auto assets = root.assets();
   auto objects = root.objectDatabase();
 
@@ -215,8 +213,8 @@ void defineObjectOrientation(TilesetUpdater& updater,
   // Overlay the image with the wiring nodes:
   auto objectConfig = objects->getConfig(objectName);
 
-  drawNodes(combinedImage, imagePosition, objectConfig->config.getArray("inputNodes", {}), InboundNode);
-  drawNodes(combinedImage, imagePosition, objectConfig->config.getArray("outputNodes", {}), OutboundNode);
+  drawNodes(*assets, combinedImage, imagePosition, objectConfig->config.getArray("inputNodes", {}), InboundNode);
+  drawNodes(*assets, combinedImage, imagePosition, objectConfig->config.getArray("outputNodes", {}), OutboundNode);
 
   std::shared_ptr<::Star::Object> example = objects->createObject(objectName);
 
@@ -234,7 +232,7 @@ void defineObjectOrientation(TilesetUpdater& updater,
     properties.set("tilesetDirection", DirectionNames.getRight(direction));
   }
 
-  StringSet tilesets = categorizeObject(objectName, imageSize);
+  StringSet tilesets = categorizeObject(root, objectName, imageSize);
 
   // tileName becomes part of the filename for the tile's image. Different
   // orientations require different images, so the tileName must be different
@@ -252,20 +250,19 @@ void defineObjectOrientation(TilesetUpdater& updater,
   }
 }
 
-void scanObjects(TilesetUpdater& updater) {
-  auto& root = Root::singleton();
+void scanObjects(Root& root, TilesetUpdater& updater) {
   auto objects = root.objectDatabase();
 
   for (String const& objectName : objects->allObjects()) {
     auto orientations = objects->getOrientations(objectName);
     if (orientations.size() < 1) {
-      Logger::warn("Object {} has no orientations and will not be exported", objectName);
+      root.logger().warn("Object {} has no orientations and will not be exported", objectName);
       continue;
     }
 
     // Always export the first orientation
     std::shared_ptr<::Star::ObjectOrientation> orientation = orientations[0];
-    defineObjectOrientation(updater, objectName, orientations, 0);
+    defineObjectOrientation(root, updater, objectName, orientations, 0);
 
     // If there are more than 2 orientations or the imagePositions are different
     // then horizontal flipping in the editor is not enough to get all the
@@ -273,13 +270,12 @@ void scanObjects(TilesetUpdater& updater) {
     // as a separate tile.
     for (unsigned i = 1; i < orientations.size(); ++i) {
       if (i >= 2 || orientation->imagePosition != orientations[i]->imagePosition)
-        defineObjectOrientation(updater, objectName, orientations, i);
+        defineObjectOrientation(root, updater, objectName, orientations, i);
     }
   }
 }
 
-void scanLiquids(TilesetUpdater& updater) {
-  auto& root = Root::singleton();
+void scanLiquids(Root& root, TilesetUpdater& updater) {
   auto liquids = root.liquidsDatabase();
   auto assets = root.assets();
 
@@ -312,6 +308,7 @@ void scanLiquids(TilesetUpdater& updater) {
 }
 
 int main(int argc, char** argv) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   try {
     RootLoader rootLoader({{}, {}, {}, LogLevel::Error, false, {}});
 
@@ -321,16 +318,16 @@ int main(int argc, char** argv) {
     OptionParser::Options options;
     std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
-    TilesetUpdater updater;
+    TilesetUpdater updater(root->logger());
 
     for (String source : root->assets()->assetSources()) {
-      Logger::info("Assets source: \"{}\"", source);
+      root->logger().info("Assets source: \"{}\"", source);
       updater.defineAssetSource(source);
     }
 
-    scanMaterials(updater);
-    scanObjects(updater);
-    scanLiquids(updater);
+    scanMaterials(*root, updater);
+    scanObjects(*root, updater);
+    scanLiquids(*root, updater);
 
     updater.exportTilesets();
 

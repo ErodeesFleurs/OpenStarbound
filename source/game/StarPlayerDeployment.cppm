@@ -38,11 +38,13 @@ import star.world;
 
 namespace Star {
 
+class Root;
+
 class RenderCallback;
 
 class PlayerDeployment {
 public:
-  PlayerDeployment(Json const& config);
+  PlayerDeployment(Root& root, Json const& config);
 
   void diskLoad(Json const& diskStore);
   Json diskStore() const;
@@ -63,6 +65,7 @@ public:
 
   void renderLightSources(RenderCallback* renderCallback);
 private:
+  Root& m_root;
   World* m_world;
   Json m_config;
 

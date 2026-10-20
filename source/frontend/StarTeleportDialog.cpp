@@ -204,19 +204,19 @@ import star.quest_manager;
 import star.algorithm;
 namespace Star {
 
-TeleportDialog::TeleportDialog(std::shared_ptr<UniverseClient> client,
+TeleportDialog::TeleportDialog(GuiContext& guiContext, std::shared_ptr<UniverseClient> client,
     PaneManager* paneManager,
     Json config,
     EntityId sourceEntityId,
-    TeleportBookmark currentLocation) {
+    TeleportBookmark currentLocation) : Pane(guiContext) {
   m_client = client;
   m_paneManager = paneManager;
   m_sourceEntityId = sourceEntityId;
   m_currentLocation = currentLocation;
 
-  auto assets = Root::singleton().assets();
+  auto assets = context()->root().assets();
 
-  GuiReader reader;
+  GuiReader reader(*context());
 
   reader.registerCallback("dismiss", std::bind(&Pane::dismiss, this));
   reader.registerCallback("teleport", std::bind(&TeleportDialog::teleport, this));
@@ -349,7 +349,7 @@ void TeleportDialog::editBookmark() {
     bookmarks.sort([](auto const& a, auto const& b) { return a.bookmarkName.toLower() < b.bookmarkName.toLower(); });
     selectedItem = selectedItem - (m_destinations.size() - bookmarks.size());
     if (bookmarks.size() > selectedItem) {
-      auto editBookmarkDialog = std::make_shared<EditBookmarkDialog>(m_client->mainPlayer()->universeMap());
+      auto editBookmarkDialog = std::make_shared<EditBookmarkDialog>(*context(), m_client->mainPlayer()->universeMap());
       editBookmarkDialog->setBookmark(bookmarks[selectedItem]);
       m_paneManager->displayPane(PaneLayer::ModalWindow, editBookmarkDialog);
     }

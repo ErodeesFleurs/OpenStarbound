@@ -73,11 +73,13 @@ import star.world_storage;
 
 namespace Star {
 
+class Root;
+
 class Player;
 
 class PlayerStorage {
 public:
-  PlayerStorage(String const& storageDir);
+  PlayerStorage(Root& root, String const& storageDir);
   ~PlayerStorage();
 
   std::size_t playerCount() const;
@@ -111,6 +113,7 @@ public:
   Json getMetadata(String const& key);
 
 private:
+  Root& m_root;
   String const& uuidFileName(Uuid const& uuid);
   void writeMetadata();
 

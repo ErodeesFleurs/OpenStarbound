@@ -6,6 +6,8 @@ import star.format;
 import star.json;
 
 namespace Star {
+class Assets;
+class RandomService;
 
 struct TerrainExceptionTag {
   static constexpr char const* name() { return "TerrainException"; }
@@ -13,7 +15,7 @@ struct TerrainExceptionTag {
 using TerrainException = StarError<TerrainExceptionTag, StarException>;
 
 struct TerrainSelectorParameters {
-  TerrainSelectorParameters();
+  explicit TerrainSelectorParameters(RandomService& random);
   explicit TerrainSelectorParameters(Json const& v);
 
   Json toJson() const;
@@ -50,7 +52,7 @@ public:
   Config selectorConfig(String const& name) const;
   std::shared_ptr<TerrainSelector const> createSelectorType(String const& type, Json const& config, TerrainSelectorParameters const& parameters) const;
 
-  TerrainDatabase();
+  TerrainDatabase(std::shared_ptr<Assets const> const& assets, RandomService& random);
 
   std::shared_ptr<TerrainSelector const> createNamedSelector(String const& name, TerrainSelectorParameters const& parameters) const;
   std::shared_ptr<TerrainSelector const> constantSelector(float value);
@@ -59,6 +61,7 @@ public:
   std::shared_ptr<TerrainSelector const> loadSelector(Json const& store) const;
 
 private:
+  RandomService& m_random;
   StringMap<Config> m_terrainSelectors;
 };
 

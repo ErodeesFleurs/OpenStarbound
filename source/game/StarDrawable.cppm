@@ -22,6 +22,8 @@ import star.matrix3;
 import star.line;
 namespace Star {
 
+class ImageMetadataDatabase;
+
 struct Drawable {
   friend DataStream& operator>>(DataStream& ds, Drawable& drawable);
   friend DataStream& operator<<(DataStream& ds, Drawable const& drawable);
@@ -45,18 +47,18 @@ struct Drawable {
     // Add directives to this ImagePart, while optionally keeping the
     // transformed center of the image the same if the directives change the
     // image size.
-    ImagePart& addDirectives(Directives const& directives, bool keepImageCenterPosition = false);
-    ImagePart& addDirectivesGroup(DirectivesGroup const& directivesGroup, bool keepImageCenterPosition = false);
+    ImagePart& addDirectives(ImageMetadataDatabase const& imageMetadata, Directives const& directives, bool keepImageCenterPosition = false);
+    ImagePart& addDirectivesGroup(ImageMetadataDatabase const& imageMetadata, DirectivesGroup const& directivesGroup, bool keepImageCenterPosition = false);
 
     // Remove directives from this ImagePart, while optionally keeping the
     // transformed center of the image the same if the directives change the
     // image size.
-    ImagePart& removeDirectives(bool keepImageCenterPosition = false);
+    ImagePart& removeDirectives(ImageMetadataDatabase const& imageMetadata, bool keepImageCenterPosition = false);
   };
 
   static Drawable makeLine(Line2F const& line, float lineWidth, Color const& color, Vec2F const& position = Vec2F());
   static Drawable makePoly(PolyF poly, Color const& color, Vec2F const& position = Vec2F());
-  static Drawable makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color = Color::White);
+  static Drawable makeImage(ImageMetadataDatabase const& imageMetadata, AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color = Color::White);
 
   template <typename DrawablesContainer>
   static void translateAll(DrawablesContainer& drawables, Vec2F const& translation);
@@ -77,10 +79,10 @@ struct Drawable {
   static void rebaseAll(DrawablesContainer& drawables, Vec2F const& newBase = Vec2F());
 
   template <typename DrawablesContainer>
-  static RectF boundBoxAll(DrawablesContainer const& drawables, bool cropImages);
+  static RectF boundBoxAll(ImageMetadataDatabase const& imageMetadata, DrawablesContainer const& drawables, bool cropImages);
 
   Drawable();
-  explicit Drawable(Json const& json);
+  Drawable(ImageMetadataDatabase const& imageMetadata, Json const& json);
 
   Json toJson() const;
 
@@ -96,7 +98,7 @@ struct Drawable {
   // between them.
   void rebase(Vec2F const& newBase = Vec2F());
 
-  RectF boundBox(bool cropImages) const;
+  RectF boundBox(ImageMetadataDatabase const& imageMetadata, bool cropImages) const;
 
   bool isLine() const;
   LinePart& linePart();
@@ -157,10 +159,10 @@ void Drawable::rebaseAll(DrawablesContainer& drawables, Vec2F const& newBase) {
 }
 
 template <typename DrawablesContainer>
-RectF Drawable::boundBoxAll(DrawablesContainer const& drawables, bool cropImages) {
+RectF Drawable::boundBoxAll(ImageMetadataDatabase const& imageMetadata, DrawablesContainer const& drawables, bool cropImages) {
   RectF boundBox = RectF::null();
   for (auto const& drawable : drawables)
-    boundBox.combine(drawable.boundBox(cropImages));
+    boundBox.combine(drawable.boundBox(imageMetadata, cropImages));
   return boundBox;
 }
 

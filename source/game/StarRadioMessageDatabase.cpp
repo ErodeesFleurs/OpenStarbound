@@ -21,8 +21,6 @@ import star.version;
 
 import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
 import star.root;
 
 import star.radio_message_database;
@@ -36,8 +34,8 @@ extern EnumMap<RadioMessageType> const RadioMessageTypeNames{
     {RadioMessageType::Tutorial, "tutorial"},
 };
 
-RadioMessageDatabase::RadioMessageDatabase() {
-  auto assets = Root::singleton().assets();
+RadioMessageDatabase::RadioMessageDatabase(Root& root) : m_root(root) {
+  auto assets = m_root.assets();
   auto& files = assets->scanExtension("radiomessages");
   for (auto& file : files) {
     try {
@@ -64,7 +62,7 @@ RadioMessage RadioMessageDatabase::createRadioMessage(Json const& config,  Maybe
   if (config.isType(Json::Type::String)) {
     return radioMessage(config.toString());
   } else if (config.isType(Json::Type::Object)) {
-    Json const& defaults = Root::singleton().assets()->json("/radiomessages.config:messageDefaults");
+    Json const& defaults = m_root.assets()->json("/radiomessages.config:messageDefaults");
     auto mergedConfig = jsonMerge(defaults, config);
 
     RadioMessage message;

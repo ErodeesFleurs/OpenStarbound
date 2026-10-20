@@ -56,7 +56,7 @@ class TabSetWidget;
 
 class MerchantPane : public Pane {
 public:
-  MerchantPane(std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, Json const& settings, EntityId sourceEntityId = NullEntityId);
+  MerchantPane(GuiContext& guiContext, std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, Json const& settings, EntityId sourceEntityId = NullEntityId);
 
   void displayed() override;
   void dismissed() override;

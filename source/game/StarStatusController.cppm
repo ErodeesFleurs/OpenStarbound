@@ -55,13 +55,15 @@ import star.net_element_group;
 import star.net_element_sync_group;
 
 namespace Star {
+
+class Root;
 class Entity;
 class ActorMovementController;
 
 
 class StatusController : public NetElement {
 public:
-  StatusController(Json const& config);
+  StatusController(Root& root, Json const& config);
 
   Json diskStore() const;
   void diskLoad(Json const& store);
@@ -175,11 +177,12 @@ public:
   Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
 private:
+  Root& m_root;
   typedef LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> StatScript;
 
   struct EffectAnimator : public NetElement {
-    EffectAnimator();
-    EffectAnimator(Maybe<String> animationConfig);
+    EffectAnimator(Root& root);
+    EffectAnimator(Root& root, Maybe<String> animationConfig);
 
     void initNetVersion(NetElementVersion const* version = nullptr) override;
 
@@ -194,6 +197,7 @@ private:
     void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
     void blankNetDelta(float interpolationTime) override;
 
+    Root& m_root;
     Maybe<String> animationConfig;
     NetworkedAnimator animator;
     NetworkedAnimator::DynamicTarget dynamicTarget;
@@ -225,6 +229,8 @@ private:
   };
 
   struct UniqueEffectInstance {
+    explicit UniqueEffectInstance(Root& root) : script(root) {}
+
     UniqueStatusEffectConfig effectConfig;
     Directives parentDirectives;
     HashSet<StatModifierGroupId> modifierGroups;

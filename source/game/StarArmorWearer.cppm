@@ -19,6 +19,8 @@ import star.net_element_sync_group;
 
 namespace Star {
 
+class Root;
+
 class Humanoid;
 
 class ArmorItem;
@@ -33,7 +35,7 @@ class EffectEmitter;
 
 class ArmorWearer : public NetElementSyncGroup {
 public:
-  ArmorWearer();
+  ArmorWearer(Root& root);
 
   // returns true if movement parameters changed
   bool setupHumanoid(Humanoid& humanoid, bool forceNude);
@@ -80,6 +82,7 @@ public:
   std::shared_ptr<ArmorItem> cosmeticItem(std::uint8_t slot) const;
   ItemDescriptor cosmeticItemDescriptor(std::uint8_t slot) const;
 private:
+  Root& m_root;
   void netElementsNeedLoad(bool full) override;
   void netElementsNeedStore() override;
 

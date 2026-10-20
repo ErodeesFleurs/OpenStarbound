@@ -73,7 +73,8 @@ struct TextPositioning {
 // kerning*.
 class TextPainter {
 public:
-  TextPainter(std::shared_ptr<Renderer> renderer, std::shared_ptr<TextureGroup> textureGroup);
+  // Root must outlive this painter and its scoped reload subscription.
+  TextPainter(Root& root, std::shared_ptr<Renderer> renderer, std::shared_ptr<TextureGroup> textureGroup);
 
   RectF renderText(StringView s, TextPositioning const& position);
   RectF renderLine(StringView s, TextPositioning const& position);
@@ -115,8 +116,9 @@ private:
 
   void renderPrimitives();
   void renderGlyph(String::Char c, Vec2F const& screenPos, List<RenderPrimitive>& out, unsigned fontSize, float scale, Vec4B color, Directives const* processingDirectives = nullptr);
-  static std::shared_ptr<Font> loadFont(String const& fontPath, Maybe<String> fontName = {});
+  std::shared_ptr<Font> loadFont(String const& fontPath, Maybe<String> fontName = {});
 
+  Root& m_root;
   std::shared_ptr<Renderer> m_renderer;
   List<RenderPrimitive> m_shadowPrimitives;
   List<RenderPrimitive> m_backPrimitives;

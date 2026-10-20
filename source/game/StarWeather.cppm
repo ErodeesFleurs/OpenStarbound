@@ -33,6 +33,7 @@ namespace Star {
 
 class Clock;
 class Projectile;
+class Root;
 
 // Callback used to determine whether weather effects should be spawned in
 // the given tile location.  Other checks that enable / disable weather such as
@@ -42,7 +43,7 @@ typedef std::function<bool(Vec2I)> WeatherEffectsActiveQuery;
 
 class ServerWeather {
 public:
-  ServerWeather();
+  explicit ServerWeather(Root& root);
 
   void setup(WeatherPool weatherPool, float undergroundLevel, WorldGeometry worldGeometry,
       WeatherEffectsActiveQuery weatherEffectsActiveQuery);
@@ -83,6 +84,7 @@ private:
 
   void spawnWeatherProjectiles(float dt);
 
+  Root* m_root;
   WeatherPool m_weatherPool;
   float m_undergroundLevel;
   WorldGeometry m_worldGeometry;
@@ -116,7 +118,7 @@ private:
 
 class ClientWeather {
 public:
-  ClientWeather();
+  explicit ClientWeather(Root& root);
 
   void setup(WorldGeometry worldGeometry, WeatherEffectsActiveQuery weatherEffectsActiveQuery);
 
@@ -144,6 +146,7 @@ private:
 
   void spawnWeatherParticles(RectF newClientRegion, float dt);
 
+  Root* m_root;
   WeatherPool m_weatherPool;
   float m_undergroundLevel;
   WorldGeometry m_worldGeometry;

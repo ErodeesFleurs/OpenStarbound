@@ -24,9 +24,6 @@ import star.version;
 
 import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
-import star.root;
 
 import star.spawn_type_database;
 
@@ -121,9 +118,9 @@ Json SpawnProfile::toJson() const {
   };
 }
 
-SpawnProfile constructSpawnProfile(Json const& config, std::uint64_t seed) {
+SpawnProfile constructSpawnProfile(Assets const& assets, Json const& config, std::uint64_t seed) {
   SpawnProfile spawnProfile;
-  auto commonGroups = Root::singleton().assets()->json("/spawning.config:spawnGroups");
+  auto commonGroups = assets.json("/spawning.config:spawnGroups");
   for (auto group : config.get("groups", JsonArray()).iterateArray()) {
     auto poolNameOrConfig = group.get("pool");
     WeightedPool<String> typePool;
@@ -140,8 +137,7 @@ SpawnProfile constructSpawnProfile(Json const& config, std::uint64_t seed) {
   return spawnProfile;
 }
 
-SpawnTypeDatabase::SpawnTypeDatabase() {
-  auto assets = Root::singleton().assets();
+SpawnTypeDatabase::SpawnTypeDatabase(std::shared_ptr<Assets const> const& assets) {
   auto& files = assets->scanExtension("spawntypes");
   assets->queueJsons(files);
   std::uint64_t seedMix = 0;

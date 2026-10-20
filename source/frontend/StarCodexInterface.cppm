@@ -53,7 +53,7 @@ class Codex;
 
 class CodexInterface : public Pane {
 public:
-  CodexInterface(std::shared_ptr<Player> player);
+  CodexInterface(GuiContext& guiContext, std::shared_ptr<Player> player);
 
   virtual void show() override;
   virtual void tick(float dt) override;

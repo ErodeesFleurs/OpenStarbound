@@ -22,9 +22,6 @@ import star.version;
 import star.item_descriptor;
 import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
-import star.root;
 
 import star.quest_template_database;
 
@@ -81,8 +78,7 @@ QuestTemplate::QuestTemplate(Json const& config) {
   }
 }
 
-QuestTemplateDatabase::QuestTemplateDatabase() {
-  auto assets = Root::singleton().assets();
+QuestTemplateDatabase::QuestTemplateDatabase(std::shared_ptr<Assets const> assets, Logger& logger) : m_logger(logger) {
   auto& files = assets->scanExtension("questtemplate");
   assets->queueJsons(files);
   for (auto& qt : files) {
@@ -98,7 +94,7 @@ List<String> QuestTemplateDatabase::allQuestTemplateIds() const {
 
 std::shared_ptr<QuestTemplate> QuestTemplateDatabase::questTemplate(String const& templateId) const {
   if (!m_templates.contains(templateId)) {
-    Logger::error("No quest template found for id '{}'", templateId);
+    m_logger.error("No quest template found for id '{}'", templateId);
     return {};
   }
   return m_templates.get(templateId);

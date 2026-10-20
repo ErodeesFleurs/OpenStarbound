@@ -30,6 +30,7 @@ import star.celestial_parameters;
 namespace Star {
 
 class CelestialDatabase;
+class Root;
 
 // Functions for generating and drawing worlds from a celestial database.
 // Guards against drawing unloaded celestial objects, will return empty if no
@@ -48,17 +49,17 @@ public:
   // Specify the shadowing parameters in order to use the shadowing
   // information from that body instead of the primary one.
   static List<std::pair<String, float>> drawWorld(
-      CelestialParameters const& celestialParameters, Maybe<CelestialParameters> const& shadowingParameters = {});
-  static List<std::pair<String, String>> worldHorizonImages(CelestialParameters const& celestialParameters);
-  static int worldRadialPosition(CelestialParameters const& celestialParameters);
+      Root& root, CelestialParameters const& celestialParameters, Maybe<CelestialParameters> const& shadowingParameters = {});
+  static List<std::pair<String, String>> worldHorizonImages(Root& root, CelestialParameters const& celestialParameters);
+  static int worldRadialPosition(Root& root, CelestialParameters const& celestialParameters);
 
   // Each orbiting body will occupy a unique orbital slot, but to give
   // graphical diversity, will also fit into exactly one radial slot for
   // display purposes.  The range of radial numbers is [0, RadialPosiitons)
-  static int planetRadialPositions();
-  static int satelliteRadialPositions();
+  static int planetRadialPositions(Root& root);
+  static int satelliteRadialPositions(Root& root);
 
-  static List<std::pair<String, float>> drawSystemTwinkle(std::shared_ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& system, double twinkleTime);
+  static List<std::pair<String, float>> drawSystemTwinkle(Root& root, std::shared_ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& system, double twinkleTime);
 
   // Returns the small graphic for the given planetary object appropriate for a
   // system-level view.
@@ -68,13 +69,13 @@ public:
   // Returns the graphics appropriate to draw an entire world (planetary object
   // or satellite object) in a map view.  Shadows the satellite the same as
   // its parent planetary object.
-  static List<std::pair<String, float>> drawWorld(std::shared_ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate);
+  static List<std::pair<String, float>> drawWorld(Root& root, std::shared_ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate);
 
   // Draw all of the left and right image pairs for all the layers for the
   // world horizon.
-  static List<std::pair<String, String>> worldHorizonImages(std::shared_ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate);
+  static List<std::pair<String, String>> worldHorizonImages(Root& root, std::shared_ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate);
 
-  static int worldRadialPosition(std::shared_ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate);
+  static int worldRadialPosition(Root& root, std::shared_ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate);
 
 private:
 };

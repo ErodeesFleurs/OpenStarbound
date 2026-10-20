@@ -165,7 +165,7 @@ namespace Star::LuaBindings::UniverseServerCallbacks {
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeUniverseServerCallbacks(UniverseServer* universe) {
+LuaCallbacks LuaBindings::makeUniverseServerCallbacks(Root& root, UniverseServer* universe) {
   LuaCallbacks callbacks;
 
   callbacks.registerCallbackWithSignature<Maybe<String>, ConnectionId>("uuidForClient", std::bind(UniverseServerCallbacks::uuidForClient, universe, std::placeholders::_1));
@@ -191,22 +191,22 @@ LuaCallbacks LuaBindings::makeUniverseServerCallbacks(UniverseServer* universe) 
     universe->clientWarpPlayer(clientId, parseWarpAction(action), deploy.value(false));
   });
 
-  callbacks.registerCallback("setServerAccount", [](String const& account, String const& password, Maybe<bool> admin) {
-    auto config = Root::singleton().configuration();
+  callbacks.registerCallback("setServerAccount", [&root](String const& account, String const& password, Maybe<bool> admin) {
+    auto config = root.configuration();
     auto serverUsers = config->get("serverUsers").toObject();
     serverUsers[account] = JsonObject{{"password", password}, {"admin", admin.value(false)}};
     config->set("serverUsers", serverUsers);
   });
 
-  callbacks.registerCallback("removeServerAccount", [](String const& account) {
-    auto config = Root::singleton().configuration();
+  callbacks.registerCallback("removeServerAccount", [&root](String const& account) {
+    auto config = root.configuration();
     auto serverUsers = config->get("serverUsers").toObject();
     serverUsers.erase(account);
     config->set("serverUsers", serverUsers);
   });
 
-  callbacks.registerCallback("getServerAccounts", []() -> Json {
-    auto config = Root::singleton().configuration();
+  callbacks.registerCallback("getServerAccounts", [&root]() -> Json {
+    auto config = root.configuration();
     auto serverUsers = config->get("serverUsers");
     JsonObject result;
     for (auto& p : serverUsers.iterateObject())
@@ -219,25 +219,25 @@ LuaCallbacks LuaBindings::makeUniverseServerCallbacks(UniverseServer* universe) 
     return universe->clientConnectionVersion(clientId);
   });
   
-  callbacks.registerCallback("createCustomWorld", [universe](String name, Json templateData) {
-    universe->createCustomWorld(CustomWorldId(name), std::make_shared<WorldTemplate>(templateData));
+  callbacks.registerCallback("createCustomWorld", [&root, universe](String name, Json templateData) {
+    universe->createCustomWorld(CustomWorldId(name), std::make_shared<WorldTemplate>(root, templateData));
   });
-  callbacks.registerCallback("createCustomWorldFromConfig", [universe](String name, Json worldConfig) {
+  callbacks.registerCallback("createCustomWorldFromConfig", [&root, universe](String name, Json worldConfig) {
     std::uint64_t worldSeed;
     if (worldConfig.contains("seed"))
       worldSeed = worldConfig.getUInt("seed");
     else
-      worldSeed = Random::randu64();
+      worldSeed = root.random().randu64();
 
     String worldType = worldConfig.getString("type");
 
     std::shared_ptr<VisitableWorldParameters> worldParameters;
     if (worldType.equalsIgnoreCase("Terrestrial"))
-      worldParameters = generateTerrestrialWorldParameters(worldConfig.getString("planetType"), worldConfig.getString("planetSize"), worldSeed);
+      worldParameters = generateTerrestrialWorldParameters(root, worldConfig.getString("planetType"), worldConfig.getString("planetSize"), worldSeed);
     else if (worldType.equalsIgnoreCase("Asteroids"))
-      worldParameters = generateAsteroidsWorldParameters(worldSeed);
+      worldParameters = generateAsteroidsWorldParameters(root, worldSeed);
     else if (worldType.equalsIgnoreCase("FloatingDungeon"))
-      worldParameters = generateFloatingDungeonWorldParameters(worldConfig.getString("dungeonWorld"));
+      worldParameters = generateFloatingDungeonWorldParameters(root, worldConfig.getString("dungeonWorld"));
     else
       throw StarException(strf("Unknown world type: '{}'\n", worldType));
 
@@ -249,7 +249,7 @@ LuaCallbacks LuaBindings::makeUniverseServerCallbacks(UniverseServer* universe) 
     worldParameters->disableDeathDrops = worldConfig.getBool("disableDeathDrops", false);
 
     SkyParameters skyParameters = SkyParameters(worldConfig.get("skyParameters", Json()));
-    auto worldTemplate = std::make_shared<WorldTemplate>(worldParameters, skyParameters, worldSeed);
+    auto worldTemplate = std::make_shared<WorldTemplate>(root, worldParameters, skyParameters, worldSeed);
     Json worldProperties = worldConfig.get("worldProperties", JsonObject{});
     universe->createCustomWorld(CustomWorldId(name), worldTemplate);
   });
@@ -390,7 +390,7 @@ RpcPromise<Json> LuaBindings::UniverseServerCallbacks::sendWorldMessage(Universe
 
 bool LuaBindings::UniverseServerCallbacks::sendPacket(UniverseServer* universe, ConnectionId clientId, String const& packetTypeName, Json const& args) {
   auto packetType = PacketTypeNames.getLeft(packetTypeName);
-  auto packet = createPacket(packetType, args);
+  auto packet = createPacket(universe->root().random(), packetType, args);
   return universe->sendPacket(clientId, packet);
 }
 

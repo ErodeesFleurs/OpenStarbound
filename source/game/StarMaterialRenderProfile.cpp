@@ -29,9 +29,6 @@ import star.tile_damage;
 import star.material_render_profile;
 import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
-import star.root;
 
 
 import star.image_metadata_database;
@@ -106,7 +103,7 @@ std::pair<String, Vec2F> const& MaterialRenderProfile::damageImage(float damageL
   return crackingFrames.at(clamp<unsigned>(damageLevel * crackingFrames.size(), 0, crackingFrames.size() - 1));
 }
 
-MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const& relativePath) {
+MaterialRenderProfile parseMaterialRenderProfile(ImageMetadataDatabase const& imageMetadata, Json const& spec, String const& relativePath) {
   MaterialRenderProfile profile;
 
   bool lightTransparent = spec.getBool("lightTransparent", false);
@@ -156,7 +153,7 @@ MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const&
 
     // Need to flip texture coordinates because material rendering configs
     // assume top down image coordinates
-    unsigned imageHeight = Root::singleton().imageMetadataDatabase()->imageSize(renderPiece->texture)[1];
+    unsigned imageHeight = imageMetadata.imageSize(renderPiece->texture)[1];
     auto flipTextureCoordinates = [imageHeight](
         RectF const& rect) { return RectF::withSize(Vec2F(rect.xMin(), imageHeight - rect.yMax()), rect.size()); };
     for (unsigned v = 0; v < variants; ++v) {

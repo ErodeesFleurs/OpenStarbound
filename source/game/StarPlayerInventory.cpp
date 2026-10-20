@@ -76,7 +76,6 @@ import star.item_recipe;
 import star.inventory_types;
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.configuration;
 import star.root;
 import star.status_effect_item;
@@ -131,7 +130,7 @@ import star.math_common;
 import star.algorithm;
 namespace Star {
 
-bool PlayerInventory::itemAllowedInBag(std::shared_ptr<Item> const& items, String const& bagType) {
+bool PlayerInventory::itemAllowedInBag(std::shared_ptr<Item> const& items, String const& bagType) const {
   // any inventory type can have empty slots
   if (!items || items->empty())
     return true;
@@ -156,8 +155,12 @@ bool PlayerInventory::itemAllowedAsEquipment(std::shared_ptr<Item> const& item, 
     return is<ArmorItem>(item);
 }
 
-PlayerInventory::PlayerInventory() {
-  auto config = Root::singleton().assets()->json("/player.config:inventory");
+PlayerInventory::PlayerInventory(Root& root)
+  : PlayerInventory(root, root.assets()->json("/player.config:inventory"), root.assets()->json("/currencies.config")) {}
+
+PlayerInventory::PlayerInventory(Root& root, Json inventoryConfig, Json currenciesConfig)
+  : m_root(&root), m_inventoryConfig(std::move(inventoryConfig)), m_currenciesConfig(std::move(currenciesConfig)) {
+  auto const& config = m_inventoryConfig;
 
   auto bags = config.get("itemBags");
   auto bagOrder = bags.toObject().keys().sorted([&bags](String const& a, String const& b) {
@@ -165,12 +168,11 @@ PlayerInventory::PlayerInventory() {
   });
   for (auto name : bagOrder) {
     std::size_t size = bags.get(name).getUInt("size");
-    m_bags[name] = std::make_shared<ItemBag>(size);
+    m_bags[name] = std::make_shared<ItemBag>(root, size);
     m_bagsNetState[name].resize(size);
   }
 
-  auto currenciesConfig = Root::singleton().assets()->json("/currencies.config");
-  for (auto p : currenciesConfig.iterateObject())
+  for (auto p : m_currenciesConfig.iterateObject())
     m_currencies[p.first] = 0;
 
   std::size_t customBarGroups = config.getUInt("customBarGroups");
@@ -640,7 +642,7 @@ void PlayerInventory::sortBag(String const& bagType) {
       }
     });
 
-  auto itemDatabase = Root::singletonPtr()->itemDatabase();
+  auto itemDatabase = m_root->itemDatabase();
   bag->items().sort([itemDatabase](std::shared_ptr<Item> const& a, std::shared_ptr<Item> const& b) {
       if (a && !b)
         return true;
@@ -780,7 +782,7 @@ void PlayerInventory::addCurrency(String const& currencyType, std::uint64_t amou
   std::uint64_t newTotal = previousTotal + amount;
   if (newTotal < previousTotal)
     newTotal = std::numeric_limits<std::uint64_t>::max();
-  m_currencies[currencyType] = std::min(Root::singleton().assets()->json("/currencies.config").get(currencyType).getUInt("playerMax", std::numeric_limits<std::uint64_t>::max()), newTotal);
+  m_currencies[currencyType] = std::min(m_root->assets()->json("/currencies.config").get(currencyType).getUInt("playerMax", std::numeric_limits<std::uint64_t>::max()), newTotal);
 }
 
 bool PlayerInventory::consumeCurrency(String const& currencyType, std::uint64_t amount) {
@@ -935,7 +937,7 @@ void PlayerInventory::setEquipmentVisibility(EquipmentSlot slot, bool visible) {
 }
 
 void PlayerInventory::load(Json const& store) {
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto itemDatabase = m_root->itemDatabase();
 
   for (auto slot : EquipmentSlotNames) {
     auto jItem = store.get(strf("{}Slot", slot.second), Json());
@@ -948,7 +950,7 @@ void PlayerInventory::load(Json const& store) {
   m_inventoryLoadOverflow.clear();
   for (auto const& p : itemBags) {
     auto& bagType = p.first;
-    auto newBag = ItemBag::loadStore(p.second);
+    auto newBag = ItemBag::loadStore(*m_root, p.second);
     newBag.cleanup();
     if (m_bags.contains(bagType)) {
       auto& bag = m_bags.at(bagType);
@@ -1000,7 +1002,7 @@ void PlayerInventory::load(Json const& store) {
 }
 
 Json PlayerInventory::store() const {
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto itemDatabase = m_root->itemDatabase();
 
   JsonArray customBar;
   for (std::size_t i = 0; i < m_customBar.size(0); ++i) {
@@ -1126,9 +1128,10 @@ void PlayerInventory::setPlayer(Player* player) {
   m_player = player;
 }
 
-PlayerInventory const& PlayerInventory::blankInventory() {
-  static thread_local auto inventory = std::make_shared<PlayerInventory>();
-  return *inventory;
+PlayerInventory const& PlayerInventory::blankInventory() const {
+  if (!m_blankInventory)
+    m_blankInventory.reset(new PlayerInventory(*m_root, m_inventoryConfig, m_currenciesConfig));
+  return *m_blankInventory;
 }
 
 void PlayerInventory::netStore(DataStream& ds, NetCompatibilityRules rules) const {
@@ -1146,7 +1149,7 @@ bool PlayerInventory::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, N
     return NetElementSyncGroup::writeNetDelta(ds, fromVersion, rules);
 }
 
-bool PlayerInventory::checkInventoryFilter(std::shared_ptr<Item> const& items, String const& filterName) {
+bool PlayerInventory::checkInventoryFilter(std::shared_ptr<Item> const& items, String const& filterName) const {
   Json filterConfig;
 
   auto itemFilters = items->instanceValue("inventoryFilters");
@@ -1157,14 +1160,14 @@ bool PlayerInventory::checkInventoryFilter(std::shared_ptr<Item> const& items, S
   }
 
   if (!filterConfig.isType(Json::Type::Object)) {
-    auto config = Root::singleton().assets()->json("/player.config:inventoryFilters");
+    auto config = m_root->assets()->json("/player.config:inventoryFilters");
     filterConfig = config.opt(filterName).value();
     if (!filterConfig.isType(Json::Type::Object))
       filterConfig = config.get("default", JsonObject());
   }
 
   // filter by item type if an itemTypes filter is set
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto itemDatabase = m_root->itemDatabase();
   auto itemTypeName = ItemTypeNames.getRight(itemDatabase->itemType(items->name()));
   if (filterConfig.contains("typeWhitelist") && !filterConfig.getArray("typeWhitelist").contains(itemTypeName))
     return false;
@@ -1261,7 +1264,7 @@ void PlayerInventory::swapCustomBarLinks(InventorySlot a, InventorySlot b) {
 }
 
 void PlayerInventory::autoAddToCustomBar(InventorySlot slot) {
-  if (!Root::singleton().configuration()->getPath("inventory.pickupToActionBar").toBool())
+  if (!m_root->configuration()->getPath("inventory.pickupToActionBar").toBool())
     return;
 
   auto items = itemsAt(slot);
@@ -1270,7 +1273,7 @@ void PlayerInventory::autoAddToCustomBar(InventorySlot slot) {
 }
 
 void PlayerInventory::netElementsNeedLoad(bool) {
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto itemDatabase = m_root->itemDatabase();
 
   auto deserializeItem = [&itemDatabase](NetElementData<ItemDescriptor>& netState, std::shared_ptr<Item>& item) {
     if (netState.pullUpdated())

@@ -104,9 +104,9 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-PlayerConfig::PlayerConfig(JsonObject const& cfg) {
+PlayerConfig::PlayerConfig(Root& root, JsonObject const& cfg) : humanoidTiming(root, cfg.value("humanoidTiming")) {
   defaultIdentity = HumanoidIdentity(cfg.value("defaultHumanoidIdentity"));
-  humanoidTiming = Humanoid::HumanoidTiming(cfg.value("humanoidTiming"));
+
 
   for (Json v : cfg.value("defaultItems", JsonArray()).toArray())
     defaultItems.append(ItemDescriptor(v));
@@ -126,7 +126,7 @@ PlayerConfig::PlayerConfig(JsonObject const& cfg) {
   underwaterSensor = jsonToVec2F(cfg.get("underwaterSensor"));
   underwaterMinWaterLevel = cfg.get("underwaterMinWaterLevel").toFloat();
 
-  splashConfig = EntitySplashConfig(cfg.get("splashConfig"));
+  splashConfig = EntitySplashConfig(root, cfg.get("splashConfig"));
 
   companionsConfig = cfg.get("companionsConfig");
 
@@ -146,24 +146,24 @@ PlayerConfig::PlayerConfig(JsonObject const& cfg) {
     genericScriptContexts[p.first] = p.second.toString();
 }
 
-PlayerFactory::PlayerFactory() : m_rebuilder(std::make_shared<Rebuilder>("player")) {
-  auto assets = Root::singleton().assets();
-  m_config = std::make_shared<PlayerConfig>(assets->json("/player.config").toObject());
+PlayerFactory::PlayerFactory(Root& root) : m_root(root), m_rebuilder(std::make_shared<Rebuilder>(root, "player")) {
+  auto assets = m_root.assets();
+  m_config = std::make_shared<PlayerConfig>(m_root, assets->json("/player.config").toObject());
 }
 
 std::shared_ptr<Player> PlayerFactory::create() const {
-  return std::make_shared<Player>(m_config);
+  return std::make_shared<Player>(m_root, m_config);
 }
 
 std::shared_ptr<Player> PlayerFactory::diskLoadPlayer(Json const& diskStore) const {
   std::shared_ptr<Player> player;
   try {
-    player = std::make_shared<Player>(m_config, diskStore);
+    player = std::make_shared<Player>(m_root, m_config, diskStore);
   } catch (std::exception const& e) {
     auto exception = std::current_exception();
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
       try {
-        player = std::make_shared<Player>(m_config, store);
+        player = std::make_shared<Player>(m_root, m_config, store);
       } catch (std::exception const& e) {
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
@@ -178,7 +178,7 @@ std::shared_ptr<Player> PlayerFactory::diskLoadPlayer(Json const& diskStore) con
 }
 
 std::shared_ptr<Player> PlayerFactory::netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules) const {
-  return std::make_shared<Player>(m_config, netStore, rules);
+  return std::make_shared<Player>(m_root, m_config, netStore, rules);
 }
 
 }

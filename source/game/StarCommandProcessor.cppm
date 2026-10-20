@@ -18,10 +18,11 @@ import star.lua_root;
 namespace Star {
 
 class UniverseServer;
+class Root;
 
 class CommandProcessor {
 public:
-  CommandProcessor(UniverseServer* universe);
+  CommandProcessor(Root& root, UniverseServer* universe);
 
   ServerCommandResult adminCommand(String const& command, String const& argumentString);
   ServerCommandResult userCommand(ConnectionId clientId, String const& command, String const& argumentString);
@@ -81,6 +82,7 @@ private:
   Maybe<String> localCheck(ConnectionId connectionId, String const& commandDescription) const;
   LuaCallbacks makeCommandCallbacks();
 
+  Root& m_root;
   UniverseServer* m_universe;
   ShellParser m_parser;
 

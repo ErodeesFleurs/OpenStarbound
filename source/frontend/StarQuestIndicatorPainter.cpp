@@ -158,19 +158,21 @@ import star.quest_manager;
 
 namespace Star {
 
-QuestIndicatorPainter::QuestIndicatorPainter(std::shared_ptr<UniverseClient> const& client) {
+QuestIndicatorPainter::QuestIndicatorPainter(GuiContext& context, std::shared_ptr<UniverseClient> const& client)
+  : m_guiContext(&context) {
   m_client = client;
 }
 
-std::shared_ptr<Animation> indicatorAnimation(String indicatorPath) {
-  auto assets = Root::singleton().assets();
-  return std::make_shared<Animation>(assets->json(indicatorPath), indicatorPath);
+std::shared_ptr<Animation> indicatorAnimation(Root& root, String indicatorPath) {
+  auto assets = root.assets();
+  return std::make_shared<Animation>(root, assets->json(indicatorPath), indicatorPath);
 }
 
 void QuestIndicatorPainter::update(float dt, std::shared_ptr<WorldClient> const& world, WorldCamera const& camera) {
   m_camera = camera;
 
-  Set<EntityId> foundIndicators;
+  auto& foundIndicators = m_foundIndicators;
+  foundIndicators.clear();
   for (auto const& entity : world->query<Entity>(camera.worldScreenRect())) {
     auto indicator = m_client->questManager()->getQuestIndicator(entity);
     if (!indicator) continue;
@@ -184,14 +186,14 @@ void QuestIndicatorPainter::update(float dt, std::shared_ptr<WorldClient> const&
         currentIndicator->animation->update(dt);
       } else {
         currentIndicator->indicatorName = indicator->indicatorImage;
-        currentIndicator->animation = indicatorAnimation(indicator->indicatorImage);
+        currentIndicator->animation = indicatorAnimation(m_guiContext->root(), indicator->indicatorImage);
       }
     } else {
       m_indicators[entity->entityId()] = Indicator {
           entity->entityId(),
           screenPos,
           indicator->indicatorImage,
-          indicatorAnimation(indicator->indicatorImage)
+          indicatorAnimation(m_guiContext->root(), indicator->indicatorImage)
         };
     }
   }
@@ -206,7 +208,7 @@ Drawable QuestIndicatorPainter::Indicator::render(float pixelRatio) const {
 }
 
 void QuestIndicatorPainter::render() {
-  auto& context = GuiContext::singleton();
+  auto& context = *m_guiContext;
 
   for (auto const& indicator : m_indicators.values()) {
     Drawable drawable = indicator.render(m_camera.pixelRatio());

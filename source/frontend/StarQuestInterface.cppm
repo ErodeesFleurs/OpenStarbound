@@ -50,7 +50,7 @@ class Quest;
 
 class QuestLogInterface : public Pane {
 public:
-  QuestLogInterface(std::shared_ptr<QuestManager> manager, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic, std::shared_ptr<UniverseClient> client);
+  QuestLogInterface(GuiContext& guiContext, std::shared_ptr<QuestManager> manager, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic, std::shared_ptr<UniverseClient> client);
   virtual ~QuestLogInterface() {}
 
   virtual void displayed() override;
@@ -83,7 +83,7 @@ private:
 
 class QuestPane : public Pane {
 protected:
-  QuestPane(std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player);
+  QuestPane(GuiContext& guiContext, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player);
 
   void commonSetup(Json config, String bodyText, String const& portraitName);
   virtual void close();
@@ -103,7 +103,7 @@ public:
     Cancelled
   };
 
-  NewQuestInterface(std::shared_ptr<QuestManager> const& manager, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player);
+  NewQuestInterface(GuiContext& guiContext, std::shared_ptr<QuestManager> const& manager, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player);
 
 protected:
   void close() override;
@@ -118,7 +118,7 @@ private:
 
 class QuestCompleteInterface : public QuestPane {
 public:
-  QuestCompleteInterface(std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic);
+  QuestCompleteInterface(GuiContext& guiContext, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic);
 
 protected:
   void close() override;
@@ -130,7 +130,7 @@ private:
 
 class QuestFailedInterface : public QuestPane {
 public:
-  QuestFailedInterface(std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player);
+  QuestFailedInterface(GuiContext& guiContext, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player);
 };
 
 }

@@ -206,14 +206,14 @@ import star.player_inventory;
 import star.algorithm;
 namespace Star {
 
-CraftingPane::CraftingPane(std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, Json const& settings, EntityId sourceEntityId) {
+CraftingPane::CraftingPane(GuiContext& guiContext, std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, Json const& settings, EntityId sourceEntityId) : Pane(guiContext) {
   m_worldClient = std::move(worldClient);
   m_player = std::move(player);
   m_blueprints = m_player->blueprints();
   m_recipeAutorefreshCooldown = 0;
   m_sourceEntityId = sourceEntityId;
 
-  auto assets = Root::singleton().assets();
+  auto assets = context()->root().assets();
   // get the config data for this crafting pane, default to "bare hands" crafting
   auto baseConfig = settings.get("config", "/interface/windowconfig/crafting.config");
   m_settings = jsonMerge(assets->json("/interface/windowconfig/crafting.config:default"), 
@@ -222,7 +222,7 @@ CraftingPane::CraftingPane(std::shared_ptr<WorldClient> worldClient, std::shared
   m_filter = StringSet::from(jsonToStringList(m_settings.get("filter", JsonArray())));
   m_maxSpinCount = m_settings.getUInt("maxSpinCount", 1000);
 
-  GuiReader reader;
+  GuiReader reader(*context());
   reader.registerCallback("spinCount.up", [this](Widget*) {
       if (m_count < maxCraft())
         m_count++;
@@ -247,7 +247,7 @@ CraftingPane::CraftingPane(std::shared_ptr<WorldClient> worldClient, std::shared
   reader.registerCallback("btnStopCraft", [this](Widget*) { toggleCraft(); });
 
   reader.registerCallback("btnFilterHaveMaterials", [this](Widget*) {
-      Root::singleton().configuration()->setPath("crafting.filterHaveMaterials", m_filterHaveMaterials->isChecked());
+      context()->root().configuration()->setPath("crafting.filterHaveMaterials", m_filterHaveMaterials->isChecked());
       updateAvailableRecipes();
     });
 
@@ -287,7 +287,7 @@ CraftingPane::CraftingPane(std::shared_ptr<WorldClient> worldClient, std::shared
 
   m_filterHaveMaterials = fetchChild<ButtonWidget>("btnFilterHaveMaterials");
   if (m_filterHaveMaterials)
-    m_filterHaveMaterials->setChecked(Root::singleton().configuration()->getPath("crafting.filterHaveMaterials").toBool());
+    m_filterHaveMaterials->setChecked(context()->root().configuration()->getPath("crafting.filterHaveMaterials").toBool());
 
   fetchChild<ButtonWidget>("btnCraft")->disable();
   if (auto spinCountUp = fetchChild<ButtonWidget>("spinCount.up"))
@@ -307,9 +307,9 @@ CraftingPane::CraftingPane(std::shared_ptr<WorldClient> worldClient, std::shared
 
     if (auto container = as<ContainerEntity>(entity)) {
       if (container->iconItem()) {
-        auto itemDatabase = Root::singleton().itemDatabase();
+        auto itemDatabase = context()->root().itemDatabase();
         auto iconItem = itemDatabase->itemShared(container->iconItem());
-        auto icon = std::make_shared<ItemSlotWidget>(iconItem, "/interface/inventory/portrait.png");
+        auto icon = std::make_shared<ItemSlotWidget>(*context(), iconItem, "/interface/inventory/portrait.png");
         String title = this->title();
         if (title.empty())
           title = container->containerDescription();
@@ -321,7 +321,7 @@ CraftingPane::CraftingPane(std::shared_ptr<WorldClient> worldClient, std::shared
       }
     }
     if (auto portaitEntity = as<PortraitEntity>(entity)) {
-      auto portrait = std::make_shared<PortraitWidget>(portaitEntity, PortraitMode::Bust);
+      auto portrait = std::make_shared<PortraitWidget>(*context(), portaitEntity, PortraitMode::Bust);
       portrait->setIconMode();
       String title = this->title();
       if (title.empty())
@@ -403,7 +403,7 @@ void CraftingPane::upgradeTable() {
 }
 
 std::size_t CraftingPane::itemCount(List<std::shared_ptr<Item>> const& store, ItemDescriptor const& item) {
-  auto itemDb = Root::singleton().itemDatabase();
+  auto itemDb = context()->root().itemDatabase();
   return itemDb->getCountOfItem(store, item);
 }
 
@@ -440,13 +440,13 @@ void CraftingPane::update(float dt) {
       auto description = fetchChild<Widget>("description");
       description->removeAllChildren();
 
-      auto item = Root::singleton().itemDatabase()->itemShared(recipe.output);
-      ItemTooltipBuilder::buildItemDescription(description, item);
+      auto item = context()->root().itemDatabase()->itemShared(recipe.output);
+      ItemTooltipBuilder::buildItemDescription(*context(), description, item);
     }
   }
 
   // crafters gonna craft
-  while (m_crafting && m_craftTimer.wrapTick()) {
+  while (m_crafting && m_craftTimer.wrapTick(context()->root().timing().timestep)) {
     craft(std::min(m_count, (int)m_settings.getInt("craftCount", 1)));
   }
 
@@ -559,7 +559,7 @@ void CraftingPane::updateAvailableRecipes() {
 }
 
 void CraftingPane::setupWidget(std::shared_ptr<Widget> const& widget, ItemRecipe const& recipe, HashMap<ItemDescriptor, std::uint64_t> const& normalizedBag) {
-  auto& root = Root::singleton();
+  auto& root = context()->root();
 
   auto single = recipe.output.singular();
   std::shared_ptr<Item> item = m_itemCache[single];
@@ -577,7 +577,7 @@ void CraftingPane::setupWidget(std::shared_ptr<Widget> const& widget, ItemRecipe
         unavailable = true;
     }
 
-    auto itemDb = Root::singleton().itemDatabase();
+    auto itemDb = context()->root().itemDatabase();
     for (auto const& input : recipe.inputs) {
       if (itemDb->getCountOfItem(normalizedBag, input, recipe.matchInputParameters) < input.count())
         unavailable = true;
@@ -627,10 +627,10 @@ void CraftingPane::setupWidget(std::shared_ptr<Widget> const& widget, ItemRecipe
 }
 
 std::shared_ptr<Pane> CraftingPane::setupTooltip(ItemRecipe const& recipe) {
-  auto& root = Root::singleton();
+  auto& root = context()->root();
 
-  auto tooltip = std::make_shared<Pane>();
-  GuiReader reader;
+  auto tooltip = std::make_shared<Pane>(*context());
+  GuiReader reader(*context());
   reader.construct(root.assets()->json("/interface/craftingtooltip/craftingtooltip.config"), tooltip.get());
 
   auto guiList = tooltip->fetchChild<ListWidget>("itemList");
@@ -679,7 +679,7 @@ std::shared_ptr<Pane> CraftingPane::setupTooltip(ItemRecipe const& recipe) {
 }
 
 bool CraftingPane::consumeIngredients(ItemRecipe& recipe, int count) {
-  auto itemDb = Root::singleton().itemDatabase();
+  auto itemDb = context()->root().itemDatabase();
 
   auto normalizedBag = m_player->inventory()->availableItems();
   auto availableCurrencies = m_player->inventory()->availableCurrencies();
@@ -728,10 +728,10 @@ void CraftingPane::toggleCraft() {
       m_craftTimer = GameTimer(recipe.duration);
 
       if (auto craftingSound = m_settings.optString("craftingSound")) {
-        auto assets = Root::singleton().assets();
+        auto assets = context()->root().assets();
         m_craftingSound = std::make_shared<AudioInstance>(*assets->audio(*craftingSound));
         m_craftingSound->setLoops(-1);
-        GuiContext::singleton().playAudio(m_craftingSound);
+        context()->playAudio(m_craftingSound);
       }
     } else {
       craft(m_count);
@@ -740,7 +740,7 @@ void CraftingPane::toggleCraft() {
 }
 
 void CraftingPane::craft(int count) {
-  auto& root = Root::singleton();
+  auto& root = context()->root();
 
   if (m_guiList->selectedItem() != NPos) {
     auto recipe = recipeFromSelectedWidget();
@@ -802,7 +802,7 @@ void CraftingPane::countChanged() {
 
 List<ItemRecipe> CraftingPane::determineRecipes() {
   HashSet<ItemRecipe> recipes;
-  auto itemDb = Root::singleton().itemDatabase();
+  auto itemDb = context()->root().itemDatabase();
 
   StringSet categoryFilter;
   if (auto categoriesGroup = fetchChild<ButtonGroupWidget>("categories")) {
@@ -829,7 +829,7 @@ List<ItemRecipe> CraftingPane::determineRecipes() {
     filterHaveMaterials = m_filterHaveMaterials->isChecked();
 
   if (m_settings.getBool("printer", false)) {
-    auto objectDatabase = Root::singleton().objectDatabase();
+    auto objectDatabase = context()->root().objectDatabase();
 
     StringList itemList;
     if (m_player->isAdmin())
@@ -921,7 +921,7 @@ List<ItemRecipe> CraftingPane::determineRecipes() {
   }
 
   List<ItemRecipe> sortedRecipes = recipes.values();
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto itemDatabase = context()->root().itemDatabase();
   sortByComputedValue(sortedRecipes, [itemDatabase](ItemRecipe const& recipe) {
       return std::make_tuple(itemDatabase->itemFriendlyName(recipe.output.name()).trim().toLower(), recipe.output.name());
     });
@@ -932,7 +932,7 @@ List<ItemRecipe> CraftingPane::determineRecipes() {
 int CraftingPane::maxCraft() {
   if (m_player->isAdmin())
     return m_maxSpinCount;
-  auto itemDb = Root::singleton().itemDatabase();
+  auto itemDb = context()->root().itemDatabase();
   int res = 0;
   if (m_guiList->selectedItem() != NPos && m_guiList->selectedItem() < m_recipes.size()) {
     HashMap<ItemDescriptor, std::uint64_t> normalizedBag = m_player->inventory()->availableItems();

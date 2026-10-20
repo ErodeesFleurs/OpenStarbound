@@ -40,6 +40,7 @@ import star.net_element_system;
 import star.net_compatibility;
 import star.byte_array;
 namespace Star {
+class Root;
 class Npc;
 }
 
@@ -115,9 +116,9 @@ class Npc
     public virtual PhysicsEntity,
     public virtual EmoteEntity {
 public:
-  Npc(ByteArray const& netStore, NetCompatibilityRules rules = {});
-  Npc(NpcVariant const& npcVariant);
-  Npc(NpcVariant const& npcVariant, Json const& initialState);
+  Npc(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules rules = {});
+  Npc(Root& rootContext, NpcVariant const& npcVariant);
+  Npc(Root& rootContext, NpcVariant const& npcVariant, Json const& initialState);
 
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {});

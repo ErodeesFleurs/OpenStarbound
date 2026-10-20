@@ -64,10 +64,11 @@ import star.object;
 import star.game_timers;
 
 namespace Star {
+class Root;
 
 class FarmableObject : public Object {
 public:
-  FarmableObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters);
+  FarmableObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters);
 
   void update(float dt, std::uint64_t currentStep) override;
 

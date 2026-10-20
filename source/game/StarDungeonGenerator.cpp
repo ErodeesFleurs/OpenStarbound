@@ -39,7 +39,6 @@ import star.world_geometry;
 import star.dungeon_generator;
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.configuration;
 import star.root;
 import star.liquids_database;
@@ -121,24 +120,24 @@ namespace Dungeon {
       m_parts.add(part.toString());
   }
 
-  List<std::shared_ptr<Rule const>> Rule::readRules(Json const& rules) {
+  List<std::shared_ptr<Rule const>> Rule::readRules(Root& root, Json const& rules) {
     List<std::shared_ptr<Rule const>> result;
     for (auto const& list : rules.iterateArray()) {
-      Maybe<std::shared_ptr<Rule const>> rule = Rule::parse(list);
+      Maybe<std::shared_ptr<Rule const>> rule = Rule::parse(root, list);
       if (rule.isValid())
         result.push_back(*rule);
     }
     return result;
   }
 
-  List<std::shared_ptr<Brush const>> Brush::readBrushes(Json const& brushes) {
+  List<std::shared_ptr<Brush const>> Brush::readBrushes(Root& root, Json const& brushes) {
     List<std::shared_ptr<Brush const>> result;
     for (auto const& list : brushes.iterateArray())
-      result.push_back(Brush::parse(list));
+      result.push_back(Brush::parse(root, list));
     return result;
   }
 
-  Maybe<std::shared_ptr<Rule const>> Rule::parse(Json const& rule) {
+  Maybe<std::shared_ptr<Rule const>> Rule::parse(Root& root, Json const& rule) {
     String key = rule.getString(0);
     if (key == "worldGenMustContainLiquid")
       return as<Rule>(std::make_shared<const WorldGenMustContainLiquidRule>());
@@ -166,7 +165,7 @@ namespace Dungeon {
     if (key == "doNotCombineWith")
       return as<Rule>(std::make_shared<const DoNotCombineWithRule>(rule));
 
-    Logger::error("Unknown dungeon rule: {}", key);
+    root.logger().error("Unknown dungeon rule: {}", key);
     return Maybe<std::shared_ptr<Rule const>>();
   }
 
@@ -291,7 +290,7 @@ namespace Dungeon {
     return std::make_shared<const ItemBrush>(item);
   }
 
-  std::shared_ptr<Brush const> Brush::parse(Json const& brush) {
+  std::shared_ptr<Brush const> Brush::parse(Root& root, Json const& brush) {
     String key = brush.getString(0);
     if (key == "clear")
       return as<const Brush>(std::make_shared<ClearBrush>());
@@ -309,11 +308,11 @@ namespace Dungeon {
     if (key == "item")
       return parseItemBrush(brush);
     if (key == "npc")
-      return as<Brush>(std::make_shared<NpcBrush>(brush.get(1)));
+      return as<Brush>(std::make_shared<NpcBrush>(root, brush.get(1)));
     if (key == "stagehand")
       return as<Brush>(std::make_shared<StagehandBrush>(brush.get(1)));
     if (key == "random")
-      return as<Brush>(std::make_shared<RandomBrush>(brush));
+      return as<Brush>(std::make_shared<RandomBrush>(root, brush));
     if (key == "surface")
       return parseSurfaceBrush(brush);
     if (key == "surfacebackground")
@@ -327,11 +326,11 @@ namespace Dungeon {
     throw DungeonException::format("Unknown dungeon brush: {}", key);
   }
 
-  RandomBrush::RandomBrush(Json const& brush) {
+  RandomBrush::RandomBrush(Root& root, Json const& brush) {
     JsonArray options = brush.getArray(1);
     for (auto const& option : options)
-      m_brushes.append(Brush::parse(option));
-    m_seed = Random::randi64();
+      m_brushes.append(Brush::parse(root, option));
+    m_seed = root.random().randi64();
   }
 
   void RandomBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
@@ -363,7 +362,7 @@ namespace Dungeon {
     if (phase != Phase::WallPhase)
       return;
 
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = writer->root().materialDatabase();
     MaterialId material = materialDatabase->materialId(m_material);
 
     ModId mod = NoModId;
@@ -390,7 +389,7 @@ namespace Dungeon {
     if (phase != Phase::WallPhase)
       return;
 
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = writer->root().materialDatabase();
     MaterialId material = materialDatabase->materialId(m_material);
 
     ModId mod = NoModId;
@@ -446,11 +445,11 @@ namespace Dungeon {
     writer->addDrop(Vec2F(position), m_item);
   }
 
-  NpcBrush::NpcBrush(Json const& brush) {
+  NpcBrush::NpcBrush(Root& root, Json const& brush) {
     m_npc = brush;
     auto map = m_npc.toObject();
     if (map.value("seed") == Json("stable"))
-      map["seed"] = Random::randu64();
+      map["seed"] = root.random().randu64();
     m_npc = map;
   }
 
@@ -461,7 +460,7 @@ namespace Dungeon {
     if (m_npc.contains("species")) {
       // interpret species as a comma separated list of unquoted strings
       StringList speciesOptions = m_npc.get("species").toString().replace(" ", "").split(",");
-      writer->spawnNpc(Vec2F(position), m_npc.set("species", Random::randFrom(speciesOptions)));
+      writer->spawnNpc(Vec2F(position), m_npc.set("species", writer->root().random().randFrom(speciesOptions)));
     } else {
       writer->spawnNpc(Vec2F(position), m_npc);
     }
@@ -499,7 +498,7 @@ namespace Dungeon {
     }
     if (phase == Phase::ModsPhase) {
       if (m_mod.isValid()) {
-        auto materialDatabase = Root::singleton().materialDatabase();
+        auto materialDatabase = writer->root().materialDatabase();
         writer->setForegroundMod(position, materialDatabase->modId(*m_mod), 0);
       } else {
         if (writer->needsForegroundBiomeMod(position)) {
@@ -520,7 +519,7 @@ namespace Dungeon {
     }
     if (phase == Phase::ModsPhase) {
       if (m_mod.isValid()) {
-        auto materialDatabase = Root::singleton().materialDatabase();
+        auto materialDatabase = writer->root().materialDatabase();
         writer->setBackgroundMod(position, materialDatabase->modId(*m_mod), 0);
       } else {
         if (writer->needsBackgroundBiomeMod(position)) {
@@ -534,7 +533,7 @@ namespace Dungeon {
     : m_liquid(liquidName), m_quantity(quantity), m_source(source) {}
 
   void LiquidBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
-    auto liquidsDatabase = Root::singleton().liquidsDatabase();
+    auto liquidsDatabase = writer->root().liquidsDatabase();
     LiquidId liquidId = liquidsDatabase->liquidId(m_liquid);
     LiquidStore liquid(liquidId, m_quantity, 1.0f, m_source);
     if (phase == Phase::WallPhase) {
@@ -555,11 +554,11 @@ namespace Dungeon {
 
   InvalidBrush::InvalidBrush(Maybe<String> nameHint) : m_nameHint(nameHint) {}
 
-  void InvalidBrush::paint(Vec2I, Phase, DungeonGeneratorWriter*) const {
+  void InvalidBrush::paint(Vec2I, Phase, DungeonGeneratorWriter* writer) const {
     if (m_nameHint)
-      Logger::error("Invalid tile '{}'", *m_nameHint);
+      writer->root().logger().error("Invalid tile '{}'", *m_nameHint);
     else
-      Logger::error("Invalid tile");
+      writer->root().logger().error("Invalid tile");
   }
 
   bool Tile::canPlace(Vec2I position, DungeonGeneratorWriter* writer) const {
@@ -617,21 +616,21 @@ namespace Dungeon {
     return false;
   }
 
-  std::shared_ptr<Part const> parsePart(DungeonDefinition* dungeon, Json const& definition, Maybe<std::shared_ptr<ImageTileset const>> tileset) {
+  std::shared_ptr<Part const> parsePart(Root& root, DungeonDefinition* dungeon, Json const& definition, Maybe<std::shared_ptr<ImageTileset const>> tileset) {
     String kind = definition.get("def").getString(0);
     if (kind == "image") {
       if (tileset.isNothing())
         throw DungeonException("Dungeon parts designed in images require the 'tiles' key in the .dungeon file");
-      return std::make_shared<const Part>(dungeon, definition, std::make_shared<ImagePartReader>(*tileset));
+      return std::make_shared<const Part>(root, dungeon, definition, std::make_shared<ImagePartReader>(root, *tileset));
     } else if (kind == "tmx")
-      return std::make_shared<const Part>(dungeon, definition, std::make_shared<TMXPartReader>());
+      return std::make_shared<const Part>(root, dungeon, definition, std::make_shared<TMXPartReader>(root));
     throw DungeonException::format("Unknown dungeon part kind: {}", kind);
   }
 
-  Part::Part(DungeonDefinition* dungeon, Json const& part, std::shared_ptr<PartReader> reader) {
+  Part::Part(Root& root, DungeonDefinition* dungeon, Json const& part, std::shared_ptr<PartReader> reader) : m_root(root) {
     m_dungeon = dungeon;
     m_name = part.getString("name");
-    m_rules = Rule::readRules(part.get("rules"));
+    m_rules = Rule::readRules(root, part.get("rules"));
     m_chance = part.getFloat("chance", 1);
     if (m_chance <= 0)
       m_chance = 0.0001f;
@@ -753,10 +752,10 @@ namespace Dungeon {
       return true;
 
     bool result = false;
-    m_reader->forEachTile([&result, pos, &places](Vec2I tilePos, Tile const& tile) -> bool {
+    m_reader->forEachTile([this, &result, pos, &places](Vec2I tilePos, Tile const& tile) -> bool {
       if (tile.collidesWithPlaces())
         if (places.contains(pos + tilePos)) {
-          Logger::debug("Tile collided with place at {}", pos + tilePos);
+          this->root().logger().debug("Tile collided with place at {}", pos + tilePos);
           result = true;
           return true;
         }
@@ -803,13 +802,13 @@ namespace Dungeon {
   }
 
   void Part::placePhase(Vec2I pos, Phase phase, Set<Vec2I> const& places, DungeonGeneratorWriter* writer) const {
-    m_reader->forEachTile([&places, pos, phase, writer](Vec2I tilePos, Tile const& tile) -> bool {
+    m_reader->forEachTile([this, &places, pos, phase, writer](Vec2I tilePos, Tile const& tile) -> bool {
       Vec2I position = pos + tilePos;
       if (tile.collidesWithPlaces() || !places.contains(position)) {
         try {
           tile.place(position, phase, writer);
         } catch (std::exception const&) {
-          Logger::error("Error at map position {}:", tilePos);
+          this->root().logger().error("Error at map position {}:", tilePos);
           throw;
         }
       }
@@ -889,7 +888,7 @@ namespace Dungeon {
             d = pickByNeighbours(position);
           if (d == Direction::Unknown)
             d = pickByEdge(position, m_size);
-          Logger::debug("Found connector on {} at {} group {} direction {}", m_name, position, tile.connector->value, (int)d);
+          this->root().logger().debug("Found connector on {} at {} group {} direction {}", m_name, position, tile.connector->value, (int)d);
           m_connections.append(std::make_shared<Connector>(this, tile.connector->value, tile.connector->forwardOnly, d, position));
         }
 
@@ -1011,8 +1010,8 @@ namespace Dungeon {
     return m_offset;
   }
 
-  DungeonGeneratorWriter::DungeonGeneratorWriter(std::shared_ptr<DungeonGeneratorWorldFacade> facade, Maybe<int> terrainMarkingSurfaceLevel, Maybe<int> terrainSurfaceSpaceExtends)
-    : m_facade(facade), m_terrainMarkingSurfaceLevel(terrainMarkingSurfaceLevel), m_terrainSurfaceSpaceExtends(terrainSurfaceSpaceExtends) {
+  DungeonGeneratorWriter::DungeonGeneratorWriter(Root& root, std::shared_ptr<DungeonGeneratorWorldFacade> facade, Maybe<int> terrainMarkingSurfaceLevel, Maybe<int> terrainSurfaceSpaceExtends)
+    : m_root(root), m_facade(facade), m_terrainMarkingSurfaceLevel(terrainMarkingSurfaceLevel), m_terrainSurfaceSpaceExtends(terrainSurfaceSpaceExtends) {
     m_currentBounds.setMin(Vec2I{std::numeric_limits<std::int32_t>::max(), std::numeric_limits<std::int32_t>::max()});
     m_currentBounds.setMax(Vec2I{std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::min()});
   }
@@ -1358,8 +1357,8 @@ namespace Dungeon {
   }
 }
 
-DungeonDefinitions::DungeonDefinitions() : m_paths(), m_cacheMutex(), m_definitionCache(DefinitionsCacheSize) {
-  auto assets = Root::singleton().assets();
+DungeonDefinitions::DungeonDefinitions(Root& root) : m_root(root), m_paths(), m_cacheMutex(), m_definitionCache(DefinitionsCacheSize) {
+  auto assets = this->root().assets();
 
   for (auto& file : assets->scan(".dungeon")) {
     Json dungeon = assets->json(file);
@@ -1382,16 +1381,16 @@ JsonObject DungeonDefinitions::getMetadata(String const& name) const {
   return definition->metadata();
 }
 
-std::shared_ptr<DungeonDefinition> DungeonDefinitions::readDefinition(String const& path) {
+std::shared_ptr<DungeonDefinition> DungeonDefinitions::readDefinition(String const& path) const {
   try {
-    auto assets = Root::singleton().assets();
-    return std::make_shared<DungeonDefinition>(assets->json(path).toObject(), AssetPath::directory(path));
+    auto assets = this->root().assets();
+    return std::make_shared<DungeonDefinition>(this->root(), assets->json(path).toObject(), AssetPath::directory(path));
   } catch (std::exception const& e) {
     throw DungeonException::format("Error loading dungeon '{}': {}", path, outputException(e, false));
   }
 }
 
-DungeonDefinition::DungeonDefinition(JsonObject const& definition, String const& directory) {
+DungeonDefinition::DungeonDefinition(Root& root, JsonObject const& definition, String const& directory) : m_root(root) {
   m_directory = directory;
   m_metadata = definition.get("metadata").toObject();
   m_name = m_metadata.get("name").toString();
@@ -1399,7 +1398,7 @@ DungeonDefinition::DungeonDefinition(JsonObject const& definition, String const&
   m_species = m_metadata.get("species").toString();
   m_isProtected = m_metadata.contains("protected") ? m_metadata.get("protected").toBool() : false;
   if (m_metadata.contains("rules"))
-    m_rules = Dungeon::Rule::readRules(m_metadata.get("rules"));
+    m_rules = Dungeon::Rule::readRules(root, m_metadata.get("rules"));
 
   m_maxRadius = m_metadata.value("maxRadius", 100).toInt();
   m_maxParts = m_metadata.value("maxParts", 100).toInt();
@@ -1407,12 +1406,12 @@ DungeonDefinition::DungeonDefinition(JsonObject const& definition, String const&
 
   m_anchors = jsonToStringList(m_metadata.get("anchor"));
 
-  auto tileset = definition.maybe("tiles").apply([](Json const& tileset) {
-      return std::make_shared<const Dungeon::ImageTileset>(tileset);
+  auto tileset = definition.maybe("tiles").apply([&root](Json const& tileset) {
+      return std::make_shared<const Dungeon::ImageTileset>(root, tileset);
     });
 
   for (auto const& partsDefMap : definition.get("parts").iterateArray()) {
-    std::shared_ptr<Dungeon::Part const> part = parsePart(this, partsDefMap, tileset);
+    std::shared_ptr<Dungeon::Part const> part = parsePart(root, this, partsDefMap, tileset);
     if (m_parts.contains(part->name()))
       throw DungeonException::format("Duplicate dungeon part name: {}", part->name());
     m_parts.insert(part->name(), part);
@@ -1477,30 +1476,30 @@ int DungeonDefinition::extendSurfaceFreeSpace() const {
   return m_extendSurfaceFreeSpace;
 }
 
-DungeonGenerator::DungeonGenerator(String const& dungeonName, std::uint64_t seed, float threatLevel, Maybe<DungeonId> dungeonId)
-  : m_rand(seed), m_threatLevel(threatLevel), m_dungeonId(dungeonId) {
-  m_def = Root::singleton().dungeonDefinitions()->get(dungeonName);
+DungeonGenerator::DungeonGenerator(Root& root, String const& dungeonName, std::uint64_t seed, float threatLevel, Maybe<DungeonId> dungeonId)
+  : m_root(root), m_rand(seed), m_threatLevel(threatLevel), m_dungeonId(dungeonId) {
+  m_def = this->root().dungeonDefinitions()->get(dungeonName);
 }
 
 Maybe<std::pair<List<RectI>, Set<Vec2I>>> DungeonGenerator::generate(std::shared_ptr<DungeonGeneratorWorldFacade> facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement) {
   String name = m_def->name();
   try {
-    Dungeon::DungeonGeneratorWriter writer(facade, markSurfaceAndTerrain ? position[1] : Maybe<int>(), m_def->extendSurfaceFreeSpace());
+    Dungeon::DungeonGeneratorWriter writer(this->root(), facade, markSurfaceAndTerrain ? position[1] : Maybe<int>(), m_def->extendSurfaceFreeSpace());
 
-    Logger::debug(forcePlacement ? "Forcing generation of dungeon {}" : "Generating dungeon {}", name);
+    this->root().logger().debug(forcePlacement ? "Forcing generation of dungeon {}" : "Generating dungeon {}", name);
 
     std::shared_ptr<Dungeon::Part const> anchor = pickAnchor();
     if (!anchor) {
-      Logger::error("No valid anchor piece found for dungeon {} at {}", name, position);
+      this->root().logger().error("No valid anchor piece found for dungeon {} at {}", name, position);
       return {};
     }
 
     auto pos = position + Vec2I(0, -anchor->placementLevelConstraint());
     if (forcePlacement || anchor->canPlace(pos, &writer)) {
-      Logger::info("Placing dungeon {} at {}", name, position);
+      this->root().logger().info("Placing dungeon {} at {}", name, position);
       return buildDungeon(anchor, pos, &writer, forcePlacement);
     } else {
-      Logger::debug("Failed to place dungeon {} at {}", name, position);
+      this->root().logger().debug("Failed to place dungeon {} at {}", name, position);
       return {};
     }
   } catch (std::exception const& e) {
@@ -1517,7 +1516,7 @@ std::pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(std::shared_pt
   Set<Vec2I> preserveTiles;
   int piecesPlaced = 0;
 
-  Logger::debug("Placing dungeon entrance at {}", basePos);
+  this->root().logger().debug("Placing dungeon entrance at {}", basePos);
 
   auto placePart = [&](Dungeon::Part const* part, Vec2I const& placePos) {
       Set<Vec2I> clearTileEntityPositions;
@@ -1550,7 +1549,7 @@ std::pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(std::shared_pt
       placementCounter[part->name()]++;
       piecesPlaced++;
 
-      Logger::debug("placed {}", part->name());
+      this->root().logger().debug("placed {}", part->name());
     };
 
   placePart(anchor.get(), basePos);
@@ -1562,7 +1561,7 @@ std::pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(std::shared_pt
     Dungeon::Part const* parentPart = openSet.first().first;
     Vec2I parentPos = openSet.first().second;
     openSet.takeFirst();
-    Logger::debug("Trying to add part {} at {} connectors: {}", parentPart->name(), parentPos, parentPart->connections().size());
+    this->root().logger().debug("Trying to add part {} at {} connectors: {}", parentPart->name(), parentPos, parentPart->connections().size());
     for (std::size_t i = 0; i < parentPart->connections().size(); i++) {
       auto connector = parentPart->connections()[i];
       Vec2I connectorPos = parentPos + connector->offset();
@@ -1571,7 +1570,7 @@ std::pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(std::shared_pt
       List<std::shared_ptr<Dungeon::Connector const>> options = findConnectablePart(connector);
       while (options.size()) {
         std::shared_ptr<Dungeon::Connector const> option = chooseOption(options, m_rand);
-        Logger::debug("Trying part {}", option->part()->name());
+        this->root().logger().debug("Trying part {}", option->part()->name());
         Vec2I partPos = connectorPos - option->offset() + option->positionAdjustment();
         Vec2I optionPos = connectorPos + option->positionAdjustment();
         if (!option->part()->ignoresPartMaximum()) {
@@ -1579,28 +1578,28 @@ std::pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(std::shared_pt
             continue;
 
           if ((partPos - origin).magnitude() > m_def->maxRadius()) {
-            Logger::debug("out of range. {} ... {}", partPos, origin);
+            this->root().logger().debug("out of range. {} ... {}", partPos, origin);
             continue;
           }
         }
         if (!option->part()->allowsPlacement(placementCounter[option->part()->name()])) {
-          Logger::debug("part failed in allowsPlacement");
+          this->root().logger().debug("part failed in allowsPlacement");
           continue;
         }
         if (!option->part()->checkPartCombinationsAllowed(placementCounter)) {
-          Logger::debug("part failed in checkPartCombinationsAllowed");
+          this->root().logger().debug("part failed in checkPartCombinationsAllowed");
           continue;
         }
         if (option->part()->collidesWithPlaces(partPos, preserveTiles)) {
-          Logger::debug("part failed in collidesWithPlaces");
+          this->root().logger().debug("part failed in collidesWithPlaces");
           continue;
         }
         if (option->part()->minimumThreatLevel() && m_threatLevel < *option->part()->minimumThreatLevel()) {
-          Logger::debug("part failed in minimumThreatLevel");
+          this->root().logger().debug("part failed in minimumThreatLevel");
           continue;
         }
         if (option->part()->maximumThreatLevel() && m_threatLevel > *option->part()->maximumThreatLevel()) {
-          Logger::debug("part failed in maximumThreatLevel");
+          this->root().logger().debug("part failed in maximumThreatLevel");
           continue;
         }
         if (forcePlacement || option->part()->canPlace(partPos, writer)) {
@@ -1609,14 +1608,14 @@ std::pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(std::shared_pt
           closedConnectors.add(optionPos);
           break;
         } else {
-          Logger::debug("part failed in canPlace");
+          this->root().logger().debug("part failed in canPlace");
         }
       }
     }
   }
-  Logger::debug("Settling dungeon water.");
+  this->root().logger().debug("Settling dungeon water.");
   writer->flushLiquid();
-  Logger::debug("Flushing dungeon into the worldgen.");
+  this->root().logger().debug("Flushing dungeon into the worldgen.");
   writer->flush();
 
   return {writer->boundingBoxes(), modifiedTiles};

@@ -23,7 +23,7 @@ import star.version;
 
 import star.asset_source;
 import star.assets;
-import star.root_base;
+
 import star.configuration;
 import star.root;
 
@@ -33,8 +33,8 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-WorldClientState::WorldClientState() {
-  auto clientConfig = Root::singleton().assets()->json("/client.config");
+WorldClientState::WorldClientState(Root& root) {
+  auto clientConfig = root.assets()->json("/client.config");
 
   m_windowMonitoringBorder = clientConfig.getInt("windowMonitoringBorder");
   m_presenceEntityMonitoringBorder = clientConfig.getInt("presenceEntityMonitoringBorder");

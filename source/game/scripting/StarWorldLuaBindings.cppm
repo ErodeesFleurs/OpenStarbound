@@ -3,9 +3,11 @@ module;
 namespace Star {
 class LuaCallbacks;
 class World;
+class Root;
 namespace LuaBindings {
-  LuaCallbacks makeWorldThreadCallbacks(World* world);
-  LuaCallbacks makeWorldCallbacks(World* world);
+  // Borrows the script domain's root and world; both must outlive the callbacks.
+  LuaCallbacks makeWorldThreadCallbacks(Root& root, World* world);
+  LuaCallbacks makeWorldCallbacks(Root& root, World* world);
 }
 }
 

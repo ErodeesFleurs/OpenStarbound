@@ -22,6 +22,10 @@ import star.set;
 
 namespace Star {
 class Image;
+class Root;
+class Input;
+class Voice;
+class TileDrawer;
 struct Drawable;
 struct TextStyle;
 struct TextPositioning;
@@ -47,16 +51,16 @@ using GuiContextException = StarError<GuiContextExceptionTag, StarException>;
 
 class GuiContext {
 public:
-  // Get pointer to the singleton root instance, if it exists.  Otherwise,
-  // returns nullptr.
-  static GuiContext* singletonPtr();
-
-  // Gets reference to GuiContext singleton, throws GuiContextException if root
-  // is not initialized.
-  static GuiContext& singleton();
-
-  GuiContext(std::shared_ptr<Mixer> mixer, std::shared_ptr<ApplicationController> appController);
+  GuiContext(Root& root, std::shared_ptr<Mixer> mixer, std::shared_ptr<ApplicationController> appController);
   ~GuiContext();
+
+  Root& root() const;
+  void bindInput(Input& input);
+  Input& input() const;
+  void bindVoice(Voice& voice);
+  Voice& voice() const;
+  void setTileDrawer(TileDrawer* tileDrawer);
+  TileDrawer* tileDrawer() const;
 
   GuiContext(GuiContext const&) = delete;
   GuiContext& operator=(GuiContext const&) = delete;
@@ -164,7 +168,10 @@ public:
   void cleanup();
 
 private:
-  static GuiContext* s_singleton;
+  Root& m_root;
+  Input* m_input = nullptr;
+  Voice* m_voice = nullptr;
+  TileDrawer* m_tileDrawer = nullptr;
 
   std::shared_ptr<Mixer> m_mixer;
   std::shared_ptr<ApplicationController> m_applicationController;

@@ -17,6 +17,7 @@ constexpr int FontLoadFlags = FT_LOAD_NO_SVG | FT_LOAD_COLOR;
 
 struct FTContext {
   FT_Library library;
+  std::mutex mutex;
 
   FTContext() {
     library = nullptr;
@@ -32,33 +33,45 @@ struct FTContext {
   }
 };
 
-FTContext ftContext;
+FontLibrary::FontLibrary() : m_context(std::make_shared<FTContext>()) {}
+FontLibrary::~FontLibrary() = default;
 
 struct FontImpl {
-  FT_Face face;
+  std::shared_ptr<FTContext> context;
+  FT_Face face = nullptr;
+
+  ~FontImpl() {
+    if (face) {
+      std::lock_guard lock(context->mutex);
+      FT_Done_Face(face);
+    }
+  }
 };
 
-std::shared_ptr<Font> Font::loadFont(String const& fileName, unsigned pixelSize) {
-  return loadFont(std::make_shared<ByteArray>(File::readFile(fileName)), pixelSize);
+std::shared_ptr<Font> Font::loadFont(FontLibrary const& library, String const& fileName, unsigned pixelSize) {
+  return loadFont(library, std::make_shared<ByteArray>(File::readFile(fileName)), pixelSize);
 }
 
-std::shared_ptr<Font> Font::loadFont(std::shared_ptr<ByteArray const> const& bytes, unsigned pixelSize) {
-  std::shared_ptr<Font> font = std::make_shared<Font>();
+std::shared_ptr<Font> Font::loadFont(FontLibrary const& library, std::shared_ptr<ByteArray const> const& bytes, unsigned pixelSize) {
+  std::shared_ptr<Font> font = std::make_shared<Font>(library);
   font->m_fontBuffer = bytes;
   font->setPixelSize(pixelSize);
 
   return font;
 }
 
-Font::Font() : m_pixelSize(0), m_alphaThreshold(0) {}
+Font::Font(FontLibrary const& library) : Font(library.m_context) {}
 
-Font::~Font() {
-  if (m_fontImpl)
-    FT_Done_Face(m_fontImpl->face);
-}
+Font::Font(std::shared_ptr<FTContext> context)
+  : m_context(std::move(context)), m_pixelSize(0), m_alphaThreshold(0) {}
+
+Font::~Font() = default;
 
 std::shared_ptr<Font> Font::clone() const {
-  return Font::loadFont(m_fontBuffer, m_pixelSize);
+  std::shared_ptr<Font> font(new Font(m_context));
+  font->m_fontBuffer = m_fontBuffer;
+  font->setPixelSize(m_pixelSize);
+  return font;
 }
 
 void Font::setPixelSize(unsigned pixelSize) {
@@ -68,7 +81,8 @@ void Font::setPixelSize(unsigned pixelSize) {
   if (m_pixelSize == pixelSize)
     return;
 
-  if (m_fontImpl && FT_Set_Pixel_Sizes(m_fontImpl->face, m_pixelSize = pixelSize, 0))
+  m_pixelSize = pixelSize;
+  if (m_fontImpl && FT_Set_Pixel_Sizes(m_fontImpl->face, m_pixelSize, 0))
     throw FontException(strf("Cannot set font pixel size to: {}", m_pixelSize));
 }
 
@@ -98,8 +112,12 @@ void Font::loadFontImpl() {
       throw FontException("Font buffer is null or empty");
 
     std::shared_ptr<FontImpl> fontImpl = std::make_shared<FontImpl>();
-    if (FT_New_Memory_Face(ftContext.library, (FT_Byte const*)m_fontBuffer->ptr(), m_fontBuffer->size(), 0, &fontImpl->face))
-      throw FontException::format("Could not load font from buffer");
+    fontImpl->context = m_context;
+    {
+      std::lock_guard lock(m_context->mutex);
+      if (FT_New_Memory_Face(m_context->library, (FT_Byte const*)m_fontBuffer->ptr(), m_fontBuffer->size(), 0, &fontImpl->face))
+        throw FontException::format("Could not load font from buffer");
+    }
 
     if (FT_Set_Pixel_Sizes(fontImpl->face, m_pixelSize, 0))
       throw FontException::format("Cannot set font pixel size to: {}", m_pixelSize);

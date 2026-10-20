@@ -123,7 +123,8 @@ Json FramesSpecification::toJson() const {
   };
 }
 
-Assets::Assets(Settings settings, StringList assetSources) {
+Assets::Assets(Logger& logger, RandomService& random, LogMap& logMap, Settings settings, StringList assetSources)
+  : m_logger(logger) {
   const char* AssetsPatchSuffix = ".patch";
   const char* AssetsPatchListSuffix = ".patchlist";
   const char* AssetsLuaPatchSuffix = ".patch.lua";
@@ -132,6 +133,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
   m_assetSources = std::move(assetSources);
 
   auto luaEngine = LuaEngine::create();
+  luaEngine->setImageResolver([this](String const& path) { return image(path); });
   m_luaEngine = luaEngine;
   auto pushGlobalContext = [&luaEngine](String const& name, LuaCallbacks && callbacks) {
     auto table = luaEngine->createTable();
@@ -198,7 +200,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
     return callbacks;
   };
 
-  pushGlobalContext("sb", LuaBindings::makeUtilityCallbacks());
+  pushGlobalContext("sb", LuaBindings::makeUtilityCallbacks(random, logger, logMap));
   pushGlobalContext("assets", makeBaseAssetCallbacks());
 
   auto decorateLuaContext = [&](LuaContext& context, std::shared_ptr<MemoryAssetSource> newFiles) {
@@ -330,7 +332,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
         JsonObject memoryMetadata{ {"name", memoryName} };
         auto memoryAssets = std::make_shared<MemoryAssetSource>(memoryName, memoryMetadata);
         auto now = Time::monotonicTime();
-        Logger::info("Running {} scripts {}", groupName, *scriptGroup);
+        m_logger.info("Running {} scripts {}", groupName, *scriptGroup);
         try {
           auto context = luaEngine->createContext();
           decorateLuaContext(context, memoryAssets);
@@ -340,9 +342,9 @@ Assets::Assets(Settings settings, StringList assetSources) {
             context.load(script, path);
           }
         } catch (LuaException const& e) {
-          Logger::error("Exception while running {} scripts from asset source '{}': {}", groupName, sourcePath, e.what());
+          m_logger.error("Exception while running {} scripts from asset source '{}': {}", groupName, sourcePath, e.what());
         }
-        Logger::info("Took {} seconds to run {} scripts {}", Time::monotonicTime() - now, groupName, *scriptGroup);
+        m_logger.info("Took {} seconds to run {} scripts {}", Time::monotonicTime() - now, groupName, *scriptGroup);
         if (!memoryAssets->empty())
           addSource(strf("{}::{}", sourcePath, groupName), memoryAssets);
       }
@@ -355,10 +357,10 @@ Assets::Assets(Settings settings, StringList assetSources) {
   List<std::pair<String, std::shared_ptr<AssetSource>>> sources;
 
   for (auto& sourcePath : m_assetSources) {
-    Logger::info("Loading assets from: '{}'", sourcePath);
+    m_logger.info("Loading assets from: '{}'", sourcePath);
     std::shared_ptr<AssetSource> source;
     if (File::isDirectory(sourcePath))
-      source = std::make_shared<DirectoryAssetSource>(sourcePath, m_settings.pathIgnore);
+      source = std::make_shared<DirectoryAssetSource>(m_logger, sourcePath, m_settings.pathIgnore);
     else
       source = std::make_shared<PackedAssetSource>(sourcePath);
 
@@ -405,7 +407,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
 
     // preload.config contains files which will be loaded and then told to persist.
     Json preload = json("/preload.config");
-    Logger::info("Preloading assets");
+    m_logger.info("Preloading assets");
     for (auto script : preload.iterateArray()) {
       auto type = AssetTypeNames.getLeft(script.getString("type"));
       auto path = script.getString("path");
@@ -428,9 +430,9 @@ Assets::~Assets() {
     try {
       std::rethrow_exception(error);
     } catch (std::exception const& e) {
-      Logger::error("Asset worker failed during shutdown: {}", e.what());
+      m_logger.error("Asset worker failed during shutdown: {}", e.what());
     } catch (...) {
-      Logger::error("Asset worker failed during shutdown with an unknown exception");
+      m_logger.error("Asset worker failed during shutdown with an unknown exception");
     }
   }
 }
@@ -1034,7 +1036,7 @@ std::shared_ptr<Image const> Assets::readImage(String const& path) const {
     if (auto memorySource = as<MemoryAssetSource>(p->source))
       image = memorySource->image(p->sourceName);
     if (!image)
-      image = std::make_shared<Image>(Image::readPng(p->source->open(p->sourceName)));
+      image = std::make_shared<Image>(Image::readPng(m_logger, p->source->open(p->sourceName)));
 
     if (!p->patchSources.empty()) {
       return applyImagePatches(image, path, p->patchSources);
@@ -1067,14 +1069,14 @@ std::shared_ptr<Image const> Assets::applyImagePatches(std::shared_ptr<Image con
           if (ud->is<Image>())
             result = std::move(newResult);
           else
-            Logger::warn("Patch '{}' for image '{}' returned a non-Image userdata value, ignoring", patchPath, path);
+            m_logger.warn("Patch '{}' for image '{}' returned a non-Image userdata value, ignoring", patchPath, path);
         } else {
-          Logger::warn("Patch '{}' for image '{}' returned a non-Image value, ignoring", patchPath, path);
+          m_logger.warn("Patch '{}' for image '{}' returned a non-Image value, ignoring", patchPath, path);
         }
       }
       luaLocker.unlock();
     } else {
-      Logger::warn("Patch '{}' for image '{}' isn't a Lua script, ignoring", patchPath, path);
+      m_logger.warn("Patch '{}' for image '{}' isn't a Lua script, ignoring", patchPath, path);
     }
   }
   return std::make_shared<Image>(std::move(result.get<LuaUserData>().get<Image>()));
@@ -1089,9 +1091,9 @@ Json Assets::checkPatchArray(String const& path, std::shared_ptr<AssetSource> co
         try {
           newResult = checkPatchArray(path, source, newResult, patch.toArray(), externalRef);
         } catch (JsonPatchTestFail const& e) {
-          Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", path, source->metadata().value("name", ""), m_assetSourcePaths.getLeft(source), e.what());
+          m_logger.debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", path, source->metadata().value("name", ""), m_assetSourcePaths.getLeft(source), e.what());
         } catch (JsonPatchException const& e) {
-          Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", path, source->metadata().value("name", ""), m_assetSourcePaths.getLeft(source), e.what());
+          m_logger.error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", path, source->metadata().value("name", ""), m_assetSourcePaths.getLeft(source), e.what());
         }
         break;
       case Json::Type::Object: // if its an object, check for operations, or for if an external file is needed for patches to reference
@@ -1150,9 +1152,9 @@ Json Assets::applyJsonPatches(Json const& input, String const& path, List<std::p
           try {
             result = checkPatchArray(pair.first, patchSource, result, patchData, {});
           } catch (JsonPatchTestFail const& e) {
-            Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+            m_logger.debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
           } catch (JsonPatchException const& e) {
-            Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+            m_logger.error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
           }
         } else if (patchJson.isType(Json::Type::Object)) {
           result = jsonMergeNulling(result, patchJson.toObject());
@@ -1171,9 +1173,9 @@ bool Assets::doLoad(AssetId const& id) const {
     // data.
     return (bool)loadAsset(id);
   } catch (std::exception const& e) {
-    Logger::error("Exception caught loading asset: {}, {}", id.path, outputException(e, true));
+    m_logger.error("Exception caught loading asset: {}, {}", id.path, outputException(e, true));
   } catch (...) {
-    Logger::error("Unknown exception caught loading asset: {}", id.path);
+    m_logger.error("Unknown exception caught loading asset: {}", id.path);
   }
 
   // There was an exception, remove the asset from the queue and fill the cache
@@ -1191,9 +1193,9 @@ bool Assets::doPost(AssetId const& id) const {
     if (id.type == AssetType::Audio)
       assetData = postProcessAudio(assetData);
   } catch (std::exception const& e) {
-    Logger::error("Exception caught post-processing asset: {}, {}", id.path, outputException(e, true));
+    m_logger.error("Exception caught post-processing asset: {}, {}", id.path, outputException(e, true));
   } catch (...) {
-    Logger::error("Unknown exception caught post-processing asset: {}", id.path);
+    m_logger.error("Unknown exception caught post-processing asset: {}", id.path);
   }
 
   m_queue.remove(id);
@@ -1233,10 +1235,10 @@ std::shared_ptr<Assets::AssetData> Assets::loadAsset(AssetId const& id) const {
 
     } catch (StarException const& e) {
       if (id.type == AssetType::Image && m_settings.missingImage) {
-        Logger::error("Could not load image asset '{}', using placeholder default.\n{}", id.path, outputException(e, false));
+        m_logger.error("Could not load image asset '{}', using placeholder default.\n{}", id.path, outputException(e, false));
         assetData = loadImage({*m_settings.missingImage, {}, {}});
       } else if (id.type == AssetType::Audio && m_settings.missingAudio) {
-        Logger::error("Could not load audio asset '{}', using placeholder default.\n{}", id.path, outputException(e, false));
+        m_logger.error("Could not load audio asset '{}', using placeholder default.\n{}", id.path, outputException(e, false));
         assetData = loadAudio({*m_settings.missingAudio, {}, {}});
       } else {
         throw;
@@ -1391,7 +1393,7 @@ std::shared_ptr<Assets::AssetData> Assets::loadAudio(AssetPath const& path) cons
 std::shared_ptr<Assets::AssetData> Assets::loadFont(AssetPath const& path) const {
   return unlockDuring([&]() {
     auto newData = std::make_shared<FontData>();
-    newData->font = Font::loadFont(std::make_shared<ByteArray>(read(path.basePath)));
+    newData->font = Font::loadFont(m_fontLibrary, std::make_shared<ByteArray>(read(path.basePath)));
     return newData;
   });
 }

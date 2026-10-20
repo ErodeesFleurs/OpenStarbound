@@ -27,7 +27,6 @@ import star.animation;
 import star.particle;
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.configuration;
 import star.root;
 import star.weather_types;
@@ -41,17 +40,17 @@ WeatherType::WeatherType() {
   maximumWind = 0;
 }
 
-WeatherType::WeatherType(Json config, String path) {
+WeatherType::WeatherType(Root& root, Json config, String path) {
   if (config.isType(Json::Type::String)) {
     path = config.toString();
-    config = Root::singleton().assets()->json(path);
+    config = root.assets()->json(path);
   }
 
   name = config.getString("name");
 
   for (auto v : config.getArray("particles", JsonArray())) {
     ParticleConfig config;
-    config.particle = Particle(v.get("particle"), path);
+    config.particle = Particle(root, v.get("particle"), path);
     config.density = v.getFloat("density");
     config.autoRotate = v.getBool("autoRotate", false);
     particles.append(std::move(config));

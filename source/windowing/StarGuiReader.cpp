@@ -60,7 +60,7 @@ import star.pane;
 
 namespace Star {
 
-GuiReader::GuiReader() {
+GuiReader::GuiReader(GuiContext& context) : WidgetParser(context) {
   m_constructors["background"] = [this](
       String const& name, Json const& config) { return backgroundHandler(name, config); };
   m_constructors["button"] = [this](String const& name, Json const& config) { return buttonHandler(name, config); };

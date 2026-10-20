@@ -45,9 +45,11 @@ import star.world;
 
 namespace Star {
 
+class Root;
+
 class Companion {
 public:
-  Companion(Json const& json);
+  Companion(Root& root, Json const& json);
   Json toJson() const;
 
   Uuid podUuid() const;
@@ -68,7 +70,7 @@ private:
 
 class PlayerCompanions {
 public:
-  PlayerCompanions(Json const& config);
+  PlayerCompanions(Root& root, Json const& config);
 
   void diskLoad(Json const& diskStore);
   Json diskStore() const;
@@ -84,6 +86,7 @@ public:
   void update(float dt);
 
 private:
+  Root& m_root;
   LuaCallbacks makeCompanionsCallbacks();
 
   World* m_world;

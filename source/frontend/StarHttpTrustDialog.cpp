@@ -66,16 +66,16 @@ module star.http_trust_dialog;
 
 namespace Star {
 
-HttpTrustDialog::HttpTrustDialog() : m_confirmed(false) {}
+HttpTrustDialog::HttpTrustDialog(GuiContext& guiContext) : Pane(guiContext), m_confirmed(false) {}
 
 HttpTrustDialog::~HttpTrustDialog() = default;
 
 void HttpTrustDialog::displayRequest(String const& domain, std::function<void(HttpTrustReply, bool)> callback) {
-  const auto assets = Root::singleton().assets();
+  const auto assets = context()->root().assets();
 
   removeAllChildren();
 
-  GuiReader reader;
+  GuiReader reader(*context());
 
   m_domain = domain;
   m_callback = std::move(callback);
@@ -111,7 +111,7 @@ void HttpTrustDialog::reply(const HttpTrustReply replyType) {
 
   // If allowing and remember is checked, add to trusted list
   if (replyType == HttpTrustReply::Allow && remember) {
-    auto& root = Root::singleton();
+    auto& root = context()->root();
     const auto config = root.configuration();
 
     JsonArray trustedSites;

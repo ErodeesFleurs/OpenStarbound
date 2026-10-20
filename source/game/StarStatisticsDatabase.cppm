@@ -9,6 +9,9 @@ import star.lru_cache;
 
 namespace Star {
 
+class Assets;
+class Root;
+
 struct StatEvent {
   String eventName;
   StringList scripts;
@@ -24,7 +27,7 @@ struct Achievement {
 
 class StatisticsDatabase {
 public:
-  StatisticsDatabase();
+  explicit StatisticsDatabase(Root& root);
 
   std::shared_ptr<StatEvent> event(String const& eventName) const;
 
@@ -33,9 +36,10 @@ public:
   StringList achievementsForStat(String const& statName) const;
 
 private:
-  static std::shared_ptr<StatEvent> readEvent(String const& path);
-  static std::shared_ptr<Achievement> readAchievement(String const& path);
+  static std::shared_ptr<StatEvent> readEvent(Assets const& assets, String const& path);
+  static std::shared_ptr<Achievement> readAchievement(Assets const& assets, String const& path);
 
+  Root& m_root;
   StringMap<String> m_eventPaths;
   StringMap<String> m_achievementPaths;
   StringMap<StringList> m_statAchievements;

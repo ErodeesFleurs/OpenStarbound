@@ -138,23 +138,23 @@ import star.object_database;
 
 export namespace Star {
 namespace ItemTooltipBuilder {
-  std::shared_ptr<Pane> buildItemTooltip(std::shared_ptr<Item> const& item, std::shared_ptr<Player> const& viewer = {});
+  std::shared_ptr<Pane> buildItemTooltip(GuiContext& context, std::shared_ptr<Item> const& item, std::shared_ptr<Player> const& viewer = {});
 
-  void buildItemDescription(std::shared_ptr<Widget> const& container, std::shared_ptr<Item> const& item);
+  void buildItemDescription(GuiContext& context, std::shared_ptr<Widget> const& container, std::shared_ptr<Item> const& item);
   void buildItemDescriptionInner(
-      std::shared_ptr<Widget> const& container, std::shared_ptr<Item> const& item, String const& tooltipKind, String& title, String& subtitle, std::shared_ptr<Player> const& viewer = {});
+      GuiContext& context, std::shared_ptr<Widget> const& container, std::shared_ptr<Item> const& item, String const& tooltipKind, String& title, String& subtitle, std::shared_ptr<Player> const& viewer = {});
 
-  void describePersistentEffect(std::shared_ptr<ListWidget> const& container, PersistentStatusEffect const& effect);
+  void describePersistentEffect(GuiContext& context, std::shared_ptr<ListWidget> const& container, PersistentStatusEffect const& effect);
 };
 }
 
 namespace Star {
 
-std::shared_ptr<Pane> ItemTooltipBuilder::buildItemTooltip(std::shared_ptr<Item> const& item, std::shared_ptr<Player> const& viewer) {
+std::shared_ptr<Pane> ItemTooltipBuilder::buildItemTooltip(GuiContext& context, std::shared_ptr<Item> const& item, std::shared_ptr<Player> const& viewer) {
   if (!item) {
     return {};
   } else {
-    std::shared_ptr<Pane> tooltip = std::make_shared<Pane>();
+    std::shared_ptr<Pane> tooltip = std::make_shared<Pane>(context);
     tooltip->removeAllChildren();
 
     String title;
@@ -167,9 +167,9 @@ std::shared_ptr<Pane> ItemTooltipBuilder::buildItemTooltip(std::shared_ptr<Item>
     if (!tooltipKind.endsWith(".tooltip"))
       tooltipKind = "/interface/tooltips/" + tooltipKind + ".tooltip";
 
-    buildItemDescriptionInner(tooltip, item, tooltipKind, title, subTitle, viewer);
+    buildItemDescriptionInner(context, tooltip, item, tooltipKind, title, subTitle, viewer);
 
-    auto titleIcon = std::make_shared<ItemSlotWidget>(item, "/interface/inventory/portrait.png");
+    auto titleIcon = std::make_shared<ItemSlotWidget>(context, item, "/interface/inventory/portrait.png");
     titleIcon->setBackingImageAffinity(true, true);
     titleIcon->showRarity(false);
     tooltip->setTitle(titleIcon, title, subTitle);
@@ -178,7 +178,7 @@ std::shared_ptr<Pane> ItemTooltipBuilder::buildItemTooltip(std::shared_ptr<Item>
   }
 }
 
-void ItemTooltipBuilder::buildItemDescription(std::shared_ptr<Widget> const& container, std::shared_ptr<Item> const& item) {
+void ItemTooltipBuilder::buildItemDescription(GuiContext& context, std::shared_ptr<Widget> const& container, std::shared_ptr<Item> const& item) {
   String tooltipKind = item->tooltipKind();
 
   if (tooltipKind.empty())
@@ -188,21 +188,21 @@ void ItemTooltipBuilder::buildItemDescription(std::shared_ptr<Widget> const& con
 
   String title;
   String subTitle;
-  buildItemDescriptionInner(container, item, tooltipKind, title, subTitle);
+  buildItemDescriptionInner(context, container, item, tooltipKind, title, subTitle);
 }
 
-String categoryDisplayName(String const& category) {
-  Json categories = Root::singleton().assets()->json("/items/categories.config:labels");
+String categoryDisplayName(GuiContext& context, String const& category) {
+  Json categories = context.root().assets()->json("/items/categories.config:labels");
   return categories.getString(category, category);
 }
 
 void ItemTooltipBuilder::buildItemDescriptionInner(
-    std::shared_ptr<Widget> const& container, std::shared_ptr<Item> const& item, String const& tooltipKind, String& title, String& subTitle, std::shared_ptr<Player> const& viewer) {
-  GuiReader reader;
-  auto& root = Root::singleton();
+    GuiContext& context, std::shared_ptr<Widget> const& container, std::shared_ptr<Item> const& item, String const& tooltipKind, String& title, String& subTitle, std::shared_ptr<Player> const& viewer) {
+  GuiReader reader(context);
+  auto& root = context.root();
   auto assets = root.assets();
   title = item->friendlyName();
-  subTitle = categoryDisplayName(item->category());
+  subTitle = categoryDisplayName(context, item->category());
   String description = item->description();
 
   reader.construct(assets->json(tooltipKind), container.get());
@@ -225,7 +225,7 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
 
   if (auto objectItem = as<ObjectItem>(item)) {
     try {
-      auto object = Root::singleton().objectDatabase()->createObject(objectItem->objectName(), objectItem->objectParameters());
+      auto object = context.root().objectDatabase()->createObject(objectItem->objectName(), objectItem->objectParameters());
 
       if (container->containsChild("objectImage")) {
         auto drawables = object->cursorHintDrawables();
@@ -236,10 +236,10 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
         container->setLabel("slotCountLabel", strf("Holds {} Items", objectItem->instanceValue("slotCount")));
 
       title = object->shortDescription();
-      subTitle = categoryDisplayName(object->category());
+      subTitle = categoryDisplayName(context, object->category());
       description = object->description();
     } catch (StarException const& e) {
-      Logger::error("Failed to instantiate object for object item tooltip. {}", outputException(e, false));
+      context.root().logger().error("Failed to instantiate object for object item tooltip. {}", outputException(e, false));
     }
   } else {
     if (container->containsChild("objectImage")) {
@@ -250,9 +250,9 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
           std::shared_ptr<Player> armorViewer;
           if (assets->json("/interface.config:tooltip.previewArmorWith").toString() == "player")
             armorViewer = viewer;
-          objectImage->setDrawables(previewable->preview(armorViewer));
+          objectImage->setDrawables(previewable->preview(context.tileDrawer(), armorViewer));
         } else {
-          objectImage->setDrawables(previewable->preview(viewer));
+          objectImage->setDrawables(previewable->preview(context.tileDrawer(), viewer));
         }
       } else {
         auto drawables = item->iconDrawables();
@@ -271,7 +271,7 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
       if (pair.second.isType(Json::Type::String))
         container->fetchChild<ImageWidget>(pair.first)->setImage(pair.second.toString());
       else
-        container->fetchChild<ImageWidget>(pair.first)->setDrawables(pair.second.toArray().transformed(construct<Drawable>()));
+        container->fetchChild<ImageWidget>(pair.first)->setDrawables(pair.second.toArray().transformed([&context](Json const& drawable) { return Drawable(*context.root().imageMetadataDatabase(), drawable); }));
     }
   }
 
@@ -292,7 +292,7 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
     auto statusList = container->fetchChild<ListWidget>("statusList");
     if (auto statusEffects = as<StatusEffectItem>(item)) {
       for (auto effect : statusEffects->statusEffects())
-        describePersistentEffect(statusList, effect);
+        describePersistentEffect(context, statusList, effect);
     }
   }
 
@@ -321,9 +321,9 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
 }
 
 void ItemTooltipBuilder::describePersistentEffect(
-    std::shared_ptr<ListWidget> const& container, PersistentStatusEffect const& effect) {
+    GuiContext& context, std::shared_ptr<ListWidget> const& container, PersistentStatusEffect const& effect) {
   if (auto uniqueStatusEffect = effect.ptr<UniqueStatusEffect>()) {
-    auto statusEffectDatabase = Root::singleton().statusEffectDatabase();
+    auto statusEffectDatabase = context.root().statusEffectDatabase();
     auto effectConfig = statusEffectDatabase->uniqueEffectConfig(*uniqueStatusEffect);
     if (effectConfig.icon) {
       auto listItem = container->addItem();
@@ -331,7 +331,7 @@ void ItemTooltipBuilder::describePersistentEffect(
       listItem->fetchChild<ImageWidget>("statusImage")->setImage(*effectConfig.icon);
     }
   } else if (auto modifierEffect = effect.ptr<StatModifier>()) {
-    auto statsConfig = Root::singleton().assets()->json("/interface/stats/stats.config");
+    auto statsConfig = context.root().assets()->json("/interface/stats/stats.config");
     if (auto baseMultiplier = modifierEffect->ptr<StatBaseMultiplier>()) {
       if (statsConfig.contains(baseMultiplier->statName)) {
         auto listItem = container->addItem();

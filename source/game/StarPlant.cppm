@@ -43,6 +43,7 @@ import star.net_element_system;
 import star.net_compatibility;
 import star.byte_array;
 namespace Star {
+class Root;
 
 class RenderCallback;
 struct TreeVariant;
@@ -93,11 +94,11 @@ public:
     float zLevel;
   };
 
-  Plant(TreeVariant const& config, std::uint64_t seed);
-  Plant(GrassVariant const& config, std::uint64_t seed);
-  Plant(BushVariant const& config, std::uint64_t seed);
-  Plant(Json const& diskStore);
-  Plant(ByteArray const& netStore, NetCompatibilityRules rules = {});
+  Plant(Root& rootContext, TreeVariant const& config, std::uint64_t seed);
+  Plant(Root& rootContext, GrassVariant const& config, std::uint64_t seed);
+  Plant(Root& rootContext, BushVariant const& config, std::uint64_t seed);
+  Plant(Root& rootContext, Json const& diskStore);
+  Plant(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules rules = {});
 
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {}) const;
@@ -150,7 +151,7 @@ public:
   RectF interactiveBoundBox() const override;
 
 private:
-  Plant();
+  Plant(Root& rootContext);
 
   void breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition);
   Vec2I baseDamagePosition(List<Vec2I> const& positions) const;

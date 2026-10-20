@@ -137,7 +137,7 @@ import star.effect_emitter;
 import star.npc;
 import star.asset_source;
 import star.assets;
-import star.root_base;
+
 import star.configuration;
 import star.root;
 import star.inventory_types;
@@ -150,13 +150,13 @@ import star.tick_rate_monitor;
 import star.algorithm;
 namespace Star {
 
-WorldClientThread::WorldClientThread(ClientSubWorldId subWorldId, UniverseClient* universe)
+WorldClientThread::WorldClientThread(Root& root, ClientSubWorldId subWorldId, UniverseClient* universe)
   : Thread("WorldClientThread: " + String(subWorldId)),
     m_subWorldId(subWorldId),
     m_stop(false),
     m_errorOccurred(false),
     m_shouldExpire(false) {
-    m_worldClient = std::make_shared<WorldClient>(subWorldId,universe);
+    m_worldClient = std::make_shared<WorldClient>(root, subWorldId,universe);
 }
 
 WorldClientThread::~WorldClientThread() {
@@ -231,16 +231,16 @@ void WorldClientThread::clearMessages() {
 
 void WorldClientThread::run() {
   try {
-    auto& root = Root::singleton();
+    auto& root = m_worldClient->root();
     double updateMeasureWindow = root.assets()->json("/client.config:subWorldUpdateMeasureWindow").toDouble();
 
-    TickRateApproacher tickApproacher(1.0f / GlobalTimestep, updateMeasureWindow);
+    TickRateApproacher tickApproacher(1.0f / m_worldClient->root().timing().timestep, updateMeasureWindow);
 
     while (!m_stop && !m_errorOccurred) {
-      LogMap::set(strf("client_{}_update", m_subWorldId), strf("{:4.2f}Hz", tickApproacher.rate()));
+      m_worldClient->root().logMap().set(strf("client_{}_update", m_subWorldId), strf("{:4.2f}Hz", tickApproacher.rate()));
 
       update();
-      tickApproacher.setTargetTickRate(1.0f / GlobalTimestep);
+      tickApproacher.setTargetTickRate(1.0f / m_worldClient->root().timing().timestep);
       tickApproacher.tick();
 
       double spareTime = tickApproacher.spareTime();
@@ -250,7 +250,7 @@ void WorldClientThread::run() {
         Thread::sleepPrecise(spareMilliseconds);
     }
   } catch (std::exception const& e) {
-    Logger::error("WorldClientThread exception caught: {}", outputException(e, true));
+    m_worldClient->root().logger().error("WorldClientThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
   }
 }
@@ -263,14 +263,14 @@ void WorldClientThread::update() {
   try {
     m_worldClient->handleIncomingPackets(std::move(incomingPackets));
   } catch (std::exception const& e) {
-    Logger::error("WorldClientThread exception caught handling incoming packets: {}", outputException(e, true));
+    m_worldClient->root().logger().error("WorldClientThread exception caught handling incoming packets: {}", outputException(e, true));
     queueLocker.lock();
     m_outgoingPacketQueue.append({std::make_shared<ClientSubWorldRequest>(m_subWorldId, WorldId())});
     queueLocker.unlock();
     m_errorOccurred = true;
   }
 
-  float dt = GlobalTimestep * GlobalTimescale;
+  float dt = m_worldClient->root().timing().timestep * m_worldClient->root().timing().timescale;
   if (dt > 0.0f && (!m_pause || *m_pause == false))
     m_worldClient->update(dt);
 
@@ -297,7 +297,7 @@ void WorldClientThread::update() {
   queueLocker.lock();
   m_outgoingPacketQueue.append(std::make_shared<ClientSubWorldPackets>(m_subWorldId,std::move(outgoingPackets)));
   if (shouldDestroy) {
-    Logger::info("WorldClientThread requesting destroy");
+    m_worldClient->root().logger().info("WorldClientThread requesting destroy");
     m_outgoingPacketQueue.append(std::make_shared<ClientSubWorldRequest>(m_subWorldId, WorldId()));
   }
   queueLocker.unlock();

@@ -12,6 +12,9 @@ import star.vector;
 
 namespace Star {
 
+class Assets;
+class Logger;
+
 class SpeciesTextVariants;
 class PositionalTextVariants;
 
@@ -68,7 +71,7 @@ public:
 // Stores and returns from the list of known quest templates
 class QuestTemplateDatabase {
 public:
-  QuestTemplateDatabase();
+  QuestTemplateDatabase(std::shared_ptr<Assets const> assets, Logger& logger);
 
   // Return a list of all known template id values
   List<String> allQuestTemplateIds() const;
@@ -77,6 +80,7 @@ public:
   std::shared_ptr<QuestTemplate> questTemplate(String const& templateId) const;
 
 private:
+  Logger& m_logger;
   StringMap<std::shared_ptr<QuestTemplate>> m_templates;
 };
 

@@ -28,10 +28,12 @@ import star.version;
 namespace Star {
   
 extern VersionNumber const TeamManagerVersion;
+class Root;
+class RandomService;
 
 class TeamManager {
 public:
-  TeamManager();
+  explicit TeamManager(Root& root);
 
   JsonRpcHandlers rpcHandlers();
 
@@ -60,6 +62,8 @@ private:
   };
 
   struct Team {
+    explicit Team(RandomService& random) : leaderUuid(random) {}
+
     Uuid leaderUuid;
     TeamNumber pvpTeamNumber;
 
@@ -67,11 +71,16 @@ private:
   };
 
   struct Invitation {
+    explicit Invitation(RandomService& random) : inviterUuid(random) {}
+
     Uuid inviterUuid;
     String inviterName;
   };
 
   struct PolledInvitation {
+    explicit PolledInvitation(RandomService& random) : inviterUuid(random) {}
+    PolledInvitation(Uuid uuid, double time) : inviterUuid(std::move(uuid)), polledAt(time) {}
+
     Uuid inviterUuid;
     double polledAt;
   };
@@ -86,6 +95,7 @@ private:
   bool addToTeam(Uuid const& playerUuid, Uuid const& teamUuid);
   bool removeFromTeam(Uuid const& playerUuid, Uuid const& teamUuid);
 
+  Root& m_root;
   RecursiveMutex m_mutex;
   Map<Uuid, Team> m_teams;
   StringMap<List<Uuid>> m_connectedPlayers;

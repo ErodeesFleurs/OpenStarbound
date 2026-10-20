@@ -11,6 +11,8 @@ import star.tileset_database;
 
 namespace Star {
 
+class Logger;
+
 struct Tile {
   String source, database, tileset, name;
   std::shared_ptr<Image const> image;
@@ -33,7 +35,7 @@ private:
 
 class Tileset {
 public:
-  Tileset(String const& source, String const& name, std::shared_ptr<TileDatabase> const& database);
+  Tileset(Logger& logger, String const& source, String const& name, std::shared_ptr<TileDatabase> const& database);
 
   void defineTile(std::shared_ptr<Tile> const& tile);
   void exportTileset() const;
@@ -78,13 +80,17 @@ private:
       JsonObject& tileImages,
       String const& tilesetPath) const;
 
+  Logger& m_logger;
   String m_source, m_name;
   List<std::shared_ptr<Tile>> m_tiles;
   std::shared_ptr<TileDatabase> m_database;
 };
 
+// The caller owns the logger and keeps it alive through tileset export.
 class TilesetUpdater {
 public:
+  explicit TilesetUpdater(Logger& logger);
+
   void defineAssetSource(String const& source);
   void defineTile(std::shared_ptr<Tile> const& tile);
   void exportTilesets();
@@ -92,6 +98,8 @@ public:
 private:
   std::shared_ptr<TileDatabase> const& getDatabase(std::shared_ptr<Tile> const& tile);
   std::shared_ptr<Tileset> const& getTileset(std::shared_ptr<Tile> const& tile);
+
+  Logger& m_logger;
 
   // Asset Source -> Tileset Name -> Tileset
   StringMap<StringMap<std::shared_ptr<Tileset>>> m_tilesets;

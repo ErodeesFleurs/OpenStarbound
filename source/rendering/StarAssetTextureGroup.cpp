@@ -35,10 +35,10 @@ import star.image_metadata_database;
 import star.algorithm;
 namespace Star {
 
-AssetTextureGroup::AssetTextureGroup(std::shared_ptr<TextureGroup> textureGroup)
-  : m_textureGroup(std::move(textureGroup)) {
+AssetTextureGroup::AssetTextureGroup(Root& root, std::shared_ptr<TextureGroup> textureGroup)
+  : m_root(root), m_textureGroup(std::move(textureGroup)) {
   m_reloadTracker = std::make_shared<TrackerListener>();
-  m_reloadSubscription = Root::singleton().registerReloadListener(m_reloadTracker);
+  m_reloadSubscription = m_root.registerReloadListener(m_reloadTracker);
 }
 
 TexturePtr AssetTextureGroup::loadTexture(AssetPath const& imagePath) {
@@ -84,7 +84,7 @@ TexturePtr AssetTextureGroup::loadTexture(AssetPath const& imagePath, bool tryTe
     return p->first;
   }
 
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
 
   std::shared_ptr<Image const> image;
   if (tryTexture)

@@ -51,7 +51,7 @@ namespace Star {
 
 class ShadersMenu : public BaseScriptPane {
 public:
-  ShadersMenu(Json const& config, std::shared_ptr<UniverseClient> client);
+  ShadersMenu(GuiContext& guiContext, Json const& config, std::shared_ptr<UniverseClient> client);
 
   virtual void show() override;
   void displayed() override;

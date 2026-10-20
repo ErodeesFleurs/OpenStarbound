@@ -41,6 +41,9 @@ namespace Star {
 class Assets;
 class EnvironmentPainter;
 class TilePainter;
+class TileDrawer;
+class Root;
+class ImageMetadataDatabase;
 }
 import star.world_geometry;
 import star.collision_block;
@@ -92,13 +95,16 @@ namespace Star {
 // Will update client rendering window internally
 class WorldPainter {
 public:
-  WorldPainter();
+  // Root outlives this painter; resource providers are refreshed for each frame.
+  explicit WorldPainter(Root& root);
 
   void renderInit(std::shared_ptr<Renderer> renderer);
 
   void setCameraPosition(WorldGeometry const& worldGeometry, Vec2F const& position);
 
   WorldCamera& camera();
+  // Borrowed preview provider, unavailable until renderInit creates the renderer.
+  TileDrawer* tileDrawer() const;
 
   void update(float dt);
   void render(WorldRenderData& renderData, std::function<bool()> lightWaiter);
@@ -113,6 +119,7 @@ private:
   void drawDrawable(Drawable drawable);
   void drawDrawableSet(List<Drawable>& drawable);
 
+  Root& m_root;
   WorldCamera m_camera;
 
   std::shared_ptr<Renderer> m_renderer;
@@ -133,6 +140,7 @@ private:
   // Updated every frame
 
   std::shared_ptr<Assets const> m_assets;
+  std::shared_ptr<ImageMetadataDatabase const> m_imageMetadata;
   RectF m_worldScreenRect;
 
   Vec2F m_previousCameraCenter;

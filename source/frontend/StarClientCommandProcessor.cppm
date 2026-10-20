@@ -66,7 +66,7 @@ class Quest;
 
 class ClientCommandProcessor {
 public:
-  ClientCommandProcessor(std::shared_ptr<UniverseClient> universeClient, std::shared_ptr<Cinematic> cinematicOverlay,
+  ClientCommandProcessor(GuiContext& context, std::shared_ptr<UniverseClient> universeClient, std::shared_ptr<Cinematic> cinematicOverlay,
       MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands);
 
   StringList handleCommand(String const& commandLine, bool userInput = false);
@@ -129,6 +129,8 @@ private:
   }
   static CaseInsensitiveStringMap<BuiltinCommand> makeBuiltinCommands();
   static const CaseInsensitiveStringMap<BuiltinCommand> s_builtinCommands;
+  GuiContext& m_context;
+
 
   std::shared_ptr<UniverseClient> m_universeClient;
   std::shared_ptr<Cinematic> m_cinematicOverlay;

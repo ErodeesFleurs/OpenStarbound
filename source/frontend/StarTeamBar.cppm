@@ -60,7 +60,7 @@ class TeamBar;
 
 class TeamInvite : public Pane {
 public:
-  TeamInvite(TeamBar* owner);
+  TeamInvite(GuiContext& guiContext, TeamBar* owner);
 
   virtual void show() override;
 
@@ -73,7 +73,7 @@ private:
 
 class TeamInvitation : public Pane {
 public:
-  TeamInvitation(TeamBar* owner);
+  TeamInvitation(GuiContext& guiContext, TeamBar* owner);
 
   void open(Uuid const& inviterUuid, String const& inviterName);
 
@@ -87,7 +87,7 @@ private:
 
 class TeamMemberMenu : public Pane {
 public:
-  TeamMemberMenu(TeamBar* owner);
+  TeamMemberMenu(GuiContext& guiContext, TeamBar* owner);
 
   void open(Uuid memberUuid, Vec2I position);
 
@@ -108,7 +108,7 @@ private:
 
 class TeamBar : public Pane {
 public:
-  TeamBar(MainInterface* mainInterface, std::shared_ptr<UniverseClient> client);
+  TeamBar(GuiContext& guiContext, MainInterface* mainInterface, std::shared_ptr<UniverseClient> client);
 
   bool sendEvent(InputEvent const& event) override;
 
@@ -130,7 +130,7 @@ private:
   MainInterface* m_mainInterface;
   std::shared_ptr<UniverseClient> m_client;
 
-  GuiContext* m_guiContext;
+
 
   TextStyle m_nameStyle;
   Vec2F m_nameOffset;

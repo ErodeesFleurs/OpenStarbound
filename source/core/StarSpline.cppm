@@ -32,7 +32,7 @@ public:
     float u = clamp<float>(t, 0, 1);
     if (u != t) {
       t = u;
-      Logger::warn("Passed out of range time to Spline::pointAt");
+      EmergencyLog::warn("Passed out of range time to Spline::pointAt");
     }
 
     if (auto p = m_pointCache.ptr(t))
@@ -55,7 +55,7 @@ public:
     float u = clamp<float>(t, 0, 1);
     if (u != t) {
       t = u;
-      Logger::warn("Passed out of range time to Spline::tangentAt");
+      EmergencyLog::warn("Passed out of range time to Spline::tangentAt");
     }
 
     // constructs a hodograph and returns pointAt
@@ -68,7 +68,7 @@ public:
 
   DataT length(float begin = 0, float end = 1, std::size_t subdivisions = 100) const {
     if (!(begin <= 1 && begin >= 0 && end <= 1 && end >= 0 && begin <= end)) {
-      Logger::warn("Passed invalid range to Spline::length");
+      EmergencyLog::warn("Passed invalid range to Spline::length");
       return 0;
     }
 
@@ -98,7 +98,7 @@ public:
       return 1;
     u = clamp<float>(u, 0, 1);
     if (u == 0 || u == 1) {
-      Logger::warn("Passed out of range time to Spline::arcLenPara");
+      EmergencyLog::warn("Passed out of range time to Spline::arcLenPara");
       return u;
     }
     DataT targetLength = length() * u;

@@ -69,7 +69,7 @@ typedef std::function<WidgetConstructResult(String const& name, Json const& conf
 
 class WidgetParser {
 public:
-  WidgetParser();
+  WidgetParser(GuiContext& context);
   virtual ~WidgetParser() {}
 
   virtual void construct(Json const& config, Widget* widget = nullptr);
@@ -112,6 +112,7 @@ protected:
   void common(std::shared_ptr<Widget> widget, Json const& config, bool getChildren = true);
   ImageStretchSet parseImageStretchSet(Json const& config);
 
+  GuiContext* m_context;
   Pane* m_pane;
   StringMap<ConstuctorFunc> m_constructors;
   StringMap<WidgetCallbackFunc> m_callbacks;

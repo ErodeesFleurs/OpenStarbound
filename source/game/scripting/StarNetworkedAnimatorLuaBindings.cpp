@@ -1,4 +1,7 @@
 module;
+import star.lua_root;
+import star.root;
+import star.image_metadata_database;
 import std;
 import star.json;
 import star.json_extra;
@@ -218,15 +221,15 @@ LuaCallbacks LuaBindings::makeNetworkedAnimatorCallbacks(NetworkedAnimator* netw
   callbacks.registerCallbackWithSignature<void, String, List<Drawable>>(
       "setPartDrawables", std::bind(&NetworkedAnimator::setPartDrawables, networkedAnimator, std::placeholders::_1, std::placeholders::_2));
   callbacks.registerCallback("addPartJsonDrawables",
-    [networkedAnimator](String const& part, JsonArray drawablesConfig) {
-      networkedAnimator->addPartDrawables(part, drawablesConfig.transformed([](Json config) -> Drawable {
-        return Drawable(config);
+    [networkedAnimator](LuaEngine& engine, String const& part, JsonArray drawablesConfig) {
+      networkedAnimator->addPartDrawables(part, drawablesConfig.transformed([&engine](Json config) -> Drawable {
+        return Drawable(*luaExecutionRoot(engine).imageMetadataDatabase(), config);
       }));
     });
   callbacks.registerCallback("setPartJsonDrawables",
-    [networkedAnimator](String const& part, JsonArray drawablesConfig) {
-      networkedAnimator->setPartDrawables(part, drawablesConfig.transformed([](Json config) -> Drawable {
-        return Drawable(config);
+    [networkedAnimator](LuaEngine& engine, String const& part, JsonArray drawablesConfig) {
+      networkedAnimator->setPartDrawables(part, drawablesConfig.transformed([&engine](Json config) -> Drawable {
+        return Drawable(*luaExecutionRoot(engine).imageMetadataDatabase(), config);
       }));
     });
 

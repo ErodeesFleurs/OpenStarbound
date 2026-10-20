@@ -18,6 +18,7 @@ import star.lua_converters;
 import star.lua_game_converters;
 import star.world;
 import star.world_lua_bindings;
+import star.root;
 
 namespace Star {
 
@@ -49,7 +50,8 @@ class ScriptableThread;
 // re-init the script before calling invoke.  'autoReInit' defaults to true.
 class LuaBaseComponent {
 public:
-  LuaBaseComponent();
+  explicit LuaBaseComponent(Root& root);
+  Root& root() const;
   // The LuaBaseComponent destructor does NOT call the 'unint' entry point in
   // the script.  In order to do so, uninit() must be called manually before
   // destruction.  This is because during destruction, it is highly likely that
@@ -122,6 +124,7 @@ protected:
   void cleanThreads();
 private:
   
+  Root& m_root;
   StringList m_scripts;
   StringMap<LuaCallbacks> m_callbacks;
   StringMap<LuaCallbacks> m_threadCallbacks;
@@ -139,6 +142,7 @@ private:
 template <typename Base>
 class LuaStorableComponent : public Base {
 public:
+  using Base::Base;
   JsonObject getScriptStorage() const;
   void setScriptStorage(JsonObject storage);
 
@@ -167,7 +171,7 @@ public:
     RpcPromiseKeeper<Json> promise;
   };
   
-  LuaUpdatableComponent();
+  explicit LuaUpdatableComponent(Root& root);
 
   unsigned updateDelta() const;
   float updateDt(float dt) const;
@@ -208,6 +212,7 @@ private:
 template <typename Base>
 class LuaWorldComponent : public Base {
 public:
+  using Base::Base;
   void init(World* world);
   void uninit();
 
@@ -224,7 +229,7 @@ private:
 template <typename Base>
 class LuaMessageHandlingComponent : public Base {
 public:
-  LuaMessageHandlingComponent();
+  explicit LuaMessageHandlingComponent(Root& root);
 
   Maybe<ChainableJsonMessageResponse> handleMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
@@ -253,7 +258,7 @@ Maybe<Ret> LuaBaseComponent::invoke(String const& name, V&&... args) {
       return {};
     return m_context->luaTo<LuaFunction>(std::move(method)).invoke<Ret>(std::forward<V>(args)...);
   } catch (LuaException const& e) {
-    Logger::error("Exception while invoking lua function '{}'. {}", name, outputException(e, true));
+    root().logger().error("Exception while invoking lua function '{}'. {}", name, outputException(e, true));
     setError(printException(e, false));
     return {};
   }
@@ -267,7 +272,7 @@ Maybe<LuaValue> LuaBaseComponent::eval(String const& code) {
   try {
     return m_context->eval<Ret>(code);
   } catch (LuaException const& e) {
-    Logger::error("Exception while evaluating lua in context: {}", outputException(e, true));
+    root().logger().error("Exception while evaluating lua in context: {}", outputException(e, true));
     return {};
   }
 }
@@ -301,7 +306,7 @@ void LuaStorableComponent<Base>::contextShutdown() {
 }
 
 template <typename Base>
-LuaUpdatableComponent<Base>::LuaUpdatableComponent() {
+LuaUpdatableComponent<Base>::LuaUpdatableComponent(Root& root) : Base(root) {
   m_updatePeriodic.setStepCount(1);
 
   LuaCallbacks scriptCallbacks;
@@ -312,7 +317,7 @@ LuaUpdatableComponent<Base>::LuaUpdatableComponent() {
       setUpdateDelta(d);
     });
 
-  m_lastDt = GlobalTimestep * GlobalTimescale;
+  m_lastDt = root.timing().timestep * root.timing().timescale;
   Base::addCallbacks("script", std::move(scriptCallbacks));
 }
 
@@ -360,7 +365,7 @@ Maybe<ChainableJsonMessageResponse> LuaUpdatableComponent<Base>::handleThreadMes
     try {
       return handler->function->template invoke<ChainableJsonMessageResponse>(message.originThread, message.message, luaUnpack(message.args));
     } catch (LuaException const& e) {
-      Logger::error(
+      Base::root().logger().error(
           "Exception while invoking lua thread message handler for message '{}'. {}", message.message, outputException(e, true));
       Base::setError(String(printException(e, false)));
     }
@@ -417,8 +422,8 @@ void LuaWorldComponent<Base>::init(World* world) {
     uninit();
 
   Base::setLuaRoot(world->luaRoot());
-  Base::addCallbacks("world", LuaBindings::makeWorldCallbacks(world));
-  Base::addThreadCallbacks("world", LuaBindings::makeWorldThreadCallbacks(world));
+  Base::addCallbacks("world", LuaBindings::makeWorldCallbacks(Base::root(), world));
+  Base::addThreadCallbacks("world", LuaBindings::makeWorldThreadCallbacks(Base::root(), world));
   for (auto& p : world->luaThreadCallbacks()) {
     Base::addThreadCallbacks(p.first,p.second);
     m_worldThreadCallbacks.add(p.first);
@@ -438,7 +443,7 @@ void LuaWorldComponent<Base>::uninit() {
 }
 
 template <typename Base>
-LuaMessageHandlingComponent<Base>::LuaMessageHandlingComponent() {
+LuaMessageHandlingComponent<Base>::LuaMessageHandlingComponent(Root& root) : Base(root) {
   LuaCallbacks scriptCallbacks;
   scriptCallbacks.registerCallback("setHandler", [this](Variant<String, Json> message, Maybe<LuaFunction> handler) {
       MessageHandler handlerInfo = {};
@@ -485,7 +490,7 @@ Maybe<ChainableJsonMessageResponse> LuaMessageHandlingComponent<Base>::handleMes
       else
         return handler->function->template invoke<ChainableJsonMessageResponse>(localMessage, luaUnpack(args));
     } catch (LuaException const& e) {
-      Logger::error(
+      Base::root().logger().error(
           "Exception while invoking lua message handler for message '{}'. {}", message, outputException(e, true));
       Base::setError(String(printException(e, false)));
     }

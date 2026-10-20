@@ -36,11 +36,13 @@ import star.thread;
 import star.lexical_cast;
 import star.string_conversion;
 import star.packed_asset_source;
+import star.logging;
+import star.random;
 
 namespace Star {
 
-ModUploader::ModUploader()
-  : QMainWindow() {
+ModUploader::ModUploader(Logger& logger, RandomService& random)
+  : QMainWindow(), m_logger(logger), m_random(random) {
   m_steamDispatch.initialize();
   connect(QApplication::instance(), &QCoreApplication::aboutToQuit, this, [this] {
     m_closing = true;
@@ -192,7 +194,7 @@ void ModUploader::loadDirectory() {
   m_reloadButton->setEnabled(true);
   m_directoryLabel->setText(toQString(*m_modDirectory));
   m_editorSection->setEnabled(true);
-  m_assetSource = DirectoryAssetSource(*m_modDirectory);
+  m_assetSource = DirectoryAssetSource(m_logger, *m_modDirectory);
 
   JsonObject metadata = m_assetSource->metadata();
   m_nameEditor->setText(toQString(metadata.value("name", "").toString()));
@@ -356,7 +358,7 @@ void ModUploader::uploadToSteam() {
     m_modIdLabel->setText(toQString(strf("<a href=\"{}\">{}</a>", modUrl, modIdString)));
   }
 
-  String steamUploadDir = File::temporaryDirectory();
+  String steamUploadDir = File::temporaryDirectory(m_random);
   auto progressCallback = [&progress](std::size_t i, std::size_t total, String, String assetPath) {
     progress.setLabelText(toQString(strf("Packing '{}'", assetPath)));
     progress.setMaximum(total);

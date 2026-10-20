@@ -9,12 +9,14 @@ import star.socket;
 
 namespace Star {
 
+class Logger;
+
 class TcpSocket : public Socket {
 public:
   static std::shared_ptr<TcpSocket> connectTo(HostAddressWithPort const& address);
-  static std::shared_ptr<TcpSocket> listen(HostAddressWithPort const& address);
+  static std::shared_ptr<TcpSocket> listen(Logger& logger, HostAddressWithPort const& address);
 
-  std::shared_ptr<TcpSocket> accept();
+  std::shared_ptr<TcpSocket> accept(Logger& logger);
 
   // Must be called after connect.  Sets TCP_NODELAY option.
   void setNoDelay(bool noDelay);
@@ -39,9 +41,9 @@ class TcpServer {
 public:
   typedef std::function<void(std::shared_ptr<TcpSocket> socket)> AcceptCallback;
 
-  TcpServer(HostAddressWithPort const& address);
+  TcpServer(Logger& logger, HostAddressWithPort const& address);
   // Listens to all interfaces.
-  TcpServer(std::uint16_t port);
+  TcpServer(Logger& logger, std::uint16_t port);
   ~TcpServer();
 
   void stop();
@@ -61,6 +63,7 @@ public:
   void setAcceptCallback(AcceptCallback callback, unsigned timeout = 20);
 
 private:
+  Logger& m_logger;
   mutable Mutex m_mutex;
 
   AcceptCallback m_callback;

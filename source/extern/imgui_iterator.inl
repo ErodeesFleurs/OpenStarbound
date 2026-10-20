@@ -24,7 +24,6 @@
 //    IMGUI_API void          EndFrame();                                 // ends the Dear ImGui frame. automatically called by Render(). If you don't need to render data (skipping rendering) you may call EndFrame() without Render()... but you'll have wasted CPU already! If you don't need to render, better to not create any windows and not call NewFrame() at all!
 IMGUI_FUNCTION(EndFrame)
 CALL_FUNCTION_NO_RET(EndFrame)
-POP_END_STACK(0)
 END_IMGUI_FUNC
 //    IMGUI_API void          Render();                                   // ends the Dear ImGui frame, finalize the draw data. You can then get call GetDrawData().
 //Not allowed to use this function
@@ -94,14 +93,12 @@ LABEL_ARG(name)
 OPTIONAL_BOOL_POINTER_ARG(p_open)
 OPTIONAL_INT_ARG(flags, 0)
 CALL_FUNCTION(Begin, bool, name, p_open, flags)
-IF_RET_ADD_END_STACK(1)
 PUSH_BOOL(ret)
 END_BOOL_POINTER(p_open)
 END_IMGUI_FUNC
 //    IMGUI_API void          End();
 IMGUI_FUNCTION(End)
 CALL_FUNCTION_NO_RET(End)
-POP_END_STACK(1)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginChild(const char* str_id, const ImVec2& size = ImVec2 0  0, ImGuiChildFlags child_flags = 0, ImGuiWindowFlags window_flags = 0);
 IMGUI_FUNCTION(BeginChild)
@@ -110,7 +107,6 @@ OPTIONAL_IM_VEC_2_ARG(size, 0, 0)
 OPTIONAL_INT_ARG(child_flags, 0)
 OPTIONAL_INT_ARG(window_flags, 0)
 CALL_FUNCTION(BeginChild, bool, str_id, size, child_flags, window_flags)
-IF_RET_ADD_END_STACK(2)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginChild(ImGuiID id, const ImVec2& size = ImVec2 0  0, ImGuiChildFlags child_flags = 0, ImGuiWindowFlags window_flags = 0);
@@ -120,13 +116,11 @@ OPTIONAL_IM_VEC_2_ARG(size, 0, 0)
 OPTIONAL_INT_ARG(child_flags, 0)
 OPTIONAL_INT_ARG(window_flags, 0)
 CALL_FUNCTION(BeginChild, bool, id, size, child_flags, window_flags)
-IF_RET_ADD_END_STACK(2)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndChild();
 IMGUI_FUNCTION(EndChild)
 CALL_FUNCTION_NO_RET(EndChild)
-POP_END_STACK(2)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsWindowAppearing();
 IMGUI_FUNCTION(IsWindowAppearing)
@@ -348,14 +342,12 @@ IMGUI_FUNCTION(PushStyleVar)
 INT_ARG(idx)
 NUMBER_ARG(val)
 CALL_FUNCTION_NO_RET(PushStyleVar, idx, val)
-ADD_END_STACK(3)
 END_IMGUI_FUNC
 //    IMGUI_API void          PushStyleVar(ImGuiStyleVar idx, const ImVec2& val);             // modify a style ImVec2 variable. "
 IMGUI_FUNCTION(PushStyleVar_2)
 INT_ARG(idx)
 IM_VEC_2_ARG(val)
 CALL_FUNCTION_NO_RET(PushStyleVar, idx, val)
-ADD_END_STACK(3)
 END_IMGUI_FUNC
 //    IMGUI_API void          PushStyleVarX(ImGuiStyleVar idx, float val_x);                  // modify X component of a style ImVec2 variable. "
 IMGUI_FUNCTION(PushStyleVarX)
@@ -373,7 +365,6 @@ END_IMGUI_FUNC
 IMGUI_FUNCTION(PopStyleVar)
 OPTIONAL_INT_ARG(count, 1)
 CALL_FUNCTION_NO_RET(PopStyleVar, count)
-POP_END_STACK(3)
 END_IMGUI_FUNC
 //    IMGUI_API void          PushItemFlag(ImGuiItemFlags option, bool enabled);              // modify specified shared item flag, e.g. PushItemFlag(ImGuiItemFlags_NoTabStop, true)
 IMGUI_FUNCTION(PushItemFlag)
@@ -538,12 +529,10 @@ END_IMGUI_FUNC
 //    IMGUI_API void          BeginGroup();                                                   // lock horizontal starting position
 IMGUI_FUNCTION(BeginGroup)
 CALL_FUNCTION_NO_RET(BeginGroup)
-ADD_END_STACK(4)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndGroup();                                                     // unlock horizontal starting position + capture the whole group bounding box into one "item" (so you can use IsItemHovered() or layout primitives such as SameLine() on whole group, etc.)
 IMGUI_FUNCTION(EndGroup)
 CALL_FUNCTION_NO_RET(EndGroup)
-POP_END_STACK(4)
 END_IMGUI_FUNC
 //    IMGUI_API void          AlignTextToFramePadding();                                      // vertically align upcoming text baseline to FramePadding.y so that it will align properly to regularly framed items (call if you have text on a line before a framed item)
 IMGUI_FUNCTION(AlignTextToFramePadding)
@@ -802,13 +791,11 @@ LABEL_ARG(label)
 LABEL_ARG(preview_value)
 OPTIONAL_INT_ARG(flags, 0)
 CALL_FUNCTION(BeginCombo, bool, label, preview_value, flags)
-IF_RET_ADD_END_STACK(5)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndCombo(); // only call EndCombo() if BeginCombo() returns true!
 IMGUI_FUNCTION(EndCombo)
 CALL_FUNCTION_NO_RET(EndCombo)
-POP_END_STACK(5)
 END_IMGUI_FUNC
 //    IMGUI_API bool          Combo(const char* label, int* current_item, const char* const items[], int items_count, int popup_max_height_in_items = -1);
 // Unsupported arg type  const char* const items[]
@@ -1076,7 +1063,6 @@ END_IMGUI_FUNC
 IMGUI_FUNCTION(TreeNode)
 LABEL_ARG(label)
 CALL_FUNCTION(TreeNode, bool, label)
-IF_RET_ADD_END_STACK(6)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          TreeNode(const char* str_id, const char* fmt, ...);   // helper variation to easily decorelate the id from the displayed string. Read the FAQ about why and how to use ID. to align arbitrary text at the same level as a TreeNode() you can use Bullet().
@@ -1085,7 +1071,6 @@ IMGUI_FUNCTION(TreeNode_3)
 LABEL_ARG(str_id)
 LABEL_ARG(fmt)
 CALL_FUNCTION(TreeNode, bool, str_id, fmt)
-IF_RET_ADD_END_STACK(6)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          TreeNode(const void* ptr_id, const char* fmt, ...);   // "
@@ -1124,14 +1109,12 @@ END_IMGUI_FUNC
 IMGUI_FUNCTION(TreePush)
 LABEL_ARG(str_id)
 CALL_FUNCTION_NO_RET(TreePush, str_id)
-ADD_END_STACK(6)
 END_IMGUI_FUNC
 //    IMGUI_API void          TreePush(const void* ptr_id);                                       // "
 // Unsupported arg type const void* ptr_id
 //    IMGUI_API void          TreePop();                                                          // ~ Unindent()+PopID()
 IMGUI_FUNCTION(TreePop)
 CALL_FUNCTION_NO_RET(TreePop)
-POP_END_STACK(6)
 END_IMGUI_FUNC
 //    IMGUI_API float         GetTreeNodeToLabelSpacing();                                        // horizontal distance preceding label when using TreeNode*() or Bullet() == (g.FontSize + style.FramePadding.x*2) for a regular unframed TreeNode
 IMGUI_FUNCTION(GetTreeNodeToLabelSpacing)
@@ -1200,13 +1183,11 @@ IMGUI_FUNCTION(BeginListBox)
 LABEL_ARG(label)
 OPTIONAL_IM_VEC_2_ARG(size, 0, 0)
 CALL_FUNCTION(BeginListBox, bool, label, size)
-IF_RET_ADD_END_STACK(7)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndListBox();                                                       // only call EndListBox() if BeginListBox() returned true!
 IMGUI_FUNCTION(EndListBox)
 CALL_FUNCTION_NO_RET(EndListBox)
-POP_END_STACK(7)
 END_IMGUI_FUNC
 //    IMGUI_API bool          ListBox(const char* label, int* current_item, const char* const items[], int items_count, int height_in_items = -1);
 // Unsupported arg type  const char* const items[]
@@ -1251,37 +1232,31 @@ END_IMGUI_FUNC
 //    IMGUI_API bool          BeginMenuBar();                                                     // append to menu-bar of current window (requires ImGuiWindowFlags_MenuBar flag set on parent window).
 IMGUI_FUNCTION(BeginMenuBar)
 CALL_FUNCTION(BeginMenuBar, bool)
-IF_RET_ADD_END_STACK(8)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndMenuBar();                                                       // only call EndMenuBar() if BeginMenuBar() returns true!
 IMGUI_FUNCTION(EndMenuBar)
 CALL_FUNCTION_NO_RET(EndMenuBar)
-POP_END_STACK(8)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginMainMenuBar();                                                 // create and append to a full screen menu-bar.
 IMGUI_FUNCTION(BeginMainMenuBar)
 CALL_FUNCTION(BeginMainMenuBar, bool)
-IF_RET_ADD_END_STACK(9)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndMainMenuBar();                                                   // only call EndMainMenuBar() if BeginMainMenuBar() returns true!
 IMGUI_FUNCTION(EndMainMenuBar)
 CALL_FUNCTION_NO_RET(EndMainMenuBar)
-POP_END_STACK(9)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginMenu(const char* label, bool enabled = true);                  // create a sub-menu entry. only call EndMenu() if this returns true!
 IMGUI_FUNCTION(BeginMenu)
 LABEL_ARG(label)
 OPTIONAL_BOOL_ARG(enabled, true)
 CALL_FUNCTION(BeginMenu, bool, label, enabled)
-IF_RET_ADD_END_STACK(10)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndMenu();                                                          // only call EndMenu() if BeginMenu() returns true!
 IMGUI_FUNCTION(EndMenu)
 CALL_FUNCTION_NO_RET(EndMenu)
-POP_END_STACK(10)
 END_IMGUI_FUNC
 //    IMGUI_API bool          MenuItem(const char* label, const char* shortcut = NULL, bool selected = false, bool enabled = true);  // return true when activated.
 IMGUI_FUNCTION(MenuItem)
@@ -1305,13 +1280,11 @@ END_IMGUI_FUNC
 //    IMGUI_API bool          BeginTooltip();                                                     // begin/append a tooltip window.
 IMGUI_FUNCTION(BeginTooltip)
 CALL_FUNCTION(BeginTooltip, bool)
-IF_RET_ADD_END_STACK(11)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndTooltip();                                                       // only call EndTooltip() if BeginTooltip()/BeginItemTooltip() returns true!
 IMGUI_FUNCTION(EndTooltip)
 CALL_FUNCTION_NO_RET(EndTooltip)
-POP_END_STACK(11)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetTooltip(const char* fmt, ...);                     // set a text-only tooltip. Often used after a ImGui::IsItemHovered() check. Override any previous call to SetTooltip().
 // Variadic functions aren't supported but here it is anyway
@@ -1324,7 +1297,6 @@ END_IMGUI_FUNC
 //    IMGUI_API bool          BeginItemTooltip();                                                 // begin/append a tooltip window if preceding item was hovered.
 IMGUI_FUNCTION(BeginItemTooltip)
 CALL_FUNCTION(BeginItemTooltip, bool)
-IF_RET_ADD_END_STACK(12)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetItemTooltip(const char* fmt, ...);                 // set a text-only tooltip if preceding item was hovered. override any previous call to SetTooltip().
@@ -1340,7 +1312,6 @@ IMGUI_FUNCTION(BeginPopup)
 LABEL_ARG(str_id)
 OPTIONAL_INT_ARG(flags, 0)
 CALL_FUNCTION(BeginPopup, bool, str_id, flags)
-IF_RET_ADD_END_STACK(13)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginPopupModal(const char* name, bool* p_open = NULL, ImGuiWindowFlags flags = 0); // return true if the modal is open, and you can start outputting to it.
@@ -1349,14 +1320,12 @@ LABEL_ARG(name)
 OPTIONAL_BOOL_POINTER_ARG(p_open)
 OPTIONAL_INT_ARG(flags, 0)
 CALL_FUNCTION(BeginPopupModal, bool, name, p_open, flags)
-IF_RET_ADD_END_STACK(13)
 PUSH_BOOL(ret)
 END_BOOL_POINTER(p_open)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndPopup();                                                                         // only call EndPopup() if BeginPopupXXX() returns true!
 IMGUI_FUNCTION(EndPopup)
 CALL_FUNCTION_NO_RET(EndPopup)
-POP_END_STACK(13)
 END_IMGUI_FUNC
 //    IMGUI_API void          OpenPopup(const char* str_id, ImGuiPopupFlags popup_flags = 0);                     // call to mark popup as open (don't call every frame!).
 IMGUI_FUNCTION(OpenPopup)
@@ -1385,7 +1354,6 @@ IMGUI_FUNCTION(BeginPopupContextItem)
 OPTIONAL_LABEL_ARG(str_id)
 OPTIONAL_INT_ARG(popup_flags, 1)
 CALL_FUNCTION(BeginPopupContextItem, bool, str_id, popup_flags)
-IF_RET_ADD_END_STACK(13)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginPopupContextWindow(const char* str_id = NULL, ImGuiPopupFlags popup_flags = 1);// open+begin popup when clicked on current window.
@@ -1393,7 +1361,6 @@ IMGUI_FUNCTION(BeginPopupContextWindow)
 OPTIONAL_LABEL_ARG(str_id)
 OPTIONAL_INT_ARG(popup_flags, 1)
 CALL_FUNCTION(BeginPopupContextWindow, bool, str_id, popup_flags)
-IF_RET_ADD_END_STACK(13)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginPopupContextVoid(const char* str_id = NULL, ImGuiPopupFlags popup_flags = 1);  // open+begin popup when clicked in void (where there are no windows).
@@ -1401,7 +1368,6 @@ IMGUI_FUNCTION(BeginPopupContextVoid)
 OPTIONAL_LABEL_ARG(str_id)
 OPTIONAL_INT_ARG(popup_flags, 1)
 CALL_FUNCTION(BeginPopupContextVoid, bool, str_id, popup_flags)
-IF_RET_ADD_END_STACK(13)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsPopupOpen(const char* str_id, ImGuiPopupFlags flags = 0);                         // return true if the popup is open.
@@ -1419,13 +1385,11 @@ OPTIONAL_INT_ARG(flags, 0)
 OPTIONAL_IM_VEC_2_ARG(outer_size, 0.0f, 0.0f)
 OPTIONAL_NUMBER_ARG(inner_width, 0.0f)
 CALL_FUNCTION(BeginTable, bool, str_id, columns, flags, outer_size, inner_width)
-IF_RET_ADD_END_STACK(14)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndTable();                                         // only call EndTable() if BeginTable() returns true!
 IMGUI_FUNCTION(EndTable)
 CALL_FUNCTION_NO_RET(EndTable)
-POP_END_STACK(14)
 END_IMGUI_FUNC
 //    IMGUI_API void          TableNextRow(ImGuiTableRowFlags row_flags = 0, float min_row_height = 0.0f); // append into the first cell of a new row.
 IMGUI_FUNCTION(TableNextRow)
@@ -1568,13 +1532,11 @@ IMGUI_FUNCTION(BeginTabBar)
 LABEL_ARG(str_id)
 OPTIONAL_INT_ARG(flags, 0)
 CALL_FUNCTION(BeginTabBar, bool, str_id, flags)
-IF_RET_ADD_END_STACK(15)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndTabBar();                                                        // only call EndTabBar() if BeginTabBar() returns true!
 IMGUI_FUNCTION(EndTabBar)
 CALL_FUNCTION_NO_RET(EndTabBar)
-POP_END_STACK(15)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginTabItem(const char* label, bool* p_open = NULL, ImGuiTabItemFlags flags = 0); // create a Tab. Returns true if the Tab is selected.
 IMGUI_FUNCTION(BeginTabItem)
@@ -1582,14 +1544,12 @@ LABEL_ARG(label)
 OPTIONAL_BOOL_POINTER_ARG(p_open)
 OPTIONAL_INT_ARG(flags, 0)
 CALL_FUNCTION(BeginTabItem, bool, label, p_open, flags)
-IF_RET_ADD_END_STACK(16)
 PUSH_BOOL(ret)
 END_BOOL_POINTER(p_open)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndTabItem();                                                       // only call EndTabItem() if BeginTabItem() returns true!
 IMGUI_FUNCTION(EndTabItem)
 CALL_FUNCTION_NO_RET(EndTabItem)
-POP_END_STACK(16)
 END_IMGUI_FUNC
 //    IMGUI_API bool          TabItemButton(const char* label, ImGuiTabItemFlags flags = 0);      // create a Tab behaving like a button. return true when clicked. cannot be selected in the tab bar.
 IMGUI_FUNCTION(TabItemButton)
@@ -1639,7 +1599,6 @@ END_IMGUI_FUNC
 IMGUI_FUNCTION(BeginDragDropSource)
 OPTIONAL_INT_ARG(flags, 0)
 CALL_FUNCTION(BeginDragDropSource, bool, flags)
-IF_RET_ADD_END_STACK(17)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          SetDragDropPayload(const char* type, const void* data, size_t sz, ImGuiCond cond = 0);  // type is a user defined string of maximum 32 characters. Strings starting with '_' are reserved for dear imgui internal types. Data is copied and held by imgui. Return true when payload has been accepted.
@@ -1648,12 +1607,10 @@ END_IMGUI_FUNC
 //    IMGUI_API void          EndDragDropSource();                                                                    // only call EndDragDropSource() if BeginDragDropSource() returns true!
 IMGUI_FUNCTION(EndDragDropSource)
 CALL_FUNCTION_NO_RET(EndDragDropSource)
-POP_END_STACK(17)
 END_IMGUI_FUNC
 //    IMGUI_API bool                  BeginDragDropTarget();                                                          // call after submitting an item that may receive a payload. If this returns true, you can call AcceptDragDropPayload() + EndDragDropTarget()
 IMGUI_FUNCTION(BeginDragDropTarget)
 CALL_FUNCTION(BeginDragDropTarget, bool)
-IF_RET_ADD_END_STACK(18)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API const ImGuiPayload*   AcceptDragDropPayload(const char* type, ImGuiDragDropFlags flags = 0);          // accept contents of a given type. If ImGuiDragDropFlags_AcceptBeforeDelivery is set you can peek into the payload before the mouse button is released.
@@ -1661,7 +1618,6 @@ END_IMGUI_FUNC
 //    IMGUI_API void                  EndDragDropTarget();                                                            // only call EndDragDropTarget() if BeginDragDropTarget() returns true!
 IMGUI_FUNCTION(EndDragDropTarget)
 CALL_FUNCTION_NO_RET(EndDragDropTarget)
-POP_END_STACK(18)
 END_IMGUI_FUNC
 //    IMGUI_API const ImGuiPayload*   GetDragDropPayload();                                                           // peek directly into the current payload from anywhere. returns NULL when drag and drop is finished or inactive. use ImGuiPayload::IsDataType() to test for the payload type.
 // Unsupported return type const
@@ -1669,12 +1625,10 @@ END_IMGUI_FUNC
 IMGUI_FUNCTION(BeginDisabled)
 OPTIONAL_BOOL_ARG(disabled, true)
 CALL_FUNCTION_NO_RET(BeginDisabled, disabled)
-ADD_END_STACK(19)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndDisabled();
 IMGUI_FUNCTION(EndDisabled)
 CALL_FUNCTION_NO_RET(EndDisabled)
-POP_END_STACK(19)
 END_IMGUI_FUNC
 //    IMGUI_API void          PushClipRect(const ImVec2& clip_rect_min, const ImVec2& clip_rect_max, bool intersect_with_current_clip_rect);
 IMGUI_FUNCTION(PushClipRect)
@@ -2084,27 +2038,6 @@ END_IMGUI_FUNC
 // Unsupported arg type size_t size
 //    IMGUI_API void          MemFree(void* ptr);
 // Unsupported arg type void* ptr
-END_STACK_START
-END_STACK_OPTION(0, EndFrame)
-END_STACK_OPTION(1, End)
-END_STACK_OPTION(2, EndChild)
-END_STACK_OPTION(3, PopStyleVar)
-END_STACK_OPTION(4, EndGroup)
-END_STACK_OPTION(5, EndCombo)
-END_STACK_OPTION(6, TreePop)
-END_STACK_OPTION(7, EndListBox)
-END_STACK_OPTION(8, EndMenuBar)
-END_STACK_OPTION(9, EndMainMenuBar)
-END_STACK_OPTION(10, EndMenu)
-END_STACK_OPTION(11, EndTooltip)
-END_STACK_OPTION(13, EndPopup)
-END_STACK_OPTION(14, EndTable)
-END_STACK_OPTION(15, EndTabBar)
-END_STACK_OPTION(16, EndTabItem)
-END_STACK_OPTION(17, EndDragDropSource)
-END_STACK_OPTION(18, EndDragDropTarget)
-END_STACK_OPTION(19, EndDisabled)
-END_STACK_END
 //enum ImGuiWindowFlags_
 
 START_ENUM(WindowFlags)

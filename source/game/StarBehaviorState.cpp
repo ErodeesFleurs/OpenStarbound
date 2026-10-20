@@ -1,4 +1,6 @@
 import std;
+import star.lua_root;
+import star.root;
 import star.string;
 import star.list;
 import star.set;
@@ -17,7 +19,7 @@ import star.algorithm;
 namespace Star {
 
 // node parameter types supported by the blackboard
-List<NodeParameterType> BlackboardTypes = {
+extern List<NodeParameterType> const BlackboardTypes = {
   NodeParameterType::Json,
   NodeParameterType::Entity,
   NodeParameterType::Position,
@@ -388,7 +390,7 @@ NodeStatus BehaviorState::runDynamic(DynamicNode const& node, NodeState& state) 
 
 NodeStatus BehaviorState::runRandomize(RandomizeNode const& node, NodeState& state) {
   if (state.isNothing())
-    state.set(CompositeState(node.children.size(), Random::randUInt(node.children.size() - 1)));
+    state.set(CompositeState(node.children.size(), luaExecutionRoot(m_luaContext.engine()).random().randUInt(node.children.size() - 1)));
 
   CompositeState& composite = state->get<CompositeState>();
   auto child = node.children.get(composite.index);

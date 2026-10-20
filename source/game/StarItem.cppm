@@ -20,6 +20,8 @@ import star.game_types;
 import star.strong_typedef;
 
 namespace Star {
+class Root;
+class TileDrawer;
 class Item;
 class GenericItem;
 }
@@ -42,10 +44,8 @@ public:
   // Config here is the configuration loaded directly from assets, directory is
   // the asset path this config was found in, that other assets should be
   // loaded relative to.
-  Item(Json config, String directory, Json parameters = JsonObject());
+  Item(Root& root, Json config, String directory, Json parameters = JsonObject());
 
-  // For items which do not come from files
-  Item();
 
   virtual ~Item();
 
@@ -110,7 +110,7 @@ public:
   virtual Maybe<List<Drawable>> secondaryDrawables() const;
   virtual bool hasSecondaryDrawables() const;
 
-  virtual List<Drawable> dropDrawables() const;
+  virtual List<Drawable> dropDrawables(TileDrawer* tileDrawer) const;
   String largeImage() const;
 
   String tooltipKind() const;
@@ -145,6 +145,8 @@ public:
   static bool itemsEqual(std::shared_ptr<Item const> const& a, std::shared_ptr<Item const> const& b);
 
 protected:
+  Root& root() const;
+
   void setMaxStack(std::uint64_t maxStack);
   void setDescription(String const& description);
   void setShortDescription(String const& description);
@@ -162,6 +164,7 @@ protected:
   String const& directory() const;
 
 private:
+  Root* m_root;
   Json m_config;
   String m_directory;
 
@@ -190,7 +193,7 @@ private:
 
 class GenericItem : public Item {
 public:
-  GenericItem(Json const& config, String const& directory, Json const& parameters);
+  GenericItem(Root& root, Json const& config, String const& directory, Json const& parameters);
   virtual std::shared_ptr<Item> clone() const;
 };
 
@@ -215,6 +218,8 @@ inline ItemDescriptor itemSafeDescriptor(std::shared_ptr<Item> const& item) {
 export module star.item;
 
 export namespace Star {
+  using ::Star::Root;
+  using ::Star::TileDrawer;
   using ::Star::Item;
   using ::Star::GenericItem;
   using ::Star::ItemExceptionTag;

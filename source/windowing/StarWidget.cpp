@@ -64,9 +64,9 @@ import star.flow_layout;
 import star.algorithm;
 namespace Star {
 
-Widget::Widget() {
+Widget::Widget(GuiContext& context) {
   m_parent = nullptr;
-  m_context = GuiContext::singletonPtr();
+  m_context = &context;
   m_visible = true;
   m_focus = false;
   m_doScissor = true;

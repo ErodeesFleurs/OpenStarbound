@@ -104,7 +104,7 @@ export namespace Star {
 
 class ObjectItem : public Item, public FireableItem, public BeamItem {
 public:
-  ObjectItem(Json const& config, String const& directory, Json const& objectParameters);
+  ObjectItem(Root& root, Json const& config, String const& directory, Json const& objectParameters);
   virtual ~ObjectItem() {}
 
   std::shared_ptr<Item> clone() const override;
@@ -131,8 +131,8 @@ private:
 
 namespace Star {
 
-ObjectItem::ObjectItem(Json const& config, String const& directory, Json const& objectParameters)
-  : Item(config, directory, objectParameters), FireableItem(config), BeamItem(config) {
+ObjectItem::ObjectItem(Root& root, Json const& config, String const& directory, Json const& objectParameters)
+  : Item(root, config, directory, objectParameters), FireableItem(config), BeamItem(root, config) {
   setTwoHanded(config.getBool("twoHanded", true));
 
   // Make sure that all script objects that have retainObjectParametersInItem
@@ -197,7 +197,7 @@ bool ObjectItem::placeInWorld(FireMode, bool shifting) {
     return false;
 
   auto pos = Vec2I(owner()->aimPosition().floor());
-  auto objectDatabase = Root::singleton().objectDatabase();
+  auto objectDatabase = root().objectDatabase();
   try {
     if (auto object = objectDatabase->createForPlacement(world(), objectName(), pos, owner()->walkingDirection(), objectParameters())) {
       if (consume(1)) {
@@ -206,7 +206,7 @@ bool ObjectItem::placeInWorld(FireMode, bool shifting) {
       }
     }
   } catch (StarException const& e) {
-    Logger::error("Failed to instantiate object for placement. {} {} : {}",
+    root().logger().error("Failed to instantiate object for placement. {} {} : {}",
         objectName(),
         objectParameters().repr(0, true),
         outputException(e, true));
@@ -220,7 +220,7 @@ bool ObjectItem::canPlace(bool) const {
   if (initialized()) {
     if (owner()->isAdmin() || owner()->inToolRange()) {
       auto pos = Vec2I(owner()->aimPosition().floor());
-      auto objectDatabase = Root::singleton().objectDatabase();
+      auto objectDatabase = root().objectDatabase();
       return objectDatabase->canPlaceObject(world(), pos, objectName());
     }
   }

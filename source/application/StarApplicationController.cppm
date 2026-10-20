@@ -84,6 +84,7 @@ public:
   virtual std::shared_ptr<P2PNetworkingService> p2pNetworkingService() const = 0;
   virtual std::shared_ptr<UserGeneratedContentService> userGeneratedContentService() const = 0;
   virtual std::shared_ptr<DesktopService> desktopService() const = 0;
+  virtual bool steamIsFlatpak() const = 0;
 
   // Signals the application to quit
   virtual void quit() = 0;

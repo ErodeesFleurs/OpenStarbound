@@ -55,6 +55,7 @@ import star.net_element_system;
 import star.net_compatibility;
 import star.byte_array;
 namespace Star {
+class Root;
 
 class Item;
 
@@ -62,18 +63,18 @@ class ItemDrop : public virtual MobileEntity, public virtual ScriptedEntity {
 public:
   // Creates a drop at the given position and adds a hard-coded amount of
   // randomness to the drop position / velocity.
-  static std::shared_ptr<ItemDrop> createRandomizedDrop(std::shared_ptr<Item> const& item, Vec2F const& position, bool eternal = false);
-  static std::shared_ptr<ItemDrop> createRandomizedDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, bool eternal = false);
+  static std::shared_ptr<ItemDrop> createRandomizedDrop(Root& rootContext, std::shared_ptr<Item> const& item, Vec2F const& position, bool eternal = false);
+  static std::shared_ptr<ItemDrop> createRandomizedDrop(Root& rootContext, ItemDescriptor const& itemDescriptor, Vec2F const& position, bool eternal = false);
 
   // Create a drop and throw in the given direction with a hard-coded initial
   // throw velocity (unrelated to magnitude of direction, direction is
   // normalized first).  Initially intangible for 1 second.
-  static std::shared_ptr<ItemDrop> throwDrop(std::shared_ptr<Item> const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
-  static std::shared_ptr<ItemDrop> throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
+  static std::shared_ptr<ItemDrop> throwDrop(Root& rootContext, std::shared_ptr<Item> const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
+  static std::shared_ptr<ItemDrop> throwDrop(Root& rootContext, ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
 
-  ItemDrop(std::shared_ptr<Item> item);
-  ItemDrop(Json const& diskStore);
-  ItemDrop(ByteArray netStore, NetCompatibilityRules rules = {});
+  ItemDrop(Root& rootContext, std::shared_ptr<Item> item);
+  ItemDrop(Root& rootContext, Json const& diskStore);
+  ItemDrop(Root& rootContext, ByteArray netStore, NetCompatibilityRules rules = {});
 
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {}) const;
@@ -144,7 +145,7 @@ private:
   enum class Mode { Intangible, Available, Taken, Dead };
   static EnumMap<Mode> const ModeNames;
 
-  ItemDrop();
+  ItemDrop(Root& rootContext);
 
   // Set the movement controller's collision poly to match the
   // item drop drawables

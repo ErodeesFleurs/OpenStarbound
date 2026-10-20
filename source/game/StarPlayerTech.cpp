@@ -31,18 +31,18 @@ import star.player_tech;
 
 namespace Star {
 
-PlayerTech::PlayerTech() {}
+PlayerTech::PlayerTech(Root& root) : m_root(root) {}
 
-PlayerTech::PlayerTech(Json const& json) {
+PlayerTech::PlayerTech(Root& root, Json const& json) : m_root(root) {
   m_availableTechs = jsonToStringSet(json.get("availableTechs"));
   m_enabledTechs = jsonToStringSet(json.get("enabledTechs"));
-  auto techDatabase = Root::singleton().techDatabase();
+  auto techDatabase = m_root.techDatabase();
   for (auto& p : json.getObject("equippedTechs")) {
     String techName = p.second.toString();
     if (techDatabase->contains(techName))
       m_equippedTechs.set(TechTypeNames.getLeft(p.first), techName);
     else
-      Logger::warn("Unequipping unknown tech '{}' from slot '{}'", techName, p.first);
+      m_root.logger().warn("Unequipping unknown tech '{}' from slot '{}'", techName, p.first);
   }
 }
 
@@ -96,7 +96,7 @@ void PlayerTech::equip(String const& techModule) {
   if (!m_enabledTechs.contains(techModule))
     throw PlayerTechException::format("Equipping tech module '{}' when not enabled", techModule);
 
-  auto techDatabase = Root::singleton().techDatabase();
+  auto techDatabase = m_root.techDatabase();
   m_equippedTechs[techDatabase->tech(techModule).type] = techModule;
 }
 

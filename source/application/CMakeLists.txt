@@ -3,6 +3,7 @@ target_sources (star_application_module_interfaces PUBLIC FILE_SET CXX_MODULES F
     StarApplication.cppm
     StarApplicationController.cppm
     StarMainApplication.cppm
+    StarNativeUiContext.cppm
     StarRenderer.cppm
     StarTextureAtlas.cppm
     StarRenderer_opengl.cppm

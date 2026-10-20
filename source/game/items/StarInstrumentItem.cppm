@@ -85,7 +85,7 @@ class InstrumentItem : public Item,
                        public ActivatableItem,
                        public PointableItem {
 public:
-  InstrumentItem(Json const& config, String const& directory, Json const& data);
+  InstrumentItem(Root& root, Json const& config, String const& directory, Json const& data);
 
   std::shared_ptr<Item> clone() const override;
 
@@ -119,16 +119,16 @@ private:
 
 namespace Star {
 
-InstrumentItem::InstrumentItem(Json const& config, String const& directory, Json const& data) : Item(config, directory, data) {
+InstrumentItem::InstrumentItem(Root& root, Json const& config, String const& directory, Json const& data) : Item(root, config, directory, data) {
   m_activeCooldown = 0;
 
   auto image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   Vec2F position = jsonToVec2F(instanceValue("handPosition", JsonArray{0, 0}));
-  m_drawables.append(Drawable::makeImage(image, 1.0f / TilePixels, true, position));
+  m_drawables.append(Drawable::makeImage(*root.imageMetadataDatabase(), image, 1.0f / TilePixels, true, position));
 
   image = AssetPath::relativeTo(directory, instanceValue("activeImage").toString());
   position = jsonToVec2F(instanceValue("activeHandPosition", JsonArray{0, 0}));
-  m_activeDrawables.append(Drawable::makeImage(image, 1.0f / TilePixels, true, position));
+  m_activeDrawables.append(Drawable::makeImage(*root.imageMetadataDatabase(), image, 1.0f / TilePixels, true, position));
 
   m_activeAngle = (instanceValue("activeAngle").toFloat() / 180.0f) * std::numbers::pi;
 

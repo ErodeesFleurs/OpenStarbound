@@ -141,28 +141,29 @@ TEST(FlatHashSet, Preset) {
 }
 
 TEST(FlatHashSet, Random) {
+  RandomService random;
   List<Vec2I> keys;
   for (unsigned i = 0; i < 100000; ++i)
     keys.append(Vec2I(i * 743202097, i * 205495087));
-  Random::shuffle(keys);
+  random.shuffle(keys);
 
   FlatHashSet<Vec2I> testSet;
   for (std::size_t i = 0; i < keys.size(); ++i)
     testSet.insert(keys[i]);
 
-  Random::shuffle(keys);
+  random.shuffle(keys);
   for (std::size_t i = 0; i < keys.size() / 2; ++i)
     testSet.erase(keys[i]);
 
-  Random::shuffle(keys);
+  random.shuffle(keys);
   for (std::size_t i = 0; i < keys.size() / 3; ++i)
     testSet.insert(keys[i]);
 
-  Random::shuffle(keys);
+  random.shuffle(keys);
   for (std::size_t i = 0; i < keys.size() / 2; ++i)
     testSet.erase(keys[i]);
 
-  Random::shuffle(keys);
+  random.shuffle(keys);
   for (auto k : keys) {
     auto i = testSet.find(k);
     if (i != testSet.end()) {
@@ -170,7 +171,7 @@ TEST(FlatHashSet, Random) {
     }
   }
 
-  Random::shuffle(keys);
+  random.shuffle(keys);
   for (auto k : keys) {
     testSet.insert(k);
     ASSERT_TRUE(testSet.find(k) != testSet.end());
@@ -183,7 +184,7 @@ TEST(FlatHashSet, Random) {
   keys.sort();
   ASSERT_TRUE(cmp == keys);
 
-  Random::shuffle(keys);
+  random.shuffle(keys);
   for (auto k : keys) {
     testSet.erase(k);
     ASSERT_TRUE(testSet.find(k) == testSet.end());
@@ -241,28 +242,29 @@ TEST(FlatHashMap, Preset) {
 }
 
 TEST(FlatHashMap, Random) {
+  RandomService random;
   List<std::pair<Vec2I, int>> values;
   for (unsigned i = 0; i < 100000; ++i)
     values.append({Vec2I(i * 743202097, i * 205495087), i});
-  Random::shuffle(values);
+  random.shuffle(values);
 
   FlatHashMap<Vec2I, int> testMap;
   for (auto v : values)
     testMap.insert(v);
 
-  Random::shuffle(values);
+  random.shuffle(values);
   for (std::size_t i = 0; i < values.size() / 2; ++i)
     testMap.erase(values[i].first);
 
-  Random::shuffle(values);
+  random.shuffle(values);
   for (std::size_t i = 0; i < values.size() / 3; ++i)
     testMap.insert(values[i]);
 
-  Random::shuffle(values);
+  random.shuffle(values);
   for (std::size_t i = 0; i < values.size() / 2; ++i)
     testMap.erase(values[i].first);
 
-  Random::shuffle(values);
+  random.shuffle(values);
   for (auto v : values) {
     auto i = testMap.find(v.first);
     if (i != testMap.end()) {
@@ -270,13 +272,13 @@ TEST(FlatHashMap, Random) {
     }
   }
 
-  Random::shuffle(values);
+  random.shuffle(values);
   for (auto v : values) {
     ASSERT_TRUE(testMap.insert(v).first->second == v.second);
     ASSERT_TRUE(testMap.at(v.first) == v.second);
   }
 
-  Random::shuffle(values);
+  random.shuffle(values);
   for (auto v : values) {
     ASSERT_EQ(testMap.erase(v.first), 1u);
     ASSERT_TRUE(testMap.find(v.first) == testMap.end());

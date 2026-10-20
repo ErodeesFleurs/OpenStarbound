@@ -188,7 +188,7 @@ Socket::~Socket() {
   close();
 }
 
-void Socket::bind(HostAddressWithPort const& addressWithPort) {
+void Socket::bind(Logger& logger, HostAddressWithPort const& addressWithPort) {
   WriteLocker locker(m_mutex);
   checkOpen("Socket::bind");
 
@@ -215,7 +215,7 @@ void Socket::bind(HostAddressWithPort const& addressWithPort) {
 
   m_socketMode = SocketMode::Bound;
 
-  Logger::debug("bind {} ({})", addressWithPort, m_impl->socketDesc);
+  logger.debug("bind {} ({})", addressWithPort, m_impl->socketDesc);
 }
 
 void Socket::listen(int backlog) {

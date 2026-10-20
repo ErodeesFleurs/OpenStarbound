@@ -29,10 +29,12 @@ import star.world_parameters;
 import star.byte_array;
 namespace Star {
 
+class Root;
+
 class CelestialParameters {
 public:
   CelestialParameters();
-  CelestialParameters(CelestialCoordinate coordinate, std::uint64_t seed, String name, Json parameters);
+  CelestialParameters(Root& root, CelestialCoordinate coordinate, std::uint64_t seed, String name, Json parameters);
   explicit CelestialParameters(Json const& diskStore);
   explicit CelestialParameters(ByteArray netStore);
 

@@ -24,7 +24,6 @@ import star.version;
 import star.uuid;
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.configuration;
 import star.root;
 
@@ -47,11 +46,11 @@ UniverseFlagAction parseUniverseFlagAction(Json const& json) {
   }
 }
 
-UniverseSettings::UniverseSettings() {
+UniverseSettings::UniverseSettings(Root& root) : m_root(root), m_uuid(root.random()) {
   loadFlagActions();
 }
 
-UniverseSettings::UniverseSettings(Json const& json) {
+UniverseSettings::UniverseSettings(Root& root, Json const& json) : m_root(root), m_uuid(root.random()) {
   m_uuid = Uuid(json.getString("uuid"));
   m_flags = jsonToStringSet(json.get("flags"));
 
@@ -81,11 +80,11 @@ void UniverseSettings::setFlag(String const& flag) {
   MutexLocker locker(m_lock);
 
   if (m_flags.add(flag)) {
-    Logger::info("Universe flags set to {}", m_flags);
+    m_root.logger().info("Universe flags set to {}", m_flags);
     if (auto flagActions = m_flagActions.maybe(flag))
       m_pendingFlagActions.appendAll(*flagActions);
     else
-      Logger::info("No actions configured for universe flag {}", flag);
+      m_root.logger().info("No actions configured for universe flag {}", flag);
   }
 }
 
@@ -122,7 +121,7 @@ void UniverseSettings::resetFlags() {
 void UniverseSettings::loadFlagActions() {
   m_flagActions.clear();
 
-  Json flagsConfig = Root::singleton().assets()->json("/universeflags.config");
+  Json flagsConfig = m_root.assets()->json("/universeflags.config");
   for (auto flagPair : flagsConfig.iterateObject()) {
     List<UniverseFlagAction> actions;
     for (auto actionConfig : flagPair.second.get("actions").iterateArray())

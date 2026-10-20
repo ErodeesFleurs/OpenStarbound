@@ -5,14 +5,9 @@ import star.format;
 import star.string;
 import star.vector;
 import star.input_event;
+import star.logging;
 
 namespace Star {
-
-#ifdef STAR_ENABLE_STEAM_INTEGRATION
-#ifdef STAR_SYSTEM_LINUX
-extern bool g_steamIsFlatpak;
-#endif
-#endif
 
 class ApplicationController;
 class Renderer;
@@ -35,6 +30,9 @@ public:
 
   // Called once on application startup, before any other methods.
   virtual void startup(StringList const& cmdLineArgs);
+
+  // Available after startup and until this application is destroyed.
+  virtual Logger& logger() const = 0;
 
   // Called on application initialization, before rendering initialization.  If
   // overriden, must call base class instance.
@@ -98,8 +96,3 @@ export namespace Star {
   using ::Star::WindowMode;
 }
 
-#if defined(STAR_ENABLE_STEAM_INTEGRATION) && defined(STAR_SYSTEM_LINUX)
-export namespace Star {
-  using ::Star::g_steamIsFlatpak;
-}
-#endif

@@ -50,6 +50,8 @@ namespace Star {
 
 class StackWidget : public Widget {
 public:
+  explicit StackWidget(GuiContext& context) : Widget(context) {}
+
   void showPage(std::size_t page);
   void showPage(String const& name);
 

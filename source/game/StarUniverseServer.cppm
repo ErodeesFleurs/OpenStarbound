@@ -136,6 +136,7 @@ class CelestialMasterDatabase;
 class WorldServer;
 class UniverseSettings;
 class ServerClientContext;
+class Root;
 
 struct UniverseServerExceptionTag {
   static constexpr char const* name() { return "UniverseServerException"; }
@@ -147,8 +148,10 @@ using UniverseServerException = StarError<UniverseServerExceptionTag, StarExcept
 // and routes packets between them.
 class UniverseServer : public Universe, public Thread {
 public:
-  UniverseServer(String const& storageDir, bool const& isLocal = false);
+  UniverseServer(Root& root, String const& storageDir, bool const& isLocal = false);
   ~UniverseServer() override;
+
+  Root& root() const;
 
   // If enabled, will listen on the configured server port for incoming
   // connections.
@@ -366,6 +369,8 @@ private:
   // Get SkyParameters if the coordinate is a valid world, and empty
   // SkyParameters otherwise.
   SkyParameters celestialSkyParameters(CelestialCoordinate const& coordinate) const;
+
+  Root& m_root;
 
   mutable RecursiveMutex m_mainLock;
   

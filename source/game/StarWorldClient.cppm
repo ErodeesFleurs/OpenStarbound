@@ -110,8 +110,11 @@ import star.game_timers;
 
 namespace Star {
 
+class Root;
+
 struct Biome;
 class WorldTemplate;
+class TileDrawer;
 class Sky;
 class Parallax;
 class LuaRoot;
@@ -135,8 +138,8 @@ class WorldClient : public World {
 public:
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> ScriptComponent;
   
-  WorldClient(std::shared_ptr<Player> mainPlayer, std::shared_ptr<LuaRoot> luaRoot, UniverseClient* universe);
-  WorldClient(ClientSubWorldId subWorldId, UniverseClient* universe);
+  WorldClient(Root& root, std::shared_ptr<Player> mainPlayer, std::shared_ptr<LuaRoot> luaRoot, UniverseClient* universe);
+  WorldClient(Root& root, ClientSubWorldId subWorldId, UniverseClient* universe);
   ~WorldClient();
 
   ConnectionId connection() const override;
@@ -261,7 +264,7 @@ public:
   void update(float dt);
   // borderTiles here should extend the client window for border tile
   // calculations.  It is not necessary on the light array.
-  void render(WorldRenderData& renderData, unsigned borderTiles);
+  void render(WorldRenderData& renderData, unsigned borderTiles, TileDrawer* tileDrawer);
   List<std::shared_ptr<AudioInstance>> pullPendingAudio();
   List<std::shared_ptr<AudioInstance>> pullPendingMusic();
 
@@ -299,6 +302,9 @@ private:
   static const float DropDist;
 
   struct ClientRenderCallback : RenderCallback {
+    explicit ClientRenderCallback(TileDrawer* drawer) : m_tileDrawer(drawer) {}
+    TileDrawer* tileDrawer() const override { return m_tileDrawer; }
+    TileDrawer* m_tileDrawer;
     void addDrawable(Drawable drawable, EntityRenderLayer renderLayer) override;
     void addLightSource(LightSource lightSource) override;
     void addParticle(Particle particle) override;

@@ -69,10 +69,10 @@ import star.image_widget;
 
 namespace Star {
 
-ModsMenu::ModsMenu() {
-  auto assets = Root::singleton().assets();
+ModsMenu::ModsMenu(GuiContext& contextRef) : Pane(contextRef) {
+  auto assets = context()->root().assets();
 
-  GuiReader reader;
+  GuiReader reader(*context());
   reader.registerCallback("linkbutton", std::bind(&ModsMenu::openLink, this));
   reader.registerCallback("workshopbutton", std::bind(&ModsMenu::openWorkshop, this));
   reader.construct(assets->json("/interface/modsmenu/modsmenu.config:paneLayout"), this);
@@ -103,7 +103,7 @@ ModsMenu::ModsMenu() {
   auto copyLinkLabel = fetchChild<LabelWidget>("copylinklabel");
   auto workshopLinkButton = fetchChild<ButtonWidget>("workshopbutton");
 
-  auto& guiContext = GuiContext::singleton();
+  auto& guiContext = *context();
   bool hasDesktopService = (bool)guiContext.applicationController()->desktopService();
 
   workshopLinkButton->setEnabled(hasDesktopService);
@@ -131,7 +131,7 @@ void ModsMenu::update(float dt) {
 
   } else {
     String assetsSource = m_assetsSources.at(selectedItem);
-    JsonObject assetsSourceMetadata = Root::singleton().assets()->assetSourceMetadata(assetsSource);
+    JsonObject assetsSourceMetadata = context()->root().assets()->assetSourceMetadata(assetsSource);
 
     m_modName->setText(bestModName(assetsSourceMetadata, assetsSource));
     m_modAuthor->setText(assetsSourceMetadata.value("author", "No Author Set").toString());
@@ -163,13 +163,13 @@ void ModsMenu::openLink() {
     return;
 
   String assetsSource = m_assetsSources.at(selectedItem);
-  JsonObject assetsSourceMetadata = Root::singleton().assets()->assetSourceMetadata(assetsSource);
+  JsonObject assetsSourceMetadata = context()->root().assets()->assetSourceMetadata(assetsSource);
   String link = assetsSourceMetadata.value("link", "").toString();
 
   if (link.empty())
     return;
 
-  auto& guiContext = GuiContext::singleton();
+  auto& guiContext = *context();
   if (auto desktopService = guiContext.applicationController()->desktopService())
     desktopService->openUrl(link);
   else
@@ -177,8 +177,8 @@ void ModsMenu::openLink() {
 }
 
 void ModsMenu::openWorkshop() {
-  auto assets = Root::singleton().assets();
-  auto& guiContext = GuiContext::singleton();
+  auto assets = context()->root().assets();
+  auto& guiContext = *context();
   if (auto desktopService = guiContext.applicationController()->desktopService())
     desktopService->openUrl(assets->json("/interface/modsmenu/modsmenu.config:workshopLink").toString());
 }

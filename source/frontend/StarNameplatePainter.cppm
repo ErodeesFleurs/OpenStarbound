@@ -35,10 +35,11 @@ import star.world_camera;
 namespace Star {
 
 class WorldClient;
+class GuiContext;
 
 class NameplatePainter {
 public:
-  NameplatePainter();
+  NameplatePainter(GuiContext& context);
 
   void update(float dt, std::shared_ptr<WorldClient> const& world, WorldCamera const& camera, bool inspectionMode);
   void render();
@@ -56,6 +57,8 @@ private:
   TextPositioning statusPosition(Vec2F bubblePosition) const;
   RectF determineBoundBox(Vec2F bubblePosition, Nametag const& nametag) const;
 
+  GuiContext* m_guiContext;
+
   bool m_showMasterNames;
   float m_opacityRate;
   float m_inspectOpacityRate;
@@ -68,6 +71,7 @@ private:
   WorldCamera m_camera;
 
   Set<EntityId> m_entitiesWithNametags;
+  Set<EntityId> m_foundEntities;
   BubbleSeparator<Nametag> m_nametags;
 };
 

@@ -90,7 +90,7 @@ export namespace Star {
 
 class TillingTool : public Item, public SwingableItem {
 public:
-  TillingTool(Json const& config, String const& directory, Json const& parameters = JsonObject());
+  TillingTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   std::shared_ptr<Item> clone() const override;
 
@@ -120,9 +120,9 @@ private:
 
 namespace Star {
 
-TillingTool::TillingTool(Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters), SwingableItem(config) {
-  auto assets = Root::singleton().assets();
+TillingTool::TillingTool(Root& root, Json const& config, String const& directory, Json const& parameters)
+  : Item(root, config, directory, parameters), SwingableItem(config) {
+  auto assets = this->root().assets();
 
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_frames = instanceValue("frames", 1).toInt();
@@ -143,10 +143,10 @@ std::shared_ptr<Item> TillingTool::clone() const {
 
 List<Drawable> TillingTool::drawables() const {
   if (m_frameTiming == 0)
-    return {Drawable::makeImage(m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels)};
+    return {Drawable::makeImage(*root().imageMetadataDatabase(), m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels)};
   else {
     int frame = std::max(0, std::min(m_frames - 1, (int)std::floor((m_frameTiming / m_frameCycle) * m_frames)));
-    return {Drawable::makeImage(m_animationFrame[frame], 1.0f / TilePixels, true, -handPosition() / TilePixels)};
+    return {Drawable::makeImage(*root().imageMetadataDatabase(), m_animationFrame[frame], 1.0f / TilePixels, true, -handPosition() / TilePixels)};
   }
 }
 
@@ -158,10 +158,10 @@ void TillingTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   if (!ready())
     return;
 
-  auto strikeSound = Random::randValueFrom(m_strikeSounds);
+  auto strikeSound = root().random().randValueFrom(m_strikeSounds);
 
   if (owner() && world()) {
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = root().materialDatabase();
     Vec2I pos(owner()->aimPosition().floor());
 
     if (world()->material(pos + Vec2I(0, 1), TileLayer::Foreground) != EmptyMaterialId)
@@ -188,7 +188,7 @@ void TillingTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
           auto damageResult = world()->damageTile(pos, layer, owner()->position(), {TileDamageType::Tilling, 1.0f});
           used = damageResult != TileDamageResult::None;
           if (damageResult == TileDamageResult::Protected) {
-            strikeSound = Root::singleton().assets()->json("/client.config:defaultDingSound").toString();
+            strikeSound = root().assets()->json("/client.config:defaultDingSound").toString();
           }
         }
       }

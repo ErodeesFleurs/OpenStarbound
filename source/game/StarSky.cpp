@@ -66,7 +66,7 @@ import star.math_common;
 import star.algorithm;
 namespace Star {
 
-Sky::Sky() {
+Sky::Sky(Root& root) : m_root(root) {
   skyParametersUpdated();
 
   m_netInit = false;
@@ -86,7 +86,7 @@ Sky::Sky() {
   m_netGroup.setNeedsStoreCallback(std::bind(&Sky::writeNetStates, this));
 }
 
-Sky::Sky(SkyParameters const& skyParameters, bool inOrbit) : Sky() {
+Sky::Sky(Root& root, SkyParameters const& skyParameters, bool inOrbit) : Sky(root) {
   m_skyParameters = skyParameters;
   skyParametersUpdated();
 
@@ -341,7 +341,7 @@ List<std::shared_ptr<AudioInstance>> Sky::pullSounds() {
       }
 
       if (m_flyingTimer >= triggerTime) {
-        auto assets = Root::singleton().assets();
+        auto assets = m_root.assets();
         auto SFX = assets->audio(m_settings.queryString("enterHyperspaceAudio"));
         m_sentSFX = true;
         res.append(std::make_shared<AudioInstance>(*SFX));
@@ -355,7 +355,7 @@ List<std::shared_ptr<AudioInstance>> Sky::pullSounds() {
       }
 
       if (m_flyingTimer >= triggerTime) {
-        auto assets = Root::singleton().assets();
+        auto assets = m_root.assets();
         auto SFX = assets->audio(m_settings.queryString("exitHyperspaceAudio"));
         m_sentSFX = true;
         res.append(std::make_shared<AudioInstance>(*SFX));
@@ -364,7 +364,7 @@ List<std::shared_ptr<AudioInstance>> Sky::pullSounds() {
     }
   } else if (m_flyingType == FlyingType::Arriving) {
     if (!m_sentSFX) {
-      auto assets = Root::singleton().assets();
+      auto assets = m_root.assets();
       auto SFX = assets->audio(m_settings.queryString("arrivalAudio"));
       m_sentSFX = true;
       res.append(std::make_shared<AudioInstance>(*SFX));
@@ -710,7 +710,7 @@ float Sky::slowdownTime() const {
 
 void Sky::skyParametersUpdated() {
   m_skyParametersUpdated = true;
-  m_settings = jsonMerge(Root::singleton().assets()->json("/sky.config"), m_skyParameters.settings);
+  m_settings = jsonMerge(m_root.assets()->json("/sky.config"), m_skyParameters.settings);
   m_starFrames = m_settings.queryInt("stars.frames");
   m_starList = jsonToStringList(m_settings.query("stars.list"));
   m_hyperStarList = jsonToStringList(m_settings.query("stars.hyperlist"));

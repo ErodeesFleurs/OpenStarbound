@@ -39,14 +39,14 @@ std::shared_ptr<TcpSocket> TcpSocket::connectTo(HostAddressWithPort const& addre
   return socket;
 }
 
-std::shared_ptr<TcpSocket> TcpSocket::listen(HostAddressWithPort const& addressWithPort) {
+std::shared_ptr<TcpSocket> TcpSocket::listen(Logger& logger, HostAddressWithPort const& addressWithPort) {
   auto socket = std::shared_ptr<TcpSocket>(new TcpSocket(addressWithPort.address().mode()));
-  socket->bind(addressWithPort);
+  socket->bind(logger, addressWithPort);
   ((Socket&)(*socket)).listen(32);
   return socket;
 }
 
-std::shared_ptr<TcpSocket> TcpSocket::accept() {
+std::shared_ptr<TcpSocket> TcpSocket::accept(Logger& logger) {
   ReadLocker locker(m_mutex);
 
   if (m_socketMode != SocketMode::Bound)
@@ -76,7 +76,7 @@ std::shared_ptr<TcpSocket> TcpSocket::accept() {
 
   sockPtr->m_localAddress = m_localAddress;
   setAddressFromNative(sockPtr->m_remoteAddress, m_localAddress.address().mode(), &sockAddr);
-  Logger::debug("accept from {} ({})", sockPtr->m_remoteAddress, sockPtr->m_impl->socketDesc);
+  logger.debug("accept from {} ({})", sockPtr->m_remoteAddress, sockPtr->m_impl->socketDesc);
 
   return sockPtr;
 }
@@ -188,14 +188,14 @@ void TcpSocket::connect(HostAddressWithPort const& addressWithPort) {
   m_remoteAddress = addressWithPort;
 }
 
-TcpServer::TcpServer(HostAddressWithPort const& address) : m_hostAddress(address) {
+TcpServer::TcpServer(Logger& logger, HostAddressWithPort const& address) : m_logger(logger), m_hostAddress(address) {
   m_hostAddress = address;
-  m_listenSocket = TcpSocket::listen(address);
+  m_listenSocket = TcpSocket::listen(logger, address);
   m_listenSocket->setNonBlocking(true);
-  Logger::debug("TcpServer listening on: {}", address);
+  m_logger.debug("TcpServer listening on: {}", address);
 }
 
-TcpServer::TcpServer(std::uint16_t port) : TcpServer(HostAddressWithPort("*", port)) {}
+TcpServer::TcpServer(Logger& logger, std::uint16_t port) : TcpServer(logger, HostAddressWithPort("*", port)) {}
 
 TcpServer::~TcpServer() {
   stop();
@@ -215,7 +215,7 @@ std::shared_ptr<TcpSocket> TcpServer::accept(unsigned timeout) {
   MutexLocker locker(m_mutex);
   Socket::poll({{m_listenSocket, {true, false}}}, timeout);
   try {
-    return m_listenSocket->accept();
+    return m_listenSocket->accept(m_logger);
   } catch (SocketClosedException const&) {
     return {};
   }
@@ -232,7 +232,7 @@ void TcpServer::setAcceptCallback(AcceptCallback callback, unsigned timeout) {
             try {
               conn = accept(timeout);
             } catch (NetworkException const& e) {
-              Logger::error("TcpServer caught exception accepting connection {}", outputException(e, false));
+              m_logger.error("TcpServer caught exception accepting connection {}", outputException(e, false));
             }
 
             if (conn)
@@ -242,7 +242,7 @@ void TcpServer::setAcceptCallback(AcceptCallback callback, unsigned timeout) {
               break;
           }
         } catch (std::exception const& e) {
-          Logger::error("TcpServer will close, listener thread caught exception:  {}", outputException(e, true));
+          m_logger.error("TcpServer will close, listener thread caught exception:  {}", outputException(e, true));
           m_listenSocket->close();
         }
       });

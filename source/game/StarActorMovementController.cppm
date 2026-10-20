@@ -36,6 +36,7 @@ import star.net_element_basic_fields;
 namespace Star {
 
 class World;
+class Root;
 class PathController;
 
 struct ActorMovementControllerExceptionTag {
@@ -81,7 +82,7 @@ struct ActorMovementParameters {
   friend DataStream& operator<<(DataStream& ds, ActorMovementParameters const& movementParameters);
 
   // Load sensible defaults from a config file.
-  static ActorMovementParameters sensibleDefaults();
+  static ActorMovementParameters sensibleDefaults(Root& root);
 
   // Construct parameters from config with only those specified in the config
   // set, if any.
@@ -190,8 +191,8 @@ class ActorMovementController : public virtual MovementController {
 public:
   // Constructs an ActorMovementController with parameters loaded from sensible
   // defaults, and the given parameters (if any) applied on top of them.
-  explicit ActorMovementController();
-  explicit ActorMovementController(ActorMovementParameters const& parameters);
+  explicit ActorMovementController(Root& root);
+  ActorMovementController(Root& root, ActorMovementParameters const& parameters);
 
   // Currently active parameters.
   ActorMovementParameters const& baseParameters() const;

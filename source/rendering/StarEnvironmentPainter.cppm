@@ -74,10 +74,11 @@ import star.asset_texture_group;
 namespace Star {
 
 class WorldCamera;
+class Root;
 
 class EnvironmentPainter {
 public:
-  EnvironmentPainter(std::shared_ptr<Renderer> renderer);
+  EnvironmentPainter(Root& root, std::shared_ptr<Renderer> renderer);
 
   void update(float dt);
 
@@ -125,6 +126,7 @@ private:
   std::uint64_t starsHash(SkyRenderData const& sky, Vec2F const& viewSize) const;
   void setupStars(SkyRenderData const& sky);
 
+  Root& m_root;
   std::shared_ptr<Renderer> m_renderer;
   std::shared_ptr<AssetTextureGroup> m_textureGroup;
 

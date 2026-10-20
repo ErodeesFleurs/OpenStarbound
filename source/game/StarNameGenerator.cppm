@@ -7,6 +7,8 @@ import star.json;
 import star.random;
 
 namespace Star {
+class Root;
+
 
 struct NameGeneratorExceptionTag {
   static constexpr char const* name() { return "NameGeneratorException"; }
@@ -23,7 +25,7 @@ struct MarkovSource {
 
 class PatternedNameGenerator {
 public:
-  PatternedNameGenerator();
+  explicit PatternedNameGenerator(Root& root);
 
   String generateName(String const& rulesAsset) const;
   String generateName(String const& rulesAsset, std::uint64_t seed) const;
@@ -36,6 +38,7 @@ private:
 
   MarkovSource makeMarkovSource(std::size_t prefixSize, std::size_t endSize, StringList sourceNames);
 
+  Root& m_root;
   StringMap<MarkovSource> m_markovSources;
   StringSet m_profanityFilter;
 };

@@ -15,10 +15,11 @@ namespace Star {
 
 class RenderCallback;
 class EffectSource;
+class Root;
 
 class EffectEmitter : public NetElementGroup {
 public:
-  EffectEmitter();
+  EffectEmitter(Root& root);
 
   void addEffectSources(String const& position, StringSet effectSources);
   void setSourcePosition(String name, Vec2F const& position);
@@ -34,6 +35,7 @@ public:
   void fromJson(Json const& diskStore);
 
 private:
+  Root& m_root;
   Set<std::pair<String, String>> m_newSources;
   List<std::shared_ptr<EffectSource>> m_sources;
   NetElementData<Set<std::pair<String, String>>> m_activeSources;

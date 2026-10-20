@@ -17,6 +17,8 @@ import star.quest_descriptor;
 
 namespace Star {
 
+class Root;
+
 class Quest;
 class Player;
 class World;
@@ -30,7 +32,7 @@ struct QuestIndicator {
 
 class QuestManager {
 public:
-  QuestManager(Player* player);
+  QuestManager(Root& root, Player* player);
 
   void diskLoad(Json const& quests);
   Json diskStore();
@@ -82,6 +84,7 @@ public:
   void update(float dt);
 
 private:
+  Root& m_root;
   void startInitialQuests();
   void setMostRecentQuestCurrent();
   bool questValidOnServer(std::shared_ptr<Quest> quest) const;

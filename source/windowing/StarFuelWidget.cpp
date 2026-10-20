@@ -61,8 +61,8 @@ import star.fuel_widget;
 
 namespace Star {
 
-FuelWidget::FuelWidget() {
-  auto assets = Root::singleton().assets();
+FuelWidget::FuelWidget(GuiContext& context) : Widget(context) {
+  auto assets = this->context()->root().assets();
 
   m_textStyle.fontSize = assets->json("/interface.config:font.buttonSize").toInt();
   m_textStyle.loadJson(assets->json("/interface.config:textStyle"));
@@ -126,7 +126,7 @@ void FuelWidget::renderImpl() {
   context()->drawInterfaceQuad("/interface/fuel/fuelgauge.png", shift(0, fuel, entireTex), shift(0, fuel, entirePosition));
   context()->drawInterfaceQuad("/interface/fuel/fuelgaugemarkings.png", shift(0, 1, entireTex), shift(0, 1, entirePosition));
 
-  auto& guiContext = GuiContext::singleton();
+  auto& guiContext = (*this->context());
   guiContext.setTextStyle(m_textStyle);
   if (m_potential != 0) {
     guiContext.setFontColor(Color::White.toRgba());

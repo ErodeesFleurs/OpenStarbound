@@ -47,45 +47,46 @@ import star.test_universe;
 
 
 import star.celestial_database;
+import star.game_test;
 
 using namespace Star;
 
-void validateWorld(TestUniverse& testUniverse) {
+void validateWorld(Root& root, TestUniverse& testUniverse) {
   testUniverse.update(100);
 
   // Just make sure the test world draws something for now, this will grow to
   // include more than this.
   EXPECT_GE(testUniverse.currentClientDrawables().size(), 1u) << strf("world: {}", testUniverse.currentPlayerWorld());
 
-  auto assets = Root::singleton().assets();
+  auto assets = root.assets();
   for (auto const& drawable : testUniverse.currentClientDrawables()) {
     if (drawable.isImage())
       assets->image(drawable.imagePart().image);
   }
 }
 
-TEST(SpawnTest, RandomCelestialWorld) {
-  CelestialMasterDatabase celestialDatabase;
+const GameTestRegistration randomCelestialWorld("SpawnTest", "RandomCelestialWorld", [](GameTest& fixture) {
+  CelestialMasterDatabase celestialDatabase(fixture.root());
   Maybe<CelestialCoordinate> celestialWorld = celestialDatabase.findRandomWorld(10, 50, [&](CelestialCoordinate const& coord) {
       return celestialDatabase.parameters(coord)->isVisitable();
     });
   ASSERT_TRUE((bool)celestialWorld);
 
-  TestUniverse testUniverse(Vec2U(100, 100));
+  TestUniverse testUniverse(fixture.root(), Vec2U(100, 100));
   WorldId worldId = CelestialWorldId(*celestialWorld);
   testUniverse.warpPlayer(worldId);
   EXPECT_EQ(testUniverse.currentPlayerWorld(), worldId);
-  validateWorld(testUniverse);
-}
+  validateWorld(fixture.root(), testUniverse);
+});
 
-TEST(SpawnTest, RandomInstanceWorld) {
-  auto& root = Root::singleton();
+const GameTestRegistration randomInstanceWorld("SpawnTest", "RandomInstanceWorld", [](GameTest& fixture) {
+  auto& root = fixture.root();
   StringList instanceWorlds = root.assets()->json("/instance_worlds.config").toObject().keys();
   ASSERT_GT(instanceWorlds.size(), 0u);
-  WorldId instanceWorld = InstanceWorldId(Random::randFrom(instanceWorlds));
+  WorldId instanceWorld = InstanceWorldId(root.random().randFrom(instanceWorlds));
 
-  TestUniverse testUniverse(Vec2U(100, 100));
+  TestUniverse testUniverse(root, Vec2U(100, 100));
   testUniverse.warpPlayer(instanceWorld);
   EXPECT_EQ(testUniverse.currentPlayerWorld(), instanceWorld);
-  validateWorld(testUniverse);
-}
+  validateWorld(root, testUniverse);
+});

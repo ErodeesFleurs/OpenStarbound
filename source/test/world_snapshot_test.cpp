@@ -127,6 +127,7 @@ import star.world_template;
 import star.celestial_database;
 
 import star.algorithm;
+import star.game_test;
 using namespace Star;
 
 namespace {
@@ -162,10 +163,10 @@ namespace {
 // runs and machines and can be compared to a constant.  When world generation
 // changes on purpose, rerun with --gtest_filter='WorldSnapshot.*'; the new hash
 // is printed to stderr.
-TEST(WorldSnapshot, FixedCoordinateGenerationIsDeterministic) {
-  auto storagePath = File::temporaryDirectory();
+const GameTestRegistration fixedCoordinateGenerationIsDeterministic("WorldSnapshot", "FixedCoordinateGenerationIsDeterministic", [](GameTest& fixture) {
+  auto storagePath = File::temporaryDirectory(fixture.root().random());
   auto finallyGuard = finally([&storagePath]() { File::removeDirectoryRecursive(storagePath); });
-  auto celestialDatabase = std::make_shared<CelestialMasterDatabase>(File::relativeTo(storagePath, "universe.chunks"));
+  auto celestialDatabase = std::make_shared<CelestialMasterDatabase>(fixture.root(), File::relativeTo(storagePath, "universe.chunks"));
 
   // Find a real planet: the celestial generator places systems sparsely, and a
   // hand picked coordinate is most likely empty.
@@ -185,11 +186,11 @@ TEST(WorldSnapshot, FixedCoordinateGenerationIsDeterministic) {
   ASSERT_TRUE(coordinate.isValid()) << "no planetary body found in the scanned region";
   // A separate template for the surface level: a template handed to a WorldServer
   // is modified by world generation.
-  float surfaceLevel = std::make_shared<WorldTemplate>(*coordinate, celestialDatabase)->surfaceLevel();
+  float surfaceLevel = std::make_shared<WorldTemplate>(fixture.root(), *coordinate, celestialDatabase)->surfaceLevel();
 
   auto makeWorld = [&]() {
-    auto worldTemplate = std::make_shared<WorldTemplate>(*coordinate, celestialDatabase);
-    return std::make_shared<WorldServer>(worldTemplate, File::ephemeralFile());
+    auto worldTemplate = std::make_shared<WorldTemplate>(fixture.root(), *coordinate, celestialDatabase);
+    return std::make_shared<WorldServer>(fixture.root(), worldTemplate, File::ephemeralFile(fixture.root().random()));
   };
   auto firstWorld = makeWorld();
   auto secondWorld = makeWorld();
@@ -203,19 +204,19 @@ TEST(WorldSnapshot, FixedCoordinateGenerationIsDeterministic) {
   firstWorld->close();
   secondWorld->close();
   celestialDatabase->close();
-}
+});
 
-TEST(WorldSnapshot, ShipWorldIsDeterministic) {
+const GameTestRegistration shipWorldIsDeterministic("WorldSnapshot", "ShipWorldIsDeterministic", [](GameTest& fixture) {
   // The ship world does not depend on celestial parameters, so it has its own
   // stable hash.
-  auto speciesShips = Root::singleton().assets()->json("/universe_server.config:speciesShips");
-  auto shipStructure = WorldStructure(jsonToStringList(speciesShips.get("human"))[0]);
+  auto speciesShips = fixture.root().assets()->json("/universe_server.config:speciesShips");
+  auto shipStructure = WorldStructure(fixture.root(), jsonToStringList(speciesShips.get("human"))[0]);
   Vec2U worldSize(2048, 2048);
   if (auto jWorldSize = shipStructure.configValue("worldSize"))
     worldSize = jsonToVec2U(jWorldSize);
 
   auto makeWorld = [&]() {
-    auto world = std::make_shared<WorldServer>(worldSize, File::ephemeralFile());
+    auto world = std::make_shared<WorldServer>(fixture.root(), worldSize, File::ephemeralFile(fixture.root().random()));
     world->setCentralStructure(shipStructure);
     return world;
   };
@@ -244,18 +245,18 @@ TEST(WorldSnapshot, ShipWorldIsDeterministic) {
   EXPECT_EQ(firstHash, 0x96a3df5c62832b0bull) << "update the expected hash (printed above)";
   firstWorld->close();
   secondWorld->close();
-}
+});
 
-TEST(WorldSnapshot, StoppedWorldRetainsClientsAndExportsRecoverableChunks) {
-  auto storage = File::temporaryFile();
+const GameTestRegistration stoppedWorldRetainsClientsAndExportsRecoverableChunks("WorldSnapshot", "StoppedWorldRetainsClientsAndExportsRecoverableChunks", [](GameTest& fixture) {
+  auto storage = File::temporaryFile(fixture.root().random());
   auto path = storage->fileName();
   auto cleanup = finally([&]() { storage->close(); File::remove(path); });
-  auto world = std::make_shared<WorldServer>(Vec2U(2048, 2048), storage);
-  auto speciesShips = Root::singleton().assets()->json("/universe_server.config:speciesShips");
-  world->setCentralStructure(WorldStructure(jsonToStringList(speciesShips.get("human"))[0]));
+  auto world = std::make_shared<WorldServer>(fixture.root(), Vec2U(2048, 2048), storage);
+  auto speciesShips = fixture.root().assets()->json("/universe_server.config:speciesShips");
+  world->setCentralStructure(WorldStructure(fixture.root(), jsonToStringList(speciesShips.get("human"))[0]));
   world->setProperty("stopSaveRegression", Json(42));
 
-  WorldServerThread thread(world, ClientShipWorldId(Uuid()));
+  WorldServerThread thread(world, ClientShipWorldId(Uuid(fixture.root().random())));
   ASSERT_TRUE(thread.addClient(MinClientConnectionId, SpawnTargetPosition(Vec2F(1024, 1024)),
       true, false, NetCompatibilityRules{}, MainClientWorldId));
   thread.start();
@@ -293,18 +294,18 @@ TEST(WorldSnapshot, StoppedWorldRetainsClientsAndExportsRecoverableChunks) {
   thread.close();
   EXPECT_FALSE(thread.serverErrorOccurred());
 
-  WorldServer fromChunks(chunks);
+  WorldServer fromChunks(fixture.root(), chunks);
   EXPECT_EQ(fromChunks.getProperty("stopSaveRegression", Json()), Json(42));
   fromChunks.close();
 
-  WorldServer fromFile(File::open(path, IOMode::ReadWrite));
+  WorldServer fromFile(fixture.root(), File::open(path, IOMode::ReadWrite));
   EXPECT_EQ(fromFile.getProperty("stopSaveRegression", Json()), Json(42));
   fromFile.close();
-}
+});
 
-TEST(ProjectileActions, DelayedExplosionOutlivesProjectile) {
-  auto& root = Root::singleton();
-  auto world = std::make_shared<WorldServer>(Vec2U(2048, 2048), File::ephemeralFile());
+const GameTestRegistration delayedExplosionOutlivesProjectile("ProjectileActions", "DelayedExplosionOutlivesProjectile", [](GameTest& fixture) {
+  auto& root = fixture.root();
+  auto world = std::make_shared<WorldServer>(root, Vec2U(2048, 2048), File::ephemeralFile(root.random()));
   auto closeWorld = finally([&]() { world->close(); });
   Vec2I tilePosition(1024, 1024);
   world->generateRegion(RectI::withSize(tilePosition - Vec2I(4, 4), Vec2I(9, 9)));
@@ -336,4 +337,4 @@ TEST(ProjectileActions, DelayedExplosionOutlivesProjectile) {
   for (unsigned step = 0; step < 10 && world->material(tilePosition, TileLayer::Foreground) != EmptyMaterialId; ++step)
     world->update(0.2f);
   EXPECT_EQ(world->material(tilePosition, TileLayer::Foreground), EmptyMaterialId);
-}
+});

@@ -11,13 +11,16 @@ import star.chat_types;
 import star.set;
 import star.thread;
 import star.uuid;
+import star.random;
 
 import star.chat_processor;
 
 import star.algorithm;
 namespace Star {
 
-char const* ChatProcessor::ServerNick = "server";
+ChatProcessor::ChatProcessor(RandomService& random) : m_random(random) {}
+
+char const* const ChatProcessor::ServerNick = "server";
 
 String ChatProcessor::connectClient(ConnectionId clientId, String nick) {
   RecursiveMutexLocker locker(m_mutex);
@@ -266,7 +269,7 @@ bool ChatProcessor::handleCommand(ChatReceivedMessage& message) {
     if (res.is<String>()) {
       response = res.get<String>();
     } else {
-      Uuid uuid;
+      Uuid uuid(m_random);
       m_commandPromises[uuid] = std::make_pair(message.fromConnection,res.get<RpcPromise<String>>());
     }
   } else {

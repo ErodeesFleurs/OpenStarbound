@@ -17,11 +17,12 @@ import star.drawable;
 namespace Star {
 
 class Player;
+class TileDrawer;
 
 class PreviewableItem {
 public:
   virtual ~PreviewableItem() {}
-  virtual List<Drawable> preview(std::shared_ptr<Player> const& viewer = {}) const = 0;
+  virtual List<Drawable> preview(TileDrawer* tileDrawer, std::shared_ptr<Player> const& viewer = {}) const = 0;
 };
 
 }
@@ -30,5 +31,6 @@ export module star.previewable_item;
 
 export namespace Star {
   using ::Star::Player;
+  using ::Star::TileDrawer;
   using ::Star::PreviewableItem;
 }

@@ -91,7 +91,7 @@ import star.material_database;
 import star.static_random;
 namespace Star {
 
-RenderTile TileDrawer::DefaultRenderTile{
+RenderTile const TileDrawer::DefaultRenderTile{
     NullMaterialId,
     NoModId,
     NullMaterialId,
@@ -110,38 +110,19 @@ RenderTile TileDrawer::DefaultRenderTile{
     0
 };
 
-TileDrawer* TileDrawer::s_singleton;
-
-TileDrawer* TileDrawer::singletonPtr() {
-  return s_singleton;
-}
-
-TileDrawer& TileDrawer::singleton() {
-  if (!s_singleton)
-    throw StarException("TileDrawer::singleton() called with no TileDrawer instance available");
-  else
-    return *s_singleton;
-}
-
-TileDrawer::TileDrawer() {
-  auto assets = Root::singleton().assets();
+TileDrawer::TileDrawer(Root& root) : m_root(root) {
+  auto assets = m_root.assets();
 
   m_backgroundLayerColor = jsonToColor(assets->json("/rendering.config:backgroundLayerColor")).toRgba();
   m_foregroundLayerColor = jsonToColor(assets->json("/rendering.config:foregroundLayerColor")).toRgba();
   m_liquidDrawLevels = jsonToVec2F(assets->json("/rendering.config:liquidDrawLevels"));
-  s_singleton = this;
-}
-
-TileDrawer::~TileDrawer() {
-  if (s_singleton == this)
-    s_singleton = nullptr;
 }
 
 bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
   TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData, float scale, Vec2I offset, Maybe<TerrainLayer> variantLayer) {
-  auto& root = Root::singleton();
-  auto assets = Root::singleton().assets();
-  auto materialDatabase = root.materialDatabase();
+  auto assets = m_root.assets();
+  auto materialDatabase = m_root.materialDatabase();
+  auto imageMetadata = m_root.imageMetadataDatabase();
 
   RenderTile const& tile = getRenderTile(renderData, pos);
 
@@ -214,7 +195,7 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
       if (!variant) continue;
       auto& textureCoords = variant->wrap(variance);
       auto image = getPieceImage(piecePair.first, textureCoords, materialHue, directives);
-      drawList.emplace_back(Drawable::makeImage(image, scale, false, piecePair.second * scale + Vec2F(pos), color));
+      drawList.emplace_back(Drawable::makeImage(*imageMetadata, image, scale, false, piecePair.second * scale + Vec2F(pos), color));
     }
   }
 
@@ -235,7 +216,7 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
       if (!variant) continue;
       auto& textureCoords = variant->wrap(variance);
       auto image = getPieceImage(piecePair.first, textureCoords, modHue, directives);
-      drawList.emplace_back(Drawable::makeImage(image, scale, false, piecePair.second * scale + Vec2F(pos), color));
+      drawList.emplace_back(Drawable::makeImage(*imageMetadata, image, scale, false, piecePair.second * scale + Vec2F(pos), color));
     }
   }
 
@@ -243,7 +224,7 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
     auto& drawList = drawables[damageZLevel()];
     auto const& crackingImage = materialRenderProfile->damageImage(damageLevel, damageType);
 
-    drawList.emplace_back(Drawable::makeImage(crackingImage.first, scale, false, crackingImage.second * scale + Vec2F(pos), color));
+    drawList.emplace_back(Drawable::makeImage(*imageMetadata, crackingImage.first, scale, false, crackingImage.second * scale + Vec2F(pos), color));
   }
 
   return occlude;

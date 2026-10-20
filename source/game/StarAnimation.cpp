@@ -26,6 +26,7 @@ import star.lexical_cast;
 import star.drawable;
 import star.asset_source;
 import star.assets;
+import star.image_metadata_database;
 import star.root_base;
 import star.configuration;
 import star.root;
@@ -35,9 +36,9 @@ import star.animation;
 import star.math_common;
 namespace Star {
 
-Animation::Animation() : Animation({}, {}) {}
+Animation::Animation(Root& root) : Animation(root, {}, {}) {}
 
-Animation::Animation(Json config, String const& directory) {
+Animation::Animation(Root& root, Json config, String const& directory) : m_root(&root) {
   m_directory = directory;
   if (m_directory.empty()) {
     if (config.isType(Json::Type::String))
@@ -48,7 +49,7 @@ Animation::Animation(Json config, String const& directory) {
   if (config.isNull())
     config = JsonObject();
 
-  config = Root::singleton().assets()->fetchJson(config);
+  config = root.assets()->fetchJson(config);
 
   m_mode = AnimationModeNames.getLeft(config.getString("mode", "endAndDisappear"));
   m_base = config.getString("frames", "");
@@ -63,7 +64,7 @@ Animation::Animation(Json config, String const& directory) {
   m_centered = config.getBool("centered", true);
   m_processing = config.getString("processing", "");
   m_color = config.opt("color").apply(jsonToColor).value(Color::White);
-  m_variantOffset = Random::randInt(config.getInt("variants", 1) - 1) * m_frameNumber;
+  m_variantOffset = root.random().randInt(config.getInt("variants", 1) - 1) * m_frameNumber;
 
   reset();
 }
@@ -98,8 +99,9 @@ Drawable Animation::drawable(float pixelSize) const {
   if (m_appendFrame)
     baseFrame += ":" + toString(m_frame);
 
-  Drawable drawable = Drawable::makeImage(std::move(baseFrame), pixelSize, m_centered, m_offset);
-  drawable.imagePart().addDirectivesGroup(m_processing, true);
+  auto imageMetadata = m_root->imageMetadataDatabase();
+  Drawable drawable = Drawable::makeImage(*imageMetadata, std::move(baseFrame), pixelSize, m_centered, m_offset);
+  drawable.imagePart().addDirectivesGroup(*imageMetadata, m_processing, true);
   drawable.rotate(m_angle);
   drawable.color = m_color;
   return drawable;
@@ -139,7 +141,7 @@ void Animation::reset() {
   m_tagValues["index"] = "0";
 }
 
-EnumMap<Animation::AnimationMode> Animation::AnimationModeNames = {{Animation::AnimationMode::Stop, "Stop"},
+EnumMap<Animation::AnimationMode> const Animation::AnimationModeNames = {{Animation::AnimationMode::Stop, "Stop"},
     {Animation::AnimationMode::EndAndDisappear, "EndAndDisappear"},
     {Animation::AnimationMode::LoopForever, "LoopForever"}};
 }

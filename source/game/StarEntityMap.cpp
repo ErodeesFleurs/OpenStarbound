@@ -46,6 +46,7 @@ import star.tile_modification;
 import star.lua_root;
 import star.force_regions;
 import star.world;
+import star.root;
 import star.physics_entity;
 import star.mobile_entity;
 import star.scripted_entity;
@@ -285,7 +286,7 @@ void EntityMap::forAllEntities(EntityCallback const& callback, std::function<boo
     try {
       callback(entity);
     } catch (...) {
-      Logger::error("[EntityMap] Exception caught running forAllEntities callback for {} entity {} (named \"{}\")",
+      entity->root().logger().error("[EntityMap] Exception caught running forAllEntities callback for {} entity {} (named \"{}\")",
         EntityTypeNames.getRight(entity->entityType()),
         entity->entityId(),
         entity->name()

@@ -252,8 +252,21 @@ DataStream& operator>>(DataStream& ds, Matrix3<DataT>& mat3) {
   return ds;
 }
 
-// Writes / reads a Variant type if every type has operator<< / operator>>
-// defined for DataStream and if it is default constructible.
+// Variant payloads are decoded before construction.  Non-default-constructible
+// alternatives provide DataStream::read<T>() specializations.
+
+namespace detail {
+template <typename First, typename... Rest, typename VariantType>
+void readVariantPayload(DataStream& ds, VariantType& variant, VariantTypeIndex typeIndex) {
+  if (typeIndex == 0) {
+    variant = ds.read<First>();
+  } else if constexpr (sizeof...(Rest) != 0) {
+    readVariantPayload<Rest...>(ds, variant, typeIndex - 1);
+  } else {
+    throw BadVariantType();
+  }
+}
+}
 
 template <typename FirstType, typename... RestTypes>
 DataStream& operator<<(DataStream& ds, Variant<FirstType, RestTypes...> const& variant) {
@@ -264,8 +277,7 @@ DataStream& operator<<(DataStream& ds, Variant<FirstType, RestTypes...> const& v
 
 template <typename FirstType, typename... RestTypes>
 DataStream& operator>>(DataStream& ds, Variant<FirstType, RestTypes...>& variant) {
-  variant.makeType(ds.read<VariantTypeIndex>());
-  variant.call(DataStreamReadFunctor{ds});
+  detail::readVariantPayload<FirstType, RestTypes...>(ds, variant, ds.read<VariantTypeIndex>());
   return ds;
 }
 
@@ -278,8 +290,11 @@ DataStream& operator<<(DataStream& ds, MVariant<AllowedTypes...> const& mvariant
 
 template <typename... AllowedTypes>
 DataStream& operator>>(DataStream& ds, MVariant<AllowedTypes...>& mvariant) {
-  mvariant.makeType(ds.read<VariantTypeIndex>());
-  mvariant.call(DataStreamReadFunctor{ds});
+  auto typeIndex = ds.read<VariantTypeIndex>();
+  if (typeIndex == 0)
+    mvariant.reset();
+  else
+    detail::readVariantPayload<AllowedTypes...>(ds, mvariant, typeIndex - 1);
   return ds;
 }
 
@@ -316,7 +331,10 @@ DataStream& operator<<(DataStream& ds, Maybe<T> const& maybe) {
 
 template <typename T>
 DataStream& operator>>(DataStream& ds, Maybe<T>& maybe) {
-  readMaybe(ds, maybe, [](DataStream& ds, T& t) { ds >> t; });
+  if (ds.read<bool>())
+    maybe = ds.read<T>();
+  else
+    maybe.reset();
   return ds;
 }
 

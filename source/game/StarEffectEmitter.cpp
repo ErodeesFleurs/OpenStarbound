@@ -48,7 +48,7 @@ import star.particle_database;
 import star.algorithm;
 namespace Star {
 
-EffectEmitter::EffectEmitter() {
+EffectEmitter::EffectEmitter(Root& root) : m_root(root) {
   m_renders = false;
   m_direction = Direction::Right;
   addNetElement(&m_activeSources);
@@ -96,7 +96,7 @@ void EffectEmitter::tick(float dt, EntityMode mode) {
     }
     for (auto& c : m_activeSources.get()) {
       if (!current.contains(c)) {
-        m_sources.append(Root::singleton().effectSourceDatabase()->effectSourceConfig(c.second)->instance(c.first));
+        m_sources.append(m_root.effectSourceDatabase()->effectSourceConfig(c.second)->instance(c.first));
       }
     }
   }
@@ -115,7 +115,7 @@ void EffectEmitter::render(RenderCallback* renderCallback) {
   for (auto& ps : m_sources) {
     Vec2F position = m_positions.get(ps->effectSpawnLocation());
     for (auto& p : ps->particles()) {
-      Particle particle = Root::singleton().particleDatabase()->particle(p);
+      Particle particle = m_root.particleDatabase()->particle(p);
       if (m_direction == Direction::Left) {
         particle.flip = true;
         particle.position[0] = -particle.position[0];

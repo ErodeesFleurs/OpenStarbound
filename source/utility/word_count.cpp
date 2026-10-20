@@ -1,4 +1,5 @@
 import star.json;
+import star.native_runtime;
 import star.maybe;
 import star.set;
 import star.string;
@@ -49,6 +50,7 @@ import star.item_database;
 using namespace Star;
 
 int main(int argc, char** argv) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   try {
     RootLoader rootLoader({{}, {}, {}, LogLevel::Error, false, {}});
 
@@ -59,7 +61,7 @@ int main(int argc, char** argv) {
     std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
     StringMap<int> wordCounts;
-    auto assets = Root::singleton().assets();
+    auto assets = root->assets();
 
     auto countWordsInType = [&](String const& type, std::function<int(Json const&)> countFunction, Maybe<std::function<bool(String const&)>> filterFunction = {}, Maybe<String> wordCountKey = {}) {
       auto files = assets->scanExtension(type).values();

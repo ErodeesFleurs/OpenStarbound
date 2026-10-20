@@ -41,7 +41,7 @@ namespace Star {
 
 class PopupInterface : public Pane {
 public:
-  PopupInterface();
+  PopupInterface(GuiContext& guiContext);
 
   virtual ~PopupInterface() {}
 

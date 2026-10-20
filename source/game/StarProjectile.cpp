@@ -121,14 +121,14 @@ import star.line;
 import star.math_common;
 namespace Star {
 
-Projectile::Projectile(std::shared_ptr<ProjectileConfig> const& config, Json const& parameters) {
+Projectile::Projectile(Root& rootContext, std::shared_ptr<ProjectileConfig> const& config, Json const& parameters) : Entity(rootContext), m_scriptComponent(rootContext) {
   m_config = config;
   m_parameters = parameters;
 
   setup();
 }
 
-Projectile::Projectile(std::shared_ptr<ProjectileConfig> const& config, DataStreamBuffer& data, NetCompatibilityRules) {
+Projectile::Projectile(Root& rootContext, std::shared_ptr<ProjectileConfig> const& config, DataStreamBuffer& data, NetCompatibilityRules) : Entity(rootContext), m_scriptComponent(rootContext) {
   m_config = config;
   data.read(m_parameters);
   setup();
@@ -204,7 +204,7 @@ void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
     setReferenceVelocity(referenceVelocity.apply(jsonToVec2F));
 
   if (world->isClient() && !m_persistentAudioFile.empty()) {
-    m_persistentAudio = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(m_persistentAudioFile));
+    m_persistentAudio = std::make_shared<AudioInstance>(*this->root().assets()->audio(m_persistentAudioFile));
     m_persistentAudio->setLoops(-1);
     m_persistentAudio->setPosition(position());
     m_pendingRenderables.append(m_persistentAudio);
@@ -462,7 +462,7 @@ void Projectile::update(float dt, std::uint64_t) {
   }
 
   if (world()->isClient())
-    SpatialLogger::logPoly("world", m_movementController->collisionBody(), Color::Red.toRgba());
+    this->root().spatialLogger().logPoly("world", m_movementController->collisionBody(), Color::Red.toRgba());
 }
 
 void Projectile::render(RenderCallback* renderCallback) {
@@ -474,8 +474,8 @@ void Projectile::render(RenderCallback* renderCallback) {
   m_effectEmitter->render(renderCallback);
 
   String image = strf("{}:{}{}", m_config->image, m_frame, m_imageSuffix);
-  Drawable drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F());
-  drawable.imagePart().addDirectives(m_imageDirectives, true);
+  Drawable drawable = Drawable::makeImage(*this->root().imageMetadataDatabase(), image, 1.0f / TilePixels, true, Vec2F());
+  drawable.imagePart().addDirectives(*this->root().imageMetadataDatabase(), m_imageDirectives, true);
   if (m_config->flippable) {
     auto angleSide = getAngleSide(m_movementController->rotation(), true);
     if (angleSide.second == Direction::Left)
@@ -606,13 +606,13 @@ MovementController* Projectile::movementController() {
   return m_movementController.get();
 }
 
-List<Particle> Projectile::sparkBlock(World* world, Vec2I const& position, Vec2F const& damageSource) {
-  auto& root = Root::singleton();
+List<Particle> Projectile::sparkBlock(Root& rootContext, World* world, Vec2I const& position, Vec2F const& damageSource) {
+  auto& root = rootContext;
   auto assets = root.assets();
   auto materialDatabase = root.materialDatabase();
 
-  auto blockDamageParticle = Particle(assets->json("/client.config:blockDamageParticle"));
-  auto blockDamageVariance = Particle(assets->json("/client.config:blockDamageParticleVariance"));
+  auto blockDamageParticle = Particle(rootContext, assets->json("/client.config:blockDamageParticle"));
+  auto blockDamageVariance = Particle(rootContext, assets->json("/client.config:blockDamageParticleVariance"));
 
   List<Particle> result;
   for (auto layer : {TileLayer::Background, TileLayer::Foreground}) {
@@ -623,12 +623,12 @@ List<Particle> Projectile::sparkBlock(World* world, Vec2I const& position, Vec2F
       particle.position += centerOfTile(position);
       particle.velocity = particle.velocity.magnitude() * vnorm(world->geometry().diff(damageSource, particle.position));
       particle.color = materialDatabase->materialParticleColor(material, hueShift);
-      particle.applyVariance(blockDamageVariance);
+      particle.applyVariance(rootContext, blockDamageVariance);
 
       particle.approach += Vec2F(0.0f, 5.0f);
-      particle.velocity += Vec2F(Random::randf() - 0.5f, 5.0f + Random::randf());
-      particle.velocity += 10.0f * Vec2F(1.0f - 2.0f * Random::randf(), 1.0f - 2.0f * Random::randf());
-      particle.finalVelocity = 0.5f * (particle.finalVelocity + Vec2F(Random::randf() - 0.5f, -20.0f + Random::randf()));
+      particle.velocity += Vec2F(rootContext.random().randf() - 0.5f, 5.0f + rootContext.random().randf());
+      particle.velocity += 10.0f * Vec2F(1.0f - 2.0f * rootContext.random().randf(), 1.0f - 2.0f * rootContext.random().randf());
+      particle.finalVelocity = 0.5f * (particle.finalVelocity + Vec2F(rootContext.random().randf() - 0.5f, -20.0f + rootContext.random().randf()));
       particle.trail = true;
 
       result.append(std::move(particle));
@@ -698,7 +698,7 @@ void Projectile::processAction(Json const& action) {
     if (isSlave())
       return;
 
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = this->root().materialDatabase();
     List<MaterialId> tileDrops;
     unsigned totalDrops = 0;
     for (auto sets : parameters.getArray("materials")) {
@@ -711,14 +711,14 @@ void Projectile::processAction(Json const& action) {
 
     List<Vec2I> openSpaces = world()->findEmptyTiles(m_lastNonCollidingTile, parameters.getInt("radius", 2), totalDrops);
     if (openSpaces.size() < totalDrops)
-      Logger::debug("Couldn't find a place for all the tile drops. {} drops requested, {} spaces found.", totalDrops, openSpaces.size());
+      this->root().logger().debug("Couldn't find a place for all the tile drops. {} drops requested, {} spaces found.", totalDrops, openSpaces.size());
 
     bool allowEntityOverlap = parameters.getBool("allowEntityOverlap", true);
 
-    Random::shuffle(tileDrops);
+    this->root().random().shuffle(tileDrops);
     for (auto& tile : zip(openSpaces, tileDrops)) {
       if (!world()->modifyTile(std::get<0>(tile), PlaceMaterial{TileLayer::Foreground, std::get<1>(tile), MaterialHue()}, allowEntityOverlap)) {
-        auto itemDrop = ItemDrop::createRandomizedDrop(materialDatabase->materialItemDrop(std::get<1>(tile)), (Vec2F)std::get<0>(tile));
+        auto itemDrop = ItemDrop::createRandomizedDrop(this->root(), materialDatabase->materialItemDrop(std::get<1>(tile)), (Vec2F)std::get<0>(tile));
         world()->addEntity(itemDrop);
       }
     }
@@ -727,7 +727,7 @@ void Projectile::processAction(Json const& action) {
     if (isSlave())
       return;
 
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = this->root().materialDatabase();
     Maybe<ModId> previousMod =
         parameters.optString("previousMod").apply(std::bind(&MaterialDatabase::modId, materialDatabase, std::placeholders::_1));
     ModId newMod = materialDatabase->modId(parameters.getString("newMod"));
@@ -747,7 +747,7 @@ void Projectile::processAction(Json const& action) {
         if (world()->material({x, m_collisionTile[1] + radius + 1}, layer) == EmptyMaterialId) {
           for (int y = m_collisionTile[1] + radius; y >= m_collisionTile[1] - radius; --y) {
             auto mat = world()->material({x, y}, layer);
-            if (Random::randf() <= chance) {
+            if (this->root().random().randf() <= chance) {
               if (isRealMaterial(mat)) {
                 auto mod = world()->mod({x, y}, layer);
                 if (!previousMod || *previousMod == mod)
@@ -766,7 +766,7 @@ void Projectile::processAction(Json const& action) {
       return;
 
     float waterAmount = parameters.getFloat("quantity", 1.0f);
-    LiquidId liquid = Root::singleton().liquidsDatabase()->liquidId(parameters.getString("liquid"));
+    LiquidId liquid = this->root().liquidsDatabase()->liquidId(parameters.getString("liquid"));
     auto empty = world()->findEmptyTiles(m_lastNonCollidingTile, parameters.getInt("radius", 5), 50);
     for (Vec2I pos : empty) {
       if (world()->lineTileCollision(Vec2F(pos), Vec2F(m_lastNonCollidingTile)))
@@ -794,13 +794,13 @@ void Projectile::processAction(Json const& action) {
     if (parameters.contains("inheritSpeedFactor"))
       projectileParameters = projectileParameters.set("speed", (m_movementController->velocity() - m_referenceVelocity.value()).magnitude() * parameters.getFloat("inheritSpeedFactor"));
 
-    auto projectile = Root::singleton().projectileDatabase()->createProjectile(type, projectileParameters);
+    auto projectile = this->root().projectileDatabase()->createProjectile(type, projectileParameters);
     Vec2F offset;
     if (parameters.contains("offset")) {
       offset = jsonToVec2F(parameters.getArray("offset", {0.0f, 0.0f}));
     } else if (parameters.contains("offsetRange")) {
       auto offsetRange = jsonToVec4F(parameters.get("offsetRange"));
-      offset = Vec2F(Random::randf(offsetRange[0], offsetRange[2]), Random::randf(offsetRange[1], offsetRange[3]));
+      offset = Vec2F(this->root().random().randf(offsetRange[0], offsetRange[2]), this->root().random().randf(offsetRange[1], offsetRange[3]));
     }
     if (m_referenceVelocity)
       projectile->setReferenceVelocity(m_referenceVelocity);
@@ -813,7 +813,7 @@ void Projectile::processAction(Json const& action) {
       if (parameters.contains("angle"))
         angle = parameters.getFloat("angle") * std::numbers::pi / 180.0f;
       if (parameters.contains("fuzzAngle"))
-        angleAdjust += Random::randf(-1, 1) * parameters.getFloat("fuzzAngle") * std::numbers::pi / 180.0f;
+        angleAdjust += this->root().random().randf(-1, 1) * parameters.getFloat("fuzzAngle") * std::numbers::pi / 180.0f;
       if (parameters.contains("angleAdjust"))
         angleAdjust += parameters.getFloat("angleAdjust") * std::numbers::pi / 180.0f;
       if (parameters.contains("autoFlipAdjust") && parameters.getBool("autoFlipAdjust")) {
@@ -844,12 +844,12 @@ void Projectile::processAction(Json const& action) {
     if (!m_collision || collisionMaterial == EmptyMaterialId)
       return;
 
-    for (auto& particle : sparkBlock(world(), m_collisionTile, position())) {
+    for (auto& particle : sparkBlock(this->root(), world(), m_collisionTile, position())) {
       // enable trails and such
       particle.approach += Vec2F(0.0f, 5.0f);
-      particle.velocity += Vec2F(Random::randf() - 0.5f, 5.0f + Random::randf());
-      particle.velocity += 10.0f * Vec2F(1.0f - 2.0f * Random::randf(), 1.0f - 2.0f * Random::randf());
-      particle.finalVelocity = 0.5f * (particle.finalVelocity + Vec2F(Random::randf() - 0.5f, -20.0f + Random::randf()));
+      particle.velocity += Vec2F(this->root().random().randf() - 0.5f, 5.0f + this->root().random().randf());
+      particle.velocity += 10.0f * Vec2F(1.0f - 2.0f * this->root().random().randf(), 1.0f - 2.0f * this->root().random().randf());
+      particle.finalVelocity = 0.5f * (particle.finalVelocity + Vec2F(this->root().random().randf() - 0.5f, -20.0f + this->root().random().randf()));
       particle.trail = true;
 
       m_pendingRenderables.append(std::move(particle));
@@ -859,7 +859,7 @@ void Projectile::processAction(Json const& action) {
     if (!world()->isClient())
       return;
 
-    Particle particle = Root::singleton().particleDatabase()->particle(parameters.get("specification"));
+    Particle particle = this->root().particleDatabase()->particle(parameters.get("specification"));
     particle.position = particle.position.rotate(m_movementController->rotation());
     if (parameters.getBool("rotate", false)) {
       particle.rotation = m_movementController->rotation();
@@ -903,7 +903,7 @@ void Projectile::processAction(Json const& action) {
 
       float level = parameters.getFloat("level", m_parameters.getFloat("level", 0.0f));
 
-      auto monsterDatabase = Root::singleton().monsterDatabase();
+      auto monsterDatabase = this->root().monsterDatabase();
       auto monster = monsterDatabase->createMonster(monsterDatabase->randomMonster(type, arguments), level);
 
       auto spawnPosition = position();
@@ -914,7 +914,7 @@ void Projectile::processAction(Json const& action) {
     }
 
     if (world()->isClient() && parameters.contains("particle")) {
-      Particle particle(parameters.getObject("particle"));
+      Particle particle(root(), parameters.getObject("particle"));
       particle.translate(position());
       particle.velocity += m_referenceVelocity.value();
       m_pendingRenderables.append(std::move(particle));
@@ -928,14 +928,14 @@ void Projectile::processAction(Json const& action) {
     std::size_t count = parameters.getInt("count", 1);
     JsonObject data = parameters.getObject("data", JsonObject{});
 
-    auto itemDrop = ItemDrop::createRandomizedDrop(ItemDescriptor(name, count, data), position());
+    auto itemDrop = ItemDrop::createRandomizedDrop(this->root(), ItemDescriptor(name, count, data), position());
     world()->addEntity(itemDrop);
 
   } else if (command == "sound") {
     if (!world()->isClient())
       return;
 
-    std::shared_ptr<AudioInstance> sound = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(Random::randValueFrom(parameters.getArray("options")).toString()));
+    std::shared_ptr<AudioInstance> sound = std::make_shared<AudioInstance>(*this->root().assets()->audio(this->root().random().randValueFrom(parameters.getArray("options")).toString()));
     sound->setPosition(position());
     sound->setVolume(parameters.getFloat("volume", 1.0f));
     sound->setPitchMultiplier(parameters.getFloat("pitch", 1.0f));
@@ -957,7 +957,7 @@ void Projectile::processAction(Json const& action) {
   } else if (command == "option") {
     JsonArray options = parameters.getArray("options");
     if (options.size())
-      processAction(Random::randFrom(options));
+      processAction(this->root().random().randFrom(options));
 
   } else if (command == "actions") {
     JsonArray list = parameters.getArray("list");
@@ -974,7 +974,7 @@ void Projectile::processAction(Json const& action) {
     }
 
   } else if (command == "config") {
-    processAction(Root::singleton().assets()->json(parameters.getString("file")));
+    processAction(this->root().assets()->json(parameters.getString("file")));
 
   } else {
     throw StarException(strf("Unknown projectile reap command {}", command));
@@ -1003,7 +1003,7 @@ void Projectile::tickShared(float dt) {
   for (auto periodicActionIt = m_periodicActions.begin(); periodicActionIt != m_periodicActions.end();) {
     auto& periodicAction = *periodicActionIt;
     if (std::get<1>(periodicAction)) {
-      if (std::get<0>(periodicAction).wrapTick())
+      if (std::get<0>(periodicAction).wrapTick(root().timing().timestep))
         processAction(std::get<2>(periodicAction));
     } else {
       if (std::get<0>(periodicAction).tick(dt)) {
@@ -1060,9 +1060,9 @@ void Projectile::setup() {
   auto movementSettings = jsonMerge(m_config->movementSettings, m_parameters.get("movementSettings", Json()));
   if (!movementSettings.contains("physicsEffectCategories"))
     movementSettings = movementSettings.set("physicsEffectCategories", JsonArray{"projectile"});
-  m_movementController = std::make_shared<MovementController>(movementSettings);
+  m_movementController = std::make_shared<MovementController>(this->root(), movementSettings);
 
-  m_effectEmitter = std::make_shared<EffectEmitter>();
+  m_effectEmitter = std::make_shared<EffectEmitter>(this->root());
 
   m_initialSpeed = m_parameters.getFloat("speed", m_config->initialSpeed);
   m_sourceEntity = NullEntityId;

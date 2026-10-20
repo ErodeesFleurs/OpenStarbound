@@ -46,7 +46,7 @@ public:
 
   unsigned MaximumEventBuffer = 16;
 
-  CanvasWidget();
+  CanvasWidget(GuiContext& context);
 
   void setCaptureMouseEvents(bool captureMouse);
   void setCaptureKeyboardEvents(bool captureKeyboard);

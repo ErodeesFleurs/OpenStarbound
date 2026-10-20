@@ -107,7 +107,6 @@ import star.item_drop;
 import star.npc;
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.configuration;
 import star.root;
 import star.stagehand;
@@ -141,8 +140,7 @@ EnumMap<EntityType> const EntityFactory::EntityStorageIdentifiers{
   {EntityType::Vehicle, "VehicleEntity"}
 };
 
-EntityFactory::EntityFactory() {
-  auto& root = Root::singleton();
+EntityFactory::EntityFactory(Root& root) : m_root(root) {
   m_playerFactory = root.playerFactory();
   m_monsterDatabase = root.monsterDatabase();
   m_objectDatabase = root.objectDatabase();
@@ -190,17 +188,17 @@ std::shared_ptr<Entity> EntityFactory::netLoadEntity(EntityType type, ByteArray 
   } else if (type == EntityType::Object) {
     return m_objectDatabase->netLoadObject(netStore, rules);
   } else if (type == EntityType::Plant) {
-    return std::make_shared<Plant>(netStore, rules);
+    return std::make_shared<Plant>(m_root, netStore, rules);
   } else if (type == EntityType::PlantDrop) {
-    return std::make_shared<PlantDrop>(netStore, rules);
+    return std::make_shared<PlantDrop>(m_root, netStore, rules);
   } else if (type == EntityType::Projectile) {
     return m_projectileDatabase->netLoadProjectile(netStore, rules);
   } else if (type == EntityType::ItemDrop) {
-    return std::make_shared<ItemDrop>(netStore, rules);
+    return std::make_shared<ItemDrop>(m_root, netStore, rules);
   } else if (type == EntityType::Npc) {
     return m_npcDatabase->netLoadNpc(netStore, rules);
   } else if (type == EntityType::Stagehand) {
-    return std::make_shared<Stagehand>(netStore, rules);
+    return std::make_shared<Stagehand>(m_root, netStore, rules);
   } else if (type == EntityType::Vehicle) {
     return m_vehicleDatabase->netLoad(netStore, rules);
   } else {
@@ -242,13 +240,13 @@ std::shared_ptr<Entity> EntityFactory::diskLoadEntity(EntityType type, Json cons
   } else if (type == EntityType::Object) {
     return m_objectDatabase->diskLoadObject(diskStore);
   } else if (type == EntityType::Plant) {
-    return std::make_shared<Plant>(diskStore);
+    return std::make_shared<Plant>(m_root, diskStore);
   } else if (type == EntityType::ItemDrop) {
-    return std::make_shared<ItemDrop>(diskStore);
+    return std::make_shared<ItemDrop>(m_root, diskStore);
   } else if (type == EntityType::Npc) {
     return m_npcDatabase->diskLoadNpc(diskStore);
   } else if (type == EntityType::Stagehand) {
-    return std::make_shared<Stagehand>(diskStore);
+    return std::make_shared<Stagehand>(m_root, diskStore);
   } else if (type == EntityType::Vehicle) {
     return m_vehicleDatabase->diskLoad(diskStore);
   } else {

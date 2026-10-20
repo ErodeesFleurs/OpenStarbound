@@ -21,6 +21,8 @@ import star.directives;
 
 import star.vector;
 namespace Star {
+class Root;
+
 
 class FontTextureGroup {
 public:
@@ -34,7 +36,7 @@ public:
     Vec2F offset;
   };
 
-  FontTextureGroup(std::shared_ptr<TextureGroup> textureGroup);
+  FontTextureGroup(Root& root, std::shared_ptr<TextureGroup> textureGroup);
 
   const GlyphTexture& glyphTexture(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr);
 
@@ -55,6 +57,7 @@ public:
 private:
   Font* getFontForCharacter(String::Char);
 
+  Root& m_root;
   CaseInsensitiveStringMap<std::shared_ptr<Font>> m_fonts;
   String m_fontName;
   std::shared_ptr<Font> m_activeFont;

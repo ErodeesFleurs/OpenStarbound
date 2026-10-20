@@ -77,7 +77,7 @@ class Widget;
 
 class InventoryPane : public Pane {
 public:
-  InventoryPane(MainInterface* parent, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor);
+  InventoryPane(GuiContext& guiContext, MainInterface* parent, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor);
 
   void displayed() override;
   std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition) override;

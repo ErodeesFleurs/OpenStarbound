@@ -1,6 +1,7 @@
 module;
 import std;
 import star.xx_hash;
+import star.byte_array;
 import star.json;
 import star.id_map;
 import star.ordered_map;
@@ -83,6 +84,7 @@ class WorldCamera;
 
 class Assets;
 class MaterialDatabase;
+class Root;
 
 class TilePainter : public TileDrawer {
 public:
@@ -98,7 +100,7 @@ public:
   static unsigned const RenderChunkSize = 16;
   static unsigned const BorderTileSize = RenderChunkSize + MaterialRenderProfileMaxNeighborDistance - 1;
 
-  TilePainter(std::shared_ptr<Renderer> renderer);
+  TilePainter(Root& root, std::shared_ptr<Renderer> renderer);
 
   // Adjusts lighting levels for liquids.
   void adjustLighting(WorldRenderData& renderData) const;
@@ -145,8 +147,8 @@ private:
   // RenderChunkSize results in the coordinate of the lower left most tile in
   // the render chunk.
 
-  static ChunkHash terrainChunkHash(WorldRenderData& renderData, Vec2I chunkIndex);
-  static ChunkHash liquidChunkHash(WorldRenderData& renderData, Vec2I chunkIndex);
+  ChunkHash terrainChunkHash(WorldRenderData& renderData, Vec2I chunkIndex);
+  ChunkHash liquidChunkHash(WorldRenderData& renderData, Vec2I chunkIndex);
 
   void renderTerrainChunks(WorldCamera const& camera, TerrainLayer terrainLayer);
 
@@ -158,6 +160,9 @@ private:
   void produceLiquidPrimitives(HashMap<LiquidId, List<RenderPrimitive>>& primitives, Vec2I const& pos, WorldRenderData const& renderData);
 
   float liquidDrawLevel(float liquidLevel) const;
+
+  ByteArray m_terrainHashBuffer;
+  ByteArray m_liquidHashBuffer;
 
   List<LiquidInfo> m_liquids;
 

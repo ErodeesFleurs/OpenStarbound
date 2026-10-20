@@ -19,13 +19,14 @@ import star.directives;
 import star.font_texture_group;
 import star.time;
 import star.logging;
+import star.root;
 
 import star.vector;
 import star.algorithm;
 namespace Star {
 
-FontTextureGroup::FontTextureGroup(std::shared_ptr<TextureGroup> textureGroup)
-  : m_textureGroup(std::move(textureGroup)) {}
+FontTextureGroup::FontTextureGroup(Root& root, std::shared_ptr<TextureGroup> textureGroup)
+  : m_root(root), m_textureGroup(std::move(textureGroup)) {}
 
 void FontTextureGroup::cleanup(std::int64_t timeout) {
   std::int64_t currentTime = Time::monotonicMilliseconds();
@@ -86,14 +87,14 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
         if (auto error = entry.operation.ptr<ErrorImageOperation>()) {
           if (auto string = error->cause.ptr<std::string>()) {
             if (!string->empty()) {
-              Logger::error("Error in parsed font directives: {}", *string);
+              m_root.logger().error("Error in parsed font directives: {}", *string);
               string->clear();
             }
           } else if (auto& exception = error->cause.get<std::exception_ptr>()) {
             try
               { std::rethrow_exception(error->cause.get<std::exception_ptr>()); }
             catch (std::exception const& e)
-              { Logger::error("Exception in parsed font directives: {}", e.what()); };
+              { m_root.logger().error("Exception in parsed font directives: {}", e.what()); };
             exception = {};
           }
           broken |= true;
@@ -101,7 +102,7 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
           try { processImageOperation(entry.operation, image); }
           catch (StarException const& e) {
             broken |= true;
-            Logger::error("Exception processing font directives for {}px '{}': {}", size, String(c), e.what());
+            m_root.logger().error("Exception processing font directives for {}px '{}': {}", size, String(c), e.what());
           }
         }
       }

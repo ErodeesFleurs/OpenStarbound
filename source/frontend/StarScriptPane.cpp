@@ -204,23 +204,23 @@ import star.status_controller_lua_bindings;
 
 namespace Star {
 
-ScriptPane::ScriptPane(std::shared_ptr<UniverseClient> client, Json config, EntityId sourceEntityId) : BaseScriptPane(config) {
-  auto& root = Root::singleton();
+ScriptPane::ScriptPane(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, Json config, EntityId sourceEntityId) : BaseScriptPane(guiContext, config) {
+  auto& root = context()->root();
   auto assets = root.assets();
 
   m_client = std::move(client);
   m_sourceEntityId = sourceEntityId;
 
-  m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_client->mainPlayer().get()));
+  m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(context()->root(), m_client->mainPlayer().get()));
   m_script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_client->mainPlayer()->statusController()));
-  m_script.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client.get()));
+  m_script.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(context()->root(), m_client.get()));
 }
 
 void ScriptPane::displayed() {
   auto world = m_client->worldClient();
   if (world && world->inWorld()) {
     m_script.setLuaRoot(world->luaRoot());
-    m_script.addCallbacks("world", LuaBindings::makeWorldCallbacks(world.get()));
+    m_script.addCallbacks("world", LuaBindings::makeWorldCallbacks(context()->root(), world.get()));
   }
   BaseScriptPane::displayed();
 }
@@ -241,9 +241,9 @@ std::shared_ptr<Pane> ScriptPane::createTooltip(Vec2I const& screenPosition) {
   auto result = m_script.invoke<Json>("createTooltip", screenPosition);
   if (result && !result.value().isNull()) {
     if (result->type() == Json::Type::String) {
-      return SimpleTooltipBuilder::buildTooltip(result->toString());
+      return SimpleTooltipBuilder::buildTooltip(*context(), result->toString());
     } else {
-      std::shared_ptr<Pane> tooltip = std::make_shared<Pane>();
+      std::shared_ptr<Pane> tooltip = std::make_shared<Pane>(*context());
       m_reader->construct(*result, tooltip.get());
       return tooltip;
     }
@@ -256,7 +256,7 @@ std::shared_ptr<Pane> ScriptPane::createTooltip(Vec2I const& screenPosition) {
         item = itemGrid->itemAt(screenPosition);
     }
     if (item)
-      return ItemTooltipBuilder::buildItemTooltip(item, m_client->mainPlayer());
+      return ItemTooltipBuilder::buildItemTooltip(*context(), item, m_client->mainPlayer());
     return {};
   }
 }

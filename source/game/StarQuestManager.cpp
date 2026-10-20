@@ -174,19 +174,19 @@ import star.client_context;
 
 namespace Star {
 
-QuestManager::QuestManager(Player* player) {
+QuestManager::QuestManager(Root& root, Player* player) : m_root(root) {
   m_player = player;
   m_world = nullptr;
   m_trackOnWorldQuests = false;
 }
 
-std::shared_ptr<QuestTemplate> getTemplate(String const& templateId) {
-  return Root::singleton().questTemplateDatabase()->questTemplate(templateId);
+std::shared_ptr<QuestTemplate> getTemplate(Root& root, String const& templateId) {
+  return root.questTemplateDatabase()->questTemplate(templateId);
 }
 
-StringMap<std::shared_ptr<Quest>> readQuests(Json const& json) {
-  auto versioningDatabase = Root::singleton().versioningDatabase();
-  auto questTemplateDatabase = Root::singleton().questTemplateDatabase();
+StringMap<std::shared_ptr<Quest>> readQuests(Root& root, Json const& json) {
+  auto versioningDatabase = root.versioningDatabase();
+  auto questTemplateDatabase = root.questTemplateDatabase();
 
   auto validateArc = [questTemplateDatabase](QuestArcDescriptor const& arc) {
       for (auto quest : arc.quests) {
@@ -200,9 +200,9 @@ StringMap<std::shared_ptr<Quest>> readQuests(Json const& json) {
   for (auto const& questPair : json.iterateObject()) {
     // don't load the quest unless all quests in the arc exist
     Json diskStore = versioningDatabase->loadVersionedJson(VersionedJson::fromJson(questPair.second), "Quest");
-    auto questArc = QuestArcDescriptor::diskLoad(diskStore.get("arc"));
+    auto questArc = QuestArcDescriptor::diskLoad(root, diskStore.get("arc"));
     if (validateArc(questArc))
-      result[questPair.first] = std::make_shared<Quest>(questPair.second);
+      result[questPair.first] = std::make_shared<Quest>(root, questPair.second);
   }
   return result;
 }
@@ -214,7 +214,7 @@ std::function<bool (std::shared_ptr<Quest> const&)> questFilter(QuestState state
 }
 
 void QuestManager::diskLoad(Json const& quests) {
-  m_quests = readQuests(quests.get("quests", JsonObject{}));
+  m_quests = readQuests(m_root, quests.get("quests", JsonObject{}));
   m_trackedQuestId = quests.optString("currentQuest");
 }
 
@@ -262,7 +262,7 @@ bool QuestManager::canStart(QuestArcDescriptor const& questArc) const {
     return false;
 
   for (auto questDesc : questArc.quests) {
-    auto questTemplate = getTemplate(questDesc.templateId);
+    auto questTemplate = getTemplate(m_root, questDesc.templateId);
     if (!questTemplate)
       return false;
     if (auto quest = m_quests.maybe(questDesc.questId))
@@ -481,7 +481,7 @@ Maybe<QuestIndicator> QuestManager::getQuestIndicator(std::shared_ptr<Entity> co
     }
 
     if (!indicatorType) {
-      auto questTemplateDatabase = Root::singleton().questTemplateDatabase();
+      auto questTemplateDatabase = m_root.questTemplateDatabase();
       for (auto& questArc : questGiver->offeredQuests()) {
         if (canStart(questArc) && questArc.quests.size() > 0) {
           auto& questDesc = questArc.quests[0];
@@ -494,7 +494,7 @@ Maybe<QuestIndicator> QuestManager::getQuestIndicator(std::shared_ptr<Entity> co
   }
 
   if (indicatorType) {
-    Json indicators = Root::singleton().assets()->json("/quests/quests.config:indicators");
+    Json indicators = m_root.assets()->json("/quests/quests.config:indicators");
     String indicatorImage = indicators.get(*indicatorType).getString("image");
     if (questGiver)
       indicatorPos = questGiver->questIndicatorPosition();
@@ -585,11 +585,11 @@ void QuestManager::update(float dt) {
 
 void QuestManager::startInitialQuests() {
   auto startingQuests =
-      Root::singleton().assets()->json(strf("/quests/quests.config:initialquests.{}", m_player->species())).toArray();
+      m_root.assets()->json(strf("/quests/quests.config:initialquests.{}", m_player->species())).toArray();
   for (auto const& questArcJson : startingQuests) {
-    QuestArcDescriptor quest = QuestArcDescriptor::fromJson(questArcJson);
+    QuestArcDescriptor quest = QuestArcDescriptor::fromJson(m_root, questArcJson);
     if (canStart(quest))
-      offer(std::make_shared<Quest>(quest, 0, m_player));
+      offer(std::make_shared<Quest>(m_root, quest, 0, m_player));
   }
 }
 

@@ -73,8 +73,8 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-ProjectileDatabase::ProjectileDatabase() {
-  auto assets = Root::singleton().assets();
+ProjectileDatabase::ProjectileDatabase(Root& root) : m_root(root) {
+  auto assets = m_root.assets();
 
   auto& files = assets->scanExtension("projectile");
   assets->queueJsons(files);
@@ -82,11 +82,11 @@ ProjectileDatabase::ProjectileDatabase() {
     try {
       auto projectileConfig = readConfig(file);
       if (m_configs.contains(projectileConfig->typeName))
-        Logger::error("Duplicate projectile asset typeName {}. configfile {}", projectileConfig->typeName, file);
+        m_root.logger().error("Duplicate projectile asset typeName {}. configfile {}", projectileConfig->typeName, file);
       else
         m_configs[projectileConfig->typeName] = projectileConfig;
     } catch (std::exception const& e) {
-      Logger::error("Could not read projectile '{}', error: {}", file, outputException(e, false));
+      m_root.logger().error("Could not read projectile '{}', error: {}", file, outputException(e, false));
     }
   }
 }
@@ -108,7 +108,7 @@ Json ProjectileDatabase::projectileConfig(String const& type) const {
 std::shared_ptr<Projectile> ProjectileDatabase::createProjectile(String const& type, Json const& parameters) const {
   if (!m_configs.contains(type))
     throw ProjectileDatabaseException(strf("Unknown projectile with typeName {}.", type));
-  return std::make_shared<Projectile>(m_configs.get(type), parameters);
+  return std::make_shared<Projectile>(m_root, m_configs.get(type), parameters);
 }
 
 String ProjectileDatabase::damageKindImage(String const& type) const {
@@ -129,11 +129,11 @@ std::shared_ptr<Projectile> ProjectileDatabase::netLoadProjectile(ByteArray cons
   DataStreamBuffer ds(netStore);
   ds.setStreamCompatibilityVersion(rules);
   String typeName = ds.read<String>();
-  return std::make_shared<Projectile>(m_configs.get(typeName), ds, rules);
+  return std::make_shared<Projectile>(m_root, m_configs.get(typeName), ds, rules);
 }
 
 std::shared_ptr<ProjectileConfig> ProjectileDatabase::readConfig(String const& path) {
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
 
   Json config = assets->json(path);
 

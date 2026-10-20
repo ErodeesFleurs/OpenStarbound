@@ -6,10 +6,12 @@ import star.json;
 
 namespace Star {
 
+class Root;
+
 class InterpolationTracker {
 public:
   InterpolationTracker();
-  InterpolationTracker(Json config);
+  InterpolationTracker(Root& root, Json config);
 
   // Should interpolation be enabled on entities at all?  If this is false,
   // extrapolationHint and interpolationLead will always return 0.
@@ -27,6 +29,7 @@ public:
   float interpolationLeadTime() const;
 
 private:
+  void readConfig(Json const& config);
   bool m_interpolationEnabled;
   float m_entityUpdateDelta;
   double m_timeLead;

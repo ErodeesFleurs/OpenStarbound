@@ -170,9 +170,9 @@ SystemWorldConfig SystemWorldConfig::fromJson(Json const& json) {
   return config;
 }
 
-SystemWorld::SystemWorld(std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase)
-  : m_celestialDatabase(std::move(celestialDatabase)), m_universeClock(std::move(universeClock)) {
-  m_config = SystemWorldConfig::fromJson(Root::singleton().assets()->json("/systemworld.config"));
+SystemWorld::SystemWorld(Root& root, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase)
+  : m_root(root), m_celestialDatabase(std::move(celestialDatabase)), m_universeClock(std::move(universeClock)) {
+  m_config = SystemWorldConfig::fromJson(this->root().assets()->json("/systemworld.config"));
 }
 
 SystemWorldConfig const& SystemWorld::systemConfig() const {
@@ -300,7 +300,7 @@ SystemObjectConfig SystemWorld::systemObjectConfig(String const& name, Uuid cons
   RandomSource rand(staticRandomU64(uuid.hex()));
 
   SystemObjectConfig object;
-  auto config = systemObjectTypeConfig(name);
+  auto config = systemObjectTypeConfig(this->root(), name);
   auto orbitRange = jsonToVec2F(config.get("orbitRange"));
   auto lifeTimeRange = jsonToVec2F(config.get("lifeTime"));
 
@@ -308,8 +308,8 @@ SystemObjectConfig SystemWorld::systemObjectConfig(String const& name, Uuid cons
 
   object.moving = config.getBool("moving");
   object.speed = config.getFloat("speed");
-  object.orbitDistance = Random::randf(orbitRange[0], orbitRange[1]);
-  object.lifeTime = Random::randf(lifeTimeRange[0], lifeTimeRange[1]);
+  object.orbitDistance = this->root().random().randf(orbitRange[0], orbitRange[1]);
+  object.lifeTime = this->root().random().randf(lifeTimeRange[0], lifeTimeRange[1]);
 
   object.permanent = config.getBool("permanent", false);
 
@@ -326,8 +326,8 @@ SystemObjectConfig SystemWorld::systemObjectConfig(String const& name, Uuid cons
   return object;
 }
 
-Json SystemWorld::systemObjectTypeConfig(String const& name) {
-  return Root::singleton().assets()->json(strf("/system_objects.config:{}", name));
+Json SystemWorld::systemObjectTypeConfig(Root& root, String const& name) {
+  return root.assets()->json(strf("/system_objects.config:{}", name));
 }
 
 Maybe<Vec2F> SystemWorld::systemLocationPosition(SystemLocation const& location) const {
@@ -345,7 +345,7 @@ Maybe<Vec2F> SystemWorld::systemLocationPosition(SystemLocation const& location)
 }
 
 Vec2F SystemWorld::randomArrivalPosition() const {
-  RandomSource rand;
+  RandomSource rand(this->root().random().randu64());
   float range = m_config.arrivalRange[0] + (rand.randf() * (m_config.arrivalRange[1] - m_config.arrivalRange[0]));
   float angle = rand.randf() * std::numbers::pi * 2;
   return Vec2F::withAngle(angle, range);
@@ -371,23 +371,23 @@ Maybe<WarpAction> SystemWorld::objectWarpAction(Uuid const& uuid) const {
   }
 }
 
-SystemObject::SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& position, JsonObject parameters)
-  : m_config(std::move(config)), m_uuid(std::move(uuid)), m_spawnTime(0.0f), m_parameters(std::move(parameters)) {
+SystemObject::SystemObject(Root& root, SystemObjectConfig config, Uuid uuid, Vec2F const& position, JsonObject parameters)
+  : m_root(root), m_config(std::move(config)), m_uuid(std::move(uuid)), m_spawnTime(0.0f), m_parameters(std::move(parameters)) {
   setPosition(position);
   init();
 }
 
-SystemObject::SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& position, double spawnTime, JsonObject parameters)
-  : m_config(std::move(config)), m_uuid(std::move(uuid)), m_spawnTime(std::move(spawnTime)), m_parameters(std::move(parameters)) {
+SystemObject::SystemObject(Root& root, SystemObjectConfig config, Uuid uuid, Vec2F const& position, double spawnTime, JsonObject parameters)
+  : m_root(root), m_config(std::move(config)), m_uuid(std::move(uuid)), m_spawnTime(std::move(spawnTime)), m_parameters(std::move(parameters)) {
   setPosition(position);
   for (auto p : m_config.generatedParameters) {
     if (!m_parameters.contains(p.first))
-      m_parameters[p.first] = Root::singleton().nameGenerator()->generateName(p.second);
+      m_parameters[p.first] = this->root().nameGenerator()->generateName(p.second);
   }
   init();
 }
 
-SystemObject::SystemObject(SystemWorld* system, Json const& diskStore) {
+SystemObject::SystemObject(Root& root, SystemWorld* system, Json const& diskStore) : m_root(root), m_uuid(root.random()) {
   m_uuid = Uuid(diskStore.getString("uuid"));
   auto name = diskStore.getString("name");
   m_config = system->systemObjectConfig(name, m_uuid);
@@ -452,7 +452,7 @@ bool SystemObject::shouldDestroy() const {
 }
 
 void SystemObject::enterOrbit(CelestialCoordinate const& target, Vec2F const& targetPosition, double time) {
-  int direction = Random::randf() > 0.5 ? 1 : -1; // random direction
+  int direction = this->root().random().randf() > 0.5 ? 1 : -1; // random direction
   m_orbit.set(CelestialOrbit{target, direction, time, targetPosition - position()});
   m_approach.reset();
 }
@@ -503,7 +503,7 @@ void SystemObject::serverUpdate(SystemWorldServer* system, float dt) {
       });
 
     if (planets.size() > 0)
-      m_approach = Random::randFrom(planets);
+      m_approach = this->root().random().randFrom(planets);
   }
 }
 
@@ -548,7 +548,7 @@ SystemClientShip::SystemClientShip(SystemWorld* system, Uuid uuid, float speed, 
   setPosition(system->systemLocationPosition(location).value({}));
 
   // temporary
-  auto shipConfig = Root::singleton().assets()->json("/systemworld.config:clientShip");
+  auto shipConfig = system->root().assets()->json("/systemworld.config:clientShip");
   m_config = ClientShipConfig{
     shipConfig.getFloat("orbitDistance"),
     shipConfig.getFloat("departTime"),

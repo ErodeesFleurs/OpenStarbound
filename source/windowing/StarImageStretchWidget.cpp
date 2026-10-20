@@ -57,8 +57,8 @@ import star.image_stretch_widget;
 
 namespace Star {
 
-ImageStretchWidget::ImageStretchWidget(ImageStretchSet const& imageStretchSet, GuiDirection direction)
-  : m_imageStretchSet(imageStretchSet), m_direction(direction) {
+ImageStretchWidget::ImageStretchWidget(GuiContext& context, ImageStretchSet const& imageStretchSet, GuiDirection direction)
+  : Widget(context), m_imageStretchSet(imageStretchSet), m_direction(direction) {
 
 }
 

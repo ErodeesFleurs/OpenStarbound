@@ -3,6 +3,7 @@ import star.xx_hash;
 import star.json_extra;
 import star.data_stream;
 import star.string;
+import star.vector;
 import star.color;
 import star.list;
 import star.image_processing;
@@ -151,7 +152,8 @@ namespace Star {
 // update this in the rare case that backwards compat code has to be set up in TeamManager
 extern VersionNumber const TeamClientVersion = 1;
   
-TeamClient::TeamClient(std::shared_ptr<Player> mainPlayer, std::shared_ptr<ClientContext> clientContext) {
+TeamClient::TeamClient(Root& root, std::shared_ptr<Player> mainPlayer, std::shared_ptr<ClientContext> clientContext)
+  : m_root(root), m_teamLeader(root.random()), m_pendingInvitation(Uuid(root.random()), String()) {
   m_mainPlayer = mainPlayer;
   m_clientContext = clientContext;
 
@@ -258,7 +260,7 @@ void TeamClient::update() {
   handleRpcResponses();
 
   if (!m_hasPendingInvitation) {
-    if (Time::monotonicTime() - m_pollInvitationsTimer > Root::singleton().assets()->json("/interface.config:invitationPollInterval").toFloat()) {
+    if (Time::monotonicTime() - m_pollInvitationsTimer > m_root.assets()->json("/interface.config:invitationPollInterval").toFloat()) {
       m_pollInvitationsTimer = Time::monotonicTime();
       JsonObject request;
       request["playerUuid"] = m_clientContext->playerUuid().hex();
@@ -273,13 +275,13 @@ void TeamClient::update() {
     }
   }
   if (!m_fullUpdateRunning) {
-    if (Time::monotonicTime() - m_fullUpdateTimer > Root::singleton().assets()->json("/interface.config:fullUpdateInterval").toFloat()) {
+    if (Time::monotonicTime() - m_fullUpdateTimer > m_root.assets()->json("/interface.config:fullUpdateInterval").toFloat()) {
       m_fullUpdateTimer = Time::monotonicTime();
       pullFullUpdate();
     }
   }
   if (!m_statusUpdateRunning) {
-    if (Time::monotonicTime() - m_statusUpdateTimer > Root::singleton().assets()->json("/interface.config:statusUpdateInterval").toFloat()) {
+    if (Time::monotonicTime() - m_statusUpdateTimer > m_root.assets()->json("/interface.config:statusUpdateInterval").toFloat()) {
       m_statusUpdateTimer = Time::monotonicTime();
       statusUpdate();
     }
@@ -305,17 +307,18 @@ void TeamClient::pullFullUpdate() {
         m_members.clear();
 
         for (auto m : response.getArray("members")) {
-          Member member;
-          member.name = m.getString("name");
-          member.uuid = Uuid(m.getString("uuid"));
-          member.entity = m.getInt("entity");
-          member.healthPercentage = m.getFloat("health");
-          member.energyPercentage = m.getFloat("energy");
-          member.position[0] = m.getFloat("x");
-          member.position[1] = m.getFloat("y");
-          member.world = parseWorldId(m.getString("world"));
-          member.warpMode = WarpModeNames.getLeft(m.getString("warpMode"));
-          member.portrait = jsonToList<Drawable>(m.get("portrait"));
+          Member member{
+              .name = m.getString("name"),
+              .uuid = Uuid(m.getString("uuid")),
+              .entity = static_cast<EntityId>(m.getInt("entity")),
+              .healthPercentage = m.getFloat("health"),
+              .energyPercentage = m.getFloat("energy"),
+              .world = parseWorldId(m.getString("world")),
+              .position = Vec2F(m.getFloat("x"), m.getFloat("y")),
+              .warpMode = WarpModeNames.getLeft(m.getString("warpMode")),
+              .portrait = jsonToList<Drawable>(m.get("portrait"), [this](Json const& value) {
+                return Drawable(*m_root.imageMetadataDatabase(), value);
+              })};
           m_members.push_back(member);
         }
         std::sort(m_members.begin(), m_members.end(), [](Member const& a, Member const& b) { return a.name < b.name; });
@@ -399,7 +402,7 @@ void TeamClient::writePlayerData(JsonObject& request, std::shared_ptr<Player> pl
 }
 
 void TeamClient::clearTeam() {
-  m_teamLeader = Uuid();
+  m_teamLeader = Uuid(m_root.random());
   m_teamUuid = {};
   m_members.clear();
   forceUpdate();

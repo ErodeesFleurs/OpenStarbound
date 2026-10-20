@@ -62,7 +62,7 @@ struct LuaUserDataMethods<std::shared_ptr<CanvasWidget>> {
 };
 
 namespace LuaBindings {
-  LuaCallbacks makeWidgetCallbacks(Widget* parentWidget, std::shared_ptr<GuiReader> reader = {});
+  LuaCallbacks makeWidgetCallbacks(GuiContext& context, Widget* parentWidget, std::shared_ptr<GuiReader> reader = {});
 }
 
 }

@@ -13,6 +13,7 @@ import star.ordered_map;
 import star.lru_cache;
 import star.data_stream_devices;
 import star.thread;
+import star.logging;
 
 namespace Star {
 
@@ -25,8 +26,8 @@ class BTreeDatabase {
 public:
   std::uint32_t const ContentIdentifierStringSize = 16;
 
-  BTreeDatabase();
-  BTreeDatabase(String const& contentIdentifier, std::size_t keySize);
+  explicit BTreeDatabase(Logger& logger);
+  BTreeDatabase(Logger& logger, String const& contentIdentifier, std::size_t keySize);
   // Never commits.  Call commit()/close() explicitly to report save failures.
   ~BTreeDatabase() noexcept;
 
@@ -274,6 +275,7 @@ private:
   void checkKeySize(ByteArray const& k) const;
   std::uint32_t maxFreeIndexLength() const;
 
+  Logger& m_logger;
   mutable ReadersWriterMutex m_lock;
 
   BTreeMixin<BTreeImpl> m_impl;
@@ -316,8 +318,8 @@ private:
 // constant size key.
 class BTreeSha256Database : private BTreeDatabase {
 public:
-  BTreeSha256Database();
-  BTreeSha256Database(String const& contentIdentifier);
+  explicit BTreeSha256Database(Logger& logger);
+  BTreeSha256Database(Logger& logger, String const& contentIdentifier);
 
   // Keys can be arbitrary size, actual key is the SHA-256 checksum of the key.
   bool contains(ByteArray const& key);

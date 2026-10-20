@@ -57,7 +57,7 @@ class AudioInstance;
 
 class RadioMessagePopup : public Pane {
 public:
-  RadioMessagePopup();
+  RadioMessagePopup(GuiContext& guiContext);
 
   void update(float dt) override;
   void dismissed() override;

@@ -32,9 +32,14 @@ import star.root;
 
 namespace Star {
 
-LuaRoot::LuaRoot() {
-  auto& root = Root::singleton();
-  m_scriptCache = std::make_shared<ScriptCache>();
+Root& luaExecutionRoot(LuaEngine& engine) {
+  if (auto scope = dynamic_cast<LuaExecutionScope*>(engine.executionHost()))
+    return scope->root();
+  throw LuaException("Game Lua conversion requires an explicit game execution scope");
+}
+
+LuaRoot::LuaRoot(Root& root) : m_root(root) {
+  m_scriptCache = std::make_shared<ScriptCache>(root);
 
   restart();
 
@@ -48,6 +53,10 @@ LuaRoot::LuaRoot() {
 
 LuaRoot::~LuaRoot() {
   shutdown();
+}
+
+Root& LuaRoot::root() const {
+  return m_root;
 }
 
 void LuaRoot::loadScript(String const& assetPath) {
@@ -65,9 +74,13 @@ void LuaRoot::unloadScript(String const& assetPath) {
 void LuaRoot::restart() {
   shutdown();
 
-  auto& root = Root::singleton();
+  auto& root = m_root;
 
   m_luaEngine = LuaEngine::create(root.configuration()->get("safeScripts").toBool());
+  m_luaEngine->setExecutionHost(std::make_unique<LuaExecutionScope>(root));
+  m_luaEngine->setImageResolver([&root](String const& path) {
+    return root.assets()->image(path);
+  });
 
   m_luaEngine->setRecursionLimit(root.configuration()->get("scriptRecursionLimit").toUInt());
   m_luaEngine->setInstructionLimit(root.configuration()->get("scriptInstructionLimit").toUInt());
@@ -104,13 +117,13 @@ void LuaRoot::shutdown() {
     String profileSummary = Json(profile.transformed(jsonFromProfileEntry)).repr(1);
 
     if (!File::isDirectory(m_storageDirectory)) {
-      Logger::info("Creating lua storage directory");
+      m_root.logger().info("Creating lua storage directory");
       File::makeDirectory(m_storageDirectory);
     }
 
     String filename = strf("{}.luaprofile", Time::printCurrentDateAndTime("<year>-<month>-<day>-<hours>-<minutes>-<seconds>-<millis>"));
     String path = File::relativeTo(m_storageDirectory, filename);
-    Logger::info("Writing lua profile {}", filename);
+    m_root.logger().info("Writing lua profile {}", filename);
     File::writeFile(profileSummary, path);
   }
 
@@ -135,13 +148,13 @@ LuaContext LuaRoot::createContext(StringList const& scriptPaths) {
     }
   });
 
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
 
   for (auto const& scriptPath : scriptPaths) {
     if (assets->assetExists(scriptPath))
       cache->loadContextScript(newContext, scriptPath);
     else
-      Logger::error("Script '{}' does not exist", scriptPath);
+      m_root.logger().error("Script '{}' does not exist", scriptPath);
   }
 
   for (auto const& callbackPair : m_luaCallbacks)
@@ -186,7 +199,7 @@ LuaEngine& LuaRoot::luaEngine() const {
 }
 
 void LuaRoot::ScriptCache::loadScript(LuaEngine& engine, String const& assetPath) {
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
   RecursiveMutexLocker locker(mutex);
   scripts[assetPath] = engine.compile(*assets->bytes(assetPath), assetPath);
 }

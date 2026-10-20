@@ -28,14 +28,6 @@ import star.celestial_coordinate;
 import star.quest_descriptor;
 import star.item;
 import star.item_descriptor;
-import star.asset_source;
-import star.assets;
-import star.root_base;
-import star.configuration;
-import star.root;
-
-
-import star.item_database;
 
 namespace Star {
 

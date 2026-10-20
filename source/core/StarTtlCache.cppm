@@ -19,8 +19,8 @@ public:
   typedef typename LruCacheType::Key Key;
   typedef typename LruCacheType::Value::second_type Value;
 
-  TtlCacheBase();
-  TtlCacheBase(std::int64_t timeToLive, int timeSmear = 1000, std::size_t maxSize = NPos, bool ttlUpdateEnabled = true);
+  explicit TtlCacheBase(RandomService& random);
+  TtlCacheBase(RandomService& random, std::int64_t timeToLive, int timeSmear = 1000, std::size_t maxSize = NPos, bool ttlUpdateEnabled = true);
 
   std::int64_t timeToLive() const;
   void setTimeToLive(std::int64_t timeToLive);
@@ -89,6 +89,8 @@ private:
     return static_cast<bool>(filter);
   }
 
+  // The owning service must outlive this cache.
+  std::reference_wrapper<RandomService> m_random;
   LruCacheType m_cache;
   std::int64_t m_timeToLive;
   int m_timeSmear;
@@ -102,11 +104,12 @@ template <typename Key, typename Value, typename Hash = Star::hash<Key>, typenam
 using HashTtlCache = TtlCacheBase<HashLruCache<Key, std::pair<std::int64_t, Value>, Hash, Equals, Allocator>>;
 
 template <typename LruCacheType>
-TtlCacheBase<LruCacheType>::TtlCacheBase()
-  : TtlCacheBase(10000, 1000, NPos, true) {}
+TtlCacheBase<LruCacheType>::TtlCacheBase(RandomService& random)
+  : TtlCacheBase(random, 10000, 1000, NPos, true) {}
 
 template <typename LruCacheType>
-TtlCacheBase<LruCacheType>::TtlCacheBase(std::int64_t timeToLive, int timeSmear, std::size_t maxSize, bool ttlUpdateEnabled) {
+TtlCacheBase<LruCacheType>::TtlCacheBase(RandomService& random, std::int64_t timeToLive, int timeSmear, std::size_t maxSize, bool ttlUpdateEnabled)
+  : m_random(random) {
   m_cache.setMaxSize(maxSize);
   m_timeToLive = timeToLive;
   m_timeSmear = timeSmear;
@@ -175,7 +178,7 @@ template <typename LruCacheType>
 auto TtlCacheBase<LruCacheType>::ptr(Key const& key) -> Value * {
   if (auto p = m_cache.ptr(key)) {
     if (m_ttlUpdateEnabled)
-      p->first = Time::monotonicMilliseconds() + Random::randInt(-m_timeSmear, m_timeSmear);
+      p->first = Time::monotonicMilliseconds() + m_random.get().randInt(-m_timeSmear, m_timeSmear);
     return &p->second;
   }
   return nullptr;
@@ -183,7 +186,7 @@ auto TtlCacheBase<LruCacheType>::ptr(Key const& key) -> Value * {
 
 template <typename LruCacheType>
 void TtlCacheBase<LruCacheType>::set(Key const& key, Value value) {
-  m_cache.set(key, std::make_pair(Time::monotonicMilliseconds() + Random::randInt(-m_timeSmear, m_timeSmear), value));
+  m_cache.set(key, std::make_pair(Time::monotonicMilliseconds() + m_random.get().randInt(-m_timeSmear, m_timeSmear), value));
 }
 
 template <typename LruCacheType>
@@ -206,7 +209,7 @@ auto TtlCacheBase<LruCacheType>::get(Key const& key, Producer&& producer) -> Val
       return std::pair<std::int64_t, Value>(0, std::invoke(producer, key));
     });
   if (value.first == 0 || m_ttlUpdateEnabled)
-    value.first = Time::monotonicMilliseconds() + Random::randInt(-m_timeSmear, m_timeSmear);
+    value.first = Time::monotonicMilliseconds() + m_random.get().randInt(-m_timeSmear, m_timeSmear);
   return value.second;
 }
 

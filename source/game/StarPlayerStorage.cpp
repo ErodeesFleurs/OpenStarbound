@@ -128,25 +128,25 @@ import star.entity_factory;
 
 namespace Star {
 
-PlayerStorage::PlayerStorage(String const& storageDir) {
+PlayerStorage::PlayerStorage(Root& root, String const& storageDir) : m_root(root) {
   m_storageDirectory = storageDir;
   m_backupDirectory = File::relativeTo(m_storageDirectory, "backup");
   if (!File::isDirectory(m_storageDirectory)) {
-    Logger::info("Creating player storage directory");
+    m_root.logger().info("Creating player storage directory");
     File::makeDirectory(m_storageDirectory);
     return;
   }
 
-  auto configuration = Root::singleton().configuration();
+  auto configuration = m_root.configuration();
   if (configuration->get("clearPlayerFiles").toBool()) {
-    Logger::info("Clearing all player files");
+    m_root.logger().info("Clearing all player files");
     for (auto file : File::dirList(m_storageDirectory)) {
       if (!file.second)
         File::remove(File::relativeTo(m_storageDirectory, file.first));
     }
   } else {
-    auto versioningDatabase = Root::singleton().versioningDatabase();
-    auto entityFactory = Root::singleton().entityFactory();
+    auto versioningDatabase = m_root.versioningDatabase();
+    auto entityFactory = m_root.entityFactory();
 
     for (auto file : File::dirList(m_storageDirectory)) {
       if (file.second)
@@ -161,10 +161,10 @@ PlayerStorage::PlayerStorage(String const& storageDir) {
             auto& playerCacheData = m_savedPlayersCache[uuid];
             playerCacheData = entityFactory->loadVersionedJson(json, EntityType::Player);
           } else {
-            Logger::warn("Duplicate player? Skipping player file {} because it has the same UUID as {}.player ({})", file.first, m_playerFileNames.getRight(uuid), uuid.hex());
+            m_root.logger().warn("Duplicate player? Skipping player file {} because it has the same UUID as {}.player ({})", file.first, m_playerFileNames.getRight(uuid), uuid.hex());
           }
         } catch (std::exception const& e) {
-          Logger::error("Error loading player file, ignoring! {} : {}", filename, outputException(e, false));
+          m_root.logger().error("Error loading player file, ignoring! {} : {}", filename, outputException(e, false));
         }
       }
     }
@@ -177,7 +177,7 @@ PlayerStorage::PlayerStorage(String const& storageDir) {
         it = m_savedPlayersCache.erase(it);
       } else {
         try {
-          auto entityFactory = Root::singleton().entityFactory();
+          auto entityFactory = m_root.entityFactory();
           auto player = as<Player>(entityFactory->diskLoadEntity(EntityType::Player, entry.second));
           if (player->uuid() != entry.first)
             throw PlayerException(strf("Uuid mismatch in loaded player with filename uuid '{}'", entry.first.hex()));
@@ -185,9 +185,9 @@ PlayerStorage::PlayerStorage(String const& storageDir) {
           auto& fileName = uuidFileName(entry.first);
           String uuidHex = entry.first.hex();
           if (uuidHex == fileName)
-            Logger::error("Failed to validate player with uuid {} : {}", uuidHex, outputException(e, true));
+            m_root.logger().error("Failed to validate player with uuid {} : {}", uuidHex, outputException(e, true));
           else
-            Logger::error("Failed to validate player with uuid {} ({}.player) : {}", uuidHex, fileName, outputException(e, true));
+            m_root.logger().error("Failed to validate player with uuid {} ({}.player) : {}", uuidHex, fileName, outputException(e, true));
           it = m_savedPlayersCache.erase(it);
           continue;
         }
@@ -208,7 +208,7 @@ PlayerStorage::PlayerStorage(String const& storageDir) {
       }
     }
   } catch (std::exception const& e) {
-    Logger::warn("Error loading player storage metadata file, resetting: {}", outputException(e, false));
+    m_root.logger().warn("Error loading player storage metadata file, resetting: {}", outputException(e, false));
   }
 }
 
@@ -274,8 +274,8 @@ List<Uuid> PlayerStorage::playerUuidListByName(String const& name, Maybe<Uuid> e
 
 
 Json PlayerStorage::savePlayer(std::shared_ptr<Player> const& player) {
-  auto entityFactory = Root::singleton().entityFactory();
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+  auto entityFactory = m_root.entityFactory();
+  auto versioningDatabase = m_root.versioningDatabase();
 
   RecursiveMutexLocker locker(m_mutex);
 
@@ -290,7 +290,7 @@ Json PlayerStorage::savePlayer(std::shared_ptr<Player> const& player) {
     VersionedJson versionedJson = entityFactory->storeVersionedJson(EntityType::Player, playerCacheData);
     auto fileName = strf("{}.player", uuidFileName(uuid));
     VersionedJson::writeFile(versionedJson, File::relativeTo(m_storageDirectory, fileName));
-    Logger::debug("Saved player {} to {}", Text::stripEscapeCodes(player->name()), fileName);
+    m_root.logger().debug("Saved player {} to {}", Text::stripEscapeCodes(player->name()), fileName);
   }
   return newPlayerData;
 }
@@ -313,14 +313,14 @@ Json PlayerStorage::getPlayerData(Uuid const& uuid) {
 
 std::shared_ptr<Player> PlayerStorage::loadPlayer(Uuid const& uuid) {
   auto playerCacheData = getPlayerData(uuid);
-  auto entityFactory = Root::singleton().entityFactory();
+  auto entityFactory = m_root.entityFactory();
   try {
     auto player = convert<Player>(entityFactory->diskLoadEntity(EntityType::Player, playerCacheData));
     if (player->uuid() != uuid)
       throw PlayerException(strf("Uuid mismatch in loaded player with filename uuid '{}'", uuid.hex()));
     return player;
   } catch (std::exception const& e) {
-    Logger::error("Error loading player file, ignoring! {}", outputException(e, false));
+    m_root.logger().error("Error loading player file, ignoring! {}", outputException(e, false));
     RecursiveMutexLocker locker(m_mutex);
     m_savedPlayersCache.remove(uuid);
     return {};
@@ -347,7 +347,7 @@ void PlayerStorage::deletePlayer(Uuid const& uuid) {
   removeIfExists(storagePrefix, ".player");
   removeIfExists(storagePrefix, ".shipworld");
 
-  auto configuration = Root::singleton().configuration();
+  auto configuration = m_root.configuration();
   unsigned playerBackupFileCount = configuration->get("playerBackupFileCount").toUInt();
 
   for (unsigned i = 1; i <= playerBackupFileCount; ++i) {
@@ -364,9 +364,9 @@ WorldChunks PlayerStorage::loadShipData(Uuid const& uuid) {
   String filename = File::relativeTo(m_storageDirectory, strf("{}.shipworld", uuidFileName(uuid)));
   try {
     if (File::exists(filename))
-      return WorldStorage::getWorldChunksFromFile(filename);
+      return WorldStorage::getWorldChunksFromFile(m_root.logger(), filename);
   } catch (StarException const& e) {
-    Logger::error("Failed to load shipworld file, removing {} : {}", filename, outputException(e, false));
+    m_root.logger().error("Failed to load shipworld file, removing {} : {}", filename, outputException(e, false));
     File::remove(filename);
   }
 
@@ -381,7 +381,7 @@ void PlayerStorage::applyShipUpdates(Uuid const& uuid, WorldChunks const& update
   if (updates.empty())
     return;
   String filePath = File::relativeTo(m_storageDirectory, strf("{}.shipworld", uuidFileName(uuid)));
-  WorldStorage::applyWorldChunksUpdateToFile(filePath, updates);
+  WorldStorage::applyWorldChunksUpdateToFile(m_root.logger(), filePath, updates);
 }
 
 void PlayerStorage::moveToFront(Uuid const& uuid) {
@@ -392,7 +392,7 @@ void PlayerStorage::moveToFront(Uuid const& uuid) {
 void PlayerStorage::backupCycle(Uuid const& uuid) {
   RecursiveMutexLocker locker(m_mutex);
 
-  auto configuration = Root::singleton().configuration();
+  auto configuration = m_root.configuration();
   unsigned playerBackupFileCount = configuration->get("playerBackupFileCount").toUInt();
   auto& fileName = uuidFileName(uuid);
 

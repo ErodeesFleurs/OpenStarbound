@@ -72,8 +72,8 @@ import star.quests;
 
 namespace Star {
 
-QuestTrackerPane::QuestTrackerPane() {
-  auto assets = Root::singleton().assets();
+QuestTrackerPane::QuestTrackerPane(GuiContext& guiContext) : Pane(guiContext) {
+  auto assets = context()->root().assets();
   auto config = assets->json("/interface/questtracker/questtracker.config");
 
   m_progressFrameImage = config.getString("progressFrameImage");
@@ -93,7 +93,7 @@ QuestTrackerPane::QuestTrackerPane() {
   m_compassAcceleration = config.getFloat("compassAcceleration");
   m_compassFriction = config.getFloat("compassFriction");
 
-  GuiReader reader;
+  GuiReader reader(*context());
   reader.construct(config.get("paneLayout"), this);
 
   m_frame = fetchChild<ImageWidget>("imgFrame");

@@ -26,6 +26,13 @@ import star.algorithm;
 namespace Star {
 
 class LuaEngine;
+class Image;
+
+// Engine-owned host state keeps domain capabilities alive with Lua references.
+class LuaExecutionHost {
+public:
+  virtual ~LuaExecutionHost() = default;
+};
 typedef RefPtr<LuaEngine> LuaEnginePtr;
 
 // Basic unspecified lua exception
@@ -505,6 +512,13 @@ public:
   LuaEngine& operator=(LuaEngine const&) = delete;
   LuaEngine& operator=(LuaEngine&&) = default;
 
+  // Optional host capability. Core-only engines leave image resolution unset.
+  using ImageResolver = std::function<std::shared_ptr<Image const>(String const&)>;
+  void setImageResolver(ImageResolver resolver) { m_imageResolver = std::move(resolver); }
+  ImageResolver const& imageResolver() const { return m_imageResolver; }
+  void setExecutionHost(std::unique_ptr<LuaExecutionHost> host) { m_executionHost = std::move(host); }
+  LuaExecutionHost* executionHost() const { return m_executionHost.get(); }
+
   // Set the instruction limit for computation sequences in the engine.  During
   // any function invocation, thread resume, or code evaluation, an instruction
   // counter will be started.  In the event that the instruction counter
@@ -747,6 +761,8 @@ private:
   static int s_luaRecursionLimitExceptionKey;
 
   lua_State* m_state;
+  ImageResolver m_imageResolver;
+  std::unique_ptr<LuaExecutionHost> m_executionHost;
   int m_pcallTracebackMessageHandlerRegistryId;
   int m_scriptDefaultEnvRegistryId;
   int m_wrappedFunctionMetatableRegistryId;
@@ -2235,6 +2251,7 @@ std::size_t LuaEngine::pushArguments(lua_State* state, Args const&... args) {
 export module star.lua;
 
 export namespace Star {
+  using ::Star::LuaExecutionHost;
   template <>
   struct LuaConverter<bool>;
 

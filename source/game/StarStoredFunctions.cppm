@@ -9,6 +9,8 @@ import star.multi_array_interpolator;
 import star.multi_table;
 
 namespace Star {
+class Assets;
+
 
 struct StoredFunctionExceptionTag {
   static constexpr char const* name() { return "StoredFunctionException"; }
@@ -74,7 +76,7 @@ private:
 
 class FunctionDatabase {
 public:
-  FunctionDatabase();
+  explicit FunctionDatabase(std::shared_ptr<Assets const> const& assets);
 
   StringList namedFunctions() const;
   StringList namedFunctions2() const;

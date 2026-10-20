@@ -1,6 +1,4 @@
-#include <stdio.h>
 #include <imgui.h>
-#include <vector>
 
 extern "C" {
   #include "lua.h"
@@ -16,80 +14,6 @@ extern "C" {
 #endif
 
 // THIS IS FOR LUA 5.3 although you can make a few changes for other versions
-
-
-
-#define ENABLE_IM_LUA_END_STACK
-// to keep track of end and begins and clean up the imgui stack
-// if lua errors
-
-// If you want to pass lua_State to the functions then define this value at the project level.
-#ifndef LUA_BINDINGS_LOCAL_STATE
-// define this global before you call RunString or LoadImGuiBindings
-lua_State* lState;
-#endif
-
-#ifdef ENABLE_IM_LUA_END_STACK
-// Stack for imgui begin and end
-std::vector<int> endStack;
-static void AddToStack(int type) {
-  endStack.push_back(type);
-}
-
-static void PopEndStack() {
-  if (!endStack.empty()) {
-    endStack.pop_back();
-  }
-}
-
-static void ImEndStack(int type);
-
-#endif
-
-// Example lua run string function
-// returns NULL on success and error string on error
-const char * RunString(
-#if LUA_BINDINGS_LOCAL_STATE
-    lua_State* lState, 
-#endif
-    const char* szLua) {
-  if (!lState) {
-    fprintf(stderr, "You didn't pass a valid lState, either assign that or refactor LoadImguiBindings and RunString\n");
-  }
-
-  int iStatus = luaL_loadstring(lState, szLua);
-  if(iStatus) {
-    return lua_tostring(lState, -1);
-    //fprintf(stderr, "Lua syntax error: %s\n", lua_tostring(lState, -1));
-    //return;
-  }
-#ifdef ENABLE_IM_LUA_END_STACK
-  endStack.clear();
-#endif
-  iStatus = lua_pcall( lState, 0, 0, 0 );
-
-#ifdef ENABLE_IM_LUA_END_STACK
-  bool wasEmpty = endStack.empty();
-  while(!endStack.empty()) {
-    ImEndStack(endStack.back());
-    endStack.pop_back();
-  }
-
-#endif
-  if( iStatus )
-  {
-      return lua_tostring(lState, -1);
-      //fprintf(stderr, "Error: %s\n", lua_tostring( lState, -1 ));
-      //return;
-  }
-#ifdef ENABLE_IM_LUA_END_STACK
-  else if (!wasEmpty) {
-    return "Script didn't clean up ImGui stack properly";
-  }
-#endif
-  return NULL;
-}
-
 
 #define IMGUI_FUNCTION_DRAW_LIST(name) \
 static int impl_draw_list_##name(lua_State *L) { \
@@ -275,39 +199,6 @@ static int impl_##name(lua_State *L) { \
   return stackval; \
 }
 
-#ifdef ENABLE_IM_LUA_END_STACK
-#define IF_RET_ADD_END_STACK(type) \
-  if (ret) { \
-    AddToStack(type); \
-  }
-
-#define ADD_END_STACK(type) \
-  AddToStack(type);
-
-#define POP_END_STACK(type) \
-  PopEndStack();
-
-#define END_STACK_START \
-static void ImEndStack(int type) { \
-  switch(type) {
-
-#define END_STACK_OPTION(type, function) \
-    case type: \
-      ImGui::function(); \
-      break;
-
-#define END_STACK_END \
-  } \
-}
-#else
-#define END_STACK_START
-#define END_STACK_OPTION(type, function)
-#define END_STACK_END
-#define IF_RET_ADD_END_STACK(type)
-#define ADD_END_STACK(type)
-#define POP_END_STACK(type)
-#endif
-
 #define START_ENUM(name)
 #define MAKE_ENUM(c_name,lua_name)
 #define END_ENUM(name)
@@ -390,18 +281,6 @@ static const struct luaL_Reg imguilib [] = {
 #define END_BOOL_POINTER(name)
 #undef END_IMGUI_FUNC
 #define END_IMGUI_FUNC
-#undef END_STACK_START
-#define END_STACK_START
-#undef END_STACK_OPTION
-#define END_STACK_OPTION(type, function)
-#undef END_STACK_END
-#define END_STACK_END
-#undef IF_RET_ADD_END_STACK
-#define IF_RET_ADD_END_STACK(type)
-#undef ADD_END_STACK
-#define ADD_END_STACK(type)
-#undef POP_END_STACK
-#define POP_END_STACK(type)
 #undef START_ENUM
 #define START_ENUM(name)
 #undef MAKE_ENUM
@@ -503,18 +382,6 @@ static void pushImguiEnums(lua_State* lState, const char* tableName) {
 #define END_BOOL_POINTER(name)
 #undef END_IMGUI_FUNC
 #define END_IMGUI_FUNC
-#undef END_STACK_START
-#define END_STACK_START
-#undef END_STACK_OPTION
-#define END_STACK_OPTION(type, function)
-#undef END_STACK_END
-#define END_STACK_END
-#undef IF_RET_ADD_END_STACK
-#define IF_RET_ADD_END_STACK(type)
-#undef ADD_END_STACK
-#define ADD_END_STACK(type)
-#undef POP_END_STACK
-#define POP_END_STACK(type)
 
 #include "imgui_iterator.inl"
 

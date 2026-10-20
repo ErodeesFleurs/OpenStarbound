@@ -42,10 +42,10 @@ import star.item_database;
 
 namespace Star {
 
-AugmentItem::AugmentItem(Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters) {}
+AugmentItem::AugmentItem(Root& root, Json const& config, String const& directory, Json const& parameters)
+  : Item(root, config, directory, parameters) {}
 
-AugmentItem::AugmentItem(AugmentItem const& rhs) : AugmentItem(rhs.config(), rhs.directory(), rhs.parameters()) {}
+AugmentItem::AugmentItem(AugmentItem const& rhs) : AugmentItem(rhs.root(), rhs.config(), rhs.directory(), rhs.parameters()) {}
 
 std::shared_ptr<Item> AugmentItem::clone() const {
   return std::make_shared<AugmentItem>(*this);
@@ -56,7 +56,7 @@ StringList AugmentItem::augmentScripts() const {
 }
 
 std::shared_ptr<Item> AugmentItem::applyTo(std::shared_ptr<Item> const item) {
-  return Root::singleton().itemDatabase()->applyAugment(item, this);
+  return root().itemDatabase()->applyAugment(item, this);
 }
 
 }

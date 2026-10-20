@@ -90,7 +90,7 @@ import star.net_compatibility;
 import star.algorithm;
 namespace Star {
 
-StatusController::StatusController(Json const& config) : m_statCollection(config) {
+StatusController::StatusController(Root& root, Json const& config) : m_root(root), m_statCollection(config), m_effectAnimators([&root] { return std::make_shared<EffectAnimator>(root); }), m_primaryScript(root) {
   m_parentEntity = nullptr;
   m_movementController = nullptr;
 
@@ -144,7 +144,7 @@ StatusController::StatusController(Json const& config) : m_statCollection(config
   m_netGroup.addNetElement(&m_toolUsageSuppressed);
 
   if (m_primaryAnimationConfig)
-    m_primaryAnimatorId = m_effectAnimators.addNetElement(std::make_shared<EffectAnimator>(*m_primaryAnimationConfig));
+    m_primaryAnimatorId = m_effectAnimators.addNetElement(std::make_shared<EffectAnimator>(m_root, *m_primaryAnimationConfig));
   else
     m_primaryAnimatorId = EffectAnimatorGroup::NullElementId;
 }
@@ -565,14 +565,14 @@ void StatusController::tickMaster(float dt) {
   bool statusImmune = statPositive("statusImmunity");
 
   if (!statusImmune && m_movementController->liquidPercentage() > m_minimumLiquidStatusEffectPercentage) {
-    auto liquidsDatabase = Root::singleton().liquidsDatabase();
+    auto liquidsDatabase = m_root.liquidsDatabase();
     if (auto liquidSettings = liquidsDatabase->liquidSettings(m_movementController->liquidId())) {
       for (auto const& effect : liquidSettings->statusEffects)
         addEphemeralEffect(jsonToEphemeralStatusEffect(effect), {});
     }
   }
 
-  if (m_environmentStatusEffectUpdateTimer.wrapTick()) {
+  if (m_environmentStatusEffectUpdateTimer.wrapTick(m_root.timing().timestep)) {
     PolyF collisionBody = m_movementController->collisionBody();
     List<PersistentStatusEffect> entityEffects;
     if (!statusImmune) {
@@ -604,7 +604,7 @@ void StatusController::tickMaster(float dt) {
   }
 
   for (auto const& key : m_uniqueEffects.keys()) {
-    auto& uniqueEffect = m_uniqueEffects[key];
+    auto& uniqueEffect = m_uniqueEffects.get(key);
     auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
     if (metadata->duration && *metadata->duration <= 0.0f)
       removeUniqueEffect(key);
@@ -676,11 +676,11 @@ Maybe<ChainableJsonMessageResponse> StatusController::receiveMessage(String cons
   return result;
 }
 
-StatusController::EffectAnimator::EffectAnimator() : EffectAnimator(Maybe<String>{}) {}
+StatusController::EffectAnimator::EffectAnimator(Root& root) : EffectAnimator(root, Maybe<String>{}) {}
 
-StatusController::EffectAnimator::EffectAnimator(Maybe<String> config) {
+StatusController::EffectAnimator::EffectAnimator(Root& root, Maybe<String> config) : m_root(root), animator(root) {
   animationConfig = std::move(config);
-  animator = animationConfig ? NetworkedAnimator(*animationConfig) : NetworkedAnimator();
+  animator = animationConfig ? NetworkedAnimator(m_root, *animationConfig) : NetworkedAnimator(m_root);
 }
 
 void StatusController::EffectAnimator::initNetVersion(NetElementVersion const* version) {
@@ -696,7 +696,7 @@ void StatusController::EffectAnimator::netStore(DataStream& ds, NetCompatibility
 void StatusController::EffectAnimator::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   if (!checkWithRules(rules)) return;
   ds.read(animationConfig);
-  animator = animationConfig ? NetworkedAnimator(*animationConfig) : NetworkedAnimator();
+  animator = animationConfig ? NetworkedAnimator(m_root, *animationConfig) : NetworkedAnimator(m_root);
   animator.netLoad(ds, rules);
 }
 
@@ -783,25 +783,25 @@ void StatusController::updatePersistentUniqueEffects() {
   }
   // Again, here we are using "durationless" to mean "persistent"
   for (auto const& key : m_uniqueEffects.keys()) {
-    auto metadata = m_uniqueEffectMetadata.getNetElement(m_uniqueEffects[key].metadataId);
+    auto metadata = m_uniqueEffectMetadata.getNetElement(m_uniqueEffects.get(key).metadataId);
     if (!metadata->duration && !activePersistentUniqueEffects.contains(key))
       removeUniqueEffect(key);
   }
 }
 
 float StatusController::defaultUniqueEffectDuration(UniqueStatusEffect const& effect) const {
-  return Root::singleton().statusEffectDatabase()->uniqueEffectConfig(effect).defaultDuration;
+  return m_root.statusEffectDatabase()->uniqueEffectConfig(effect).defaultDuration;
 }
 
 bool StatusController::addUniqueEffect(
     UniqueStatusEffect const& effect, Maybe<float> duration, Maybe<EntityId> sourceEntityId) {
-  auto statusEffectDatabase = Root::singleton().statusEffectDatabase();
+  auto statusEffectDatabase = m_root.statusEffectDatabase();
   if (statusEffectDatabase->isUniqueEffect(effect)) {
     auto effectConfig = statusEffectDatabase->uniqueEffectConfig(effect);
     if ((duration && statPositive("statusImmunity")) || (effectConfig.blockingStat && statPositive(*effectConfig.blockingStat)))
       return false;
 
-    auto& uniqueEffect = m_uniqueEffects[effect];
+    auto& uniqueEffect = m_uniqueEffects.try_emplace(effect, m_root).first->second;
     uniqueEffect.effectConfig = effectConfig;
     uniqueEffect.script.setScripts(uniqueEffect.effectConfig.scripts);
     uniqueEffect.script.setUpdateDelta(uniqueEffect.effectConfig.scriptDelta);
@@ -812,7 +812,7 @@ bool StatusController::addUniqueEffect(
     uniqueEffect.animatorId = UniqueEffectMetadataGroup::NullElementId;
     if (uniqueEffect.effectConfig.animationConfig)
       uniqueEffect.animatorId =
-          m_effectAnimators.addNetElement(std::make_shared<EffectAnimator>(uniqueEffect.effectConfig.animationConfig));
+          m_effectAnimators.addNetElement(std::make_shared<EffectAnimator>(m_root, uniqueEffect.effectConfig.animationConfig));
 
     uniqueEffect.toolUsageSuppressed = false;
 
@@ -821,13 +821,13 @@ bool StatusController::addUniqueEffect(
 
     return true;
   } else {
-    Logger::warn("Unique status effect '{}' not found in status effect database", effect);
+    m_root.logger().warn("Unique status effect '{}' not found in status effect database", effect);
     return false;
   }
 }
 
 void StatusController::removeUniqueEffect(UniqueStatusEffect const& effect) {
-  auto& uniqueEffect = m_uniqueEffects[effect];
+  auto& uniqueEffect = m_uniqueEffects.get(effect);
 
   uniqueEffect.script.invoke("onExpire");
 

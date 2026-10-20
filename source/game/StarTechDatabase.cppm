@@ -10,6 +10,8 @@ import star.game_types;
 
 namespace Star {
 
+class Assets;
+
 struct TechDatabaseExceptionTag {
   static constexpr char const* name() { return "TechDatabaseException"; }
 };
@@ -40,7 +42,7 @@ struct TechConfig {
 
 class TechDatabase {
 public:
-  TechDatabase();
+  explicit TechDatabase(std::shared_ptr<Assets const> assets);
 
   bool contains(String const& techName) const;
   TechConfig tech(String const& techName) const;

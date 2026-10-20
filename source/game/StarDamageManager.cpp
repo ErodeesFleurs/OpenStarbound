@@ -35,6 +35,7 @@ import star.tile_modification;
 import star.lua_root;
 import star.force_regions;
 import star.world;
+import star.root;
 
 import star.damage_manager;
 
@@ -120,9 +121,9 @@ void DamageManager::update(float dt) {
         damageSource.translate(causingEntity->position());
 
       if (auto poly = damageSource.damageArea.ptr<PolyF>())
-        SpatialLogger::logPoly("world", *poly, Color::Orange.toRgba());
+        m_world->root().spatialLogger().logPoly("world", *poly, Color::Orange.toRgba());
       else if (auto line = damageSource.damageArea.ptr<Line2F>())
-        SpatialLogger::logLine("world", *line, Color::Orange.toRgba());
+        m_world->root().spatialLogger().logLine("world", *line, Color::Orange.toRgba());
 
       for (auto const& hitResultPair : queryHit(damageSource, causingEntity->entityId())) {
         auto targetEntity = m_world->entity(hitResultPair.first);

@@ -30,12 +30,15 @@ import star.interaction_types;
 namespace Star {
 
 class Item;
+class Input;
 class ActorMovementController;
 class StatusController;
 
 // FIXME: This interface is a complete mess.
 class ToolUserEntity : public virtual ActorEntity {
 public:
+  virtual Input* input() const { return nullptr; }
+
   // Translates the given arm position into it's final entity space position
   // based on the given facing direction, and arm angle, and an offset from the
   // rotation center of the arm.

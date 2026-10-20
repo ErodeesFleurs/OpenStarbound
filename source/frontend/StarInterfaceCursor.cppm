@@ -22,9 +22,11 @@ import star.animation;
 import star.vector;
 namespace Star {
 
+class GuiContext;
+
 class InterfaceCursor {
 public:
-  InterfaceCursor();
+  InterfaceCursor(GuiContext& context);
 
   // Sets the cursor to the default defined in interface.config
   void resetCursor();
@@ -41,6 +43,7 @@ public:
   void update(float dt);
 
 private:
+  GuiContext* m_guiContext;
   String m_configFile;
   Vec2I m_offset;
   Vec2I m_size;

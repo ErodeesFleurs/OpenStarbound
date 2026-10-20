@@ -4,6 +4,7 @@ import star.string;
 import star.format;
 import star.thread;
 import star.worker_pool;
+import star.list;
 
 namespace Star {
 
@@ -58,51 +59,81 @@ WorkerPool::~WorkerPool() {
 
 
 void WorkerPool::start(unsigned threadCount) {
+  if (threadCount == 0) {
+    stop();
+    return;
+  }
+
   MutexLocker threadLock(m_threadMutex);
+  {
+    MutexLocker workLock(m_workMutex);
+    for (auto const& workerThread : m_workerThreads)
+      workerThread->shouldStop = true;
+    m_workCondition.broadcast();
+  }
+  joinWorkers();
 
-  for (auto const& workerThread : m_workerThreads)
-    workerThread->shouldStop = true;
-
-  m_workCondition.broadcast();
-  m_workerThreads.clear();
-
-  for (std::size_t i = m_workerThreads.size(); i < threadCount; ++i)
-    m_workerThreads.append(std::make_unique<WorkerThread>(this));
+  try {
+    MutexLocker workLock(m_workMutex);
+    m_workerThreads.reserve(threadCount);
+    for (unsigned i = 0; i < threadCount; ++i)
+      m_workerThreads.append(std::make_unique<WorkerThread>(this));
+    m_acceptingWork = true;
+  } catch (...) {
+    stopWorkers();
+    throw;
+  }
 }
 
 void WorkerPool::stop() {
   MutexLocker threadLock(m_threadMutex);
-  for (auto const& workerThread : m_workerThreads)
-    workerThread->shouldStop = true;
+  stopWorkers();
+}
 
+void WorkerPool::stopWorkers() {
+  Deque<UniqueFunction<void(std::exception_ptr)>> cancelledWork;
   {
-    // Must hold the work lock while broadcasting to ensure that any worker
-    // threads that might wait without stopping actually get the signal.
     MutexLocker workLock(m_workMutex);
+    m_acceptingWork = false;
+    for (auto const& workerThread : m_workerThreads)
+      workerThread->shouldStop = true;
+    cancelledWork = std::move(m_pendingWork);
     m_workCondition.broadcast();
   }
 
+  if (!cancelledWork.empty()) {
+    auto cancelled = std::make_exception_ptr(WorkerPoolException("Worker pool stopped before work began"));
+    for (auto& work : cancelledWork)
+      work(cancelled);
+  }
+  joinWorkers();
+}
+
+void WorkerPool::joinWorkers() {
+  for (auto const& workerThread : m_workerThreads)
+    workerThread->join();
+  MutexLocker workLock(m_workMutex);
   m_workerThreads.clear();
 }
 
 void WorkerPool::finish() {
-  // This is kind of a weird way to "wait" until all the pending work is
-  // finished.  In order for the currently active worker threads to
-  // cooperatively complete the remaining work, the work lock must not be held
-  // the entire time (then just this thread would be the one finishing the
-  // work).  Instead, the calling thread joins in on the action and tries to
-  // finish work while yielding to the other threads after each completed job.
-  MutexLocker workMutex(m_workMutex);
+  MutexLocker threadLock(m_threadMutex);
+  MutexLocker workLock(m_workMutex);
+  m_acceptingWork = false;
+  m_finishingThread = std::this_thread::get_id();
   while (!m_pendingWork.empty()) {
-    auto firstWork = m_pendingWork.takeFirst();
-    workMutex.unlock();
-    firstWork();
+    auto work = m_pendingWork.takeFirst();
+    workLock.unlock();
+    work({});
     Thread::yield();
-    workMutex.lock();
+    workLock.lock();
   }
-  workMutex.unlock();
-
-  stop();
+  m_finishingThread = {};
+  for (auto const& workerThread : m_workerThreads)
+    workerThread->shouldStop = true;
+  m_workCondition.broadcast();
+  workLock.unlock();
+  joinWorkers();
 }
 
 WorkerPoolHandle WorkerPool::addWork(UniqueFunction<void()> work) {
@@ -110,8 +141,10 @@ WorkerPoolHandle WorkerPool::addWork(UniqueFunction<void()> work) {
   // finished.  Set the result to empty string if successful and to the content
   // of the exception if an exception is thrown.
   auto workerPoolHandleImpl = std::make_shared<WorkerPoolHandle::Impl>();
-  queueWork([workerPoolHandleImpl, work = std::move(work)]() mutable {
+  queueWork([workerPoolHandleImpl, work = std::move(work)](std::exception_ptr cancelled) mutable {
     try {
+      if (cancelled)
+        std::rethrow_exception(cancelled);
       work();
       MutexLocker handleLocker(workerPoolHandleImpl->mutex);
       workerPoolHandleImpl->done.store(true, std::memory_order_release);
@@ -130,7 +163,20 @@ WorkerPoolHandle WorkerPool::addWork(UniqueFunction<void()> work) {
 }
 
 std::size_t WorkerPool::getWorkerCount() const {
+  MutexLocker workLock(m_workMutex);
   return m_workerThreads.size();
+}
+
+bool WorkerPool::isWorkerThread() const {
+  auto id = std::this_thread::get_id();
+  MutexLocker workLock(m_workMutex);
+  if (m_finishingThread == id)
+    return true;
+  for (auto const& workerThread : m_workerThreads) {
+    if (workerThread->id == id)
+      return true;
+  }
+  return false;
 }
 
 WorkerPool::WorkerThread::WorkerThread(WorkerPool* parent)
@@ -147,29 +193,30 @@ WorkerPool::WorkerThread::~WorkerThread() {
 
 void WorkerPool::WorkerThread::run() {
   MutexLocker workLock(parent->m_workMutex);
-  while (true) {
-    if (shouldStop)
-      break;
-
+  id = std::this_thread::get_id();
+  while (!shouldStop) {
     if (parent->m_pendingWork.empty()) {
       waiting = true;
       parent->m_workCondition.wait(parent->m_workMutex);
       waiting = false;
-    }
-
-    if (!parent->m_pendingWork.empty()) {
+    } else {
       auto work = parent->m_pendingWork.takeFirst();
       workLock.unlock();
-      work();
+      work({});
       workLock.lock();
     }
   }
 }
 
-void WorkerPool::queueWork(UniqueFunction<void()> work) {
+void WorkerPool::queueWork(UniqueFunction<void(std::exception_ptr)> work) {
   MutexLocker workLock(m_workMutex);
-  m_pendingWork.append(std::move(work));
-  m_workCondition.signal();
+  if (m_acceptingWork) {
+    m_pendingWork.append(std::move(work));
+    m_workCondition.signal();
+  } else {
+    workLock.unlock();
+    work(std::make_exception_ptr(WorkerPoolException("Cannot submit work to a stopped worker pool")));
+  }
 }
 
 }

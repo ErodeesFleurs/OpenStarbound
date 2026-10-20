@@ -45,10 +45,15 @@ import star.inventory_types;
 import star.armors;
 import star.net_element_top;
 import star.format;
+import star.game_test;
+import star.algorithm;
+import star.file;
+import star.random;
+import star.collection_database;
 
 using namespace Star;
 
-TEST(ItemTest, ItemDescriptorConstruction) {
+const GameTestRegistration itemDescriptorConstruction("ItemTest", "ItemDescriptorConstruction", [](GameTest&) {
   ItemDescriptor testItemDescriptor;
 
   testItemDescriptor = ItemDescriptor();
@@ -81,10 +86,10 @@ TEST(ItemTest, ItemDescriptorConstruction) {
 
   testItemDescriptor = ItemDescriptor("perfectlygenericitem", 1);
   testItemDescriptor = ItemDescriptor("perfectlygenericitem", 1, JsonObject{{"testParameter", "testValue"}});
-}
+});
 
-TEST(ItemTest, ItemComparison) {
-  auto itemDatabase = Root::singleton().itemDatabase();
+const GameTestRegistration itemComparison("ItemTest", "ItemComparison", [](GameTest& fixture) {
+  auto itemDatabase = fixture.root().itemDatabase();
   std::shared_ptr<::Star::Item> testItem = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1));
   std::shared_ptr<::Star::Item> testItemParams = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1, JsonObject{{"testParameter", "testValue"}}));
 
@@ -190,19 +195,19 @@ TEST(ItemTest, ItemComparison) {
   }
   EXPECT_FALSE(testItem->matches(testItemParams, true));
   EXPECT_FALSE(testItemParams->matches(testItem, true));
-}
+});
 
-TEST(ItemTest, ConstructItems) {
-  auto itemDatabase = Root::singleton().itemDatabase();
+const GameTestRegistration constructItems("ItemTest", "ConstructItems", [](GameTest& fixture) {
+  auto itemDatabase = fixture.root().itemDatabase();
 
   for (auto itemName : itemDatabase->allItems())
     std::shared_ptr<::Star::Item> item = itemDatabase->item(ItemDescriptor(itemName, 1));
-}
+});
 
-TEST(ItemTest, ConstBagObservesEmptyStacksWithoutReleasingThem) {
-  auto itemDatabase = Root::singleton().itemDatabase();
+const GameTestRegistration constBagObservesEmptyStacksWithoutReleasingThem("ItemTest", "ConstBagObservesEmptyStacksWithoutReleasingThem", [](GameTest& fixture) {
+  auto itemDatabase = fixture.root().itemDatabase();
   auto makeEmptyBag = [&] {
-    ItemBag bag(2);
+    ItemBag bag(fixture.root(), 2);
     bag.setItem(0, itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1)));
     bag.setItem(1, itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1)));
     return bag;
@@ -233,12 +238,12 @@ TEST(ItemTest, ConstBagObservesEmptyStacksWithoutReleasingThem) {
   EXPECT_FALSE(slots[0]);
   EXPECT_EQ(slots[1], liveItem);
   EXPECT_FALSE(listedBag.cleanup());
-}
+});
 
 namespace {
 
-std::shared_ptr<Item> inventoryTestHeadArmor() {
-  auto itemDatabase = Root::singleton().itemDatabase();
+std::shared_ptr<Item> inventoryTestHeadArmor(Root& root) {
+  auto itemDatabase = root.itemDatabase();
   for (auto const& name : itemDatabase->allItems()) {
     if (itemDatabase->itemType(name) == ItemType::HeadArmor)
       return itemDatabase->item(ItemDescriptor(name, 1));
@@ -246,13 +251,13 @@ std::shared_ptr<Item> inventoryTestHeadArmor() {
   throw ItemException("Inventory tests require a head armor item");
 }
 
-BagSlot inventoryTestBagSlot(PlayerInventory const& inventory, std::shared_ptr<Item> const& item) {
+BagSlot inventoryTestBagSlot(Root& root, PlayerInventory const& inventory, std::shared_ptr<Item> const& item) {
   // The perfectly generic item is an ObjectItem, not a main-bag generic item.
   // Use the real configured filters rather than forcing it into a fixed bag.
-  auto bags = Root::singleton().assets()->json("/player.config:inventory").get("itemBags");
+  auto bags = root.assets()->json("/player.config:inventory").get("itemBags");
   for (auto const& name : bags.toObject().keys()) {
     auto bag = inventory.bagContents(name);
-    if (bag && bag->size() != 0 && PlayerInventory::itemAllowedInBag(item, name))
+    if (bag && bag->size() != 0 && inventory.itemAllowedInBag(item, name))
       return BagSlot(name, 0);
   }
   throw ItemException("Inventory tests require a bag accepting the fixture item");
@@ -260,15 +265,15 @@ BagSlot inventoryTestBagSlot(PlayerInventory const& inventory, std::shared_ptr<I
 
 }
 
-TEST(ItemTest, ConstInventoryObservesExternallyConsumedItemsWithoutMutation) {
-  auto itemDatabase = Root::singleton().itemDatabase();
-  PlayerInventory inventory;
+const GameTestRegistration constInventoryObservesExternallyConsumedItemsWithoutMutation("ItemTest", "ConstInventoryObservesExternallyConsumedItemsWithoutMutation", [](GameTest& fixture) {
+  auto itemDatabase = fixture.root().itemDatabase();
+  PlayerInventory inventory(fixture.root());
   auto const& view = std::as_const(inventory);
   auto bagItem = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1));
-  auto bagSlot = inventoryTestBagSlot(view, bagItem);
+  auto bagSlot = inventoryTestBagSlot(fixture.root(), view, bagItem);
 
   List<std::pair<InventorySlot, std::shared_ptr<Item>>> items{
-    {EquipmentSlot::Head, inventoryTestHeadArmor()},
+    {EquipmentSlot::Head, inventoryTestHeadArmor(fixture.root())},
     {bagSlot, bagItem},
     {SwapSlot(), itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1))},
     {TrashSlot(), itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1))}
@@ -315,17 +320,17 @@ TEST(ItemTest, ConstInventoryObservesExternallyConsumedItemsWithoutMutation) {
   for (std::size_t i = 0; i < items.size(); ++i)
     EXPECT_EQ(items[i].second.use_count(), owners[i] - 1);
   EXPECT_FALSE(view.customBarPrimarySlot(0));
-}
+});
 
-TEST(ItemTest, InventoryMutationNormalizesEmptySlots) {
-  auto itemDatabase = Root::singleton().itemDatabase();
-  PlayerInventory inventory;
+const GameTestRegistration inventoryMutationNormalizesEmptySlots("ItemTest", "InventoryMutationNormalizesEmptySlots", [](GameTest& fixture) {
+  auto itemDatabase = fixture.root().itemDatabase();
+  PlayerInventory inventory(fixture.root());
   auto makeItems = [&](std::uint64_t count) {
     return itemDatabase->item(ItemDescriptor("perfectlygenericitem", count));
   };
 
   auto items = makeItems(2);
-  auto bagSlot = inventoryTestBagSlot(inventory, items);
+  auto bagSlot = inventoryTestBagSlot(fixture.root(), inventory, items);
   ASSERT_TRUE(inventory.setItem(bagSlot, items));
   EXPECT_TRUE(inventory.consumeSlot(bagSlot, 2));
   EXPECT_FALSE(inventory.itemsAt(bagSlot));
@@ -345,7 +350,7 @@ TEST(ItemTest, InventoryMutationNormalizesEmptySlots) {
   EXPECT_TRUE(inventory.consumeItems(ItemDescriptor("perfectlygenericitem", 5)));
   EXPECT_FALSE(inventory.itemsAt(bagSlot));
 
-  auto armor = inventoryTestHeadArmor();
+  auto armor = inventoryTestHeadArmor(fixture.root());
   auto armorDescriptor = armor->descriptor();
   ASSERT_TRUE(inventory.setItem(EquipmentSlot::Head, armor));
   EXPECT_TRUE(inventory.exchangeItems(EquipmentSlot::Head, TrashSlot()));
@@ -399,14 +404,14 @@ TEST(ItemTest, InventoryMutationNormalizesEmptySlots) {
   BagSlot pastEnd(bagSlot.first, static_cast<std::uint8_t>(bagSize));
   EXPECT_THROW(std::as_const(inventory).itemsAt(pastEnd), OutOfRangeException);
   EXPECT_THROW(inventory.takeSlot(pastEnd), OutOfRangeException);
-}
+});
 
-TEST(ItemTest, InventoryMutableTraversalAndNetworkNormalizeConsumption) {
-  auto itemDatabase = Root::singleton().itemDatabase();
-  NetElementTop<PlayerInventory> master;
-  NetElementTop<PlayerInventory> slave;
+const GameTestRegistration inventoryMutableTraversalAndNetworkNormalizeConsumption("ItemTest", "InventoryMutableTraversalAndNetworkNormalizeConsumption", [](GameTest& fixture) {
+  auto itemDatabase = fixture.root().itemDatabase();
+  NetElementTop<PlayerInventory> master(fixture.root());
+  NetElementTop<PlayerInventory> slave(fixture.root());
   auto item = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 2));
-  auto bagSlot = inventoryTestBagSlot(master, item);
+  auto bagSlot = inventoryTestBagSlot(fixture.root(), master, item);
   ASSERT_TRUE(master.setItem(bagSlot, item));
   ASSERT_TRUE(master.setItem(TrashSlot(), itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1))));
   master.setCustomBarPrimarySlot(0, InventorySlot(bagSlot));
@@ -441,7 +446,210 @@ TEST(ItemTest, InventoryMutableTraversalAndNetworkNormalizeConsumption) {
   EXPECT_FALSE(slave.swapSlotItem());
   EXPECT_EQ(swapAlias.use_count(), 1);
 
-  PlayerInventory restored;
+  PlayerInventory restored(fixture.root());
   restored.load(master.store());
   EXPECT_TRUE(restored.allItems().empty());
+});
+
+namespace {
+
+class ReadyCatalogErrorSink : public LogSink {
+public:
+  ReadyCatalogErrorSink() { setLevel(LogLevel::Error); }
+  void log(char const* message, LogLevel) override {
+    ADD_FAILURE() << "Ready-catalog fixture logged an error: " << message;
+  }
+};
+
 }
+
+const GameTestRegistration nestedReadyCatalog("ItemTest", "BuildersAndRebuildersKeepReadyCatalogAcrossNestedServices", [](GameTest& fixture) {
+  auto directory = File::temporaryDirectory(fixture.root().random());
+  auto cleanup = finally([&] { File::removeDirectoryRecursive(directory); });
+  auto overlay = File::relativeTo(directory, "assets");
+  auto writeAsset = [&](String const& path, String const& contents) {
+    auto destination = File::relativeTo(overlay, path.beginsWith("/") ? path.substr(1) : path);
+    File::makeDirectoryRecursive(File::dirName(destination));
+    File::writeFile(contents, destination);
+  };
+
+  // Reuse the actual fixture's legal species/NPC assets, including their real
+  // creation/build scripts. The wrappers add observable nested item consumers.
+  auto baseAssets = fixture.root().assets();
+  String humanPath;
+  Json humanConfig;
+  for (auto const& path : baseAssets->scanExtension("species")) {
+    auto config = baseAssets->json(path);
+    if (config.getString("kind") == "human") {
+      humanPath = path;
+      humanConfig = config;
+      break;
+    }
+  }
+  ASSERT_FALSE(humanPath.empty());
+  Json npcConfig;
+  for (auto const& path : baseAssets->scanExtension("npctype")) {
+    auto config = baseAssets->json(path);
+    if (config.getString("type") == "villager") {
+      npcConfig = config;
+      break;
+    }
+  }
+  ASSERT_FALSE(npcConfig.isNull());
+  auto creationScripts = humanConfig.getArray("createScripts", {});
+  if (creationScripts.empty())
+    creationScripts.append("/humanoid/opensb/create.lua");
+  creationScripts.append("/readycatalog/create.lua");
+  auto buildScripts = humanConfig.getArray("buildScripts", {});
+  if (buildScripts.empty())
+    buildScripts.append("/humanoid/opensb/build.lua");
+  buildScripts.append("/readycatalog/humanoid.lua");
+  humanConfig = humanConfig.set("createScripts", creationScripts).set("buildScripts", buildScripts);
+  writeAsset(humanPath, humanConfig.repr());
+  npcConfig = npcConfig.set("type", "readycatalognpc")
+      .set("humanoidConfig", "/humanoid.config")
+      .set("items", Json::parse(R"({"override":[[0,[{}]]]})"));
+  writeAsset("/readycatalog/probe.npctype", npcConfig.repr());
+  writeAsset("/readycatalog/create.lua", R"(
+local originalCreate = create
+function create(...)
+  local identity, parameters, armor = originalCreate(...)
+  local descriptor = root.createItem("readycatalogleaf")
+  assert(descriptor.name == "readycatalogleaf")
+  parameters.readyCreateMarker = root.itemConfig("readycatalogleaf").config.shortdescription
+  return identity, parameters, armor
+end
+)");
+  writeAsset("/readycatalog/humanoid.lua", R"(
+local originalBuild = build
+function build(...)
+  local config = originalBuild(...)
+  local descriptor = root.createItem("readycatalogleaf")
+  assert(descriptor.name == "readycatalogleaf")
+  root.setConfiguration("readySpeciesBuild", root.itemConfig("readycatalogleaf").config.shortdescription)
+  return config
+end
+)");
+
+  writeAsset("/_metadata", R"({
+    "name":"ready_catalog_fixture",
+    "errorHandlers":{"item":["/readycatalog/rebuild.lua"]}
+  })");
+  writeAsset("/readycatalog/leaf.item", R"({
+    "itemName":"readycatalogleaf","rarity":"common",
+    "shortdescription":"LeafOwner","description":"Ready catalog leaf"
+  })");
+  writeAsset("/readycatalog/built.item", R"({
+    "itemName":"readycatalogbuilt","rarity":"common",
+    "shortdescription":"Unbuilt","builder":"/readycatalog/build.lua"
+  })");
+  writeAsset("/readycatalog/broken.item", R"({
+    "itemName":"readycatalogbroken","rarity":"common",
+    "shortdescription":"Unrebuilt","builder":"/readycatalog/broken.lua"
+  })");
+  writeAsset("/readycatalog/broken.lua", R"(
+function build()
+  error("intentional ready-catalog rebuild")
+end
+)");
+  writeAsset("/readycatalog/probe.treasurepools", R"({
+    "readycatalogpool":[[0,{"fill":[{"item":"readycatalogleaf"}],"poolRounds":0}]]
+  })");
+  writeAsset("/readycatalog/probe.collection", R"({
+    "name":"readycatalogcollection","type":"item",
+    "collectables":{"leaf":{"item":"readycatalogleaf","icon":"/assetmissing.png"}}
+  })");
+  writeAsset("/versioning.config", baseAssets->json("/versioning.config").set("ReadyCatalog", 1).repr());
+  writeAsset("/versioning/ReadyCatalog_0_1.lua", R"(
+function update(data)
+  return {
+    name = root.createItem("readycatalogleaf").name,
+    marker = root.itemConfig("readycatalogleaf").config.shortdescription
+  }
+end
+)");
+
+  String checkNestedServices = R"(
+local function checkNestedServices()
+  local leaf = root.itemConfig("readycatalogleaf").config.shortdescription
+  assert(leaf == "LeafOwner")
+  assert(root.createItem("readycatalogleaf").name == "readycatalogleaf")
+  local treasure = root.createTreasure("readycatalogpool", 1, 123)
+  assert(#treasure == 1 and treasure[1].name == "readycatalogleaf")
+  local upgraded = root.loadVersionedJson(
+    {id="ReadyCatalog",version=0,content={}}, "ReadyCatalog")
+  assert(upgraded.name == "readycatalogleaf" and upgraded.marker == leaf)
+  assert(root.collection("readycatalogcollection").name == "readycatalogcollection")
+  local collectables = root.collectables("readycatalogcollection")
+  assert(#collectables == 1 and collectables[1].title == leaf)
+  local variant = root.npcVariant("human", "readycatalognpc", 1, 456)
+  assert(variant.humanoidParameters.readyCreateMarker == leaf)
+  local portrait = root.npcPortrait("head", "human", "readycatalognpc", 1, 456)
+  assert(#portrait > 0)
+  assert(root.getConfiguration("readySpeciesBuild") == leaf)
+  return leaf
+end
+)";
+  writeAsset("/readycatalog/build.lua", checkNestedServices + R"(
+function build(directory, config, parameters)
+  config.shortdescription = "NestedReady_" .. checkNestedServices()
+  parameters.nestedCatalog = "builder"
+  return config, parameters
+end
+)");
+  writeAsset("/readycatalog/rebuild.lua", checkNestedServices + R"(
+function error(descriptor, message)
+  if descriptor.name ~= "readycatalogbroken" then return descriptor end
+  assert(string.find(message, "intentional ready%-catalog rebuild"))
+  return root.createItem({
+    name = "readycatalogleaf",
+    count = descriptor.count,
+    parameters = {
+      shortdescription = "RebuiltReady_" .. checkNestedServices(),
+      nestedCatalog = "rebuilder"
+    }
+  })
+end
+)");
+  writeAsset("/readycatalog/built.recipe", R"({
+    "input":[],"output":{"name":"readycatalogbuilt","count":1},
+    "groups":[],"collectables":{}
+  })");
+  writeAsset("/readycatalog/broken.recipe", R"({
+    "input":[],"output":{"name":"readycatalogbroken","count":1},
+    "groups":[],"collectables":{}
+  })");
+
+  auto settings = fixture.rootSettings();
+  settings.assetSources.append(overlay);
+  settings.storageDirectory = File::relativeTo(directory, "storage");
+  settings.runtimeConfigFile = {};
+  settings.logDirectory = {};
+  settings.logFile = {};
+  settings.includeUGC = false;
+  Root root(settings);
+  root.logger().addSink(std::make_shared<ReadyCatalogErrorSink>());
+
+  // These strings are recorded by the INITIAL recipe scan while the Root has
+  // not published ItemDatabase. A later db.item() alone could hide a fallback.
+  auto database = root.itemDatabase();
+  auto builtRecipes = database->recipesForOutputItem("readycatalogbuilt");
+  ASSERT_EQ(builtRecipes.size(), 1u);
+  EXPECT_TRUE(builtRecipes.begin()->guiFilterString.contains("nestedready_leafowner"));
+  auto rebuiltRecipes = database->recipesForOutputItem("readycatalogbroken");
+  ASSERT_EQ(rebuiltRecipes.size(), 1u);
+  EXPECT_TRUE(rebuiltRecipes.begin()->guiFilterString.contains("rebuiltready_leafowner"));
+  auto built = database->item(ItemDescriptor("readycatalogbuilt"));
+  ASSERT_TRUE(built);
+  EXPECT_EQ(built->name(), "readycatalogbuilt");
+  EXPECT_EQ(built->friendlyName(), "NestedReady_LeafOwner");
+  EXPECT_EQ(built->parameters().getString("nestedCatalog"), "builder");
+  auto rebuilt = database->item(ItemDescriptor("readycatalogbroken", 3));
+  ASSERT_TRUE(rebuilt);
+  EXPECT_EQ(rebuilt->name(), "readycatalogleaf");
+  EXPECT_EQ(rebuilt->count(), 3u);
+  EXPECT_EQ(rebuilt->friendlyName(), "RebuiltReady_LeafOwner");
+  EXPECT_EQ(rebuilt->parameters().getString("nestedCatalog"), "rebuilder");
+  EXPECT_EQ(root.collectionDatabase()->collectable("readycatalogcollection", "leaf").title, "LeafOwner");
+  EXPECT_EQ(root.configuration()->get("readySpeciesBuild").toString(), "LeafOwner");
+});

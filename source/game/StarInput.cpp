@@ -246,7 +246,8 @@ Json Input::bindToJson(Bind const& bind) {
   return Json();
 }
 
-Input::BindEntry::BindEntry(String entryId, Json const& config, BindCategory const& parentCategory) {
+Input::BindEntry::BindEntry(Input& input, String entryId, Json const& config, BindCategory const& parentCategory)
+  : owner(input) {
   category = &parentCategory;
   id = entryId;
   name = config.getString("name", id);
@@ -255,12 +256,12 @@ Input::BindEntry::BindEntry(String entryId, Json const& config, BindCategory con
     try
       { defaultBinds.emplace_back(bindFromJson(jBind)); }
     catch (JsonException const& e)
-      { Logger::error("Binds: Error loading default bind in {}.{}: {}", parentCategory.id, id, e.what()); }
+      { owner.m_root.logger().error("Binds: Error loading default bind in {}.{}: {}", parentCategory.id, id, e.what()); }
   }
 }
 
 void Input::BindEntry::updated() {
-  auto config = Root::singleton().configuration();
+  auto config = owner.m_root.configuration();
 
   JsonArray array;
   for (auto const& bind : customBinds)
@@ -280,7 +281,7 @@ void Input::BindEntry::updated() {
     config->setPath(path, array);
   }
 
-  Input::singleton().rebuildMappings();
+  owner.rebuildMappings();
 }
 
 Input::BindRef::BindRef(BindEntry& bindEntry, KeyBind& keyBind) {
@@ -301,7 +302,7 @@ Input::BindRef::BindRef(BindEntry& bindEntry) {
   mods = KeyMod::NoMod;
 }
 
-Input::BindCategory::BindCategory() {};
+Input::BindCategory::BindCategory(Input& input) : owner(input) {}
 
 void Input::BindCategory::mergeJson(String const& categoryId, Json const& categoryConfig) {
   id = categoryId;
@@ -309,7 +310,7 @@ void Input::BindCategory::mergeJson(String const& categoryId, Json const& catego
   name = config.getString("name", id);
   entries.clear();
 
-  std::shared_ptr<Configuration> userConfig = Root::singletonPtr()->configuration();
+  std::shared_ptr<Configuration> userConfig = owner.m_root.configuration();
   auto userBindings = userConfig->get(InputBindingConfigRoot);
 
   for (auto& pair : config.getObject("binds", {})) {
@@ -318,14 +319,14 @@ void Input::BindCategory::mergeJson(String const& categoryId, Json const& catego
     if (!bindConfig.isType(Json::Type::Object))
       continue;
 
-    BindEntry& entry = entries.try_emplace(bindId, bindId, bindConfig, *this).first->second;
+    BindEntry& entry = entries.try_emplace(bindId, owner, bindId, bindConfig, *this).first->second;
 
     if (userBindings.isType(Json::Type::Object)) {
       for (auto& jBind : userBindings.queryArray(strf("{}.{}", id, bindId), {})) {
         try
           { entry.customBinds.emplace_back(bindFromJson(jBind)); }
         catch (JsonException const& e)
-          { Logger::error("Binds: Error loading user bind in {}.{}: {}", id, bindId, e.what()); }
+          { owner.m_root.logger().error("Binds: Error loading user bind in {}.{}: {}", id, bindId, e.what()); }
       }
     }
 
@@ -381,24 +382,7 @@ Input::InputState& Input::addBindState(BindEntry const* bindEntry) {
   return insertion.first->second;
 }
 
-Input* Input::s_singleton;
-
-Input* Input::singletonPtr() {
-  return s_singleton;
-}
-
-Input& Input::singleton() {
-  if (!s_singleton)
-    throw InputException("Input::singleton() called with no Input instance available");
-  else
-    return *s_singleton;
-}
-
-Input::Input() {
-  if (s_singleton)
-    throw InputException("Singleton Input has been constructed twice");
-
-  s_singleton = this;
+Input::Input(Root& root) : m_root(root) {
 
   m_pressedMods = KeyMod::NoMod;
 
@@ -408,12 +392,11 @@ Input::Input() {
     reload();
   });
 
-  m_rootReloadSubscription = Root::singletonPtr()->registerReloadListener(m_rootReloadListener);
+  m_rootReloadSubscription = m_root.registerReloadListener(m_rootReloadListener);
 }
 
 Input::~Input() {
   m_rootReloadSubscription.disconnect();
-  s_singleton = nullptr;
 }
 
 List<std::pair<InputEvent, bool>> const& Input::inputEventsThisFrame() const {
@@ -580,7 +563,7 @@ void Input::rebuildMappings() {
 void Input::reload() {;
   m_bindCategories.clear();
 
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
 
   for (auto& bindPath : assets->scanExtension("binds")) {
     for (auto& pair : assets->json(bindPath).toObject()) {
@@ -589,7 +572,7 @@ void Input::reload() {;
       if (!categoryConfig.isType(Json::Type::Object))
         continue;
 
-      m_bindCategories[categoryId].mergeJson(categoryId, categoryConfig);
+      m_bindCategories.try_emplace(categoryId, *this).first->second.mergeJson(categoryId, categoryConfig);
     }
   }
 
@@ -597,7 +580,7 @@ void Input::reload() {;
   for (auto& pair : m_bindCategories)
     count += pair.second.entries.size();
 
-  Logger::info("Binds: Loaded {} bind{}", count, count == 1 ? "" : "s");
+  m_root.logger().info("Binds: Loaded {} bind{}", count, count == 1 ? "" : "s");
 
   rebuildMappings();
 }

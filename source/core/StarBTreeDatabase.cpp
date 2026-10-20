@@ -25,7 +25,7 @@ import star.byte_array;
 import star.algorithm;
 namespace Star {
 
-BTreeDatabase::BTreeDatabase() {
+BTreeDatabase::BTreeDatabase(Logger& logger) : m_logger(logger) {
   m_impl.parent = this;
   m_open = false;
   m_deviceSize = 0;
@@ -39,8 +39,8 @@ BTreeDatabase::BTreeDatabase() {
   m_usingAltRoot = false;
 }
 
-BTreeDatabase::BTreeDatabase(String const& contentIdentifier, std::size_t keySize)
-  : BTreeDatabase() {
+BTreeDatabase::BTreeDatabase(Logger& logger, String const& contentIdentifier, std::size_t keySize)
+  : BTreeDatabase(logger) {
   setContentIdentifier(contentIdentifier);
   setKeySize(keySize);
 }
@@ -1180,7 +1180,7 @@ bool BTreeDatabase::tryFlatten() {
   if (free < 0.05f)
     return false;
 
-  Logger::info("[BTreeDatabase] File '{}' is {:.2f}% free space, flattening", m_device->deviceName(), free * 100.f);
+  m_logger.info("[BTreeDatabase] File '{}' is {:.2f}% free space, flattening", m_device->deviceName(), free * 100.f);
 
   indexBlockIndex = m_headFreeIndexBlock;
   {
@@ -1216,7 +1216,7 @@ bool BTreeDatabase::tryFlatten() {
   writeRoot();
   m_uncommitted.clear();
 
-  Logger::info("[BTreeDatabase] Finished flattening '{}' in {:.2f} milliseconds", m_device->deviceName(), (Time::monotonicTime() - start) * 1000.f);
+  m_logger.info("[BTreeDatabase] Finished flattening '{}' in {:.2f} milliseconds", m_device->deviceName(), (Time::monotonicTime() - start) * 1000.f);
   return true;
 }
 
@@ -1287,11 +1287,11 @@ std::uint32_t BTreeDatabase::maxFreeIndexLength() const {
   return (m_blockSize / sizeof(BlockIndex)) - 2 - sizeof(BlockIndex) - 4;
 }
 
-BTreeSha256Database::BTreeSha256Database() {
+BTreeSha256Database::BTreeSha256Database(Logger& logger) : BTreeDatabase(logger) {
   setKeySize(32);
 }
 
-BTreeSha256Database::BTreeSha256Database(String const& contentIdentifier) {
+BTreeSha256Database::BTreeSha256Database(Logger& logger, String const& contentIdentifier) : BTreeDatabase(logger) {
   setKeySize(32);
   setContentIdentifier(contentIdentifier);
 }

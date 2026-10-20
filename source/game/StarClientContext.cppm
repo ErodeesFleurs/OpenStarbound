@@ -82,11 +82,12 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
+class Root;
 class CelestialLog;
 
 class ClientContext {
 public:
-  ClientContext(Uuid serverUuid, Uuid playerUuid);
+  ClientContext(Root& root, Uuid serverUuid, Uuid playerUuid);
 
   Uuid serverUuid() const;
   // The player Uuid can differ from the mainPlayer's Uuid
@@ -122,6 +123,7 @@ public:
   NetCompatibilityRules netCompatibilityRules() const;
 
 private:
+  Root& m_root;
   Uuid m_serverUuid;
   Uuid m_playerUuid;
   ConnectionId m_connectionId = 0;

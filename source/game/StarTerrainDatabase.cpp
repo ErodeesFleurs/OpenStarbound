@@ -22,9 +22,6 @@ import star.random;
 
 import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
-import star.root;
 
 import star.terrain_database;
 import star.terrain_basic;
@@ -39,8 +36,8 @@ import star.terrain_cache;
 
 namespace Star {
 
-TerrainSelectorParameters::TerrainSelectorParameters() {
-  seed = Random::randu64();
+TerrainSelectorParameters::TerrainSelectorParameters(RandomService& random) {
+  seed = random.randu64();
   worldWidth = 0;
   commonality = 1.0f;
 }
@@ -74,8 +71,7 @@ TerrainSelector::TerrainSelector(String type, Json config, TerrainSelectorParame
 
 TerrainSelector::~TerrainSelector() {}
 
-TerrainDatabase::TerrainDatabase() {
-  auto assets = Root::singleton().assets();
+TerrainDatabase::TerrainDatabase(std::shared_ptr<Assets const> const& assets, RandomService& random) : m_random(random) {
 
   // 'type' here is the extension of the file, and determines the selector type
   auto scanFiles = [this, assets](String const& type) {
@@ -120,7 +116,7 @@ std::shared_ptr<TerrainSelector const> TerrainDatabase::createNamedSelector(Stri
 }
 
 std::shared_ptr<TerrainSelector const> TerrainDatabase::constantSelector(float value) {
-  return createSelectorType(ConstantSelector::Name, JsonObject{{"value", value}}, TerrainSelectorParameters());
+  return createSelectorType(ConstantSelector::Name, JsonObject{{"value", value}}, TerrainSelectorParameters(m_random));
 }
 
 Json TerrainDatabase::storeSelector(std::shared_ptr<TerrainSelector const> const& selector) const {

@@ -33,17 +33,17 @@ import star.player_codexes;
 import star.algorithm;
 namespace Star {
 
-PlayerCodexes::PlayerCodexes() : PlayerCodexes(Json{}) {}
+PlayerCodexes::PlayerCodexes(Root& root) : PlayerCodexes(root, Json{}) {}
 
-PlayerCodexes::PlayerCodexes(Json const& variant) {
+PlayerCodexes::PlayerCodexes(Root& root, Json const& variant) : m_root(root) {
   if (variant) {
-    auto assets = Root::singleton().assets();
+    auto assets = m_root.assets();
     auto codexData = jsonToMapV<StringMap<bool>>(variant, std::mem_fn(&Json::toBool));
     for (auto pair : codexData) {
-      if (auto codex = Root::singleton().codexDatabase()->codex(pair.first)) {
+      if (auto codex = m_root.codexDatabase()->codex(pair.first)) {
         m_codexes[pair.first] = CodexEntry{codex, pair.second};
       } else {
-        Logger::debug("Failed to load missing codex '{}'", pair.first);
+        m_root.logger().debug("Failed to load missing codex '{}'", pair.first);
       }
     }
   }
@@ -70,7 +70,7 @@ bool PlayerCodexes::codexKnown(String const& codexId) const {
 
 std::shared_ptr<Codex const> PlayerCodexes::learnCodex(String const& codexId, bool markRead) {
   if (!codexKnown(codexId)) {
-    if (auto codex = Root::singleton().codexDatabase()->codex(codexId)) {
+    if (auto codex = m_root.codexDatabase()->codex(codexId)) {
       auto entry = CodexEntry{codex, markRead};
       m_codexes[codexId] = entry;
       return entry.first;
@@ -100,7 +100,7 @@ bool PlayerCodexes::markCodexUnread(String const& codexId) {
 }
 
 void PlayerCodexes::learnInitialCodexes(String const& playerSpecies) {
-  for (auto codexId : jsonToStringList(Root::singleton().assets()->json(strf("/player.config:defaultCodexes.{}", playerSpecies))))
+  for (auto codexId : jsonToStringList(m_root.assets()->json(strf("/player.config:defaultCodexes.{}", playerSpecies))))
     learnCodex(codexId, true);
 }
 

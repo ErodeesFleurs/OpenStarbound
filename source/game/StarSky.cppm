@@ -41,6 +41,7 @@ namespace Star {
 
 class Clock;
 class AudioInstance;
+class Root;
 
 // Sky objects, such as stars and orbiters, are given in a pseudo screen space,
 // "view space", that does not take the pixel ratio into account.  "viewSize"
@@ -48,8 +49,8 @@ class AudioInstance;
 // dividing by the pixel ratio.
 class Sky {
 public:
-  Sky();
-  Sky(SkyParameters const& skyParameters, bool inOrbit);
+  explicit Sky(Root& root);
+  Sky(Root& root, SkyParameters const& skyParameters, bool inOrbit);
 
   // Controls the space sky "flight" system
   void startFlying(bool enterHyperspace, bool startInWarp, Json settings = {});
@@ -148,6 +149,7 @@ private:
 
   void skyParametersUpdated();
  
+  Root& m_root;
   Json m_settings;
   SkyParameters m_skyParameters;
   bool m_skyParametersUpdated;

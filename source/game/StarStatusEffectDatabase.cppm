@@ -13,6 +13,8 @@ import star.status_types;
 
 namespace Star {
 
+class Assets;
+
 struct StatusEffectDatabaseExceptionTag {
   static constexpr char const* name() { return "StatusEffectDatabaseException"; }
 };
@@ -37,7 +39,7 @@ struct UniqueStatusEffectConfig {
 
 class StatusEffectDatabase {
 public:
-  StatusEffectDatabase();
+  explicit StatusEffectDatabase(std::shared_ptr<Assets const> assets);
 
   bool isUniqueEffect(UniqueStatusEffect const& effect) const;
 

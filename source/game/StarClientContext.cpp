@@ -76,6 +76,7 @@ import star.world_storage;
 import star.player_types;
 
 import star.client_context;
+import star.root;
 
 import star.net_compatibility;
 import star.byte_array;
@@ -102,10 +103,11 @@ DataStream& operator<<(DataStream& ds, ShipUpgrades const& upgrades) {
   return ds;
 }
 
-ClientContext::ClientContext(Uuid serverUuid, Uuid playerUuid) {
+ClientContext::ClientContext(Root& root, Uuid serverUuid, Uuid playerUuid)
+  : m_root(root), m_serverUuid(root.random()), m_playerUuid(root.random()) {
   m_serverUuid = std::move(serverUuid);
   m_playerUuid = std::move(playerUuid);
-  m_rpc = std::make_shared<JsonRpc>();
+  m_rpc = std::make_shared<JsonRpc>(m_root.logger());
 
   m_netGroup.addNetElement(&m_orbitWarpActionNetState);
   m_netGroup.addNetElement(&m_playerWorldIdNetState);

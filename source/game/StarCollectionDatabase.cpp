@@ -58,8 +58,8 @@ Collectable::Collectable() : name(), order(), title(), description(), icon() {}
 Collectable::Collectable(String const& name, int order, String const& title, String const& description, String const& icon)
   : name(name), order(order), title(title), description(description), icon(icon) {};
 
-CollectionDatabase::CollectionDatabase() {
-  auto assets = Root::singleton().assets();
+CollectionDatabase::CollectionDatabase(Root& root) : m_root(root) {
+  auto assets = m_root.assets();
   auto& files = assets->scanExtension("collection");
   assets->queueJsons(files);
   for (auto& file : files) {
@@ -72,16 +72,11 @@ CollectionDatabase::CollectionDatabase() {
     collection.type = CollectionTypeNames.getLeft(config.getString("type", "generic"));
 
     m_collectables[collection.name] = {};
+    m_collectableConfigs[collection.name] = {};
     for (auto pair : config.get("collectables").iterateObject()) {
-      Collectable collectable;
-      if (collection.type == CollectionType::Monster)
-        collectable = parseMonsterCollectable(pair.first, pair.second);
-      else if (collection.type == CollectionType::Item)
-        collectable = parseItemCollectable(pair.first, pair.second);
-      else
-        collectable = parseGenericCollectable(pair.first, pair.second);
-
-      m_collectables[collection.name][collectable.name] = collectable;
+      m_collectableConfigs[collection.name][pair.first] = pair.second;
+      if (collection.type == CollectionType::Generic)
+        m_collectables[collection.name][pair.first] = parseGenericCollectable(pair.first, pair.second);
     }
 
     m_collections[collection.name] = collection;
@@ -101,23 +96,58 @@ Collection CollectionDatabase::collection(String const& collectionName) const {
 }
 
 List<Collectable> CollectionDatabase::collectables(String const& collectionName) const {
+  return collectables(collectionName, nullptr);
+}
+
+List<Collectable> CollectionDatabase::collectables(String const& collectionName, ItemDatabase const* itemCatalog) const {
   try {
-    return m_collectables.get(collectionName).values();
+    List<Collectable> result;
+    auto const& configs = m_collectableConfigs.get(collectionName);
+    result.reserve(configs.size());
+    for (auto const& entry : configs)
+      result.append(collectable(collectionName, entry.first, itemCatalog));
+    return result;
   } catch (MapException const& e) {
     throw CollectionDatabaseException(strf("Collection '{}' not found", collectionName), e);
   }
 }
 
 Collectable CollectionDatabase::collectable(String const& collectionName, String const& collectableName) const {
+  return collectable(collectionName, collectableName, nullptr);
+}
+
+Collectable CollectionDatabase::collectable(String const& collectionName, String const& collectableName, ItemDatabase const* itemCatalog) const {
   try {
-    return m_collectables.get(collectionName).get(collectableName);
+    auto const& config = m_collectableConfigs.get(collectionName).get(collectableName);
+    {
+      MutexLocker locker(m_collectablesMutex);
+      if (auto cached = m_collectables.get(collectionName).maybe(collectableName))
+        return *cached;
+    }
+    Collectable result;
+    switch (m_collections.get(collectionName).type) {
+      case CollectionType::Generic:
+        result = parseGenericCollectable(collectableName, config);
+        break;
+      case CollectionType::Monster:
+        result = parseMonsterCollectable(collectableName, config);
+        break;
+      case CollectionType::Item:
+        result = parseItemCollectable(collectableName, config, itemCatalog);
+        break;
+    }
+    MutexLocker locker(m_collectablesMutex);
+    if (auto cached = m_collectables.get(collectionName).maybe(collectableName))
+      return *cached;
+    m_collectables[collectionName][collectableName] = result;
+    return result;
   } catch (MapException const& e) {
     throw CollectionDatabaseException(strf("Collectable '{}' not found in collection '{}'", collectableName, collectionName), e);
   }
 }
 
 bool CollectionDatabase::hasCollectable(String const& collectionName, String const& collectableName) const {
-  return (m_collections.contains(collectionName) && m_collectables.get(collectionName).contains(collectableName));
+  return (m_collections.contains(collectionName) && m_collectableConfigs.get(collectionName).contains(collectableName));
 }
 
 Collectable CollectionDatabase::parseGenericCollectable(String const& name, Json const& config) const {
@@ -135,7 +165,7 @@ Collectable CollectionDatabase::parseGenericCollectable(String const& name, Json
 Collectable CollectionDatabase::parseMonsterCollectable(String const& name, Json const& config) const {
   Collectable collectable = parseGenericCollectable(name, config);
   auto seed = 0; // use a static seed to utilize caching
-  auto variant = Root::singleton().monsterDatabase()->monsterVariant(config.getString("monsterType"), seed);
+  auto variant = m_root.monsterDatabase()->monsterVariant(config.getString("monsterType"), seed);
 
   collectable.title = variant.shortDescription.value("");
   collectable.description = variant.description.value("");
@@ -143,10 +173,12 @@ Collectable CollectionDatabase::parseMonsterCollectable(String const& name, Json
   return collectable;
 }
 
-Collectable CollectionDatabase::parseItemCollectable(String const& name, Json const& config) const {
+Collectable CollectionDatabase::parseItemCollectable(String const& name, Json const& config, ItemDatabase const* itemCatalog) const {
   Collectable collectable = parseGenericCollectable(name, config);
-  auto itemDatabase = Root::singleton().itemDatabase();
-  auto item = itemDatabase->itemShared(ItemDescriptor(config.getString("item")));
+  auto catalogOwner = itemCatalog ? std::shared_ptr<ItemDatabase const>{} : m_root.itemDatabase();
+  if (!itemCatalog)
+    itemCatalog = catalogOwner.get();
+  auto item = itemCatalog->itemShared(ItemDescriptor(config.getString("item")));
 
   collectable.title = item->friendlyName();
   collectable.description = item->description();
@@ -156,7 +188,7 @@ Collectable CollectionDatabase::parseItemCollectable(String const& name, Json co
   } else {
     auto inventoryIcon = item->instanceValue("inventoryIcon", "");
     if (inventoryIcon.isType(Json::Type::String))
-      collectable.icon = AssetPath::relativeTo(itemDatabase->itemConfig(item->name(), JsonObject()).directory, inventoryIcon.toString());
+      collectable.icon = AssetPath::relativeTo(itemCatalog->itemConfig(item->name(), JsonObject()).directory, inventoryIcon.toString());
   }
 
   return collectable;

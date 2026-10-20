@@ -80,13 +80,13 @@ SpeciesOption::SpeciesOption()
     undyColorDirectives(),
     hairColorDirectives() {}
 
-SpeciesDatabase::SpeciesDatabase() : m_luaRoot(std::make_shared<LuaRoot>()) {
-  auto assets = Root::singleton().assets();
+SpeciesDatabase::SpeciesDatabase(Root& root) : m_root(root), m_luaRoot(std::make_shared<LuaRoot>(root)) {
+  auto assets = m_root.assets();
 
   auto& files = assets->scanExtension("species");
   assets->queueJsons(files);
   for (auto& file : files) {
-    auto speciesDefinition = std::make_shared<SpeciesDefinition>(assets->json(file));
+    auto speciesDefinition = std::make_shared<SpeciesDefinition>(m_root, assets->json(file));
     if (m_species.contains(speciesDefinition->kind()))
       throw StarException(strf("Duplicate species asset with kind {}. configfile {}", speciesDefinition->kind(), file));
     auto k = speciesDefinition->kind().toLower();
@@ -105,13 +105,14 @@ StringMap<std::shared_ptr<SpeciesDefinition>> SpeciesDatabase::allSpecies() cons
   return m_species;
 }
 
-Json SpeciesDatabase::humanoidConfig(HumanoidIdentity identity, JsonObject parameters, Json config) const {
+Json SpeciesDatabase::humanoidConfig(HumanoidIdentity identity, JsonObject parameters, Json config, ItemDatabase const* itemCatalog) const {
   auto speciesDef = species(identity.species);
   if (speciesDef->m_buildScripts.size() > 0) {
     RecursiveMutexLocker locker(m_luaMutex);
     auto context = m_luaRoot->createContext(speciesDef->m_buildScripts);
-    context.setCallbacks("root", LuaBindings::makeRootCallbacks());
-    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+    context.remove("root");
+    context.setCallbacks("root", LuaBindings::makeRootCallbacks(m_root, itemCatalog));
+    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks(m_root.random(), m_root.logger(), m_root.logMap()));
 
     // NPCs can have their own custom humanoidConfig that don't align with their species
     // however we need to make sure it only gets passed into this if its different from base
@@ -138,7 +139,8 @@ CharacterCreationResult SpeciesDatabase::createHumanoid(
   std::size_t pantsChoice,
   std::size_t pantsColor,
   std::size_t personality,
-  LuaVariadic<LuaValue> ext
+  LuaVariadic<LuaValue> ext,
+  ItemDatabase const* itemCatalog
 ) const {
   CharacterCreationResult result;
 
@@ -146,8 +148,9 @@ CharacterCreationResult SpeciesDatabase::createHumanoid(
   if (speciesDefinition->m_creationScripts.size() > 0) {
     RecursiveMutexLocker locker(m_luaMutex);
     auto context = m_luaRoot->createContext(speciesDefinition->m_creationScripts);
-    context.setCallbacks("root", LuaBindings::makeRootCallbacks());
-    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+    context.remove("root");
+    context.setCallbacks("root", LuaBindings::makeRootCallbacks(m_root, itemCatalog));
+    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks(m_root.random(), m_root.logger(), m_root.logMap()));
     Json identityReturn;
     luaTie(identityReturn, result.humanoidParameters, result.armor) = context.invokePath<LuaTupleReturn<Json, JsonObject, JsonObject>>(
       "create",
@@ -242,12 +245,12 @@ CharacterCreationResult SpeciesDatabase::createHumanoid(
   return result;
 }
 
-CharacterCreationResult SpeciesDatabase::generateHumanoid(String speciesChoice, std::int64_t seed, Maybe<Gender> gender) const {
+CharacterCreationResult SpeciesDatabase::generateHumanoid(String speciesChoice, std::int64_t seed, Maybe<Gender> gender, ItemDatabase const* itemCatalog) const {
   RandomSource randSource(seed);
   auto speciesDefinition = species(speciesChoice);
   auto chosenGender = gender.value(randSource.randb() ? Gender::Male : Gender::Female);
   return createHumanoid(
-    Root::singleton().nameGenerator()->generateName(speciesDefinition->nameGen(chosenGender), randSource),
+    m_root.nameGenerator()->generateName(speciesDefinition->nameGen(chosenGender), randSource),
     speciesChoice,
     (unsigned)chosenGender,
     randSource.randu32(),
@@ -259,11 +262,12 @@ CharacterCreationResult SpeciesDatabase::generateHumanoid(String speciesChoice, 
     randSource.randu32(),
     randSource.randu32(),
     randSource.randu32(),
-    {}
+    {},
+    itemCatalog
   );
 }
 
-SpeciesDefinition::SpeciesDefinition(Json const& config) {
+SpeciesDefinition::SpeciesDefinition(Root& root, Json const& config) : m_root(root) {
   m_config = config;
   m_kind = config.getString("kind");
   m_humanoidConfig = config.getString("humanoidConfig", "/humanoid.config");
@@ -365,7 +369,7 @@ SpeciesOption const& SpeciesDefinition::options() const {
 }
 
 Json SpeciesDefinition::humanoidConfig() const {
-  auto config = Root::singleton().assets()->json(m_humanoidConfig);
+  auto config = m_root.assets()->json(m_humanoidConfig);
   return jsonMerge(config, m_humanoidOverrides);
 }
 

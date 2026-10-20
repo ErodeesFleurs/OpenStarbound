@@ -50,10 +50,11 @@ class ToolUserEntity;
 class Item;
 class World;
 class EffectEmitter;
+class Root;
 
 class ToolUser : public NetElementSyncGroup {
 public:
-  ToolUser();
+  explicit ToolUser(Root& root);
 
   Json diskStore() const;
   void diskLoad(Json const& diskStore);
@@ -111,6 +112,8 @@ public:
 private:
   class NetItem : public NetElement {
   public:
+    explicit NetItem(Root& root);
+
     void initNetVersion(NetElementVersion const* version = nullptr) override;
 
     void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
@@ -132,6 +135,7 @@ private:
   private:
     void updateItemDescriptor();
 
+    Root* m_root;
     NetElementData<ItemDescriptor> m_itemDescriptor;
     std::shared_ptr<Item> m_item;
     NetElementVersion const* m_netVersion = nullptr;
@@ -147,6 +151,9 @@ private:
 
   void netElementsNeedLoad(bool full) override;
   void netElementsNeedStore() override;
+
+  // Borrowed for this tool user's lifetime; catalog lookups remain reload-aware.
+  Root* m_root;
 
   float m_beamGunRadius;
   unsigned m_beamGunGlowBorder;

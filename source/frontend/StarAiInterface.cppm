@@ -84,7 +84,7 @@ using AiInterfaceException = StarError<AiInterfaceExceptionTag, StarException>;
 
 class AiInterface : public Pane {
 public:
-  AiInterface(std::shared_ptr<UniverseClient> client, std::shared_ptr<Cinematic> cinematic, MainInterfacePaneManager* paneManager);
+  AiInterface(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<Cinematic> cinematic, MainInterfacePaneManager* paneManager);
 
   void update(float dt) override;
 

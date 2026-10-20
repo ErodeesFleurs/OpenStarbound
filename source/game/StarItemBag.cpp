@@ -33,34 +33,32 @@ import star.item_recipe;
 import star.item_descriptor;
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.configuration;
 import star.root;
 
 
 import star.item_database;
 import star.item_bag;
+import star.versioning_database;
 
 namespace Star {
 
-ItemBag::ItemBag() {}
-
-ItemBag::ItemBag(std::size_t size) {
+ItemBag::ItemBag(Root& root, std::size_t size) : m_root(&root) {
   m_items.resize(size);
 }
 
-ItemBag ItemBag::fromJson(Json const& store) {
-  auto itemDatabase = Root::singleton().itemDatabase();
-  ItemBag res;
+ItemBag ItemBag::fromJson(Root& root, Json const& store) {
+  auto itemDatabase = root.itemDatabase();
+  ItemBag res(root, 0);
   auto entries = store.arrayPtr();
   res.m_items = entries->transformed([itemDatabase](Json const& v) { return itemDatabase->fromJson(v); });
 
   return res;
 }
 
-ItemBag ItemBag::loadStore(Json const& store) {
-  auto itemDatabase = Root::singleton().itemDatabase();
-  ItemBag res;
+ItemBag ItemBag::loadStore(Root& root, Json const& store) {
+  auto itemDatabase = root.itemDatabase();
+  ItemBag res(root, 0);
   auto entries = store.arrayPtr();
   res.m_items = entries->transformed([itemDatabase](Json const& v) { return itemDatabase->diskLoad(v); });
 
@@ -68,13 +66,16 @@ ItemBag ItemBag::loadStore(Json const& store) {
 }
 
 Json ItemBag::toJson() const {
-  auto itemDatabase = Root::singleton().itemDatabase();
-  return m_items.transformed([itemDatabase](std::shared_ptr<Item const> const& item) { return itemDatabase->toJson(item); });
+  return m_items.transformed([](std::shared_ptr<Item const> const& item) {
+    return item ? item->descriptor().toJson() : Json();
+  });
 }
 
 Json ItemBag::diskStore() const {
-  auto itemDatabase = Root::singleton().itemDatabase();
-  return m_items.transformed([itemDatabase](std::shared_ptr<Item const> const& item) { return itemDatabase->diskStore(item); });
+  auto versioningDatabase = m_root->versioningDatabase();
+  return m_items.transformed([&versioningDatabase](std::shared_ptr<Item const> const& item) {
+    return item ? item->descriptor().diskStore(*versioningDatabase) : Json();
+  });
 }
 
 std::size_t ItemBag::size() const {
@@ -361,7 +362,7 @@ void ItemBag::condenseStacks() {
 }
 
 void ItemBag::read(DataStream& ds) {
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto itemDatabase = m_root->itemDatabase();
 
   m_items.clear();
   m_items.resize(ds.readVlqU());

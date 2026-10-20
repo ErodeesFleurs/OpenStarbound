@@ -6,7 +6,6 @@ import star.maybe;
 import star.thread;
 import star.worker_pool;
 
-import star.logging;
 import star.format;
 #include <cpr/cpr.h>
 
@@ -35,30 +34,38 @@ public:
   HttpClient();
   ~HttpClient();
 
-  static WorkerPoolPromise<HttpResponse> requestAsync(HttpRequest const& request);
+  HttpClient(HttpClient const&) = delete;
+  HttpClient& operator=(HttpClient const&) = delete;
+  HttpClient(HttpClient&&) = delete;
+  HttpClient& operator=(HttpClient&&) = delete;
 
-  static WorkerPoolPromise<HttpResponse> getAsync(String const& url, StringMap<String> const& headers = {});
-  static WorkerPoolPromise<HttpResponse> postAsync(String const& url, String const& body, StringMap<String> const& headers = {});
-  static WorkerPoolPromise<HttpResponse> putAsync(String const& url, String const& body, StringMap<String> const& headers = {});
-  static WorkerPoolPromise<HttpResponse> deleteAsync(String const& url, StringMap<String> const& headers = {});
-  static WorkerPoolPromise<HttpResponse> patchAsync(String const& url, String const& body, StringMap<String> const& headers = {});
+  // Cancels queued requests and joins in-flight blocking requests.
+  void stop();
+
+  WorkerPoolPromise<HttpResponse> requestAsync(HttpRequest const& request);
+
+  WorkerPoolPromise<HttpResponse> getAsync(String const& url, StringMap<String> const& headers = {});
+  WorkerPoolPromise<HttpResponse> postAsync(String const& url, String const& body, StringMap<String> const& headers = {});
+  WorkerPoolPromise<HttpResponse> putAsync(String const& url, String const& body, StringMap<String> const& headers = {});
+  WorkerPoolPromise<HttpResponse> deleteAsync(String const& url, StringMap<String> const& headers = {});
+  WorkerPoolPromise<HttpResponse> patchAsync(String const& url, String const& body, StringMap<String> const& headers = {});
 
 private:
-  static WorkerPool& workerPool();
+  // Blocking network I/O must not occupy the CPU/render executor.
+  WorkerPool m_workerPool;
 };
 
 }
 
 namespace Star {
 
-WorkerPool& HttpClient::workerPool() {
-  static WorkerPool pool("HttpClient", 4);
-  return pool;
-}
-
-HttpClient::HttpClient() = default;
+HttpClient::HttpClient() : m_workerPool("HttpClient", 4) {}
 
 HttpClient::~HttpClient() = default;
+
+void HttpClient::stop() {
+  m_workerPool.stop();
+}
 
 static HttpResponse performRequest(HttpRequest const& req) {
   HttpResponse response;
@@ -132,9 +139,29 @@ static HttpResponse performRequest(HttpRequest const& req) {
 }
 
 WorkerPoolPromise<HttpResponse> HttpClient::requestAsync(HttpRequest const& request) {
-  return workerPool().addProducer<HttpResponse>([request]() {
+  return m_workerPool.addProducer<HttpResponse>([request]() {
     return performRequest(request);
   });
+}
+
+WorkerPoolPromise<HttpResponse> HttpClient::getAsync(String const& url, StringMap<String> const& headers) {
+  return requestAsync({"GET", url, headers, {}});
+}
+
+WorkerPoolPromise<HttpResponse> HttpClient::postAsync(String const& url, String const& body, StringMap<String> const& headers) {
+  return requestAsync({"POST", url, headers, body});
+}
+
+WorkerPoolPromise<HttpResponse> HttpClient::putAsync(String const& url, String const& body, StringMap<String> const& headers) {
+  return requestAsync({"PUT", url, headers, body});
+}
+
+WorkerPoolPromise<HttpResponse> HttpClient::deleteAsync(String const& url, StringMap<String> const& headers) {
+  return requestAsync({"DELETE", url, headers, {}});
+}
+
+WorkerPoolPromise<HttpResponse> HttpClient::patchAsync(String const& url, String const& body, StringMap<String> const& headers) {
+  return requestAsync({"PATCH", url, headers, body});
 }
 
 }

@@ -28,7 +28,8 @@ namespace {
   }
 }
 
-DirectoryAssetSource::DirectoryAssetSource(String const& baseDirectory, StringList const& ignorePatterns) {
+DirectoryAssetSource::DirectoryAssetSource(Logger& logger, String const& baseDirectory, StringList const& ignorePatterns)
+  : m_logger(logger) {
   m_baseDirectory = baseDirectory;
   m_ignorePatterns = ignorePatterns;
 
@@ -111,7 +112,7 @@ void DirectoryAssetSource::scanAll(String const& assetDirectory, StringList& out
     if (entry.second) {
       String childDirectory = toFilesystem(assetPath);
       if (resolvesToAncestor(childDirectory, ancestorDirectories)) {
-        Logger::warn(
+        m_logger.warn(
             "DirectoryAssetSource: '{}' resolves to one of its own parent directories, not scanning it", assetPath);
         continue;
       }

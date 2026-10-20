@@ -36,7 +36,7 @@ typedef std::function<void(Widget*)> WidgetCallbackFunc;
 
 class Widget {
 public:
-  Widget();
+  Widget(GuiContext& context);
   virtual ~Widget();
 
   Widget(Widget const& copy) = delete;

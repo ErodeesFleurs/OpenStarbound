@@ -57,7 +57,7 @@ inline constexpr float ItemIndicateNewTime = 1.5f;
 
 class ItemSlotWidget : public Widget {
 public:
-  ItemSlotWidget(std::shared_ptr<Item> const& item, String const& backingImage);
+  ItemSlotWidget(GuiContext& context, std::shared_ptr<Item> const& item, String const& backingImage);
 
   virtual void update(float dt) override;
   bool sendEvent(InputEvent const& event) override;

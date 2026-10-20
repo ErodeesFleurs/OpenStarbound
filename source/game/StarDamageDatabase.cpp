@@ -23,16 +23,12 @@ import star.version;
 import star.damage_types;
 import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
-import star.root;
 
 import star.damage_database;
 
 namespace Star {
 
-DamageDatabase::DamageDatabase() {
-  auto assets = Root::singleton().assets();
+DamageDatabase::DamageDatabase(std::shared_ptr<Assets const> assets) {
 
   auto elementalConfig = assets->json("/damage/elementaltypes.config");
   for (auto p : elementalConfig.iterateObject()) {

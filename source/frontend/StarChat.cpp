@@ -208,15 +208,15 @@ import star.team_client;
 import star.algorithm;
 namespace Star {
 
-Chat::Chat(std::shared_ptr<UniverseClient> client, Json const& baseConfig) : BaseScriptPane(baseConfig, false) {
+Chat::Chat(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, Json const& baseConfig) : BaseScriptPane(guiContext, baseConfig, false) {
   m_client = client;
   m_scripted = baseConfig.get("scripts", Json()).isType(Json::Type::Array);
   m_script.setLuaRoot(m_client->luaRoot());
-  m_script.addCallbacks("world", LuaBindings::makeWorldCallbacks((World*)m_client->worldClient().get()));
+  m_script.addCallbacks("world", LuaBindings::makeWorldCallbacks(context()->root(), (World*)m_client->worldClient().get()));
   m_chatPrevIndex = 0;
   m_historyOffset = 0;
   
-  auto assets = Root::singleton().assets();
+  auto assets = context()->root().assets();
   auto config = baseConfig.get("config");
   m_timeChatLastActive = Time::monotonicMilliseconds();
   m_chatTextStyle = config.get("textStyle");
@@ -277,9 +277,9 @@ Chat::Chat(std::shared_ptr<UniverseClient> client, Json const& baseConfig) : Bas
 
     m_chatHistory.appendAll(m_client->playerStorage()->getMetadata("chatHistory").opt().apply(jsonToStringList).value());
   } else {
-    m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_client->mainPlayer().get()));
+    m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(context()->root(), m_client->mainPlayer().get()));
     m_script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_client->mainPlayer()->statusController()));
-    m_script.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client.get()));
+    m_script.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(context()->root(), m_client.get()));
   }
 
   show();
@@ -405,7 +405,7 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
     return;
   }
 
-  GuiContext& guiContext = GuiContext::singleton();
+  GuiContext& guiContext = *context();
 
   for (auto const& message : messages) {
     Maybe<unsigned> wrapWidth;
@@ -428,9 +428,9 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
     }
 
     if (message.fromNick != "")
-      Logger::info("Chat: <{}> {}", message.fromNick, message.text);
+      context()->root().logger().info("Chat: <{}> {}", message.fromNick, message.text);
     else
-      Logger::info("Chat: {}", message.text);
+      context()->root().logger().info("Chat: {}", message.text);
   }
 
   if (showPane) {
@@ -485,7 +485,7 @@ void Chat::renderImpl() {
   Vec2I chatMin = m_chatLogPadding;
   int messageIndex = -m_historyOffset;
 
-  GuiContext& guiContext = GuiContext::singleton();
+  GuiContext& guiContext = *context();
   float lineHeight = m_chatTextStyle.lineSpacing;
   float fontSize = m_chatTextStyle.fontSize;
   guiContext.setTextStyle(m_chatTextStyle);
@@ -633,7 +633,7 @@ void Chat::updateSize() {
 }
 
 void Chat::updateBottomButton() {
-  auto assets = Root::singleton().assets();
+  auto assets = context()->root().assets();
   auto bottomConfig = assets->json("/interface/chat/chat.config:bottom");
   if (m_historyOffset == 0)
     m_bottomButton->setImages(bottomConfig.get("atbottom").getString("base"), bottomConfig.get("atbottom").getString("hover"));

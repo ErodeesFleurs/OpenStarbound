@@ -86,11 +86,11 @@ import star.label_widget;
 
 namespace Star {
 
-EditBookmarkDialog::EditBookmarkDialog(std::shared_ptr<PlayerUniverseMap> playerUniverseMap) {
+EditBookmarkDialog::EditBookmarkDialog(GuiContext& guiContext, std::shared_ptr<PlayerUniverseMap> playerUniverseMap) : Pane(guiContext) {
   m_playerUniverseMap = playerUniverseMap;
 
-  GuiReader reader;
-  auto assets = Root::singleton().assets();
+  GuiReader reader(*context());
+  auto assets = context()->root().assets();
   reader.registerCallback("ok", [this](Widget*) { ok(); });
   reader.registerCallback("remove", [this](Widget*) { remove(); });
   reader.registerCallback("close", [this](Widget*) { close(); });
@@ -122,7 +122,7 @@ void EditBookmarkDialog::show() {
     fetchChild<ButtonWidget>("remove")->show();
   }
 
-  auto assets = Root::singleton().assets();
+  auto assets = context()->root().assets();
   fetchChild<ImageWidget>("imgIcon")->setImage(strf("/interface/bookmarks/icons/{}.png", m_bookmark.icon));
 
   fetchChild<LabelWidget>("lblPlanetName")->setText(m_bookmark.targetName);

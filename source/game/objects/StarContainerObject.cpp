@@ -113,7 +113,7 @@ import star.data_stream_devices;
 import star.algorithm;
 namespace Star {
 
-ContainerObject::ContainerObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters) : Object(config, parameters) {
+ContainerObject::ContainerObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters) : Entity(rootContext), Object(rootContext, config, parameters) {
   m_opened.set(0);
   m_count = 0;
   m_currentState = 0;
@@ -127,7 +127,7 @@ ContainerObject::ContainerObject(std::shared_ptr<ObjectConfig const> config, Jso
   m_itemsUpdated = true;
   m_runUpdatedCallback = true;
 
-  m_items = std::make_shared<ItemBag>(configValue("slotCount").toInt());
+  m_items = std::make_shared<ItemBag>(root(), configValue("slotCount").toInt());
 
   m_netGroup.addNetElement(&m_opened);
   m_netGroup.addNetElement(&m_crafting);
@@ -146,17 +146,17 @@ void ContainerObject::init(World* world, EntityId entityId, EntityMode mode) {
     if (!m_initialized) {
       m_initialized = true;
       float level = world->threatLevel();
-      std::uint64_t seed = configValue("treasureSeed", Random::randu64()).toUInt();
+      std::uint64_t seed = configValue("treasureSeed", this->root().random().randu64()).toUInt();
       level = configValue("level", level).toFloat();
       level += configValue("levelAdjustment", 0).toFloat();
       if (!configValue("initialItems").isNull()) {
         List<ItemDescriptor> items;
         for (auto const& spec : configValue("initialItems").iterateArray())
-          m_items->addItems({Root::singleton().itemDatabase()->item(ItemDescriptor(spec), level, ++seed)});
+          m_items->addItems({this->root().itemDatabase()->item(ItemDescriptor(spec), level, ++seed)});
       }
       if (!configValue("treasurePools").isNull()) {
-        String treasurePool = Random::randValueFrom(configValue("treasurePools").toArray()).toString();
-        Root::singleton().treasureDatabase()->fillWithTreasure(m_items, treasurePool, level, ++seed);
+        String treasurePool = this->root().random().randValueFrom(configValue("treasurePools").toArray()).toString();
+        this->root().treasureDatabase()->fillWithTreasure(m_items, treasurePool, level, ++seed);
       }
       itemsUpdated();
     }
@@ -168,7 +168,7 @@ void ContainerObject::update(float dt, std::uint64_t currentStep) {
 
   if (isMaster()) {
     for (auto const& drop : take(m_lostItems))
-      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(root(), drop, position()));
 
     if (m_crafting.get())
       tickCrafting(dt);
@@ -190,7 +190,7 @@ void ContainerObject::update(float dt, std::uint64_t currentStep) {
     if (m_ageItemsTimer.elapsedTime() > configValue("ageItemsEvery", 10).toDouble()) {
       double elapsedTime = m_ageItemsTimer.elapsedTime() * configValue("itemAgeMultiplier", 1.0f).toDouble();
       for (auto& item : m_items->items()) {
-        if (Root::singleton().itemDatabase()->ageItem(item, elapsedTime))
+        if (this->root().itemDatabase()->ageItem(item, elapsedTime))
           itemsUpdated();
       }
       m_ageItemsTimer.setElapsedTime(0.0);
@@ -208,14 +208,14 @@ void ContainerObject::update(float dt, std::uint64_t currentStep) {
 }
 
 void ContainerObject::render(RenderCallback* renderCallback) {
-  auto assets = Root::singleton().assets();
+  auto assets = this->root().assets();
 
   if (m_animationFrameCooldown <= 0) {
     if (m_opened.get() != m_currentState) {
       if (m_currentState == 0) {
         // opening, or flipping to the other side
         if (!configValue("openSounds").isNull()) {
-          auto audio = std::make_shared<AudioInstance>(*assets->audio(Random::randValueFrom(configValue("openSounds").toArray()).toString()));
+          auto audio = std::make_shared<AudioInstance>(*assets->audio(this->root().random().randValueFrom(configValue("openSounds").toArray()).toString()));
           audio->setPosition(position());
           audio->setRangeMultiplier(config()->soundEffectRangeMultiplier);
           renderCallback->addAudio(std::move(audio));
@@ -224,7 +224,7 @@ void ContainerObject::render(RenderCallback* renderCallback) {
       if (m_currentState == configValue("openFrameIndex", 2).toInt()) {
         // closing
         if (!configValue("closeSounds").isNull()) {
-          auto audio = std::make_shared<AudioInstance>(*assets->audio(Random::randValueFrom(configValue("closeSounds").toArray()).toString()));
+          auto audio = std::make_shared<AudioInstance>(*assets->audio(this->root().random().randValueFrom(configValue("closeSounds").toArray()).toString()));
           audio->setPosition(position());
           audio->setRangeMultiplier(config()->soundEffectRangeMultiplier);
           renderCallback->addAudio(std::move(audio));
@@ -248,12 +248,12 @@ void ContainerObject::destroy(RenderCallback* renderCallback) {
   Object::destroy(renderCallback);
   if (isMaster()) {
     for (auto const& drop : m_items->items())
-      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(root(), drop, position()));
   }
 }
 
 Maybe<ChainableJsonMessageResponse> ContainerObject::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
-  auto itemDb = Root::singleton().itemDatabase();
+  auto itemDb = this->root().itemDatabase();
 
   if (message.equalsIgnoreCase("startCrafting")) {
     startCrafting();
@@ -303,7 +303,7 @@ InteractAction ContainerObject::interact(InteractRequest const&) {
 }
 
 Json ContainerObject::containerGuiConfig() const {
-  return Root::singleton().assets()->json(configValue("uiConfig").toString().replace("<slots>", toString(m_items->size())));
+  return this->root().assets()->json(configValue("uiConfig").toString().replace("<slots>", toString(m_items->size())));
 }
 
 String ContainerObject::containerDescription() const {
@@ -311,7 +311,7 @@ String ContainerObject::containerDescription() const {
 }
 
 String ContainerObject::containerSubTitle() const {
-  Json categories = Root::singleton().assets()->json("/items/categories.config:labels");
+  Json categories = this->root().assets()->json("/items/categories.config:labels");
   return categories.getString(Object::category(), Object::category());
 }
 
@@ -341,8 +341,8 @@ void ContainerObject::containerClose() {
 
 RpcPromise<std::shared_ptr<Item>> ContainerObject::addItems(std::shared_ptr<Item> const& items) {
   if (isSlave()) {
-    return world()->sendEntityMessage(entityId(), "addItems", {itemSafeDescriptor(items).toJson()}).wrap([](Json res) {
-        return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
+    return world()->sendEntityMessage(entityId(), "addItems", {itemSafeDescriptor(items).toJson()}).wrap([owner = &root()](Json res) {
+        return owner->itemDatabase()->item(ItemDescriptor(res));
       });
   } else {
     return RpcPromise<std::shared_ptr<Item>>::createFulfilled(doAddItems(items));
@@ -351,8 +351,8 @@ RpcPromise<std::shared_ptr<Item>> ContainerObject::addItems(std::shared_ptr<Item
 
 RpcPromise<std::shared_ptr<Item>> ContainerObject::putItems(std::size_t pos, std::shared_ptr<Item> const& items) {
   if (isSlave()) {
-    return world()->sendEntityMessage(entityId(), "putItems", {itemSafeDescriptor(items).toJson()}).wrap([](Json res) {
-        return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
+    return world()->sendEntityMessage(entityId(), "putItems", {itemSafeDescriptor(items).toJson()}).wrap([owner = &root()](Json res) {
+        return owner->itemDatabase()->item(ItemDescriptor(res));
       });
   } else {
     return RpcPromise<std::shared_ptr<Item>>::createFulfilled(doPutItems(pos, items));
@@ -361,8 +361,8 @@ RpcPromise<std::shared_ptr<Item>> ContainerObject::putItems(std::size_t pos, std
 
 RpcPromise<std::shared_ptr<Item>> ContainerObject::takeItems(std::size_t slot, std::size_t count) {
   if (isSlave()) {
-    return world()->sendEntityMessage(entityId(), "takeItems", {slot, count}).wrap([](Json res) {
-        return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
+    return world()->sendEntityMessage(entityId(), "takeItems", {slot, count}).wrap([owner = &root()](Json res) {
+        return owner->itemDatabase()->item(ItemDescriptor(res));
       });
   } else {
     return RpcPromise<std::shared_ptr<Item>>::createFulfilled(doTakeItems(slot, count));
@@ -371,8 +371,8 @@ RpcPromise<std::shared_ptr<Item>> ContainerObject::takeItems(std::size_t slot, s
 
 RpcPromise<std::shared_ptr<Item>> ContainerObject::swapItems(std::size_t slot, std::shared_ptr<Item> const& items, bool tryCombine) {
   if (isSlave()) {
-    return world()->sendEntityMessage(entityId(), "swapItems", {slot, itemSafeDescriptor(items).toJson(), tryCombine}).wrap([](Json res) {
-        return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
+    return world()->sendEntityMessage(entityId(), "swapItems", {slot, itemSafeDescriptor(items).toJson(), tryCombine}).wrap([owner = &root()](Json res) {
+        return owner->itemDatabase()->item(ItemDescriptor(res));
       });
   } else {
     return RpcPromise<std::shared_ptr<Item>>::createFulfilled(doSwapItems(slot, items, tryCombine));
@@ -381,8 +381,8 @@ RpcPromise<std::shared_ptr<Item>> ContainerObject::swapItems(std::size_t slot, s
 
 RpcPromise<std::shared_ptr<Item>> ContainerObject::applyAugment(std::size_t slot, std::shared_ptr<Item> const& augment) {
   if (isSlave()) {
-    return world()->sendEntityMessage(entityId(), "applyAugment", {slot, itemSafeDescriptor(augment).toJson()}).wrap([](Json res) {
-        return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
+    return world()->sendEntityMessage(entityId(), "applyAugment", {slot, itemSafeDescriptor(augment).toJson()}).wrap([owner = &root()](Json res) {
+        return owner->itemDatabase()->item(ItemDescriptor(res));
       });
   } else {
     return RpcPromise<std::shared_ptr<Item>>::createFulfilled(doApplyAugment(slot, augment));
@@ -411,8 +411,8 @@ RpcPromise<bool> ContainerObject::consumeItems(std::size_t pos, std::size_t coun
 
 RpcPromise<List<std::shared_ptr<Item>>> ContainerObject::clearContainer() {
   if (isSlave()) {
-    return world()->sendEntityMessage(entityId(), "clearContainer", {}).wrap([](Json res) {
-        auto itemDb = Root::singleton().itemDatabase();
+    return world()->sendEntityMessage(entityId(), "clearContainer", {}).wrap([owner = &root()](Json res) {
+        auto itemDb = owner->itemDatabase();
         return res.toArray().transformed([itemDb](Json const& item) {
             return itemDb->item(ItemDescriptor(item));
           });
@@ -518,7 +518,7 @@ void ContainerObject::readStoredData(Json const& diskStore) {
   m_crafting.set(diskStore.getBool("crafting"));
   m_craftingProgress.set(diskStore.getFloat("craftingProgress"));
   m_initialized = diskStore.getBool("initialized");
-  m_items = std::make_shared<ItemBag>(ItemBag::loadStore(diskStore.get("items")));
+  m_items = std::make_shared<ItemBag>(ItemBag::loadStore(root(), diskStore.get("items")));
   m_ageItemsTimer = EpochTimer(diskStore.get("ageItemsTimer"));
 
   m_lostItems.appendAll(m_items->resize(configValue("slotCount").toUInt()));
@@ -537,7 +537,7 @@ Json ContainerObject::writeStoredData() const {
 }
 
 ItemRecipe ContainerObject::recipeForMaterials(List<std::shared_ptr<Item>> const& inputItems) {
-  auto& root = Root::singleton();
+  auto& root = this->root();
   auto itemDatabase = root.itemDatabase();
 
   Json recipeGroup = configValue("recipeGroup");
@@ -591,9 +591,9 @@ void ContainerObject::tickCrafting(float dt) {
       }
     }
     std::shared_ptr<Item> overflow =
-        m_items->putItems(m_items->size() - 1, Root::singleton().itemDatabase()->item(m_goalRecipe.output));
+        m_items->putItems(m_items->size() - 1, root().itemDatabase()->item(m_goalRecipe.output));
     if (overflow)
-      world()->addEntity(ItemDrop::createRandomizedDrop(overflow, position()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(root(), overflow, position()));
     itemsUpdated();
   }
 }

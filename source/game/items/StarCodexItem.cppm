@@ -110,7 +110,7 @@ export namespace Star {
 
 class CodexItem : public Item, public SwingableItem {
 public:
-  CodexItem(Json const& config, String const& directory, Json const& data);
+  CodexItem(Root& root, Json const& config, String const& directory, Json const& data);
   virtual std::shared_ptr<Item> clone() const override;
 
   virtual List<Drawable> drawables() const override;
@@ -118,7 +118,7 @@ public:
   virtual void fireTriggered() override;
 
   virtual List<Drawable> iconDrawables() const override;
-  virtual List<Drawable> dropDrawables() const override;
+  virtual List<Drawable> dropDrawables(TileDrawer*) const override;
 
 private:
   String m_codexId;
@@ -130,15 +130,15 @@ private:
 
 namespace Star {
 
-CodexItem::CodexItem(Json const& config, String const& directory, Json const& data)
-  : Item(config, directory, data), SwingableItem(config) {
+CodexItem::CodexItem(Root& root, Json const& config, String const& directory, Json const& data)
+  : Item(root, config, directory, data), SwingableItem(config) {
   setWindupTime(0.2f);
   setCooldownTime(0.5f);
   m_requireEdgeTrigger = true;
   m_codexId = instanceValue("codexId").toString();
   String iconPath = instanceValue("codexIcon").toString();
-  m_iconDrawables = {Drawable::makeImage(iconPath, 1.0f, true, Vec2F())};
-  m_worldDrawables = {Drawable::makeImage(iconPath, 1.0f / TilePixels, true, Vec2F())};
+  m_iconDrawables = {Drawable::makeImage(*root.imageMetadataDatabase(), iconPath, 1.0f, true, Vec2F())};
+  m_worldDrawables = {Drawable::makeImage(*root.imageMetadataDatabase(), iconPath, 1.0f / TilePixels, true, Vec2F())};
 }
 
 std::shared_ptr<Item> CodexItem::clone() const {
@@ -153,10 +153,10 @@ void CodexItem::fireTriggered() {
   if (auto player = as<Player>(owner())) {
     auto codexLearned = player->codexes()->learnCodex(m_codexId);
     if (codexLearned) {
-      player->queueUIMessage(Root::singleton().assets()->json("/codex.config:messages.learned").toString());
+      player->queueUIMessage(root().assets()->json("/codex.config:messages.learned").toString());
     } else {
       player->codexes()->markCodexUnread(m_codexId);
-      player->queueUIMessage(Root::singleton().assets()->json("/codex.config:messages.alreadyKnown").toString());
+      player->queueUIMessage(root().assets()->json("/codex.config:messages.alreadyKnown").toString());
     }
   }
 }
@@ -165,7 +165,7 @@ List<Drawable> CodexItem::iconDrawables() const {
   return m_iconDrawables;
 }
 
-List<Drawable> CodexItem::dropDrawables() const {
+List<Drawable> CodexItem::dropDrawables(TileDrawer*) const {
   return m_worldDrawables;
 }
 

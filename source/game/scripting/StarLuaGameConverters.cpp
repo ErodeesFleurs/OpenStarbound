@@ -26,6 +26,9 @@ import star.mixer;
 import star.bi_map;
 
 import star.collection_database;
+import star.lua_root;
+import star.root;
+import star.image_metadata_database;
 
 import star.behavior_database;
 import star.behavior_state;
@@ -508,7 +511,7 @@ LuaValue LuaConverter<Drawable>::from(LuaEngine& engine, Drawable const& v) {
   return table;
 }
 
-Maybe<Drawable> LuaConverter<Drawable>::to(LuaEngine&, LuaValue const& v) {
+Maybe<Drawable> LuaConverter<Drawable>::to(LuaEngine& engine, LuaValue const& v) {
   if (auto table = v.ptr<LuaTable>()) {
     Maybe<Drawable> result;
     result.emplace();
@@ -521,7 +524,7 @@ Maybe<Drawable> LuaConverter<Drawable>::to(LuaEngine&, LuaValue const& v) {
     else if (auto poly = table->get<Maybe<PolyF>>("poly"))
       drawable = Drawable::makePoly(poly.take(), color);
     else if (auto image = table->get<Maybe<String>>("image"))
-      drawable = Drawable::makeImage(image.take(), 1.0f, table->get<Maybe<bool>>("centered").value(true), Vec2F(), color);
+      drawable = Drawable::makeImage(*luaExecutionRoot(engine).imageMetadataDatabase(), image.take(), 1.0f, table->get<Maybe<bool>>("centered").value(true), Vec2F(), color);
     else
       return {}; // throw LuaAnimationComponentException("Drawable table must have 'line', 'poly', or 'image'");
 

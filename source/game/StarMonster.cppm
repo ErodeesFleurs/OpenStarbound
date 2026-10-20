@@ -42,6 +42,7 @@ import star.net_element_system;
 import star.net_compatibility;
 import star.byte_array;
 namespace Star {
+class Root;
 class Monster;
 }
 
@@ -112,8 +113,8 @@ public:
     String image;
   };
 
-  Monster(MonsterVariant const& variant, Maybe<float> level = {});
-  Monster(Json const& diskStore);
+  Monster(Root& rootContext, MonsterVariant const& variant, Maybe<float> level = {});
+  Monster(Root& rootContext, Json const& diskStore);
 
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {});

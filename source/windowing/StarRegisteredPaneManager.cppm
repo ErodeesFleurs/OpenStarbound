@@ -61,6 +61,8 @@ class RegisteredPaneManager : public PaneManager {
 public:
   typedef KeyT Key;
 
+  explicit RegisteredPaneManager(GuiContext& context) : PaneManager(context) {}
+
   void registerPane(KeyT paneId, PaneLayer paneLayer, std::shared_ptr<Pane> pane, DismissCallback onDismiss = {});
   std::shared_ptr<Pane> deregisterPane(KeyT const& paneId);
   void deregisterAllPanes();

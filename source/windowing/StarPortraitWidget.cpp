@@ -121,7 +121,7 @@ import star.image_metadata_database;
 
 namespace Star {
 
-PortraitWidget::PortraitWidget(std::shared_ptr<PortraitEntity> entity, PortraitMode mode) : m_entity(entity), m_portraitMode(mode) {
+PortraitWidget::PortraitWidget(GuiContext& context, std::shared_ptr<PortraitEntity> entity, PortraitMode mode) : Widget(context), m_entity(entity), m_portraitMode(mode) {
   m_scale = 1;
   m_renderHumanoid = false;
   m_iconMode = false;
@@ -129,7 +129,7 @@ PortraitWidget::PortraitWidget(std::shared_ptr<PortraitEntity> entity, PortraitM
   init();
 }
 
-PortraitWidget::PortraitWidget() {
+PortraitWidget::PortraitWidget(GuiContext& context) : Widget(context) {
   m_entity = {};
   m_portraitMode = PortraitMode::Full;
   m_scale = 1;
@@ -144,7 +144,7 @@ RectI PortraitWidget::getScissorRect() const {
 }
 
 void PortraitWidget::renderImpl() {
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  auto imgMetadata = this->context()->root().imageMetadataDatabase();
 
   Vec2I offset = Vec2I();
   if (m_iconMode) {
@@ -182,7 +182,7 @@ void PortraitWidget::renderImpl() {
 }
 
 void PortraitWidget::init() {
-  auto assets = Root::singleton().assets();
+  auto assets = this->context()->root().assets();
 
   m_noEntityImageFull = assets->json("/interface.config:portraitNullPlayerImageFull").toString();
   m_noEntityImagePart = assets->json("/interface.config:portraitNullPlayerImagePart").toString();
@@ -221,14 +221,14 @@ bool PortraitWidget::sendEvent(InputEvent const&) {
 }
 
 void PortraitWidget::updateSize() {
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  auto imgMetadata = this->context()->root().imageMetadataDatabase();
 
   if (m_iconMode) {
     setSize(Vec2I(imgMetadata->imageSize(m_iconImage) * m_scale));
   } else {
     if (m_entity) {
       setSize(Vec2I(
-          (Drawable::boundBoxAll(m_entity->portrait(m_portraitMode), false)
+          (Drawable::boundBoxAll(*this->context()->root().imageMetadataDatabase(), m_entity->portrait(m_portraitMode), false)
                   .size()
               * TilePixels
               * m_scale)

@@ -47,9 +47,11 @@ import star.world_tiles;
 import star.algorithm;
 namespace Star {
 
+class Root;
+
 class ParticleManager {
 public:
-  ParticleManager(WorldGeometry const& worldGeometry, std::shared_ptr<ClientTileSectorArray> const& tileSectorArray);
+  ParticleManager(Root& root, WorldGeometry const& worldGeometry, std::shared_ptr<ClientTileSectorArray> const& tileSectorArray);
 
   void add(Particle particle);
   void addParticles(List<Particle> particles);
@@ -67,6 +69,8 @@ public:
 
 private:
   enum class TileType { Colliding, Water, Empty };
+
+  Root& m_root;
 
   List<Particle> m_particles;
   List<Particle> m_nextParticles;

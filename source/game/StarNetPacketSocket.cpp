@@ -284,10 +284,10 @@ void LocalPacketSocket::waitForData(bool writable, std::chrono::steady_clock::ti
 LocalPacketSocket::LocalPacketSocket(std::shared_ptr<Pipe> incomingPipe, std::weak_ptr<Pipe> outgoingPipe)
   : m_incomingPipe(std::move(incomingPipe)), m_outgoingPipe(std::move(outgoingPipe)) {}
 
-std::unique_ptr<TcpPacketSocket> TcpPacketSocket::open(std::shared_ptr<TcpSocket> socket) {
+std::unique_ptr<TcpPacketSocket> TcpPacketSocket::open(Logger& logger, std::shared_ptr<TcpSocket> socket) {
   socket->setNoDelay(true);
   socket->setNonBlocking(true);
-  return std::unique_ptr<TcpPacketSocket>(new TcpPacketSocket(std::move(socket)));
+  return std::unique_ptr<TcpPacketSocket>(new TcpPacketSocket(logger, std::move(socket)));
 }
 
 bool TcpPacketSocket::isOpen() const {
@@ -415,7 +415,7 @@ List<std::shared_ptr<Packet>> TcpPacketSocket::receivePackets() {
     if (trimPos)
       m_inputBuffer.trimLeft(trimPos);
   } catch (IOException const& e) {
-    Logger::warn("I/O error in TcpPacketSocket::receivePackets, closing: {}", outputException(e, false));
+    m_logger.warn("I/O error in TcpPacketSocket::receivePackets, closing: {}", outputException(e, false));
     m_inputBuffer.clear();
     m_socket->shutdown();
   }
@@ -453,9 +453,9 @@ bool TcpPacketSocket::writeData() {
       m_outputBuffer.trimLeft(written);
     }
   } catch (SocketClosedException const& e) {
-    Logger::debug("TcpPacketSocket socket closed: {}", outputException(e, false));
+    m_logger.debug("TcpPacketSocket socket closed: {}", outputException(e, false));
   } catch (IOException const& e) {
-    Logger::warn("I/O error in TcpPacketSocket::writeData: {}", outputException(e, false));
+    m_logger.warn("I/O error in TcpPacketSocket::writeData: {}", outputException(e, false));
     m_socket->shutdown();
   }
   return dataSent;
@@ -478,9 +478,9 @@ bool TcpPacketSocket::readData() {
       }
     }
   } catch (SocketClosedException const& e) {
-    Logger::debug("TcpPacketSocket socket closed: {}", outputException(e, false));
+    m_logger.debug("TcpPacketSocket socket closed: {}", outputException(e, false));
   } catch (IOException const& e) {
-    Logger::warn("I/O error in TcpPacketSocket::receiveData: {}", outputException(e, false));
+    m_logger.warn("I/O error in TcpPacketSocket::receiveData: {}", outputException(e, false));
     m_socket->shutdown();
   }
   return dataReceived;
@@ -498,10 +498,11 @@ Maybe<PacketStats> TcpPacketSocket::outgoingStats() const {
   return m_outgoingStats.stats();
 }
 
-TcpPacketSocket::TcpPacketSocket(std::shared_ptr<TcpSocket> socket) : m_socket(std::move(socket)) {}
+TcpPacketSocket::TcpPacketSocket(Logger& logger, std::shared_ptr<TcpSocket> socket)
+  : m_logger(logger), m_socket(std::move(socket)) {}
 
-std::unique_ptr<P2PPacketSocket> P2PPacketSocket::open(std::unique_ptr<P2PSocket> socket) {
-  return std::unique_ptr<P2PPacketSocket>(new P2PPacketSocket(std::move(socket)));
+std::unique_ptr<P2PPacketSocket> P2PPacketSocket::open(Logger& logger, std::unique_ptr<P2PSocket> socket) {
+  return std::unique_ptr<P2PPacketSocket>(new P2PPacketSocket(logger, std::move(socket)));
 }
 
 bool P2PPacketSocket::isOpen() const {
@@ -602,7 +603,7 @@ List<std::shared_ptr<Packet>> P2PPacketSocket::receivePackets() {
       } while (!packetStream.atEnd());
     }
   } catch (IOException const& e) {
-    Logger::warn("I/O error in P2PPacketSocket::receivePackets, closing: {}", outputException(e, false));
+    m_logger.warn("I/O error in P2PPacketSocket::receivePackets, closing: {}", outputException(e, false));
     m_socket.reset();
   }
   return packets;
@@ -627,7 +628,7 @@ bool P2PPacketSocket::writeData() {
         }
       }
     } catch (StarException const& e) {
-      Logger::warn("Exception in P2PPacketSocket::writeData, closing: {}", outputException(e, false));
+      m_logger.warn("Exception in P2PPacketSocket::writeData, closing: {}", outputException(e, false));
       m_socket.reset();
     }
   }
@@ -648,7 +649,7 @@ bool P2PPacketSocket::readData() {
         workDone = true;
       }
     } catch (StarException const& e) {
-      Logger::warn("Exception in P2PPacketSocket::readData, closing: {}", outputException(e, false));
+      m_logger.warn("Exception in P2PPacketSocket::readData, closing: {}", outputException(e, false));
       m_socket.reset();
     }
   }
@@ -674,7 +675,7 @@ Maybe<PacketStats> P2PPacketSocket::outgoingStats() const {
   return m_outgoingStats.stats();
 }
 
-P2PPacketSocket::P2PPacketSocket(std::shared_ptr<P2PSocket> socket)
-  : m_socket(std::move(socket)) {}
+P2PPacketSocket::P2PPacketSocket(Logger& logger, std::shared_ptr<P2PSocket> socket)
+  : m_logger(logger), m_socket(std::move(socket)) {}
 
 }

@@ -5,13 +5,15 @@ import star.list;
 import star.string;
 
 namespace Star {
+class Assets;
+
 
 // Keep the game-heavy Humanoid definition out of interface BMIs.
 enum class HumanoidEmote;
 
 class EmoteProcessor {
 public:
-  EmoteProcessor();
+  explicit EmoteProcessor(std::shared_ptr<Assets const> const& assets);
 
   HumanoidEmote detectEmotes(String const& chatter) const;
 

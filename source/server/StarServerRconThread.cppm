@@ -217,7 +217,7 @@ ServerRconClient::ServerRconClient(UniverseServer* universe, std::shared_ptr<Tcp
     m_packetBuffer(MaxPacketSize),
     m_stop(true),
     m_authed(false) {
-  auto& root = Root::singleton();
+  auto& root = m_universe->root();
   auto cfg = root.configuration();
 
   m_packetBuffer.setByteOrder(ByteOrder::LittleEndian);
@@ -330,7 +330,7 @@ void ServerRconClient::processRequest() {
         String command;
         m_packetBuffer >> command;
         try {
-          Logger::info("RCON {}: {}", m_socket->remoteAddress(), command);
+          m_universe->root().logger().info("RCON {}: {}", m_socket->remoteAddress(), command);
           auto res = handleCommand(command);
           if (res.is<String>())
             sendCmdResponse(requestId, res.get<String>());
@@ -365,15 +365,15 @@ void ServerRconClient::run() {
       processRequest();
   } catch (NoMoreRequests const&) {
   } catch (std::exception const& e) {
-    Logger::error("ServerRconClient exception caught: {}", outputException(e, false));
+    m_universe->root().logger().error("ServerRconClient exception caught: {}", outputException(e, false));
   }
 }
 
 
 ServerRconThread::ServerRconThread(UniverseServer* universe, HostAddressWithPort const& address)
-  : Thread("RconServer"), m_universe(universe), m_rconServer(address), m_stop(true) {
-  if (Root::singleton().configuration()->get("rconServerPassword").toString().empty())
-    Logger::warn("rconServerPassword is not configured requests will NOT be processed");
+  : Thread("RconServer"), m_universe(universe), m_rconServer(universe->root().logger(), address), m_stop(true) {
+  if (m_universe->root().configuration()->get("rconServerPassword").toString().empty())
+    m_universe->root().logger().warn("rconServerPassword is not configured requests will NOT be processed");
 }
 
 ServerRconThread::~ServerRconThread() {
@@ -408,7 +408,7 @@ void ServerRconThread::stop() {
 
 void ServerRconThread::run() {
   try {
-    auto timeout = Root::singleton().configuration()->get("rconServerTimeout").toInt();
+    auto timeout = m_universe->root().configuration()->get("rconServerTimeout").toInt();
     while (!m_stop) {
       if (auto client = m_rconServer.accept(100)) {
         client->setTimeout(timeout);
@@ -419,7 +419,7 @@ void ServerRconThread::run() {
       }
     }
   } catch (std::exception const& e) {
-    Logger::error("ServerRconThread exception caught: {}", e.what());
+    m_universe->root().logger().error("ServerRconThread exception caught: {}", e.what());
   }
 }
 

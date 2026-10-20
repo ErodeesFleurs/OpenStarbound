@@ -13,9 +13,9 @@ namespace Star {
 template <typename Float>
 class PeriodicFunction {
 public:
-  PeriodicFunction();
+  explicit PeriodicFunction(RandomService& random);
   PeriodicFunction(
-      Float period, Float min = 0, Float max = 1, Float periodVariance = 0, Float magnitudeVariance = 0);
+      RandomService& random, Float period, Float min = 0, Float max = 1, Float periodVariance = 0, Float magnitudeVariance = 0);
 
   void update(Float delta);
 
@@ -23,6 +23,7 @@ public:
   Float value(WeightOperator weightOperator) const;
 
 private:
+  std::reference_wrapper<RandomService> m_random;
   Float m_halfPeriod;
   Float m_min;
   Float m_max;
@@ -37,12 +38,13 @@ private:
 };
 
 template <typename Float>
-PeriodicFunction<Float>::PeriodicFunction()
-  : PeriodicFunction(1, 0, 1, 0, 0) {}
+PeriodicFunction<Float>::PeriodicFunction(RandomService& random)
+  : PeriodicFunction(random, 1, 0, 1, 0, 0) {}
 
 template <typename Float>
 PeriodicFunction<Float>::PeriodicFunction(
-    Float period, Float min, Float max, Float periodVariance, Float magnitudeVariance) {
+    RandomService& random, Float period, Float min, Float max, Float periodVariance, Float magnitudeVariance)
+  : m_random(random) {
   m_halfPeriod = period / 2;
   m_min = min;
   m_max = max;
@@ -51,8 +53,8 @@ PeriodicFunction<Float>::PeriodicFunction(
 
   m_timerMax = m_halfPeriod;
   m_timer = 0;
-  m_source = m_max + Random::randf(-1, 1) * m_magnitudeVariance;
-  m_target = m_min + Random::randf(-1, 1) * m_magnitudeVariance;
+  m_source = m_max + random.randf(-1, 1) * m_magnitudeVariance;
+  m_target = m_min + random.randf(-1, 1) * m_magnitudeVariance;
   m_targetMode = true;
 }
 
@@ -65,9 +67,9 @@ void PeriodicFunction<Float>::update(Float delta) {
   // which are greater than the period, but it avoids infinite looping
   if (m_timer <= 0.0f) {
     m_source = m_target;
-    m_target = (m_targetMode ? m_max : m_min) + Random::randf(-1, 1) * m_magnitudeVariance;
+    m_target = (m_targetMode ? m_max : m_min) + m_random.get().randf(-1, 1) * m_magnitudeVariance;
     m_targetMode = !m_targetMode;
-    m_timerMax = m_halfPeriod + Random::randf(-1, 1) * m_halfPeriodVariance;
+    m_timerMax = m_halfPeriod + m_random.get().randf(-1, 1) * m_halfPeriodVariance;
     m_timer = std::max(0.0f, m_timer + m_timerMax);
   }
 }

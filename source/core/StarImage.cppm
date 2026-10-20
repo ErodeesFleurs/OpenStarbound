@@ -9,6 +9,8 @@ import star.io_device;
 import star.math_common;
 namespace Star {
 
+class Logger;
+
 enum class PixelFormat : std::uint8_t {
   RGB24,
   RGBA32,
@@ -30,11 +32,11 @@ using ImageException = StarError<ImageExceptionTag, StarException>;
 // 0) defined to be the *lower left* corner.
 class Image {
 public:
-  static Image readPng(std::shared_ptr<IODevice> device);
+  static Image readPng(Logger& logger, std::shared_ptr<IODevice> device);
   static bool isPng(std::shared_ptr<IODevice> device);
   // Returns the size and pixel format that would be constructed from the given
   // png file, without actually loading it.
-  static std::tuple<Vec2U, PixelFormat> readPngMetadata(std::shared_ptr<IODevice> device);
+  static std::tuple<Vec2U, PixelFormat> readPngMetadata(Logger& logger, std::shared_ptr<IODevice> device);
 
   static Image filled(Vec2U size, Vec4B color, PixelFormat pf = PixelFormat::RGBA32);
 
@@ -139,7 +141,7 @@ public:
   // Convert this image into the given pixel format
   Image convert(PixelFormat pixelFormat) const;
 
-  void writePng(std::shared_ptr<IODevice> device) const;
+  void writePng(Logger& logger, std::shared_ptr<IODevice> device) const;
 
 private:
   std::uint8_t* m_data;

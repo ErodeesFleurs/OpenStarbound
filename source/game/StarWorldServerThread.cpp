@@ -141,7 +141,7 @@ import star.effect_emitter;
 import star.npc;
 import star.asset_source;
 import star.assets;
-import star.root_base;
+
 import star.configuration;
 import star.root;
 import star.inventory_types;
@@ -200,7 +200,7 @@ void WorldServerThread::close() {
     m_worldServer->close();
   } catch (std::exception const& e) {
     m_errorOccurred = true;
-    Logger::error("WorldServerThread final save failed: {}", outputException(e, true));
+    m_worldServer->root().logger().error("WorldServerThread final save failed: {}", outputException(e, true));
   }
 }
 
@@ -221,7 +221,7 @@ bool WorldServerThread::spawnTargetValid(SpawnTarget const& spawnTarget) {
     RecursiveMutexLocker locker(m_mutex);
     return m_worldServer->spawnTargetValid(spawnTarget);
   } catch (std::exception const& e) {
-    Logger::error("WorldServerThread exception caught: {}", outputException(e, true));
+    m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
     return false;
   }
@@ -237,7 +237,7 @@ bool WorldServerThread::addClient(ConnectionId clientId, SpawnTarget const& spaw
 
     return false;
   } catch (std::exception const& e) {
-    Logger::error("WorldServerThread exception caught: {}", outputException(e, true));
+    m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
     return false;
   }
@@ -261,7 +261,7 @@ List<std::shared_ptr<Packet>> WorldServerThread::removeClient(ConnectionId clien
       outgoingPackets.appendAll(m_worldServer->removeClient(clientId));
 
   } catch (std::exception const& e) {
-    Logger::error("WorldServerThread exception caught: {}", outputException(e, true));
+    m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
   }
 
@@ -314,7 +314,7 @@ Maybe<Vec2F> WorldServerThread::playerRevivePosition(ConnectionId clientId) cons
       return player->position() + player->feetOffset();
     return {};
   } catch (std::exception const& e) {
-    Logger::error("WorldServerThread exception caught: {}", outputException(e, true));
+    m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
     return {};
   }
@@ -325,7 +325,7 @@ Maybe<std::pair<String, String>> WorldServerThread::pullNewPlanetType() {
     RecursiveMutexLocker locker(m_mutex);
     return m_worldServer->pullNewPlanetType();
   } catch (std::exception const& e) {
-    Logger::error("WorldServerThread exception caught: {}", outputException(e, true));
+    m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
     return {};
   }
@@ -351,7 +351,7 @@ void WorldServerThread::unloadAll(bool force) {
     RecursiveMutexLocker locker(m_mutex);
     m_worldServer->unloadAll(force);
   } catch (std::exception const& e) {
-    Logger::error("WorldServerThread exception caught: {}", outputException(e, true));
+    m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
   }
 }
@@ -361,7 +361,7 @@ WorldChunks WorldServerThread::readChunks() {
     RecursiveMutexLocker locker(m_mutex);
     return m_worldServer->readChunks();
   } catch (std::exception const& e) {
-    Logger::error("WorldServerThread exception caught: {}", outputException(e, true));
+    m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
     return {};
   }
@@ -369,7 +369,7 @@ WorldChunks WorldServerThread::readChunks() {
 
 void WorldServerThread::run() {
   try {
-    auto& root = Root::singleton();
+    auto& root = m_worldServer->root();
     double updateMeasureWindow = root.assets()->json("/universe_server.config:updateMeasureWindow").toDouble();
     double fidelityDecrementScore = root.assets()->json("/universe_server.config:fidelityDecrementScore").toDouble();
     double fidelityIncrementScore = root.assets()->json("/universe_server.config:fidelityIncrementScore").toDouble();
@@ -382,17 +382,17 @@ void WorldServerThread::run() {
     double storageInterval = root.assets()->json("/universe_server.config:worldStorageInterval").toDouble() / 1000.0;
     Timer storageTimer = Timer::withTime(storageInterval);
 
-    TickRateApproacher tickApproacher(1.0f / ServerGlobalTimestep, updateMeasureWindow);
+    TickRateApproacher tickApproacher(1.0f / m_worldServer->root().timing().serverTimestep, updateMeasureWindow);
     double fidelityScore = 0.0;
     WorldServerFidelity automaticFidelity = WorldServerFidelity::Medium;
 
     while (!m_stop && !m_errorOccurred) {
       auto fidelity = lockedFidelity.value(automaticFidelity);
-      LogMap::set(strf("server_{}_fidelity", m_worldId), WorldServerFidelityNames.getRight(fidelity));
-      LogMap::set(strf("server_{}_update", m_worldId), strf("{:4.2f}Hz", tickApproacher.rate()));
+      m_worldServer->root().logMap().set(strf("server_{}_fidelity", m_worldId), WorldServerFidelityNames.getRight(fidelity));
+      m_worldServer->root().logMap().set(strf("server_{}_update", m_worldId), strf("{:4.2f}Hz", tickApproacher.rate()));
 
       update(fidelity);
-      tickApproacher.setTargetTickRate(1.0f / ServerGlobalTimestep);
+      tickApproacher.setTargetTickRate(1.0f / m_worldServer->root().timing().serverTimestep);
       tickApproacher.tick();
 
       if (storageTimer.timeUp()) {
@@ -420,7 +420,7 @@ void WorldServerThread::run() {
         Thread::sleepPrecise(spareMilliseconds);
     }
   } catch (std::exception const& e) {
-    Logger::error("WorldServerThread exception caught: {}", outputException(e, true));
+    m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
   }
 }
@@ -435,7 +435,7 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
     try {
       m_worldServer->handleIncomingPackets(clientId, std::move(incomingPackets));
     } catch (std::exception const& e) {
-      Logger::error("WorldServerThread exception caught handling incoming packets for client {}: {}",
+      m_worldServer->root().logger().error("WorldServerThread exception caught handling incoming packets for client {}: {}",
           clientId, outputException(e, true));
       RecursiveMutexLocker queueLocker(m_queueMutex);
       m_outgoingPacketQueue[clientId].appendAll(m_worldServer->removeClient(clientId));
@@ -443,7 +443,7 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
     }
   }
 
-  float dt = ServerGlobalTimestep * GlobalTimescale;
+  float dt = m_worldServer->root().timing().serverTimestep * m_worldServer->root().timing().timescale;
   m_worldServer->setFidelity(fidelity);
   if (dt > 0.0f && (!m_pause || *m_pause == false))
     m_worldServer->update(dt);
@@ -477,7 +477,7 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
 
 void WorldServerThread::sync() {
   RecursiveMutexLocker locker(m_mutex);
-  Logger::debug("WorldServer: periodic sync to disk of world {}", m_worldId);
+  m_worldServer->root().logger().debug("WorldServer: periodic sync to disk of world {}", m_worldId);
   m_worldServer->sync();
 }
 

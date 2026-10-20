@@ -213,7 +213,7 @@ private:
 
   class RequestChallenge {
   public:
-    RequestChallenge();
+    explicit RequestChallenge(RandomService& random);
     bool before(std::uint64_t time);
     std::int32_t getChallenge();
 
@@ -239,7 +239,7 @@ namespace Star {
 ServerQueryThread::ServerQueryThread(UniverseServer* universe, HostAddressWithPort const& bindAddress)
   : Thread("QueryServer"),
     m_universe(universe),
-    m_queryServer(bindAddress),
+    m_queryServer(universe->root().logger(), bindAddress),
     m_stop(true),
     m_lastChallengeCheck(Time::monotonicMilliseconds()) {
   m_playersResponse.resize(A2S_PACKET_SIZE);
@@ -257,7 +257,7 @@ ServerQueryThread::ServerQueryThread(UniverseServer* universe, HostAddressWithPo
   m_serverPort = 0;
   m_lastActiveTime = 0;
 
-  auto& root = Root::singleton();
+  auto& root = m_universe->root();
   auto cfg = root.configuration();
 
   m_maxPlayers = cfg->get("maxPlayers").toUInt();
@@ -412,7 +412,7 @@ void ServerQueryThread::buildRuleResponse() {
 }
 
 void ServerQueryThread::sendChallenge(HostAddressWithPort const& address) {
-  auto challenge = std::make_shared<RequestChallenge>();
+  auto challenge = std::make_shared<RequestChallenge>(m_universe->root().random());
 
   m_validChallenges[address.address()] = challenge;
   m_generalResponse.clear();
@@ -448,13 +448,13 @@ void ServerQueryThread::run() {
         processPacket(udpAddress, std::span(reinterpret_cast<std::uint8_t const*>(udpData), len));
     } catch (SocketClosedException const&) {
     } catch (std::exception const& e) {
-      Logger::error("ServerQueryThread exception caught: {}", outputException(e, true));
+      m_universe->root().logger().error("ServerQueryThread exception caught: {}", outputException(e, true));
     }
   }
 }
 
-ServerQueryThread::RequestChallenge::RequestChallenge()
-  : m_time(Time::monotonicMilliseconds()), m_challenge(Random::randi32()) {}
+ServerQueryThread::RequestChallenge::RequestChallenge(RandomService& random)
+  : m_time(Time::monotonicMilliseconds()), m_challenge(random.randi32()) {}
 
 bool ServerQueryThread::RequestChallenge::before(std::uint64_t time) {
   return m_time < time;

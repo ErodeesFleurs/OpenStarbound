@@ -18,6 +18,9 @@ import star.ttl_cache;
 
 namespace Star {
 
+class Assets;
+class Root;
+
 struct TenantExceptionTag {
   static constexpr char const* name() { return "TenantException"; }
 };
@@ -63,7 +66,7 @@ struct Tenant {
 
 class TenantDatabase {
 public:
-  TenantDatabase();
+  explicit TenantDatabase(Root& root);
 
   void cleanup();
 
@@ -74,8 +77,9 @@ public:
   List<std::shared_ptr<Tenant>> getMatchingTenants(StringMap<unsigned> const& colonyTags) const;
 
 private:
-  static std::shared_ptr<Tenant> readTenant(String const& path);
+  static std::shared_ptr<Tenant> readTenant(Assets const& assets, String const& path);
 
+  Root& m_root;
   Map<String, String> m_paths;
   mutable Mutex m_cacheMutex;
   mutable HashTtlCache<String, std::shared_ptr<Tenant>> m_tenantCache;

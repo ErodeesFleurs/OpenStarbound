@@ -211,19 +211,19 @@ import star.item_bag;
 
 namespace Star {
 
-QuestLogInterface::QuestLogInterface(std::shared_ptr<QuestManager> manager, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic, std::shared_ptr<UniverseClient> client) {
+QuestLogInterface::QuestLogInterface(GuiContext& guiContext, std::shared_ptr<QuestManager> manager, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic, std::shared_ptr<UniverseClient> client) : Pane(guiContext) {
   m_manager = manager;
   m_player = player;
   m_cinematic = cinematic;
   m_client = client;
 
-  auto assets = Root::singleton().assets();
+  auto assets = context()->root().assets();
   auto config = assets->json("/interface/windowconfig/questlog.config");
 
   m_trackLabel = config.getString("trackLabel");
   m_untrackLabel = config.getString("untrackLabel");
 
-  GuiReader reader;
+  GuiReader reader(*context());
 
   reader.registerCallback("close", [this](Widget*) { dismiss(); });
   reader.registerCallback("btnToggleTracking",
@@ -256,7 +256,7 @@ QuestLogInterface::QuestLogInterface(std::shared_ptr<QuestManager> manager, std:
   mainQuestList->disableScissoring();
   sideQuestList->disableScissoring();
 
-  m_rewardItems = std::make_shared<ItemBag>(5);
+  m_rewardItems = std::make_shared<ItemBag>(context()->root(), 5);
   fetchChild<ItemGridWidget>("rewardItems")->setItemBag(m_rewardItems);
 
   m_refreshRate = 30;
@@ -268,15 +268,15 @@ void QuestLogInterface::pollDialog(PaneManager* paneManager) {
     return;
 
   if (auto failableQuest = m_manager->getFirstFailableQuest()) {
-    auto qfi = std::make_shared<QuestFailedInterface>(failableQuest.value(), m_player);
+    auto qfi = std::make_shared<QuestFailedInterface>(*context(), failableQuest.value(), m_player);
     (*failableQuest)->setDialogShown();
     paneManager->displayPane(PaneLayer::ModalWindow, qfi);
   } else if (auto completableQuest = m_manager->getFirstCompletableQuest()) {
-    auto qci = std::make_shared<QuestCompleteInterface>(completableQuest.value(), m_player, m_cinematic);
+    auto qci = std::make_shared<QuestCompleteInterface>(*context(), completableQuest.value(), m_player, m_cinematic);
     (*completableQuest)->setDialogShown();
     paneManager->displayPane(PaneLayer::ModalWindow, qci);
   } else if (auto newQuest = m_manager->getFirstNewQuest()) {
-    auto nqd = std::make_shared<NewQuestInterface>(m_manager, newQuest.value(), m_player);
+    auto nqd = std::make_shared<NewQuestInterface>(*context(), m_manager, newQuest.value(), m_player);
     paneManager->displayPane(PaneLayer::ModalWindow, nqd);
   }
 }
@@ -371,7 +371,7 @@ std::shared_ptr<Pane> QuestLogInterface::createTooltip(Vec2I const& screenPositi
       item = itemGrid->itemAt(screenPosition);
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(item, m_player);
+    return ItemTooltipBuilder::buildItemTooltip(*context(), item, m_player);
   return {};
 }
 
@@ -477,10 +477,10 @@ void QuestLogInterface::showQuests(List<std::shared_ptr<Quest>> quests) {
   verticalLayout->update(0);
 }
 
-QuestPane::QuestPane(std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player) : Pane(), m_quest(quest), m_player(std::move(player)) {}
+QuestPane::QuestPane(GuiContext& guiContext, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player) : Pane(guiContext), m_quest(quest), m_player(std::move(player)) {}
 
 void QuestPane::commonSetup(Json config, String bodyText, String const& portraitName) {
-  GuiReader reader;
+  GuiReader reader(*context());
 
   reader.registerCallback("close", [this](Widget*) { close(); });
   reader.registerCallback("btnDecline", [this](Widget*) { decline(); });
@@ -505,13 +505,13 @@ void QuestPane::commonSetup(Json config, String bodyText, String const& portrait
   }
 
   if (auto rewardItemsWidget = fetchChild<ItemGridWidget>("rewardItems")) {
-    auto rewardItems = std::make_shared<ItemBag>(5);
+    auto rewardItems = std::make_shared<ItemBag>(context()->root(), 5);
     for (auto const& reward : m_quest->rewards())
       rewardItems->addItems(reward->clone());
     rewardItemsWidget->setItemBag(rewardItems);
   }
 
-  auto sound = Random::randValueFrom(config.get("onShowSound").toArray(), "").toString();
+  auto sound = context()->root().random().randValueFrom(config.get("onShowSound").toArray(), "").toString();
   if (!sound.empty())
     context()->playAudio(sound);
 }
@@ -537,13 +537,13 @@ std::shared_ptr<Pane> QuestPane::createTooltip(Vec2I const& screenPosition) {
       item = itemGrid->itemAt(screenPosition);
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(item, m_player);
+    return ItemTooltipBuilder::buildItemTooltip(*context(), item, m_player);
   return {};
 }
 
-NewQuestInterface::NewQuestInterface(std::shared_ptr<QuestManager> const& manager, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player)
-  : QuestPane(quest, std::move(player)), m_manager(manager), m_decision(QuestDecision::Cancelled) {
-  auto assets = Root::singleton().assets();
+NewQuestInterface::NewQuestInterface(GuiContext& guiContext, std::shared_ptr<QuestManager> const& manager, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player)
+  : QuestPane(guiContext, quest, std::move(player)), m_manager(manager), m_decision(QuestDecision::Cancelled) {
+  auto assets = context()->root().assets();
 
   List<Drawable> objectivePortrait = m_quest->portrait("Objective").value({});
   bool shortDialog = objectivePortrait.size() == 0;
@@ -610,9 +610,9 @@ void NewQuestInterface::dismissed() {
   }
 }
 
-QuestCompleteInterface::QuestCompleteInterface(std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic)
-  : QuestPane(quest, player) {
-  auto assets = Root::singleton().assets();
+QuestCompleteInterface::QuestCompleteInterface(GuiContext& guiContext, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic)
+  : QuestPane(guiContext, quest, player) {
+  auto assets = context()->root().assets();
   String configFile = m_quest->getTemplate()->questCompleteGuiConfig.value(assets->json("/quests/quests.config:defaultGuiConfigs.questComplete").toString());
   Json config = assets->json(configFile);
 
@@ -627,7 +627,7 @@ QuestCompleteInterface::QuestCompleteInterface(std::shared_ptr<Quest> const& que
 }
 
 void QuestCompleteInterface::close() {
-  auto assets = Root::singleton().assets();
+  auto assets = context()->root().assets();
   if (m_quest->completionCinema() && m_cinematic) {
     String cinema = m_quest->completionCinema()->replaceTags(
         StringMap<String>{{"species", m_player->species()}, {"gender", GenderNames.getRight(m_player->gender())}});
@@ -636,8 +636,8 @@ void QuestCompleteInterface::close() {
   dismiss();
 }
 
-QuestFailedInterface::QuestFailedInterface(std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player) : QuestPane(quest, std::move(player)) {
-  auto assets = Root::singleton().assets();
+QuestFailedInterface::QuestFailedInterface(GuiContext& guiContext, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player) : QuestPane(guiContext, quest, std::move(player)) {
+  auto assets = context()->root().assets();
   String configFile = m_quest->getTemplate()->questFailedGuiConfig.value(assets->json("/quests/quests.config:defaultGuiConfigs.questFailed").toString());
   Json config = assets->json(configFile);
   commonSetup(config, m_quest->failureText(), "QuestFailed");

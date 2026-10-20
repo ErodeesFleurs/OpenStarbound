@@ -10,7 +10,7 @@ import star.encode;
 
 namespace Star {
 
-Uuid::Uuid() : Uuid(Random::randBytes(UuidSize)) {}
+Uuid::Uuid(RandomService& random) : Uuid(random.randBytes(UuidSize)) {}
 
 Uuid::Uuid(ByteArray const& bytes) {
   if (bytes.size() != UuidSize)
@@ -67,6 +67,11 @@ std::size_t hash<Uuid>::operator()(Uuid const& u) const {
 DataStream& operator>>(DataStream& ds, Uuid& uuid) {
   uuid = Uuid(ds.readBytes(UuidSize));
   return ds;
+}
+
+template <>
+Uuid DataStream::read<Uuid>() {
+  return Uuid(readBytes(UuidSize));
 }
 
 DataStream& operator<<(DataStream& ds, Uuid const& uuid) {

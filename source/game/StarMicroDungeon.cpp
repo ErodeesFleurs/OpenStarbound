@@ -33,7 +33,6 @@ import star.world_geometry;
 import star.dungeon_generator;
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.configuration;
 import star.root;
 
@@ -45,7 +44,7 @@ namespace Star {
 // Placed on server so it can keep a cacheing system which allows for a quick
 // scan if a piece fits.
 
-MicroDungeonFactory::MicroDungeonFactory() {
+MicroDungeonFactory::MicroDungeonFactory(Root& root) : m_root(root) {
   m_generating = false;
 
   m_placementshifts.push_back(0);
@@ -62,7 +61,7 @@ Maybe<std::pair<List<RectI>, Set<Vec2I>>> MicroDungeonFactory::generate(RectI co
     float threatLevel,
     std::shared_ptr<DungeonGeneratorWorldFacade> facade,
     bool forcePlacement) {
-  Dungeon::DungeonGeneratorWriter writer(facade, {}, {});
+  Dungeon::DungeonGeneratorWriter writer(m_root, facade, {}, {});
 
   if (m_generating)
     throw DungeonException("Not reentrant.");
@@ -70,7 +69,7 @@ Maybe<std::pair<List<RectI>, Set<Vec2I>>> MicroDungeonFactory::generate(RectI co
   m_generating = true;
   auto generatingGuard = finally([this]() { m_generating = false; });
 
-  DungeonGenerator dungeonGenerator(dungeonName, seed, threatLevel, BiomeMicroDungeonId);
+  DungeonGenerator dungeonGenerator(m_root, dungeonName, seed, threatLevel, BiomeMicroDungeonId);
 
   try {
     // don't bother scanning around because its used in a bruteforce manner for now.
@@ -78,7 +77,7 @@ Maybe<std::pair<List<RectI>, Set<Vec2I>>> MicroDungeonFactory::generate(RectI co
 
     auto anchorPart = dungeonGenerator.pickAnchor();
     if (!anchorPart) {
-      Logger::debug("No valid anchor piece found for microdungeon at {}, skipping", position);
+      m_root.logger().debug("No valid anchor piece found for microdungeon at {}, skipping", position);
       return {};
     }
 

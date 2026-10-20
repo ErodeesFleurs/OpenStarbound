@@ -17,6 +17,7 @@ import star.bi_map;
 import star.string;
 import star.vector;
 import star.text;
+import star.map;
 
 
 
@@ -40,7 +41,7 @@ class StoredFunction;
 
 class ChatBubbleManager {
 public:
-  ChatBubbleManager();
+  ChatBubbleManager(GuiContext& context);
 
   void setCamera(WorldCamera const& camera);
 
@@ -94,6 +95,7 @@ private:
 
   BubbleSeparator<Bubble> m_bubbles;
   int m_zoom;
+  Map<EntityId, int> m_entityBubbleCounts;
   float m_cachedInterfaceScale;
   Vec2F m_bubbleOffset;
   float m_maxAge;

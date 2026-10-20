@@ -12,6 +12,8 @@ import star.tech_database;
 
 namespace Star {
 
+class Root;
+
 struct PlayerTechExceptionTag {
   static constexpr char const* name() { return "PlayerTechException"; }
 };
@@ -21,8 +23,8 @@ using PlayerTechException = StarError<PlayerTechExceptionTag, StarException>;
 // enabled, enabled but not equipped, or equipped.
 class PlayerTech {
 public:
-  PlayerTech();
-  PlayerTech(Json const& json);
+  PlayerTech(Root& root);
+  PlayerTech(Root& root, Json const& json);
 
   Json toJson() const;
 
@@ -44,6 +46,7 @@ public:
   StringList techModules() const;
 
 private:
+  Root& m_root;
   StringSet m_availableTechs;
   StringSet m_enabledTechs;
   HashMap<TechType, String> m_equippedTechs;

@@ -64,7 +64,7 @@ class BindingsMenu;
 
 class OptionsMenu : public Pane {
 public:
-  OptionsMenu(PaneManager* manager, std::shared_ptr<UniverseClient> client);
+  OptionsMenu(GuiContext& guiContext, PaneManager* manager, std::shared_ptr<UniverseClient> client);
 
   virtual void show() override;
 

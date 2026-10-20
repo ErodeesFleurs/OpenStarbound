@@ -12,6 +12,7 @@ import star.btree_database;
 import star.file;
 import star.buffer;
 import star.random;
+import star.logging;
 
 #include "gtest/gtest.h"
 
@@ -72,12 +73,12 @@ namespace {
     return genBlock(k) == b;
   }
 
-  void putAll(BTreeDatabase& db, const List<std::uint32_t>& keys) {
+  void putAll(RandomService& random, BTreeDatabase& db, const List<std::uint32_t>& keys) {
     for (std::uint32_t k : keys) {
       ByteArray val = genBlock(k);
       db.insert(toByteArray(k), val);
 
-      int i = Random::randi32();
+      int i = random.randi32();
       if (i % 23 == 0)
         db.commit();
     }
@@ -116,15 +117,17 @@ namespace {
   }
 
   void testBTreeDatabase(std::size_t testCount, std::size_t writeRepeat, std::size_t randCount, std::size_t rollbackCount, std::size_t blockSize) {
-    auto tmpFile = File::temporaryFile();
+    RandomService random;
+    Logger logger;
+    auto tmpFile = File::temporaryFile(random);
     auto finallyGuard = finally([&tmpFile]() { tmpFile->remove(); });
 
     Set<std::uint32_t> keySet;
-    BTreeDatabase db("TestDB", 4);
+    BTreeDatabase db(logger, "TestDB", 4);
     db.setAutoCommit(false);
 
     while (keySet.size() < testCount)
-      keySet.add(Random::randUInt(0, MaxKey));
+      keySet.add(random.randUInt(0, MaxKey));
 
     List<std::uint32_t> keys;
     for (std::uint32_t k : keySet) {
@@ -138,25 +141,25 @@ namespace {
     db.open();
 
     // record writes/reads repeated writeRepeat times randomly each cycle
-    Random::shuffle(keys);
-    putAll(db, keys);
+    random.shuffle(keys);
+    putAll(random, db, keys);
 
     EXPECT_EQ(db.recordCount(), testCount);
 
-    Random::shuffle(keys);
+    random.shuffle(keys);
     checkAll(db, keys);
 
     // Random reads/writes with randCount cycles...
     for (std::uint32_t i = 0; i < randCount; ++i) {
       List<std::uint32_t> keysTemp(keys.begin(), keys.begin() + keys.size() / 2);
 
-      Random::shuffle(keysTemp);
+      random.shuffle(keysTemp);
       removeAll(db, keysTemp);
 
-      Random::shuffle(keysTemp);
-      putAll(db, keysTemp);
+      random.shuffle(keysTemp);
+      putAll(random, db, keysTemp);
 
-      Random::shuffle(keys);
+      random.shuffle(keys);
       checkAll(db, keys);
     }
 
@@ -165,7 +168,7 @@ namespace {
     // Random reads/writes/rollbacks with rollbackCount cycles...
     for (std::uint32_t i = 0; i < rollbackCount ; ++i) {
       List<std::uint32_t> keysTemp(keys.begin(), keys.begin() + keys.size() / 2);
-      Random::shuffle(keysTemp);
+      random.shuffle(keysTemp);
 
       removeAll(db, keysTemp);
       db.rollback();
@@ -212,10 +215,12 @@ TEST(BTreeDatabaseTest, Consistency) {
 }
 
 TEST(BTreeDatabaseTest, Threading) {
-  auto tmpFile = File::temporaryFile();
+  RandomService random;
+  Logger logger;
+  auto tmpFile = File::temporaryFile(random);
   auto finallyGuard = finally([&tmpFile]() { tmpFile->remove(); });
 
-  BTreeDatabase db("TestDB", 4);
+  BTreeDatabase db(logger, "TestDB", 4);
   db.setAutoCommit(false);
   db.setBlockSize(256);
   db.setIODevice(tmpFile);
@@ -225,21 +230,21 @@ TEST(BTreeDatabaseTest, Threading) {
   List<std::uint32_t> deleteKeySet;
 
   while (writeKeySet.size() < 5000) {
-    std::uint32_t key = Random::randu32();
+    std::uint32_t key = random.randu32();
     writeKeySet.append(key);
-    if (Random::randf() > 0.3)
+    if (random.randf() > 0.3)
       deleteKeySet.append(key);
   }
-  Random::shuffle(writeKeySet);
+  random.shuffle(writeKeySet);
 
   {
     auto writer = Thread::invoke("databaseTestWriter",
-        [&db, &writeKeySet]() {
+        [&random, &db, &writeKeySet]() {
           try {
             for (std::uint32_t k : writeKeySet) {
               ByteArray val = genBlock(k);
               db.insert(toByteArray(k), val);
-              if (Random::randi32() % 23 == 0)
+              if (random.randi32() % 23 == 0)
                 db.commit();
             }
           } catch (std::exception const& e) {
@@ -249,11 +254,11 @@ TEST(BTreeDatabaseTest, Threading) {
         });
 
     auto deleter = Thread::invoke("databaseTestDeleter",
-        [&db, &deleteKeySet]() {
+        [&random, &db, &deleteKeySet]() {
           try {
             for (std::uint32_t k : deleteKeySet) {
               db.remove(toByteArray(k));
-              if (Random::randi32() % 23 == 0)
+              if (random.randi32() % 23 == 0)
                 db.commit();
             }
           } catch (std::exception const& e) {
@@ -294,8 +299,9 @@ TEST(BTreeDatabaseTest, Threading) {
 
 
 TEST(BTreeDatabaseTest, FailedCommitIsReportedWithoutDestructorRetry) {
+  Logger logger;
   auto device = std::make_shared<FailingSyncBuffer>();
-  auto db = std::make_unique<BTreeDatabase>("TestDB", 4);
+  auto db = std::make_unique<BTreeDatabase>(logger, "TestDB", 4);
   db->setAutoCommit(false);
   db->setIODevice(device);
   db->open();
@@ -316,7 +322,7 @@ TEST(BTreeDatabaseTest, FailedCommitIsReportedWithoutDestructorRetry) {
   // the new complete leaf.  Require a consistent, usable recovery, not a
   // particular visibility outcome for the failed transaction.
   device->failSync = false;
-  BTreeDatabase recovered;
+  BTreeDatabase recovered(logger);
   recovered.setIODevice(device);
   recovered.open();
   auto committed = recovered.find(toByteArray(0));
@@ -341,8 +347,9 @@ TEST(BTreeDatabaseTest, FailedCommitIsReportedWithoutDestructorRetry) {
 }
 
 TEST(BTreeDatabaseTest, FailedCloseIsReportedWithoutDestructorRetry) {
+  Logger logger;
   auto device = std::make_shared<FailingSyncBuffer>();
-  auto db = std::make_unique<BTreeDatabase>("TestDB", 4);
+  auto db = std::make_unique<BTreeDatabase>(logger, "TestDB", 4);
   db->setAutoCommit(false);
   db->setIODevice(device);
   db->open();
@@ -358,8 +365,9 @@ TEST(BTreeDatabaseTest, FailedCloseIsReportedWithoutDestructorRetry) {
 }
 
 TEST(BTreeDatabaseTest, FailedDeviceCloseIsConsumedOnce) {
+  Logger logger;
   auto device = std::make_shared<FailingCloseBuffer>();
-  BTreeDatabase db("TestDB", 4);
+  BTreeDatabase db(logger, "TestDB", 4);
   db.setIODevice(device);
   db.open();
 

@@ -25,7 +25,6 @@ target_sources (star_base_modules PRIVATE
     StarAnimatedPartSet.cpp
     StarDirectoryAssetSource.cpp
     StarVersionOptionParser.cpp
-    StarRootBase.cpp
     StarMixer.cpp
     StarCellularLightArray.cpp
     StarCellularLighting.cpp)

@@ -4,6 +4,7 @@ import star.list;
 import star.maybe;
 import star.lru_cache;
 import star.ttl_cache;
+import star.random;
 
 #include "gtest/gtest.h"
 
@@ -148,7 +149,8 @@ TEST(LruCache, BorrowsMutableNoncopyableCallbacks) {
 }
 
 TEST(TtlCache, MoveOnlyProducerAndOptionalRefreshFilters) {
-  HashTtlCache<int, int> cache(-1, 0, 4, false);
+  RandomService random;
+  HashTtlCache<int, int> cache(random, -1, 0, 4, false);
   EXPECT_EQ(cache.get(1, [value = std::make_unique<int>(42)](int const&) mutable { return *value; }), 42);
   struct Refresh {
     explicit operator bool() const { return false; }

@@ -50,7 +50,6 @@ import star.force_regions;
 import star.world;
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.configuration;
 import star.root;
 
@@ -60,21 +59,21 @@ namespace Star {
 
 EntitySplashConfig::EntitySplashConfig() {}
 
-EntitySplashConfig::EntitySplashConfig(Json const& config) {
+EntitySplashConfig::EntitySplashConfig(Root& root, Json const& config) {
   splashSpeedMin = config.get("splashSpeedMin").toFloat();
   splashMinWaterLevel = config.get("splashMinWaterLevel").toFloat();
   splashBottomSensor = jsonToVec2F(config.get("splashBottomSensor"));
   splashTopSensor = jsonToVec2F(config.get("splashTopSensor"));
   numSplashParticles = config.get("numSplashParticles").toInt();
   splashYVelocityFactor = config.get("splashYVelocityFactor").toFloat();
-  splashParticle = Particle(config.get("splashParticle").toObject());
-  splashParticleVariance = Particle(config.get("splashParticleVariance").toObject());
+  splashParticle = Particle(root, config.get("splashParticle").toObject());
+  splashParticleVariance = Particle(root, config.get("splashParticleVariance").toObject());
 }
 
 List<Particle> EntitySplashConfig::doSplash(Vec2F position, Vec2F velocity, World* world) const {
   List<Particle> particles;
   if (std::fabs(velocity[1]) >= splashSpeedMin) {
-    auto liquidDb = Root::singleton().liquidsDatabase();
+    auto liquidDb = world->root().liquidsDatabase();
     Vec2I bottom = Vec2I::floor(position + splashBottomSensor);
     Vec2I top = Vec2I::floor(position + splashTopSensor);
     if (world->liquidLevel(bottom).level - world->liquidLevel(top).level >= splashMinWaterLevel) {
@@ -91,7 +90,7 @@ List<Particle> EntitySplashConfig::doSplash(Vec2F position, Vec2F velocity, Worl
         newSplashParticle.position = position;
         newSplashParticle.velocity[1] = std::fabs(velocity[1]) * splashYVelocityFactor;
         newSplashParticle.color = particleColor;
-        newSplashParticle.applyVariance(splashParticleVariance);
+        newSplashParticle.applyVariance(world->root(), splashParticleVariance);
         particles.append(newSplashParticle);
       }
     }

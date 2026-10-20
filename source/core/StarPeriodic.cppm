@@ -62,11 +62,11 @@ private:
 // time) with optional randomness.
 class RatePeriodic {
 public:
-  RatePeriodic()
-    : RatePeriodic(1, 0) {}
+  explicit RatePeriodic(RandomService& random)
+    : RatePeriodic(random, 1, 0) {}
 
-  RatePeriodic(double period, double noise = 0)
-    : m_period(period), m_noise(noise), m_counter(period + Random::randf(-noise, noise)), m_elapsed(0.0) {}
+  RatePeriodic(RandomService& random, double period, double noise = 0)
+    : m_random(random), m_period(period), m_noise(noise), m_counter(period + random.randf(-noise, noise)), m_elapsed(0.0) {}
 
   double period() const {
     return m_period;
@@ -84,7 +84,7 @@ public:
     m_elapsed += subAmount;
 
     if (m_counter <= 0.0) {
-      m_counter = m_period + Random::randf(-m_noise, m_noise);
+      m_counter = m_period + m_random.get().randf(-m_noise, m_noise);
       function(m_elapsed);
       m_elapsed = 0.0;
       if (amount > 0.0)
@@ -93,6 +93,7 @@ public:
   }
 
 private:
+  std::reference_wrapper<RandomService> m_random;
   double m_period;
   double m_noise;
   double m_counter;

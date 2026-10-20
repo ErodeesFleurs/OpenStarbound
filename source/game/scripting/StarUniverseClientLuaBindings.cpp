@@ -134,10 +134,11 @@ import star.world_template;
 
 module star.universe_client_lua_bindings;
 import star.client_context;
+import star.root;
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeUniverseClientThreadCallbacks(UniverseClient* universe) {
+LuaCallbacks LuaBindings::makeUniverseClientThreadCallbacks(Root& root, UniverseClient* universe) {
   LuaCallbacks callbacks;
   
   callbacks.registerCallback("sendOwnUniverseMessage", [universe](String const& message, LuaVariadic<Json> args) -> RpcPromise<Json> {
@@ -156,22 +157,22 @@ LuaCallbacks LuaBindings::makeUniverseClientThreadCallbacks(UniverseClient* univ
     universe->createCustomWorld(name, templateData);
   });
   
-  callbacks.registerCallback("createClientCustomWorldFromConfig", [universe](String name, Json worldConfig) {
+  callbacks.registerCallback("createClientCustomWorldFromConfig", [&root, universe](String name, Json worldConfig) {
     std::uint64_t worldSeed;
     if (worldConfig.contains("seed"))
       worldSeed = worldConfig.getUInt("seed");
     else
-      worldSeed = Random::randu64();
+      worldSeed = root.random().randu64();
 
     String worldType = worldConfig.getString("type");
 
     std::shared_ptr<VisitableWorldParameters> worldParameters;
     if (worldType.equalsIgnoreCase("Terrestrial"))
-      worldParameters = generateTerrestrialWorldParameters(worldConfig.getString("planetType"), worldConfig.getString("planetSize"), worldSeed);
+      worldParameters = generateTerrestrialWorldParameters(root, worldConfig.getString("planetType"), worldConfig.getString("planetSize"), worldSeed);
     else if (worldType.equalsIgnoreCase("Asteroids"))
-      worldParameters = generateAsteroidsWorldParameters(worldSeed);
+      worldParameters = generateAsteroidsWorldParameters(root, worldSeed);
     else if (worldType.equalsIgnoreCase("FloatingDungeon"))
-      worldParameters = generateFloatingDungeonWorldParameters(worldConfig.getString("dungeonWorld"));
+      worldParameters = generateFloatingDungeonWorldParameters(root, worldConfig.getString("dungeonWorld"));
     else
       throw StarException(strf("Unknown world type: '{}'\n", worldType));
 
@@ -183,7 +184,7 @@ LuaCallbacks LuaBindings::makeUniverseClientThreadCallbacks(UniverseClient* univ
     worldParameters->disableDeathDrops = worldConfig.getBool("disableDeathDrops", false);
 
     SkyParameters skyParameters = SkyParameters(worldConfig.get("skyParameters", Json()));
-    auto worldTemplate = WorldTemplate(worldParameters, skyParameters, worldSeed);
+    auto worldTemplate = WorldTemplate(root, worldParameters, skyParameters, worldSeed);
     universe->createCustomWorld(name, worldTemplate.store());
   });
   
@@ -212,8 +213,8 @@ LuaCallbacks LuaBindings::makeUniverseClientThreadCallbacks(UniverseClient* univ
   return callbacks;
 }
 
-LuaCallbacks LuaBindings::makeUniverseClientCallbacks(UniverseClient* universe) {
-  LuaCallbacks callbacks = makeUniverseClientThreadCallbacks(universe);
+LuaCallbacks LuaBindings::makeUniverseClientCallbacks(Root& root, UniverseClient* universe) {
+  LuaCallbacks callbacks = makeUniverseClientThreadCallbacks(root, universe);
   
   callbacks.registerCallback("subWorldActive", [universe](String const& worldId) -> bool {
     return universe->subWorldExistsOnWorld(parseWorldId(worldId));

@@ -29,6 +29,7 @@ namespace Star {
 
 extern VersionNumber const TeamClientVersion;
   
+class Root;
 class Player;
 class ClientContext;
 
@@ -46,7 +47,7 @@ public:
     List<Drawable> portrait;
   };
 
-  TeamClient(std::shared_ptr<Player> mainPlayer, std::shared_ptr<ClientContext> clientContext);
+  TeamClient(Root& root, std::shared_ptr<Player> mainPlayer, std::shared_ptr<ClientContext> clientContext);
 
   void invitePlayer(String const& playerName);
   void acceptInvitation(Uuid const& inviterUuid);
@@ -83,6 +84,7 @@ private:
 
   void clearTeam();
 
+  Root& m_root;
   std::shared_ptr<Player> m_mainPlayer;
   std::shared_ptr<ClientContext> m_clientContext;
   Maybe<Uuid> m_teamUuid;

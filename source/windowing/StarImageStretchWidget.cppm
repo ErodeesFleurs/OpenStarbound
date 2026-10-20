@@ -49,7 +49,7 @@ namespace Star {
 
 class ImageStretchWidget : public Widget {
 public:
-  ImageStretchWidget(ImageStretchSet const& imageStretchSet, GuiDirection direction);
+  ImageStretchWidget(GuiContext& context, ImageStretchSet const& imageStretchSet, GuiDirection direction);
   void setImageStretchSet(String const& beginImage, String const& innerImage, String const& endImage);
 
   virtual ~ImageStretchWidget() {}

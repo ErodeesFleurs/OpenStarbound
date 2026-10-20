@@ -64,6 +64,7 @@ import star.plant_database;
 import star.biome_placement;
 import star.celestial_types;
 import star.world_template;
+import star.game_test;
 
 #include "gtest/gtest.h"
 
@@ -74,8 +75,8 @@ using namespace Star;
 
 namespace {
 
-static WorldTemplate makeGardenWorld(std::shared_ptr<::Star::TerrestrialWorldParameters> parameters, std::uint64_t seed) {
-  return WorldTemplate(parameters, SkyParameters(), seed);
+static WorldTemplate makeGardenWorld(Root& root, std::shared_ptr<::Star::TerrestrialWorldParameters> parameters, std::uint64_t seed) {
+  return WorldTemplate(root, parameters, SkyParameters(), seed);
 }
 
 static WorldTemplate::WeatherLayer const* layerAt(WorldTemplate const& world, int height) {
@@ -84,10 +85,10 @@ static WorldTemplate::WeatherLayer const* layerAt(WorldTemplate const& world, in
 
 }
 
-TEST(WeatherDomainTest, DefaultTerrestrialOwnership) {
+const GameTestRegistration weatherDomainDefaultTerrestrialOwnership("WeatherDomainTest", "DefaultTerrestrialOwnership", [](GameTest& fixture) {
   std::uint64_t seed = 1234;
-  auto parameters = generateTerrestrialWorldParameters("garden", "small", seed);
-  auto world = makeGardenWorld(parameters, seed);
+  auto parameters = generateTerrestrialWorldParameters(fixture.root(), "garden", "small", seed);
+  auto world = makeGardenWorld(fixture.root(), parameters, seed);
 
   auto surface = layerAt(world, parameters->surfaceLayer.layerMinHeight);
   auto atmosphere = layerAt(world, parameters->atmosphereLayer.layerMinHeight);
@@ -115,13 +116,13 @@ TEST(WeatherDomainTest, DefaultTerrestrialOwnership) {
   auto surfaceDomain = world.weatherDomain("surface");
   ASSERT_NE(surfaceDomain, nullptr);
   EXPECT_EQ(surfaceDomain->effectsMinHeight, parameters->subsurfaceLayer.layerMinHeight);
-}
+});
 
-TEST(WeatherDomainTest, ExplicitLayerWeatherCreatesIndependentDomain) {
+const GameTestRegistration weatherDomainExplicitLayerWeatherCreatesIndependentDomain("WeatherDomainTest", "ExplicitLayerWeatherCreatesIndependentDomain", [](GameTest& fixture) {
   std::uint64_t seed = 5678;
-  auto parameters = generateTerrestrialWorldParameters("garden", "small", seed);
+  auto parameters = generateTerrestrialWorldParameters(fixture.root(), "garden", "small", seed);
   parameters->atmosphereLayer.primaryRegion.biome = "garden";
-  auto world = makeGardenWorld(parameters, seed);
+  auto world = makeGardenWorld(fixture.root(), parameters, seed);
 
   auto atmosphere = layerAt(world, parameters->atmosphereLayer.layerMinHeight);
   ASSERT_NE(atmosphere, nullptr);
@@ -131,10 +132,10 @@ TEST(WeatherDomainTest, ExplicitLayerWeatherCreatesIndependentDomain) {
   ASSERT_NE(atmosphereDomain, nullptr);
   EXPECT_FALSE(atmosphereDomain->pool.empty());
   EXPECT_EQ(atmosphereDomain->effectsMinHeight, parameters->atmosphereLayer.layerMinHeight);
-}
+});
 
-TEST(WeatherDomainTest, WeatherPropertyPresenceIsDistinctFromOmission) {
-  auto biomes = Root::singleton().biomeDatabase();
+const GameTestRegistration weatherDomainWeatherPropertyPresenceIsDistinctFromOmission("WeatherDomainTest", "WeatherPropertyPresenceIsDistinctFromOmission", [](GameTest& fixture) {
+  auto biomes = fixture.root().biomeDatabase();
   EXPECT_TRUE(biomes->biomeHasWeather("garden"));
   EXPECT_FALSE(biomes->biomeHasWeather("atmosphere"));
-}
+});

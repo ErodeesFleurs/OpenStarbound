@@ -3,6 +3,7 @@
 #endif
 
 import star.xx_hash;
+import star.native_runtime;
 import star.json;
 import star.file;
 import star.random;
@@ -168,6 +169,7 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
   )JSON");
 
 int main(int argc, char** argv) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   try {
     #if defined STAR_SYSTEM_WINDOWS
     unsigned long exceptionStackSize = 131072;
@@ -184,16 +186,16 @@ int main(int argc, char** argv) {
 
     auto configuration = root->configuration();
     {
-      Logger::info("{}", rootLoader.getVersionString());
+      root->logger().info("{}", rootLoader.getVersionString());
 
-      float updateRate = 1.0f / GlobalTimestep;
+      float updateRate = 1.0f / root->timing().timestep;
       if (auto jUpdateRate = configuration->get("updateRate")) {
         updateRate = jUpdateRate.toFloat();
-        ServerGlobalTimestep = GlobalTimestep = 1.0f / updateRate;
-        Logger::info("Configured tick rate is {:4.2f}hz", updateRate);
+        root->timing().serverTimestep = root->timing().timestep = 1.0f / updateRate;
+        root->logger().info("Configured tick rate is {:4.2f}hz", updateRate);
       }
 
-      std::unique_ptr<::Star::UniverseServer> server = std::make_unique<UniverseServer>(root->toStoragePath("universe"));
+      std::unique_ptr<::Star::UniverseServer> server = std::make_unique<UniverseServer>(*root, root->toStoragePath("universe"));
       server->setListeningTcp(true);
       server->start();
 
@@ -211,7 +213,7 @@ int main(int argc, char** argv) {
 
       while (server->isRunning()) {
         if (signalHandler.interruptCaught()) {
-          Logger::info("Interrupt caught!");
+          root->logger().info("Interrupt caught!");
           server->stop();
           break;
         }
@@ -231,7 +233,7 @@ int main(int argc, char** argv) {
       }
     }
 
-    Logger::info("Server shutdown gracefully");
+    root->logger().info("Server shutdown gracefully");
   } catch (std::exception const& e) {
     fatalException(e, true);
   }

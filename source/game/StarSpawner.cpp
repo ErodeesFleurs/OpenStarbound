@@ -99,7 +99,7 @@ import star.radio_message_database;
 import star.player;
 import star.asset_source;
 import star.assets;
-import star.root_base;
+
 import star.configuration;
 import star.root;
 import star.aggressive_entity;
@@ -115,8 +115,8 @@ import star.static_random;
 import star.algorithm;
 namespace Star {
 
-Spawner::Spawner() {
-  auto assets = Root::singleton().assets();
+Spawner::Spawner(Root& root) : m_root(root) {
+  auto assets = this->root().assets();
   auto config = assets->json("/spawning.config");
 
   m_spawnCellSize = config.getUInt("spawnCellSize");
@@ -353,7 +353,7 @@ Maybe<Vec2F> Spawner::adjustSpawnRegion(RectF const& spawnRegion, RectF const& b
       tryPositions.append({x, y});
   }
 
-  Random::shuffle(tryPositions);
+  this->root().random().shuffle(tryPositions);
   for (auto const& p : tryPositions) {
     if (checkPosition(p))
       return p;
@@ -370,8 +370,8 @@ void Spawner::spawnInCell(Vec2I const& cell) {
   if (m_debug)
     m_debugSpawnInfo[cell] = SpawnCellDebugInfo{*cellSpawnParameters, 0, 0};
 
-  auto monsterDatabase = Root::singleton().monsterDatabase();
-  auto spawnTypeDatabase = Root::singleton().spawnTypeDatabase();
+  auto monsterDatabase = this->root().monsterDatabase();
+  auto spawnTypeDatabase = this->root().spawnTypeDatabase();
 
   RectF spawnRegion = cellRegion(cell);
   auto spawnProfile = m_facade->spawnProfile(spawnRegion.center());
@@ -381,13 +381,13 @@ void Spawner::spawnInCell(Vec2I const& cell) {
     if (!spawnType.spawnParameters.compatible(*cellSpawnParameters))
       continue;
 
-    if (Random::randf() < spawnType.spawnChance) {
+    if (this->root().random().randf() < spawnType.spawnChance) {
       std::uint64_t spawnSeed = staticRandomU64(spawnType.seedMix, m_facade->spawnSeed());
-      int targetGroupSize = Random::randInt(spawnType.groupSize[0], spawnType.groupSize[1]);
+      int targetGroupSize = this->root().random().randInt(spawnType.groupSize[0], spawnType.groupSize[1]);
       for (int i = 0; i < targetGroupSize; ++i) {
         String monsterType;
         if (auto monsterPool = spawnType.monsterType.maybe<WeightedPool<String>>())
-          monsterType = monsterPool->select();
+          monsterType = monsterPool->select(this->root().random());
         else
           monsterType = spawnType.monsterType.get<String>();
 
@@ -400,9 +400,9 @@ void Spawner::spawnInCell(Vec2I const& cell) {
         if (auto position = adjustSpawnRegion(spawnRegion, monsterBoundBox, spawnType.spawnParameters)) {
           float level = m_facade->threatLevel();
           if (m_facade->dayLevel() >= m_minimumDayLevel)
-            level += Random::randf(spawnType.dayLevelAdjustment[0], spawnType.dayLevelAdjustment[1]);
+            level += this->root().random().randf(spawnType.dayLevelAdjustment[0], spawnType.dayLevelAdjustment[1]);
           else
-            level += Random::randf(spawnType.nightLevelAdjustment[0], spawnType.nightLevelAdjustment[1]);
+            level += this->root().random().randf(spawnType.nightLevelAdjustment[0], spawnType.nightLevelAdjustment[1]);
 
           auto spawnProfile = m_facade->spawnProfile(*position);
 
@@ -437,16 +437,16 @@ void Spawner::debugShowSpawnCells() {
   for (auto const& debugInfo : m_debugSpawnInfo) {
     RectF spawnRegion = Spawner::cellRegion(debugInfo.first);
     if (regionVisibleToClient(spawnRegion)) {
-      SpatialLogger::logPoly("world", PolyF(spawnRegion), {128, 0, 0, 255});
+      this->root().spatialLogger().logPoly("world", PolyF(spawnRegion), {128, 0, 0, 255});
       StringList areaList;
       for (auto area : debugInfo.second.spawnParameters.areas)
         areaList.append(SpawnParameters::AreaNames.getRight(area).slice(0, 3));
-      SpatialLogger::logText("world", strf("Areas: {}", areaList.join(", ")), spawnRegion.min() + Vec2F(0.5, 2.5), {255, 255, 255, 255});
-      SpatialLogger::logText("world", strf("Region: {}", SpawnParameters::RegionNames.getRight(debugInfo.second.spawnParameters.region)), spawnRegion.min() + Vec2F(0.5, 1.5), {255, 255, 255, 255});
-      SpatialLogger::logText("world", strf("Time: {}", SpawnParameters::TimeNames.getRight(debugInfo.second.spawnParameters.time)), spawnRegion.min() + Vec2F(0.5, 0.5), {255, 255, 255, 255});
+      this->root().spatialLogger().logText("world", strf("Areas: {}", areaList.join(", ")), spawnRegion.min() + Vec2F(0.5, 2.5), {255, 255, 255, 255});
+      this->root().spatialLogger().logText("world", strf("Region: {}", SpawnParameters::RegionNames.getRight(debugInfo.second.spawnParameters.region)), spawnRegion.min() + Vec2F(0.5, 1.5), {255, 255, 255, 255});
+      this->root().spatialLogger().logText("world", strf("Time: {}", SpawnParameters::TimeNames.getRight(debugInfo.second.spawnParameters.time)), spawnRegion.min() + Vec2F(0.5, 0.5), {255, 255, 255, 255});
 
       if (debugInfo.second.spawnAttempts > 0)
-        SpatialLogger::logText("world", strf("Spawns: {} / {}", debugInfo.second.spawns, debugInfo.second.spawnAttempts), spawnRegion.min() + Vec2F(0.5, 3.5), (debugInfo.second.spawnAttempts > debugInfo.second.spawns) ? Color::Red.toRgba() : Color::Green.toRgba());
+        this->root().spatialLogger().logText("world", strf("Spawns: {} / {}", debugInfo.second.spawns, debugInfo.second.spawnAttempts), spawnRegion.min() + Vec2F(0.5, 3.5), (debugInfo.second.spawnAttempts > debugInfo.second.spawns) ? Color::Red.toRgba() : Color::Green.toRgba());
     }
   }
 }

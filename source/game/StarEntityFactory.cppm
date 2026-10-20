@@ -22,6 +22,7 @@ import star.byte_array;
 namespace Star {
 
 struct VersionedJson;
+class Root;
 class VehicleDatabase;
 class VersioningDatabase;
 class PlayerFactory;
@@ -37,7 +38,7 @@ using EntityFactoryException = StarError<EntityFactoryExceptionTag, StarExceptio
 
 class EntityFactory {
 public:
-  EntityFactory();
+  explicit EntityFactory(Root& root);
 
   ByteArray netStoreEntity(std::shared_ptr<Entity> const& entity, NetCompatibilityRules rules = {}) const;
   std::shared_ptr<Entity> netLoadEntity(EntityType type, ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
@@ -55,6 +56,7 @@ public:
   VersionedJson storeVersionedEntity(std::shared_ptr<Entity> const& entityPtr) const;
 
 private:
+  Root& m_root;
   static EnumMap<EntityType> const EntityStorageIdentifiers;
 
   mutable RecursiveMutex m_mutex;

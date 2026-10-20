@@ -104,7 +104,7 @@ ScriptableThread::ScriptableThread(Json parameters, LuaBaseComponent* parent)
     m_errorOccurred(false),
     m_shouldExpire(false),
     m_parent(parent) {
-      m_luaRoot = std::make_shared<LuaRoot>();
+      m_luaRoot = std::make_shared<LuaRoot>(parent->root());
       m_luaRoot->luaEngine().setNullTerminated(false);
       m_luaRoot->tuneAutoGarbageCollection(m_parameters.getFloat("luaGcPause",1.2), m_parameters.getFloat("luaGcStepMultiplier",1.2));
       m_name = m_parameters.getString("name");
@@ -122,11 +122,8 @@ ScriptableThread::ScriptableThread(Json parameters, LuaBaseComponent* parent)
 }
 
 ScriptableThread::~ScriptableThread() {
-  m_stop = true;
-
+  stop();
   m_scriptContexts.clear();
-  
-  join();
 }
 
 void ScriptableThread::addCallbacks(String const& groupName, LuaCallbacks const& callbacks) {
@@ -177,7 +174,7 @@ void ScriptableThread::passMessage(Message&& message) {
 void ScriptableThread::run() {
   try {
     for (auto& p : m_parameters.getObject("scripts")) {
-      auto scriptComponent = std::make_shared<ScriptComponent>();
+      auto scriptComponent = std::make_shared<ScriptComponent>(m_luaRoot->root());
       scriptComponent->setLuaRoot(m_luaRoot);
       scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
       
@@ -195,7 +192,7 @@ void ScriptableThread::run() {
 
     while (!m_stop && !m_errorOccurred) {
       if (m_logMapped)
-        LogMap::set(strf("lua_{}_update", m_name), strf("{:4.2f}Hz", tickApproacher.rate()));
+        m_luaRoot->root().logMap().set(strf("lua_{}_update", m_name), strf("{:4.2f}Hz", tickApproacher.rate()));
 
       update();
       tickApproacher.setTargetTickRate(1.0f / m_timestep);
@@ -208,7 +205,7 @@ void ScriptableThread::run() {
         Thread::sleepPrecise(spareMilliseconds);
     }
   } catch (std::exception const& e) {
-    Logger::error("ScriptableThread exception caught: {}", outputException(e, true));
+    m_luaRoot->root().logger().error("ScriptableThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
   }
   for (auto& p : m_scriptContexts)
@@ -249,7 +246,7 @@ void ScriptableThread::update() {
       message.promise.fail("Message not handled by thread");
   }
   if (m_logMapped)
-    LogMap::set(strf("lua_{}_lua_mem", m_name), m_luaRoot->luaMemoryUsage());
+    m_luaRoot->root().logMap().set(strf("lua_{}_lua_mem", m_name), m_luaRoot->luaMemoryUsage());
 }
 
 LuaCallbacks ScriptableThread::makeThreadCallbacks() {

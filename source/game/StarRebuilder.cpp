@@ -31,9 +31,9 @@ import star.rebuilder;
 
 namespace Star {
 
-Rebuilder::Rebuilder(String const& id) {
-  m_luaRoot = std::make_shared<LuaRoot>();
-  auto assets = Root::singleton().assets();
+Rebuilder::Rebuilder(Root& root, String const& id, ItemDatabase const* itemCatalog) {
+  m_luaRoot = std::make_shared<LuaRoot>(root);
+  auto assets = root.assets();
   m_contexts = std::make_shared<List<LuaContext>>();
 
   for (auto& path : assets->assetSources()) {
@@ -42,8 +42,8 @@ Rebuilder::Rebuilder(String const& id) {
       if (auto scriptPaths = scripts.value().optArray(id)) {
         for (auto& scriptPath : *scriptPaths) {
           auto context = m_luaRoot->createContext(scriptPath.toString());
-          context.setCallbacks("root", LuaBindings::makeRootCallbacks());
-          context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+          context.setCallbacks("root", LuaBindings::makeRootCallbacks(root, itemCatalog));
+          context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks(root.random(), root.logger(), root.logMap()));
           m_contexts->push_back(context);
         }
       }

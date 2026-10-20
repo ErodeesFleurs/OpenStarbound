@@ -132,7 +132,7 @@ EnumMap<TechController::ParentState> const TechController::ParentStateNames{
   {TechController::ParentState::SwimIdle, "SwimIdle"}
 };
 
-TechController::TechController() {
+TechController::TechController(Root& root) : m_root(root), m_techAnimators([&root] { return std::make_shared<TechAnimator>(root); }) {
   m_parentEntity = nullptr;
   m_movementController = nullptr;
   m_statusController = nullptr;
@@ -448,11 +448,11 @@ Maybe<ChainableJsonMessageResponse> TechController::receiveMessage(String const&
   return {};
 }
 
-TechController::TechAnimator::TechAnimator() : TechAnimator(Maybe<String>{}) {}
+TechController::TechAnimator::TechAnimator(Root& root) : TechAnimator(root, Maybe<String>{}) {}
 
-TechController::TechAnimator::TechAnimator(Maybe<String> ac) {
+TechController::TechAnimator::TechAnimator(Root& root, Maybe<String> ac) : m_root(root), animator(root) {
   animationConfig = std::move(ac);
-  animator = animationConfig ? NetworkedAnimator(*animationConfig) : NetworkedAnimator();
+  animator = animationConfig ? NetworkedAnimator(m_root, *animationConfig) : NetworkedAnimator(m_root);
   netGroup.addNetElement(&animator);
   netGroup.addNetElement(&visible);
 }
@@ -470,7 +470,7 @@ void TechController::TechAnimator::netStore(DataStream& ds, NetCompatibilityRule
 void TechController::TechAnimator::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   if (!checkWithRules(rules)) return;
   ds >> animationConfig;
-  animator = animationConfig ? NetworkedAnimator(*animationConfig) : NetworkedAnimator();
+  animator = animationConfig ? NetworkedAnimator(m_root, *animationConfig) : NetworkedAnimator(m_root);
   netGroup.netLoad(ds, rules);
 }
 
@@ -515,11 +515,11 @@ void TechController::setupTechModules(List<std::tuple<String, JsonObject>> const
   m_techModules.clear();
   m_techAnimators.clearNetElements();
 
-  auto techDatabase = Root::singleton().techDatabase();
+  auto techDatabase = m_root.techDatabase();
 
   for (auto const& moduleInit : moduleInits) {
     if (techDatabase->contains(std::get<0>(moduleInit))) {
-      auto& module = m_techModules.emplaceAppend();
+      auto& module = m_techModules.emplaceAppend(m_root);
 
       module.config = techDatabase->tech(std::get<0>(moduleInit));
 
@@ -530,12 +530,12 @@ void TechController::setupTechModules(List<std::tuple<String, JsonObject>> const
 
       module.toolUsageSuppressed = false;
 
-      auto moduleAnimator = std::make_shared<TechAnimator>(module.config.animationConfig);
+      auto moduleAnimator = std::make_shared<TechAnimator>(m_root, module.config.animationConfig);
       for (auto const& pair : module.config.parameters.get("animationParts", JsonObject()).iterateObject())
         moduleAnimator->animator.setPartTag(pair.first, "partImage", pair.second.toString());
       module.animatorId = m_techAnimators.addNetElement(moduleAnimator);
     } else {
-      Logger::warn("Tech module '{}' not found in tech database", std::get<0>(moduleInit));
+      m_root.logger().warn("Tech module '{}' not found in tech database", std::get<0>(moduleInit));
     }
   }
 }
@@ -561,7 +561,7 @@ void TechController::initializeModules() {
     module.scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&m_techAnimators.getNetElement(module.animatorId)->animator));
     module.scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController));
     if (auto player = as<Player>(m_parentEntity))
-      module.scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(player));
+      module.scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_root, player));
     module.scriptComponent.addActorMovementCallbacks(m_movementController);
 
     module.scriptComponent.init(m_parentEntity->world());

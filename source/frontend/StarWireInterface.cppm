@@ -48,7 +48,7 @@ class Player;
 
 class WirePane : public Pane, public WireConnector {
 public:
-  WirePane(std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, std::shared_ptr<WorldPainter> worldPainter);
+  WirePane(GuiContext& guiContext, std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, std::shared_ptr<WorldPainter> worldPainter);
   virtual ~WirePane() {}
 
   virtual void update(float dt) override;

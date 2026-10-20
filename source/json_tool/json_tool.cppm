@@ -11,6 +11,8 @@ import star.json_path;
 
 namespace Star {
 
+class Logger;
+
 struct GetCommand {
   std::shared_ptr<JsonPath::Path> path;
   bool opt;
@@ -144,7 +146,7 @@ struct ParsedArgs {
 
 FormattedJson addOrSet(bool add, std::shared_ptr<JsonPath::Path> path, FormattedJson const& input, InsertLocation insertLocation, FormattedJson const& value);
 String reprWithLineEnding(FormattedJson const& json);
-StringList findFiles(FindInput const& findArgs);
+StringList findFiles(Logger& logger, FindInput const& findArgs);
 
 }
 

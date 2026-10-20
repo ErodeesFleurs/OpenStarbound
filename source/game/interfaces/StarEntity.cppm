@@ -28,6 +28,7 @@ import star.algorithm;
 namespace Star {
 
 class RenderCallback;
+class Root;
 class World;
 struct DamageNotification;
 
@@ -70,6 +71,8 @@ extern EnumMap<EntityType> const EntityTypeNames;
 class Entity {
 public:
   virtual ~Entity();
+
+  Root& root() const;
 
   virtual EntityType entityType() const = 0;
 
@@ -211,7 +214,7 @@ public:
   bool isSlave() const;
 
 protected:
-  Entity();
+  explicit Entity(Root& root);
 
   void setPersistent(bool persistent);
   void setKeepAlive(bool keepAlive);
@@ -219,6 +222,7 @@ protected:
   void setTeam(EntityDamageTeam newTeam);
 
 private:
+  Root& m_root;
   EntityId m_entityId;
   Maybe<EntityMode> m_entityMode;
   bool m_persistent;

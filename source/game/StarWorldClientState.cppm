@@ -13,12 +13,13 @@ import star.net_element_basic_fields;
 import star.net_element_system;
 
 namespace Star {
+class Root;
 
 // Class to aid in network syncronization of client state such as viewing area
 // and player entity id.
 class WorldClientState {
 public:
-  WorldClientState();
+  WorldClientState(Root& root);
 
   // Actual area of the client visible screen (rounded to nearest block)
   RectI window() const;

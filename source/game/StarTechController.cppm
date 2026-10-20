@@ -45,6 +45,8 @@ import star.net_element_group;
 
 namespace Star {
 
+class Root;
+
 class StatusController;
 class Entity;
 class ActorMovementController;
@@ -69,7 +71,7 @@ public:
   };
   static EnumMap<ParentState> const ParentStateNames;
 
-  TechController();
+  TechController(Root& root);
 
   Json diskStore();
   void diskLoad(Json const& store);
@@ -122,9 +124,10 @@ public:
   Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
 private:
+  Root& m_root;
   struct TechAnimator : public NetElement {
-    TechAnimator();
-    TechAnimator(Maybe<String> animationConfig);
+    TechAnimator(Root& root);
+    TechAnimator(Root& root, Maybe<String> animationConfig);
 
     void initNetVersion(NetElementVersion const* version = nullptr) override;
 
@@ -143,6 +146,7 @@ private:
     void setVisible(bool visible);
     bool isVisible() const;
 
+    Root& m_root;
     Maybe<String> animationConfig;
     NetworkedAnimator animator;
     NetworkedAnimator::DynamicTarget dynamicTarget;
@@ -153,6 +157,8 @@ private:
   typedef NetElementDynamicGroup<TechAnimator> TechAnimatorGroup;
 
   struct TechModule {
+    explicit TechModule(Root& root) : scriptComponent(root) {}
+
     TechConfig config;
 
     LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>>

@@ -82,7 +82,7 @@ import star.object_database;
 
 namespace Star {
 
-LoungeableObject::LoungeableObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters) : Object(config, parameters) {
+LoungeableObject::LoungeableObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters) : Entity(rootContext), Object(rootContext, config, parameters) {
   m_interactive.set(true);
 }
 
@@ -93,9 +93,9 @@ void LoungeableObject::render(RenderCallback* renderCallback) {
     if (!entitiesLounging().empty()) {
       if (auto orientation = currentOrientation()) {
         Drawable drawable =
-            Drawable::makeImage(m_sitCoverImage, 1.0f / TilePixels, false, position() + orientation->imagePosition);
+            Drawable::makeImage(*root().imageMetadataDatabase(), m_sitCoverImage, 1.0f / TilePixels, false, position() + orientation->imagePosition);
         if (m_flipImages)
-          drawable.scale(Vec2F(-1, 1), drawable.boundBox(false).center());
+          drawable.scale(Vec2F(-1, 1), drawable.boundBox(*root().imageMetadataDatabase(), false).center());
         renderCallback->addDrawable(std::move(drawable), RenderLayerObject + 2);
       }
     }

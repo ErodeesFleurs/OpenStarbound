@@ -4,6 +4,7 @@ import star.string;
 import star.file;
 import star.lexical_cast;
 import star.json_path;
+import star.random;
 
 #include "gtest/gtest.h"
 import star.json_patch;
@@ -83,7 +84,8 @@ TEST(JsonTest, UnicodeFile) {
   EXPECT_EQ(v.getString("first"), String("日本語"));
   EXPECT_EQ(v.get("second").repr(), String("\"foobar\\u0019\""));
 
-  String file = File::temporaryFileName();
+  RandomService random;
+  String file = File::temporaryFileName(random);
   auto finallyGuard = finally([&file]() { File::remove(file); });
 
   File::writeFile(v.printJson(), file);

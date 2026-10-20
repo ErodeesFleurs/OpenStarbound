@@ -194,6 +194,14 @@ Json Packet::writeJson() const  { return JsonObject{}; }
 PacketCompressionMode Packet::compressionMode() const { return m_compressionMode; }
 void Packet::setCompressionMode(PacketCompressionMode compressionMode) { m_compressionMode = compressionMode; }
 
+namespace {
+// Empty packet construction stages a subsequent wire/JSON read, not an identity.
+// Sending code supplies IDs or uses the explicit random-source factory below.
+Uuid unfilledPacketUuid() {
+  return Uuid::nil();
+}
+}
+
 std::shared_ptr<Packet> createPacket(PacketType type) {
   switch (type) {
     case PacketType::ProtocolRequest: return std::make_shared<ProtocolRequestPacket>();
@@ -283,8 +291,51 @@ std::shared_ptr<Packet> createPacket(PacketType type) {
   }
 }
 
-std::shared_ptr<Packet> createPacket(PacketType type, Maybe<Json> const& args) {
+std::shared_ptr<Packet> createPacket(RandomService& random, PacketType type, Maybe<Json> const& args) {
   auto packet = createPacket(type);
+  // The raw Lua packet API also permits omitted JSON fields. Preserve its
+  // generated identities explicitly; decoding through createPacket(type) never
+  // consumes the domain's random stream.
+  switch (type) {
+    case PacketType::ConnectSuccess:
+      static_cast<ConnectSuccessPacket&>(*packet).serverUuid = Uuid(random);
+      break;
+    case PacketType::ClientConnect:
+      static_cast<ClientConnectPacket&>(*packet).playerUuid = Uuid(random);
+      break;
+    case PacketType::EntityInteract:
+      static_cast<EntityInteractPacket&>(*packet).requestId = Uuid(random);
+      break;
+    case PacketType::EntityInteractResult:
+      static_cast<EntityInteractResultPacket&>(*packet).requestId = Uuid(random);
+      break;
+    case PacketType::EntityMessage:
+      static_cast<EntityMessagePacket&>(*packet).uuid = Uuid(random);
+      break;
+    case PacketType::EntityMessageResponse:
+      static_cast<EntityMessageResponsePacket&>(*packet).uuid = Uuid(random);
+      break;
+    case PacketType::SystemWorldStart:
+      static_cast<SystemWorldStartPacket&>(*packet).clientShip.first = Uuid(random);
+      break;
+    case PacketType::SystemObjectDestroy:
+      static_cast<SystemObjectDestroyPacket&>(*packet).objectUuid = Uuid(random);
+      break;
+    case PacketType::SystemShipDestroy:
+      static_cast<SystemShipDestroyPacket&>(*packet).shipUuid = Uuid(random);
+      break;
+    case PacketType::SystemObjectSpawn:
+      static_cast<SystemObjectSpawnPacket&>(*packet).uuid = Uuid(random);
+      break;
+    case PacketType::UniverseMessage:
+      static_cast<UniverseMessage&>(*packet).uuid = Uuid(random);
+      break;
+    case PacketType::UniverseMessageResponse:
+      static_cast<UniverseMessageResponse&>(*packet).uuid = Uuid(random);
+      break;
+    default:
+      break;
+  }
 
   if (args && !args->isNull())
     packet->readJson(*args);
@@ -328,7 +379,7 @@ void ProtocolResponsePacket::write(DataStream& ds, NetCompatibilityRules netRule
     ds.write(info);
 }
 
-ConnectSuccessPacket::ConnectSuccessPacket() {}
+ConnectSuccessPacket::ConnectSuccessPacket() : serverUuid(unfilledPacketUuid()) {}
 
 ConnectSuccessPacket::ConnectSuccessPacket(
     ConnectionId clientId, Uuid serverUuid, CelestialBaseInformation celestialInformation)
@@ -508,7 +559,7 @@ Json ServerInfoPacket::writeJson() const {
   };
 }
 
-ClientConnectPacket::ClientConnectPacket() {}
+ClientConnectPacket::ClientConnectPacket() : playerUuid(unfilledPacketUuid()) {}
 
 ClientConnectPacket::ClientConnectPacket(ByteArray assetsDigest, bool allowAssetsMismatch, Uuid playerUuid,
     String playerName, String shipSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades,
@@ -956,7 +1007,7 @@ void SpawnEntityPacket::write(DataStream& ds) const {
   ds.write(firstNetState);
 }
 
-EntityInteractPacket::EntityInteractPacket() {}
+EntityInteractPacket::EntityInteractPacket() : requestId(unfilledPacketUuid()) {}
 
 EntityInteractPacket::EntityInteractPacket(InteractRequest interactRequest, Uuid requestId)
   : interactRequest(interactRequest), requestId(requestId) {}
@@ -971,7 +1022,7 @@ void EntityInteractPacket::write(DataStream& ds) const {
   ds.write(requestId);
 }
 
-EntityInteractResultPacket::EntityInteractResultPacket() {}
+EntityInteractResultPacket::EntityInteractResultPacket() : requestId(unfilledPacketUuid()) {}
 
 EntityInteractResultPacket::EntityInteractResultPacket(InteractAction action, Uuid requestId, EntityId sourceEntityId)
   : action(action), requestId(requestId), sourceEntityId(sourceEntityId) {}
@@ -1192,7 +1243,7 @@ void DamageNotificationPacket::write(DataStream& ds) const {
   ds.write(remoteDamageNotification);
 }
 
-EntityMessagePacket::EntityMessagePacket() {}
+EntityMessagePacket::EntityMessagePacket() : uuid(unfilledPacketUuid()) {}
 
 EntityMessagePacket::EntityMessagePacket(Variant<EntityId, String> entityId, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection)
   : entityId(entityId), message(std::move(message)), args(std::move(args)), uuid(uuid), fromConnection(fromConnection) {}
@@ -1235,7 +1286,7 @@ Json EntityMessagePacket::writeJson() const {
   };
 }
 
-EntityMessageResponsePacket::EntityMessageResponsePacket() {}
+EntityMessageResponsePacket::EntityMessageResponsePacket() : uuid(unfilledPacketUuid()) {}
 
 EntityMessageResponsePacket::EntityMessageResponsePacket(Either<String, Json> response, Uuid uuid)
   : response(std::move(response)), uuid(uuid) {}
@@ -1442,7 +1493,7 @@ void StepUpdatePacket::write(DataStream& ds, NetCompatibilityRules netRules) con
   }
 }
 
-SystemWorldStartPacket::SystemWorldStartPacket() {}
+SystemWorldStartPacket::SystemWorldStartPacket() : clientShip(unfilledPacketUuid(), SystemLocation()) {}
 
 SystemWorldStartPacket::SystemWorldStartPacket(Vec3I location, List<ByteArray> objectStores, List<ByteArray> shipStores, std::pair<Uuid, SystemLocation> clientShip)
   : location(std::move(location)), objectStores(std::move(objectStores)), shipStores(std::move(shipStores)), clientShip(std::move(clientShip)) {}
@@ -1488,7 +1539,7 @@ void SystemObjectCreatePacket::write(DataStream& ds) const {
   ds.write(objectStore);
 }
 
-SystemObjectDestroyPacket::SystemObjectDestroyPacket() {}
+SystemObjectDestroyPacket::SystemObjectDestroyPacket() : objectUuid(unfilledPacketUuid()) {}
 
 SystemObjectDestroyPacket::SystemObjectDestroyPacket(Uuid objectUuid) : objectUuid(std::move(objectUuid)) {}
 
@@ -1512,7 +1563,7 @@ void SystemShipCreatePacket::write(DataStream& ds) const {
   ds.write(shipStore);
 }
 
-SystemShipDestroyPacket::SystemShipDestroyPacket() {}
+SystemShipDestroyPacket::SystemShipDestroyPacket() : shipUuid(unfilledPacketUuid()) {}
 
 SystemShipDestroyPacket::SystemShipDestroyPacket(Uuid shipUuid) : shipUuid(std::move(shipUuid)) {}
 
@@ -1524,7 +1575,7 @@ void SystemShipDestroyPacket::write(DataStream& ds) const {
   ds.write(shipUuid);
 }
 
-SystemObjectSpawnPacket::SystemObjectSpawnPacket() {}
+SystemObjectSpawnPacket::SystemObjectSpawnPacket() : uuid(unfilledPacketUuid()) {}
 
 SystemObjectSpawnPacket::SystemObjectSpawnPacket(String typeName, Uuid uuid, Maybe<Vec2F> position, JsonObject parameters)
   : typeName(std::move(typeName)), uuid(std::move(uuid)), position(std::move(position)), parameters(std::move(parameters)) {}
@@ -1673,7 +1724,7 @@ void LogMapUpdate::write(DataStream& ds) const {
   ds.write(map);
 }
 
-UniverseMessage::UniverseMessage() {}
+UniverseMessage::UniverseMessage() : uuid(unfilledPacketUuid()) {}
 
 UniverseMessage::UniverseMessage(ConnectionId connection, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection)
   : connection(connection), message(std::move(message)), args(std::move(args)), uuid(uuid), fromConnection(fromConnection) {}
@@ -1712,7 +1763,7 @@ Json UniverseMessage::writeJson() const {
   };
 }
 
-UniverseMessageResponse::UniverseMessageResponse() {}
+UniverseMessageResponse::UniverseMessageResponse() : uuid(unfilledPacketUuid()) {}
 
 UniverseMessageResponse::UniverseMessageResponse(Either<String, Json> response, Uuid uuid)
   : response(std::move(response)), uuid(uuid) {}

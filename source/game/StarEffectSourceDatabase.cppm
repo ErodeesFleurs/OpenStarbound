@@ -7,13 +7,14 @@ import star.json;
 import star.vector;
 
 namespace Star {
+class Root;
 
 class AudioInstance;
 struct Particle;
 
 class EffectSource {
 public:
-  EffectSource(String const& kind, String suggestedSpawnLocation, Json const& definition);
+  EffectSource(Root& root, String const& kind, String suggestedSpawnLocation, Json const& definition);
   String const& kind() const;
   void tick(float dt);
   bool expired() const;
@@ -25,6 +26,7 @@ public:
   String suggestedSpawnLocation() const;
 
 private:
+  Root& m_root;
   String m_kind;
   Json m_config;
   bool m_loops;
@@ -45,18 +47,19 @@ private:
 
 class EffectSourceConfig {
 public:
-  EffectSourceConfig(Json const& config);
+  EffectSourceConfig(Root& root, Json const& config);
   String const& kind();
   std::shared_ptr<EffectSource> instance(String const& suggestedSpawnLocation);
 
 private:
+  Root& m_root;
   String m_kind;
   Json m_config;
 };
 
 class EffectSourceDatabase {
 public:
-  EffectSourceDatabase();
+  explicit EffectSourceDatabase(Root& root);
 
   std::shared_ptr<EffectSourceConfig> effectSourceConfig(String const& kind) const;
 
@@ -64,8 +67,8 @@ private:
   StringMap<std::shared_ptr<EffectSourceConfig>> m_sourceConfigs;
 };
 
-List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position = Vec2F());
-List<std::shared_ptr<AudioInstance>> soundsFromDefinition(Json const& config, Vec2F const& position = Vec2F());
+List<Particle> particlesFromDefinition(Root& root, Json const& config, Vec2F const& position = Vec2F());
+List<std::shared_ptr<AudioInstance>> soundsFromDefinition(Root& root, Json const& config, Vec2F const& position = Vec2F());
 
 }
 

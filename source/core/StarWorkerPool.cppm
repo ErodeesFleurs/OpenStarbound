@@ -95,13 +95,15 @@ private:
 
 class WorkerPool {
 public:
-  // Creates a stopped pool
+  // Creates a pool that queues work until start() or finish().
   WorkerPool(String name);
   // Creates a started pool
   WorkerPool(String name, unsigned threadCount);
   ~WorkerPool();
 
   // Workers borrow this object's locks and queues; its address must stay stable.
+  WorkerPool(WorkerPool const&) = delete;
+  WorkerPool& operator=(WorkerPool const&) = delete;
   WorkerPool(WorkerPool&&) = delete;
   WorkerPool& operator=(WorkerPool&&) = delete;
 
@@ -109,14 +111,12 @@ public:
   // already started, reconfigure the thread counts.
   void start(unsigned threadCount);
 
-  // Stop the thread pool, not necessarily finishing any pending jobs (may
-  // leave pending jobs on the queue).
+  // Stop accepting work, fail queued jobs, and wait for running jobs to finish.
+  // Submissions after stop return an already-failed handle or promise until start.
   void stop();
 
-  // Try to finish any remaining jobs, then stop the thread pool.  This method
-  // must not be called if the worker pool will continuously receive new work,
-  // as it may not ever complete if that is the case.  The work queue must
-  // eventually become empty for this to properly return.
+  // Stop accepting work, complete all accepted jobs, then stop the threads.
+  // Neither finish nor stop may be called from one of this pool's jobs.
   void finish();
 
   // Add the given work to the pool and return a handle for the work.  It not
@@ -134,6 +134,9 @@ public:
   // Returns the current number of worker threads.
   std::size_t getWorkerCount() const;
 
+  // Detect nested work without a process-global or thread-local current pool.
+  bool isWorkerThread() const;
+
 private:
   class WorkerThread : public Thread {
   public:
@@ -146,17 +149,25 @@ private:
     WorkerPool* parent;
     std::atomic<bool> shouldStop;
     std::atomic<bool> waiting;
+    std::thread::id id;
   };
 
-  void queueWork(UniqueFunction<void()> work);
+  // A non-null exception cancels a queued job without invoking its producer.
+  void queueWork(UniqueFunction<void(std::exception_ptr)> work);
+
+  // Lifecycle helpers require m_threadMutex, but never join with m_workMutex held.
+  void stopWorkers();
+  void joinWorkers();
 
   String m_name;
   Mutex m_threadMutex;
   List<std::unique_ptr<WorkerThread>> m_workerThreads;
 
-  Mutex m_workMutex;
+  mutable Mutex m_workMutex;
   ConditionVariable m_workCondition;
-  Deque<UniqueFunction<void()>> m_pendingWork;
+  Deque<UniqueFunction<void(std::exception_ptr)>> m_pendingWork;
+  std::thread::id m_finishingThread;
+  bool m_acceptingWork = true;
 };
 
 template <typename ResultType>
@@ -215,8 +226,10 @@ WorkerPoolPromise<ResultType> WorkerPool::addProducer(UniqueFunction<ResultType(
   // Construct a worker pool promise and wrap the producer to signal the
   // promise when finished.
   auto workerPoolPromiseImpl = std::make_shared<typename WorkerPoolPromise<ResultType>::Impl>();
-  queueWork([workerPoolPromiseImpl, producer = std::move(producer)]() mutable {
+  queueWork([workerPoolPromiseImpl, producer = std::move(producer)](std::exception_ptr cancelled) mutable {
     try {
+      if (cancelled)
+        std::rethrow_exception(cancelled);
       auto result = producer();
       MutexLocker promiseLocker(workerPoolPromiseImpl->mutex);
       workerPoolPromiseImpl->result = std::move(result);

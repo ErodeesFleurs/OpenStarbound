@@ -16,10 +16,12 @@ import star.vector;
 import star.game_types;
 
 namespace Star {
+class Root;
 
 class World;
 class Item;
 class ItemBag;
+class ItemDatabase;
 class ContainerObject;
 
 struct TreasureExceptionTag {
@@ -29,7 +31,7 @@ using TreasureException = StarError<TreasureExceptionTag, StarException>;
 
 class TreasureDatabase {
 public:
-  TreasureDatabase();
+  explicit TreasureDatabase(Root& root);
 
   StringList treasurePools() const;
   bool isTreasurePool(String const& treasurePool) const;
@@ -39,6 +41,7 @@ public:
 
   List<std::shared_ptr<Item>> createTreasure(String const& treasurePool, float level) const;
   List<std::shared_ptr<Item>> createTreasure(String const& treasurePool, float level, std::uint64_t seed) const;
+  List<std::shared_ptr<Item>> createTreasure(String const& treasurePool, float level, std::uint64_t seed, ItemDatabase const* itemCatalog) const;
 
   // Adds created treasure to the given ItemBags, does not clear the ItemBag
   // first.  Returns overflow items.
@@ -52,7 +55,7 @@ public:
   std::shared_ptr<ContainerObject> createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction, std::uint64_t seed) const;
 
 private:
-  List<std::shared_ptr<Item>> createTreasure(String const& treasurePool, float level, std::uint64_t seed, StringSet visitedPools) const;
+  List<std::shared_ptr<Item>> createTreasure(String const& treasurePool, float level, std::uint64_t seed, StringSet visitedPools, ItemDatabase const* itemCatalog) const;
 
   // Specifies either an item descriptor or the name of a valid treasurepool to
   // be
@@ -94,6 +97,7 @@ private:
   };
   typedef List<TreasureChest> TreasureChestSet;
 
+  Root& m_root;
   StringMap<TreasurePool> m_treasurePools;
   StringMap<TreasureChestSet> m_treasureChestSets;
 };

@@ -40,8 +40,8 @@ import star.animation;
 
 namespace Star {
 
-AiDatabase::AiDatabase() {
-  auto assets = Root::singleton().assets();
+AiDatabase::AiDatabase(Root& root) : m_animationConfig(root) {
+  auto assets = root.assets();
   auto config = assets->json("/ai/ai.config");
 
   auto& missions = assets->scanExtension("aimission");
@@ -65,13 +65,14 @@ AiDatabase::AiDatabase() {
 
   m_animationConfig.charactersPerSecond = config.getFloat("charactersPerSecond");
   m_animationConfig.defaultAnimation = config.getString("defaultAnimation");
-  m_animationConfig.staticAnimation = Animation("/ai/ai.config:staticAnimation");
+  m_animationConfig.staticAnimation = Animation(root, "/ai/ai.config:staticAnimation");
   m_animationConfig.staticOpacity = config.getFloat("staticOpacity");
-  m_animationConfig.scanlineAnimation = Animation("/ai/ai.config:scanlineAnimation");
+  m_animationConfig.scanlineAnimation = Animation(root, "/ai/ai.config:scanlineAnimation");
   m_animationConfig.scanlineOpacity = config.getFloat("scanlineOpacity");
 
+  // Preserve the default animation's RNG draw when inserting a new entry.
   for (auto const& pair : config.get("aiAnimations").iterateObject())
-    m_animationConfig.aiAnimations[pair.first] = Animation(pair.second, "/ai/");
+    m_animationConfig.aiAnimations.try_emplace(pair.first, root).first->second = Animation(root, pair.second, "/ai/");
 }
 
 AiMission AiDatabase::mission(String const& missionName) const {

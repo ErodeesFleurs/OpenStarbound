@@ -5,10 +5,14 @@ import star.string;
 import star.list;
 import star.format;
 import star.bi_map;
+import star.json;
+import star.thread;
 
 namespace Star {
 
 class Json;
+class Root;
+class ItemDatabase;
 
 struct CollectionDatabaseExceptionTag {
   static constexpr char const* name() { return "CollectionDatabaseException"; }
@@ -44,22 +48,27 @@ struct Collection {
 
 class CollectionDatabase {
 public:
-  CollectionDatabase();
+  explicit CollectionDatabase(Root& root);
 
   List<Collection> collections() const;
   Collection collection(String const& collectionName) const;
   List<Collectable> collectables(String const& collectionName) const;
+  List<Collectable> collectables(String const& collectionName, ItemDatabase const* itemCatalog) const;
   Collectable collectable(String const& collectionName, String const& collectableName) const;
+  Collectable collectable(String const& collectionName, String const& collectableName, ItemDatabase const* itemCatalog) const;
 
   bool hasCollectable(String const& collectionName, String const& collectableName) const;
 
 private:
   Collectable parseGenericCollectable(String const& name, Json const& config) const;
   Collectable parseMonsterCollectable(String const& name, Json const& config) const;
-  Collectable parseItemCollectable(String const& name, Json const& config) const;
+  Collectable parseItemCollectable(String const& name, Json const& config, ItemDatabase const* itemCatalog) const;
 
+  Root& m_root;
   StringMap<Collection> m_collections;
-  StringMap<StringMap<Collectable>> m_collectables;
+  StringMap<StringMap<Json>> m_collectableConfigs;
+  mutable Mutex m_collectablesMutex;
+  mutable StringMap<StringMap<Collectable>> m_collectables;
 };
 
 

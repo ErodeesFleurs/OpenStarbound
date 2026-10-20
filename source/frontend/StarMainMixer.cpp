@@ -191,8 +191,8 @@ import star.voice;
 
 namespace Star {
 
-MainMixer::MainMixer(unsigned sampleRate, unsigned channels) {
-  m_mixer = std::make_shared<Mixer>(sampleRate, channels);
+MainMixer::MainMixer(Root& root, unsigned sampleRate, unsigned channels) : m_root(&root) {
+  m_mixer = std::make_shared<Mixer>(root.logger(), sampleRate, channels);
 }
 
 void MainMixer::setUniverseClient(std::shared_ptr<UniverseClient> universeClient) {
@@ -203,8 +203,12 @@ void MainMixer::setWorldPainter(std::shared_ptr<WorldPainter> worldPainter) {
   m_worldPainter = std::move(worldPainter);
 }
 
+void MainMixer::setVoice(Voice* voice) {
+  m_voice = voice;
+}
+
 void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
-  auto assets = Root::singleton().assets();
+  auto assets = m_root->assets();
 
   auto updateGroupVolume = [&](MixerGroup group, bool muted, String const& settingName) {
       if (m_mutedGroups.contains(group) != muted) {
@@ -216,7 +220,7 @@ void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
           m_mixer->setGroupVolume(group, m_groupVolumes[group], 1.0f);
         }
       } else if (!m_mutedGroups.contains(group)) {
-        float volumeSetting = Root::singleton().configuration()->get(settingName).toFloat() / 100.0f;
+        float volumeSetting = m_root->configuration()->get(settingName).toFloat() / 100.0f;
         volumeSetting = perceptualToAmplitude(volumeSetting);
         if (!m_groupVolumes.contains(group) || volumeSetting != m_groupVolumes[group]) {
           m_mixer->setGroupVolume(group, volumeSetting);
@@ -291,8 +295,8 @@ void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
       return std::pow(clamp(diffMagnitude / maxDistance, 0.0f, 1.0f), 1.0f / attenuationGamma);
     };
 
-    if (Voice* voice = Voice::singletonPtr())
-      voice->update(dt, attenuationFunction);
+    if (m_voice)
+      m_voice->update(dt, attenuationFunction);
 
     m_mixer->update(dt, attenuationFunction);
 
@@ -302,8 +306,8 @@ void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
     if (m_mixer->hasEffect("echo"))
       m_mixer->removeEffect("echo", 0);
 
-    if (Voice* voice = Voice::singletonPtr())
-      voice->update(dt);
+    if (m_voice)
+      m_voice->update(dt);
 
     m_mixer->update(dt);
   }

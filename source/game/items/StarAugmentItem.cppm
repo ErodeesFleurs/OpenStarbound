@@ -26,7 +26,7 @@ namespace Star {
 
 class AugmentItem : public Item {
 public:
-  AugmentItem(Json const& config, String const& directory, Json const& parameters = JsonObject());
+  AugmentItem(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
   AugmentItem(AugmentItem const& rhs);
 
   std::shared_ptr<Item> clone() const override;

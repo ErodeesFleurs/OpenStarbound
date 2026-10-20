@@ -43,7 +43,6 @@ import star.lru_cache;
 
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.configuration;
 import star.root;
 import star.item_descriptor;
@@ -244,14 +243,14 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
     throw StarException("TMXTileLayer data length was inconsistent with width/height");
 }
 
-  TMXMap::TMXMap(Json const& tmx) {
+  TMXMap::TMXMap(Root& root, Json const& tmx) {
     if (tmx.getUInt("tileheight") != 8 || tmx.getUInt("tilewidth") != 8)
       throw StarException("Invalid tile size");
 
     m_width = tmx.getUInt("width");
     m_height = tmx.getUInt("height");
 
-    m_tilesets = std::make_shared<TMXTilesets>(tmx.getArray("tilesets"));
+    m_tilesets = std::make_shared<TMXTilesets>(root, tmx.getArray("tilesets"));
 
     for (Json const& tmxLayer : tmx.get("layers").iterateArray()) {
       String layerType = tmxLayer.getString("type");
@@ -261,7 +260,7 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
         m_tileLayers.append(layer);
 
       } else if (layerType == "objectgroup") {
-        std::shared_ptr<TMXObjectGroup> group = std::make_shared<TMXObjectGroup>(tmxLayer, m_tilesets);
+        std::shared_ptr<TMXObjectGroup> group = std::make_shared<TMXObjectGroup>(root, tmxLayer, m_tilesets);
         m_objectGroups.append(group);
 
       } else {
@@ -298,13 +297,13 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
     return relativePath.slice(i);
   }
 
-  TMXTilesets::TMXTilesets(Json const& tmx) {
+  TMXTilesets::TMXTilesets(Root& root, Json const& tmx) {
     for (Json const& tilesetJson : tmx.iterateArray()) {
       if (!tilesetJson.contains("source"))
         throw StarException::format("Tiled map has embedded tileset {}", tilesetJson.optString("name"));
 
       String sourcePath = tilesetAssetPath(tilesetJson.getString("source"));
-      std::shared_ptr<Tiled::Tileset const> tileset = Root::singleton().tilesetDatabase()->get(sourcePath);
+      std::shared_ptr<Tiled::Tileset const> tileset = root.tilesetDatabase()->get(sourcePath);
       m_tilesets.append(tileset);
 
       std::size_t firstGid = tilesetJson.getUInt("firstgid");
@@ -314,11 +313,11 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
       }
     }
 
-    m_nullTile = std::make_shared<Tiled::Tile>(Tiled::Properties(), TileLayer::Foreground);
+    m_nullTile = std::make_shared<Tiled::Tile>(root, Tiled::Properties(), TileLayer::Foreground);
 
     JsonObject emptyBackProperties;
     emptyBackProperties["clear"] = "true";
-    m_emptyBackTile = std::make_shared<Tiled::Tile>(Tiled::Properties(emptyBackProperties), TileLayer::Background);
+    m_emptyBackTile = std::make_shared<Tiled::Tile>(root, Tiled::Properties(emptyBackProperties), TileLayer::Background);
   }
 
   Tiled::Tile const& TMXTilesets::getTile(unsigned gid, TileLayer layer) const {
@@ -339,7 +338,7 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
     return a.firstGid > b.firstGid;
   }
 
-  TMXObject::TMXObject(Maybe<Json> const& groupProperties, Json const& tmx, std::shared_ptr<TMXTilesets> tilesets) {
+  TMXObject::TMXObject(Root& root, Maybe<Json> const& groupProperties, Json const& tmx, std::shared_ptr<TMXTilesets> tilesets) {
     m_objectId = tmx.getUInt("id");
 
     // convert object properties in array format to object format
@@ -400,7 +399,7 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
     }
 
     properties = properties.inherit(computedProperties);
-    m_tile = std::make_shared<Tiled::Tile>(properties, m_layer, flipX);
+    m_tile = std::make_shared<Tiled::Tile>(root, properties, m_layer, flipX);
   }
 
   Vec2I TMXObject::getSize(Json const& tmx) {
@@ -467,7 +466,7 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
     return StarException::format("At {},{}: {}", pos[0], pos[1], msg);
   }
 
-  TMXObjectGroup::TMXObjectGroup(Json const& tmx, std::shared_ptr<TMXTilesets> tilesets) {
+  TMXObjectGroup::TMXObjectGroup(Root& root, Json const& tmx, std::shared_ptr<TMXTilesets> tilesets) {
     m_name = tmx.getString("name");
     
     // convert group properties in array format to object format
@@ -482,14 +481,14 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
         }
       });
     for (Json const& tmxObject : tmx.getArray("objects")) {
-      std::shared_ptr<TMXObject> object = std::make_shared<TMXObject>(groupProperties, tmxObject, tilesets);
+      std::shared_ptr<TMXObject> object = std::make_shared<TMXObject>(root, groupProperties, tmxObject, tilesets);
       m_objects.append(object);
     }
   }
 
   void TMXPartReader::readAsset(String const& asset) {
-    auto assets = Root::singleton().assets();
-    m_maps.append(std::make_pair(asset, std::make_shared<const TMXMap>(assets->json(asset))));
+    auto assets = m_root.assets();
+    m_maps.append(std::make_pair(asset, std::make_shared<const TMXMap>(m_root, assets->json(asset))));
   }
 
   Vec2U TMXPartReader::size() const {

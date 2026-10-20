@@ -13,6 +13,9 @@ import star.version;
 import star.lua_root;
 
 namespace Star {
+class Root;
+class ItemDatabase;
+
 
 struct VersionedJsonExceptionTag {
   static constexpr char const* name() { return "VersionedJsonException"; }
@@ -58,7 +61,7 @@ DataStream& operator<<(DataStream& ds, VersionedJson const& versionedJson);
 
 class VersioningDatabase {
 public:
-  VersioningDatabase();
+  explicit VersioningDatabase(Root& root);
 
   // Converts the given content Json to a VersionedJson by marking it with the
   // given identifier and the current version configured in the versioning
@@ -73,10 +76,12 @@ public:
   // version using update scripts.  If successful, returns the up to date
   // VersionedJson, otherwise throws VersioningDatabaseException.
   VersionedJson updateVersionedJson(VersionedJson const& versionedJson) const;
+  VersionedJson updateVersionedJson(VersionedJson const& versionedJson, ItemDatabase const* itemCatalog) const;
 
   // Convenience method, checkts the versionedJson expected identifier and then
   // brings the given versionedJson up to date and returns the content.
   Json loadVersionedJson(VersionedJson const& versionedJson, String const& expectedIdentifier) const;
+  Json loadVersionedJson(VersionedJson const& versionedJson, String const& expectedIdentifier, ItemDatabase const* itemCatalog) const;
 
 private:
   struct VersionUpdateScript {
@@ -85,8 +90,9 @@ private:
     VersionNumber toVersion;
   };
 
-  LuaCallbacks makeVersioningCallbacks() const;
+  LuaCallbacks makeVersioningCallbacks(ItemDatabase const* itemCatalog) const;
 
+  Root& m_root;
   mutable RecursiveMutex m_mutex;
   mutable LuaRoot m_luaRoot;
 

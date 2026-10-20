@@ -53,7 +53,7 @@ namespace Star {
 // currently
 class FlowLayout : public Layout {
 public:
-  FlowLayout();
+  FlowLayout(GuiContext& context);
   virtual void update(float dt) override;
   void setSpacing(Vec2I const& spacing);
   void setWrapping(bool wrap);

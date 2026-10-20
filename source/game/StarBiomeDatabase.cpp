@@ -73,8 +73,8 @@ import star.material_database;
 import star.static_random;
 namespace Star {
 
-BiomeDatabase::BiomeDatabase() {
-  auto assets = Root::singleton().assets();
+BiomeDatabase::BiomeDatabase(Root& root) : m_root(root) {
+  auto assets = m_root.assets();
 
   // 'type' here is the extension of the file, and determines the selector type
   auto scanFiles = [=](String const& type, ConfigMap& map) {
@@ -114,7 +114,7 @@ WeatherPool BiomeDatabase::biomeWeathers(String const& biomeName, std::uint64_t 
   if (auto weatherList = binnedChoiceFromJson(m_biomes.get(biomeName).parameters.get("weather", JsonArray{}), threatLevel).optArray(); weatherList && !weatherList->empty()) {
     auto weatherPoolPath = staticRandomFrom(*weatherList, seed, "WeatherPool");
 
-    auto assets = Root::singleton().assets();
+    auto assets = m_root.assets();
     auto weatherPoolConfig = assets->fetchJson(weatherPoolPath);
     weatherPool = jsonToWeightedPool<String>(weatherPoolConfig);
   }
@@ -173,7 +173,7 @@ StringList BiomeDatabase::biomeOres(String const& biomeName, float threatLevel) 
   auto const& config = m_biomes.get(biomeName);
   auto oreDistribution = config.parameters.get("ores", {});
   if (!oreDistribution.isNull()) {
-    auto& root = Root::singleton();
+    auto& root = m_root;
     auto functionDatabase = root.functionDatabase();
 
     auto oresList = functionDatabase->configFunction(oreDistribution)->get(threatLevel);
@@ -197,7 +197,7 @@ WeatherType BiomeDatabase::weatherType(String const& name) const {
   auto config = m_weathers.get(name);
 
   try {
-    return WeatherType(config.parameters, config.path);
+    return WeatherType(m_root, config.parameters, config.path);
   } catch (MapException const& e) {
     throw BiomeException(strf("Required key not found in weather config {}", config.path), e);
   }
@@ -207,7 +207,7 @@ std::shared_ptr<Biome> BiomeDatabase::createBiome(String const& biomeName, std::
   if (!m_biomes.contains(biomeName))
     throw BiomeException(strf("No such biome '{}'", biomeName));
 
-  auto& root = Root::singleton();
+  auto& root = m_root;
   auto materialDatabase = root.materialDatabase();
 
   try {
@@ -236,7 +236,7 @@ std::shared_ptr<Biome> BiomeDatabase::createBiome(String const& biomeName, std::
 
     if (config.parameters.contains("parallax")) {
       auto parallaxFile = AssetPath::relativeTo(config.path, config.parameters.getString("parallax"));
-      biome->parallax = std::make_shared<Parallax>(parallaxFile, seed, verticalMidPoint, mainHueShift, biome->surfacePlaceables.firstTreeType());
+      biome->parallax = std::make_shared<Parallax>(m_root, parallaxFile, seed, verticalMidPoint, mainHueShift, biome->surfacePlaceables.firstTreeType());
     }
 
     if (config.parameters.contains("musicTrack"))
@@ -246,7 +246,7 @@ std::shared_ptr<Biome> BiomeDatabase::createBiome(String const& biomeName, std::
       biome->ambientNoises = std::make_shared<AmbientNoisesDescription>(config.parameters.getObject("ambientNoises"), config.path);
 
     if (config.parameters.contains("spawnProfile"))
-      biome->spawnProfile = constructSpawnProfile(config.parameters.getObject("spawnProfile"), seed);
+      biome->spawnProfile = constructSpawnProfile(*m_root.assets(), config.parameters.getObject("spawnProfile"), seed);
 
     return biome;
   } catch (std::exception const& cause) {
@@ -269,7 +269,7 @@ float BiomeDatabase::pickHueShiftFromJson(Json source, std::uint64_t seed, Strin
 }
 
 BiomePlaceables BiomeDatabase::readBiomePlaceables(Json const& config, std::uint64_t seed, float biomeHueShift) const {
-  auto& root = Root::singleton();
+  auto& root = m_root;
   RandomSource rand(seed);
   BiomePlaceables placeables;
   if (config.contains("grassMod") && !config.getArray("grassMod").empty())
@@ -280,7 +280,7 @@ BiomePlaceables BiomeDatabase::readBiomePlaceables(Json const& config, std::uint
   placeables.ceilingGrassModDensity = config.getFloat("ceilingGrassModDensity", 0);
 
   for (auto const& itemConfig : config.getArray("items", {}))
-    placeables.itemDistributions.append(BiomeItemDistribution(itemConfig, rand.randu64(), biomeHueShift));
+    placeables.itemDistributions.append(BiomeItemDistribution(root, itemConfig, rand.randu64(), biomeHueShift));
 
   return placeables;
 }
@@ -288,7 +288,7 @@ BiomePlaceables BiomeDatabase::readBiomePlaceables(Json const& config, std::uint
 List<std::pair<ModId, float>> BiomeDatabase::readOres(Json const& oreDistribution, float threatLevel) const {
   List<std::pair<ModId, float>> ores;
   if (!oreDistribution.isNull()) {
-    auto& root = Root::singleton();
+    auto& root = m_root;
     auto functionDatabase = root.functionDatabase();
     auto materialDatabase = root.materialDatabase();
 

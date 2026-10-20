@@ -64,10 +64,10 @@ import star.label_widget;
 
 namespace Star {
 
-PopupInterface::PopupInterface() {
-  auto assets = Root::singleton().assets();
+PopupInterface::PopupInterface(GuiContext& guiContext) : Pane(guiContext) {
+  auto assets = context()->root().assets();
 
-  GuiReader reader;
+  GuiReader reader(*context());
 
   reader.registerCallback("close", [this](Widget*) { dismiss(); });
   reader.registerCallback("ok", [this](Widget*) { dismiss(); });
@@ -79,7 +79,7 @@ void PopupInterface::displayMessage(String const& message, String const& title, 
   setTitleString(title, subtitle);
   fetchChild<LabelWidget>("message")->setText(message);
   show();
-  auto sound = onShowSound.value(Random::randValueFrom(Root::singleton().assets()->json("/interface/windowconfig/popup.config:onShowSound").toArray(), "").toString());
+  auto sound = onShowSound.value(context()->root().random().randValueFrom(context()->root().assets()->json("/interface/windowconfig/popup.config:onShowSound").toArray(), "").toString());
   if (!sound.empty())
     context()->playAudio(sound);
 }

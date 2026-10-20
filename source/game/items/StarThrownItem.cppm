@@ -86,12 +86,12 @@ export namespace Star {
 
 class ThrownItem : public Item, public SwingableItem, public PreviewableItem {
 public:
-  ThrownItem(Json const& config, String const& directory, Json const& itemParameters = JsonObject());
+  ThrownItem(Root& root, Json const& config, String const& directory, Json const& itemParameters = JsonObject());
 
   std::shared_ptr<Item> clone() const override;
 
   List<Drawable> drawables() const override;
-  List<Drawable> preview(std::shared_ptr<Player> const& viewer = {}) const override;
+  List<Drawable> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
 
 protected:
   void fireTriggered() override;
@@ -107,14 +107,14 @@ private:
 
 namespace Star {
 
-ThrownItem::ThrownItem(Json const& config, String const& directory, Json const& itemParameters)
-  : Item(config, directory, itemParameters), SwingableItem(config) {
+ThrownItem::ThrownItem(Root& root, Json const& config, String const& directory, Json const& itemParameters)
+  : Item(root, config, directory, itemParameters), SwingableItem(config) {
   m_projectileType = instanceValue("projectileType").toString();
   m_projectileConfig = instanceValue("projectileConfig", {});
   m_ammoUsage = instanceValue("ammoUsage", 1).toUInt();
 
   auto image = AssetPath::relativeTo(directory, instanceValue("image").toString());
-  m_drawables = {Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F())};
+  m_drawables = {Drawable::makeImage(*root.imageMetadataDatabase(), image, 1.0f / TilePixels, true, Vec2F())};
 }
 
 std::shared_ptr<Item> ThrownItem::clone() const {
@@ -125,13 +125,11 @@ List<Drawable> ThrownItem::drawables() const {
   return m_drawables;
 }
 
-List<Drawable> ThrownItem::preview(std::shared_ptr<Player> const&) const {
+List<Drawable> ThrownItem::preview(TileDrawer*, std::shared_ptr<Player> const&) const {
   return iconDrawables();
 }
 
 void ThrownItem::fireTriggered() {
-  auto& root = Root::singleton();
-
   if (initialized()) {
     Vec2F direction = world()->geometry().diff(owner()->aimPosition(), owner()->position()).normalized();
     Vec2F firePosition = owner()->position() + ownerFirePosition();
@@ -139,7 +137,7 @@ void ThrownItem::fireTriggered() {
       return;
 
     if (consume(m_ammoUsage)) {
-      auto projectile = root.projectileDatabase()->createProjectile(m_projectileType, m_projectileConfig);
+      auto projectile = root().projectileDatabase()->createProjectile(m_projectileType, m_projectileConfig);
       projectile->setInitialPosition(firePosition);
       projectile->setInitialDirection(direction);
       projectile->setSourceEntity(owner()->entityId(), false);

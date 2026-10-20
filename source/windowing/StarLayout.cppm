@@ -50,7 +50,7 @@ namespace Star {
 // VERY simple base class for a layout container object.
 class Layout : public Widget {
 public:
-  Layout();
+  Layout(GuiContext& context);
   virtual void update(float dt) override;
 };
 

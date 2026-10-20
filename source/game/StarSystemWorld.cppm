@@ -103,9 +103,13 @@ struct SystemWorldConfig {
   SkyParameters emptySkyParameters;
 };
 
+class Root;
 class SystemWorld {
+  Root& m_root;
 public:
-  SystemWorld(std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase);
+  Root& root() const { return m_root; }
+public:
+  SystemWorld(Root& root, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase);
 
   virtual ~SystemWorld() = default;
 
@@ -131,7 +135,7 @@ public:
   virtual std::shared_ptr<SystemObject> getObject(Uuid const& uuid) const = 0;
 
   SystemObjectConfig systemObjectConfig(String const& name, Uuid const& uuid) const;
-  static Json systemObjectTypeConfig(String const& typeName);
+  static Json systemObjectTypeConfig(Root& root, String const& typeName);
 
 protected:
   Vec3I m_location;
@@ -161,10 +165,12 @@ struct SystemObjectConfig {
 };
 
 class SystemObject {
+  Root& m_root;
+  Root& root() const { return m_root; }
 public:
-  SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& position, JsonObject parameters = {});
-  SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& position, double spawnTime, JsonObject parameters = {});
-  SystemObject(SystemWorld* system, Json const& diskStore);
+  SystemObject(Root& root, SystemObjectConfig config, Uuid uuid, Vec2F const& position, JsonObject parameters = {});
+  SystemObject(Root& root, SystemObjectConfig config, Uuid uuid, Vec2F const& position, double spawnTime, JsonObject parameters = {});
+  SystemObject(Root& root, SystemWorld* system, Json const& diskStore);
 
   void init();
 

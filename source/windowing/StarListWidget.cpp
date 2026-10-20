@@ -65,14 +65,14 @@ import star.image_widget;
 
 namespace Star {
 
-ListWidget::ListWidget(Json const& schema) : m_schema(schema) {
+ListWidget::ListWidget(GuiContext& context, Json const& schema) : Widget(context), m_schema(schema), m_reader(context) {
   m_selectedItem = NPos;
   m_columns = 1;
   setSchema(m_schema);
   updateSizeAndPosition();
 }
 
-ListWidget::ListWidget() {
+ListWidget::ListWidget(GuiContext& context) : Widget(context), m_reader(context) {
   m_selectedItem = NPos;
   m_columns = 1;
   updateSizeAndPosition();
@@ -116,7 +116,7 @@ void ListWidget::setSchema(Json const& schema) {
     m_hoverBG = schema.getString("hoverBG", "");
     m_disabledBG = schema.getString("disabledBG", "");
     if (m_disabledBG.empty() && !m_unselectedBG.empty())
-      m_disabledBG = m_unselectedBG + Root::singleton().assets()->json("/interface.config:disabledButton").toString();
+      m_disabledBG = m_unselectedBG + this->context()->root().assets()->json("/interface.config:disabledButton").toString();
     m_spacing = jsonToVec2I(schema.get("spacing"));
     m_memberSize = jsonToVec2I(schema.get("memberSize"));
   } catch (JsonException const& e) {
@@ -127,7 +127,7 @@ void ListWidget::setSchema(Json const& schema) {
 
 std::shared_ptr<Widget> ListWidget::addItem() {
   auto newItem = constructWidget();
-  addChild(toString(Random::randu64()), newItem);
+  addChild(toString(this->context()->root().random().randu64()), newItem);
   updateSizeAndPosition();
 
   return newItem;
@@ -135,7 +135,7 @@ std::shared_ptr<Widget> ListWidget::addItem() {
 
 std::shared_ptr<Widget> ListWidget::addItem(std::size_t at) {
   auto newItem = constructWidget();
-  addChildAt(toString(Random::randu64()), newItem, at);
+  addChildAt(toString(this->context()->root().random().randu64()), newItem, at);
   updateSizeAndPosition();
 
   if (m_selectedItem != NPos && at <= m_selectedItem)
@@ -145,14 +145,14 @@ std::shared_ptr<Widget> ListWidget::addItem(std::size_t at) {
 }
 
 std::shared_ptr<Widget> ListWidget::addItem(std::shared_ptr<Widget> existingItem) {
-  addChild(toString(Random::randu64()), existingItem);
+  addChild(toString(this->context()->root().random().randu64()), existingItem);
   updateSizeAndPosition();
 
   return existingItem;
 }
 
 std::shared_ptr<Widget> ListWidget::constructWidget() {
-  std::shared_ptr<Widget> newItem = std::make_shared<Widget>();
+  std::shared_ptr<Widget> newItem = std::make_shared<Widget>(*this->context());
   m_reader.construct(m_schema.get("listTemplate"), newItem.get());
   newItem->setSize(m_memberSize);
   m_doScissor ? newItem->enableScissoring() : newItem->disableScissoring();

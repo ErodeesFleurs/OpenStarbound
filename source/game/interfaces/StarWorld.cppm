@@ -49,6 +49,7 @@ import star.rect;
 namespace Star {
 
 class World;
+class Root;
 class TileEntity;
 class ScriptedEntity;
 
@@ -56,6 +57,8 @@ typedef std::function<void(World*)> WorldAction;
 
 class World {
 public:
+  explicit World(Root& root) : m_root(root) {}
+  Root& root() const { return m_root; }
   virtual ~World() {}
 
   // Will remain constant throughout the life of the world.
@@ -246,6 +249,8 @@ public:
 
   template <typename EntityT>
   List<std::shared_ptr<EntityT>> atTile(Vec2I const& pos) const;
+private:
+  Root& m_root;
 };
 
 template <typename EntityT>

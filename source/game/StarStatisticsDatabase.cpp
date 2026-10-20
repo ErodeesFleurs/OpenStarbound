@@ -21,16 +21,16 @@ import star.version;
 
 import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
 import star.root;
 
 import star.statistics_database;
 
 namespace Star {
 
-StatisticsDatabase::StatisticsDatabase() : m_cacheMutex(), m_eventCache() {
-  auto assets = Root::singleton().assets();
+StatisticsDatabase::StatisticsDatabase(Root& root)
+  : m_root(root), m_cacheMutex(), m_eventCache() {
+  auto assets = m_root.assets();
+  auto& logger = m_root.logger();
 
   auto& eventFiles = assets->scanExtension("event");
   assets->queueJsons(eventFiles);
@@ -41,11 +41,11 @@ StatisticsDatabase::StatisticsDatabase() : m_cacheMutex(), m_eventCache() {
     try {
       String name = assets->json(file).getString("eventName");
       if (m_eventPaths.contains(name))
-        Logger::error("Event {} defined twice, second time from {}", name, file);
+        logger.error("Event {} defined twice, second time from {}", name, file);
       else
         m_eventPaths[name] = file;
     } catch (std::exception const& e) {
-      Logger::error("Error loading event file {}: {}", file, outputException(e, true));
+      logger.error("Error loading event file {}: {}", file, outputException(e, true));
     }
   }
 
@@ -54,7 +54,7 @@ StatisticsDatabase::StatisticsDatabase() : m_cacheMutex(), m_eventCache() {
       Json achievement = assets->json(file);
       String name = achievement.getString("name");
       if (m_achievementPaths.contains(name))
-        Logger::error("Achievement {} defined twice, second time from {}", name, file);
+        logger.error("Achievement {} defined twice, second time from {}", name, file);
       else
         m_achievementPaths[name] = file;
 
@@ -62,7 +62,7 @@ StatisticsDatabase::StatisticsDatabase() : m_cacheMutex(), m_eventCache() {
         m_statAchievements[stat.toString()].append(name);
       }
     } catch (std::exception const& e) {
-      Logger::error("Error loading achievement file {}: {}", file, outputException(e, true));
+      logger.error("Error loading achievement file {}: {}", file, outputException(e, true));
     }
   }
 }
@@ -71,7 +71,7 @@ std::shared_ptr<StatEvent> StatisticsDatabase::event(String const& name) const {
   MutexLocker locker(m_cacheMutex);
   return m_eventCache.get(name, [this](String const& name) -> std::shared_ptr<StatEvent> {
       if (auto path = m_eventPaths.maybe(name))
-        return readEvent(*path);
+        return readEvent(*m_root.assets(), *path);
       return {};
     });
 }
@@ -80,7 +80,7 @@ std::shared_ptr<Achievement> StatisticsDatabase::achievement(String const& name)
   MutexLocker locker(m_cacheMutex);
   return m_achievementCache.get(name, [this](String const& name) -> std::shared_ptr<Achievement> {
       if (auto path = m_achievementPaths.maybe(name))
-        return readAchievement(*path);
+        return readAchievement(*m_root.assets(), *path);
       return {};
     });
 }
@@ -93,9 +93,8 @@ StringList StatisticsDatabase::achievementsForStat(String const& statName) const
   return m_statAchievements.value(statName);
 }
 
-std::shared_ptr<StatEvent> StatisticsDatabase::readEvent(String const& path) {
-  auto assets = Root::singleton().assets();
-  Json config = assets->json(path);
+std::shared_ptr<StatEvent> StatisticsDatabase::readEvent(Assets const& assets, String const& path) {
+  Json config = assets.json(path);
 
   return std::make_shared<StatEvent>(StatEvent {
       config.getString("eventName"),
@@ -104,9 +103,8 @@ std::shared_ptr<StatEvent> StatisticsDatabase::readEvent(String const& path) {
     });
 }
 
-std::shared_ptr<Achievement> StatisticsDatabase::readAchievement(String const& path) {
-  auto assets = Root::singleton().assets();
-  Json config = assets->json(path);
+std::shared_ptr<Achievement> StatisticsDatabase::readAchievement(Assets const& assets, String const& path) {
+  Json config = assets.json(path);
 
   return std::make_shared<Achievement>(Achievement {
       config.getString("name"),

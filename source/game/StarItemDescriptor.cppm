@@ -13,11 +13,12 @@ namespace Star {
 
 class Item;
 struct VersionedJson;
+class VersioningDatabase;
 
 class ItemDescriptor {
 public:
   // Loads ItemDescriptor from store format.
-  static ItemDescriptor loadStore(Json const& store);
+  static ItemDescriptor loadStore(VersioningDatabase const& versioningDatabase, Json const& store);
 
   ItemDescriptor();
   ItemDescriptor(String name, std::uint64_t count, Json parameters = Json());
@@ -52,7 +53,7 @@ public:
   bool matches(std::shared_ptr<Item const> const& other, bool exactMatch = false) const;
 
   // Stores ItemDescriptor to versioned structure not meant for human reading / writing.
-  Json diskStore() const;
+  Json diskStore(VersioningDatabase const& versioningDatabase) const;
 
   // Converts ItemDescriptor to spec format
   Json toJson() const;

@@ -11,6 +11,7 @@ import star.game_types;
 import star.material_types;
 
 namespace Star {
+class Root;
 
 struct WorldStructureExceptionTag {
   static constexpr char const* name() { return "WorldStructureException"; }
@@ -47,7 +48,7 @@ public:
   };
 
   WorldStructure();
-  WorldStructure(String const& configPath);
+  WorldStructure(Root& root, String const& configPath);
   WorldStructure(Json const& store);
 
   Json configValue(String const& name) const;

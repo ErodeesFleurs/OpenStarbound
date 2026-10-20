@@ -58,19 +58,19 @@ import star.label_widget;
 
 namespace Star {
 
-LabelWidget::LabelWidget()
-  : LabelWidget(String(), Color::White, HorizontalAnchor::LeftAnchor, VerticalAnchor::BottomAnchor, {}, {}) {}
+LabelWidget::LabelWidget(GuiContext& context)
+  : LabelWidget(context, String(), Color::White, HorizontalAnchor::LeftAnchor, VerticalAnchor::BottomAnchor, {}, {}) {}
 
-LabelWidget::LabelWidget(String text,
+LabelWidget::LabelWidget(GuiContext& context, String text,
     Color const& color,
     HorizontalAnchor const& hAnchor,
     VerticalAnchor const& vAnchor,
     Maybe<unsigned> wrapWidth,
     Maybe<float> lineSpacing)
-  : m_hAnchor(hAnchor),
+  : Widget(context), m_hAnchor(hAnchor),
     m_vAnchor(vAnchor),
     m_wrapWidth(std::move(wrapWidth)) {
-  auto assets = Root::singleton().assets();
+  auto assets = this->context()->root().assets();
   m_style = assets->json("/interface.config:labelTextStyle");
   m_style.color = color.toRgba();
   if (lineSpacing)

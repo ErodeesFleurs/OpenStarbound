@@ -148,7 +148,7 @@ import star.sky;
 
 
 namespace Star {
-LuaCallbacks LuaBindings::makeCelestialCallbacks(std::shared_ptr<CelestialDatabase> celestialDatabase) {
+LuaCallbacks LuaBindings::makeCelestialCallbacks(Root& root, std::shared_ptr<CelestialDatabase> celestialDatabase) {
   LuaCallbacks callbacks;
   
   callbacks.registerCallback("planetParameters", [celestialDatabase](Json const& coords) -> Json {
@@ -177,7 +177,7 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(std::shared_ptr<CelestialDataba
         return parameters->seed();
       return {};
     });
-  callbacks.registerCallback("planetOres", [celestialDatabase](Json const& coords, float threatLevel) -> List<String> {
+  callbacks.registerCallback("planetOres", [&root, celestialDatabase](Json const& coords, float threatLevel) -> List<String> {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
       auto parameters = celestialDatabase->parameters(coordinate);
       if (!parameters)
@@ -187,7 +187,7 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(std::shared_ptr<CelestialDataba
       if (!visitableParameters)
         return {};
 
-      auto biomeDatabase = Root::singleton().biomeDatabase();
+      auto biomeDatabase = root.biomeDatabase();
       auto addOres = [biomeDatabase, threatLevel](StringSet& oreList, String const& biomeName) {
           oreList.addAll(biomeDatabase->biomeOres(biomeName, threatLevel));
         };
@@ -236,22 +236,22 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(std::shared_ptr<CelestialDataba
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
       return CelestialGraphics::drawSystemPlanetaryObject(celestialDatabase, coordinate);
     });
-  callbacks.registerCallback("worldImages", [celestialDatabase](Json const& coords) -> List<std::pair<String, float>> {
+  callbacks.registerCallback("worldImages", [&root, celestialDatabase](Json const& coords) -> List<std::pair<String, float>> {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
-      return CelestialGraphics::drawWorld(celestialDatabase, coordinate);
+      return CelestialGraphics::drawWorld(root, celestialDatabase, coordinate);
     });
-  callbacks.registerCallback("starImages", [celestialDatabase](Json const& coords, float twinkleTime) -> List<std::pair<String, float>> {
+  callbacks.registerCallback("starImages", [&root, celestialDatabase](Json const& coords, float twinkleTime) -> List<std::pair<String, float>> {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
-      return CelestialGraphics::drawSystemTwinkle(celestialDatabase, coordinate, twinkleTime);
+      return CelestialGraphics::drawSystemTwinkle(root, celestialDatabase, coordinate, twinkleTime);
     });
   
   return callbacks;
 }
 
-LuaCallbacks LuaBindings::makeCelestialCallbacks(Universe* universe) {
+LuaCallbacks LuaBindings::makeCelestialCallbacks(Root& root, Universe* universe) {
   auto celestialDatabase = universe->celestialDatabase();
   
-  LuaCallbacks callbacks = makeCelestialCallbacks(celestialDatabase);
+  LuaCallbacks callbacks = makeCelestialCallbacks(root, celestialDatabase);
   
   if (auto client = as<UniverseClient>(universe)) {
     auto systemWorld = client->systemWorldClient();
@@ -344,8 +344,8 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(Universe* universe) {
         else
           return {};
       });
-    callbacks.registerCallback("objectTypeConfig", [](String const& typeName) -> Json {
-        return SystemWorld::systemObjectTypeConfig(typeName);
+    callbacks.registerCallback("objectTypeConfig", [&root](String const& typeName) -> Json {
+        return SystemWorld::systemObjectTypeConfig(root, typeName);
       });
     callbacks.registerCallback("systemSpawnObject", [systemWorld](String const& typeName, Maybe<Vec2F> const& position, Maybe<String> uuidHex, Maybe<JsonObject> parameters) -> String {
         Maybe<Uuid> uuid = uuidHex.apply([](auto const& u) { return Uuid(u); });

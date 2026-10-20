@@ -85,8 +85,8 @@ import star.item_database;
 
 namespace Star {
 
-BaseScriptPane::BaseScriptPane(Json config, bool construct) : Pane(), m_rawConfig(config) {
-  auto& root = Root::singleton();
+BaseScriptPane::BaseScriptPane(GuiContext& guiContext, Json config, bool construct) : Pane(guiContext), m_rawConfig(config), m_script(guiContext.root()) {
+  auto& root = context()->root();
   auto assets = root.assets();
 
   if (config.type() == Json::Type::Object && config.contains("baseConfig")) {
@@ -97,7 +97,7 @@ BaseScriptPane::BaseScriptPane(Json config, bool construct) : Pane(), m_rawConfi
   }
   
   m_interactive = m_config.getBool("interactive", true);
-  m_reader = std::make_shared<GuiReader>();
+  m_reader = std::make_shared<GuiReader>(*context());
   m_reader->registerCallback("close", [this](Widget*) { dismiss(); });
 
   for (auto const& callbackName : jsonToStringList(m_config.get("scriptWidgetCallbacks", JsonArray{}))) {
@@ -120,7 +120,7 @@ void BaseScriptPane::displayed() {
   Pane::displayed();
   if (!m_callbacksAdded) {
     m_script.addCallbacks("pane", makePaneCallbacks());
-    m_script.addCallbacks("widget", LuaBindings::makeWidgetCallbacks(this, m_reader));
+    m_script.addCallbacks("widget", LuaBindings::makeWidgetCallbacks(*context(), this, m_reader));
     m_script.addCallbacks("config", LuaBindings::makeConfigCallbacks( [this](String const& name, Json const& def) {
       return m_config.query(name, def);
     }));
@@ -172,9 +172,9 @@ std::shared_ptr<Pane> BaseScriptPane::createTooltip(Vec2I const& screenPosition)
   auto result = m_script.invoke<Json>("createTooltip", screenPosition);
   if (result && !result.value().isNull()) {
     if (result->type() == Json::Type::String) {
-      return SimpleTooltipBuilder::buildTooltip(result->toString());
+      return SimpleTooltipBuilder::buildTooltip(*context(), result->toString());
     } else {
-      std::shared_ptr<Pane> tooltip = std::make_shared<Pane>();
+      std::shared_ptr<Pane> tooltip = std::make_shared<Pane>(*context());
       m_reader->construct(*result, tooltip.get());
       return tooltip;
     }
@@ -187,7 +187,7 @@ std::shared_ptr<Pane> BaseScriptPane::createTooltip(Vec2I const& screenPosition)
         item = itemGrid->itemAt(screenPosition);
     }
     if (item)
-      return ItemTooltipBuilder::buildItemTooltip(item);
+      return ItemTooltipBuilder::buildItemTooltip(*context(), item);
     return {};
   }
 }
@@ -205,7 +205,7 @@ Maybe<std::shared_ptr<Item>> BaseScriptPane::shiftItemFromInventory(std::shared_
   if (!result || result->isNull())
     return {};
 
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto itemDatabase = context()->root().itemDatabase();
 
   if (result->type() == Json::Type::Bool) {
     if (result->toBool())

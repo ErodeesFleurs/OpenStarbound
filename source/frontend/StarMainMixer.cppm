@@ -17,13 +17,17 @@ namespace Star {
 
 class UniverseClient;
 class WorldPainter;
+class Root;
+class Voice;
 
 class MainMixer {
 public:
-  MainMixer(unsigned sampleRate, unsigned channels);
+  MainMixer(Root& root, unsigned sampleRate, unsigned channels);
 
   void setUniverseClient(std::shared_ptr<UniverseClient> universeClient);
   void setWorldPainter(std::shared_ptr<WorldPainter> worldPainter);
+  // Borrows the client voice service; bind after construction and clear before it is destroyed.
+  void setVoice(Voice* voice);
 
   void update(float dt, bool muteSfx = false, bool muteMusic = false);
 
@@ -34,6 +38,8 @@ public:
   void read(std::int16_t* sampleData, std::size_t frameCount, Mixer::ExtraMixFunction = {});
 
 private:
+  Root* m_root;
+  Voice* m_voice = nullptr;
   std::shared_ptr<UniverseClient> m_universeClient;
   std::shared_ptr<WorldPainter> m_worldPainter;
   std::shared_ptr<Mixer> m_mixer;

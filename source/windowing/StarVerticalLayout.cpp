@@ -60,9 +60,9 @@ import star.vertical_layout;
 import star.algorithm;
 namespace Star {
 
-VerticalLayout::VerticalLayout() : VerticalLayout(VerticalAnchor::TopAnchor, 0) {}
+VerticalLayout::VerticalLayout(GuiContext& context) : VerticalLayout(context, VerticalAnchor::TopAnchor, 0) {}
 
-VerticalLayout::VerticalLayout(VerticalAnchor verticalAnchor, int verticalSpacing) {
+VerticalLayout::VerticalLayout(GuiContext& context, VerticalAnchor verticalAnchor, int verticalSpacing) : Layout(context) {
   setVerticalAnchor(verticalAnchor);
   setVerticalSpacing(verticalSpacing);
 

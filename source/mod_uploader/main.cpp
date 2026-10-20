@@ -8,10 +8,14 @@ import star.format;
 
 import star.mod_uploader;
 import star.string_conversion;
+import star.logging;
+import star.random;
+import star.native_runtime;
 
 using namespace Star;
 
 int main(int argc, char** argv) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   QApplication app(argc, argv);
 
   if (!SteamAPI_Init()) {
@@ -22,7 +26,9 @@ int main(int argc, char** argv) {
     ~SteamShutdown() { SteamAPI_Shutdown(); }
   } steamShutdown;
 
-  ModUploader modUploader;
+  Logger logger;
+  RandomService random;
+  ModUploader modUploader(logger, random);
   modUploader.show();
 
   try {

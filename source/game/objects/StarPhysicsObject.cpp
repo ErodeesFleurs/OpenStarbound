@@ -85,7 +85,7 @@ import star.object_database;
 import star.algorithm;
 namespace Star {
 
-PhysicsObject::PhysicsObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters) : Object(std::move(config), parameters) {
+PhysicsObject::PhysicsObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters) : Entity(rootContext), Object(rootContext, std::move(config), parameters) {
   for (auto const& p : configValue("physicsForces", JsonObject()).iterateObject()) {
     auto& forceConfig = m_physicsForces[p.first];
 

@@ -71,11 +71,11 @@ import star.item_bag;
 
 namespace Star {
 
-ItemGridWidget::ItemGridWidget(std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& spacing, String const& backingImage, unsigned bagOffset)
-  : ItemGridWidget(bag, dimensions, {spacing[0], 0}, {0, spacing[1]}, backingImage, bagOffset) {}
+ItemGridWidget::ItemGridWidget(GuiContext& context, std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& spacing, String const& backingImage, unsigned bagOffset)
+  : ItemGridWidget(context, bag, dimensions, {spacing[0], 0}, {0, spacing[1]}, backingImage, bagOffset) {}
 
-ItemGridWidget::ItemGridWidget(std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset)
-  : m_bagOffset(bagOffset), m_dimensions(dimensions), m_rowSpacing(rowSpacing), m_columnSpacing(columnSpacing), m_backingImage(backingImage) {
+ItemGridWidget::ItemGridWidget(GuiContext& context, std::shared_ptr<ItemBag const> bag, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset)
+  : Widget(context), m_bagOffset(bagOffset), m_dimensions(dimensions), m_rowSpacing(rowSpacing), m_columnSpacing(columnSpacing), m_backingImage(backingImage) {
   m_selectedIndex = 0;
   m_progress = 1;
 
@@ -86,7 +86,7 @@ ItemGridWidget::ItemGridWidget(std::shared_ptr<ItemBag const> bag, Vec2I const& 
 
   setItemBag(bag);
 
-  auto assets = Root::singleton().assets();
+  auto assets = this->context()->root().assets();
   m_itemDraggableArea = jsonToRectI(assets->json("/interface.config:itemDraggableArea"));
   Vec2I calculatedSize = {
     m_dimensions[0] * m_rowSpacing[0] + m_dimensions[1] * m_columnSpacing[0],
@@ -228,7 +228,7 @@ void ItemGridWidget::setItemBag(std::shared_ptr<ItemBag const> bag) {
   removeAllChildren();
   m_slots.clear();
   for (std::size_t i = 0; i < m_bag->size() - m_bagOffset && i < (unsigned)m_dimensions[0] * m_dimensions[1]; ++i) {
-    auto itemSlot = std::make_shared<ItemSlotWidget>(m_bag->at(i), m_backingImage);
+    auto itemSlot = std::make_shared<ItemSlotWidget>(*this->context(), m_bag->at(i), m_backingImage);
     addChild(toString(i), itemSlot);
     m_slots.append(itemSlot);
     itemSlot->setBackingImageAffinity(m_drawBackingImageWhenFull, m_drawBackingImageWhenEmpty);
@@ -345,7 +345,7 @@ void ItemGridWidget::showDurability(bool show) {
 }
 
 RectI ItemGridWidget::getScissorRect() const {
-  auto assets = Root::singleton().assets();
+  auto assets = this->context()->root().assets();
   auto durabilityOffset = jsonToVec2I(assets->json("/interface.config:itemIconDurabilityOffset"));
   auto itemCountRightAnchor = jsonToVec2I(assets->json("/interface.config:itemCountRightAnchor"));
 

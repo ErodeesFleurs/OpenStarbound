@@ -23,16 +23,12 @@ import star.version;
 import star.status_types;
 import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
-import star.root;
 
 import star.status_effect_database;
 
 namespace Star {
 
-StatusEffectDatabase::StatusEffectDatabase() {
-  auto assets = Root::singleton().assets();
+StatusEffectDatabase::StatusEffectDatabase(std::shared_ptr<Assets const> assets) {
   auto& files = assets->scanExtension("statuseffect");
   assets->queueJsons(files);
   for (auto& file : files) {
@@ -57,8 +53,6 @@ UniqueStatusEffectConfig StatusEffectDatabase::uniqueEffectConfig(UniqueStatusEf
 
 UniqueStatusEffectConfig StatusEffectDatabase::parseUniqueEffect(Json const& config, String const& path) const {
   try {
-    auto assets = Root::singleton().assets();
-
     UniqueStatusEffectConfig effect;
     effect.name = config.getString("name");
     effect.blockingStat = config.optString("blockingStat");

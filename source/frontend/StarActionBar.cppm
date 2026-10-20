@@ -59,7 +59,7 @@ class ImageWidget;
 
 class ActionBar : public Pane {
 public:
-  ActionBar(MainInterfacePaneManager* paneManager, std::shared_ptr<Player> player);
+  ActionBar(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<Player> player);
 
   std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition) override;
   bool sendEvent(InputEvent const& event) override;

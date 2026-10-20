@@ -14,6 +14,7 @@ import star.variant;
 import star.lexical_cast;
 import star.formatted_json;
 import star.json_path;
+import star.native_runtime;
 
 // Tool for scripting and mass-editing of JSON+Comments files without affecting
 // formatting.
@@ -123,26 +124,26 @@ FormattedJson Star::addOrSet(bool add,
   return path->apply(input, emptyPathOp, objectOp, arrayOp);
 }
 
-void forEachFileRecursive(String const& directory, std::function<void(String)> func) {
+void forEachFileRecursive(Logger& logger, String const& directory, std::function<void(String)> func) {
   for (std::pair<String, bool> entry : File::dirList(directory)) {
     String filename = File::relativeTo(directory, entry.first);
     // Never follow a symlinked directory: it can point outside of the tree, or
     // at one of its own parents (which would recurse until the OS errors out).
     if (entry.second && File::isSymlink(filename)) {
-      Logger::warn("json_tool: Not descending into '{}' because it is a symlink", filename);
+      logger.warn("json_tool: Not descending into '{}' because it is a symlink", filename);
       continue;
     }
 
     if (entry.second)
-      forEachFileRecursive(filename, func);
+      forEachFileRecursive(logger, filename, func);
     else
       func(filename);
   }
 }
 
-StringList Star::findFiles(FindInput const& findArgs) {
+StringList Star::findFiles(Logger& logger, FindInput const& findArgs) {
   StringList matches;
-  forEachFileRecursive(findArgs.directory,
+  forEachFileRecursive(logger, findArgs.directory,
       [&findArgs, &matches](String const& filename) {
         if (filename.endsWith(findArgs.filenameSuffix))
           matches.append(filename);
@@ -209,7 +210,7 @@ bool process(
   return process(output, command, options, inJson);
 }
 
-bool process(
+bool process(Logger& logger,
     std::function<void(FormattedJson const&)> output, Command const& command, Options const& options, Input const& input) {
   if (input.is<JsonLiteralInput>()) {
     return process(output, command, options, input.get<JsonLiteralInput>().json);
@@ -221,7 +222,7 @@ bool process(
   if (input.is<FileInput>()) {
     files = StringList{input.get<FileInput>().filename};
   } else {
-    files = findFiles(input.get<FindInput>());
+    files = findFiles(logger, input.get<FindInput>());
   }
 
   for (String const& file : files) {
@@ -434,7 +435,9 @@ String readStdin() {
 }
 
 int main(int argc, char** argv) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   try {
+    Logger logger;
     Maybe<ParsedArgs> parsedArgs = parseArgs(argc, argv);
 
     if (!parsedArgs) {
@@ -462,14 +465,14 @@ int main(int argc, char** argv) {
     bool success = true;
 
     if (parsedArgs->command.is<EditCommand>()) {
-      return edit(argc, argv, parsedArgs->command.get<EditCommand>().path, parsedArgs->options, parsedArgs->inputs);
+      return edit(logger, argc, argv, parsedArgs->command.get<EditCommand>().path, parsedArgs->options, parsedArgs->inputs);
 
     } else if (parsedArgs->inputs.size() == 0) {
       // No files were provided. Reading from stdin
       success &= process(output->toFunction(), parsedArgs->command, parsedArgs->options, readStdin());
     } else {
       for (Input const& input : parsedArgs->inputs) {
-        success &= process(output->toFunction(), parsedArgs->command, parsedArgs->options, input);
+        success &= process(logger, output->toFunction(), parsedArgs->command, parsedArgs->options, input);
       }
     }
 

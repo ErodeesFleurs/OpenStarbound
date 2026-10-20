@@ -24,7 +24,7 @@ import star.lexical_cast;
 namespace Star {
 
 EntityRenderLayer parseRenderLayer(String renderLayer) {
-  static CaseInsensitiveStringMap<EntityRenderLayer> RenderLayerMap{
+  static CaseInsensitiveStringMap<EntityRenderLayer> const RenderLayerMap{
     {"BackgroundOverlay", RenderLayerBackgroundOverlay},
     {"BackgroundTile", RenderLayerBackgroundTile},
     {"Platform", RenderLayerPlatform},

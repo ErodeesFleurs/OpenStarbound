@@ -24,6 +24,7 @@ import star.item_descriptor;
 import star.celestial_coordinate;
 import star.quest_descriptor;
 import star.item;
+import star.root;
 
 
 export module star.currency_item;
@@ -32,7 +33,7 @@ export namespace Star {
 
 class CurrencyItem : public Item {
 public:
-  CurrencyItem(Json const& config, String const& directory);
+  CurrencyItem(Root& root, Json const& config, String const& directory);
 
   virtual std::shared_ptr<Item> clone() const override;
 
@@ -55,7 +56,7 @@ private:
 
 namespace Star {
 
-CurrencyItem::CurrencyItem(Json const& config, String const& directory) : Item(config, directory) {
+CurrencyItem::CurrencyItem(Root& root, Json const& config, String const& directory) : Item(root, config, directory) {
   m_currency = config.getString("currency");
   m_value = config.getUInt("value");
 }
@@ -67,13 +68,13 @@ std::shared_ptr<Item> CurrencyItem::clone() const {
 String CurrencyItem::pickupSound() const {
   if (count() <= instanceValue("smallStackLimit", 100).toUInt()) {
     if (!instanceValue("pickupSoundsSmall", {}).isNull())
-      return Random::randFrom(jsonToStringSet(instanceValue("pickupSoundsSmall")));
+      return root().random().randFrom(jsonToStringSet(instanceValue("pickupSoundsSmall")));
   } else if (count() <= instanceValue("mediumStackLimit", 10000).toUInt()) {
     if (!instanceValue("pickupSoundsMedium", {}).isNull())
-      return Random::randFrom(jsonToStringSet(instanceValue("pickupSoundsMedium")));
+      return root().random().randFrom(jsonToStringSet(instanceValue("pickupSoundsMedium")));
   } else {
     if (!instanceValue("pickupSoundsLarge", {}).isNull())
-      return Random::randFrom(jsonToStringSet(instanceValue("pickupSoundsLarge")));
+      return root().random().randFrom(jsonToStringSet(instanceValue("pickupSoundsLarge")));
   }
   return Item::pickupSound();
 }

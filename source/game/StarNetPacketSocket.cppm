@@ -25,6 +25,7 @@ import star.net_compatibility;
 
 namespace Star {
 
+class Logger;
 struct Packet;
 enum class PacketType : std::uint8_t;
 
@@ -154,7 +155,7 @@ private:
 // Wraps a TCP socket into a PacketSocket.
 class TcpPacketSocket : public CompressedPacketSocket {
 public:
-  static std::unique_ptr<TcpPacketSocket> open(std::shared_ptr<TcpSocket> socket);
+  static std::unique_ptr<TcpPacketSocket> open(Logger& logger, std::shared_ptr<TcpSocket> socket);
 
   bool isOpen() const override;
   void close() override;
@@ -171,8 +172,9 @@ public:
   Maybe<PacketStats> incomingStats() const override;
   Maybe<PacketStats> outgoingStats() const override;
 private:
-  TcpPacketSocket(std::shared_ptr<TcpSocket> socket);
+  TcpPacketSocket(Logger& logger, std::shared_ptr<TcpSocket> socket);
 
+  Logger& m_logger;
   std::shared_ptr<TcpSocket> m_socket;
 
   PacketStatCollector m_incomingStats;
@@ -185,7 +187,7 @@ private:
 // Wraps a P2PSocket into a PacketSocket
 class P2PPacketSocket : public CompressedPacketSocket {
 public:
-  static std::unique_ptr<P2PPacketSocket> open(std::unique_ptr<P2PSocket> socket);
+  static std::unique_ptr<P2PPacketSocket> open(Logger& logger, std::unique_ptr<P2PSocket> socket);
 
   bool isOpen() const override;
   void close() override;
@@ -203,8 +205,9 @@ public:
   Maybe<PacketStats> outgoingStats() const override;
 
 private:
-  P2PPacketSocket(std::shared_ptr<P2PSocket> socket);
+  P2PPacketSocket(Logger& logger, std::shared_ptr<P2PSocket> socket);
 
+  Logger& m_logger;
   std::shared_ptr<P2PSocket> m_socket;
   std::mutex m_waitMutex;
   std::condition_variable m_waitCondition;

@@ -11,6 +11,7 @@ import star.item_descriptor;
 namespace Star {
 
 class Item;
+class Root;
 
 // Manages a collection of items with non-zero counts, and putting them in /
 // stacking them / consuming them.  As items are taken out of the ItemBag, any
@@ -26,11 +27,10 @@ public:
     List<std::size_t> slots;
   };
 
-  ItemBag();
-  explicit ItemBag(std::size_t size);
+  explicit ItemBag(Root& root, std::size_t size = 0);
 
-  static ItemBag fromJson(Json const& spec);
-  static ItemBag loadStore(Json const& store);
+  static ItemBag fromJson(Root& root, Json const& spec);
+  static ItemBag loadStore(Root& root, Json const& store);
 
   Json toJson() const;
   Json diskStore() const;
@@ -102,7 +102,7 @@ public:
   // Attempt to condense all stacks in the given bag
   void condenseStacks();
 
-  // Uses ItemDatabase to serialize / deserialize all items
+  // Resolves the current ItemDatabase through the borrowed Root when reading.
   void read(DataStream& ds);
   void write(DataStream& ds) const;
 
@@ -115,6 +115,9 @@ private:
   // stack count but not full, or an empty slot, or NPos for no room.
   std::size_t bestSlotAvailable(std::shared_ptr<Item const> const& item, bool stacksOnly, std::function<bool(std::size_t)> test) const;
   std::size_t bestSlotAvailable(std::shared_ptr<Item const> const& item, bool stacksOnly) const;
+
+  // Borrowed for the bag's lifetime; deserialization resolves the current catalog.
+  Root* m_root;
 
   // Empty stacks and null slots represent the same logical contents.
   mutable List<std::shared_ptr<Item>> m_items;

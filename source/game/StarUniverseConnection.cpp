@@ -221,14 +221,14 @@ Maybe<PacketStats> UniverseConnection::outgoingStats() const {
   return m_packetSocket->outgoingStats();
 }
 
-UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetReceiver, std::size_t numWorkerThreads)
-    : m_packetReceiver(std::move(packetReceiver)), m_shutdown(false) {
+UniverseConnectionServer::UniverseConnectionServer(Logger& logger, PacketReceiveCallback packetReceiver, std::size_t numWorkerThreads)
+    : m_logger(logger), m_packetReceiver(std::move(packetReceiver)), m_shutdown(false) {
   if (numWorkerThreads == 0)
     m_numWorkerThreads = std::max<std::size_t>(2, std::thread::hardware_concurrency() / 4);
   else
     m_numWorkerThreads = numWorkerThreads;
 
-  Logger::info("UniverseConnectionServer: Starting {} network worker threads", m_numWorkerThreads);
+  m_logger.info("UniverseConnectionServer: Starting {} network worker threads", m_numWorkerThreads);
 
   m_connections.resize(m_numWorkerThreads);
   m_workerStats.resize(m_numWorkerThreads);
@@ -271,7 +271,7 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
                 try {
                   m_packetReceiver(this, p.first, std::move(toReceive));
                 } catch (std::exception const& e) {
-                  Logger::error("Exception caught handling incoming server packets, disconnecting client '{}' {}", p.first, outputException(e, true));
+                  m_logger.error("Exception caught handling incoming server packets, disconnecting client '{}' {}", p.first, outputException(e, true));
 
                   connectionLocker.lock();
                   if (p.second->packetSocket)
@@ -279,7 +279,7 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
                 }
               }
             } catch (std::exception const& e) {
-              Logger::error("Exception caught receiving incoming server packets, disconnecting client '{}' {}", p.first, outputException(e, true));
+              m_logger.error("Exception caught receiving incoming server packets, disconnecting client '{}' {}", p.first, outputException(e, true));
               
               connectionLocker.lock();
               if (p.second->packetSocket)
@@ -299,7 +299,7 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
           }
         }
       } catch (std::exception const& e) {
-        Logger::error("Exception caught in UniverseConnectionServer::worker_{}, closing assigned connections: {}", i, e.what());
+        m_logger.error("Exception caught in UniverseConnectionServer::worker_{}, closing assigned connections: {}", i, e.what());
         connectionsLocker.lock();
         for (auto& p : m_connections[i]) {
           MutexLocker connectionLocker(p.second->mutex);

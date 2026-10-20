@@ -101,8 +101,8 @@ import star.byte_array;
 import star.algorithm;
 namespace Star {
 
-SystemWorldClient::SystemWorldClient(std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase, std::shared_ptr<PlayerUniverseMap> universeMap)
-  : SystemWorld(universeClock, celestialDatabase), m_universeMap(std::move(universeMap)) {}
+SystemWorldClient::SystemWorldClient(Root& root, std::shared_ptr<Clock const> universeClock, std::shared_ptr<CelestialDatabase> celestialDatabase, std::shared_ptr<PlayerUniverseMap> universeMap)
+  : SystemWorld(root, universeClock, celestialDatabase), m_universeMap(std::move(universeMap)) {}
 
 CelestialCoordinate SystemWorldClient::currentSystem() const {
   return CelestialCoordinate(m_location);
@@ -197,7 +197,7 @@ std::shared_ptr<SystemClientShip> SystemWorldClient::getShip(Uuid const & uuid) 
 }
 
 Uuid SystemWorldClient::spawnObject(String typeName, Maybe<Vec2F> position, Maybe<Uuid> const& uuid, JsonObject overrides) {
-  Uuid objectUuid = uuid.value(Uuid());
+  Uuid objectUuid = uuid.value(Uuid(this->root().random()));
   m_outgoingPackets.append(std::make_shared<SystemObjectSpawnPacket>(std::move(typeName), objectUuid, std::move(position), std::move(overrides)));
   return objectUuid;
 }
@@ -270,7 +270,7 @@ std::shared_ptr<SystemObject> SystemWorldClient::netLoadObject(ByteArray netStor
   Vec2F position = ds.read<Vec2F>();
 
   JsonObject parameters = ds.read<JsonObject>();
-  return std::make_shared<SystemObject>(objectConfig, uuid, position, parameters);
+  return std::make_shared<SystemObject>(this->root(), objectConfig, uuid, position, parameters);
 }
 
 std::shared_ptr<SystemClientShip> SystemWorldClient::netLoadShip(ByteArray netStore)

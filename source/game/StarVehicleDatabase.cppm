@@ -10,6 +10,7 @@ import star.net_compatibility;
 
 namespace Star {
 
+class Root;
 class Rebuilder;
 class Vehicle;
 
@@ -20,7 +21,7 @@ using VehicleDatabaseException = StarError<VehicleDatabaseExceptionTag, StarExce
 
 class VehicleDatabase {
 public:
-  VehicleDatabase();
+  explicit VehicleDatabase(Root& root);
 
   std::shared_ptr<Vehicle> create(String const& vehicleName, Json const& extraConfig = Json()) const;
 
@@ -31,6 +32,8 @@ public:
   std::shared_ptr<Vehicle> diskLoad(Json const& diskStore) const;
 
 private:
+  Root& m_root;
+
   StringMap<std::pair<String, Json>> m_vehicles;
 
   mutable RecursiveMutex m_luaMutex;

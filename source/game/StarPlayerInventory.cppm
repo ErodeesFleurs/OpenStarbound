@@ -29,6 +29,7 @@ class ChestArmor;
 class LegsArmor;
 class BackArmor;
 class Player;
+class Root;
 
 struct InventoryExceptionTag {
   static constexpr char const* name() { return "InventoryException"; }
@@ -56,10 +57,10 @@ using InventoryException = StarError<InventoryExceptionTag, StarException>;
 class PlayerInventory : public NetElementSyncGroup {
 public:
   // Whether the given item is allowed to go in the given slot type
-  static bool itemAllowedInBag(std::shared_ptr<Item> const& item, String const& bagType);
+  bool itemAllowedInBag(std::shared_ptr<Item> const& item, String const& bagType) const;
   static bool itemAllowedAsEquipment(std::shared_ptr<Item> const& item, EquipmentSlot equipmentSlot);
 
-  PlayerInventory();
+  explicit PlayerInventory(Root& root);
 
   // Items may be consumed through shared aliases. Queries observe exhausted
   // stacks as empty without releasing the inventory's ownership.
@@ -213,7 +214,8 @@ public:
   // The given player pointer must be valid for the lifetime of this inventory
   void setPlayer(Player*);
 
-  static PlayerInventory const& blankInventory();
+  // Empty network state with this inventory's original bag and action-bar schema.
+  PlayerInventory const& blankInventory() const;
 
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
@@ -221,7 +223,9 @@ public:
 private:
   typedef std::pair<Maybe<InventorySlot>, Maybe<InventorySlot>> CustomBarLink;
 
-  static bool checkInventoryFilter(std::shared_ptr<Item> const& items, String const& filterName);
+  PlayerInventory(Root& root, Json inventoryConfig, Json currenciesConfig);
+
+  bool checkInventoryFilter(std::shared_ptr<Item> const& items, String const& filterName) const;
 
   static void normalizeItem(std::shared_ptr<Item>& item);
   std::shared_ptr<Item> retrieve(InventorySlot const& slot) const;
@@ -232,6 +236,13 @@ private:
 
   void netElementsNeedLoad(bool full) override;
   void netElementsNeedStore() override;
+
+  // Borrowed for this inventory's lifetime; resource lookups remain reload-aware.
+  Root* m_root;
+  // Preserve the construction schema for the per-inventory empty network state.
+  Json m_inventoryConfig;
+  Json m_currenciesConfig;
+  mutable std::unique_ptr<PlayerInventory> m_blankInventory;
 
   Map<EquipmentSlot, std::shared_ptr<Item>> m_equipment;
   Map<String, std::shared_ptr<ItemBag>> m_bags;

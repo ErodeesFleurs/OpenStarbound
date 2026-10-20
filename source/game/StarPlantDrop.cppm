@@ -49,15 +49,16 @@ import star.net_element_system;
 import star.net_compatibility;
 import star.byte_array;
 namespace Star {
+class Root;
 
 class RenderCallback;
 
 class PlantDrop : public virtual MobileEntity {
 public:
-  PlantDrop(List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
+  PlantDrop(Root& rootContext, List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
       bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig,
       bool master, float random);
-  PlantDrop(ByteArray const& netStore, NetCompatibilityRules rules = {});
+  PlantDrop(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules rules = {});
 
   ByteArray netStore(NetCompatibilityRules rules = {});
 

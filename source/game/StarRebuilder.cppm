@@ -10,10 +10,12 @@ namespace Star {
 
 class LuaContext;
 class LuaRoot;
+class Root;
+class ItemDatabase;
 
 class Rebuilder {
 public:
-  Rebuilder(String const& id);
+  Rebuilder(Root& root, String const& id, ItemDatabase const* itemCatalog = nullptr);
   ~Rebuilder() = default;
 
   typedef std::function<String(Json const&)> AttemptCallback;
@@ -22,7 +24,7 @@ public:
 private:
   std::shared_ptr<LuaRoot> m_luaRoot;
   mutable RecursiveMutex m_luaMutex;
-  std::shared_ptr<List<LuaContext>> m_contexts; // this is a ptr to avoid having to include Lua.hpp here
+  std::shared_ptr<List<LuaContext>> m_contexts;
 };
 
 }

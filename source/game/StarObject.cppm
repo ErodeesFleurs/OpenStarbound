@@ -39,6 +39,7 @@ import star.net_element_system;
 import star.net_compatibility;
 import star.byte_array;
 namespace Star {
+class Root;
 class AudioInstance;
 class ObjectDatabase;
 struct ObjectConfig;
@@ -91,7 +92,7 @@ class Object
     public virtual WireEntity {
 public:
 
-  Object(std::shared_ptr<ObjectConfig const> config, Json const& parameters = JsonObject());
+  Object(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters = JsonObject());
 
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {});

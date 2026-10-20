@@ -49,7 +49,7 @@ namespace Star {
 
 class FuelWidget : public Widget {
 public:
-  FuelWidget();
+  FuelWidget(GuiContext& context);
   virtual ~FuelWidget() {}
 
   virtual void update(float dt);

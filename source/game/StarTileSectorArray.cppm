@@ -90,7 +90,7 @@ public:
   // Behaves like tileEach, but gathers the results of calling the function into
   // a MultiArray
   template <typename Function>
-  MultiArray<std::invoke_result_t<Function, Vec2I, Tile>, 2> tileEachResult(RectI const& region, Function&& function) const;
+  MultiArray<std::invoke_result_t<Function, Vec2I, Tile>, 2> tileEachResult(WorkerPool& workers, RectI const& region, Function&& function) const;
 
   // Fastest way to copy data from the tile array to a given target array.
   // Takes a multi-array and a region and a function, resizes the multi-array
@@ -99,7 +99,7 @@ public:
   // function(MultiArray::Element& target, Vec2I const& position, Tile const& source);
   // Called with the defaultTile for out of range positions.
   template <typename MultiArray, typename Function>
-  void tileEachTo(MultiArray& results, RectI const& region, Function&& function) const;
+  void tileEachTo(WorkerPool& workers, MultiArray& results, RectI const& region, Function&& function) const;
 
   // Function signature here is (Vec2I const&, Tile&).  If a tile position
   // within this range is not valid, the function *will not* be called for that
@@ -113,7 +113,7 @@ public:
   template <typename Function>
   void tileEvalColumns(RectI const& region, Function&& function);
   template <typename Function>
-  void tileEvalColumnsParallel(RectI const& region, Function&& function);
+  void tileEvalColumnsParallel(WorkerPool& workers, RectI const& region, Function&& function);
 
   // Searches for a tile that satisfies a given condition in a block-area.
   // Returns true on the first instance found.  Passed in function must accept
@@ -329,15 +329,15 @@ void TileSectorArray<Tile, SectorSize>::tileEach(RectI const& region, Function&&
 
 template <typename Tile, unsigned SectorSize>
 template <typename Function>
-MultiArray<std::invoke_result_t<Function, Vec2I, Tile>, 2> TileSectorArray<Tile, SectorSize>::tileEachResult(RectI const& region, Function&& function) const {
+MultiArray<std::invoke_result_t<Function, Vec2I, Tile>, 2> TileSectorArray<Tile, SectorSize>::tileEachResult(WorkerPool& workers, RectI const& region, Function&& function) const {
   MultiArray<std::invoke_result_t<Function, Vec2I, Tile>, 2> res;
-  tileEachTo(res, region, [&](auto& res, Vec2I const& pos, Tile const& tile) { res = function(pos, tile); });
+  tileEachTo(workers, res, region, [&](auto& res, Vec2I const& pos, Tile const& tile) { res = function(pos, tile); });
   return res;
 }
 
 template <typename Tile, unsigned SectorSize>
 template <typename MultiArray, typename Function>
-void TileSectorArray<Tile, SectorSize>::tileEachTo(MultiArray& results, RectI const& region, Function&& function) const {
+void TileSectorArray<Tile, SectorSize>::tileEachTo(WorkerPool& workers, MultiArray& results, RectI const& region, Function&& function) const {
   if (region.isEmpty()) {
     results.setSize({0, 0});
     return;
@@ -350,7 +350,7 @@ void TileSectorArray<Tile, SectorSize>::tileEachTo(MultiArray& results, RectI co
   for (auto const& split : splitRect(region)) {
     auto clampedRect = yClampRect(split.rect);
     if (!clampedRect.isEmpty()) {
-      m_tileSectors.evalColumnsParallel(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), [&, function](std::size_t x, std::size_t y, Tile const* column, std::size_t columnSize) {
+      m_tileSectors.evalColumnsParallel(workers, clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), [&, function](std::size_t x, std::size_t y, Tile const* column, std::size_t columnSize) {
           std::size_t arrayColumnIndex = (x + split.xOffset + xArrayOffset) * results.size(1) + y + yArrayOffset;
           if (column) {
             for (std::size_t i = 0; i < columnSize; ++i)
@@ -418,7 +418,7 @@ void TileSectorArray<Tile, SectorSize>::tileEvalColumns(RectI const& region, Fun
 
 template <typename Tile, unsigned SectorSize>
 template <typename Function>
-void TileSectorArray<Tile, SectorSize>::tileEvalColumnsParallel(RectI const& region, Function&& function) {
+void TileSectorArray<Tile, SectorSize>::tileEvalColumnsParallel(WorkerPool& workers, RectI const& region, Function&& function) {
   for (auto const& split : splitRect(region)) {
     auto clampedRect = yClampRect(split.rect);
     if (!clampedRect.isEmpty()) {
@@ -426,7 +426,7 @@ void TileSectorArray<Tile, SectorSize>::tileEvalColumnsParallel(RectI const& reg
         function(Vec2I((int)x + split.xOffset, (int)y), column, columnSize);
         return true;
       };
-      m_tileSectors.evalColumnsParallel(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, false);
+      m_tileSectors.evalColumnsParallel(workers, clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, false);
     }
   }
 }

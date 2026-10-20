@@ -128,14 +128,15 @@ import star.assets;
 import star.root_base;
 import star.configuration;
 import star.root;
+import star.game_test;
 
 #include "gtest/gtest.h"
 
 using namespace Star;
 
-TEST(ServerTest, Run) {
-  UniverseServer server(Root::singleton().toStoragePath("universe"));
+const GameTestRegistration serverRun("ServerTest", "Run", [](GameTest& fixture) {
+  UniverseServer server(fixture.root(), fixture.root().toStoragePath("universe"));
   server.start();
   server.stop();
   server.join();
-}
+});

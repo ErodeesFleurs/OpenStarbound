@@ -30,7 +30,11 @@ public:
   typedef std::uint32_t ElementId;
   static ElementId const NullElementId = 0;
 
-  NetElementDynamicGroup() = default;
+  NetElementDynamicGroup() requires std::default_initializable<Element>
+    : m_createElement([] { return std::make_shared<Element>(); }) {}
+
+  explicit NetElementDynamicGroup(std::function<std::shared_ptr<Element>()> createElement)
+    : m_createElement(std::move(createElement)) {}
 
   NetElementDynamicGroup(NetElementDynamicGroup const&) = delete;
   NetElementDynamicGroup& operator=(NetElementDynamicGroup const&) = delete;
@@ -151,6 +155,7 @@ private:
 
   void readyElement(std::shared_ptr<Element> const& element);
 
+  std::function<std::shared_ptr<Element>()> m_createElement;
   NetElementVersion const* m_netVersion = nullptr;
   bool m_interpolationEnabled = false;
   float m_extrapolationHint = 0.0f;
@@ -265,7 +270,7 @@ void NetElementDynamicGroup<Element>::netLoad(DataStream& ds, NetCompatibilityRu
     ElementId id = ds.readVlqU();
     DataStreamBuffer storeBuffer(ds.read<ByteArray>());
 
-    std::shared_ptr<Element> element = std::make_shared<Element>();
+    std::shared_ptr<Element> element = m_createElement();
     element->netLoad(storeBuffer, rules);
     readyElement(element);
 
@@ -346,7 +351,7 @@ void NetElementDynamicGroup<Element>::readNetDelta(DataStream& ds, float interpo
         if (changeUpdate.template is<ElementReset>()) {
           m_idMap.clear();
         } else if (auto addition = changeUpdate.template ptr<ElementAddition>()) {
-          std::shared_ptr<Element> element = std::make_shared<Element>();
+          std::shared_ptr<Element> element = m_createElement();
           DataStreamBuffer storeBuffer(std::move(std::get<1>(*addition)));
           element->netLoad(storeBuffer, rules);
           readyElement(element);

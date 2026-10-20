@@ -140,6 +140,7 @@ import star.gui_types;
 import star.key_bindings;
 import star.mixer;
 import star.gui_context;
+import star.image_metadata_database;
 import star.animated_part_set;
 import star.networked_animator;
 import star.humanoid;
@@ -170,7 +171,7 @@ namespace Star {
 const float vWidth = 960.0f;
 const float vHeight = 540.0f;
 
-Cinematic::Cinematic() {
+Cinematic::Cinematic(GuiContext& context) : m_guiContext(&context) {
   m_completable = false;
   m_suppressInput = false;
 }
@@ -287,7 +288,7 @@ void Cinematic::render() {
   if (completed())
     return;
 
-  auto& guiContext = GuiContext::singleton();
+  auto& guiContext = *m_guiContext;
   auto mixer = guiContext.mixer();
   auto renderer = guiContext.renderer();
   auto textPainter = guiContext.textPainter();
@@ -351,7 +352,7 @@ void Cinematic::render() {
     auto frame = toString(((int)values.frame) % panel->animationFrames);
     auto alphaColor = Color::rgbaf(1.0f, 1.0f, 1.0f, values.alpha);
     for (auto const& d : panel->drawables) {
-      Drawable drawable = Drawable(d.set("image", d.getString("image").replaceTags(StringMap<String>{{"species", playerSpecies}, {"frame", frame}})));
+      Drawable drawable = Drawable(*m_guiContext->root().imageMetadataDatabase(), d.set("image", d.getString("image").replaceTags(StringMap<String>{{"species", playerSpecies}, {"frame", frame}})));
       drawable.translate(m_offset);
       drawable.scale(values.zoom);
       drawable.translate(values.position);
@@ -394,7 +395,7 @@ void Cinematic::render() {
     } else if (m_audioCues[i].timecode <= currentTimecode()) {
       if (m_activeAudio[i])
         continue;
-      std::shared_ptr<AudioInstance> audioInstance = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(m_audioCues[i].resource));
+      std::shared_ptr<AudioInstance> audioInstance = std::make_shared<AudioInstance>(*m_guiContext->root().assets()->audio(m_audioCues[i].resource));
       audioInstance->setLoops(m_audioCues[i].loops);
       audioInstance->setMixerGroup(MixerGroup::Cinematic);
       mixer->play(audioInstance);
@@ -404,7 +405,7 @@ void Cinematic::render() {
 }
 
 void Cinematic::drawDrawable(Drawable const& drawable, float drawableScale, Vec2F const& drawableTranslation) {
-  auto& guiContext = GuiContext::singleton();
+  auto& guiContext = *m_guiContext;
   auto& renderer = guiContext.renderer();
   auto& textureGroup = guiContext.assetTextureGroup();
 
@@ -704,7 +705,7 @@ bool Cinematic::handleInputEvent(InputEvent const& event) {
     if (m_currentTimeSkip) {
       setTime(m_currentTimeSkip.take().skipToTime);
       return true;
-    } else if (m_skippable && GuiContext::singleton().actions(event).contains(InterfaceAction::CinematicSkip)) {
+    } else if (m_skippable && m_guiContext->actions(event).contains(InterfaceAction::CinematicSkip)) {
       stop();
       return true;
     }

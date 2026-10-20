@@ -7,6 +7,8 @@ import star.json;
 
 namespace Star {
 
+class Assets;
+
 enum class HitType;
 
 typedef String TargetMaterial;
@@ -29,7 +31,7 @@ struct DamageKind {
 
 class DamageDatabase {
 public:
-  DamageDatabase();
+  explicit DamageDatabase(std::shared_ptr<Assets const> assets);
 
   DamageKind const& damageKind(String name) const;
   ElementalType const& elementalType(String const& name) const;

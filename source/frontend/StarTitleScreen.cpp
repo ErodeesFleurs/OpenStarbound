@@ -223,24 +223,24 @@ import star.sky;
 
 namespace Star {
 
-TitleScreen::TitleScreen(std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Mixer> mixer, std::shared_ptr<UniverseClient> client)
-  : m_playerStorage(playerStorage), m_skipMultiPlayerConnection(false), m_mixer(mixer) {
+TitleScreen::TitleScreen(GuiContext& context, std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Mixer> mixer, std::shared_ptr<UniverseClient> client)
+  : m_guiContext(&context), m_paneManager(context), m_cursor(context),
+    m_playerStorage(playerStorage), m_skipMultiPlayerConnection(false), m_mixer(mixer),
+    m_musicTrackManager(context.root()) {
   m_titleState = TitleState::Quit;
 
-  auto assets = Root::singleton().assets();
+  auto assets = context.root().assets();
 
-  m_guiContext = GuiContext::singletonPtr();
-
-  m_celestialDatabase = std::make_shared<CelestialMasterDatabase>();
+  m_celestialDatabase = std::make_shared<CelestialMasterDatabase>(context.root());
   auto randomWorld = m_celestialDatabase->findRandomWorld(10, 50, [this](CelestialCoordinate const& coordinate) {
       return is<TerrestrialWorldParameters>(m_celestialDatabase->parameters(coordinate)->visitableParameters());
     }).take();
 
   if (auto name = m_celestialDatabase->name(randomWorld))
-    Logger::info("Title world is {} @ CelestialWorld:{}", Text::stripEscapeCodes(*name), randomWorld);
+    context.root().logger().info("Title world is {} @ CelestialWorld:{}", Text::stripEscapeCodes(*name), randomWorld);
 
-  SkyParameters skyParameters(randomWorld, m_celestialDatabase);
-  m_skyBackdrop = std::make_shared<Sky>(skyParameters, true);
+  SkyParameters skyParameters(context.root(), randomWorld, m_celestialDatabase);
+  m_skyBackdrop = std::make_shared<Sky>(context.root(), skyParameters, true);
 
   m_musicTrack = std::make_shared<AmbientNoisesDescription>(assets->json("/interface/windowconfig/title.config:music").toObject(), "/");
 
@@ -256,11 +256,11 @@ TitleScreen::TitleScreen(std::shared_ptr<PlayerStorage> playerStorage, std::shar
 
 void TitleScreen::renderInit(std::shared_ptr<Renderer> renderer) {
   m_renderer = std::move(renderer);
-  m_environmentPainter = std::make_shared<EnvironmentPainter>(m_renderer);
+  m_environmentPainter = std::make_shared<EnvironmentPainter>(m_guiContext->root(), m_renderer);
 }
 
 void TitleScreen::render() {
-  auto assets = Root::singleton().assets();
+  auto assets = m_guiContext->root().assets();
 
   float pixelRatio = m_guiContext->interfaceScale();
   Vec2F screenSize = Vec2F(m_guiContext->windowSize());
@@ -304,7 +304,7 @@ bool TitleScreen::handleInputEvent(InputEvent const& event) {
     m_cursorScreenPos = Vec2I(mouseMove->mousePosition);
 
   if (event.is<KeyDownEvent>()) {
-    if (GuiContext::singleton().actions(event).contains(InterfaceAction::TitleBack)) {
+    if (m_guiContext->actions(event).contains(InterfaceAction::TitleBack)) {
       back();
       return true;
     }
@@ -427,10 +427,10 @@ void TitleScreen::setMultiPlayerForceLegacy(bool const& forceLegacy) {
 }
 
 void TitleScreen::initMainMenu() {
-  m_mainMenu = std::make_shared<Pane>();
-  auto backMenu = std::make_shared<Pane>();
+  m_mainMenu = std::make_shared<Pane>(*m_guiContext);
+  auto backMenu = std::make_shared<Pane>(*m_guiContext);
 
-  auto assets = Root::singleton().assets();
+  auto assets = m_guiContext->root().assets();
   auto config = assets->json("/interface/windowconfig/title.config");
 
   StringMap<WidgetCallbackFunc> buttonCallbacks;
@@ -449,7 +449,7 @@ void TitleScreen::initMainMenu() {
     WidgetCallbackFunc callback = buttonCallbacks.get(key);
     bool rightAnchored = buttonConfig.getBool("rightAnchored", false);
 
-    auto button = std::make_shared<ButtonWidget>(callback, image, imageHover, "", "");
+    auto button = std::make_shared<ButtonWidget>(*m_guiContext, callback, image, imageHover, "", "");
     button->setPosition(offset);
 
     if (rightAnchored)
@@ -468,34 +468,34 @@ void TitleScreen::initMainMenu() {
   backMenu->setAnchor(PaneAnchor::BottomLeft);
   backMenu->lockPosition();
   
-  m_backgroundMenu = std::make_shared<Pane>();
+  m_backgroundMenu = std::make_shared<Pane>(*m_guiContext);
   m_backgroundMenu->setAnchor(PaneAnchor::BottomLeft);
   m_backgroundMenu->lockPosition();
-  m_backgroundMenu->addChild("canvas", std::make_shared<CanvasWidget>());
+  m_backgroundMenu->addChild("canvas", std::make_shared<CanvasWidget>(*m_guiContext));
   m_backgroundMenu->show();
 
   m_paneManager.registerPane("mainMenu", PaneLayer::Hud, m_mainMenu);
   m_paneManager.registerPane("backMenu", PaneLayer::Hud, backMenu);
 
-  m_scriptComponent = std::make_shared<ScriptComponent>();
-  m_scriptComponent->setLuaRoot(std::make_shared<LuaRoot>());
-  m_scriptComponent->addCallbacks("background", LuaBindings::makeWidgetCallbacks(m_backgroundMenu.get()));
-  m_scriptComponent->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(m_mainMenu.get()));
+  m_scriptComponent = std::make_shared<ScriptComponent>(m_guiContext->root());
+  m_scriptComponent->setLuaRoot(std::make_shared<LuaRoot>(m_guiContext->root()));
+  m_scriptComponent->addCallbacks("background", LuaBindings::makeWidgetCallbacks(*m_guiContext, m_backgroundMenu.get()));
+  m_scriptComponent->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(*m_guiContext, m_mainMenu.get()));
   m_scriptComponent->setScripts(jsonToStringList(config.getArray("scripts", JsonArray())));
   m_scriptComponent->init();
 }
 
 void TitleScreen::initCharSelectionMenu() {
-  auto deleteDialog = std::make_shared<Pane>();
+  auto deleteDialog = std::make_shared<Pane>(*m_guiContext);
 
-  GuiReader reader;
+  GuiReader reader(*m_guiContext);
 
   reader.registerCallback("delete", [dialog = deleteDialog.get()](Widget*) { dialog->dismiss(); });
   reader.registerCallback("cancel", [dialog = deleteDialog.get()](Widget*) { dialog->dismiss(); });
 
-  reader.construct(Root::singleton().assets()->json("/interface/windowconfig/deletedialog.config"), deleteDialog.get());
+  reader.construct(m_guiContext->root().assets()->json("/interface/windowconfig/deletedialog.config"), deleteDialog.get());
 
-  auto charSelectionMenu = std::make_shared<CharSelectionPane>(m_playerStorage, [this]() {
+  auto charSelectionMenu = std::make_shared<CharSelectionPane>(*m_guiContext, m_playerStorage, [this]() {
       if (m_titleState == TitleState::SinglePlayerSelectCharacter)
         switchState(TitleState::SinglePlayerCreateCharacter);
       else if (m_titleState == TitleState::MultiPlayerSelectCharacter)
@@ -529,7 +529,7 @@ void TitleScreen::initCharSelectionMenu() {
 }
 
 void TitleScreen::initCharCreationMenu() {
-  auto charCreationMenu = std::make_shared<CharCreationPane>([this](std::shared_ptr<Player> newPlayer) {
+  auto charCreationMenu = std::make_shared<CharCreationPane>(*m_guiContext, [this](std::shared_ptr<Player> newPlayer) {
     if (newPlayer) {
       m_mainAppPlayer = newPlayer;
       m_playerStorage->savePlayer(m_mainAppPlayer);
@@ -557,17 +557,17 @@ void TitleScreen::populateServerList(ListWidget* list){
 };
 
 void TitleScreen::initMultiPlayerMenu() {
-  m_multiPlayerMenu = std::make_shared<Pane>();
-  m_serverSelectPane = std::make_shared<Pane>();
+  m_multiPlayerMenu = std::make_shared<Pane>(*m_guiContext);
+  m_serverSelectPane = std::make_shared<Pane>(*m_guiContext);
 
-  GuiReader readerConnect;
-  GuiReader readerServer;
+  GuiReader readerConnect(*m_guiContext);
+  GuiReader readerServer(*m_guiContext);
 
-  m_serverList = Root::singleton().configuration()->get("serverList");
+  m_serverList = m_guiContext->root().configuration()->get("serverList");
   if (!m_serverList.isType(Json::Type::Array))
     m_serverList = JsonArray();
 
-  auto assets = Root::singleton().assets();
+  auto assets = m_guiContext->root().assets();
 
   readerServer.registerCallback("saveServer", [this](Widget*) {
     Json serverData = JsonObject{
@@ -586,7 +586,7 @@ void TitleScreen::initMultiPlayerMenu() {
     }
 
     populateServerList(serverList.get());
-    Root::singleton().configuration()->set("serverList", m_serverList);
+    m_guiContext->root().configuration()->set("serverList", m_serverList);
   });
 
   readerServer.construct(assets->json("/interface/windowconfig/serverselect.config"), m_serverSelectPane.get());
@@ -600,7 +600,7 @@ void TitleScreen::initMultiPlayerMenu() {
       m_serverList = m_serverList.eraseIndex(pos);
     }
     populateServerList(list);
-    Root::singleton().configuration()->set("serverList", m_serverList);
+    m_guiContext->root().configuration()->set("serverList", m_serverList);
   });
 
   serverList->setCallback([this, list = serverList.get()](Widget*) {
@@ -656,7 +656,7 @@ void TitleScreen::initMultiPlayerMenu() {
 }
 
 void TitleScreen::initOptionsMenu(std::shared_ptr<UniverseClient> client) {
-  auto optionsMenu = std::make_shared<OptionsMenu>(&m_paneManager,client);
+  auto optionsMenu = std::make_shared<OptionsMenu>(*m_guiContext, &m_paneManager, client);
   optionsMenu->setAnchor(PaneAnchor::Center);
   optionsMenu->lockPosition();
 
@@ -666,7 +666,7 @@ void TitleScreen::initOptionsMenu(std::shared_ptr<UniverseClient> client) {
 }
 
 void TitleScreen::initModsMenu() {
-  auto modsMenu = std::make_shared<ModsMenu>();
+  auto modsMenu = std::make_shared<ModsMenu>(*m_guiContext);
   modsMenu->setAnchor(PaneAnchor::Center);
   modsMenu->lockPosition();
 
@@ -734,7 +734,7 @@ void TitleScreen::back() {
 }
 
 void TitleScreen::renderCursor() {
-  auto assets = Root::singleton().assets();
+  auto assets = m_guiContext->root().assets();
 
   Vec2I cursorPos = m_cursorScreenPos;
   Vec2I cursorSize = m_cursor.size();

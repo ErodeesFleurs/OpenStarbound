@@ -29,6 +29,7 @@ import star.weather_types;
 import star.force_regions;
 
 namespace Star {
+class Root;
 
 enum class WorldParametersType : std::uint8_t {
   TerrestrialWorldParameters,
@@ -200,9 +201,9 @@ std::shared_ptr<VisitableWorldParameters> diskLoadVisitableWorldParameters(Json 
 ByteArray netStoreVisitableWorldParameters(std::shared_ptr<VisitableWorldParameters const> const& parameters);
 std::shared_ptr<VisitableWorldParameters> netLoadVisitableWorldParameters(ByteArray data);
 
-std::shared_ptr<TerrestrialWorldParameters> generateTerrestrialWorldParameters(String const& typeName, String const& sizeName, std::uint64_t seed);
-std::shared_ptr<AsteroidsWorldParameters> generateAsteroidsWorldParameters(std::uint64_t seed);
-std::shared_ptr<FloatingDungeonWorldParameters> generateFloatingDungeonWorldParameters(String const& dungeonWorldName);
+std::shared_ptr<TerrestrialWorldParameters> generateTerrestrialWorldParameters(Root& root, String const& typeName, String const& sizeName, std::uint64_t seed);
+std::shared_ptr<AsteroidsWorldParameters> generateAsteroidsWorldParameters(Root& root, std::uint64_t seed);
+std::shared_ptr<FloatingDungeonWorldParameters> generateFloatingDungeonWorldParameters(Root& root, String const& dungeonWorldName);
 
 }
 

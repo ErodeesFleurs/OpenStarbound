@@ -71,11 +71,11 @@ static int const ScrollThumbOverhead = ScrollThumbSize + ScrollThumbSize;
 static int const ScrollBarTrackOverhead = ScrollButtonStackSize + ScrollButtonStackSize + ScrollThumbOverhead;
 static std::int64_t const ScrollAdvanceTimer = 100;
 
-ScrollThumb::ScrollThumb(GuiDirection direction) {
+ScrollThumb::ScrollThumb(GuiContext& context, GuiDirection direction) : Widget(context) {
   m_hovered = false;
   m_pressed = false;
   m_direction = direction;
-  auto assets = Root::singleton().assets();
+  auto assets = this->context()->root().assets();
   setImages(assets->json("/interface.config:scrollArea.thumbs"));
 }
 
@@ -148,21 +148,21 @@ Vec2U ScrollThumb::baseSize() const {
   return context()->textureSize(m_baseThumb.begin);
 }
 
-ScrollBar::ScrollBar(GuiDirection direction, WidgetCallbackFunc forwardFunc, WidgetCallbackFunc backwardFunc)
-  : m_direction(direction) {
-  m_forward = std::make_shared<ButtonWidget>();
+ScrollBar::ScrollBar(GuiContext& context, GuiDirection direction, WidgetCallbackFunc forwardFunc, WidgetCallbackFunc backwardFunc)
+  : Widget(context), m_direction(direction) {
+  m_forward = std::make_shared<ButtonWidget>(*this->context());
   m_forward->setCallback(forwardFunc);
   m_forward->setSustainCallbackOnDownHold(true);
   m_forward->setPressedOffset({0, 0});
 
-  m_backward = std::make_shared<ButtonWidget>();
+  m_backward = std::make_shared<ButtonWidget>(*this->context());
   m_backward->setCallback(backwardFunc);
   m_backward->setSustainCallbackOnDownHold(true);
   m_backward->setPressedOffset({0, 0});
 
-  m_thumb = std::make_shared<ScrollThumb>(m_direction);
+  m_thumb = std::make_shared<ScrollThumb>(*this->context(), m_direction);
 
-  auto assets = Root::singleton().assets();
+  auto assets = this->context()->root().assets();
   setButtonImages(assets->json("/interface.config:scrollArea.buttons"));
 
   addChild("thumb", m_thumb);
@@ -303,8 +303,8 @@ Vec2I ScrollBar::offsetFromThumbPosition(Vec2I const& thumbPosition) const {
   }
 }
 
-ScrollArea::ScrollArea() {
-  auto assets = Root::singleton().assets();
+ScrollArea::ScrollArea(GuiContext& context) : Widget(context) {
+  auto assets = this->context()->root().assets();
   m_buttonAdvance = assets->json("/interface.config:scrollArea.buttonAdvance").toInt();
   m_advanceLimiter = Time::monotonicMilliseconds();
 
@@ -313,8 +313,8 @@ ScrollArea::ScrollArea() {
   WidgetCallbackFunc hAdvance = [this](Widget*) { scrollAreaBy({advanceFactorHelper(), 0}); };
   WidgetCallbackFunc hRetreat = [this](Widget*) { scrollAreaBy({-advanceFactorHelper(), 0}); };
 
-  m_vBar = std::make_shared<ScrollBar>(GuiDirection::Vertical, vAdvance, vRetreat);
-  m_hBar = std::make_shared<ScrollBar>(GuiDirection::Horizontal, hAdvance, hRetreat);
+  m_vBar = std::make_shared<ScrollBar>(*this->context(), GuiDirection::Vertical, vAdvance, vRetreat);
+  m_hBar = std::make_shared<ScrollBar>(*this->context(), GuiDirection::Horizontal, hAdvance, hRetreat);
 
   m_dragActive = false;
 

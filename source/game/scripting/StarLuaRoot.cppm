@@ -9,13 +9,26 @@ import star.byte_array;
 
 namespace Star {
 
-// Loads and caches lua scripts from assets.  Automatically clears cache on
-// root reload.  Uses an internal LuaEngine, so this and all contexts are meant
-// for single threaded access and have no locking.
+class Root;
+
+class LuaExecutionScope final : public LuaExecutionHost {
+public:
+  explicit LuaExecutionScope(Root& root) : m_root(root) {}
+  Root& root() const { return m_root; }
+private:
+  Root& m_root;
+};
+
+Root& luaExecutionRoot(LuaEngine& engine);
+
+// Loads and caches Lua scripts from assets, clearing the cache on root reload.
+// The internal engine and all contexts require single-threaded access.
+// Root is borrowed and must outlive the engine and every returned context.
 class LuaRoot {
 public:
-  LuaRoot();
+  explicit LuaRoot(Root& root);
   ~LuaRoot();
+  Root& root() const;
 
   void loadScript(String const& assetPath);
   bool scriptLoaded(String const& assetPath) const;
@@ -48,6 +61,7 @@ public:
 private:
   class ScriptCache {
   public:
+    explicit ScriptCache(Root& root) : m_root(root) {}
     void loadScript(LuaEngine& engine, String const& assetPath);
     bool scriptLoaded(String const& assetPath) const;
     void unloadScript(String const& assetPath);
@@ -56,10 +70,12 @@ private:
     std::size_t memoryUsage() const;
 
   private:
+    Root& m_root;
     mutable RecursiveMutex mutex;
     StringMap<ByteArray> scripts;
   };
 
+  Root& m_root;
   LuaEnginePtr m_luaEngine;
   StringMap<LuaCallbacks> m_luaCallbacks;
   std::shared_ptr<ScriptCache> m_scriptCache;
@@ -76,4 +92,6 @@ export module star.lua_root;
 
 export namespace Star {
   using ::Star::LuaRoot;
+  using ::Star::LuaExecutionScope;
+  using ::Star::luaExecutionRoot;
 }

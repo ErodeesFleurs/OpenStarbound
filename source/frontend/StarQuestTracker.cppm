@@ -47,7 +47,7 @@ class Quest;
 
 class QuestTrackerPane : public Pane {
 public:
-  QuestTrackerPane();
+  QuestTrackerPane(GuiContext& guiContext);
 
   bool sendEvent(InputEvent const& event) override;
   void update(float dt) override;

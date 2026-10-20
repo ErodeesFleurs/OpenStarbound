@@ -133,12 +133,12 @@ import star.button_widget;
 import star.algorithm;
 namespace Star {
 
-CodexInterface::CodexInterface(std::shared_ptr<Player> player) {
+CodexInterface::CodexInterface(GuiContext& guiContext, std::shared_ptr<Player> player) : Pane(guiContext) {
   m_player = player;
 
-  auto assets = Root::singleton().assets();
+  auto assets = context()->root().assets();
 
-  GuiReader reader;
+  GuiReader reader(*context());
 
   reader.registerCallback("close", [this](Widget*) { dismiss(); });
   reader.registerCallback("prevButton", [this](Widget*) { backwardPage(); });

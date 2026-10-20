@@ -102,8 +102,9 @@ import star.byte_array;
 import star.static_random;
 namespace Star {
 
-MonsterDatabase::MonsterDatabase() : m_rebuilder(std::make_shared<Rebuilder>("monster")) {
-  auto assets = Root::singleton().assets();
+MonsterDatabase::MonsterDatabase(Root& root)
+  : m_root(root), m_rebuilder(std::make_shared<Rebuilder>(root, "monster")), m_monsterCache(root.random()) {
+  auto assets = m_root.assets();
 
   auto& monsterTypes = assets->scanExtension("monstertype");
   auto& monsterParts = assets->scanExtension("monsterpart");
@@ -251,7 +252,7 @@ MonsterVariant MonsterDatabase::randomMonster(String const& typeName, Json const
       seed = seedConfig->toUInt();
     }
   } else {
-    seed = Random::randu64();
+    seed = m_root.random().randu64();
   }
 
   return monsterVariant(typeName, seed, uniqueParameters);
@@ -305,18 +306,18 @@ std::shared_ptr<Monster> MonsterDatabase::createMonster(
     monsterVariant.parameters = jsonMerge(monsterVariant.parameters, monsterVariant.uniqueParameters);
     readCommonParameters(monsterVariant);
   }
-  return std::make_shared<Monster>(monsterVariant, level);
+  return std::make_shared<Monster>(m_root, monsterVariant, level);
 }
 
 std::shared_ptr<Monster> MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
   std::shared_ptr<Monster> monster;
   try {
-    monster = std::make_shared<Monster>(diskStore);
+    monster = std::make_shared<Monster>(m_root, diskStore);
   } catch (std::exception const& e) {
     auto exception = std::current_exception();
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
       try {
-        monster = std::make_shared<Monster>(store);
+        monster = std::make_shared<Monster>(m_root, store);
       } catch (std::exception const& e) {
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
@@ -331,11 +332,11 @@ std::shared_ptr<Monster> MonsterDatabase::diskLoadMonster(Json const& diskStore)
 }
 
 std::shared_ptr<Monster> MonsterDatabase::netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules) const {
-  return std::make_shared<Monster>(readMonsterVariant(netStore, rules));
+  return std::make_shared<Monster>(m_root, readMonsterVariant(netStore, rules));
 }
 
 List<Drawable> MonsterDatabase::monsterPortrait(MonsterVariant const& variant) const {
-  NetworkedAnimator animator(variant.animatorConfig);
+  NetworkedAnimator animator(m_root, variant.animatorConfig);
   for (auto const& pair : variant.animatorPartTags)
     animator.setPartTag(pair.first, "partImage", pair.second);
   animator.setZoom(variant.animatorZoom);
@@ -369,7 +370,7 @@ ColorReplaceMap MonsterDatabase::colorSwap(String const& setName, std::uint64_t 
   if (m_colorSwaps.contains(setName))
     return staticRandomFrom(m_colorSwaps.get(setName), seed);
   else {
-    Logger::error("Monster colors '{}' not found!", setName);
+    m_root.logger().error("Monster colors '{}' not found!", setName);
     return staticRandomFrom(m_colorSwaps.get("default"), seed);
   }
 }
@@ -511,7 +512,7 @@ MonsterVariant MonsterDatabase::produceMonster(String const& typeName, std::uint
   monsterVariant.seed = seed;
   monsterVariant.uniqueParameters = uniqueParameters;
 
-  monsterVariant.animatorConfig = Root::singleton().assets()->fetchJson(monsterType.animationConfigPath);
+  monsterVariant.animatorConfig = m_root.assets()->fetchJson(monsterType.animationConfigPath);
   monsterVariant.reversed = monsterType.reversed;
 
   // select a list of monster parts

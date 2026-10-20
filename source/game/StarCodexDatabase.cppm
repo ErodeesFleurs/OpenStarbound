@@ -6,6 +6,7 @@ import star.format;
 import star.json;
 
 namespace Star {
+class Assets;
 class Codex;
 
 struct CodexDatabaseExceptionTag {
@@ -15,7 +16,7 @@ using CodexDatabaseException = StarError<CodexDatabaseExceptionTag, StarExceptio
 
 class CodexDatabase {
 public:
-  CodexDatabase();
+  explicit CodexDatabase(std::shared_ptr<Assets const> assets);
 
   StringMap<std::shared_ptr<Codex const>> codexes() const;
   std::shared_ptr<Codex const> codex(String const& codexId) const;

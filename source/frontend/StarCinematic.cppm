@@ -31,10 +31,11 @@ import star.mixer;
 namespace Star {
 
 class Player;
+class GuiContext;
 
 class Cinematic {
 public:
-  Cinematic();
+  Cinematic(GuiContext& context);
 
   void load(Json const& definition);
 
@@ -114,6 +115,8 @@ private:
   float currentTimecode() const;
 
   PanelValues determinePanelValues(std::shared_ptr<Panel> panel, float timecode);
+
+  GuiContext* m_guiContext;
 
   List<TimeSkip> m_timeSkips;
   Maybe<TimeSkip> m_currentTimeSkip;

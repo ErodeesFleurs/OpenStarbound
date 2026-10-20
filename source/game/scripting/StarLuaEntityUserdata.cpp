@@ -124,7 +124,6 @@ import star.npc_database;
 import star.npc;
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.configuration;
 import star.root;
 import star.stagehand;
@@ -733,7 +732,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     [&](std::shared_ptr<Entity> const& entity) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
             JsonArray res;
-            auto itemDb = Root::singleton().itemDatabase();
+            auto itemDb = entity->root().itemDatabase();
             for (auto const& item : container->itemBag()->items())
                 res.append(itemDb->toJson(item));
             return res;
@@ -745,7 +744,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     methods.registerMethod("containerItemAt",
     [&](std::shared_ptr<Entity> const& entity, std::size_t offset) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
+            auto itemDb = entity->root().itemDatabase();
             auto items = container->itemBag()->items();
             if (offset < items.size()) {
                 return itemDb->toJson(items.at(offset));
@@ -789,7 +788,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
 
     methods.registerMethod("containerTakeAll",
     [&](std::shared_ptr<Entity> const& entity) -> Json {
-        auto itemDb = Root::singleton().itemDatabase();
+        auto itemDb = entity->root().itemDatabase();
         if (auto container = as<ContainerObject>(entity)) {
             if (auto itemList = container->clearContainer().result()) {
                 JsonArray res;
@@ -805,7 +804,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     methods.registerMethod("containerTakeAt",
     [&](std::shared_ptr<Entity> const& entity, std::size_t offset) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
+            auto itemDb = entity->root().itemDatabase();
             if (offset < container->containerSize()) {
                 if (auto res = container->takeItems(offset).result())
                     return itemDb->toJson(*res);
@@ -818,7 +817,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     methods.registerMethod("containerTakeNumItemsAt",
     [&](std::shared_ptr<Entity> const& entity, std::size_t offset, int const& count) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
+            auto itemDb = entity->root().itemDatabase();
             if (offset < container->containerSize()) {
                 if (auto res = container->takeItems(offset, count).result())
                     return itemDb->toJson(*res);
@@ -831,7 +830,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     methods.registerMethod("containerItemsCanFit",
     [&](std::shared_ptr<Entity> const& entity, Json const& items) -> Maybe<std::size_t> {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
+            auto itemDb = entity->root().itemDatabase();
             auto itemBag = container->itemBag();
             auto toSearch = itemDb->fromJson(items);
             return itemBag->itemsCanFit(toSearch);
@@ -843,7 +842,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     methods.registerMethod("containerItemsFitWhere",
     [&](std::shared_ptr<Entity> const& entity, Json const& items) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
+            auto itemDb = entity->root().itemDatabase();
             auto itemBag = container->itemBag();
             auto toSearch = itemDb->fromJson(items);
             auto res = itemBag->itemsFitWhere(toSearch);
@@ -859,7 +858,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     methods.registerMethod("containerAddItems",
     [&](std::shared_ptr<Entity> const& entity, Json const& items) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
+            auto itemDb = entity->root().itemDatabase();
             auto toInsert = itemDb->fromJson(items);
             if (auto res = container->addItems(toInsert).result())
                 return itemDb->toJson(*res);
@@ -871,7 +870,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     methods.registerMethod("containerStackItems",
     [&](std::shared_ptr<Entity> const& entity, Json const& items) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
+            auto itemDb = entity->root().itemDatabase();
             auto toInsert = itemDb->fromJson(items);
             if (auto res = container->addItems(toInsert).result())
                 return itemDb->toJson(*res);
@@ -883,7 +882,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     methods.registerMethod("containerPutItemsAt",
     [&](std::shared_ptr<Entity> const& entity, Json const& items, std::size_t offset) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
+            auto itemDb = entity->root().itemDatabase();
             auto toInsert = itemDb->fromJson(items);
             if (offset < container->containerSize()) {
                 if (auto res = container->putItems(offset, toInsert).result())
@@ -897,7 +896,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     methods.registerMethod("containerSwapItems",
     [&](std::shared_ptr<Entity> const& entity, Json const& items, std::size_t offset, bool noCombine) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
+            auto itemDb = entity->root().itemDatabase();
             auto toSwap = itemDb->fromJson(items);
             if (offset < container->containerSize()) {
                 if (auto res = container->swapItems(offset, toSwap, !noCombine).result())
@@ -911,7 +910,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     methods.registerMethod("containerItemApply",
     [&](std::shared_ptr<Entity> const& entity, Json const& items, std::size_t offset) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
+            auto itemDb = entity->root().itemDatabase();
             auto toSwap = itemDb->fromJson(items);
             if (offset < container->containerSize()) {
                 if (auto res = container->swapItems(offset, toSwap, false).result())

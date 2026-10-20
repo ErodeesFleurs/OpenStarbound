@@ -41,6 +41,8 @@ import star.entity_splash;
 
 namespace Star {
 
+class Root;
+
 class Rebuilder;
 class Player;
 
@@ -52,7 +54,7 @@ using PlayerException = StarError<PlayerExceptionTag, StarException>;
 // The player has a large number of shared config states, so this is a shared
 // config object to hold them.
 struct PlayerConfig {
-  PlayerConfig(JsonObject const& cfg);
+  PlayerConfig(Root& root, JsonObject const& cfg);
 
   HumanoidIdentity defaultIdentity;
   Humanoid::HumanoidTiming humanoidTiming;
@@ -93,13 +95,14 @@ struct PlayerConfig {
 
 class PlayerFactory {
 public:
-  PlayerFactory();
+  PlayerFactory(Root& root);
 
   std::shared_ptr<Player> create() const;
   std::shared_ptr<Player> diskLoadPlayer(Json const& diskStore) const;
   std::shared_ptr<Player> netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
 private:
+  Root& m_root;
   std::shared_ptr<PlayerConfig> m_config;
 
   std::shared_ptr<Rebuilder> m_rebuilder;

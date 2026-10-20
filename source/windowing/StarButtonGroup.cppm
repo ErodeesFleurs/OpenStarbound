@@ -93,7 +93,10 @@ private:
   bool m_toggle;
 };
 
-class ButtonGroupWidget : public ButtonGroup, public Widget {};
+class ButtonGroupWidget : public ButtonGroup, public Widget {
+public:
+  explicit ButtonGroupWidget(GuiContext& context) : Widget(context) {}
+};
 }
 
 export module star.button_group;

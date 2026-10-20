@@ -11,10 +11,11 @@ namespace Star {
 class UniverseServer;
 class UniverseClient;
 class Player;
+class Root;
 
 class TestUniverse {
 public:
-  TestUniverse(Vec2U clientWindowSize);
+  TestUniverse(Root& root, Vec2U clientWindowSize);
   ~TestUniverse();
 
   void warpPlayer(WorldId worldId);

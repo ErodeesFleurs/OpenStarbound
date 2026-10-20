@@ -8,6 +8,7 @@ import star.json;
 namespace Star {
 
 class AudioInstance;
+class Root;
 
 struct AmbientTrackGroup {
   AmbientTrackGroup();
@@ -37,6 +38,8 @@ typedef AmbientTrackGroup WeatherNoisesDescription;
 // manages the running ambient sounds
 class AmbientManager {
 public:
+  explicit AmbientManager(Root& root);
+
   // Automatically calls cancelAll();
   ~AmbientManager();
 
@@ -51,6 +54,7 @@ public:
   void setVolume(float volume, float delay, float duration);
 
 private:
+  Root& m_root;
   std::shared_ptr<AudioInstance> m_currentTrack;
   std::shared_ptr<AudioInstance> m_weatherTrack;
   String m_currentTrackName;

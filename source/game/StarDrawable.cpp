@@ -25,11 +25,6 @@ import std;
 import star.version;
 
 import star.drawable;
-import star.asset_source;
-import star.assets;
-import star.root_base;
-import star.configuration;
-import star.root;
 
 
 import star.image_metadata_database;
@@ -38,15 +33,14 @@ import star.matrix3;
 import star.line;
 namespace Star {
 
-Drawable::ImagePart& Drawable::ImagePart::addDirectives(Directives const& directives, bool keepImageCenterPosition) {
+Drawable::ImagePart& Drawable::ImagePart::addDirectives(ImageMetadataDatabase const& imageMetadata, Directives const& directives, bool keepImageCenterPosition) {
   if (!directives)
     return *this;
 
   if (keepImageCenterPosition) {
-    auto imageMetadata = Root::singleton().imageMetadataDatabase();
-    Vec2F imageSize = Vec2F(imageMetadata->imageSize(image));
+    Vec2F imageSize = Vec2F(imageMetadata.imageSize(image));
     image.directives += directives;
-    Vec2F newImageSize = Vec2F(imageMetadata->imageSize(image));
+    Vec2F newImageSize = Vec2F(imageMetadata.imageSize(image));
 
     // If we are trying to maintain the image center, PRE translate the image by
     // the change in size / 2
@@ -58,16 +52,15 @@ Drawable::ImagePart& Drawable::ImagePart::addDirectives(Directives const& direct
   return *this;
 }
 
-Drawable::ImagePart& Drawable::ImagePart::addDirectivesGroup(DirectivesGroup const& directivesGroup, bool keepImageCenterPosition) {
+Drawable::ImagePart& Drawable::ImagePart::addDirectivesGroup(ImageMetadataDatabase const& imageMetadata, DirectivesGroup const& directivesGroup, bool keepImageCenterPosition) {
   if (directivesGroup.empty())
     return *this;
 
   if (keepImageCenterPosition) {
-    auto imageMetadata = Root::singleton().imageMetadataDatabase();
-    Vec2F imageSize = Vec2F(imageMetadata->imageSize(image));
+    Vec2F imageSize = Vec2F(imageMetadata.imageSize(image));
     for (Directives const& directives : directivesGroup.list())
       image.directives += directives;
-    Vec2F newImageSize = Vec2F(imageMetadata->imageSize(image));
+    Vec2F newImageSize = Vec2F(imageMetadata.imageSize(image));
 
     // If we are trying to maintain the image center, PRE translate the image by
     // the change in size / 2
@@ -80,12 +73,11 @@ Drawable::ImagePart& Drawable::ImagePart::addDirectivesGroup(DirectivesGroup con
   return *this;
 }
 
-Drawable::ImagePart& Drawable::ImagePart::removeDirectives(bool keepImageCenterPosition) {
+Drawable::ImagePart& Drawable::ImagePart::removeDirectives(ImageMetadataDatabase const& imageMetadata, bool keepImageCenterPosition) {
   if (keepImageCenterPosition) {
-    auto imageMetadata = Root::singleton().imageMetadataDatabase();
-    Vec2F imageSize = Vec2F(imageMetadata->imageSize(image));
+    Vec2F imageSize = Vec2F(imageMetadata.imageSize(image));
     image.directives.clear();
-    Vec2F newImageSize = Vec2F(imageMetadata->imageSize(image));
+    Vec2F newImageSize = Vec2F(imageMetadata.imageSize(image));
 
     // If we are trying to maintain the image center, PRE translate the image by
     // the change in size / 2
@@ -115,12 +107,11 @@ Drawable Drawable::makePoly(PolyF poly, Color const& color, Vec2F const& positio
   return drawable;
 }
 
-Drawable Drawable::makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color) {
+Drawable Drawable::makeImage(ImageMetadataDatabase const& imageMetadata, AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color) {
   Drawable drawable;
   Mat3F transformation = Mat3F::identity();
   if (centered) {
-    auto imageMetadata = Root::singleton().imageMetadataDatabase();
-    Vec2F imageSize = Vec2F(imageMetadata->imageSize(image));
+    Vec2F imageSize = Vec2F(imageMetadata.imageSize(image));
     transformation.translate(-imageSize / 2);
   }
 
@@ -137,7 +128,7 @@ Drawable Drawable::makeImage(AssetPath image, float pixelSize, bool centered, Ve
 Drawable::Drawable()
   : color(Color::White), fullbright(false) {}
 
-Drawable::Drawable(Json const& json) {
+Drawable::Drawable(ImageMetadataDatabase const& imageMetadata, Json const& json) {
   if (auto line = json.opt("line")) {
     part = LinePart{jsonToLine2F(*line), json.getFloat("width"), {}};
   } else if (auto poly = json.opt("poly")) {
@@ -149,8 +140,7 @@ Drawable::Drawable(Json const& json) {
       transformation = jsonToMat3F(*transformationConfig);
     } else {
       if (json.getBool("centered", true)) {
-        auto imageMetadata = Root::singleton().imageMetadataDatabase();
-        Vec2F imageSize = Vec2F(imageMetadata->imageSize(imageString));
+        Vec2F imageSize = Vec2F(imageMetadata.imageSize(imageString));
         transformation.translate(-imageSize / 2);
       }
       if (auto rotation = json.optFloat("rotation"))
@@ -242,7 +232,7 @@ void Drawable::rebase(Vec2F const& newBase) {
   position = newBase;
 }
 
-RectF Drawable::boundBox(bool cropImages) const {
+RectF Drawable::boundBox(ImageMetadataDatabase const& imageMetadata, bool cropImages) const {
   RectF boundBox = RectF::null();
   if (auto line = part.ptr<LinePart>()) {
     boundBox.combine(line->line.min());
@@ -252,14 +242,13 @@ RectF Drawable::boundBox(bool cropImages) const {
     boundBox.combine(poly->poly.boundBox());
 
   } else if (auto image = part.ptr<ImagePart>()) {
-    auto imageMetadata = Root::singleton().imageMetadataDatabase();
     RectF imageRegion = RectF::null();
     if (cropImages) {
-      RectU nonEmptyRegion = imageMetadata->nonEmptyRegion(image->image);
+      RectU nonEmptyRegion = imageMetadata.nonEmptyRegion(image->image);
       if (!nonEmptyRegion.isNull())
         imageRegion = RectF(nonEmptyRegion);
     } else {
-      imageRegion = RectF::withSize(Vec2F(), Vec2F(imageMetadata->imageSize(image->image)));
+      imageRegion = RectF::withSize(Vec2F(), Vec2F(imageMetadata.imageSize(image->image)));
     }
 
     if (!imageRegion.isNull()) {

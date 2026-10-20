@@ -119,7 +119,7 @@ void FireableItem::init(ToolUserEntity* owner, ToolHand hand) {
   auto scripts = m_fireableParams.opt("scripts").apply(jsonToStringList);
   if (entityMode() == EntityMode::Master && scripts) {
     if (!m_scriptComponent) {
-      m_scriptComponent.emplace();
+      m_scriptComponent.emplace(owner->root());
       m_scriptComponent->setScripts(*scripts);
     }
     m_scriptComponent->addCallbacks(

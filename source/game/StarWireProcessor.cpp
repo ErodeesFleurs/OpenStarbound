@@ -46,6 +46,7 @@ import star.entity;
 import star.world_geometry;
 import star.wiring;
 import star.wire_processor;
+import star.root;
 import star.liquid_types;
 import star.tile_sector_array;
 import star.animation;
@@ -123,7 +124,7 @@ void WireProcessor::populateWorking(WireEntity* wireEntity) {
   auto p = m_workingWireEntities.insert(wireEntity->tilePosition(), WireEntityState{nullptr, {}, false});
   if (!p.second) {
     if (p.first->second.wireEntity != wireEntity)
-      Logger::debug("Multiple wire entities share tile position: {}", wireEntity->position());
+      wireEntity->root().logger().debug("Multiple wire entities share tile position: {}", wireEntity->position());
     return;
   }
   auto& wes = p.first->second;

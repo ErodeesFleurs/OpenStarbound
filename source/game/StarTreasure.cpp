@@ -93,8 +93,8 @@ import star.static_random;
 import star.algorithm;
 namespace Star {
 
-TreasureDatabase::TreasureDatabase() {
-  auto assets = Root::singleton().assets();
+TreasureDatabase::TreasureDatabase(Root& root) : m_root(root) {
+  auto assets = m_root.assets();
 
   auto& treasurePools = assets->scanExtension("treasurepools");
   auto& treasureChests = assets->scanExtension("treasurechests");
@@ -196,21 +196,27 @@ TreasureDatabase::ItemPool::ItemPool() : allowDuplication() {}
 TreasureDatabase::TreasureChest::TreasureChest() : minimumLevel() {}
 
 List<std::shared_ptr<Item>> TreasureDatabase::createTreasure(String const& treasurePool, float level) const {
-  return createTreasure(treasurePool, level, Random::randu64());
+  return createTreasure(treasurePool, level, m_root.random().randu64());
 }
 
 List<std::shared_ptr<Item>> TreasureDatabase::createTreasure(String const& treasurePool, float level, std::uint64_t seed) const {
-  return createTreasure(treasurePool, level, seed, StringSet());
+  return createTreasure(treasurePool, level, seed, nullptr);
 }
 
-List<std::shared_ptr<Item>> TreasureDatabase::createTreasure(String const& treasurePool, float level, std::uint64_t seed, StringSet visitedPools) const {
+List<std::shared_ptr<Item>> TreasureDatabase::createTreasure(String const& treasurePool, float level, std::uint64_t seed, ItemDatabase const* itemCatalog) const {
+  return createTreasure(treasurePool, level, seed, StringSet(), itemCatalog);
+}
+
+List<std::shared_ptr<Item>> TreasureDatabase::createTreasure(String const& treasurePool, float level, std::uint64_t seed, StringSet visitedPools, ItemDatabase const* itemCatalog) const {
   if (!m_treasurePools.contains(treasurePool))
     throw TreasureException(strf("Unknown treasure pool '{}'", treasurePool));
 
   if (!visitedPools.add(treasurePool))
     throw TreasureException(strf("Loop detected in treasure pool generation - set '{}' already contains '{}'", visitedPools, treasurePool));
 
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto catalogOwner = itemCatalog ? std::shared_ptr<ItemDatabase const>{} : m_root.itemDatabase();
+  if (!itemCatalog)
+    itemCatalog = catalogOwner.get();
 
   List<std::shared_ptr<Item>> treasureItems;
   HashSet<ItemDescriptor> previousDescriptors;
@@ -219,14 +225,14 @@ List<std::shared_ptr<Item>> TreasureDatabase::createTreasure(String const& treas
   int mix = 0;
   for (auto const& fillEntry : itemPool.fill) {
     if (fillEntry.is<String>()) {
-      auto poolContents = createTreasure(fillEntry.get<String>(), level, seed + ++mix, visitedPools);
+      auto poolContents = createTreasure(fillEntry.get<String>(), level, seed + ++mix, visitedPools, itemCatalog);
       for (auto item : poolContents) {
         if (itemPool.allowDuplication || previousDescriptors.add(item->descriptor().singular()))
           treasureItems.append(item);
       }
     } else {
       float itemLevel = level + itemPool.levelVariance[0] + staticRandomFloat(seed, ++mix, "FillLevelVariance") * (itemPool.levelVariance[1] - itemPool.levelVariance[0]);
-      auto fillItem = itemDatabase->item(fillEntry.get<ItemDescriptor>(), itemLevel, seed + ++mix);
+      auto fillItem = itemCatalog->item(fillEntry.get<ItemDescriptor>(), itemLevel, seed + ++mix);
       if (itemPool.allowDuplication || previousDescriptors.add(fillItem->descriptor().singular()))
         treasureItems.append(fillItem);
     }
@@ -239,7 +245,7 @@ List<std::shared_ptr<Item>> TreasureDatabase::createTreasure(String const& treas
       auto poolEntry = itemPool.pool.select(staticRandomU64(seed, i, "TreasureItem"));
 
       if (poolEntry.is<String>()) {
-        auto poolContents = createTreasure(poolEntry.get<String>(), level, staticRandomU64(seed, i, "TreasureSeedRecursion"), visitedPools);
+        auto poolContents = createTreasure(poolEntry.get<String>(), level, staticRandomU64(seed, i, "TreasureSeedRecursion"), visitedPools, itemCatalog);
         for (auto item : poolContents) {
           if (itemPool.allowDuplication || previousDescriptors.add(item->descriptor().singular()))
             treasureItems.append(item);
@@ -248,7 +254,7 @@ List<std::shared_ptr<Item>> TreasureDatabase::createTreasure(String const& treas
         float itemLevel = level + itemPool.levelVariance[0] + staticRandomFloat(staticRandomU64(seed, i, "TreasureLevelSeedMixer"), "PoolLevelVariance") * (itemPool.levelVariance[1] - itemPool.levelVariance[0]);
         auto roundItem = poolEntry.get<ItemDescriptor>();
         if (itemPool.allowDuplication || previousDescriptors.add(roundItem.singular()))
-          treasureItems.append(itemDatabase->item(roundItem, itemLevel, seed + ++mix));
+          treasureItems.append(itemCatalog->item(roundItem, itemLevel, seed + ++mix));
       }
     }
   }
@@ -258,7 +264,7 @@ List<std::shared_ptr<Item>> TreasureDatabase::createTreasure(String const& treas
 
 List<std::shared_ptr<Item>> TreasureDatabase::fillWithTreasure(
     std::shared_ptr<ItemBag> const& itemBag, String const& treasurePool, float level) const {
-  return fillWithTreasure(itemBag, treasurePool, level, Random::randu64());
+  return fillWithTreasure(itemBag, treasurePool, level, m_root.random().randu64());
 }
 
 List<std::shared_ptr<Item>> TreasureDatabase::fillWithTreasure(
@@ -273,11 +279,11 @@ List<std::shared_ptr<Item>> TreasureDatabase::fillWithTreasure(
 }
 
 std::shared_ptr<ContainerObject> TreasureDatabase::createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction) const {
-  return createTreasureChest(world, treasureChestSet, position, direction, Random::randu64());
+  return createTreasureChest(world, treasureChestSet, position, direction, m_root.random().randu64());
 }
 
 std::shared_ptr<ContainerObject> TreasureDatabase::createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction, std::uint64_t seed) const {
-  auto objectDatabase = Root::singleton().objectDatabase();
+  auto objectDatabase = m_root.objectDatabase();
 
   if (!m_treasureChestSets.contains(treasureChestSet))
     throw StarException(strf("Unknown treasure chest set '{}'", treasureChestSet));

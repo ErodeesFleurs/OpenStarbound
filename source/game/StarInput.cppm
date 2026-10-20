@@ -15,6 +15,8 @@ import star.listener;
 
 
 namespace Star {
+class Root;
+
 
 struct InputExceptionTag {
   static constexpr char const* name() { return "InputException"; }
@@ -66,6 +68,7 @@ public:
   struct BindCategory;
 
   struct BindEntry {
+    Input& owner;
     // The internal ID of this entry.
     String id;
     // The user-facing name of this entry.
@@ -80,7 +83,7 @@ public:
     // The user-configured binds.
     List<Bind> customBinds;
 
-    BindEntry(String entryId, Json const& config, BindCategory const& parentCategory);
+    BindEntry(Input& owner, String entryId, Json const& config, BindCategory const& parentCategory);
     void updated();
   };
 
@@ -95,13 +98,14 @@ public:
   };
 
   struct BindCategory {
+    Input& owner;
     String id;
     String name;
     Json config = JsonObject{};
 
     StableHashMap<String, BindEntry> entries;
 
-    BindCategory();
+    explicit BindCategory(Input& owner);
     void mergeJson(String const& categoryId, Json const& categoryConfig);
   };
 
@@ -141,15 +145,7 @@ public:
 
   typedef InputState ControllerInputState;
 
-  // Get pointer to the singleton Input instance, if it exists.  Otherwise,
-  // returns nullptr.
-  static Input* singletonPtr();
-
-  // Gets reference to Input singleton, throws InputException if root
-  // is not initialized.
-  static Input& singleton();
-
-  Input();
+  explicit Input(Root& root);
   ~Input();
 
   Input(Input const&) = delete;
@@ -216,7 +212,7 @@ private:
 
   InputState& addBindState(BindEntry const* bindEntry);
 
-  static Input* s_singleton;
+  Root& m_root;
 
   // Regenerated on reload.
   StableHashMap<String, BindCategory> m_bindCategories;

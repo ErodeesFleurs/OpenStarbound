@@ -131,12 +131,12 @@ namespace Star {
 
 String const SongPathPrefix = "/songs/";
 
-SongbookInterface::SongbookInterface(std::shared_ptr<Player> player) {
+SongbookInterface::SongbookInterface(GuiContext& guiContext, std::shared_ptr<Player> player) : Pane(guiContext) {
   m_player = std::move(player);
 
-  auto assets = Root::singleton().assets();
+  auto assets = context()->root().assets();
 
-  GuiReader reader;
+  GuiReader reader(*context());
 
   reader.registerCallback("close", [this](Widget*) { dismiss(); });
   reader.registerCallback("btnPlay",
@@ -149,7 +149,7 @@ SongbookInterface::SongbookInterface(std::shared_ptr<Player> player) {
 
   reader.construct(assets->json("/interface/windowconfig/songbook.config:paneLayout"), this);
 
-  m_reloadSubscription = Root::singleton().registerReloadListener(
+  m_reloadSubscription = context()->root().registerReloadListener(
     m_reloadListener = std::make_shared<CallbackListener>([this]() {
       refresh(true);
     })
@@ -176,7 +176,7 @@ bool SongbookInterface::play() {
 
   JsonObject song;
   song["resource"] = songName;
-  auto buffer = Root::singleton().assets()->bytes(songName);
+  auto buffer = context()->root().assets()->bytes(songName);
   song["abc"] = String(buffer->ptr(), buffer->size());
 
   m_player->songbook()->play(song, group);
@@ -185,10 +185,10 @@ bool SongbookInterface::play() {
 
 void SongbookInterface::refresh(bool reloadFiles) {
   if (reloadFiles) {
-    m_files = Root::singleton().assets()->scanExtension(".abc").values();
-    eraseWhere(m_files, [](String& song) {
+    m_files = context()->root().assets()->scanExtension(".abc").values();
+    eraseWhere(m_files, [this](String& song) {
       if (!song.beginsWith(SongPathPrefix, String::CaseInsensitive)) {
-        Logger::warn("Song '{}' isn't in {}, ignoring", song, SongPathPrefix);
+        context()->root().logger().warn("Song '{}' isn't in {}, ignoring", song, SongPathPrefix);
         return true;
       }
       return false;

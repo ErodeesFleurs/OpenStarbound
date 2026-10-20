@@ -52,8 +52,8 @@ namespace Star {
 
 class VerticalLayout : public Layout {
 public:
-  VerticalLayout();
-  VerticalLayout(VerticalAnchor verticalAnchor, int verticalSpacing = 0);
+  VerticalLayout(GuiContext& context);
+  VerticalLayout(GuiContext& context, VerticalAnchor verticalAnchor, int verticalSpacing = 0);
 
   void update(float dt) override;
   Vec2I size() const override;

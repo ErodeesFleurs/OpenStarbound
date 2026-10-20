@@ -16,11 +16,15 @@ import star.uuid;
 
 namespace Star {
 
+class RandomService;
+
 // Handles all chat routing and command parsing for client / server chat.
 // Thread safe.
 class ChatProcessor {
 public:
-  static char const* ServerNick;
+  static char const* const ServerNick;
+
+  explicit ChatProcessor(RandomService& random);
 
   // CommandHandler is passed the origin connection, the command portion
   // excluding the '/' character, and the remaining command line in full.
@@ -82,6 +86,7 @@ private:
   bool handleCommand(ChatReceivedMessage& message);
 
   mutable RecursiveMutex m_mutex;
+  RandomService& m_random;
 
   HashMap<ConnectionId, ClientInfo> m_clients;
   StringMap<ConnectionId> m_nicks;

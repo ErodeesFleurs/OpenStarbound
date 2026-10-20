@@ -21,13 +21,16 @@ import star.asset_source;
 import star.string;
 import star.directory_asset_source;
 import star.s_plain_text_edit;
+import star.logging;
+import star.random;
 
 namespace Star {
 
+// The entry point owns these services until the uploader and its callbacks stop.
 class ModUploader : public QMainWindow {
   Q_OBJECT
 public:
-  ModUploader();
+  ModUploader(Logger& logger, RandomService& random);
 
 private slots:
   void selectDirectory();
@@ -42,6 +45,9 @@ private:
   void closeEvent(QCloseEvent* event) override;
   void onSteamCreateItem(CreateItemResult_t* result, bool ioFailure);
   void onSteamSubmitItem(SubmitItemUpdateResult_t* result, bool ioFailure);
+
+  Logger& m_logger;
+  RandomService& m_random;
 
   QPushButton* m_reloadButton;
   QLabel* m_directoryLabel;

@@ -56,13 +56,13 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-Stagehand::Stagehand(Json const& config)
-  : Stagehand() {
+Stagehand::Stagehand(Root& rootContext, Json const& config)
+  : Stagehand(rootContext) {
   setUniqueId(config.optString("uniqueId"));
   readConfig(config);
 }
 
-Stagehand::Stagehand(ByteArray const& netStore, NetCompatibilityRules) : Stagehand() {
+Stagehand::Stagehand(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules) : Stagehand(rootContext) {
   readConfig(DataStreamBuffer::deserialize<Json>(netStore));
 }
 
@@ -91,7 +91,7 @@ void Stagehand::init(World* world, EntityId entityId, EntityMode mode) {
         return m_config.query(name, def);
       }));
     m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-    m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(&m_behaviors));
+    m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(this->root(), &m_behaviors));
     m_scriptComponent.init(world);
   }
 }
@@ -145,9 +145,9 @@ void Stagehand::update(float dt, std::uint64_t) {
 
   if (world()->isClient()) {
     auto boundBox = metaBoundBox().translated(position());
-    SpatialLogger::logPoly("world", PolyF(boundBox), { 0, 255, 255, 255 });
-    SpatialLogger::logLine("world", boundBox.min(), boundBox.max(), {0, 255, 255, 255});
-    SpatialLogger::logLine("world", { boundBox.xMin(), boundBox.yMax() }, { boundBox.xMax(), boundBox.yMin() }, {0, 255, 255, 255});
+    this->root().spatialLogger().logPoly("world", PolyF(boundBox), { 0, 255, 255, 255 });
+    this->root().spatialLogger().logLine("world", boundBox.min(), boundBox.max(), {0, 255, 255, 255});
+    this->root().spatialLogger().logLine("world", { boundBox.xMin(), boundBox.yMax() }, { boundBox.xMax(), boundBox.yMin() }, {0, 255, 255, 255});
   }
 }
 
@@ -167,7 +167,7 @@ Json Stagehand::configValue(String const& name, Json const& def) const {
   return m_config.query(name, def);
 }
 
-Stagehand::Stagehand() {
+Stagehand::Stagehand(Root& rootContext) : Entity(rootContext), m_scriptComponent(rootContext) {
   setPersistent(true);
 
   m_netGroup.addNetElement(&m_xPosition);

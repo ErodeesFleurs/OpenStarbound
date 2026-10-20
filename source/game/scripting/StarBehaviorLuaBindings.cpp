@@ -36,11 +36,11 @@ import star.behavior_state;
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeBehaviorCallbacks(List<std::shared_ptr<BehaviorState>>* list) {
+LuaCallbacks LuaBindings::makeBehaviorCallbacks(Root& root, List<std::shared_ptr<BehaviorState>>* list) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallback("behavior", [list](Json const& config, JsonObject const& parameters, LuaTable context, Maybe<LuaUserData> blackboard) -> std::weak_ptr<BehaviorState> {
-    auto behaviorDatabase = Root::singleton().behaviorDatabase();
+  callbacks.registerCallback("behavior", [&root, list](Json const& config, JsonObject const& parameters, LuaTable context, Maybe<LuaUserData> blackboard) -> std::weak_ptr<BehaviorState> {
+    auto behaviorDatabase = root.behaviorDatabase();
     Maybe<std::weak_ptr<Blackboard>> board = {};
     if (blackboard && blackboard->is<std::weak_ptr<Blackboard>>())
       board = blackboard->get<std::weak_ptr<Blackboard>>();

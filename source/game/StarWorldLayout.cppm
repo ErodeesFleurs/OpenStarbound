@@ -74,7 +74,10 @@ struct WorldRegion {
   WorldRegionLiquids regionLiquids;
 };
 
+class Root;
 class WorldLayout {
+  Root& m_root;
+  Root& root() const { return m_root; }
   friend DataStream& operator>>(DataStream& ds, WorldLayout& worldTemplateDescriptor);
   friend DataStream& operator<<(DataStream& ds, WorldLayout& worldTemplateDescriptor);
 public:
@@ -103,12 +106,12 @@ public:
     WorldRegion const* region;
   };
 
-  static WorldLayout buildTerrestrialLayout(TerrestrialWorldParameters const& terrestrialParameters, std::uint64_t seed);
-  static WorldLayout buildAsteroidsLayout(AsteroidsWorldParameters const& asteroidParameters, std::uint64_t seed);
-  static WorldLayout buildFloatingDungeonLayout(FloatingDungeonWorldParameters const& floatingDungeonParameters, std::uint64_t seed);
+  static WorldLayout buildTerrestrialLayout(Root& root, TerrestrialWorldParameters const& terrestrialParameters, std::uint64_t seed);
+  static WorldLayout buildAsteroidsLayout(Root& root, AsteroidsWorldParameters const& asteroidParameters, std::uint64_t seed);
+  static WorldLayout buildFloatingDungeonLayout(Root& root, FloatingDungeonWorldParameters const& floatingDungeonParameters, std::uint64_t seed);
 
-  WorldLayout();
-  WorldLayout(Json const& store);
+  WorldLayout(Root& root);
+  WorldLayout(Root& root, Json const& store);
 
   Json toJson() const;
 

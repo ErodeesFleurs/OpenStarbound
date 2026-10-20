@@ -35,7 +35,6 @@ import star.world_geometry;
 import star.dungeon_generator;
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.configuration;
 import star.root;
 
@@ -46,8 +45,9 @@ export namespace Star::Dungeon {
 class ImageTileset;
 
 class ImagePartReader : public PartReader {
+  Root& m_root;
 public:
-  ImagePartReader(std::shared_ptr<ImageTileset const> tileset) : m_tileset(tileset) {}
+  ImagePartReader(Root& root, std::shared_ptr<ImageTileset const> tileset) : m_root(root), m_tileset(tileset) {}
 
   virtual void readAsset(String const& asset) override;
   virtual Vec2U size() const override;
@@ -62,7 +62,7 @@ private:
 
 class ImageTileset {
 public:
-  ImageTileset(Json const& tileset);
+  ImageTileset(Root& root, Json const& tileset);
 
   Tile const* getTile(Vec4B color) const;
 
@@ -79,7 +79,7 @@ namespace Star {
 namespace Dungeon {
 
   void ImagePartReader::readAsset(String const& asset) {
-    auto assets = Root::singleton().assets();
+    auto assets = m_root.assets();
     m_images.push_back(std::make_pair(asset, assets->image(asset)));
   }
 
@@ -141,12 +141,12 @@ namespace Dungeon {
     return strf("{},{},{},{}", color[0], color[1], color[2], color[3]);
   }
 
-  Tile variantMapToTile(JsonObject const& tile) {
+  Tile variantMapToTile(Root& root, JsonObject const& tile) {
     Tile result;
     if (tile.contains("brush"))
-      result.brushes = Brush::readBrushes(tile.get("brush"));
+      result.brushes = Brush::readBrushes(root, tile.get("brush"));
     if (tile.contains("rules"))
-      result.rules = Rule::readRules(tile.get("rules"));
+      result.rules = Rule::readRules(root, tile.get("rules"));
 
     if (tile.contains("connector") && tile.get("connector").toBool()) {
       auto connector = TileConnector();
@@ -171,10 +171,10 @@ namespace Dungeon {
     return result;
   }
 
-  ImageTileset::ImageTileset(Json const& tileset) {
+  ImageTileset::ImageTileset(Root& root, Json const& tileset) {
     for (Json const& tileDef : tileset.iterateArray()) {
       Vec4B color = jsonToVec4B(tileDef.get("value"));
-      m_tiles.insert(colorAsInt(color), variantMapToTile(tileDef.toObject()));
+      m_tiles.insert(colorAsInt(color), variantMapToTile(root, tileDef.toObject()));
     }
   }
 

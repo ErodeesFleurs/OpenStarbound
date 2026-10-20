@@ -219,13 +219,13 @@ import star.statistics;
 
 namespace Star {
 
-InventoryPane::InventoryPane(MainInterface* parent, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor) {
+InventoryPane::InventoryPane(GuiContext& guiContext, MainInterface* parent, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor) : Pane(guiContext) {
   m_parent = parent;
   m_player = std::move(player);
   m_containerInteractor = std::move(containerInteractor);
 
-  GuiReader invWindowReader;
-  auto config = Root::singleton().assets()->json("/interface/windowconfig/playerinventory.config");
+  GuiReader invWindowReader(*context());
+  auto config = context()->root().assets()->json("/interface/windowconfig/playerinventory.config");
 
   auto leftClickCallback = [this](String const& bagType, Widget* widget) {
     auto itemGrid = convert<ItemGridWidget>(widget);
@@ -404,7 +404,7 @@ InventoryPane::InventoryPane(MainInterface* parent, std::shared_ptr<Player> play
   auto centralPortrait = fetchChild<PortraitWidget>("portrait");
   centralPortrait->setEntity(m_player);
 
-  auto portrait = std::make_shared<PortraitWidget>(m_player, PortraitMode::Bust);
+  auto portrait = std::make_shared<PortraitWidget>(*context(), m_player, PortraitMode::Bust);
   portrait->setIconMode();
   setTitle(portrait, m_player->name(), config.getString("subtitle"));
 
@@ -445,7 +445,7 @@ std::shared_ptr<Pane> InventoryPane::createTooltip(Vec2I const& screenPosition) 
         auto widgetData = itemSlot->data();
         if (widgetData && widgetData.type() == Json::Type::Object) {
           if (auto text = widgetData.optString("tooltipText"))
-            return SimpleTooltipBuilder::buildTooltip(*text);
+            return SimpleTooltipBuilder::buildTooltip(*context(), *text);
         }
       }
     }
@@ -453,15 +453,15 @@ std::shared_ptr<Pane> InventoryPane::createTooltip(Vec2I const& screenPosition) 
       item = itemGrid->itemAt(screenPosition);
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(item, m_player);
+    return ItemTooltipBuilder::buildItemTooltip(*context(), item, m_player);
 
-  auto techDatabase = Root::singleton().techDatabase();
+  auto techDatabase = context()->root().techDatabase();
   for (auto const& p : TechTypeNames) {
     if (auto techIcon = fetchChild<ImageWidget>(strf("tech{}", p.second))) {
       if (techIcon->screenBoundRect().contains(screenPosition)) {
         if (auto techModule = m_player->techs()->equippedTechs().maybe(p.first))
           if (techDatabase->contains(*techModule))
-            return SimpleTooltipBuilder::buildTooltip(techDatabase->tech(*techModule).description);
+            return SimpleTooltipBuilder::buildTooltip(*context(), techDatabase->tech(*techModule).description);
       }
     }
   }
@@ -576,7 +576,7 @@ void InventoryPane::update(float dt) {
     }
   }
 
-  auto techDatabase = Root::singleton().techDatabase();
+  auto techDatabase = context->root().techDatabase();
   for (auto const& p : TechTypeNames) {
     if (auto techIcon = fetchChild<ImageWidget>(strf("tech{}", p.second))) {
       if (auto techModule = m_player->techs()->equippedTechs().maybe(p.first)) {
@@ -590,9 +590,9 @@ void InventoryPane::update(float dt) {
   }
 
   if (std::shared_ptr<Item> swapSlot = inventory->swapSlotItem()) {
-    if (!PlayerInventory::itemAllowedInBag(swapSlot, m_selectedTab)) {
+    if (!inventory->itemAllowedInBag(swapSlot, m_selectedTab)) {
       for (auto& pair : m_itemGrids) {
-        if (pair.first != m_selectedTab && PlayerInventory::itemAllowedInBag(swapSlot, pair.first)) {
+        if (pair.first != m_selectedTab && inventory->itemAllowedInBag(swapSlot, pair.first)) {
           selectTab(pair.first);
           break;
         }
@@ -606,7 +606,7 @@ void InventoryPane::update(float dt) {
       if (auto itemWidget = p.second->itemWidgetAt(i))
         itemWidget->showLinkIndicator(customBarItems.contains(itemWidget->item()));
       else
-        Logger::warn("Could not find item widget {} in item grid {}!", i, p.first);
+        context->root().logger().warn("Could not find item widget {} in item grid {}!", i, p.first);
     }
   }
 
@@ -647,7 +647,7 @@ void InventoryPane::update(float dt) {
     fetchChild<LabelWidget>("lblEssence")->hide();
   }
 
-  auto config = Root::singleton().assets()->json("/interface/windowconfig/playerinventory.config");
+  auto config = context->root().assets()->json("/interface/windowconfig/playerinventory.config");
 
   auto pets = m_player->companions()->getCompanions("pets");
   if (pets.size() > 0) {
@@ -707,16 +707,16 @@ void InventoryPane::update(float dt) {
   if (auto item = inventory->swapSlotItem()) {
     float pitch = 1.f - ((float)item->count() / (float)item->maxStack()) * .2f;
     if (!m_currentSwapSlotItem || !item->matches(*m_currentSwapSlotItem, true))
-      context->playAudio(RandomSource().randFrom(m_pickUpSounds), 0, 1.f, pitch);
+      context->playAudio(RandomSource(context->root().random().randu64()).randFrom(m_pickUpSounds), 0, 1.f, pitch);
     else if (item->count() > m_currentSwapSlotItem->count())
-      context->playAudio(RandomSource().randFrom(m_someUpSounds), 0, 1.f, pitch);
+      context->playAudio(RandomSource(context->root().random().randu64()).randFrom(m_someUpSounds), 0, 1.f, pitch);
     else if (item->count() < m_currentSwapSlotItem->count())
-      context->playAudio(RandomSource().randFrom(m_someDownSounds), 0, 1.f, pitch);
+      context->playAudio(RandomSource(context->root().random().randu64()).randFrom(m_someDownSounds), 0, 1.f, pitch);
 
     m_currentSwapSlotItem = item->descriptor();
   } else {
     if (m_currentSwapSlotItem)
-      context->playAudio(RandomSource().randFrom(m_putDownSounds));
+      context->playAudio(RandomSource(context->root().random().randu64()).randFrom(m_putDownSounds));
     m_currentSwapSlotItem = {};
   }
 

@@ -16,13 +16,15 @@ import star.algorithm;
 
 namespace Star {
 
+class Root;
+
 // Wraps a LuaUpdatableComponent to handle the particularly tricky case of
 // maintaining ActorMovementController controls when we do not call the script
 // update every tick.
 template <typename Base>
 class LuaActorMovementComponent : public Base {
 public:
-  LuaActorMovementComponent();
+  explicit LuaActorMovementComponent(Root& root);
 
   void addActorMovementCallbacks(ActorMovementController* actorMovementController);
   void removeActorMovementCallbacks();
@@ -67,8 +69,8 @@ private:
 };
 
 template <typename Base>
-LuaActorMovementComponent<Base>::LuaActorMovementComponent()
-  : m_autoClearControls(true),
+LuaActorMovementComponent<Base>::LuaActorMovementComponent(Root& root)
+  : Base(root), m_autoClearControls(true),
     m_controlRotation(0.0f),
     m_controlDown(false),
     m_controlCrouch(false),

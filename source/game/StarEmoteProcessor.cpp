@@ -45,8 +45,7 @@ import star.emote_processor;
 
 namespace Star {
 
-EmoteProcessor::EmoteProcessor() {
-  auto assets = Root::singleton().assets();
+EmoteProcessor::EmoteProcessor(std::shared_ptr<Assets const> const& assets) {
 
   m_emoteBindings.clear();
   auto cfg = assets->json("/emotes.config");

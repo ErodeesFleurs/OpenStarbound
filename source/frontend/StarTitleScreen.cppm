@@ -88,7 +88,7 @@ enum class TitleState {
 
 class TitleScreen {
 public:
-  TitleScreen(std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Mixer> mixer, std::shared_ptr<UniverseClient> client);
+  TitleScreen(GuiContext& context, std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Mixer> mixer, std::shared_ptr<UniverseClient> client);
 
   void renderInit(std::shared_ptr<Renderer> renderer);
 

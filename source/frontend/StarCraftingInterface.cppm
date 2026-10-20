@@ -57,7 +57,7 @@ class AudioInstance;
 
 class CraftingPane : public Pane {
 public:
-  CraftingPane(
+  CraftingPane(GuiContext& guiContext,
       std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, Json const& settings, EntityId sourceEntityId = NullEntityId);
 
   void displayed() override;

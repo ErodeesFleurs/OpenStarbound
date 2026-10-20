@@ -24,6 +24,10 @@ import star.buffer;
 import star.image;
 import star.byte_array;
 import star.vector;
+import star.game_test;
+import star.root;
+import star.random;
+import star.logging;
 
 
 #include "gtest/gtest.h"
@@ -84,14 +88,14 @@ namespace {
     return image;
   }
 
-  ByteArray pngTestBytes() {
+  ByteArray pngTestBytes(Logger& logger) {
     auto buffer = std::make_shared<Buffer>();
-    pngTestImage(PixelFormat::RGBA32).writePng(buffer);
+    pngTestImage(PixelFormat::RGBA32).writePng(logger, buffer);
     return buffer->takeData();
   }
 }
 
-TEST(AssetsTest, All) {
+const GameTestRegistration assetsAll("AssetsTest", "All", [](GameTest&) {
   EXPECT_EQ(AssetPath::removeDirectives("/foo/bar/baz??::?:??:asdfasdf??D?"), "/foo/bar/baz");
   EXPECT_EQ(AssetPath::directory("/foo/bar/baz"), "/foo/bar/");
   EXPECT_EQ(AssetPath::directory("foo/bar/baz"), "foo/bar/");
@@ -108,13 +112,13 @@ TEST(AssetsTest, All) {
 
   EXPECT_EQ(
       AssetPath::relativeTo("/foo/bar/baz:baf?whoa?there", "thing:sub?directive"), "/foo/bar/thing:sub?directive");
-}
+});
 
-TEST(AssetsTest, SymlinkLoopIsNotFollowed) {
+const GameTestRegistration assetsSymlinkLoopIsNotFollowed("AssetsTest", "SymlinkLoopIsNotFollowed", [](GameTest& fixture) {
   // A symlink pointing back at one of its own parent directories used to make
   // the asset scan recurse until the operating system reported ELOOP; the
   // resulting exception escaped the Assets constructor and killed the game.
-  auto tempDir = File::temporaryDirectory();
+  auto tempDir = File::temporaryDirectory(fixture.root().random());
   auto finallyGuard = finally([&tempDir]() { File::removeDirectoryRecursive(tempDir); });
 
   std::error_code ec;
@@ -126,7 +130,7 @@ TEST(AssetsTest, SymlinkLoopIsNotFollowed) {
   if (ec)
     GTEST_SKIP() << "cannot create directory symlinks here: " << ec.message();
 
-  DirectoryAssetSource source(tempDir);
+  DirectoryAssetSource source(fixture.root().logger(), tempDir);
   auto paths = source.assetPaths();
   EXPECT_TRUE(paths.contains("/real/asset.txt"));
   // A symlink to a sibling directory is not a loop, so it is still followed.
@@ -134,9 +138,9 @@ TEST(AssetsTest, SymlinkLoopIsNotFollowed) {
   // The self-referential one has to be skipped, not recursed into forever.
   EXPECT_FALSE(paths.contains("/loop/real/asset.txt"));
   EXPECT_FALSE(paths.contains("/loop/link/asset.txt"));
-}
+});
 
-TEST(AssetsTest, ConstAnimationCachesRefreshFramesAndParts) {
+const GameTestRegistration assetsConstAnimationCachesRefreshFramesAndParts("AssetsTest", "ConstAnimationCachesRefreshFramesAndParts", [](GameTest&) {
   auto config = Json::parse(R"({
     "stateTypes": {
       "movement": {
@@ -199,9 +203,9 @@ TEST(AssetsTest, ConstAnimationCachesRefreshFramesAndParts) {
   EXPECT_FALSE(animation.activePart("body").properties.get("base").toBool());
   animation.setStateTypeEnabled("movement", false);
   EXPECT_FALSE(animation.activePart("body").activeState);
-}
+});
 
-TEST(AssetsTest, WavSignaturesAndPcmSamples) {
+const GameTestRegistration assetsWavSignaturesAndPcmSamples("AssetsTest", "WavSignaturesAndPcmSamples", [](GameTest&) {
   // Mono, 8 kHz, 16-bit PCM with two samples.
   std::array<unsigned char, 48> bytes = {
     'R', 'I', 'F', 'F', 40, 0, 0, 0, 'W', 'A', 'V', 'E',
@@ -230,10 +234,10 @@ TEST(AssetsTest, WavSignaturesAndPcmSamples) {
   bytes[12] = 'f';
   bytes[36] = 0x80;
   EXPECT_THROW((Audio(device(), "invalid-data.wav")), AudioException);
-}
+});
 
-TEST(AssetsTest, FailedStartupJoinsWorkers) {
-  auto tempDir = File::temporaryDirectory();
+const GameTestRegistration assetsFailedStartupJoinsWorkers("AssetsTest", "FailedStartupJoinsWorkers", [](GameTest& fixture) {
+  auto tempDir = File::temporaryDirectory(fixture.root().random());
   auto cleanup = finally([&] { File::removeDirectoryRecursive(tempDir); });
   Assets::Settings settings{};
   settings.workerPoolSize = 4;
@@ -245,12 +249,12 @@ TEST(AssetsTest, FailedStartupJoinsWorkers) {
   // extra errors (including errors from workers) must still fail the test.
   for (unsigned attempt = 0; attempt < 4; ++attempt)
     EXPECT_NONFATAL_FAILURE(
-        EXPECT_THROW((Assets(settings, {tempDir})), AssetException),
+        EXPECT_THROW((Assets(fixture.root().logger(), fixture.root().random(), fixture.root().logMap(), settings, {tempDir})), AssetException),
         "Error was logged: Exception caught loading asset: /preload.config,");
 
   File::writeFile("not json", File::relativeTo(tempDir, "preload.config"));
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_THROW((Assets(settings, {tempDir})), AssetException),
+      EXPECT_THROW((Assets(fixture.root().logger(), fixture.root().random(), fixture.root().logMap(), settings, {tempDir})), AssetException),
       "Error was logged: Exception caught loading asset: /preload.config,");
 
   File::writeFile("{}", File::relativeTo(tempDir, "present.json"));
@@ -258,50 +262,50 @@ TEST(AssetsTest, FailedStartupJoinsWorkers) {
       "[{\"type\":\"json\",\"path\":\"/present.json\"},{\"type\":\"json\",\"path\":\"/absent.json\"}]",
       File::relativeTo(tempDir, "preload.config"));
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_THROW((Assets(settings, {tempDir})), AssetException),
+      EXPECT_THROW((Assets(fixture.root().logger(), fixture.root().random(), fixture.root().logMap(), settings, {tempDir})), AssetException),
       "Error was logged: Exception caught loading asset: /absent.json,");
 
   File::writeFile("[{\"type\":\"image\",\"path\":\"relative.png\"}]",
       File::relativeTo(tempDir, "preload.config"));
-  EXPECT_THROW((Assets(settings, {tempDir})), AssetException);
+  EXPECT_THROW((Assets(fixture.root().logger(), fixture.root().random(), fixture.root().logMap(), settings, {tempDir})), AssetException);
   File::writeFile("[]", File::relativeTo(tempDir, "preload.config"));
-  EXPECT_NO_THROW((Assets(settings, {tempDir})));
-}
+  EXPECT_NO_THROW((Assets(fixture.root().logger(), fixture.root().random(), fixture.root().logMap(), settings, {tempDir})));
+});
 
-TEST(AssetsTest, ShutdownWithQueuedImageDependencies) {
-  auto tempDir = File::temporaryDirectory();
+const GameTestRegistration assetsShutdownWithQueuedImageDependencies("AssetsTest", "ShutdownWithQueuedImageDependencies", [](GameTest& fixture) {
+  auto tempDir = File::temporaryDirectory(fixture.root().random());
   auto cleanup = finally([&] { File::removeDirectoryRecursive(tempDir); });
   File::writeFile("[]", File::relativeTo(tempDir, "preload.config"));
-  File::writeFile(pngTestBytes(), File::relativeTo(tempDir, "sample.png"));
+  File::writeFile(pngTestBytes(fixture.root().logger()), File::relativeTo(tempDir, "sample.png"));
   Assets::Settings settings{};
   settings.workerPoolSize = 4;
   settings.assetTimeToLive = 10;
   for (unsigned attempt = 0; attempt < 16; ++attempt) {
-    Assets assets(settings, {tempDir});
+    Assets assets(fixture.root().logger(), fixture.root().random(), fixture.root().logMap(), settings, {tempDir});
     assets.queueImages(StringList{"/sample.png?flipx", "/sample.png?flipy", "/sample.png"});
   }
-}
+});
 
-TEST(ImageTest, PngRoundTripPreservesPixelsAndMetadata) {
+const GameTestRegistration pngRoundTripPreservesPixelsAndMetadata("ImageTest", "PngRoundTripPreservesPixelsAndMetadata", [](GameTest& fixture) {
   for (auto format : {PixelFormat::RGB24, PixelFormat::RGBA32}) {
     auto image = pngTestImage(format);
     auto buffer = std::make_shared<Buffer>();
-    image.writePng(buffer);
+    image.writePng(fixture.root().logger(), buffer);
     buffer->seek(0);
-    auto [size, decodedFormat] = Image::readPngMetadata(buffer);
+    auto [size, decodedFormat] = Image::readPngMetadata(fixture.root().logger(), buffer);
     EXPECT_EQ(size, image.size());
     EXPECT_EQ(decodedFormat, format);
     buffer->seek(0);
-    auto decoded = Image::readPng(buffer);
+    auto decoded = Image::readPng(fixture.root().logger(), buffer);
     EXPECT_EQ(decoded.pixelFormat(), format);
     for (unsigned y = 0; y < 2; ++y)
       for (unsigned x = 0; x < 2; ++x)
         EXPECT_EQ(decoded.get(x, y), image.get(x, y));
   }
-}
+});
 
-TEST(ImageTest, DamagedPngHeaderAndImageDataThrow) {
-  auto bytes = pngTestBytes();
+const GameTestRegistration damagedPngHeaderAndImageDataThrow("ImageTest", "DamagedPngHeaderAndImageDataThrow", [](GameTest& fixture) {
+  auto bytes = pngTestBytes(fixture.root().logger());
   ASSERT_GT(bytes.size(), 41u);
   ASSERT_EQ(std::memcmp(bytes.ptr() + 37, "IDAT", 4), 0);
   auto badHeader = bytes;
@@ -309,41 +313,41 @@ TEST(ImageTest, DamagedPngHeaderAndImageDataThrow) {
   auto badPixels = bytes;
   badPixels[41] = 0; // Invalid zlib header, reached after Image/rows allocation.
   for (unsigned attempt = 0; attempt < 16; ++attempt) {
-    EXPECT_THROW(Image::readPngMetadata(std::make_shared<Buffer>(badHeader)), ImageException);
-    EXPECT_THROW(Image::readPng(std::make_shared<Buffer>(badHeader)), ImageException);
-    EXPECT_NO_THROW(Image::readPngMetadata(std::make_shared<Buffer>(badPixels)));
-    EXPECT_THROW(Image::readPng(std::make_shared<Buffer>(badPixels)), ImageException);
+    EXPECT_THROW(Image::readPngMetadata(fixture.root().logger(), std::make_shared<Buffer>(badHeader)), ImageException);
+    EXPECT_THROW(Image::readPng(fixture.root().logger(), std::make_shared<Buffer>(badHeader)), ImageException);
+    EXPECT_NO_THROW(Image::readPngMetadata(fixture.root().logger(), std::make_shared<Buffer>(badPixels)));
+    EXPECT_THROW(Image::readPng(fixture.root().logger(), std::make_shared<Buffer>(badPixels)), ImageException);
   }
-}
+});
 
-TEST(ImageTest, PngCallbacksRethrowOriginalIoException) {
-  auto bytes = pngTestBytes();
+const GameTestRegistration pngCallbacksRethrowOriginalIoException("ImageTest", "PngCallbacksRethrowOriginalIoException", [](GameTest& fixture) {
+  auto bytes = pngTestBytes(fixture.root().logger());
   for (unsigned attempt = 0; attempt < 16; ++attempt) {
     auto metadata = std::make_shared<FailingPngBuffer>(bytes, 8);
-    EXPECT_THROW(Image::readPngMetadata(metadata), PngIoFailure);
+    EXPECT_THROW(Image::readPngMetadata(fixture.root().logger(), metadata), PngIoFailure);
     EXPECT_EQ(metadata->unwound, 1u);
     auto header = std::make_shared<FailingPngBuffer>(bytes, 8);
-    EXPECT_THROW(Image::readPng(header), PngIoFailure);
+    EXPECT_THROW(Image::readPng(fixture.root().logger(), header), PngIoFailure);
     EXPECT_EQ(header->unwound, 1u);
     auto pixels = std::make_shared<FailingPngBuffer>(bytes, 41);
-    EXPECT_THROW(Image::readPng(pixels), PngIoFailure);
+    EXPECT_THROW(Image::readPng(fixture.root().logger(), pixels), PngIoFailure);
     EXPECT_EQ(pixels->unwound, 1u);
     for (StreamOffset failAt : {0, 41}) {
       auto output = std::make_shared<FailingPngBuffer>(ByteArray{}, failAt);
-      EXPECT_THROW(pngTestImage(PixelFormat::RGBA32).writePng(output), PngIoFailure);
+      EXPECT_THROW(pngTestImage(PixelFormat::RGBA32).writePng(fixture.root().logger(), output), PngIoFailure);
       EXPECT_EQ(output->unwound, 1u);
     }
   }
-}
+});
 
-TEST(ImageTest, PngErrorCallbackContainsDiagnosticExceptions) {
-  auto damaged = pngTestBytes();
+const GameTestRegistration pngErrorCallbackContainsDiagnosticExceptions("ImageTest", "PngErrorCallbackContainsDiagnosticExceptions", [](GameTest& fixture) {
+  auto damaged = pngTestBytes(fixture.root().logger());
   damaged[29] ^= 1;
-  EXPECT_THROW(Image::readPngMetadata(std::make_shared<FailingPngNameBuffer>(damaged)), PngIoFailure);
-  EXPECT_THROW(Image::readPng(std::make_shared<FailingPngNameBuffer>(damaged)), PngIoFailure);
-}
+  EXPECT_THROW(Image::readPngMetadata(fixture.root().logger(), std::make_shared<FailingPngNameBuffer>(damaged)), PngIoFailure);
+  EXPECT_THROW(Image::readPng(fixture.root().logger(), std::make_shared<FailingPngNameBuffer>(damaged)), PngIoFailure);
+});
 
-TEST(ImageTest, InvalidPngWriteThrows) {
+const GameTestRegistration invalidPngWriteThrows("ImageTest", "InvalidPngWriteThrows", [](GameTest& fixture) {
   auto output = std::make_shared<Buffer>();
-  EXPECT_THROW(Image().writePng(output), ImageException);
-}
+  EXPECT_THROW(Image().writePng(fixture.root().logger(), output), ImageException);
+});

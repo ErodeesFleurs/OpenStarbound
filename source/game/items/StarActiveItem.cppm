@@ -116,7 +116,7 @@ class ActiveItem :
   public virtual ToolUserItem,
   public virtual NetElementGroup {
 public:
-  ActiveItem(Json const& config, String const& directory, Json const& parameters = JsonObject());
+  ActiveItem(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
   ActiveItem(ActiveItem const& rhs);
 
   std::shared_ptr<Item> clone() const override;

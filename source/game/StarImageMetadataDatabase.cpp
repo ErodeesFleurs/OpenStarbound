@@ -39,7 +39,8 @@ import star.image_metadata_database;
 import star.math_common;
 namespace Star {
 
-ImageMetadataDatabase::ImageMetadataDatabase() {
+ImageMetadataDatabase::ImageMetadataDatabase(Root& root)
+  : m_root(root), m_sizeCache(root.random()), m_spacesCache(root.random()), m_regionCache(root.random()) {
   MutexLocker locker(m_mutex);
   int timeSmear = 2000;
   std::int64_t timeToLive = 60000;
@@ -82,7 +83,7 @@ List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F posi
 
   locker.unlock();
 
-  auto image = Root::singleton().assets()->image(filteredPath);
+  auto image = m_root.assets()->image(filteredPath);
   int imageWidth = image->width();
   int imageHeight = image->height();
 
@@ -139,7 +140,7 @@ RectU ImageMetadataDatabase::nonEmptyRegion(AssetPath const& path) const {
   }
 
   locker.unlock();
-  auto image = Root::singleton().assets()->image(filteredPath);
+  auto image = m_root.assets()->image(filteredPath);
   RectU region = RectU::null();
   image->forEachPixel([&region](unsigned x, unsigned y, Vec4B const& pixel) {
     if (pixel[3] > 0)
@@ -189,7 +190,7 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
   // In error cases, this will fall back to calling Assets::image, so that image
   // can possibly produce a missing image asset or properly report the error.
 
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
 
   auto fallback = [&assets, &path]() {
     return assets->image(path)->size();
@@ -220,7 +221,7 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
       locker.unlock();
       auto file = assets->openFile(path.basePath);
       if (Image::isPng(file))
-        imageSize = std::get<0>(Image::readPngMetadata(file));
+        imageSize = std::get<0>(Image::readPngMetadata(m_root.logger(), file));
       else
         imageSize = fallback();
       locker.lock();

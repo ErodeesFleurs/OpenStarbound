@@ -25,7 +25,7 @@ struct BehaviorExceptionTag {
 };
 using BehaviorException = StarError<BehaviorExceptionTag, StarException>;
 
-extern List<NodeParameterType> BlackboardTypes;
+extern List<NodeParameterType> const BlackboardTypes;
 
 class Blackboard {
 public:

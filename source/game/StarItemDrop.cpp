@@ -124,14 +124,14 @@ import star.line;
 import star.math_common;
 namespace Star {
 
-std::shared_ptr<ItemDrop> ItemDrop::createRandomizedDrop(std::shared_ptr<Item> const& item, Vec2F const& position, bool eternal) {
+std::shared_ptr<ItemDrop> ItemDrop::createRandomizedDrop(Root& rootContext, std::shared_ptr<Item> const& item, Vec2F const& position, bool eternal) {
   if (!item)
     return {};
 
-  auto idconfig = Root::singleton().assets()->json("/itemdrop.config");
+  auto idconfig = rootContext.assets()->json("/itemdrop.config");
 
-  std::shared_ptr<ItemDrop> itemDrop = std::make_shared<ItemDrop>(item);
-  auto offset = Vec2F(idconfig.getFloat("randomizedDistance"), 0).rotate(std::numbers::pi * 2.0 * Random::randf());
+  std::shared_ptr<ItemDrop> itemDrop = std::make_shared<ItemDrop>(rootContext, item);
+  auto offset = Vec2F(idconfig.getFloat("randomizedDistance"), 0).rotate(std::numbers::pi * 2.0 * rootContext.random().randf());
   offset[1] = std::fabs(offset[1]);
   itemDrop->setPosition(position + offset / TilePixels);
   itemDrop->setVelocity(offset * idconfig.getFloat("randomizedSpeed"));
@@ -140,24 +140,24 @@ std::shared_ptr<ItemDrop> ItemDrop::createRandomizedDrop(std::shared_ptr<Item> c
   return itemDrop;
 }
 
-std::shared_ptr<ItemDrop> ItemDrop::createRandomizedDrop(ItemDescriptor const& descriptor, Vec2F const& position, bool eternal) {
+std::shared_ptr<ItemDrop> ItemDrop::createRandomizedDrop(Root& rootContext, ItemDescriptor const& descriptor, Vec2F const& position, bool eternal) {
   if (!descriptor || descriptor.isEmpty())
     return {};
 
-  auto itemDatabase = Root::singleton().itemDatabase();
-  auto itemDrop = createRandomizedDrop(itemDatabase->item(descriptor), position, false);
+  auto itemDatabase = rootContext.itemDatabase();
+  auto itemDrop = createRandomizedDrop(rootContext, itemDatabase->item(descriptor), position, false);
   itemDrop->setEternal(eternal);
 
   return itemDrop;
 }
 
-std::shared_ptr<ItemDrop> ItemDrop::throwDrop(std::shared_ptr<Item> const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) {
+std::shared_ptr<ItemDrop> ItemDrop::throwDrop(Root& rootContext, std::shared_ptr<Item> const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) {
   if (!item)
     return {};
 
-  auto idconfig = Root::singleton().assets()->json("/itemdrop.config");
+  auto idconfig = rootContext.assets()->json("/itemdrop.config");
 
-  std::shared_ptr<ItemDrop> itemDrop = std::make_shared<ItemDrop>(item);
+  std::shared_ptr<ItemDrop> itemDrop = std::make_shared<ItemDrop>(rootContext, item);
   itemDrop->setPosition(position);
   if (direction != Vec2F())
     itemDrop->setVelocity(velocity + vnorm(direction) * idconfig.getFloat("throwSpeed"));
@@ -168,19 +168,19 @@ std::shared_ptr<ItemDrop> ItemDrop::throwDrop(std::shared_ptr<Item> const& item,
   return itemDrop;
 }
 
-std::shared_ptr<ItemDrop> ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) {
+std::shared_ptr<ItemDrop> ItemDrop::throwDrop(Root& rootContext, ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) {
   if (!itemDescriptor || itemDescriptor.isEmpty())
     return {};
 
-  auto itemDatabase = Root::singleton().itemDatabase();
-  auto itemDrop = throwDrop(itemDatabase->item(itemDescriptor), position, velocity, direction, false);
+  auto itemDatabase = rootContext.itemDatabase();
+  auto itemDrop = throwDrop(rootContext, itemDatabase->item(itemDescriptor), position, velocity, direction, false);
   itemDrop->setEternal(eternal);
 
   return itemDrop;
 }
 
-ItemDrop::ItemDrop(std::shared_ptr<Item> item)
-  : ItemDrop() {
+ItemDrop::ItemDrop(Root& rootContext, std::shared_ptr<Item> item)
+  : ItemDrop(rootContext) {
   m_item = std::move(item);
   
   m_parameters = m_item->instanceValueOfType("itemDrop",Json::Type::Object,JsonObject{});
@@ -193,9 +193,9 @@ ItemDrop::ItemDrop(std::shared_ptr<Item> item)
   m_clientEntityMode = ClientEntityModeNames.getLeft(configValue("clientEntityMode", "ClientSlaveOnly").toString());
 }
 
-ItemDrop::ItemDrop(Json const& diskStore)
-  : ItemDrop() {
-  Root::singleton().itemDatabase()->diskLoad(diskStore.get("item"), m_item);
+ItemDrop::ItemDrop(Root& rootContext, Json const& diskStore)
+  : ItemDrop(rootContext) {
+  this->root().itemDatabase()->diskLoad(diskStore.get("item"), m_item);
   m_parameters = m_item->instanceValueOfType("itemDrop",Json::Type::Object,JsonObject{});
   m_movementController.setPosition(jsonToVec2F(diskStore.get("position")));
   m_mode.set(ModeNames.getLeft(diskStore.getString("mode")));
@@ -209,11 +209,11 @@ ItemDrop::ItemDrop(Json const& diskStore)
   m_clientEntityMode = ClientEntityModeNames.getLeft(configValue("clientEntityMode", "ClientSlaveOnly").toString());
 }
 
-ItemDrop::ItemDrop(ByteArray store, NetCompatibilityRules rules) : ItemDrop() {
+ItemDrop::ItemDrop(Root& rootContext, ByteArray store, NetCompatibilityRules rules) : ItemDrop(rootContext) {
   DataStreamBuffer ds(std::move(store));
   ds.setStreamCompatibilityVersion(rules);
 
-  Root::singleton().itemDatabase()->loadItem(ds.read<ItemDescriptor>(), m_item);
+  this->root().itemDatabase()->loadItem(ds.read<ItemDescriptor>(), m_item);
   m_parameters = m_item->instanceValueOfType("itemDrop",Json::Type::Object,JsonObject{});
   ds.read(m_eternal);
   ds.read(m_dropAge);
@@ -225,7 +225,7 @@ ItemDrop::ItemDrop(ByteArray store, NetCompatibilityRules rules) : ItemDrop() {
 }
 
 Json ItemDrop::diskStore() const {
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto itemDatabase = this->root().itemDatabase();
   return JsonObject{
     {"item", itemDatabase->diskStore(m_item)},
     {"position", jsonFromVec2F(m_movementController.position())},
@@ -346,7 +346,7 @@ void ItemDrop::update(float dt, std::uint64_t) {
       updateTaken(true);
     } else {
       // Rarely, check for other drops near us and combine with them if possible.
-      if (canTake() && m_mode.get() == Mode::Available && Random::randf() < m_combineChance) {
+      if (canTake() && m_mode.get() == Mode::Available && this->root().random().randf() < m_combineChance) {
         world()->findEntity(RectF::withCenter(position(), Vec2F::filled(m_combineRadius)), [&](std::shared_ptr<Entity> const& entity) {
             if (auto closeDrop = as<ItemDrop>(entity)) {
               // Make sure not to try to merge with ourselves here.
@@ -400,7 +400,7 @@ void ItemDrop::update(float dt, std::uint64_t) {
     }
 
     if (m_mode.get() <= Mode::Available && m_ageItemsTimer.elapsedTime() > m_ageItemsEvery) {
-      if (Root::singleton().itemDatabase()->ageItem(m_item, m_ageItemsTimer.elapsedTime())) {
+      if (this->root().itemDatabase()->ageItem(m_item, m_ageItemsTimer.elapsedTime())) {
         m_itemDescriptor.set(m_item->descriptor());
         updateCollisionPoly();
       }
@@ -408,7 +408,7 @@ void ItemDrop::update(float dt, std::uint64_t) {
     }
   } else {
     if (m_itemDescriptor.pullUpdated())
-      Root::singleton().itemDatabase()->loadItem(m_itemDescriptor.get(), m_item);
+      this->root().itemDatabase()->loadItem(m_itemDescriptor.get(), m_item);
     m_netGroup.tickNetInterpolation(dt);
     if (m_owningEntity.get() != NullEntityId) {
       if (!isMaster() && m_dropAge.elapsedTime() > 1.0f)
@@ -424,7 +424,7 @@ void ItemDrop::update(float dt, std::uint64_t) {
   }
 
   if (world()->isClient()) {
-    SpatialLogger::logPoly("world",
+    this->root().spatialLogger().logPoly("world",
       m_movementController.collisionBody(),
       (canTake() ? Color::Green : Color::Red).toRgba());
   }
@@ -465,16 +465,16 @@ void ItemDrop::render(RenderCallback* renderCallback) {
 
   if (!m_drawables) {
     if (auto mat = as<MaterialItem>(m_item.get())) {
-      m_drawables = mat->generatedPreview(Vec2I(position().floor()));
+      m_drawables = mat->generatedPreview(renderCallback->tileDrawer(), Vec2I(position().floor()));
       m_overForeground = true;
     }
     else
-      m_drawables = m_item->dropDrawables();
+      m_drawables = m_item->dropDrawables(renderCallback->tileDrawer());
 
     if (Directives dropDirectives = m_config.getString("directives", "")) {
       for (auto& drawable : *m_drawables) {
         if (drawable.isImage())
-          drawable.imagePart().addDirectives(dropDirectives, true);
+          drawable.imagePart().addDirectives(*this->root().imageMetadataDatabase(), dropDirectives, true);
       }
     }
   }
@@ -566,10 +566,10 @@ Json ItemDrop::configValue(String const& name, Json const& def) const {
   return m_parameters.query(name, m_config.query(name, def));
 }
 
-ItemDrop::ItemDrop() {
+ItemDrop::ItemDrop(Root& rootContext) : Entity(rootContext), m_movementController(rootContext), m_scriptComponent(rootContext) {
   setPersistent(true);
 
-  m_config = Root::singleton().assets()->json("/itemdrop.config");
+  m_config = this->root().assets()->json("/itemdrop.config");
   m_parameters = JsonObject{};
 
   MovementParameters parameters = MovementParameters(m_config.get("movementSettings", JsonObject()));
@@ -594,7 +594,7 @@ ItemDrop::ItemDrop() {
   m_velocity = m_config.getFloat("velocity");
   m_velocityApproach = m_config.getFloat("velocityApproach");
   m_overheadApproach = m_config.getFloat("overheadApproach");
-  m_overheadOffset = Vec2F(m_config.getFloat("overheadRandomizedDistance"), 0).rotate(std::numbers::pi * 2.0 * Random::randf());
+  m_overheadOffset = Vec2F(m_config.getFloat("overheadRandomizedDistance"), 0).rotate(std::numbers::pi * 2.0 * this->root().random().randf());
 
   m_combineChance = m_config.getFloat("combineChance");
   m_combineRadius = m_config.getFloat("combineRadius");
@@ -609,7 +609,7 @@ ItemDrop::ItemDrop() {
 void ItemDrop::updateCollisionPoly() {
   /* // currently disabled due to causing items to get stuck
   if (!as<MaterialItem>(m_item.get())) {
-    m_boundBox = Drawable::boundBoxAll(m_item->dropDrawables(), true);
+    m_boundBox = Drawable::boundBoxAll(*this->root().imageMetadataDatabase(), m_item->dropDrawables(nullptr), true);
     m_boundBox.rangeSetIfEmpty(m_defaultBoundBox);
     MovementParameters parameters;
     parameters.collisionPoly = PolyF(collisionArea());

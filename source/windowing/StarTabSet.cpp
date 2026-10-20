@@ -71,21 +71,21 @@ import star.image_metadata_database;
 
 namespace Star {
 
-TabSetWidget::TabSetWidget(TabSetConfig const& tabSetConfig) {
+TabSetWidget::TabSetWidget(GuiContext& context, TabSetConfig const& tabSetConfig) : Widget(context) {
   m_tabSetConfig = tabSetConfig;
 
-  m_tabBar = std::make_shared<FlowLayout>();
+  m_tabBar = std::make_shared<FlowLayout>(*this->context());
   m_tabBar->setSpacing(m_tabSetConfig.tabButtonSpacing);
   Widget::addChild("tabBar", m_tabBar);
 
-  m_stack = std::make_shared<StackWidget>();
+  m_stack = std::make_shared<StackWidget>(*this->context());
   addChild("tabs", m_stack);
 
   markAsContainer();
 }
 
 void TabSetWidget::setSize(Vec2I const& size) {
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  auto imgMetadata = this->context()->root().imageMetadataDatabase();
   auto tabHeight = std::max({imgMetadata->imageSize(m_tabSetConfig.tabButtonBaseImage).y(),
       imgMetadata->imageSize(m_tabSetConfig.tabButtonHoverImage).y(),
       imgMetadata->imageSize(m_tabSetConfig.tabButtonPressedImage).y(),
@@ -101,7 +101,7 @@ void TabSetWidget::setSize(Vec2I const& size) {
 }
 
 void TabSetWidget::addTab(String const& widgetName, std::shared_ptr<Widget> widget, String const& title) {
-  auto newButton = std::make_shared<ButtonWidget>();
+  auto newButton = std::make_shared<ButtonWidget>(*this->context());
   newButton->setImages(
       m_tabSetConfig.tabButtonBaseImage, m_tabSetConfig.tabButtonHoverImage, m_tabSetConfig.tabButtonPressedImage);
   newButton->setCheckedImages(m_tabSetConfig.tabButtonBaseImageSelected,

@@ -111,6 +111,7 @@ import star.rebuilder;
 import star.npc_database;
 import star.item_database;
 import star.species_database;
+import star.versioning_database;
 
 import star.armor_wearer;
 import star.entity_splash;
@@ -118,8 +119,8 @@ import star.entity_splash;
 import star.net_compatibility;
 namespace Star {
 
-NpcDatabase::NpcDatabase() : m_rebuilder(std::make_shared<Rebuilder>("npc")) {
-  auto assets = Root::singleton().assets();
+NpcDatabase::NpcDatabase(Root& root) : m_root(root), m_rebuilder(std::make_shared<Rebuilder>(root, "npc")) {
+  auto assets = m_root.assets();
 
   auto& files = assets->scanExtension("npctype");
   assets->queueJsons(files);
@@ -139,12 +140,12 @@ NpcDatabase::NpcDatabase() : m_rebuilder(std::make_shared<Rebuilder>("npc")) {
   }
 }
 
-NpcVariant NpcDatabase::generateNpcVariant(String const& species, String const& typeName, float level) const {
-  return generateNpcVariant(species, typeName, level, Random::randu64(), {});
+NpcVariant NpcDatabase::generateNpcVariant(String const& species, String const& typeName, float level, ItemDatabase const* itemCatalog) const {
+  return generateNpcVariant(species, typeName, level, m_root.random().randu64(), {}, itemCatalog);
 }
 
 NpcVariant NpcDatabase::generateNpcVariant(
-    String const& species, String const& typeName, float level, std::uint64_t seed, Json const& overrides) const {
+    String const& species, String const& typeName, float level, std::uint64_t seed, Json const& overrides, ItemDatabase const* itemCatalog) const {
   NpcVariant variant;
   variant.species = species;
   variant.typeName = typeName;
@@ -164,9 +165,9 @@ NpcVariant NpcDatabase::generateNpcVariant(
   variant.initialScriptDelta = config.getUInt("initialScriptDelta", 5);
   variant.scriptConfig = config.get("scriptConfig");
 
-  auto speciesDatabase = Root::singleton().speciesDatabase();
+  auto speciesDatabase = m_root.speciesDatabase();
   auto speciesDefinition = speciesDatabase->species(species);
-  auto result = speciesDatabase->generateHumanoid(species, seed);
+  auto result = speciesDatabase->generateHumanoid(species, seed, {}, itemCatalog);
   HumanoidIdentity identity = result.identity;
 
   variant.humanoidParameters = jsonMerge(result.humanoidParameters, config.getObject("humanoidParameters", JsonObject())).toObject();
@@ -174,7 +175,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
   if (config.contains("npcname"))
     identity.name = config.getString("npcname");
   else if (config.contains("nameGen")) {
-    identity.name = Root::singleton().nameGenerator()->generateName(
+    identity.name = m_root.nameGenerator()->generateName(
         jsonToStringList(config.get("nameGen"))[(int)identity.gender], randSource);
   }
   // we're going to kinda end up doing this twice just to make sure it ends up generating with the right personality array
@@ -186,8 +187,8 @@ NpcVariant NpcDatabase::generateNpcVariant(
 
   variant.uniqueHumanoidConfig = config.contains("humanoidConfig");
   if (variant.uniqueHumanoidConfig){
-    variant.humanoidConfig = Root::singleton().assets()->json(config.getString("humanoidConfig"));
-    auto usedHumanoidConfig = speciesDatabase->humanoidConfig(identity, variant.humanoidParameters, variant.humanoidConfig);
+    variant.humanoidConfig = m_root.assets()->json(config.getString("humanoidConfig"));
+    auto usedHumanoidConfig = speciesDatabase->humanoidConfig(identity, variant.humanoidParameters, variant.humanoidConfig, itemCatalog);
     // this only needs to be done if the npc has a unique humanoid config, otherwise the output from generateHumanoid should be fine
     identity.personality = parsePersonalityArray(randSource.randFrom(usedHumanoidConfig.getArray("personalities")));
   } else {
@@ -203,7 +204,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
   variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings");
 
-  auto functionDatabase = Root::singleton().functionDatabase();
+  auto functionDatabase = m_root.functionDatabase();
   float powerMultiplierModifier = functionDatabase->function("npcLevelPowerMultiplierModifier")->evaluate(variant.level);
   float protectionMultiplier = functionDatabase->function("npcLevelProtectionMultiplier")->evaluate(variant.level);
   float maxHealthMultiplier = functionDatabase->function("npcLevelHealthMultiplier")->evaluate(variant.level);
@@ -269,7 +270,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
 
   variant.nametagColor = jsonToVec3B(config.get("nametagColor", JsonArray{255, 255, 255}));
 
-  variant.splashConfig = EntitySplashConfig(config.get("splashConfig"));
+  variant.splashConfig = EntitySplashConfig(m_root, config.get("splashConfig"));
 
   return variant;
 }
@@ -329,18 +330,18 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
     variant.description = config.optString("description");
   }
 
-  auto speciesDatabase = Root::singleton().speciesDatabase();
+  auto speciesDatabase = m_root.speciesDatabase();
   auto speciesDefinition = speciesDatabase->species(variant.species);
   variant.uniqueHumanoidConfig = config.contains("humanoidConfig");
   if (variant.uniqueHumanoidConfig)
-    variant.humanoidConfig = Root::singleton().assets()->json(config.getString("humanoidConfig"));
+    variant.humanoidConfig = m_root.assets()->json(config.getString("humanoidConfig"));
   else
     variant.humanoidConfig = speciesDefinition->humanoidConfig();
 
   variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings");
 
-  auto functionDatabase = Root::singleton().functionDatabase();
+  auto functionDatabase = m_root.functionDatabase();
   float powerMultiplierModifier =
       functionDatabase->function("npcLevelPowerMultiplierModifier")->evaluate(variant.level);
   float protectionMultiplier = functionDatabase->function("npcLevelProtectionMultiplier")->evaluate(variant.level);
@@ -368,12 +369,13 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
 
   variant.nametagColor = jsonToVec3B(config.get("nametagColor", JsonArray{255, 255, 255}));
 
-  variant.splashConfig = EntitySplashConfig(config.get("splashConfig"));
+  variant.splashConfig = EntitySplashConfig(m_root, config.get("splashConfig"));
 
   return variant;
 }
 
 Json NpcDatabase::writeNpcVariantToJson(NpcVariant const& variant) const {
+  auto versioningDatabase = m_root.versioningDatabase();
   JsonObject store {
     {"species", variant.species},
     {"typeName", variant.typeName},
@@ -382,7 +384,9 @@ Json NpcDatabase::writeNpcVariantToJson(NpcVariant const& variant) const {
     {"overrides", variant.overrides},
     {"initialScriptDelta", variant.initialScriptDelta},
     {"humanoidIdentity", variant.humanoidIdentity.toJson()},
-    {"items", jsonFromMapV<StringMap<ItemDescriptor>>(variant.items, std::mem_fn(&ItemDescriptor::diskStore))},
+    {"items", jsonFromMapV<StringMap<ItemDescriptor>>(variant.items, [&versioningDatabase](ItemDescriptor const& descriptor) {
+      return descriptor.diskStore(*versioningDatabase);
+    })},
     {"persistent", variant.persistent},
     {"keepAlive", variant.keepAlive},
     {"damageTeam", variant.damageTeam},
@@ -414,11 +418,11 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
   variant.humanoidIdentity = HumanoidIdentity(data.get("humanoidIdentity"));
   variant.humanoidParameters = data.getObject("humanoidParameters", JsonObject());
 
-  auto speciesDatabase = Root::singleton().speciesDatabase();
+  auto speciesDatabase = m_root.speciesDatabase();
   auto speciesDefinition = speciesDatabase->species(variant.species);
   variant.uniqueHumanoidConfig = config.contains("humanoidConfig");
   if (variant.uniqueHumanoidConfig)
-    variant.humanoidConfig = Root::singleton().assets()->json(config.getString("humanoidConfig"));
+    variant.humanoidConfig = m_root.assets()->json(config.getString("humanoidConfig"));
   else
     variant.humanoidConfig = speciesDefinition->humanoidConfig();
 
@@ -426,7 +430,7 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
   variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings", {});
 
-  auto functionDatabase = Root::singleton().functionDatabase();
+  auto functionDatabase = m_root.functionDatabase();
   float powerMultiplierModifier =
       functionDatabase->function("npcLevelPowerMultiplierModifier")->evaluate(variant.level);
   float protectionMultiplier = functionDatabase->function("npcLevelProtectionMultiplier")->evaluate(variant.level);
@@ -442,7 +446,10 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
 
   variant.touchDamageConfig = config.get("touchDamage", {});
 
-  variant.items = jsonToMapV<StringMap<ItemDescriptor>>(data.get("items"), ItemDescriptor::loadStore);
+  auto versioningDatabase = m_root.versioningDatabase();
+  variant.items = jsonToMapV<StringMap<ItemDescriptor>>(data.get("items"), [&versioningDatabase](Json const& descriptor) {
+    return ItemDescriptor::loadStore(*versioningDatabase, descriptor);
+  });
 
   variant.disableWornArmor = config.getBool("disableWornArmor", true);
   variant.dropPools = jsonToStringList(config.get("dropPools", JsonArray{}));
@@ -454,26 +461,26 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
 
   variant.nametagColor = jsonToVec3B(config.get("nametagColor", JsonArray{255, 255, 255}));
 
-  variant.splashConfig = EntitySplashConfig(config.get("splashConfig"));
+  variant.splashConfig = EntitySplashConfig(m_root, config.get("splashConfig"));
 
   return variant;
 }
 
 std::shared_ptr<Npc> NpcDatabase::createNpc(NpcVariant const& npcVariant) const {
-  return std::make_shared<Npc>(npcVariant);
+  return std::make_shared<Npc>(m_root, npcVariant);
 }
 
 std::shared_ptr<Npc> NpcDatabase::diskLoadNpc(Json const& diskStore) const {
   std::shared_ptr<Npc> npc;
   try {
     NpcVariant npcVariant = readNpcVariantFromJson(diskStore.get("npcVariant"));
-    npc = std::make_shared<Npc>(npcVariant, diskStore);
+    npc = std::make_shared<Npc>(m_root, npcVariant, diskStore);
   } catch (std::exception const& e) {
     auto exception = std::current_exception();
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
       try {
         NpcVariant npcVariant = readNpcVariantFromJson(store.get("npcVariant"));
-        npc = std::make_shared<Npc>(npcVariant, store);
+        npc = std::make_shared<Npc>(m_root, npcVariant, store);
       } catch (std::exception const& e) {
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
@@ -488,20 +495,24 @@ std::shared_ptr<Npc> NpcDatabase::diskLoadNpc(Json const& diskStore) const {
 }
 
 std::shared_ptr<Npc> NpcDatabase::netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules) const {
-  return std::make_shared<Npc>(readNpcVariant(netStore, rules));
+  return std::make_shared<Npc>(m_root, readNpcVariant(netStore, rules));
 }
 
-List<Drawable> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMode mode) const {
-  Humanoid humanoid(npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json());
+List<Drawable> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMode mode, ItemDatabase const* itemCatalog) const {
+  Humanoid humanoid(m_root, npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json(), itemCatalog);
 
-  auto itemDatabase = Root::singleton().itemDatabase();
+  std::shared_ptr<ItemDatabase const> itemDatabase;
+  if (!itemCatalog) {
+    itemDatabase = m_root.itemDatabase();
+    itemCatalog = itemDatabase.get();
+  }
   auto items = StringMap<ItemDescriptor, CaseInsensitiveStringHash, CaseInsensitiveStringCompare>::from(npcVariant.items);
 
-  auto makeItem = [&npcVariant, &itemDatabase](ItemDescriptor itemDescriptor) -> std::shared_ptr<Item> {
-    return itemDatabase->item(itemDescriptor, npcVariant.level, npcVariant.seed);
+  auto makeItem = [&npcVariant, itemCatalog](ItemDescriptor itemDescriptor) -> std::shared_ptr<Item> {
+    return itemCatalog->item(itemDescriptor, npcVariant.level, npcVariant.seed);
   };
 
-  ArmorWearer armor;
+  ArmorWearer armor(m_root);
   for (auto item : npcVariant.items) {
     if (auto equipmentSlot = EquipmentSlotNames.maybeLeft(item.first)) {
       armor.setItem((std::uint8_t)*equipmentSlot, as<ArmorItem>(makeItem(ItemDescriptor(item.second))));

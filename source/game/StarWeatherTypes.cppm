@@ -22,6 +22,8 @@ import star.particle;
 import star.vector;
 namespace Star {
 
+class Root;
+
 struct WeatherType {
   friend DataStream& operator>>(DataStream& ds, WeatherType& weatherType);
   friend DataStream& operator<<(DataStream& ds, WeatherType const& weatherType);
@@ -42,7 +44,7 @@ struct WeatherType {
   };
 
   WeatherType();
-  WeatherType(Json config, String path = String());
+  WeatherType(Root& root, Json config, String path = String());
 
   Json toJson() const;
 

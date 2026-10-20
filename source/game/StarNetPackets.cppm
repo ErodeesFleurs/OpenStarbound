@@ -237,8 +237,10 @@ struct Packet {
   PacketCompressionMode m_compressionMode = PacketCompressionMode::Automatic;
 };
 
+// Stages a packet for wire decoding; identity fields are initially unfilled.
 std::shared_ptr<Packet> createPacket(PacketType type);
-std::shared_ptr<Packet> createPacket(PacketType type, Maybe<Json> const& args);
+// Constructs a raw outgoing packet, generating identity fields before JSON load.
+std::shared_ptr<Packet> createPacket(RandomService& random, PacketType type, Maybe<Json> const& args);
 
 template <PacketType PacketT>
 struct PacketBase : public Packet {

@@ -170,18 +170,18 @@ DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer) {
   return ds;
 }
 
-Parallax::Parallax(String const& assetFile,
+Parallax::Parallax(Root& root, String const& assetFile,
     std::uint64_t seed,
     float verticalOrigin,
     float hueShift,
-    Maybe<TreeVariant> parallaxTreeVariant) {
+    Maybe<TreeVariant> parallaxTreeVariant) : m_root(root) {
   m_seed = seed;
   m_verticalOrigin = verticalOrigin;
   m_parallaxTreeVariant = parallaxTreeVariant;
   m_hueShift = hueShift;
   m_imageDirectory = "/parallax/images/";
 
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
 
   Json config = assets->json(assetFile);
 
@@ -203,11 +203,11 @@ Parallax::Parallax(String const& assetFile,
   std::stable_sort(m_layers.begin(), m_layers.end(), [](ParallaxLayer const& a, ParallaxLayer const& b) { return a.zLevel > b.zLevel; });
 }
 
-Parallax::Parallax(Json const& store) {
+Parallax::Parallax(Root& root, Json const& store) : m_root(root) {
   m_seed = store.getUInt("seed");
   m_verticalOrigin = store.getFloat("verticalOrigin");
   if (auto treeVariant = store.opt("parallaxTreeVariant"))
-    m_parallaxTreeVariant = TreeVariant(*treeVariant);
+    m_parallaxTreeVariant = TreeVariant(*root.assets(), *treeVariant);
   m_hueShift = store.getFloat("hueShift");
   m_imageDirectory = store.getString("imageDirectory");
   m_layers = store.getArray("layers").transformed(construct<ParallaxLayer>());
@@ -231,7 +231,7 @@ void Parallax::fadeToSkyColor(Color const& skyColor) {
 }
 
 std::shared_ptr<Parallax> Parallax::createOverlay(String const& assetFile) const {
-  return std::make_shared<Parallax>(assetFile, m_seed, m_verticalOrigin, m_hueShift, m_parallaxTreeVariant);
+  return std::make_shared<Parallax>(m_root, assetFile, m_seed, m_verticalOrigin, m_hueShift, m_parallaxTreeVariant);
 }
 
 ParallaxLayers const& Parallax::layers() const {
@@ -258,7 +258,7 @@ void Parallax::buildLayer(Json const& layerSettings, String const& kind) {
 
   ParallaxLayer layer;
   RandomSource rnd(m_seed + m_layers.size());
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  auto imgMetadata = m_root.imageMetadataDatabase();
 
   int baseCount = layerSettings.getInt("baseCount", 1);
   int base = rnd.randInt(baseCount - 1) + 1;

@@ -56,7 +56,7 @@ class Player;
 
 class LargeCharPlateWidget : public ButtonWidget {
 public:
-  LargeCharPlateWidget(WidgetCallbackFunc mainCallback, std::shared_ptr<Player> player = std::shared_ptr<Player>());
+  LargeCharPlateWidget(GuiContext& context, WidgetCallbackFunc mainCallback, std::shared_ptr<Player> player = std::shared_ptr<Player>());
 
   void mouseOut() override;
 

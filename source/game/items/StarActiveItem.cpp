@@ -115,13 +115,13 @@ import star.math_common;
 import star.algorithm;
 namespace Star {
 
-ActiveItem::ActiveItem(Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters) {
-  auto assets = Root::singleton().assets();
+ActiveItem::ActiveItem(Root& root, Json const& config, String const& directory, Json const& parameters)
+  : Item(root, config, directory, parameters), m_script(root), m_itemAnimator(root), m_scriptedAnimator(root) {
+  auto assets = root.assets();
   auto animationConfig = assets->fetchJson(instanceValue("animation"), directory);
   if (auto customConfig = instanceValue("animationCustom"))
     animationConfig = jsonMerge(animationConfig, customConfig);
-  m_itemAnimator = NetworkedAnimator(animationConfig, directory);
+  m_itemAnimator = NetworkedAnimator(root, animationConfig, directory);
   for (auto const& pair : instanceValue("animationParts", JsonObject()).iterateObject())
     m_itemAnimator.setPartTag(pair.first, "partImage", pair.second.toString());
   m_scriptedAnimationParameters.reset(config.getObject("scriptedAnimationParameters", {}));
@@ -149,7 +149,7 @@ ActiveItem::ActiveItem(Json const& config, String const& directory, Json const& 
   m_armAngle.setFixedPointBase(0.01f);
 }
 
-ActiveItem::ActiveItem(ActiveItem const& rhs) : ActiveItem(rhs.config(), rhs.directory(), rhs.parameters()) {}
+ActiveItem::ActiveItem(ActiveItem const& rhs) : ActiveItem(rhs.root(), rhs.config(), rhs.directory(), rhs.parameters()) {}
 
 std::shared_ptr<Item> ActiveItem::clone() const {
   return std::make_shared<ActiveItem>(*this);
@@ -172,7 +172,7 @@ void ActiveItem::init(ToolUserEntity* owner, ToolHand hand) {
     m_script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(owner->statusController()));
     m_script.addActorMovementCallbacks(owner->movementController());
     if (auto player = as<Player>(owner))
-      m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(player));
+      m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(root(), player));
     m_script.addCallbacks("entity", LuaBindings::makeEntityCallbacks(as<Entity>(owner)));
     m_script.init(world());
     m_currentFireMode = FireMode::None;
@@ -253,15 +253,15 @@ void ActiveItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Move
   for (auto shieldPoly : shieldPolys()) {
     shieldPoly.translate(owner()->position());
     if (isClient)
-      SpatialLogger::logPoly("world", shieldPoly, {255, 255, 0, 255});
+      root().spatialLogger().logPoly("world", shieldPoly, {255, 255, 0, 255});
   }
 
   if (isClient) {
     for (auto forceRegion : forceRegions()) {
       if (auto dfr = forceRegion.ptr<DirectionalForceRegion>())
-        SpatialLogger::logPoly("world", dfr->region, { 155, 0, 255, 255 });
+        root().spatialLogger().logPoly("world", dfr->region, { 155, 0, 255, 255 });
       else if (auto rfr = forceRegion.ptr<RadialForceRegion>())
-        SpatialLogger::logPoint("world", rfr->center, { 155, 0, 255, 255 });
+        root().spatialLogger().logPoint("world", rfr->center, { 155, 0, 255, 255 });
     }
   }
 }
@@ -588,12 +588,12 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
     if (inventoryIcon.type() == Json::Type::Array) {
       setIconDrawables(inventoryIcon.toArray().transformed([&](Json config) -> Drawable {
         if (auto image = config.optString("image"))
-          return Drawable(config.set("image", AssetPath::relativeTo(directory(), *image)));
-        return Drawable(config);
+          return Drawable(*root().imageMetadataDatabase(), config.set("image", AssetPath::relativeTo(directory(), *image)));
+        return Drawable(*root().imageMetadataDatabase(), config);
       }));
     } else {
       auto image = AssetPath::relativeTo(directory(), inventoryIcon.toString());
-      setIconDrawables({Drawable::makeImage(image, 1.0f, true, Vec2F())});
+      setIconDrawables({Drawable::makeImage(*root().imageMetadataDatabase(), image, 1.0f, true, Vec2F())});
     }
   });
   callbacks.registerCallback("setSecondaryIcon", [this](Json secondaryIcon) {
@@ -601,12 +601,12 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
     if (secondaryIcon.type() == Json::Type::Array) {
       setSecondaryIconDrawables(secondaryIcon.toArray().transformed([&](Json config) -> Drawable {
         if (auto image = config.optString("image"))
-          return Drawable(config.set("image", AssetPath::relativeTo(directory(), *image)));
-        return Drawable(config);
+          return Drawable(*root().imageMetadataDatabase(), config.set("image", AssetPath::relativeTo(directory(), *image)));
+        return Drawable(*root().imageMetadataDatabase(), config);
       }));
     } else if (secondaryIcon.type() == Json::Type::String) {
       auto image = AssetPath::relativeTo(directory(), secondaryIcon.toString());
-      setSecondaryIconDrawables(Maybe<List<Drawable>>({Drawable::makeImage(image, 1.0f, true, Vec2F())}));
+      setSecondaryIconDrawables(Maybe<List<Drawable>>({Drawable::makeImage(*root().imageMetadataDatabase(), image, 1.0f, true, Vec2F())}));
     } else {
       setSecondaryIconDrawables(Maybe<List<Drawable>>());
     }

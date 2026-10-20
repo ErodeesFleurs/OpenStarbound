@@ -60,11 +60,11 @@ import star.progress_widget;
 
 namespace Star {
 
-ProgressWidget::ProgressWidget(String const& background,
+ProgressWidget::ProgressWidget(GuiContext& context, String const& background,
     String const& overlay,
     ImageStretchSet const& progressSet,
     GuiDirection direction)
-  : m_background(background),
+  : Widget(context), m_background(background),
     m_overlay(overlay),
     m_bar(progressSet),
     m_direction(direction) {
@@ -73,9 +73,9 @@ ProgressWidget::ProgressWidget(String const& background,
   m_maxLevel = 1;
 
   if (!m_background.empty())
-    setSize(Vec2I(context()->textureSize(m_background)));
+    setSize(Vec2I(this->context()->textureSize(m_background)));
   else if (!m_overlay.empty())
-    setSize(Vec2I(context()->textureSize(m_overlay)));
+    setSize(Vec2I(this->context()->textureSize(m_overlay)));
 
   m_color = Color::White;
 }

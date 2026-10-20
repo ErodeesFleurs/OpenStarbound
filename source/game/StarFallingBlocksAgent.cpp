@@ -48,7 +48,7 @@ import star.collision_generator;
 import star.world_tiles;
 import star.asset_source;
 import star.assets;
-import star.root_base;
+
 import star.configuration;
 import star.root;
 
@@ -57,9 +57,9 @@ import star.falling_blocks_agent;
 import star.algorithm;
 namespace Star {
 
-FallingBlocksAgent::FallingBlocksAgent(std::shared_ptr<FallingBlocksFacade> worldFacade)
-  : m_facade(std::move(worldFacade)) {
-  m_immediateUpwardPropagateProbability = Root::singleton().assets()->json("/worldserver.config:fallingBlocksImmediateUpwardPropogateProbability").toFloat();
+FallingBlocksAgent::FallingBlocksAgent(Root& root, std::shared_ptr<FallingBlocksFacade> worldFacade)
+  : m_facade(std::move(worldFacade)), m_random(root.random().randu64()) {
+  m_immediateUpwardPropagateProbability = root.assets()->json("/worldserver.config:fallingBlocksImmediateUpwardPropogateProbability").toFloat();
 }
 
 void FallingBlocksAgent::update() {

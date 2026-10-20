@@ -31,7 +31,7 @@ import star.collision_block;
 import star.item_descriptor;
 import star.asset_source;
 import star.assets;
-import star.root_base;
+
 import star.configuration;
 import star.root;
 
@@ -45,9 +45,9 @@ namespace Star {
 
 WorldStructure::WorldStructure() {}
 
-WorldStructure::WorldStructure(String const& configPath) {
-  auto assets = Root::singleton().assets();
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+WorldStructure::WorldStructure(Root& root, String const& configPath) {
+  auto assets = root.assets();
+  auto imgMetadata = root.imageMetadataDatabase();
   auto settings = assets->json(configPath);
 
   m_region = RectI::null();
@@ -79,7 +79,7 @@ WorldStructure::WorldStructure(String const& configPath) {
 
   auto blockPosition = jsonToVec2I(settings.getArray("blocksPosition", JsonArray{0, 0}));
   HashMap<Vec4B, BlockKey> blockKeys;
-  auto matDb = Root::singleton().materialDatabase();
+  auto matDb = root.materialDatabase();
   for (auto const& blockKeyConfig :
       assets->fetchJson(settings.get("blockKey", JsonArray()), configPath).iterateArray()) {
     auto foregroundMat = blockKeyConfig.getString("foregroundMat", "");

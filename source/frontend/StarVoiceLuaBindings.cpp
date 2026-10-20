@@ -30,10 +30,10 @@ module star.voice_lua_bindings;
 namespace Star {
 
 typedef Voice::SpeakerId SpeakerId;
-LuaCallbacks LuaBindings::makeVoiceCallbacks() {
+LuaCallbacks LuaBindings::makeVoiceCallbacks(Voice& owner) {
   LuaCallbacks callbacks;
 
-  auto voice = Voice::singletonPtr();
+  auto voice = &owner;
 
   callbacks.registerCallbackWithSignature<StringList>("devices", std::bind(&Voice::availableDevices, voice));
   callbacks.registerCallback(  "getSettings", [voice]() -> Json      { return voice->saveJson();         });

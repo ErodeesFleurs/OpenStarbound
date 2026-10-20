@@ -22,8 +22,6 @@ import star.version;
 
 import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
 import star.root;
 
 import star.tenant_database;
@@ -39,8 +37,10 @@ bool Tenant::criteriaSatisfied(StringMap<unsigned> const& colonyTags) const {
   return true;
 }
 
-TenantDatabase::TenantDatabase() {
-  auto assets = Root::singleton().assets();
+TenantDatabase::TenantDatabase(Root& root)
+  : m_root(root), m_tenantCache(root.random()) {
+  auto assets = m_root.assets();
+  auto& logger = m_root.logger();
 
   auto& files = assets->scanExtension("tenant");
   assets->queueJsons(files);
@@ -48,11 +48,11 @@ TenantDatabase::TenantDatabase() {
     try {
       String name = assets->json(file).getString("name");
       if (m_paths.contains(name))
-        Logger::error("Tenant {} defined twice, second time from {}", name, file);
+        logger.error("Tenant {} defined twice, second time from {}", name, file);
       else
         m_paths[name] = file;
     } catch (std::exception const& e) {
-      Logger::error("Error loading tenant file {}: {}", file, outputException(e, true));
+      logger.error("Error loading tenant file {}: {}", file, outputException(e, true));
     }
   }
 }
@@ -67,7 +67,7 @@ std::shared_ptr<Tenant> TenantDatabase::getTenant(String const& name) const {
   return m_tenantCache.get(name,
       [this](String const& name) -> std::shared_ptr<Tenant> {
         if (auto path = m_paths.maybe(name))
-          return readTenant(*path);
+          return readTenant(*m_root.assets(), *path);
         throw TenantException::format("No such tenant named '{}'", name);
       });
 }
@@ -86,10 +86,9 @@ List<std::shared_ptr<Tenant>> TenantDatabase::getMatchingTenants(StringMap<unsig
   return matchingTenants;
 }
 
-std::shared_ptr<Tenant> TenantDatabase::readTenant(String const& path) {
+std::shared_ptr<Tenant> TenantDatabase::readTenant(Assets const& assets, String const& path) {
   try {
-    auto assets = Root::singleton().assets();
-    Json config = assets->json(path);
+    Json config = assets.json(path);
 
     String name = config.getString("name");
     float priority = config.getFloat("priority");

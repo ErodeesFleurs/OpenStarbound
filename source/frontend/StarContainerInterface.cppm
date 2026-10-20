@@ -74,7 +74,7 @@ class ItemBag;
 
 class ContainerPane : public Pane {
 public:
-  ContainerPane(std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor);
+  ContainerPane(GuiContext& guiContext, std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor);
 
   void displayed() override;
   void dismissed() override;

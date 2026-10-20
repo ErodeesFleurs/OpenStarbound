@@ -28,11 +28,6 @@ import star.drawable;
 import star.celestial_coordinate;
 import star.quest_descriptor;
 import star.item;
-import star.asset_source;
-import star.assets;
-import star.root_base;
-import star.configuration;
-import star.root;
 
 import star.versioning_database;
 
@@ -74,9 +69,8 @@ ItemDescriptor::ItemDescriptor(Json const& spec) {
   }
 }
 
-ItemDescriptor ItemDescriptor::loadStore(Json const& spec) {
-  auto versioningDatabase = Root::singleton().versioningDatabase();
-  return ItemDescriptor{versioningDatabase->loadVersionedJson(VersionedJson::fromJson(spec), "Item")};
+ItemDescriptor ItemDescriptor::loadStore(VersioningDatabase const& versioningDatabase, Json const& spec) {
+  return ItemDescriptor{versioningDatabase.loadVersionedJson(VersionedJson::fromJson(spec), "Item")};
 }
 
 String const& ItemDescriptor::name() const {
@@ -135,13 +129,12 @@ bool ItemDescriptor::matches(std::shared_ptr<Item const> const& other, bool exac
   return other->name() == m_name && (!exactMatch || other->parameters() == m_parameters);
 }
 
-Json ItemDescriptor::diskStore() const {
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+Json ItemDescriptor::diskStore(VersioningDatabase const& versioningDatabase) const {
   auto res = JsonObject{
       {"name", m_name}, {"count", m_count}, {"parameters", m_parameters},
   };
 
-  return versioningDatabase->makeCurrentVersionedJson("Item", res).toJson();
+  return versioningDatabase.makeCurrentVersionedJson("Item", res).toJson();
 }
 
 Json ItemDescriptor::toJson() const {

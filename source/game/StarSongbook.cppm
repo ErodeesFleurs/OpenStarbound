@@ -19,10 +19,22 @@ class Audio;
 class AudioInstance;
 class World;
 class RenderCallback;
+class Root;
+
+class SongbookSynchronization {
+private:
+  friend class Songbook;
+  struct TimeSource {
+    std::int64_t keepalive;
+    std::int64_t epoch;
+  };
+  StringMap<std::shared_ptr<TimeSource>> timeSources;
+  Mutex mutex;
+};
 
 class Songbook : public NetElementSyncGroup {
 public:
-  Songbook(String const& species);
+  Songbook(Root& root, String const& species);
   ~Songbook();
 
   void update(EntityMode mode, World* world);
@@ -65,10 +77,7 @@ private:
     double fadeout;
   };
 
-  struct TimeSource {
-    std::int64_t keepalive;
-    std::int64_t epoch;
-  };
+  using TimeSource = SongbookSynchronization::TimeSource;
 
   static double fundamentalFrequency(double p);
   static double fundamentalPitch(double p);
@@ -76,8 +85,8 @@ private:
   void netElementsNeedLoad(bool full) override;
   void netElementsNeedStore() override;
 
-  static StringMap<std::shared_ptr<TimeSource>> s_timeSources;
-  static Mutex s_timeSourcesMutex;
+  Root& m_root;
+  SongbookSynchronization& m_synchronization;
 
   String m_species;
   Vec2F m_position;
@@ -129,5 +138,6 @@ export namespace Star {
   using ::Star::AudioInstance;
   using ::Star::World;
   using ::Star::Songbook;
+  using ::Star::SongbookSynchronization;
   using ::Star::RenderCallback;
 }

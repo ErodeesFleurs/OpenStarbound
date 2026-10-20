@@ -3,7 +3,6 @@ import star.io_device;
 import star.string;
 import star.buffer;
 import star.format;
-import star.logging;
 
 import star.byte_array;
 namespace Star {
@@ -283,7 +282,6 @@ std::shared_ptr<IODevice> Buffer::clone() {
 }
 
 std::shared_ptr<IODevice> ExternalBuffer::clone() {
-  Logger::info("Cloning ExternalBuffer");
   return std::make_shared<ExternalBuffer>(*this);
 }
 

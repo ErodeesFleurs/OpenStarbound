@@ -133,7 +133,6 @@ import star.npc_database;
 import star.npc;
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.configuration;
 import star.root;
 import star.stagehand;
@@ -214,7 +213,7 @@ namespace LuaBindings {
   typedef std::function<Json(std::shared_ptr<ScriptedEntity> const& entity, String const& functionName, JsonArray const& args)> CallEntityScriptFunction;
 
 
-  void addWorldDebugCallbacks(LuaCallbacks& callbacks);
+  void addWorldDebugCallbacks(Root& root, LuaCallbacks& callbacks);
   void addWorldEntityCallbacks(LuaCallbacks& callbacks, World* world);
   void addWorldEnvironmentCallbacks(LuaCallbacks& callbacks, World* world);
   void addWorldGeometryCallbacks(LuaCallbacks& callbacks, World* world);
@@ -281,10 +280,10 @@ namespace LuaBindings {
   }
 
   namespace WorldDebugCallbacks {
-    void debugPoint(Vec2F const& arg1, Color const& arg2);
-    void debugLine(Vec2F const& arg1, Vec2F const& arg2, Color const& arg3);
-    void debugPoly(PolyF const& poly, Color const& color);
-    void debugText(LuaEngine& engine, LuaVariadic<LuaValue> const& args);
+    void debugPoint(Root& root, Vec2F const& arg1, Color const& arg2);
+    void debugLine(Root& root, Vec2F const& arg1, Vec2F const& arg2, Color const& arg3);
+    void debugPoly(Root& root, PolyF const& poly, Color const& color);
+    void debugText(Root& root, LuaEngine& engine, LuaVariadic<LuaValue> const& args);
   }
 
   namespace WorldEntityCallbacks {
@@ -541,7 +540,7 @@ namespace LuaBindings {
               return world->geometry().diff(entity->position(), nearestPosition).magnitude();
             });
       } else if (*order == "random") {
-        Random::shuffle(entities);
+        world->root().random().shuffle(entities);
       } else {
         throw StarException(strf("Unsupported query order {}", order->ptr()));
       }
@@ -595,17 +594,17 @@ namespace LuaBindings {
   }
   
   // Thread-safe callbacks that can be used from any thread under the world
-  LuaCallbacks makeWorldThreadCallbacks(World* world) {
+  LuaCallbacks makeWorldThreadCallbacks(Root& root, World* world) {
     LuaCallbacks callbacks;
     
-    addWorldDebugCallbacks(callbacks);
+    addWorldDebugCallbacks(root, callbacks);
     addWorldGeometryCallbacks(callbacks, world);
     
     return callbacks;
   }
 
-  LuaCallbacks makeWorldCallbacks(World* world) {
-    LuaCallbacks callbacks = makeWorldThreadCallbacks(world);
+  LuaCallbacks makeWorldCallbacks(Root& root, World* world) {
+    LuaCallbacks callbacks = makeWorldThreadCallbacks(root, world);
 
     addWorldEnvironmentCallbacks(callbacks, world);
     addWorldEntityCallbacks(callbacks, world);
@@ -849,8 +848,8 @@ namespace LuaBindings {
         });
 
       callbacks.registerCallback("enqueuePlacement", [serverWorld](List<Json> distributionConfigs, Maybe<DungeonId> id) {
-          auto distributions = distributionConfigs.transformed([](Json const& config) {
-            return BiomeItemDistribution(config, Random::randu64());
+          auto distributions = distributionConfigs.transformed([serverWorld](Json const& config) {
+            return BiomeItemDistribution(serverWorld->root(), config, serverWorld->root().random().randu64());
           });
           return serverWorld->enqueuePlacement(std::move(distributions), id);
         });
@@ -858,7 +857,7 @@ namespace LuaBindings {
         return serverWorld->worldTemplate()->store();
       });
       callbacks.registerCallback("setTemplate", [serverWorld](Json worldTemplate) {
-        auto newTemplate = std::make_shared<WorldTemplate>(worldTemplate);
+        auto newTemplate = std::make_shared<WorldTemplate>(serverWorld->root(), worldTemplate);
         serverWorld->setTemplate(newTemplate);
       });
     }
@@ -866,11 +865,11 @@ namespace LuaBindings {
     return callbacks;
   }
 
-  void addWorldDebugCallbacks(LuaCallbacks& callbacks) {
-    callbacks.registerCallback("debugPoint", WorldDebugCallbacks::debugPoint);
-    callbacks.registerCallback("debugLine", WorldDebugCallbacks::debugLine);
-    callbacks.registerCallback("debugPoly", WorldDebugCallbacks::debugPoly);
-    callbacks.registerCallback("debugText", WorldDebugCallbacks::debugText);
+  void addWorldDebugCallbacks(Root& root, LuaCallbacks& callbacks) {
+    callbacks.registerCallbackWithSignature<void, Vec2F, Color>("debugPoint", std::bind(WorldDebugCallbacks::debugPoint, std::ref(root), std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallbackWithSignature<void, Vec2F, Vec2F, Color>("debugLine", std::bind(WorldDebugCallbacks::debugLine, std::ref(root), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    callbacks.registerCallbackWithSignature<void, PolyF, Color>("debugPoly", std::bind(WorldDebugCallbacks::debugPoly, std::ref(root), std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallbackWithSignature<void, LuaEngine&, LuaVariadic<LuaValue>>("debugText", std::bind(WorldDebugCallbacks::debugText, std::ref(root), std::placeholders::_1, std::placeholders::_2));
   }
 
   void addWorldEntityCallbacks(LuaCallbacks& callbacks, World* world) {
@@ -1312,7 +1311,7 @@ namespace LuaBindings {
       Vec2I const& worldPosition,
       Maybe<int> const& objectDirection,
       Json const& objectParameters) {
-    auto objectDatabase = Root::singleton().objectDatabase();
+    auto objectDatabase = world->root().objectDatabase();
 
     try {
       Direction direction = Direction::Right;
@@ -1327,7 +1326,7 @@ namespace LuaBindings {
         return true;
       }
     } catch (StarException const& exception) {
-      Logger::warn("Could not create placable object of kind '{}', exception caught: {}",
+      world->root().logger().warn("Could not create placable object of kind '{}', exception caught: {}",
           objectType,
           outputException(exception, false));
     }
@@ -1356,7 +1355,7 @@ namespace LuaBindings {
         descriptor = ItemDescriptor(itemType);
       }
 
-      if (auto itemDrop = ItemDrop::createRandomizedDrop(descriptor, position)) {
+      if (auto itemDrop = ItemDrop::createRandomizedDrop(world->root(), descriptor, position)) {
         if (initialVelocity)
           itemDrop->setVelocity(*initialVelocity);
         if (intangibleTime)
@@ -1365,9 +1364,9 @@ namespace LuaBindings {
         return itemDrop->inWorld() ? itemDrop->entityId() : Maybe<EntityId>();
       }
 
-      Logger::warn("Could not spawn item, item empty in WorldCallbacks::spawnItem");
+      world->root().logger().warn("Could not spawn item, item empty in WorldCallbacks::spawnItem");
     } catch (StarException const& exception) {
-      Logger::warn("Could not spawn Item of kind '{}', exception caught: {}", itemType, outputException(exception, false));
+      world->root().logger().warn("Could not spawn Item of kind '{}', exception caught: {}", itemType, outputException(exception, false));
     }
 
     return {};
@@ -1376,15 +1375,15 @@ namespace LuaBindings {
   List<EntityId> WorldCallbacks::spawnTreasure(
       World* world, Vec2F const& position, String const& pool, float level, Maybe<std::uint64_t> seed) {
     List<EntityId> entities;
-    auto treasureDatabase = Root::singleton().treasureDatabase();
+    auto treasureDatabase = world->root().treasureDatabase();
     try {
-      for (auto const& treasureItem : treasureDatabase->createTreasure(pool, level, seed.value(Random::randu64()))) {
-        std::shared_ptr<ItemDrop> entity = ItemDrop::createRandomizedDrop(treasureItem, position);
+      for (auto const& treasureItem : treasureDatabase->createTreasure(pool, level, seed.value(world->root().random().randu64()))) {
+        std::shared_ptr<ItemDrop> entity = ItemDrop::createRandomizedDrop(world->root(), treasureItem, position);
         entities.append(entity->entityId());
         world->addEntity(entity);
       }
     } catch (StarException const& exception) {
-      Logger::warn(
+      world->root().logger().warn(
           "Could not spawn treasure from pool '{}', exception caught: {}", pool, outputException(exception, false));
     }
     return entities;
@@ -1393,11 +1392,11 @@ namespace LuaBindings {
   Maybe<EntityId> WorldCallbacks::spawnMonster(
       World* world, String const& arg1, Vec2F const& arg2, Maybe<JsonObject> const& arg3) {
     Vec2F const spawnPosition = arg2;
-    auto monsterDatabase = Root::singleton().monsterDatabase();
+    auto monsterDatabase = world->root().monsterDatabase();
 
     try {
       JsonObject parameters;
-      parameters["aggressive"] = Random::randb();
+      parameters["aggressive"] = world->root().random().randb();
       if (arg3)
         parameters.merge(*arg3, true);
 
@@ -1410,7 +1409,7 @@ namespace LuaBindings {
       world->addEntity(monster);
       return monster->inWorld() ? monster->entityId() : Maybe<EntityId>();
     } catch (StarException const& exception) {
-      Logger::warn(
+      world->root().logger().warn(
           "Could not spawn Monster of type '{}', exception caught: {}", arg1, outputException(exception, false));
       return {};
     }
@@ -1432,18 +1431,18 @@ namespace LuaBindings {
     if (arg5)
       seed = *arg5;
     else
-      seed = Random::randu64();
+      seed = world->root().random().randu64();
 
     Json overrides = arg6 ? arg6 : JsonObject();
 
-    auto npcDatabase = Root::singleton().npcDatabase();
+    auto npcDatabase = world->root().npcDatabase();
     try {
       auto npc = npcDatabase->createNpc(npcDatabase->generateNpcVariant(arg2, typeName, level, seed, overrides));
       npc->setPosition(spawnPosition);
       world->addEntity(npc);
       return npc->inWorld() ? npc->entityId() : Maybe<EntityId>();
     } catch (StarException const& exception) {
-      Logger::warn("Could not spawn NPC of species '{}' and type '{}', exception caught: {}",
+      world->root().logger().warn("Could not spawn NPC of species '{}' and type '{}', exception caught: {}",
           arg2,
           typeName,
           outputException(exception, false));
@@ -1453,14 +1452,14 @@ namespace LuaBindings {
 
   Maybe<EntityId> WorldCallbacks::spawnStagehand(
       World* world, Vec2F const& spawnPosition, String const& typeName, Json const& overrides) {
-    auto stagehandDatabase = Root::singleton().stagehandDatabase();
+    auto stagehandDatabase = world->root().stagehandDatabase();
     try {
       auto stagehand = stagehandDatabase->createStagehand(typeName, overrides);
       stagehand->setPosition(spawnPosition);
       world->addEntity(stagehand);
       return stagehand->inWorld() ? stagehand->entityId() : Maybe<EntityId>();
     } catch (StarException const& exception) {
-      Logger::warn(
+      world->root().logger().warn(
           "Could not spawn Stagehand of type '{}', exception caught: {}", typeName, outputException(exception, false));
       return {};
     }
@@ -1475,7 +1474,7 @@ namespace LuaBindings {
       Json const& projectileParameters) {
 
     try {
-      auto projectileDatabase = Root::singleton().projectileDatabase();
+      auto projectileDatabase = world->root().projectileDatabase();
       auto projectile = projectileDatabase->createProjectile(projectileType, projectileParameters ? projectileParameters : JsonObject());
       projectile->setInitialPosition(spawnPosition);
       projectile->setInitialDirection(projectileDirection.value());
@@ -1483,7 +1482,7 @@ namespace LuaBindings {
       world->addEntity(projectile);
       return projectile->inWorld() ? projectile->entityId() : Maybe<EntityId>();
     } catch (StarException const& exception) {
-      Logger::warn(
+      world->root().logger().warn(
           "Could not spawn Projectile of type '{}', exception caught: {}", projectileType, outputException(exception, false));
       return {};
     }
@@ -1491,7 +1490,7 @@ namespace LuaBindings {
 
   Maybe<EntityId> WorldCallbacks::spawnVehicle(
       World* world, String const& vehicleName, Vec2F const& pos, Json const& extraConfig) {
-    auto vehicleDatabase = Root::singleton().vehicleDatabase();
+    auto vehicleDatabase = world->root().vehicleDatabase();
     auto vehicle = vehicleDatabase->create(vehicleName, extraConfig);
     vehicle->setPosition(pos);
     world->addEntity(vehicle);
@@ -1679,23 +1678,23 @@ namespace LuaBindings {
 
   bool ServerWorldCallbacks::sendPacket(WorldServer* world, ConnectionId clientId, String const& packetType, Json const& packetData) {
     PacketType type = PacketTypeNames.getLeft(packetType);
-    auto packet = createPacket(type, packetData);
+    auto packet = createPacket(world->root().random(), type, packetData);
     return world->sendPacket(clientId, packet);
   }
 
-  void WorldDebugCallbacks::debugPoint(Vec2F const& arg1, Color const& arg2) {
-    SpatialLogger::logPoint("world", arg1, arg2.toRgba());
+  void WorldDebugCallbacks::debugPoint(Root& root, Vec2F const& arg1, Color const& arg2) {
+    root.spatialLogger().logPoint("world", arg1, arg2.toRgba());
   }
 
-  void WorldDebugCallbacks::debugLine(Vec2F const& arg1, Vec2F const& arg2, Color const& arg3) {
-    SpatialLogger::logLine("world", arg1, arg2, arg3.toRgba());
+  void WorldDebugCallbacks::debugLine(Root& root, Vec2F const& arg1, Vec2F const& arg2, Color const& arg3) {
+    root.spatialLogger().logLine("world", arg1, arg2, arg3.toRgba());
   }
 
-  void WorldDebugCallbacks::debugPoly(PolyF const& poly, Color const& color) {
-    SpatialLogger::logPoly("world", poly, color.toRgba());
+  void WorldDebugCallbacks::debugPoly(Root& root, PolyF const& poly, Color const& color) {
+    root.spatialLogger().logPoly("world", poly, color.toRgba());
   }
 
-  void WorldDebugCallbacks::debugText(LuaEngine& engine, LuaVariadic<LuaValue> const& args) {
+  void WorldDebugCallbacks::debugText(Root& root, LuaEngine& engine, LuaVariadic<LuaValue> const& args) {
     if (args.size() < 3)
       throw StarException(strf("Too few arguments to debugText: {}", args.size()));
 
@@ -1703,7 +1702,7 @@ namespace LuaBindings {
     Vec4B const color = engine.luaTo<Color>(args.at(args.size() - 1)).toRgba();
 
     String text = formatLua(engine.luaTo<String>(args.at(0)), slice<List<LuaValue>>(args, 1, args.size() - 2));
-    SpatialLogger::logText("world", text, position, color);
+    root.spatialLogger().logText("world", text, position, color);
   }
 
   LuaTable WorldEntityCallbacks::entityQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options) {
@@ -2043,7 +2042,7 @@ namespace LuaBindings {
   Json WorldEntityCallbacks::containerItems(World* world, EntityId entityId) {
     if (auto container = world->get<ContainerObject>(entityId)) {
       JsonArray res;
-      auto itemDb = Root::singleton().itemDatabase();
+      auto itemDb = world->root().itemDatabase();
       for (auto const& item : container->itemBag()->items())
         res.append(itemDb->toJson(item));
       return res;
@@ -2054,7 +2053,7 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerItemAt(World* world, EntityId entityId, std::size_t offset) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
+      auto itemDb = world->root().itemDatabase();
       auto items = container->itemBag()->items();
       if (offset < items.size()) {
         return itemDb->toJson(items.at(offset));
@@ -2094,7 +2093,7 @@ namespace LuaBindings {
   }
 
   Json WorldEntityCallbacks::containerTakeAll(World* world, EntityId entityId) {
-    auto itemDb = Root::singleton().itemDatabase();
+    auto itemDb = world->root().itemDatabase();
     if (auto container = world->get<ContainerObject>(entityId)) {
       if (auto itemList = container->clearContainer().result()) {
         JsonArray res;
@@ -2109,7 +2108,7 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerTakeAt(World* world, EntityId entityId, std::size_t offset) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
+      auto itemDb = world->root().itemDatabase();
       if (offset < container->containerSize()) {
         if (auto res = container->takeItems(offset).result())
           return itemDb->toJson(*res);
@@ -2121,7 +2120,7 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerTakeNumItemsAt(World* world, EntityId entityId, std::size_t offset, int const& count) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
+      auto itemDb = world->root().itemDatabase();
       if (offset < container->containerSize()) {
         if (auto res = container->takeItems(offset, count).result())
           return itemDb->toJson(*res);
@@ -2133,7 +2132,7 @@ namespace LuaBindings {
 
   Maybe<std::size_t> WorldEntityCallbacks::containerItemsCanFit(World* world, EntityId entityId, Json const& items) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
+      auto itemDb = world->root().itemDatabase();
       auto itemBag = container->itemBag();
       auto toSearch = itemDb->fromJson(items);
       return itemBag->itemsCanFit(toSearch);
@@ -2144,7 +2143,7 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerItemsFitWhere(World* world, EntityId entityId, Json const& items) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
+      auto itemDb = world->root().itemDatabase();
       auto itemBag = container->itemBag();
       auto toSearch = itemDb->fromJson(items);
       auto res = itemBag->itemsFitWhere(toSearch);
@@ -2159,7 +2158,7 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerAddItems(World* world, EntityId entityId, Json const& items) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
+      auto itemDb = world->root().itemDatabase();
       auto toInsert = itemDb->fromJson(items);
       if (auto res = container->addItems(toInsert).result())
         return itemDb->toJson(*res);
@@ -2170,7 +2169,7 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerStackItems(World* world, EntityId entityId, Json const& items) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
+      auto itemDb = world->root().itemDatabase();
       auto toInsert = itemDb->fromJson(items);
       if (auto res = container->addItems(toInsert).result())
         return itemDb->toJson(*res);
@@ -2181,7 +2180,7 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerPutItemsAt(World* world, EntityId entityId, Json const& items, std::size_t offset) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
+      auto itemDb = world->root().itemDatabase();
       auto toInsert = itemDb->fromJson(items);
       if (offset < container->containerSize()) {
         if (auto res = container->putItems(offset, toInsert).result())
@@ -2194,7 +2193,7 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerSwapItems(World* world, EntityId entityId, Json const& items, std::size_t offset) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
+      auto itemDb = world->root().itemDatabase();
       auto toSwap = itemDb->fromJson(items);
       if (offset < container->containerSize()) {
         if (auto res = container->swapItems(offset, toSwap, true).result())
@@ -2207,7 +2206,7 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerSwapItemsNoCombine(World* world, EntityId entityId, Json const& items, std::size_t offset) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
+      auto itemDb = world->root().itemDatabase();
       auto toSwap = itemDb->fromJson(items);
       if (offset < container->containerSize()) {
         if (auto res = container->swapItems(offset, toSwap, false).result())
@@ -2220,7 +2219,7 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerItemApply(World* world, EntityId entityId, Json const& items, std::size_t offset) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
+      auto itemDb = world->root().itemDatabase();
       auto toSwap = itemDb->fromJson(items);
       if (offset < container->containerSize()) {
         if (auto res = container->swapItems(offset, toSwap, false).result())
@@ -2337,7 +2336,7 @@ namespace LuaBindings {
     } else if (materialId == EmptyMaterialId) {
       return false;
     } else {
-      auto materialDatabase = Root::singleton().materialDatabase();
+      auto materialDatabase = world->root().materialDatabase();
       return engine.createString(materialDatabase->materialName(materialId));
     }
   }
@@ -2354,7 +2353,7 @@ namespace LuaBindings {
 
     auto modId = world->mod(Vec2I::floor(position), layer);
     if (isRealMod(modId)) {
-      auto materialDatabase = Root::singleton().materialDatabase();
+      auto materialDatabase = world->root().materialDatabase();
       return engine.createString(materialDatabase->modName(modId));
     }
 
@@ -2483,7 +2482,7 @@ namespace LuaBindings {
       throw StarException(strf("Unsupported tile layer {}", layerName));
 
     auto materialName = arg3;
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = world->root().materialDatabase();
     if (!materialDatabase->materialNames().contains(materialName))
       throw StarException(strf("Unknown material name {}", materialName));
     placeMaterial.material = materialDatabase->materialId(materialName);
@@ -2526,7 +2525,7 @@ namespace LuaBindings {
     else
       throw StarException(strf("Unsupported tile layer {}", layerName));
 
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = world->root().materialDatabase();
     if (!materialDatabase->materialNames().contains(materialName))
       throw StarException(strf("Unknown material name {}", materialName));
     placeMaterial.material = materialDatabase->materialId(materialName);
@@ -2581,7 +2580,7 @@ namespace LuaBindings {
     }
 
     auto modName = arg3;
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = world->root().materialDatabase();
     if (!materialDatabase->modNames().contains(modName))
       throw StarException(strf("Unknown mod name {}", modName));
     placeMod.mod = materialDatabase->modId(modName);

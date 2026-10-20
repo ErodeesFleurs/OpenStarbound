@@ -16,11 +16,15 @@ import star.format;
 import star.version;
 import star.version_option_parser;
 import star.packed_asset_source;
+import star.logging;
+import star.native_runtime;
 
 using namespace Star;
 
 int main(int argc, char** argv) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   try {
+    Logger logger;
     double startTime = Time::monotonicTime();
 
     VersionOptionParser optParse;
@@ -80,7 +84,7 @@ int main(int argc, char** argv) {
     };
 
     outputFilename = File::relativeTo(File::fullPath(File::dirName(outputFilename)), File::baseName(outputFilename));
-    DirectoryAssetSource directorySource(assetsFolderPath, ignoreFiles);
+    DirectoryAssetSource directorySource(logger, assetsFolderPath, ignoreFiles);
     PackedAssetSource::build(directorySource, outputFilename, extensionOrdering, progressCallback);
 
     coutf("Output packed assets to {} in {}s\n", outputFilename, Time::monotonicTime() - startTime);

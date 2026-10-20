@@ -9,6 +9,8 @@ import star.uuid;
 
 namespace Star {
 
+class Root;
+
 class Codex;
 struct CodexEntry;
 class UniverseClient;
@@ -17,8 +19,8 @@ class PlayerCodexes {
 public:
   typedef std::pair<std::shared_ptr<Codex const>, bool> CodexEntry;
 
-  PlayerCodexes();
-  PlayerCodexes(Json const& json);
+  PlayerCodexes(Root& root);
+  PlayerCodexes(Root& root, Json const& json);
 
   Json toJson() const;
 
@@ -36,6 +38,7 @@ public:
   std::shared_ptr<Codex const> firstNewCodex() const;
 
 private:
+  Root& m_root;
   StringMap<CodexEntry> m_codexes;
 };
 

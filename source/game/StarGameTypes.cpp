@@ -6,9 +6,6 @@ import star.game_types;
 
 namespace Star {
 
-float GlobalTimescale = 1.0f;
-float GlobalTimestep = 1.0f / 60.0f;
-float ServerGlobalTimestep = 1.0f / 60.0f;
 
 extern EnumMap<Direction> const DirectionNames{
   {Direction::Left, "left"},

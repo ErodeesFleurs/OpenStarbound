@@ -115,8 +115,8 @@ import star.math_common;
 import star.algorithm;
 namespace Star {
 
-Vehicle::Vehicle(Json baseConfig, String path, Json dynamicConfig)
-  : m_baseConfig(std::move(baseConfig)), m_path(std::move(path)), m_dynamicConfig(std::move(dynamicConfig)) {
+Vehicle::Vehicle(Root& rootContext, Json baseConfig, String path, Json dynamicConfig)
+  : Entity(rootContext), m_baseConfig(std::move(baseConfig)), m_path(std::move(path)), m_dynamicConfig(std::move(dynamicConfig)), m_movementController(rootContext), m_networkedAnimator(rootContext), m_scriptComponent(rootContext), m_scriptedAnimator(rootContext) {
 
   m_typeName = m_baseConfig.getString("name");
 
@@ -178,12 +178,12 @@ Vehicle::Vehicle(Json baseConfig, String path, Json dynamicConfig)
     damageSourceConfig.enabled.set(pair.second.getBool("enabled", true));
   }
 
-  auto assets = Root::singleton().assets();
+  auto assets = this->root().assets();
   auto animationConfig = assets->fetchJson(configValue("animation"), m_path);
   if (auto customConfig = configValue("animationCustom"))
     animationConfig = jsonMerge(animationConfig, customConfig);
 
-  m_networkedAnimator = NetworkedAnimator(animationConfig, m_path);
+  m_networkedAnimator = NetworkedAnimator(this->root(), animationConfig, m_path);
 
   for (auto const& p : configValue("animationGlobalTags", JsonObject()).iterateObject())
     m_networkedAnimator.setGlobalTag(p.first, p.second.toString());
@@ -380,8 +380,8 @@ void Vehicle::update(float dt, std::uint64_t) {
     m_movementController.tickMaster(dt);
     m_scriptComponent.update(m_scriptComponent.updateDt(dt));
 
-    eraseWhere(m_aliveMasterConnections, [](auto& p) {
-        return p.second.tick(GlobalTimestep);
+    eraseWhere(m_aliveMasterConnections, [this](auto& p) {
+        return p.second.tick(this->root().timing().timestep);
       });
 
     for (auto& loungePositionPair : m_loungePositions) {
@@ -397,7 +397,7 @@ void Vehicle::update(float dt, std::uint64_t) {
 
     m_movementController.tickSlave(dt);
 
-    bool heartbeat = m_slaveHeartbeatTimer.wrapTick();
+    bool heartbeat = m_slaveHeartbeatTimer.wrapTick(root().timing().timestep);
 
     for (auto& p : m_loungePositions) {
       if (heartbeat) {
@@ -433,7 +433,7 @@ void Vehicle::update(float dt, std::uint64_t) {
     m_scriptedAnimator.update();
 
   if (world()->isClient())
-    SpatialLogger::logPoly("world", m_movementController.collisionBody(), {255, 255, 0, 255});
+    this->root().spatialLogger().logPoly("world", m_movementController.collisionBody(), {255, 255, 0, 255});
 }
 
 void Vehicle::render(RenderCallback* renderer) {

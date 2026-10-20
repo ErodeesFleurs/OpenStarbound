@@ -50,8 +50,8 @@ namespace Star {
 
 class LabelWidget : public Widget {
 public:
-  LabelWidget();
-  LabelWidget(String text,
+  LabelWidget(GuiContext& context);
+  LabelWidget(GuiContext& context, String text,
       Color const& color = Color::White,
       HorizontalAnchor const& hAnchor = HorizontalAnchor::LeftAnchor,
       VerticalAnchor const& vAnchor = VerticalAnchor::BottomAnchor,

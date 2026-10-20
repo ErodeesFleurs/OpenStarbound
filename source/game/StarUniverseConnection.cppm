@@ -56,6 +56,8 @@ import star.net_packet_socket;
 
 namespace Star {
 
+class Logger;
+
 class UniverseConnectionServer;
 
 struct UniverseConnectionExceptionTag {
@@ -133,7 +135,7 @@ public:
   // that client is complete.
   typedef std::function<void(UniverseConnectionServer*, ConnectionId, List<std::shared_ptr<Packet>>)> PacketReceiveCallback;
 
-  UniverseConnectionServer(PacketReceiveCallback packetReceiver, std::size_t numWorkerThreads = 0);
+  UniverseConnectionServer(Logger& logger, PacketReceiveCallback packetReceiver, std::size_t numWorkerThreads = 0);
   ~UniverseConnectionServer();
 
   bool hasConnection(ConnectionId clientId) const;
@@ -182,6 +184,9 @@ private:
     };
     WorkerStats& operator=(const WorkerStats&) = delete;
   };
+
+  // The logger outlives this server and its joined processing threads.
+  Logger& m_logger;
 
   PacketReceiveCallback const m_packetReceiver;
 

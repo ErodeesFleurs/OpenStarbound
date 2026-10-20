@@ -51,7 +51,7 @@ class CanvasWidget;
 
 class BaseScriptPane : public Pane {
 public:
-  BaseScriptPane(Json config, bool construct = true);
+  BaseScriptPane(GuiContext& guiContext, Json config, bool construct = true);
 
   virtual void show() override;
   void displayed() override;

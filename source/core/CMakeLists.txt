@@ -30,6 +30,7 @@ target_sources (star_modules PUBLIC FILE_SET CXX_MODULES
           StarJson.cppm StarLogging.cppm StarLua.cppm
           StarSha256.cppm StarImageScaling.cppm StarSecureRandom.cppm
           StarSignalHandler.cppm StarDynamicLib.cppm StarHttpClient.cppm StarUdp.cppm
+          StarNativeRuntime.cppm
           StarIODeviceCallbacks.cppm StarCompression.cppm StarJsonPatch.cppm
           StarTickRateMonitor.cppm
           StarUuid.cppm StarHostAddress.cppm StarSocket.cppm StarTcp.cppm

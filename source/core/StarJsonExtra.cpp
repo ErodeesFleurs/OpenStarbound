@@ -399,7 +399,7 @@ Json jsonFromDirectivesList(List<Directives> const& v) {
   return result;
 }
 
-Json weightedChoiceFromJson(Json const& source, Json const& default_) {
+Json weightedChoiceFromJson(RandomService& random, Json const& source, Json const& default_) {
   if (source.isNull())
     return default_;
   if (source.type() != Json::Type::Array)
@@ -425,7 +425,7 @@ Json weightedChoiceFromJson(Json const& source, Json const& default_) {
   }
   if (!options.size())
     return default_;
-  float choice = Random::randf() * sum;
+  float choice = random.randf() * sum;
   idx = 0;
   while (idx < options.size()) {
     auto const& entry = options[idx];

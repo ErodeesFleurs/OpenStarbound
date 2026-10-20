@@ -32,15 +32,16 @@ import star.particle;
 
 import star.light_source;
 import star.entity_rendering;
-import star.asset_source;
-import star.assets;
-import star.root_base;
-import star.configuration;
-import star.root;
 
 namespace Star {
 
+class TileDrawer;
+
 RenderCallback::~RenderCallback() {}
+
+TileDrawer* RenderCallback::tileDrawer() const {
+  return nullptr;
+}
 
 void RenderCallback::addDrawables(List<Drawable> drawables, EntityRenderLayer renderLayer, Vec2F translate) {
   for (auto& drawable : drawables) {

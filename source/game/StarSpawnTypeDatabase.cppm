@@ -12,6 +12,7 @@ import star.random;
 import star.weighted_pool;
 
 namespace Star {
+class Assets;
 
 struct SpawnTypeDatabaseExceptionTag {
   static constexpr char const* name() { return "SpawnTypeDatabaseException"; }
@@ -84,11 +85,11 @@ struct SpawnProfile {
   Json monsterParameters;
 };
 
-SpawnProfile constructSpawnProfile(Json const& config, std::uint64_t seed);
+SpawnProfile constructSpawnProfile(Assets const& assets, Json const& config, std::uint64_t seed);
 
 class SpawnTypeDatabase {
 public:
-  SpawnTypeDatabase();
+  explicit SpawnTypeDatabase(std::shared_ptr<Assets const> const& assets);
 
   SpawnType spawnType(String const& typeName) const;
 

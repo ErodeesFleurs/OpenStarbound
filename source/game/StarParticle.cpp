@@ -25,6 +25,7 @@ import star.asset_source;
 import star.assets;
 import star.drawable;
 import star.animation;
+import star.root;
 
 import star.vector;
 import star.math_common;
@@ -71,7 +72,7 @@ Particle::Particle() {
   flip = false;
 }
 
-Particle::Particle(Json const& config, String const& path) {
+Particle::Particle(Root& root, Json const& config, String const& path) {
   type = TypeNames.getLeft(config.getString("type", "variance"));
   if (type == Type::Variance) {
     size = 0.0f;
@@ -97,7 +98,7 @@ Particle::Particle(Json const& config, String const& path) {
       directives.clear();
     else
       directives = string.substr(pathEnd);
-    initializeAnimation();
+    initializeAnimation(root);
   }
 
   if (config.contains("color"))
@@ -181,7 +182,7 @@ void Particle::translate(Vec2F const& pos) {
   position += pos;
 }
 
-void Particle::update(float dt, Vec2F const& wind) {
+void Particle::update(Root& root, float dt, Vec2F const& wind) {
   auto prevVelocity = velocity;
   if (ignoreWind) {
     velocity[0] = Star::approach<float>(finalVelocity[0], velocity[0], approach[0] * dt);
@@ -203,7 +204,7 @@ void Particle::update(float dt, Vec2F const& wind) {
     destructionUpdate();
 
   if (type == Type::Animated) {
-    initializeAnimation();
+    initializeAnimation(root);
     animation->update(dt);
   }
 }
@@ -212,16 +213,16 @@ bool Particle::dead() const {
   return timeToLive < -destructionTime;
 }
 
-void Particle::applyVariance(Particle const& variance) {
-  size += variance.size * Random::randf(-1.0f, 1.0f);
-  position += {variance.position[0] * Random::randf(-1.0f, 1.0f), variance.position[1] * Random::randf(-1.0f, 1.0f)};
-  velocity += {variance.velocity[0] * Random::randf(-1.0f, 1.0f), variance.velocity[1] * Random::randf(-1.0f, 1.0f)};
+void Particle::applyVariance(Root& root, Particle const& variance) {
+  size += variance.size * root.random().randf(-1.0f, 1.0f);
+  position += {variance.position[0] * root.random().randf(-1.0f, 1.0f), variance.position[1] * root.random().randf(-1.0f, 1.0f)};
+  velocity += {variance.velocity[0] * root.random().randf(-1.0f, 1.0f), variance.velocity[1] * root.random().randf(-1.0f, 1.0f)};
   finalVelocity +=
-      {variance.finalVelocity[0] * Random::randf(-1.0f, 1.0f), variance.finalVelocity[1] * Random::randf(-1.0f, 1.0f)};
-  rotation += variance.rotation * Random::randf(-1.0f, 1.0f);
-  angularVelocity += variance.angularVelocity * Random::randf(-1.0f, 1.0f);
-  length += variance.length * Random::randf(-1.0f, 1.0f);
-  timeToLive += variance.timeToLive * Random::randf(-1.0f, 1.0f);
+      {variance.finalVelocity[0] * root.random().randf(-1.0f, 1.0f), variance.finalVelocity[1] * root.random().randf(-1.0f, 1.0f)};
+  rotation += variance.rotation * root.random().randf(-1.0f, 1.0f);
+  angularVelocity += variance.angularVelocity * root.random().randf(-1.0f, 1.0f);
+  length += variance.length * root.random().randf(-1.0f, 1.0f);
+  timeToLive += variance.timeToLive * root.random().randf(-1.0f, 1.0f);
 }
 
 void Particle::collide(Vec2F const& collisionPosition) {
@@ -264,9 +265,9 @@ void Particle::destructionUpdate() {
   }
 }
 
-void Particle::initializeAnimation() {
+void Particle::initializeAnimation(Root& root) {
   if (!animation) {
-    animation = Animation(AssetPath::removeDirectives(string));
+    animation = Animation(root, AssetPath::removeDirectives(string));
     animation->setProcessing(directives);
   }
 }
@@ -329,10 +330,10 @@ DataStream& operator>>(DataStream& ds, Particle& particle) {
   return ds;
 }
 
-ParticleVariantCreator makeParticleVariantCreator(Particle particle, Particle variance) {
-  return [particle, variance]() -> Particle {
+ParticleVariantCreator makeParticleVariantCreator(Root& root, Particle particle, Particle variance) {
+  return [&root, particle, variance]() -> Particle {
     auto p = particle;
-    p.applyVariance(variance);
+    p.applyVariance(root, variance);
     return p;
   };
 }

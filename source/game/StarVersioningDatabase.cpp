@@ -58,6 +58,7 @@ import star.celestial_database;
 
 
 import star.byte_array;
+import star.algorithm;
 namespace Star {
 
 char const* const VersionedJson::Magic = "SBVJ01";
@@ -168,8 +169,8 @@ DataStream& operator<<(DataStream& ds, VersionedJson const& versionedJson) {
   return ds;
 }
 
-VersioningDatabase::VersioningDatabase() {
-  auto assets = Root::singleton().assets();
+VersioningDatabase::VersioningDatabase(Root& root) : m_root(root), m_luaRoot(root) {
+  auto assets = m_root.assets();
 
   for (auto const& pair : assets->json("/versioning.config").iterateObject())
     m_currentVersions[pair.first] = pair.second.toUInt();
@@ -242,10 +243,14 @@ bool VersioningDatabase::versionedJsonCurrent(VersionedJson const& versionedJson
 }
 
 VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versionedJson) const {
+  return updateVersionedJson(versionedJson, nullptr);
+}
+
+VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versionedJson, ItemDatabase const* itemCatalog) const {
   RecursiveMutexLocker locker(m_mutex);
 
-  auto& root = Root::singleton();
-  CelestialMasterDatabase celestialDatabase;
+  auto& root = m_root;
+  CelestialMasterDatabase celestialDatabase(root);
 
   VersionedJson result = versionedJson;
   Maybe<VersionNumber> targetVersion = m_currentVersions.maybe(versionedJson.identifier);
@@ -257,6 +262,24 @@ VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versi
       return celestialDatabase.parameters(CelestialCoordinate(coord))->diskStore();
     });
 
+  auto invokeUpdate = [&](String const& script, Json const& content) {
+    auto scriptContext = m_luaRoot.createContext();
+    auto previousRoot = scriptContext.get("root");
+    auto previousVersioning = scriptContext.get("versioning");
+    auto restoreCallbacks = finally([&] {
+      scriptContext.set("root", previousRoot);
+      scriptContext.set("versioning", previousVersioning);
+    });
+    scriptContext.remove("root");
+    scriptContext.remove("versioning");
+    scriptContext.setCallbacks("root", LuaBindings::makeRootCallbacks(root, itemCatalog));
+    scriptContext.setCallbacks("sb", LuaBindings::makeUtilityCallbacks(root.random(), root.logger(), root.logMap()));
+    scriptContext.setCallbacks("celestial", celestialCallbacks);
+    scriptContext.setCallbacks("versioning", makeVersioningCallbacks(itemCatalog));
+    scriptContext.load(*root.assets()->bytes(script), script);
+    return scriptContext.invokePath<Json>("update", content);
+  };
+
   try {
     for (auto const& updateScript : m_versionUpdateScripts.value(versionedJson.identifier.toLower())) {
       for (auto const& subVersionScripts : m_subVersionUpdateScripts.value(versionedJson.identifier.toLower()).value(result.version)) {
@@ -266,20 +289,13 @@ VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versi
             break;
 
           if (subVersionUpdateScript.fromVersion == result.subVersions.value(subVersionScripts.first)) {
-            auto scriptContext = m_luaRoot.createContext();
-            scriptContext.load(*root.assets()->bytes(subVersionUpdateScript.script), subVersionUpdateScript.script);
-            scriptContext.setCallbacks("root", LuaBindings::makeRootCallbacks());
-            scriptContext.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
-            scriptContext.setCallbacks("celestial", celestialCallbacks);
-            scriptContext.setCallbacks("versioning", makeVersioningCallbacks());
-
-            result.content = scriptContext.invokePath<Json>("update", result.content);
+            result.content = invokeUpdate(subVersionUpdateScript.script, result.content);
             if (!result.content) {
               throw VersioningDatabaseException::format(
                   "Could not bring versionedJson with identifier '{}' and version {} forward to current version of {}, conversion script of sub identifier '{}' from {} to {} returned null (un-upgradeable)",
                   versionedJson.identifier, result.version, targetVersion, subVersionScripts.first, subVersionUpdateScript.fromVersion, subVersionUpdateScript.toVersion);
             }
-            Logger::debug("Brought versionedJson '{}' sub identifier '{}' from version {} to {}",
+            root.logger().debug("Brought versionedJson '{}' sub identifier '{}' from version {} to {}",
                 versionedJson.identifier, subVersionScripts.first, result.subVersions.value(subVersionScripts.first), subVersionUpdateScript.toVersion);
             result.subVersions[subVersionScripts.first] = subVersionUpdateScript.toVersion;
           }
@@ -290,20 +306,13 @@ VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versi
         break;
 
       if (updateScript.fromVersion == result.version) {
-        auto scriptContext = m_luaRoot.createContext();
-        scriptContext.load(*root.assets()->bytes(updateScript.script), updateScript.script);
-        scriptContext.setCallbacks("root", LuaBindings::makeRootCallbacks());
-        scriptContext.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
-        scriptContext.setCallbacks("celestial", celestialCallbacks);
-        scriptContext.setCallbacks("versioning", makeVersioningCallbacks());
-
-        result.content = scriptContext.invokePath<Json>("update", result.content);
+        result.content = invokeUpdate(updateScript.script, result.content);
         if (!result.content) {
           throw VersioningDatabaseException::format(
               "Could not bring versionedJson with identifier '{}' and version {} forward to current version of {}, conversion script from {} to {} returned null (un-upgradeable)",
               versionedJson.identifier, result.version, targetVersion, updateScript.fromVersion, updateScript.toVersion);
         }
-        Logger::debug("Brought versionedJson '{}' from version {} to {}",
+        root.logger().debug("Brought versionedJson '{}' from version {} to {}",
             versionedJson.identifier, result.version, updateScript.toVersion);
         result.version = updateScript.toVersion;
       }
@@ -329,27 +338,31 @@ VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versi
 }
 
 Json VersioningDatabase::loadVersionedJson(VersionedJson const& versionedJson, String const& expectedIdentifier) const {
+  return loadVersionedJson(versionedJson, expectedIdentifier, nullptr);
+}
+
+Json VersioningDatabase::loadVersionedJson(VersionedJson const& versionedJson, String const& expectedIdentifier, ItemDatabase const* itemCatalog) const {
   versionedJson.expectIdentifier(expectedIdentifier);
   if (versionedJsonCurrent(versionedJson))
     return versionedJson.content;
-  return updateVersionedJson(versionedJson).content;
+  return updateVersionedJson(versionedJson, itemCatalog).content;
 }
 
-LuaCallbacks VersioningDatabase::makeVersioningCallbacks() const {
+LuaCallbacks VersioningDatabase::makeVersioningCallbacks(ItemDatabase const* itemCatalog) const {
   LuaCallbacks versioningCallbacks;
 
-  versioningCallbacks.registerCallback("loadVersionedJson", [this](String const& storagePath) {
+  versioningCallbacks.registerCallback("loadVersionedJson", [this, itemCatalog](String const& storagePath) {
       try {
-        auto& root = Root::singleton();
+        auto& root = m_root;
         String filePath = File::fullPath(root.toStoragePath(storagePath));
         String basePath = File::fullPath(root.toStoragePath("."));
         if (!filePath.beginsWith(basePath))
           throw VersioningDatabaseException::format(
               "Cannot load external VersionedJson outside of the Root storage path");
         auto loadedJson = VersionedJson::readFile(filePath);
-        return updateVersionedJson(loadedJson).content;
+        return updateVersionedJson(loadedJson, itemCatalog).content;
       } catch (IOException const& e) {
-        Logger::debug(
+        m_root.logger().debug(
             "Unable to load versioned JSON file {} in versioning script: {}", storagePath, outputException(e, false));
         return Json();
       }

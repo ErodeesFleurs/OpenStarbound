@@ -69,6 +69,8 @@ Json AmbientNoisesDescription::toJson() const {
   return JsonObject{{"day", daySounds.toJson()}, {"night", nightSounds.toJson()}, {"loops", trackLoops}};
 }
 
+AmbientManager::AmbientManager(Root& root) : m_root(root) {}
+
 AmbientManager::~AmbientManager() {
   cancelAll();
 }
@@ -82,7 +84,7 @@ void AmbientManager::setTrackFadeInTime(float fadeInTime) {
 }
 
 std::shared_ptr<AudioInstance> AmbientManager::updateAmbient(std::shared_ptr<AmbientNoisesDescription> current, bool dayTime) {
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
 
   if (m_currentTrack) {
     if (m_currentTrack->finished())
@@ -108,7 +110,7 @@ std::shared_ptr<AudioInstance> AmbientManager::updateAmbient(std::shared_ptr<Amb
       while ((m_recentTracks.size() / 2) >= tracks.size())
         m_recentTracks.removeFirst();
       while (true) {
-        m_currentTrackName = Random::randValueFrom(tracks);
+        m_currentTrackName = m_root.random().randValueFrom(tracks);
         if (m_currentTrackName.empty() || !m_recentTracks.contains(m_currentTrackName))
           break;
         m_recentTracks.removeFirst(); // reduce chance of collisions on collision
@@ -131,7 +133,7 @@ std::shared_ptr<AudioInstance> AmbientManager::updateAmbient(std::shared_ptr<Amb
   }
   if (m_volumeChanged) {
     if (m_delay > 0)
-      m_delay -= GlobalTimestep;
+      m_delay -= m_root.timing().timestep;
     else {
       m_volumeChanged = false;
       if (m_currentTrack) {
@@ -144,7 +146,7 @@ std::shared_ptr<AudioInstance> AmbientManager::updateAmbient(std::shared_ptr<Amb
 }
 
 std::shared_ptr<AudioInstance> AmbientManager::updateWeather(std::shared_ptr<WeatherNoisesDescription> current) {
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
 
   if (m_weatherTrack) {
     if (m_weatherTrack->finished())
@@ -163,7 +165,7 @@ std::shared_ptr<AudioInstance> AmbientManager::updateWeather(std::shared_ptr<Wea
   }
 
   if (!m_weatherTrack) {
-    m_weatherTrackName = Random::randValueFrom(tracks);
+    m_weatherTrackName = m_root.random().randValueFrom(tracks);
     if (!m_weatherTrackName.empty()) {
       if (auto audio = assets->tryAudio(m_weatherTrackName)) {
         m_weatherTrack = std::make_shared<AudioInstance>(*audio);

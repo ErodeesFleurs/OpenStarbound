@@ -23,9 +23,6 @@ import star.version;
 
 import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
-import star.root;
 
 import star.behavior_database;
 
@@ -174,8 +171,7 @@ RandomizeNode::RandomizeNode(List<std::shared_ptr<BehaviorNode const>> children)
 BehaviorTree::BehaviorTree(String const& name, StringSet scripts, JsonObject const& parameters)
   : name(name), scripts(scripts), parameters(parameters) { }
 
-BehaviorDatabase::BehaviorDatabase() {
-  auto assets = Root::singleton().assets();
+BehaviorDatabase::BehaviorDatabase(std::shared_ptr<Assets const> assets) {
 
   auto& nodeFiles = assets->scanExtension("nodes");
   assets->queueJsons(nodeFiles);

@@ -23,6 +23,10 @@ import star.item_descriptor;
 import star.world_geometry;
 import star.dungeon_generator;
 
+namespace Star {
+class Root;
+}
+
 export module star.dungeon_tmx_part;
 import star.tileset_database;
 
@@ -33,7 +37,7 @@ namespace Dungeon {
 
   class TMXTilesets {
   public:
-    TMXTilesets(Json const& tmx);
+    TMXTilesets(Root& root, Json const& tmx);
 
     Tiled::Tile const& getTile(unsigned gid, TileLayer layer) const;
 
@@ -117,7 +121,7 @@ namespace Dungeon {
 
   class TMXObject {
   public:
-    TMXObject(Maybe<Json> const& groupProperties, Json const& tmx, std::shared_ptr<TMXTilesets> tilesets);
+    TMXObject(Root& root, Maybe<Json> const& groupProperties, Json const& tmx, std::shared_ptr<TMXTilesets> tilesets);
 
     Vec2I const& pos() const {
       return m_rect.min();
@@ -162,7 +166,7 @@ namespace Dungeon {
 
   class TMXObjectGroup {
   public:
-    TMXObjectGroup(Json const& tmx, std::shared_ptr<TMXTilesets> tilesets);
+    TMXObjectGroup(Root& root, Json const& tmx, std::shared_ptr<TMXTilesets> tilesets);
 
     List<std::shared_ptr<TMXObject>> const& objects() const {
       return m_objects;
@@ -180,7 +184,7 @@ namespace Dungeon {
 
   class TMXMap {
   public:
-    TMXMap(Json const& tmx);
+    TMXMap(Root& root, Json const& tmx);
 
     List<std::shared_ptr<TMXTileLayer>> const& tileLayers() const {
       return m_tileLayers;
@@ -210,7 +214,9 @@ namespace Dungeon {
   };
 
   class TMXPartReader : public PartReader {
+    Root& m_root;
   public:
+    explicit TMXPartReader(Root& root) : m_root(root) {}
     virtual void readAsset(String const& asset) override;
 
     virtual Vec2U size() const override;

@@ -88,10 +88,11 @@ namespace Star {
 
 class WorldServerThread;
 class SystemWorldServerThread;
+class Root;
 
 class ServerClientContext {
 public:
-  ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
+  ServerClientContext(Root& root, ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
       String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks, StringSet validShipSpecies, String account);
 
   ConnectionId clientId() const;
@@ -192,6 +193,7 @@ private:
     CustomWorld();
   };
   
+  Root& m_root;
   ConnectionId const m_clientId;
   Maybe<HostAddress> const m_remoteAddress;
   NetCompatibilityRules m_netRules;

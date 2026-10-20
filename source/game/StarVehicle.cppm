@@ -73,6 +73,7 @@ import star.net_element_containers;
 import star.net_element_system;
 
 namespace Star {
+class Root;
 
 struct VehicleExceptionTag {
   static constexpr char const* name() { return "VehicleException"; }
@@ -86,7 +87,7 @@ class Vehicle :
   public virtual PhysicsEntity, 
   public virtual ScriptedEntity {
 public:
-  Vehicle(Json baseConfig, String path, Json dynamicConfig);
+  Vehicle(Root& rootContext, Json baseConfig, String path, Json dynamicConfig);
 
   String name() const override;
 

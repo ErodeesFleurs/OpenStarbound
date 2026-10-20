@@ -41,12 +41,12 @@ namespace Star {
 std::uint64_t const DiscordClientId = 467102538278109224;
 #endif
 
-PcPlatformServicesState::PcPlatformServicesState()
+PcPlatformServicesState::PcPlatformServicesState(Logger& logger)
+  : logger(logger)
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-  : callbackGameOverlayActivated(steamDispatch, this, &PcPlatformServicesState::onGameOverlayActivated) {
-#else
-  {
+  , callbackGameOverlayActivated(steamDispatch, this, &PcPlatformServicesState::onGameOverlayActivated)
 #endif
+{
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
   bool shouldLoadSteam = true;
@@ -65,16 +65,16 @@ PcPlatformServicesState::PcPlatformServicesState()
   bool steamFlatpakInstalled = false;
 
   if (File::isDirectory("/var/lib/flatpak/app/com.valvesoftware.Steam")) {
-    Logger::info("Steam flatpak is installed");
+    logger.info("Steam flatpak is installed");
     steamFlatpakInstalled = true;
   }
 
   String steamRootPath = String::joinWith("", std::getenv("HOME"), "/.steam");
   if (!File::isDirectory(steamRootPath)) {
     if (steamFlatpakInstalled) {
-      g_steamIsFlatpak = true;
+      steamIsFlatpak = true;
     } else {
-      Logger::info("Could not find ~/.steam; Steam platform services will be unavailable!");
+      logger.info("Could not find ~/.steam; Steam platform services will be unavailable!");
       shouldLoadSteam = false;
     }
   } else {
@@ -84,11 +84,11 @@ PcPlatformServicesState::PcPlatformServicesState()
       // Check if ~/.steam points to a flatpak installation
       String steamAbsRootPath = File::fullPath(steamRootPath);
       if (steamAbsRootPath.contains("com.valvesoftware.Steam")) {
-        Logger::info("~/.steam points towards the installed flatpak");
-        g_steamIsFlatpak = true;
+        logger.info("~/.steam points towards the installed flatpak");
+        steamIsFlatpak = true;
         shouldLoadSteam = false;
       } else {
-        Logger::info("~/.steam does not point towards the installed flatpak");
+        logger.info("~/.steam does not point towards the installed flatpak");
       }
     }
   }
@@ -99,12 +99,12 @@ PcPlatformServicesState::PcPlatformServicesState()
     if (SteamAPI_InitEx(&errMsg) == k_ESteamAPIInitResult_OK) {
       steamAvailable = true;
       steamDispatch.initialize();
-      Logger::info("Initialized Steam platform services");
+      logger.info("Initialized Steam platform services");
     } else {
-      Logger::info("Failed to initialize Steam platform services: {}", errMsg);
+      logger.info("Failed to initialize Steam platform services: {}", errMsg);
     }
   } else {
-    Logger::info("Skipping Steam platform initialization");
+    logger.info("Skipping Steam platform initialization");
   }
 #endif
 
@@ -121,26 +121,26 @@ PcPlatformServicesState::PcPlatformServicesState()
         discord::User user;
         auto res = discordCore->UserManager().GetCurrentUser(&user);
         if (res != discord::Result::Ok)
-          Logger::error("Could not get current Discord user. (err {})", (int)res);
+          this->logger.error("Could not get current Discord user. (err {})", (int)res);
         else
           discordCurrentUser = user;
       });
 
   } else {
-    Logger::error("Failed to instantiate Discord core (err {})", (int)res);
+    logger.error("Failed to instantiate Discord core (err {})", (int)res);
   }
 
   if (discordAvailable) {
     MutexLocker locker(discordMutex);
-    discordCore->SetLogHook(discord::LogLevel::Info, [](discord::LogLevel level, char const* msg) {
+    discordCore->SetLogHook(discord::LogLevel::Info, [this](discord::LogLevel level, char const* msg) {
       if (level == discord::LogLevel::Debug)
-        Logger::debug("[Discord]: {}", msg);
+        this->logger.debug("[Discord]: {}", msg);
       else if (level == discord::LogLevel::Error)
-        Logger::debug("[Discord]: {}", msg);
+        this->logger.debug("[Discord]: {}", msg);
       else if (level == discord::LogLevel::Info)
-        Logger::info("[Discord]: {}", msg);
+        this->logger.info("[Discord]: {}", msg);
       else if (level == discord::LogLevel::Warn)
-        Logger::warn("[Discord]: {}", msg);
+        this->logger.warn("[Discord]: {}", msg);
     });
     discordEventShutdown = false;
     discordEventThread = Thread::invoke("PcPlatformServices::discordEventThread", [this]() {
@@ -154,9 +154,9 @@ PcPlatformServicesState::PcPlatformServicesState()
         }
       });
 
-    Logger::info("Initialized Discord platform services");
+    logger.info("Initialized Discord platform services");
   } else {
-    Logger::info("Was not able to authenticate with Discord and create all components, Discord services will be unavailable");
+    logger.info("Was not able to authenticate with Discord and create all components, Discord services will be unavailable");
   }
 #endif
 }
@@ -180,10 +180,10 @@ void PcPlatformServicesState::onGameOverlayActivated(GameOverlayActivated_t* cal
 }
 #endif
 
-std::unique_ptr<PcPlatformServices> PcPlatformServices::create([[maybe_unused]] String const& path, StringList platformArguments) {
+std::unique_ptr<PcPlatformServices> PcPlatformServices::create(Logger& logger, [[maybe_unused]] String const& path, StringList platformArguments) {
   auto services = std::unique_ptr<PcPlatformServices>(new PcPlatformServices);
 
-  services->m_state = std::make_shared<PcPlatformServicesState>();
+  services->m_state = std::make_shared<PcPlatformServicesState>(logger);
 
   bool provideP2PNetworking = false;
 
@@ -199,7 +199,7 @@ std::unique_ptr<PcPlatformServices> PcPlatformServices::create([[maybe_unused]] 
     auto p2pNetworkingService = std::make_shared<PcP2PNetworkingService>(services->m_state);
     for (auto& argument : platformArguments) {
       if (argument.beginsWith("+platform:connect:")) {
-        Logger::info("PC platform services joining from command line argument '{}'", argument);
+        logger.info("PC platform services joining from command line argument '{}'", argument);
         p2pNetworkingService->addPendingJoin(std::move(argument));
       } else {
         throw ApplicationException::format("Unrecognized PC platform services command line argument '{}'", argument);
@@ -220,7 +220,7 @@ std::unique_ptr<PcPlatformServices> PcPlatformServices::create([[maybe_unused]] 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   MutexLocker discordLocker(services->m_state->discordMutex);
   if (services->m_state->discordAvailable) {
-    Logger::debug("Registering Starbound to Discord at path: {}", path);
+    logger.debug("Registering Starbound to Discord at path: {}", path);
     services->m_state->discordCore->ActivityManager().RegisterCommand(path.utf8Ptr());
   }
 #endif
@@ -242,6 +242,10 @@ std::shared_ptr<UserGeneratedContentService> PcPlatformServices::userGeneratedCo
 
 std::shared_ptr<DesktopService> PcPlatformServices::desktopService() const {
   return m_desktopService;
+}
+
+bool PcPlatformServices::steamIsFlatpak() const {
+  return m_state->steamIsFlatpak;
 }
 
 bool PcPlatformServices::overlayActive() const {

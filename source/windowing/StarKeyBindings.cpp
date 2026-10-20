@@ -160,7 +160,7 @@ String printInputDescriptor(KeyChord chord) {
 
 KeyBindings::KeyBindings() {}
 
-KeyBindings::KeyBindings(Json const& json) {
+KeyBindings::KeyBindings(Root& root, Json const& json) {
   Map<Key, List<std::pair<KeyMod, InterfaceAction>>> actions;
   try {
     for (auto const& kvpair : json.iterateObject()) {
@@ -171,7 +171,7 @@ KeyBindings::KeyBindings(Json const& json) {
           auto chord = inputDescriptorFromJson(input);
           actions[chord.key].append({chord.mods, action});
         } catch (StarException const& e) {
-          Logger::warn("Could not load keybinding for {}: {}\n",
+          root.logger().warn("Could not load keybinding for {}: {}\n",
               InterfaceActionNames.getRight(action),
               outputException(e, false));
         }

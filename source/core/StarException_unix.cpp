@@ -150,21 +150,21 @@ OutputProxy outputException(std::exception const& e, bool fullStacktrace) {
 
 void printStack(char const* message) {
 #ifdef STAR_USE_CPPTRACE
-  Logger::info("Stack Trace ({})...\n{}", message, captureBacktrace());
+  EmergencyLog::info("Stack Trace ({})...\n{}", message, captureBacktrace());
 #else
-  Logger::info("Stack Trace ({})...\n{}", message, outputStack(captureStack()));
+  EmergencyLog::info("Stack Trace ({})...\n{}", message, outputStack(captureStack()));
 #endif
 }
 
 void fatalError(char const* message, bool showStackTrace) {
   if (showStackTrace)
 #ifdef STAR_USE_CPPTRACE
-    Logger::error("Fatal Error: {}\n{}", message, captureBacktrace());
+    EmergencyLog::error("Fatal Error: {}\n{}", message, captureBacktrace());
 #else
-    Logger::error("Fatal Error: {}\n{}", message, outputStack(captureStack()));
+    EmergencyLog::error("Fatal Error: {}\n{}", message, outputStack(captureStack()));
 #endif
   else
-    Logger::error("Fatal Error: {}", message);
+    EmergencyLog::error("Fatal Error: {}", message);
 
   std::abort();
 }
@@ -172,12 +172,12 @@ void fatalError(char const* message, bool showStackTrace) {
 void fatalException(std::exception const& e, bool showStackTrace) {
   if (showStackTrace)
 #ifdef STAR_USE_CPPTRACE
-    Logger::error("Fatal Exception caught: {}\nCaught at:\n{}", outputException(e, true), captureBacktrace());
+    EmergencyLog::error("Fatal Exception caught: {}\nCaught at:\n{}", outputException(e, true), captureBacktrace());
 #else
-    Logger::error("Fatal Exception caught: {}\nCaught at:\n{}", outputException(e, true), outputStack(captureStack()));
+    EmergencyLog::error("Fatal Exception caught: {}\nCaught at:\n{}", outputException(e, true), outputStack(captureStack()));
 #endif
   else
-    Logger::error("Fatal Exception caught: {}", outputException(e, showStackTrace));
+    EmergencyLog::error("Fatal Exception caught: {}", outputException(e, showStackTrace));
 
   std::abort();
 }

@@ -7,6 +7,7 @@ import star.string;
 import star.list;
 
 import star.byte_array;
+import star.random;
 namespace Star {
 
 // All file methods are thread safe.
@@ -42,19 +43,19 @@ public:
   // Resolve the given possibly relative path into an absolute path.
   static String fullPath(String const& path);
 
-  static String temporaryFileName();
+  static String temporaryFileName(RandomService& random);
 
   // Creates and opens a new ReadWrite temporary file with a real path that can
   // be closed and re-opened.  Will not be removed automatically.
-  static std::shared_ptr<File> temporaryFile();
+  static std::shared_ptr<File> temporaryFile(RandomService& random);
 
   // Creates and opens new ReadWrite temporary file and opens it.  This file
   // has no filename and will be removed on close.
-  static std::shared_ptr<File> ephemeralFile();
+  static std::shared_ptr<File> ephemeralFile(RandomService& random);
 
   // Creates a new temporary directory and reutrns the path.  Will not be
   // removed automatically.
-  static String temporaryDirectory();
+  static String temporaryDirectory(RandomService& random);
 
   static bool exists(String const& path);
 

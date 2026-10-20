@@ -71,10 +71,8 @@ import star.math_common;
 import star.algorithm;
 namespace Star {
 
-Mutex Songbook::s_timeSourcesMutex;
-StringMap<std::shared_ptr<Songbook::TimeSource>> Songbook::s_timeSources;
-
-Songbook::Songbook(String const& species) {
+Songbook::Songbook(Root& root, String const& species)
+  : m_root(root), m_synchronization(root.songbookSynchronization()) {
   m_activeCooldown = 0;
   m_dataUpdated = false;
   m_dataChanged = false;
@@ -99,7 +97,7 @@ Songbook::~Songbook() {
 Songbook::NoteMapping& Songbook::noteMapping(String const& instrument, String const& species, int note) {
   if (!m_noteMapping.contains(instrument)) {
     Map<int, NoteMapping> notemap;
-    auto tuning = Root::singleton().assets()->json(strf("/sfx/instruments/{}/tuning.config", instrument));
+    auto tuning = m_root.assets()->json(strf("/sfx/instruments/{}/tuning.config", instrument));
     for (auto e : tuning.get("mapping").iterateObject()) {
       int keyNumber = lexicalCast<int>(e.first);
       NoteMapping nm;
@@ -143,20 +141,20 @@ void Songbook::update(EntityMode mode, World* world) {
     if (!m_song.isNull()) {
       try {
         {
-          MutexLocker lock(s_timeSourcesMutex);
-          if (!s_timeSources.contains(m_timeSource)) {
+          MutexLocker lock(m_synchronization.mutex);
+          if (!m_synchronization.timeSources.contains(m_timeSource)) {
             m_timeSourceInstance = std::make_shared<TimeSource>();
-            s_timeSources[m_timeSource] = m_timeSourceInstance;
+            m_synchronization.timeSources[m_timeSource] = m_timeSourceInstance;
             m_timeSourceInstance->epoch = m_timeSourceEpoch;
             m_timeSourceInstance->keepalive = m_timeSourceEpoch;
           } else
-            m_timeSourceInstance = s_timeSources[m_timeSource];
+            m_timeSourceInstance = m_synchronization.timeSources[m_timeSource];
         }
         m_track.clear();
         m_stopped = false;
         m_track.appendAll(parseABC(m_song.getString("abc")));
       } catch (StarException const& e) {
-        Logger::error("Failed to handle abc: {}", outputException(e, true));
+        m_root.logger().error("Failed to handle abc: {}", outputException(e, true));
         m_stopped = true;
       }
     }
@@ -189,7 +187,7 @@ void Songbook::playback() {
     if (delta > 1)
       continue; // skip notes that are more than a second behind
     if (!m_uncompressedSamples.contains(note.file)) {
-      auto sample = Root::singleton().assets()->audio(note.file);
+      auto sample = m_root.assets()->audio(note.file);
       if (sample->compressed()) {
         auto copy = std::make_shared<Audio>(*sample);
         copy->uncompress();
@@ -275,10 +273,10 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
       return key.toLower().replace(" ", "").replace("minor", "m").replace("min", "m").replace("major", "maj");
     };
     String key = cleanupKey(fields.value("K", "c"));
-    auto keys = Root::singleton().assets()->json("/songbook.config:keys");
+    auto keys = m_root.assets()->json("/songbook.config:keys");
     while (true) {
       if (!keys.contains(key)) {
-        Logger::info("Failed to find key {}, falling back to C", key);
+        m_root.logger().info("Failed to find key {}, falling back to C", key);
         key = "c";
       }
       auto signature = keys.get(key);
@@ -650,7 +648,7 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
                 auto mapping = noteMapping(m_instrument, m_species, note);
                 result.append(Note{
                     m_instrument,
-                    Random::randFrom(mapping.files),
+                    m_root.random().randFrom(mapping.files),
                     now,
                     noteDuration,
                     mapping.fadeout,
@@ -669,7 +667,7 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
                 auto mapping = noteMapping(m_instrument, m_species, note);
                 result.append(Note{
                     m_instrument,
-                    Random::randFrom(mapping.files),
+                    m_root.random().randFrom(mapping.files),
                     now,
                     noteDuration,
                     mapping.fadeout,
@@ -716,19 +714,19 @@ void Songbook::play(Json const& song, String const& timeSource) {
   m_song = song;
   m_timeSource = timeSource;
   if (m_timeSource.empty())
-    m_timeSource = toString(Random::randu64());
+    m_timeSource = toString(m_root.random().randu64());
 
   {
     m_epochUpdated = false;
     m_timeSourceEpoch = Time::millisecondsSinceEpoch();
-    MutexLocker lock(s_timeSourcesMutex);
-    if (!s_timeSources.contains(m_timeSource)) {
+    MutexLocker lock(m_synchronization.mutex);
+    if (!m_synchronization.timeSources.contains(m_timeSource)) {
       m_timeSourceInstance = std::make_shared<TimeSource>();
-      s_timeSources[m_timeSource] = m_timeSourceInstance;
+      m_synchronization.timeSources[m_timeSource] = m_timeSourceInstance;
       m_timeSourceInstance->epoch = m_timeSourceEpoch;
       m_timeSourceInstance->keepalive = m_timeSourceEpoch;
     } else {
-      m_timeSourceInstance = s_timeSources[m_timeSource];
+      m_timeSourceInstance = m_synchronization.timeSources[m_timeSource];
       if ((Time::millisecondsSinceEpoch() - m_timeSourceInstance->keepalive) > 5000) {
         m_timeSourceInstance->epoch = m_timeSourceEpoch;
         m_timeSourceInstance->keepalive = m_timeSourceEpoch;

@@ -22,6 +22,8 @@ import star.cellular_liquid;
 import star.item_descriptor;
 
 namespace Star {
+class Assets;
+class MaterialDatabase;
 
 struct LiquidExceptionTag {
   static constexpr char const* name() { return "LiquidException"; }
@@ -50,7 +52,7 @@ struct LiquidSettings {
 
 class LiquidsDatabase {
 public:
-  LiquidsDatabase();
+  LiquidsDatabase(std::shared_ptr<Assets const> const& assets, std::shared_ptr<MaterialDatabase const> const& materialDatabase);
 
   LiquidCellEngineParameters liquidEngineParameters() const;
   float backgroundDrain() const;

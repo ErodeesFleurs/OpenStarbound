@@ -187,7 +187,7 @@ import star.quests;
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
+LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
   LuaCallbacks callbacks;
 
   callbacks.registerCallback("save", [player]() { return player->diskStore(); });
@@ -405,9 +405,9 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       return {};
   });
 
-  callbacks.registerCallback("itemAllowedInBag", [player](String const& bagName, Json const& item) {
+  callbacks.registerCallback("itemAllowedInBag", [&root, player](String const& bagName, Json const& item) {
     auto inventory = player->inventory();
-    auto itemDatabase = Root::singleton().itemDatabase();
+    auto itemDatabase = root.itemDatabase();
     if (!inventory->bagContents(bagName))
       return false;
     else
@@ -422,9 +422,9 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       return {};
   });
 
-  callbacks.registerCallback("setItem", [player](InventorySlot const& slot, Json const& item) {
+  callbacks.registerCallback("setItem", [&root, player](InventorySlot const& slot, Json const& item) {
     if (!player->inventory()->slotValid(slot)) return;
-    auto itemDatabase = Root::singleton().itemDatabase();
+    auto itemDatabase = root.itemDatabase();
     player->inventory()->setItem(slot, itemDatabase->item(ItemDescriptor(item)));
   });
 
@@ -472,8 +472,8 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback("blueprintKnown", [player](Json const& item) { return player->blueprintKnown(ItemDescriptor(item)); });
 
-  callbacks.registerCallback("availableRecipes", [player](Maybe<StringSet> const& filter) {
-    auto itemDatabase = Root::singleton().itemDatabase();
+  callbacks.registerCallback("availableRecipes", [&root, player](Maybe<StringSet> const& filter) {
+    auto itemDatabase = root.itemDatabase();
     auto inventory = player->inventory();
     auto recipes = itemDatabase->recipesFromBagContents(inventory->availableItems(), inventory->availableCurrencies(), filter.value());
     JsonArray result;
@@ -524,8 +524,8 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       player->giveItem(ItemDescriptor(item));
     });
 
-  callbacks.registerCallback("giveEssentialItem", [player](String const& slotName, Json const& item) {
-      auto itemDatabase = Root::singleton().itemDatabase();
+  callbacks.registerCallback("giveEssentialItem", [&root, player](String const& slotName, Json const& item) {
+      auto itemDatabase = root.itemDatabase();
       player->inventory()->setEssentialItem(EssentialItemNames.getLeft(slotName), itemDatabase->item(ItemDescriptor(item)));
     });
 
@@ -537,8 +537,8 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       player->inventory()->setEssentialItem(EssentialItemNames.getLeft(slotName), {});
     });
 
-  callbacks.registerCallback("setEquippedItem", [player](String const& slotName, Json const& item) {
-      auto itemDatabase = Root::singleton().itemDatabase();
+  callbacks.registerCallback("setEquippedItem", [&root, player](String const& slotName, Json const& item) {
+      auto itemDatabase = root.itemDatabase();
       auto slot = InventorySlot(EquipmentSlotNames.getLeft(slotName));
       player->inventory()->setItem(slot, itemDatabase->item(ItemDescriptor(item)));
     });
@@ -666,17 +666,17 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       return player->inventory()->swapSlotItem()->descriptor().toJson();
     });
 
-  callbacks.registerCallback("setSwapSlotItem", [player](Json const& item) {
-      auto itemDatabase = Root::singleton().itemDatabase();
+  callbacks.registerCallback("setSwapSlotItem", [&root, player](Json const& item) {
+      auto itemDatabase = root.itemDatabase();
       player->inventory()->setSwapSlotItem(itemDatabase->item(ItemDescriptor(item)));
     });
 
   callbacks.registerCallback("canStartQuest",
-      [player](Json const& quest) { return player->questManager()->canStart(QuestArcDescriptor::fromJson(quest)); });
+      [&root, player](Json const& quest) { return player->questManager()->canStart(QuestArcDescriptor::fromJson(root, quest)); });
 
-  callbacks.registerCallback("startQuest", [player](Json const& quest, Maybe<String> const& serverUuid, Maybe<String> const& worldId) {
-      auto questArc = QuestArcDescriptor::fromJson(quest);
-      auto followUp = std::make_shared<Quest>(questArc, 0, player);
+  callbacks.registerCallback("startQuest", [&root, player](Json const& quest, Maybe<String> const& serverUuid, Maybe<String> const& worldId) {
+      auto questArc = QuestArcDescriptor::fromJson(root, quest);
+      auto followUp = std::make_shared<Quest>(root, questArc, 0, player);
       if (serverUuid)
         followUp->setServerUuid(Uuid(*serverUuid));
       if (worldId)

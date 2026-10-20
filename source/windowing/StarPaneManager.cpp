@@ -72,9 +72,9 @@ extern EnumMap<PaneLayer> const PaneLayerNames{
   {PaneLayer::World, "World"}
 };
 
-PaneManager::PaneManager()
-  : m_context(GuiContext::singletonPtr()), m_prevInterfaceScale(1) {
-  auto assets = Root::singleton().assets();
+PaneManager::PaneManager(GuiContext& context)
+  : m_context(&context), m_prevInterfaceScale(1) {
+  auto assets = m_context->root().assets();
   m_tooltipMouseoverRadius = assets->json("/panes.config:tooltipMouseoverRadius").toFloat();
   m_tooltipMouseOffset = jsonToVec2I(assets->json("/panes.config:tooltipMouseoverOffset"));
   m_tooltipShowTimer = GameTimer(assets->json("/panes.config:tooltipMouseoverTime").toFloat());

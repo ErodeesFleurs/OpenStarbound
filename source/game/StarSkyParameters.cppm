@@ -17,6 +17,7 @@ namespace Star {
 
 class CelestialParameters;
 class CelestialDatabase;
+class Root;
 
 struct VisitableWorldParameters;
 
@@ -32,7 +33,7 @@ struct SkyParameters {
   friend DataStream& operator>>(DataStream& ds, SkyParameters& value);
   friend DataStream& operator<<(DataStream& ds, SkyParameters const& value);
   SkyParameters();
-  SkyParameters(CelestialCoordinate const& coordinate, std::shared_ptr<CelestialDatabase> const& celestialDatabase);
+  SkyParameters(Root& root, CelestialCoordinate const& coordinate, std::shared_ptr<CelestialDatabase> const& celestialDatabase);
   SkyParameters(SkyParameters const& oldSkyParameters, std::shared_ptr<VisitableWorldParameters const> newVisitableParameters);
   explicit SkyParameters(Json const& config);
 

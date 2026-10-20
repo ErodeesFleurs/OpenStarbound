@@ -258,7 +258,7 @@ public:
     #ifdef STAR_STREAM_AUDIO
     int result = ov_open_callbacks(&m_deviceCallbacks, &m_vorbisFile, NULL, 0, m_callbacks);
     if (result < 0) {
-      Logger::error("Failed to open ogg stream: error code {}", result);
+      EmergencyLog::error("Failed to open ogg stream: error code {}", result);
       return false;
     }
     #else

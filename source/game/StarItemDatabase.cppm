@@ -36,6 +36,7 @@ import star.item;
 import star.either;
 namespace Star {
 
+class Root;
 class RecipeDatabase;
 class AugmentItem;
 
@@ -75,7 +76,7 @@ enum class ItemType {
   ActiveItem,
   AugmentItem
 };
-extern EnumMap<ItemType> ItemTypeNames;
+extern EnumMap<ItemType> const ItemTypeNames;
 
 class ItemDatabase {
 public:
@@ -104,7 +105,7 @@ public:
   static HashSet<ItemRecipe> recipesFromSubset(HashMap<ItemDescriptor, std::uint64_t> const& normalizedBag, StringMap<std::uint64_t> const& availableCurrencies, HashSet<ItemRecipe> const& subset, StringSet const& allowedTypes);
   static String guiFilterString(std::shared_ptr<Item> const& item);
 
-  ItemDatabase();
+  ItemDatabase(Root& root);
 
   void cleanup();
 
@@ -193,7 +194,8 @@ private:
     String filename;
   };
 
-  static std::shared_ptr<Item> createItem(ItemType type, ItemConfig const& config);
+  std::shared_ptr<Item> createItem(ItemType type, ItemConfig const& config) const;
+  ItemDescriptor loadDescriptor(Json const& store) const;
   std::shared_ptr<Item> tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level = {}, Maybe<std::uint64_t> seed = {}, bool ignoreInvalid = false) const;
 
   ItemData const& itemData(String const& name) const;
@@ -207,6 +209,8 @@ private:
   void scanRecipes();
   void addBlueprints();
   void addCodexes();
+
+  Root& m_root;
 
   StringMap<ItemData> m_items;
   HashSet<ItemRecipe> m_recipes;
@@ -243,7 +247,7 @@ bool ItemDatabase::loadItem(ItemDescriptor const& descriptor, std::shared_ptr<It
 template <typename ItemT>
 bool ItemDatabase::diskLoad(Json const& diskStore, std::shared_ptr<ItemT>& itemPtr) const {
   try {
-    return loadItem(ItemDescriptor::loadStore(diskStore), itemPtr);
+    return loadItem(loadDescriptor(diskStore), itemPtr);
   } catch (StarException const&) {
     return false;
   }

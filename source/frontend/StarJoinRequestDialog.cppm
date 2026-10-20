@@ -44,7 +44,7 @@ enum class P2PJoinRequestReply;
 
 class JoinRequestDialog : public Pane {
 public:
-  JoinRequestDialog();
+  JoinRequestDialog(GuiContext& guiContext);
 
   virtual ~JoinRequestDialog() {}
 

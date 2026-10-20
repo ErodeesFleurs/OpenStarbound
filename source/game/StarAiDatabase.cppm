@@ -19,9 +19,11 @@ import star.animation;
 
 namespace Star {
 
+class Root;
+
 class AiDatabase {
 public:
-  AiDatabase();
+  explicit AiDatabase(Root& root);
 
   AiMission mission(String const& missionName) const;
 
@@ -39,6 +41,8 @@ public:
 
 private:
   struct AiAnimationConfig {
+    explicit AiAnimationConfig(Root& root) : staticAnimation(root), scanlineAnimation(root) {}
+
     StringMap<Animation> aiAnimations;
     String defaultAnimation;
     float charactersPerSecond;

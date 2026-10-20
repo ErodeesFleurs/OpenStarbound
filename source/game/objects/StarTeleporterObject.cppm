@@ -64,6 +64,7 @@ import star.networked_animator;
 import star.entity_rendering_types;
 import star.entity_rendering;
 import star.object;
+import star.root;
 
 export module star.teleporter_object;
 
@@ -71,7 +72,7 @@ export namespace Star {
 
 class TeleporterObject : public Object, public WarpTargetEntity {
 public:
-  TeleporterObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters = JsonObject());
+  TeleporterObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters = JsonObject());
 
   Vec2F footPosition() const override;
 };
@@ -80,8 +81,8 @@ public:
 
 namespace Star {
 
-TeleporterObject::TeleporterObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters) : Object(config, parameters) {
-  setUniqueId(configValue("uniqueId", Uuid().hex()).optString());
+TeleporterObject::TeleporterObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters) : Entity(rootContext), Object(rootContext, config, parameters) {
+  setUniqueId(configValue("uniqueId", Uuid(root().random()).hex()).optString());
 }
 
 Vec2F TeleporterObject::footPosition() const {

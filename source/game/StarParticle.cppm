@@ -19,6 +19,8 @@ import star.animation;
 import star.vector;
 namespace Star {
 
+class Root;
+
 struct Particle {
   friend DataStream& operator<<(DataStream& ds, Particle const& particle);
   friend DataStream& operator>>(DataStream& ds, Particle& particle);
@@ -54,20 +56,20 @@ struct Particle {
   Particle();
   // If particle is type Textured, then the image name is considered relative
   // to the given asset path
-  explicit Particle(Json const& config, String const& assetsPath = "/");
+  explicit Particle(Root& root, Json const& config, String const& assetsPath = "/");
 
   Json toJson() const;
 
   void translate(Vec2F const& pos);
 
   // Updates position, velocity, rotation, and timeToLive.
-  void update(float dt, Vec2F const& wind = Vec2F());
+  void update(Root& root, float dt, Vec2F const& wind = Vec2F());
 
   bool dead() const;
 
   // Apply random variance to this particle based on a "variance" particle that
   // contains the maximum amount of variance for each field.
-  void applyVariance(Particle const& variance);
+  void applyVariance(Root& root, Particle const& variance);
 
   // Stops particle and sets time to live to 0.0 (triggering destruction)
   void collide(Vec2F const& collisionPosition);
@@ -78,7 +80,7 @@ struct Particle {
   // Internally called by update() / collide() / destruct()
   void destructionUpdate();
 
-  void initializeAnimation();
+  void initializeAnimation(Root& root);
 
   Type type;
 
@@ -133,7 +135,7 @@ DataStream& operator<<(DataStream& ds, Particle const& particle);
 DataStream& operator>>(DataStream& ds, Particle& particle);
 
 typedef std::function<Particle()> ParticleVariantCreator;
-ParticleVariantCreator makeParticleVariantCreator(Particle particle, Particle variance);
+ParticleVariantCreator makeParticleVariantCreator(Root& root, Particle particle, Particle variance);
 
 }
 

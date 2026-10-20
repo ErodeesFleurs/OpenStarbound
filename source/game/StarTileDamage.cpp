@@ -25,9 +25,6 @@ import star.version;
 
 import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
-import star.root;
 import star.tile_damage;
 
 import star.math_common;
@@ -96,9 +93,9 @@ DataStream& operator<<(DataStream& ds, TileDamage const& tileDamage) {
 TileDamageParameters::TileDamageParameters()
   : m_damageRecoveryPerSecond(0.0f), m_maximumEffectTime(0.0f), m_totalHealth(0), m_requiredHarvestLevel(0) {}
 
-TileDamageParameters::TileDamageParameters(Json config, Maybe<float> healthOverride, Maybe<unsigned> harvestLevelOverride) {
+TileDamageParameters::TileDamageParameters(Assets const& assets, Json config, Maybe<float> healthOverride, Maybe<unsigned> harvestLevelOverride) {
   if (config.type() == Json::Type::String)
-    config = Root::singleton().assets()->json(config.toString());
+    config = assets.json(config.toString());
 
   for (auto const& pair : config.getObject("damageFactors"))
     m_damages[TileDamageTypeNames.getLeft(pair.first)] = pair.second.toFloat();

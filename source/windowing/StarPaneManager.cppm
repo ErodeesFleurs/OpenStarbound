@@ -78,7 +78,7 @@ class PaneManager {
 public:
   typedef std::function<void(std::shared_ptr<Pane> const&)> DismissCallback;
 
-  PaneManager();
+  PaneManager(GuiContext& context);
 
   // Display a pane on any given layer.  The pane lifetime in this class is
   // only during display, once dismissed, the pane is forgotten completely.

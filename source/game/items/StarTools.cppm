@@ -74,13 +74,14 @@ import star.preview_tile_tool;
 
 namespace Star {
 
+class Root;
 class World;
 class WireConnector;
 class ToolUserEntity;
 
 class MiningTool : public Item, public SwingableItem, public DurabilityItem {
 public:
-  MiningTool(Json const& config, String const& directory, Json const& parameters = JsonObject());
+  MiningTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   std::shared_ptr<Item> clone() const override;
 
@@ -118,7 +119,7 @@ private:
 
 class HarvestingTool : public Item, public SwingableItem {
 public:
-  HarvestingTool(Json const& config, String const& directory, Json const& parameters = JsonObject());
+  HarvestingTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   std::shared_ptr<Item> clone() const override;
 
@@ -148,7 +149,7 @@ private:
 
 class WireTool : public Item, public FireableItem, public PointableItem, public BeamItem {
 public:
-  WireTool(Json const& config, String const& directory, Json const& parameters = JsonObject());
+  WireTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   std::shared_ptr<Item> clone() const override;
 
@@ -179,7 +180,7 @@ private:
 
 class BeamMiningTool : public Item, public FireableItem, public PreviewTileTool, public PointableItem, public BeamItem {
 public:
-  BeamMiningTool(Json const& config, String const& directory, Json const& parameters = JsonObject());
+  BeamMiningTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   std::shared_ptr<Item> clone() const override;
 
@@ -220,7 +221,7 @@ class PaintingBeamTool
     public PointableItem,
     public BeamItem {
 public:
-  PaintingBeamTool(Json const& config, String const& directory, Json const& parameters = JsonObject());
+  PaintingBeamTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   std::shared_ptr<Item> clone() const override;
 

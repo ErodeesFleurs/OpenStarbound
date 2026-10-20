@@ -56,7 +56,7 @@ class ShadersMenu;
 
 class GraphicsMenu : public Pane {
 public:
-  GraphicsMenu(PaneManager* manager,std::shared_ptr<UniverseClient> client);
+  GraphicsMenu(GuiContext& guiContext, PaneManager* manager,std::shared_ptr<UniverseClient> client);
 
   void show() override;
   void dismissed() override;

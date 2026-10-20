@@ -53,7 +53,7 @@ enum class SpecialRepeatKeyCodes : String::Char { None, Delete, Backspace, Left,
 
 class TextBoxWidget : public Widget {
 public:
-  TextBoxWidget(String const& startingText, String const& hint, WidgetCallbackFunc callback);
+  TextBoxWidget(GuiContext& context, String const& startingText, String const& hint, WidgetCallbackFunc callback);
 
   virtual void update(float dt) override;
 

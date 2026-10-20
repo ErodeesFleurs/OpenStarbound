@@ -321,9 +321,17 @@ void DataStream::pwrite(PointerType const& pointer, WriteFunction writeFunction)
 
 template <typename PointerType>
 void DataStream::pread(PointerType& pointer) {
-  return pread(pointer, [](DataStream& ds, typename std::decay<typename PointerType::element_type>::type& value) {
-      ds.read(value);
-    });
+  using Element = typename std::decay<typename PointerType::element_type>::type;
+  if constexpr (std::is_default_constructible_v<Element>) {
+    pread(pointer, [](DataStream& ds, Element& value) { ds.read(value); });
+  } else {
+    if (read<bool>()) {
+      auto element = std::make_unique<Element>(read<Element>());
+      pointer.reset(element.release());
+    } else {
+      pointer.reset();
+    }
+  }
 }
 
 template <typename PointerType>
@@ -377,7 +385,10 @@ void DataStream::writeContainer(Container const& container) {
 
 template <typename Container>
 void DataStream::readContainer(Container& container) {
-  readContainer(container, [](DataStream& ds, typename Container::value_type& element) { ds >> element; });
+  container.clear();
+  std::size_t size = readVlqU();
+  for (std::size_t i = 0; i < size; ++i)
+    container.insert(container.end(), read<typename Container::value_type>());
 }
 
 template <typename Container>
@@ -390,10 +401,13 @@ void DataStream::writeMapContainer(Container const& container) {
 
 template <typename Container>
 void DataStream::readMapContainer(Container& container) {
-  readMapContainer(container, [](DataStream& ds, typename Container::key_type& key, typename Container::mapped_type& mapped) {
-      ds >> key;
-      ds >> mapped;
-    });
+  container.clear();
+  std::size_t size = readVlqU();
+  for (std::size_t i = 0; i < size; ++i) {
+    auto key = read<typename Container::key_type>();
+    auto mapped = read<typename Container::mapped_type>();
+    container.insert(std::make_pair(std::move(key), std::move(mapped)));
+  }
 }
 
 }

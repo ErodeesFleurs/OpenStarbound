@@ -17,6 +17,7 @@ import star.matrix3;
 import star.line;
 import star.algorithm;
 import star.weighted_pool;
+import star.random;
 import star.directives;
 namespace Star {
 
@@ -96,7 +97,7 @@ List<Color> jsonToColorList(Json const& v);
 List<Directives> jsonToDirectivesList(Json const& v);
 Json jsonFromDirectivesList(List<Directives> const& v);
 
-Json weightedChoiceFromJson(Json const& source, Json const& default_);
+Json weightedChoiceFromJson(RandomService& random, Json const& source, Json const& default_);
 
 // Assumes that the bins parameter is an array of pairs (arrays), where the
 // first element is a minimum value and the second element is the actual

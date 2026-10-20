@@ -44,6 +44,8 @@ import star.biome;
 import star.tile_damage;
 import star.parallax;
 import star.ambient;
+import star.root;
+import star.assets;
 
 import star.algorithm;
 namespace Star {
@@ -55,12 +57,14 @@ BiomePlaceables::BiomePlaceables() {
   ceilingGrassModDensity = 0.0f;
 }
 
-BiomePlaceables::BiomePlaceables(Json const& variant) {
+BiomePlaceables::BiomePlaceables(Assets const& assets, Json const& variant) {
   grassMod = variant.getInt("grassMod");
   grassModDensity = variant.getFloat("grassModDensity");
   ceilingGrassMod = variant.getInt("ceilingGrassMod");
   ceilingGrassModDensity = variant.getFloat("ceilingGrassModDensity");
-  itemDistributions = variant.getArray("itemDistributions").transformed(construct<BiomeItemDistribution>());
+  itemDistributions = variant.getArray("itemDistributions").transformed([&assets](Json const& item) {
+    return BiomeItemDistribution(assets, item);
+  });
 }
 
 Json BiomePlaceables::toJson() const {
@@ -89,7 +93,7 @@ Biome::Biome() {
   materialHueShift = MaterialHue();
 }
 
-Biome::Biome(Json const& store) : Biome() {
+Biome::Biome(Root& root, Json const& store) : Biome() {
   baseName = store.getString("baseName");
   description = store.getString("description");
 
@@ -100,14 +104,15 @@ Biome::Biome(Json const& store) : Biome() {
   hueShift = store.getFloat("hueShift");
   materialHueShift = store.getUInt("materialHueShift");
 
-  surfacePlaceables = BiomePlaceables(store.get("surfacePlaceables"));
-  undergroundPlaceables = BiomePlaceables(store.get("undergroundPlaceables"));
+  auto assets = root.assets();
+  surfacePlaceables = BiomePlaceables(*assets, store.get("surfacePlaceables"));
+  undergroundPlaceables = BiomePlaceables(*assets, store.get("undergroundPlaceables"));
 
   if (auto config = store.opt("spawnProfile"))
     spawnProfile = SpawnProfile(*config);
 
   if (auto config = store.opt("parallax"))
-    parallax = std::make_shared<Parallax>(*config);
+    parallax = std::make_shared<Parallax>(root, *config);
 
   if (auto config = store.opt("ambientNoises"))
     ambientNoises = std::make_shared<AmbientNoisesDescription>(*config);

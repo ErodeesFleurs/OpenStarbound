@@ -54,7 +54,7 @@ class UniverseClient;
 
 class StatusPane : public Pane {
 public:
-  StatusPane(MainInterfacePaneManager* paneManager, std::shared_ptr<UniverseClient> client);
+  StatusPane(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<UniverseClient> client);
 
   virtual std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition) override;
 
@@ -74,7 +74,6 @@ private:
   std::shared_ptr<UniverseClient> m_client;
   std::shared_ptr<Player> m_player;
 
-  GuiContext* m_guiContext;
   List<StatusEffectIndicator> m_statusIndicators;
 };
 

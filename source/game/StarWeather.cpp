@@ -35,7 +35,6 @@ import star.asset_path;
 
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.configuration;
 import star.root;
 import star.damage_types;
@@ -82,7 +81,7 @@ import star.math_common;
 import star.algorithm;
 namespace Star {
 
-ServerWeather::ServerWeather() {
+ServerWeather::ServerWeather(Root& root) : m_root(&root) {
   m_undergroundLevel = 0.0f;
   m_currentWeatherIndex = NPos;
   m_currentWeatherIntensity = 0.0f;
@@ -156,22 +155,22 @@ void ServerWeather::update(double dt) {
     else
       m_currentWeatherIntensity = 0.0f;
   } else if (!m_weatherPool.empty()) {
-    auto assets = Root::singleton().assets();
+    auto assets = m_root->assets();
     double weatherCooldownTime = assets->json("/weather.config:weatherCooldownTime").toDouble();
     double weatherWarmupTime = assets->json("/weather.config:weatherWarmupTime").toDouble();
 
     if (m_currentTime >= m_nextWeatherChangeTime) {
-      m_currentWeatherIndex = m_weatherPool.selectIndex();
+      m_currentWeatherIndex = m_weatherPool.selectIndex(m_root->random());
       if (m_currentWeatherIndex == NPos)
         m_currentWeatherType = {};
       else
-        m_currentWeatherType = Root::singleton().biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
+        m_currentWeatherType = m_root->biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
 
       m_lastWeatherChangeTime = m_nextWeatherChangeTime;
-      m_nextWeatherChangeTime = m_currentTime + Random::randd(m_currentWeatherType->duration[0], m_currentWeatherType->duration[1]);
+      m_nextWeatherChangeTime = m_currentTime + m_root->random().randd(m_currentWeatherType->duration[0], m_currentWeatherType->duration[1]);
 
       // TODO: For now just set the wind at maximum either left or right, nothing exciting.
-      m_currentWind = m_currentWeatherType->maximumWind * (Random::randb() ? 1 : -1);
+      m_currentWind = m_currentWeatherType->maximumWind * (m_root->random().randb() ? 1 : -1);
     }
 
     m_currentWeatherIntensity = std::min(clamp((m_currentTime - m_lastWeatherChangeTime) / weatherWarmupTime, 0.0, 1.0),
@@ -237,9 +236,9 @@ void ServerWeather::setWeatherIndex(std::size_t weatherIndex, bool force) {
   } else {
     m_currentWeatherIndex = weatherIndex;
     m_currentWeatherType =
-      Root::singleton().biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
+      m_root->biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
     m_currentWeatherIntensity = 1.0f;
-    m_currentWind = m_currentWeatherType->maximumWind * (Random::randb() ? 1 : -1);
+    m_currentWind = m_currentWeatherType->maximumWind * (m_root->random().randb() ? 1 : -1);
   }
 
   m_lastWeatherChangeTime = m_currentTime;
@@ -247,7 +246,7 @@ void ServerWeather::setWeatherIndex(std::size_t weatherIndex, bool force) {
     m_nextWeatherChangeTime = std::numeric_limits<float>::infinity();
   else
     m_nextWeatherChangeTime =
-      m_currentWeatherType ? m_currentTime + Random::randd(m_currentWeatherType->duration[0], m_currentWeatherType->duration[1])
+      m_currentWeatherType ? m_currentTime + m_root->random().randd(m_currentWeatherType->duration[0], m_currentWeatherType->duration[1])
                            : m_currentTime;
 
   setNetStates();
@@ -271,7 +270,7 @@ void ServerWeather::spawnWeatherProjectiles(float dt) {
   if (!m_currentWeatherType || m_clientVisibleRegions.empty())
     return;
 
-  auto projectileDatabase = Root::singleton().projectileDatabase();
+  auto projectileDatabase = m_root->projectileDatabase();
 
   // TODO: The complexity of this method is TERRIBLE, if this becomes a problem
   // for any reason there are large numbers of ways to make this much better,
@@ -345,13 +344,13 @@ void ServerWeather::spawnWeatherProjectiles(float dt) {
       // Figure out a good target value based on the rate per x tile, making
       // sure to handle very low count values appropriately on average.
       float count = projectileConfig.ratePerX * spawnRect.width() * dt * m_currentWeatherIntensity;
-      if (Random::randf() > fpart(count))
+      if (m_root->random().randf() > fpart(count))
         count = std::floor(count);
       else
         count = std::ceil(count);
 
       for (int i = 0; i < count; ++i) {
-        Vec2F position = {Random::randf() * spawnRect.width() + spawnRect.xMin(), Random::randf() * spawnRect.height() + spawnRect.yMin()};
+        Vec2F position = {m_root->random().randf() * spawnRect.width() + spawnRect.xMin(), m_root->random().randf() * spawnRect.height() + spawnRect.yMin()};
 
         if (position[1] > m_undergroundLevel && (!m_weatherEffectsActiveQuery || m_weatherEffectsActiveQuery(Vec2I::floor(position)))) {
           // Make sure not to spawn projectiles if they intersect any client
@@ -377,7 +376,7 @@ void ServerWeather::spawnWeatherProjectiles(float dt) {
   }
 }
 
-ClientWeather::ClientWeather() {
+ClientWeather::ClientWeather(Root& root) : m_root(&root) {
   m_undergroundLevel = 0.0f;
   m_currentWeatherIndex = NPos;
   m_currentWeatherIntensity = 0.0f;
@@ -425,7 +424,7 @@ void ClientWeather::update(double dt) {
     m_currentWeatherType = {};
   } else {
     if (m_visibleRegion == RectI() || m_visibleRegion.yMax() > m_undergroundLevel)
-      m_currentWeatherType = Root::singleton().biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
+      m_currentWeatherType = m_root->biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
     else
       m_currentWeatherType = {};
   }
@@ -495,15 +494,15 @@ void ClientWeather::spawnWeatherParticles(RectF newClientRegion, float dt) {
 
     for (auto const& renderZone : newClientRegion.subtract(visibleRegion)) {
       float count = particleConfig.density * renderZone.width() * renderZone.height() * m_currentWeatherIntensity;
-      if (Random::randf() > fpart(count))
+      if (m_root->random().randf() > fpart(count))
         count = std::floor(count);
       else
         count = std::ceil(count);
 
       for (int i = 0; i < count; ++i) {
         auto newParticle = particleConfig.particle;
-        float x = Random::randf() * renderZone.width() + renderZone.xMin();
-        float y = Random::randf() * renderZone.height() + renderZone.yMin();
+        float x = m_root->random().randf() * renderZone.width() + renderZone.xMin();
+        float y = m_root->random().randf() * renderZone.height() + renderZone.yMin();
         newParticle.position += m_worldGeometry.xwrap(Vec2F(x, y));
         newParticle.velocity = targetVelocity;
         if (y > m_undergroundLevel && (!m_weatherEffectsActiveQuery || m_weatherEffectsActiveQuery(Vec2I::floor(newParticle.position)))) {

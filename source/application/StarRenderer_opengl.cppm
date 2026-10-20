@@ -16,6 +16,7 @@ import star.variant;
 import star.bi_map;
 import star.ref_ptr;
 import star.renderer;
+import star.logging;
 
 
 import star.vector;
@@ -38,7 +39,7 @@ bool settingModeValue(BoolSettingMode const& mode, bool const& setting);
 // active during construction, destruction, and all method calls.
 class OpenGlRenderer : public Renderer {
 public:
-  OpenGlRenderer();
+  explicit OpenGlRenderer(Logger& logger);
   ~OpenGlRenderer();
 
   String rendererId() const override;
@@ -261,6 +262,7 @@ private:
   void blitGlFrameBuffer(RefPtr<OpenGlRenderer::GlFrameBuffer> const& frameBuffer, bool const& useAlt = false);
   void switchGlFrameBuffer(RefPtr<OpenGlRenderer::GlFrameBuffer> const& frameBuffer);
 
+  Logger& m_logger;
   Vec2U m_screenSize;
 
   GLuint m_program = 0;

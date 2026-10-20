@@ -109,12 +109,12 @@ export namespace Star {
 
 class UnlockItem : public Item, public SwingableItem, public PreviewableItem {
 public:
-  UnlockItem(Json const& config, String const& directory, Json const& itemParameters = JsonObject());
+  UnlockItem(Root& root, Json const& config, String const& directory, Json const& itemParameters = JsonObject());
 
   std::shared_ptr<Item> clone() const override;
 
   List<Drawable> drawables() const override;
-  List<Drawable> preview(std::shared_ptr<Player> const& viewer = {}) const override;
+  List<Drawable> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
 
 protected:
   void fireTriggered() override;
@@ -131,13 +131,13 @@ private:
 
 namespace Star {
 
-UnlockItem::UnlockItem(Json const& config, String const& directory, Json const& itemParameters)
-  : Item(config, directory, itemParameters), SwingableItem(config) {
+UnlockItem::UnlockItem(Root& root, Json const& config, String const& directory, Json const& itemParameters)
+  : Item(root, config, directory, itemParameters), SwingableItem(config) {
   m_tierRecipesUnlock = instanceValue("tierRecipesUnlock").optString();
   m_shipUpgrade = instanceValue("shipUpgrade").optUInt();
   m_unlockMessage = instanceValue("unlockMessage").optString().value();
   auto image = AssetPath::relativeTo(directory, instanceValue("image").toString());
-  m_drawables = {Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F())};
+  m_drawables = {Drawable::makeImage(*root.imageMetadataDatabase(), image, 1.0f / TilePixels, true, Vec2F())};
 }
 
 std::shared_ptr<Item> UnlockItem::clone() const {
@@ -148,7 +148,7 @@ List<Drawable> UnlockItem::drawables() const {
   return m_drawables;
 }
 
-List<Drawable> UnlockItem::preview(std::shared_ptr<Player> const&) const {
+List<Drawable> UnlockItem::preview(TileDrawer*, std::shared_ptr<Player> const&) const {
   return iconDrawables();
 }
 
@@ -174,13 +174,13 @@ void UnlockItem::fireTriggered() {
     }
 
     if (m_tierRecipesUnlock) {
-      auto playerConfig = Root::singleton().assets()->json("/player.config");
+      auto playerConfig = root().assets()->json("/player.config");
 
       List<ItemDescriptor> blueprints;
       for (Json v : playerConfig.get("defaultBlueprints", JsonObject()).getArray(*m_tierRecipesUnlock, JsonArray()))
         blueprints.append(ItemDescriptor(v));
 
-      auto speciesConfig = Root::singleton().assets()->json(strf("/species/{}.species", player->species()));
+      auto speciesConfig = root().assets()->json(strf("/species/{}.species", player->species()));
       for (Json v : speciesConfig.get("defaultBlueprints", JsonObject()).getArray(*m_tierRecipesUnlock, JsonArray()))
         blueprints.append(ItemDescriptor(v));
 

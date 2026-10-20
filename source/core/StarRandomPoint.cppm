@@ -26,7 +26,7 @@ public:
   typedef Star::Vector<DataType, 2> Point;
   typedef Star::Rect<DataType> Rect;
   typedef List<std::pair<Point, PointData>> PointSet;
-  Random2dPointGenerator(std::uint64_t seed, float cellSize, Vec2I const& densityRange);
+  Random2dPointGenerator(RandomService& random, std::uint64_t seed, float cellSize, Vec2I const& densityRange);
 
   // Each point will in the area will be generated in a predictable order, and
   // if the callback uses the RandomSource in a predictable way, will generate
@@ -43,8 +43,8 @@ private:
 };
 
 template <typename PointData, typename DataType>
-inline Random2dPointGenerator<PointData, DataType>::Random2dPointGenerator(std::uint64_t seed, float cellSize, Vec2I const& densityRange)
-  : m_seed(seed), m_cellSize(cellSize), m_densityRange(densityRange) {}
+inline Random2dPointGenerator<PointData, DataType>::Random2dPointGenerator(RandomService& random, std::uint64_t seed, float cellSize, Vec2I const& densityRange)
+  : m_cache(random), m_seed(seed), m_cellSize(cellSize), m_densityRange(densityRange) {}
 
 template <typename PointData, typename DataType>
 template <typename PointCallback>
@@ -59,7 +59,6 @@ auto Random2dPointGenerator<PointData, DataType>::generate(Poly const& area, Poi
   PointSet finalResult;
   // VT: Reserve space for worst case scenario, this gives ~2x speedup
   finalResult.reserve(sectorCount * m_densityRange[1]); 
-  RandomSource sectorRandomness;
 
   for (std::int64_t x = sectorXMin; x <= sectorXMax; ++x) {
     for (std::int64_t y = sectorYMin; y <= sectorYMax; ++y) {
@@ -69,7 +68,7 @@ auto Random2dPointGenerator<PointData, DataType>::generate(Poly const& area, Poi
 
       finalResult.appendAll(m_cache.get(Point(x, y), [&](Point const&) {
           PointSet sectorResult;
-          sectorRandomness.init(staticRandomU64(m_seed, x, y));
+          RandomSource sectorRandomness(staticRandomU64(m_seed, x, y));
           unsigned max = sectorRandomness.randInt(m_densityRange[0], m_densityRange[1]);
           for (unsigned i = 0; i < max; ++i) {
             Point pointPos = Point(x + (DataType)sectorRandomness.randd(), y + (DataType)sectorRandomness.randd()) * m_cellSize;

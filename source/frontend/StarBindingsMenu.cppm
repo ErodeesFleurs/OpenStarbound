@@ -47,7 +47,7 @@ namespace Star {
 
 class BindingsMenu : public BaseScriptPane {
 public:
-  BindingsMenu(Json const& config);
+  BindingsMenu(GuiContext& guiContext, Json const& config);
 
   virtual void show() override;
   void displayed() override;

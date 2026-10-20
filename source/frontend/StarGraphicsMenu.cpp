@@ -180,9 +180,9 @@ import star.shaders_menu;
 
 namespace Star {
 
-GraphicsMenu::GraphicsMenu(PaneManager* manager,std::shared_ptr<UniverseClient> client)
-  : m_paneManager(manager) {
-  GuiReader reader;
+GraphicsMenu::GraphicsMenu(GuiContext& guiContext, PaneManager* manager,std::shared_ptr<UniverseClient> client)
+  : Pane(guiContext), m_paneManager(manager) {
+  GuiReader reader(*context());
   reader.registerCallback("cancel",
       [&](Widget*) {
         dismiss();
@@ -205,25 +205,25 @@ GraphicsMenu::GraphicsMenu(PaneManager* manager,std::shared_ptr<UniverseClient> 
   reader.registerCallback("zoomSlider", [this](Widget*) {
       auto zoomSlider = fetchChild<SliderBarWidget>("zoomSlider");
       m_localChanges.set("zoomLevel", m_zoomList[zoomSlider->val()]);
-      Root::singleton().configuration()->set("zoomLevel", m_zoomList[zoomSlider->val()]);
+      context()->root().configuration()->set("zoomLevel", m_zoomList[zoomSlider->val()]);
       syncGui();
     });
   reader.registerCallback("cameraSpeedSlider", [this](Widget*) {
       auto cameraSpeedSlider = fetchChild<SliderBarWidget>("cameraSpeedSlider");
       m_localChanges.set("cameraSpeedFactor", m_cameraSpeedList[cameraSpeedSlider->val()]);
-      Root::singleton().configuration()->set("cameraSpeedFactor", m_cameraSpeedList[cameraSpeedSlider->val()]);
+      context()->root().configuration()->set("cameraSpeedFactor", m_cameraSpeedList[cameraSpeedSlider->val()]);
       syncGui();
     });
   reader.registerCallback("speechBubbleCheckbox", [this](Widget*) {
       auto button = fetchChild<ButtonWidget>("speechBubbleCheckbox");
       m_localChanges.set("speechBubbles", button->isChecked());
-      Root::singleton().configuration()->set("speechBubbles", button->isChecked());
+      context()->root().configuration()->set("speechBubbles", button->isChecked());
       syncGui();
     });
   reader.registerCallback("interactiveHighlightCheckbox", [this](Widget*) {
       auto button = fetchChild<ButtonWidget>("interactiveHighlightCheckbox");
       m_localChanges.set("interactiveHighlight", button->isChecked());
-      Root::singleton().configuration()->set("interactiveHighlight", button->isChecked());
+      context()->root().configuration()->set("interactiveHighlight", button->isChecked());
       syncGui();
     });
   reader.registerCallback("fullscreenCheckbox", [this](Widget*) {
@@ -251,38 +251,38 @@ GraphicsMenu::GraphicsMenu(PaneManager* manager,std::shared_ptr<UniverseClient> 
   reader.registerCallback("antiAliasingCheckbox", [this](Widget*) {
     bool checked = fetchChild<ButtonWidget>("antiAliasingCheckbox")->isChecked();
     m_localChanges.set("antiAliasing", checked);
-    Root::singleton().configuration()->set("antiAliasing", checked);
+    context()->root().configuration()->set("antiAliasing", checked);
     syncGui();
   });
   reader.registerCallback("hardwareCursorCheckbox", [this](Widget*) {
     bool checked = fetchChild<ButtonWidget>("hardwareCursorCheckbox")->isChecked();
     m_localChanges.set("hardwareCursor", checked);
-    Root::singleton().configuration()->set("hardwareCursor", checked);
-    GuiContext::singleton().applicationController()->setCursorHardware(checked);
+    context()->root().configuration()->set("hardwareCursor", checked);
+    context()->applicationController()->setCursorHardware(checked);
   });
   reader.registerCallback("monochromeCheckbox", [this](Widget*) {
       bool checked = fetchChild<ButtonWidget>("monochromeCheckbox")->isChecked();
       m_localChanges.set("monochromeLighting", checked);
-      Root::singleton().configuration()->set("monochromeLighting", checked);
+      context()->root().configuration()->set("monochromeLighting", checked);
       syncGui();
     });
   reader.registerCallback("newLightingCheckbox", [this](Widget*) {
     bool checked = fetchChild<ButtonWidget>("newLightingCheckbox")->isChecked();
     m_localChanges.set("newLighting", checked);
-    Root::singleton().configuration()->set("newLighting", checked);
+    context()->root().configuration()->set("newLighting", checked);
     syncGui();
   });
   reader.registerCallback("hdrCheckbox", [this](Widget*) {
     bool checked = fetchChild<ButtonWidget>("hdrCheckbox")->isChecked();
     m_localChanges.set("hdr", checked);
-    Root::singleton().configuration()->set("hdr", checked);
+    context()->root().configuration()->set("hdr", checked);
     syncGui();
   });
   reader.registerCallback("showShadersMenu", [this](Widget*) {
       displayShaders();
     });
 
-  auto assets = Root::singleton().assets();
+  auto assets = context()->root().assets();
 
   auto config = assets->json("/interface/windowconfig/graphicsmenu.config");
   Json paneLayout = config.get("paneLayout");
@@ -302,7 +302,7 @@ GraphicsMenu::GraphicsMenu(PaneManager* manager,std::shared_ptr<UniverseClient> 
   initConfig();
   syncGui();
   
-  m_shadersMenu = std::make_shared<ShadersMenu>(assets->json(config.getString("shadersPanePath", "/interface/opensb/shaders/shaders.config")), client);
+  m_shadersMenu = std::make_shared<ShadersMenu>(*context(), assets->json(config.getString("shadersPanePath", "/interface/opensb/shaders/shaders.config")), client);
 }
 
 void GraphicsMenu::show() {
@@ -320,10 +320,10 @@ void GraphicsMenu::toggleFullscreen() {
   bool borderless = m_localChanges.get("borderless").toBool();
 
   m_localChanges.set("fullscreen", !(fullscreen || borderless));
-  Root::singleton().configuration()->set("fullscreen", !(fullscreen || borderless));
+  context()->root().configuration()->set("fullscreen", !(fullscreen || borderless));
 
   m_localChanges.set("borderless", false);
-  Root::singleton().configuration()->set("borderless", false);
+  context()->root().configuration()->set("borderless", false);
 
   applyWindowSettings();
   syncGui();
@@ -348,7 +348,7 @@ StringList const GraphicsMenu::ConfigKeys = {
 };
 
 void GraphicsMenu::initConfig() {
-  auto configuration = Root::singleton().configuration();
+  auto configuration = context()->root().configuration();
 
   for (auto key : ConfigKeys) {
     m_localChanges.set(key, configuration->get(key));
@@ -417,7 +417,7 @@ void GraphicsMenu::syncGui() {
 }
 
 void GraphicsMenu::apply() {
-  auto configuration = Root::singleton().configuration();
+  auto configuration = context()->root().configuration();
   for (auto p : m_localChanges) {
     configuration->set(p.first, p.second);
   }
@@ -428,8 +428,8 @@ void GraphicsMenu::displayShaders() {
 }
 
 void GraphicsMenu::applyWindowSettings() {
-  auto configuration = Root::singleton().configuration();
-  auto appController = GuiContext::singleton().applicationController();
+  auto configuration = context()->root().configuration();
+  auto appController = context()->applicationController();
   if (configuration->get("fullscreen").toBool())
     appController->setFullscreenWindow(jsonToVec2U(configuration->get("fullscreenResolution")));
   else if (configuration->get("borderless").toBool())

@@ -43,7 +43,7 @@ class Player;
 
 class SongbookInterface : public Pane {
 public:
-  SongbookInterface(std::shared_ptr<Player> player);
+  SongbookInterface(GuiContext& guiContext, std::shared_ptr<Player> player);
   ~SongbookInterface() override;
 
   void update(float dt) override;

@@ -53,6 +53,7 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
+class Root;
 class World;
 class Image;
 class ItemDatabase;
@@ -138,7 +139,7 @@ struct ObjectOrientation {
   Maybe<PolyF> statusEffectArea;
   Json touchDamageConfig;
 
-  static ParticleEmissionEntry parseParticleEmitter(String const& path, Json const& config);
+  static ParticleEmissionEntry parseParticleEmitter(Root& root, String const& path, Json const& config);
   bool placementValid(World const* world, Vec2I const& position) const;
   bool anchorsValid(World const* world, Vec2I const& position) const;
 };
@@ -224,10 +225,10 @@ struct ObjectConfig {
 class ObjectDatabase {
 public:
   static List<Vec2I> scanImageSpaces(std::shared_ptr<Image const> const& image, Vec2F const& position, float fillLimit, bool flip = false);
-  static Json parseTouchDamage(String const& path, Json const& touchDamage);
-  static List<std::shared_ptr<ObjectOrientation>> parseOrientations(String const& path, Json const& configList, Json const& baseConfig);
+  static Json parseTouchDamage(Root& root, String const& path, Json const& touchDamage);
+  static List<std::shared_ptr<ObjectOrientation>> parseOrientations(Root& root, String const& path, Json const& configList, Json const& baseConfig);
 
-  ObjectDatabase();
+  explicit ObjectDatabase(Root& root);
 
   void cleanup();
 
@@ -252,7 +253,9 @@ public:
       Direction direction, Json parameters = {}) const;
 
 private:
-  static std::shared_ptr<ObjectConfig> readConfig(String const& path);
+  std::shared_ptr<ObjectConfig> readConfig(String const& path) const;
+
+  Root& m_root;
 
   StringMap<String> m_paths;
   mutable Mutex m_cacheMutex;

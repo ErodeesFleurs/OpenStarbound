@@ -1,4 +1,5 @@
 import star.json;
+import star.native_runtime;
 import star.ordered_map;
 import star.either;
 import star.vector;
@@ -82,6 +83,7 @@ import star.static_random;
 using namespace Star;
 
 int main(int argc, char** argv) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   try {
     RootLoader rootLoader({{}, {}, {}, LogLevel::Error, false, {}});
 
@@ -98,7 +100,7 @@ int main(int argc, char** argv) {
     OptionParser::Options options;
     std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
-    std::shared_ptr<::Star::CelestialMasterDatabase> celestialDatabase = std::make_shared<CelestialMasterDatabase>();
+    std::shared_ptr<::Star::CelestialMasterDatabase> celestialDatabase = std::make_shared<CelestialMasterDatabase>(*root);
 
     Maybe<CelestialCoordinate> coordinate;
     if (!options.parameters["coordinate"].empty())
@@ -114,7 +116,7 @@ int main(int argc, char** argv) {
 
     coutf("Generating world with coordinate {}\n", *coordinate);
 
-    WorldTemplate worldTemplate(*coordinate, celestialDatabase);
+    WorldTemplate worldTemplate(*root, *coordinate, celestialDatabase);
     auto size = worldTemplate.size();
 
     if (!options.parameters["size"].empty()) {
@@ -183,7 +185,7 @@ int main(int argc, char** argv) {
     }
 
     auto outputFile = File::open("mapgen.png", IOMode::Write);
-    outputImage->writePng(outputFile);
+    outputImage->writePng(root->logger(), outputFile);
     outputFile->close();
     return 0;
   } catch (std::exception const& e) {

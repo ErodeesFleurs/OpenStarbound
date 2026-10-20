@@ -69,7 +69,7 @@ import star.image_widget;
 import star.algorithm;
 namespace Star {
 
-ConfirmationDialog::ConfirmationDialog() {}
+ConfirmationDialog::ConfirmationDialog(GuiContext& guiContext) : Pane(guiContext) {}
 
 void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> resultPromise) {
   m_resultPromise = resultPromise;
@@ -79,15 +79,15 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, RpcPromis
 void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCallbackFunc okCallback, WidgetCallbackFunc cancelCallback) {
   Json config;
   if (dialogConfig.isType(Json::Type::String))
-    config = Root::singleton().assets()->json(dialogConfig.toString());
+    config = context()->root().assets()->json(dialogConfig.toString());
   else
     config = dialogConfig;
 
-  auto assets = Root::singleton().assets();
+  auto assets = context()->root().assets();
 
   removeAllChildren();
 
-  GuiReader reader;
+  GuiReader reader(*context());
 
   m_okCallback = std::move(okCallback);
   m_cancelCallback = std::move(cancelCallback);
@@ -104,7 +104,7 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
 
   std::shared_ptr<ImageWidget> titleIcon = {};
   if (config.contains("icon"))
-    titleIcon = std::make_shared<ImageWidget>(config.getString("icon"));
+    titleIcon = std::make_shared<ImageWidget>(*context(), config.getString("icon"));
 
   setTitle(titleIcon, config.getString("title", ""), config.getString("subtitle", ""));
   fetchChild<LabelWidget>("message")->setText(config.getString("message"));
@@ -121,7 +121,7 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
     if (image.second.isType(Json::Type::String))
       widget->setImage(image.second.toString());
     else
-      widget->setDrawables(image.second.toArray().transformed(construct<Drawable>()));
+      widget->setDrawables(image.second.toArray().transformed([this](Json const& drawable) { return Drawable(*context()->root().imageMetadataDatabase(), drawable); }));
   }
 
   for (auto label : config.optObject("labels").value({})) {
@@ -130,7 +130,7 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
   }
 
   show();
-  auto sound = Random::randValueFrom(Root::singleton().assets()->json("/interface/windowconfig/confirmation.config:onShowSound").toArray(), "").toString();
+  auto sound = context()->root().random().randValueFrom(context()->root().assets()->json("/interface/windowconfig/confirmation.config:onShowSound").toArray(), "").toString();
 
   if (!sound.empty())
     context()->playAudio(sound);

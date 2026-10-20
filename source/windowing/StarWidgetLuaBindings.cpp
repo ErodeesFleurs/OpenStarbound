@@ -142,13 +142,13 @@ LuaMethods<std::shared_ptr<CanvasWidget>> LuaUserDataMethods<std::shared_ptr<Can
   });
 
   methods.registerMethod("drawJsonDrawable", [](std::shared_ptr<CanvasWidget> canvasWidget, Json drawable, Maybe<Vec2F> screenPos) {
-    canvasWidget->drawDrawable(Drawable(drawable), screenPos.value(Vec2F()));
+    canvasWidget->drawDrawable(Drawable(*canvasWidget->context()->root().imageMetadataDatabase(), drawable), screenPos.value(Vec2F()));
   });
 
   methods.registerMethod("drawJsonDrawables", [](std::shared_ptr<CanvasWidget> canvasWidget, JsonArray drawables, Maybe<Vec2F> screenPos) {
     Vec2F pos = screenPos.value(Vec2F());
     for (auto& drawable : drawables)
-      canvasWidget->drawDrawable(Drawable(drawable), pos);
+      canvasWidget->drawDrawable(Drawable(*canvasWidget->context()->root().imageMetadataDatabase(), drawable), pos);
   });
 
   methods.registerMethod("drawImage",
@@ -160,7 +160,7 @@ LuaMethods<std::shared_ptr<CanvasWidget>> LuaUserDataMethods<std::shared_ptr<Can
       });
   methods.registerMethod("drawImageDrawable",
       [](std::shared_ptr<CanvasWidget> canvasWidget, String image, Vec2F position, MVariant<Vec2F, float> scale, Maybe<Color> color, Maybe<float> rotation) {
-        auto drawable = Drawable::makeImage(image, 1.0, true, {0.0, 0.0}, color.value(Color::White));
+        auto drawable = Drawable::makeImage(*canvasWidget->context()->root().imageMetadataDatabase(), image, 1.0, true, {0.0, 0.0}, color.value(Color::White));
         if (auto s = scale.maybe<Vec2F>())
           drawable.transform(Mat3F::scaling(*s));
         else if(auto s = scale.maybe<float>())
@@ -208,9 +208,9 @@ LuaMethods<std::shared_ptr<CanvasWidget>> LuaUserDataMethods<std::shared_ptr<Can
 
 namespace LuaBindings {
 
-LuaCallbacks makeWidgetCallbacks(Widget* parentWidget, std::shared_ptr<GuiReader> reader) {
+LuaCallbacks makeWidgetCallbacks(GuiContext& context, Widget* parentWidget, std::shared_ptr<GuiReader> reader) {
   if (!reader)
-    reader = std::make_shared<GuiReader>();
+    reader = std::make_shared<GuiReader>(context);
 
   LuaCallbacks callbacks;
 
@@ -305,7 +305,7 @@ LuaCallbacks makeWidgetCallbacks(Widget* parentWidget, std::shared_ptr<GuiReader
 
   callbacks.registerCallback("addChild", [parentWidget, reader](String const& widgetName, Json const& newChildConfig, Maybe<String> const& newChildName) {
       if (auto widget = parentWidget->fetchChild<Widget>(widgetName)) {
-        String name = newChildName.value(toString(Random::randu64()));
+        String name = newChildName.value(toString(parentWidget->context()->root().random().randu64()));
         if (auto newChild = reader->makeSingle(name, newChildConfig))
           widget->addChild(name, newChild);
       }
@@ -557,7 +557,7 @@ LuaCallbacks makeWidgetCallbacks(Widget* parentWidget, std::shared_ptr<GuiReader
 
   callbacks.registerCallback("setItemSlotItem", [parentWidget](String const& widgetName, Json const& item) {
       if (auto itemSlot = parentWidget->fetchChild<ItemSlotWidget>(widgetName)) {
-        auto itemDb = Root::singleton().itemDatabase();
+        auto itemDb = parentWidget->context()->root().itemDatabase();
         itemSlot->setItem(itemDb->fromJson(item));
       }
     });
@@ -570,7 +570,7 @@ LuaCallbacks makeWidgetCallbacks(Widget* parentWidget, std::shared_ptr<GuiReader
 
   callbacks.registerCallback("addFlowImage", [parentWidget](String const& widgetName, String const& childName, String const& image) {
       if (auto flow = parentWidget->fetchChild<FlowLayout>(widgetName)) {
-        std::shared_ptr<Widget> newChild = std::make_shared<ImageWidget>(image);
+        std::shared_ptr<Widget> newChild = std::make_shared<ImageWidget>(*parentWidget->context(), image);
         flow->addChild(childName, newChild);
       }
     });

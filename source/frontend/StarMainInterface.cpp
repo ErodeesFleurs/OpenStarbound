@@ -393,15 +393,17 @@ GuiMessage::GuiMessage() : message(), cooldown(), springState() {}
 GuiMessage::GuiMessage(String const& message, float cooldown, float spring)
   : message(message), cooldown(cooldown), springState(spring) {}
 
-MainInterface::MainInterface(std::shared_ptr<UniverseClient> client, std::shared_ptr<WorldPainter> painter, std::shared_ptr<Cinematic> cinematicOverlay)
-  : m_guiContext(GuiContext::singletonPtr())
-  , m_config(MainInterfaceConfig::loadFromAssets())
+MainInterface::MainInterface(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<WorldPainter> painter, std::shared_ptr<Cinematic> cinematicOverlay)
+  : m_guiContext(&guiContext)
+  , m_config(MainInterfaceConfig::loadFromAssets(guiContext))
+  , m_cursor(guiContext)
   , m_client(std::move(client))
   , m_worldPainter(std::move(painter))
   , m_cinematicOverlay(std::move(cinematicOverlay))
-  , m_containerInteractor(std::make_shared<ContainerInteractor>())
+  , m_paneManager(guiContext)
+  , m_containerInteractor(std::make_shared<ContainerInteractor>(guiContext.root()))
 {
-  GuiReader itemSlotReader;
+  GuiReader itemSlotReader(*m_guiContext);
   m_cursorItem = convert<ItemSlotWidget>(itemSlotReader.makeSingle("cursorItemSlot", m_config->cursorItemSlot));
 
   m_planetNameTimer = GameTimer(m_config->planetNameTime);
@@ -411,7 +413,7 @@ MainInterface::MainInterface(std::shared_ptr<UniverseClient> client, std::shared
 
   m_stickyTargetingTimer = GameTimer(m_config->monsterHealthBarTime);
 
-  m_inventoryWindow = std::make_shared<InventoryPane>(this, m_client->mainPlayer(), m_containerInteractor);
+  m_inventoryWindow = std::make_shared<InventoryPane>(*m_guiContext, this, m_client->mainPlayer(), m_containerInteractor);
   m_paneManager.registerPane(MainInterfacePanes::Inventory, PaneLayer::Window, m_inventoryWindow, [this](std::shared_ptr<Pane> const&) {
       if (auto player = m_client->mainPlayer())
           player->clearSwap();
@@ -428,68 +430,68 @@ MainInterface::MainInterface(std::shared_ptr<UniverseClient> client, std::shared
 
   m_overflowMessage = std::make_shared<GuiMessage>("", 0, 0);
 
-  m_plainCraftingWindow = std::make_shared<CraftingPane>(m_client->worldClient(), m_client->mainPlayer(), JsonObject{{"filter", JsonArray{"plain"}}}, m_client->mainPlayer()->entityId());
+  m_plainCraftingWindow = std::make_shared<CraftingPane>(*m_guiContext, m_client->worldClient(), m_client->mainPlayer(), JsonObject{{"filter", JsonArray{"plain"}}}, m_client->mainPlayer()->entityId());
   m_paneManager.registerPane(MainInterfacePanes::CraftingPlain, PaneLayer::Window, m_plainCraftingWindow);
 
   m_paneManager.registerPane(MainInterfacePanes::EscapeDialog, PaneLayer::ModalWindow, createEscapeDialog());
 
-  auto songbookInterface = std::make_shared<SongbookInterface>(m_client->mainPlayer());
+  auto songbookInterface = std::make_shared<SongbookInterface>(*m_guiContext, m_client->mainPlayer());
   m_paneManager.registerPane(MainInterfacePanes::Songbook, PaneLayer::Window, songbookInterface);
 
-  m_questLogInterface = std::make_shared<QuestLogInterface>(m_client->questManager(), m_client->mainPlayer(), m_cinematicOverlay, m_client);
+  m_questLogInterface = std::make_shared<QuestLogInterface>(*m_guiContext, m_client->questManager(), m_client->mainPlayer(), m_cinematicOverlay, m_client);
   m_paneManager.registerPane(MainInterfacePanes::QuestLog, PaneLayer::Window, m_questLogInterface);
 
-  auto aiInterface = std::make_shared<AiInterface>(m_client, m_cinematicOverlay, &m_paneManager);
+  auto aiInterface = std::make_shared<AiInterface>(*m_guiContext, m_client, m_cinematicOverlay, &m_paneManager);
   m_paneManager.registerPane(MainInterfacePanes::Ai, PaneLayer::Window, aiInterface);
 
-  m_codexInterface = std::make_shared<CodexInterface>(m_client->mainPlayer());
+  m_codexInterface = std::make_shared<CodexInterface>(*m_guiContext, m_client->mainPlayer());
   m_paneManager.registerPane(MainInterfacePanes::Codex, PaneLayer::Window, m_codexInterface);
 
-  m_optionsMenu = std::make_shared<OptionsMenu>(&m_paneManager,m_client);
+  m_optionsMenu = std::make_shared<OptionsMenu>(*m_guiContext, &m_paneManager,m_client);
   m_paneManager.registerPane(MainInterfacePanes::Options, PaneLayer::ModalWindow, m_optionsMenu);
 
-  m_popupInterface = std::make_shared<PopupInterface>();
+  m_popupInterface = std::make_shared<PopupInterface>(*m_guiContext);
   m_paneManager.registerPane(MainInterfacePanes::Popup, PaneLayer::Window, m_popupInterface);
 
-  m_confirmationDialog = std::make_shared<ConfirmationDialog>();
+  m_confirmationDialog = std::make_shared<ConfirmationDialog>(*m_guiContext);
   m_paneManager.registerPane(MainInterfacePanes::Confirmation, PaneLayer::ModalWindow, m_confirmationDialog);
 
   initHttpTrustDialog();
 
-  m_joinRequestDialog = std::make_shared<JoinRequestDialog>();
+  m_joinRequestDialog = std::make_shared<JoinRequestDialog>(*m_guiContext);
   m_paneManager.registerPane(MainInterfacePanes::JoinRequest, PaneLayer::ModalWindow, m_joinRequestDialog);
 
-  m_actionBar = std::make_shared<ActionBar>(&m_paneManager, m_client->mainPlayer());
+  m_actionBar = std::make_shared<ActionBar>(*m_guiContext, &m_paneManager, m_client->mainPlayer());
   m_paneManager.registerPane(MainInterfacePanes::ActionBar, PaneLayer::Hud, m_actionBar);
 
-  m_questTracker = std::make_shared<QuestTrackerPane>();
+  m_questTracker = std::make_shared<QuestTrackerPane>(*m_guiContext);
   m_paneManager.registerPane(MainInterfacePanes::QuestTracker, PaneLayer::Hud, m_questTracker);
 
-  m_mmUpgrade = std::make_shared<ScriptPane>(m_client, Root::singleton().assets()->json("/interface.config:mainBar.mmUpgrade").getString("scriptPane", "/interface/scripted/mmupgrade/mmupgradegui.config"));
+  m_mmUpgrade = std::make_shared<ScriptPane>(*m_guiContext, m_client, m_guiContext->root().assets()->json("/interface.config:mainBar.mmUpgrade").getString("scriptPane", "/interface/scripted/mmupgrade/mmupgradegui.config"));
   m_paneManager.registerPane(MainInterfacePanes::MmUpgrade, PaneLayer::Window, m_mmUpgrade);
 
-  m_collections = std::make_shared<ScriptPane>(m_client, Root::singleton().assets()->json("/interface.config:mainBar.collections").getString("scriptPane", "/interface/scripted/collections/collectionsgui.config"));
+  m_collections = std::make_shared<ScriptPane>(*m_guiContext, m_client, m_guiContext->root().assets()->json("/interface.config:mainBar.collections").getString("scriptPane", "/interface/scripted/collections/collectionsgui.config"));
   m_paneManager.registerPane(MainInterfacePanes::Collections, PaneLayer::Window, m_collections);
 
-  m_chat = std::make_shared<Chat>(m_client, Root::singleton().assets()->json("/interface/chat/chat.config"));
+  m_chat = std::make_shared<Chat>(*m_guiContext, m_client, m_guiContext->root().assets()->json("/interface/chat/chat.config"));
   m_paneManager.registerPane(MainInterfacePanes::Chat, PaneLayer::Hud, m_chat);
-  m_clientCommandProcessor = std::make_shared<ClientCommandProcessor>(m_client, m_cinematicOverlay, &m_paneManager, m_config->macroCommands);
+  m_clientCommandProcessor = std::make_shared<ClientCommandProcessor>(*m_guiContext, m_client, m_cinematicOverlay, &m_paneManager, m_config->macroCommands);
 
-  m_radioMessagePopup = std::make_shared<RadioMessagePopup>();
+  m_radioMessagePopup = std::make_shared<RadioMessagePopup>(*m_guiContext);
   m_paneManager.registerPane(MainInterfacePanes::RadioMessagePopup, PaneLayer::Hud, m_radioMessagePopup);
 
-  m_wireInterface = std::make_shared<WirePane>(m_client->worldClient(), m_client->mainPlayer(), m_worldPainter);
+  m_wireInterface = std::make_shared<WirePane>(*m_guiContext, m_client->worldClient(), m_client->mainPlayer(), m_worldPainter);
   m_paneManager.registerPane(MainInterfacePanes::WireInterface, PaneLayer::World, m_wireInterface);
   m_client->mainPlayer()->setWireConnector(m_wireInterface.get());
 
-  auto teamBar = std::make_shared<TeamBar>(this, m_client);
+  auto teamBar = std::make_shared<TeamBar>(*m_guiContext, this, m_client);
   m_paneManager.registerPane(MainInterfacePanes::TeamBar, PaneLayer::Hud, teamBar);
 
-  auto statusPane = std::make_shared<StatusPane>(&m_paneManager, m_client);
+  auto statusPane = std::make_shared<StatusPane>(*m_guiContext, &m_paneManager, m_client);
   m_paneManager.registerPane(MainInterfacePanes::StatusPane, PaneLayer::Hud, statusPane);
 
-  auto planetName = std::make_shared<Pane>();
-  m_planetText = std::make_shared<LabelWidget>();
+  auto planetName = std::make_shared<Pane>(*m_guiContext);
+  m_planetText = std::make_shared<LabelWidget>(*m_guiContext);
   m_planetText->setTextStyle(m_config->planetNameTextStyle);
   m_planetText->setAnchor(HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor);
   planetName->disableScissoring();
@@ -498,10 +500,10 @@ MainInterface::MainInterface(std::shared_ptr<UniverseClient> client, std::shared
   planetName->addChild("planetText", m_planetText);
   m_paneManager.registerPane(MainInterfacePanes::PlanetText, PaneLayer::Hud, planetName);
 
-  auto charSelectionMenu = std::make_shared<CharSelectionPane>(m_client->playerStorage(), [=]() {},
+  auto charSelectionMenu = std::make_shared<CharSelectionPane>(*m_guiContext, m_client->playerStorage(), [=]() {},
     [this](std::shared_ptr<Player> mainPlayer) {
       m_client->switchPlayer(mainPlayer->uuid());
-      auto configuration = Root::singleton().configuration();
+      auto configuration = m_guiContext->root().configuration();
       if (configuration->get("characterSwapMovesToFront", false).toBool())
         m_client->playerStorage()->moveToFront(mainPlayer->uuid());
       if (configuration->get("characterSwapDismisses", false).toBool())
@@ -515,15 +517,15 @@ MainInterface::MainInterface(std::shared_ptr<UniverseClient> client, std::shared
   charSelectionMenu->setBG(backgrounds);
   charSelectionMenu->findChild("toggleDismissLabel")->setVisibility(true);
   auto toggleDismiss = charSelectionMenu->findChild<ButtonWidget>("toggleDismissCheckbox");
-  auto configuration = Root::singleton().configuration();
+  auto configuration = m_guiContext->root().configuration();
   toggleDismiss->setChecked(configuration->get("characterSwapDismisses", false).toBool());
   toggleDismiss->setVisibility(true);
 
   m_paneManager.registerPane(MainInterfacePanes::CharacterSwap, PaneLayer::Window, charSelectionMenu);
 
-  m_nameplatePainter = std::make_shared<NameplatePainter>();
-  m_questIndicatorPainter = std::make_shared<QuestIndicatorPainter>(m_client);
-  m_chatBubbleManager = std::make_shared<ChatBubbleManager>();
+  m_nameplatePainter = std::make_shared<NameplatePainter>(*m_guiContext);
+  m_questIndicatorPainter = std::make_shared<QuestIndicatorPainter>(*m_guiContext, m_client);
+  m_chatBubbleManager = std::make_shared<ChatBubbleManager>(*m_guiContext);
 }
 
 MainInterface::~MainInterface() {
@@ -536,6 +538,10 @@ MainInterface::RunningState MainInterface::currentState() const {
 
 MainInterfacePaneManager* MainInterface::paneManager() {
   return &m_paneManager;
+}
+
+GuiContext& MainInterface::context() const {
+  return *m_guiContext;
 }
 
 bool MainInterface::escapeDialogOpen() const {
@@ -551,7 +557,7 @@ void MainInterface::openCraftingWindow(Json const& config, EntityId sourceEntity
     }
   }
 
-  m_craftingWindow = std::make_shared<CraftingPane>(m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId);
+  m_craftingWindow = std::make_shared<CraftingPane>(*m_guiContext, m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId);
   m_paneManager.displayPane(PaneLayer::Window, m_craftingWindow, [this](std::shared_ptr<Pane> const&) {
     if (auto player = m_client->mainPlayer())
       player->clearSwap();
@@ -569,7 +575,7 @@ void MainInterface::openMerchantWindow(Json const& config, EntityId sourceEntity
 
   bool openWithInventory = config.getBool("openWithInventory", true);
   bool closeWithInventory = config.getBool("closeWithInventory", !m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Inventory));
-  m_merchantWindow = std::make_shared<MerchantPane>(m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId);
+  m_merchantWindow = std::make_shared<MerchantPane>(*m_guiContext, m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId);
   m_paneManager.displayPane(PaneLayer::Window, m_merchantWindow, [this, closeWithInventory](std::shared_ptr<Pane> const&) {
     if (closeWithInventory)
       m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
@@ -578,7 +584,7 @@ void MainInterface::openMerchantWindow(Json const& config, EntityId sourceEntity
     m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
 
   m_paneManager.bringPaneAdjacent(m_paneManager.registeredPane(MainInterfacePanes::Inventory),
-    m_merchantWindow, Root::singleton().assets()->json("/interface.config:bringAdjacentWindowGap").toFloat());
+    m_merchantWindow, m_guiContext->root().assets()->json("/interface.config:bringAdjacentWindowGap").toFloat());
 }
 
 void MainInterface::togglePlainCraftingWindow() {
@@ -605,7 +611,7 @@ std::shared_ptr<MerchantPane> MainInterface::activeMerchantPane() const {
 bool MainInterface::handleInputEvent(InputEvent const& event) {
   auto player = m_client->mainPlayer();
   auto inv = player->inventory();
-  auto& root = Root::singleton();
+  auto& root = m_guiContext->root();
 
   if (auto mouseMove = event.ptr<MouseMoveEvent>())
     m_cursorScreenIPos = Vec2I::round(m_cursorScreenPos = mouseMove->mousePosition);
@@ -729,7 +735,7 @@ bool MainInterface::textInputActive() const {
 }
 
 void MainInterface::handleInteractAction(InteractAction interactAction) {
-  auto assets = Root::singleton().assets();
+  auto assets = m_guiContext->root().assets();
   auto world = m_client->worldClient();
 
   if (interactAction.type == InteractActionType::OpenContainer) {
@@ -752,7 +758,7 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
     bool closeWithInventory = !m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Inventory);
     m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
 
-    m_containerPane = std::make_shared<ContainerPane>(world, m_client->mainPlayer(), m_containerInteractor);
+    m_containerPane = std::make_shared<ContainerPane>(*m_guiContext, world, m_client->mainPlayer(), m_containerInteractor);
     m_paneManager.displayPane(PaneLayer::Window, m_containerPane, [this, closeWithInventory](std::shared_ptr<Pane> const&) {
       if (closeWithInventory)
         m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
@@ -763,7 +769,7 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
     });
 
     m_paneManager.bringPaneAdjacent(m_paneManager.registeredPane(MainInterfacePanes::Inventory),
-        m_containerPane, Root::singleton().assets()->json("/interface.config:bringAdjacentWindowGap").toFloat());
+        m_containerPane, m_guiContext->root().assets()->json("/interface.config:bringAdjacentWindowGap").toFloat());
   } else if (interactAction.type == InteractActionType::SitDown) {
     m_client->mainPlayer()->lounge(interactAction.entityId, interactAction.data.toUInt());
   } else if (interactAction.type == InteractActionType::OpenCraftingInterface) {
@@ -830,7 +836,7 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
           };
 
           if (!m_client->mainPlayer()->universeMap()->teleportBookmarks().contains(currentLocation) || !config.getBool("canTeleport", true)) {
-            auto editBookmarkDialog = std::make_shared<EditBookmarkDialog>(m_client->mainPlayer()->universeMap());
+            auto editBookmarkDialog = std::make_shared<EditBookmarkDialog>(*m_guiContext, m_client->mainPlayer()->universeMap());
             editBookmarkDialog->setBookmark(currentLocation);
             m_paneManager.displayPane(PaneLayer::ModalWindow, editBookmarkDialog);
             return;
@@ -840,7 +846,7 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
     }
 
     if (config.getBool("canTeleport", true)) {
-      m_teleportDialog = std::make_shared<TeleportDialog>(m_client, &m_paneManager, interactAction.data, interactAction.entityId, currentLocation);
+      m_teleportDialog = std::make_shared<TeleportDialog>(*m_guiContext, m_client, &m_paneManager, interactAction.data, interactAction.entityId, currentLocation);
       m_paneManager.displayPane(PaneLayer::ModalWindow, m_teleportDialog);
     }
   } else if (interactAction.type == InteractActionType::ShowPopup) {
@@ -852,7 +858,7 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
     if (sourceEntity != NullEntityId && m_interactionScriptPanes.contains(sourceEntity) && m_paneManager.isDisplayed(m_interactionScriptPanes[sourceEntity]))
       m_paneManager.dismissPane(m_interactionScriptPanes[sourceEntity]);
 
-    std::shared_ptr<ScriptPane> scriptPane = std::make_shared<ScriptPane>(m_client, interactAction.data, sourceEntity);
+    std::shared_ptr<ScriptPane> scriptPane = std::make_shared<ScriptPane>(*m_guiContext, m_client, interactAction.data, sourceEntity);
     displayScriptPane(scriptPane, sourceEntity);
 
   } else if (interactAction.type == InteractActionType::Message) {
@@ -926,7 +932,7 @@ void MainInterface::update(float dt) {
     m_lastMouseoverTarget = NullEntityId;
 
   // special damage bar entities
-  auto barConfig = Root::singleton().assets()->json("/interface.config:specialDamageBar");
+  auto barConfig = m_guiContext->root().assets()->json("/interface.config:specialDamageBar");
   std::size_t maxBars = barConfig.getUInt("maxCount",10);
 
   for (auto it = m_specialDamageBars.begin(); it != m_specialDamageBars.end();) {
@@ -1010,20 +1016,20 @@ void MainInterface::update(float dt) {
         if (*cinematic) {
           Json definition;
           try {
-            definition = Root::singleton().assets()->fetchJson(cinematic.take());
+            definition = m_guiContext->root().assets()->fetchJson(cinematic.take());
           } catch (std::exception const& e) {
-            Logger::warn("MainInterface: failed to fetch cinematic: {}", e.what());
+            m_guiContext->root().logger().warn("MainInterface: failed to fetch cinematic: {}", e.what());
             definition = Json();
           }
           if (definition.isType(Json::Type::Object)) {
             try {
               m_cinematicOverlay->load(definition);
             } catch (std::exception const& e) {
-              Logger::warn("MainInterface: rejected malformed cinematic ({}), stopping overlay", e.what());
+              m_guiContext->root().logger().warn("MainInterface: rejected malformed cinematic ({}), stopping overlay", e.what());
               m_cinematicOverlay->stop();
             }
           } else {
-            Logger::warn("MainInterface: ignoring non-object cinematic of type {}", (int)definition.type());
+            m_guiContext->root().logger().warn("MainInterface: ignoring non-object cinematic of type {}", (int)definition.type());
             m_cinematicOverlay->stop();
           }
         } else {
@@ -1332,7 +1338,7 @@ std::shared_ptr<CanvasWidget> MainInterface::fetchCanvas(String const& canvasNam
   if (auto canvasPtr = m_canvases.ptr(canvasName))
     canvas = *canvasPtr;
   else {
-    m_canvases.emplace(canvasName, canvas = std::make_shared<CanvasWidget>());
+    m_canvases.emplace(canvasName, canvas = std::make_shared<CanvasWidget>(*m_guiContext));
     canvas->setPosition(Vec2I());
     if (ignoreInterfaceScale)
       canvas->setSize(Vec2I(m_guiContext->windowSize()));
@@ -1373,7 +1379,7 @@ void MainInterface::takeScriptPanes(List<ScriptPaneInfo>& out) {
 void MainInterface::reviveScriptPanes(List<ScriptPaneInfo>& panes) {
   for (auto& info : panes) { // this is evil and stupid
     info.scriptPane->~ScriptPane();
-    new(info.scriptPane.get()) ScriptPane(m_client, info.config, info.sourceEntityId);
+    new(info.scriptPane.get()) ScriptPane(*m_guiContext, m_client, info.config, info.sourceEntityId);
     info.scriptPane->setVisibility(info.visible);
     displayScriptPane(info.scriptPane, info.sourceEntityId);
     info.scriptPane->setPosition(info.position);
@@ -1388,12 +1394,12 @@ void MainInterface::displayDefaultPanes() {
 }
 
 std::shared_ptr<Pane> MainInterface::createEscapeDialog() {
-  auto assets = Root::singleton().assets();
+  auto assets = m_guiContext->root().assets();
 
-  auto escapeDialog = std::make_shared<Pane>();
+  auto escapeDialog = std::make_shared<Pane>(*m_guiContext);
   auto escapeDialogPtr = escapeDialog.get();
 
-  GuiReader escapeDialogReader;
+  GuiReader escapeDialogReader(*m_guiContext);
   escapeDialogReader.registerCallback("returnToGame", [escapeDialogPtr](Widget*) {
       escapeDialogPtr->dismiss();
     });
@@ -1428,8 +1434,8 @@ Vec2F MainInterface::mainBarPosition() const {
 }
 
 void MainInterface::renderBreath() {
-  auto assets = Root::singleton().assets();
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  auto assets = m_guiContext->root().assets();
+  auto imgMetadata = m_guiContext->root().imageMetadataDatabase();
 
   Vec2I breathBarSize = Vec2I(m_guiContext->textureSize("/interface/breath/empty.png")) * interfaceScale();
   Vec2I breathOffset = jsonToVec2I(assets->json("/interface.config:breathPos"));
@@ -1463,8 +1469,8 @@ void MainInterface::renderMessages() {
     return;
 
   Vec2F totalOffset = {};
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
-  unsigned bottomOffset = Root::singleton().configuration()->getPath("inventory.bottomActionBar").optBool().value(false) ? 32 : 0;
+  auto imgMetadata = m_guiContext->root().imageMetadataDatabase();
+  unsigned bottomOffset = m_guiContext->root().configuration()->getPath("inventory.bottomActionBar").optBool().value(false) ? 32 : 0;
   for (auto& message : m_messages) {
     Vec2F hiddenOffset = Vec2F(m_config->messageHiddenOffset);
     Vec2F activeOffset = Vec2F(m_config->messageActiveOffset);
@@ -1495,8 +1501,8 @@ void MainInterface::renderMessages() {
 }
 
 void MainInterface::renderMonsterHealthBar() {
-  auto assets = Root::singleton().assets();
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  auto assets = m_guiContext->root().assets();
+  auto imgMetadata = m_guiContext->root().imageMetadataDatabase();
   if (m_lastMouseoverTarget != NullEntityId && !m_stickyTargetingTimer.ready()) {
     auto world = m_client->worldClient();
 
@@ -1541,7 +1547,7 @@ void MainInterface::renderMonsterHealthBar() {
     auto portraitMaxSize = jsonToVec2I(assets->json("/interface.config:monsterHealth.portraitMaxSize"));
     List<Drawable> portrait = showDamageEntity->portrait(PortraitMode::Full);
 
-    auto bounds = Drawable::boundBoxAll(portrait, true);
+    auto bounds = Drawable::boundBoxAll(*m_guiContext->root().imageMetadataDatabase(), portrait, true);
     if (m_portraitScale == 0)
       m_portraitScale = std::max<int>(1, std::ceil(std::max(bounds.size().x() / portraitMaxSize.x(), bounds.size().y() / portraitMaxSize.y())));
     Drawable::translateAll(portrait, {-bounds.xMin() - (bounds.width() * 0.5f), -bounds.yMin() }); // crop out whitespace, align bottom center
@@ -1559,8 +1565,8 @@ void MainInterface::renderSpecialDamageBar() {
   std::size_t num = m_specialDamageBars.size();
   if (num == 0) return;
 
-  auto assets = Root::singleton().assets();
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  auto assets = m_guiContext->root().assets();
+  auto imgMetadata = m_guiContext->root().imageMetadataDatabase();
 
   auto barConfig = assets->json("/interface.config:specialDamageBar");
 
@@ -1618,7 +1624,7 @@ void MainInterface::renderMainBar() {
 
   m_cursorTooltip = {};
 
-  auto assets = Root::singleton().assets();
+  auto assets = m_guiContext->root().assets();
 
   Vec2F inventoryButtonPos = barPos + Vec2F(m_config->mainBarInventoryButtonOffset) * interfaceScale();
   if (m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Inventory)) {
@@ -1760,23 +1766,23 @@ void MainInterface::renderWindows() {
 
 void MainInterface::renderDebug() {
   if (!isDebugDisplayed()) {
-    SpatialLogger::clear();
+    m_guiContext->root().spatialLogger().clear();
     m_debugTextRect = RectF::null();
-    LogMap::clear();
-    SpatialLogger::setObserved(false);
+    m_guiContext->root().logMap().clear();
+    m_guiContext->root().spatialLogger().setObserved(false);
     return;
   }
-  SpatialLogger::setObserved(true);
+  m_guiContext->root().spatialLogger().setObserved(true);
 
   if (m_clientCommandProcessor->debugHudEnabled()) {
-    auto assets = Root::singleton().assets();
+    auto assets = m_guiContext->root().assets();
     m_guiContext->setTextStyle(m_config->debugTextStyle);
     m_guiContext->setLineSpacing(0.5f);
 
-    bool clearMap = m_debugMapClearTimer.wrapTick();
-    auto logMapValues = LogMap::getValues();
+    bool clearMap = m_debugMapClearTimer.wrapTick(m_guiContext->root().timing().timestep);
+    auto logMapValues = m_guiContext->root().logMap().getValues();
     if (clearMap)
-      LogMap::clear();
+      m_guiContext->root().logMap().clear();
 
     List<String> formatted;
     formatted.reserve(logMapValues.size());
@@ -1805,18 +1811,18 @@ void MainInterface::renderDebug() {
 
   auto const& camera = m_worldPainter->camera();
 
-  bool clearSpatial = m_debugSpatialClearTimer.wrapTick();
+  bool clearSpatial = m_debugSpatialClearTimer.wrapTick(m_guiContext->root().timing().timestep);
 
-  for (auto const& line : SpatialLogger::getLines("world", clearSpatial)) {
+  for (auto const& line : m_guiContext->root().spatialLogger().getLines("world", clearSpatial)) {
     Vec2F begin = camera.worldToScreen(line.begin);
     Vec2F end = camera.worldGeometry().diff(line.end, line.begin) * camera.pixelRatio() * TilePixels + begin;
     m_guiContext->drawLine(begin, end, line.color, 1);
   }
 
-  for (auto const& line : SpatialLogger::getLines("screen", clearSpatial))
+  for (auto const& line : m_guiContext->root().spatialLogger().getLines("screen", clearSpatial))
     m_guiContext->drawLine(Vec2F(line.begin), Vec2F(line.end), line.color, 1);
 
-  for (auto const& point : SpatialLogger::getPoints("world", clearSpatial)) {
+  for (auto const& point : m_guiContext->root().spatialLogger().getPoints("world", clearSpatial)) {
     auto position = camera.worldToScreen(point.position);
     m_guiContext->drawLine(position + Vec2F(-2, -2), position + Vec2F(-2, 2), point.color, 1);
     m_guiContext->drawLine(position + Vec2F(-2, 2), position + Vec2F(2, 2), point.color, 1);
@@ -1824,7 +1830,7 @@ void MainInterface::renderDebug() {
     m_guiContext->drawLine(position + Vec2F(2, -2), position + Vec2F(-2, -2), point.color, 1);
   }
 
-  for (auto const& point : SpatialLogger::getPoints("screen", clearSpatial)) {
+  for (auto const& point : m_guiContext->root().spatialLogger().getPoints("screen", clearSpatial)) {
     auto position = point.position;
     m_guiContext->drawLine(position + Vec2F(-2, -2), position + Vec2F(-2, 2), point.color, 1);
     m_guiContext->drawLine(position + Vec2F(-2, 2), position + Vec2F(2, 2), point.color, 1);
@@ -1834,12 +1840,12 @@ void MainInterface::renderDebug() {
 
   m_guiContext->setTextStyle(m_config->debugTextStyle);
 
-  for (auto const& logText : SpatialLogger::getText("world", clearSpatial)) {
+  for (auto const& logText : m_guiContext->root().spatialLogger().getText("world", clearSpatial)) {
     m_guiContext->setFontColor(logText.color);
     m_guiContext->renderText(logText.text.utf8Ptr(), camera.worldToScreen(logText.position));
   }
 
-  for (auto const& logText : SpatialLogger::getText("screen", clearSpatial)) {
+  for (auto const& logText : m_guiContext->root().spatialLogger().getText("screen", clearSpatial)) {
     m_guiContext->setFontColor(logText.color);
     m_guiContext->renderText(logText.text.utf8Ptr(), logText.position);
   }
@@ -1899,8 +1905,8 @@ void MainInterface::renderCursor() {
     m_guiContext->drawDrawable(cursorDrawable, Vec2F(cursorPos), cursorScale);
 
   if (m_cursorTooltip) {
-    auto assets = Root::singleton().assets();
-    auto imgDb = Root::singleton().imageMetadataDatabase();
+    auto assets = m_guiContext->root().assets();
+    auto imgDb = m_guiContext->root().imageMetadataDatabase();
 
     auto config = assets->json("/interface.config:cursorTooltip");
     auto backgroundImage = config.getString("background");
@@ -1998,7 +2004,7 @@ bool MainInterface::overlayClick(Vec2F const& mousePos, MouseButton) {
 }
 
 void MainInterface::initHttpTrustDialog() {
-  const auto httpTrustDialog = std::make_shared<HttpTrustDialog>();
+  const auto httpTrustDialog = std::make_shared<HttpTrustDialog>(*m_guiContext);
   m_paneManager.registerPane(MainInterfacePanes::HttpTrustDialog, PaneLayer::ModalWindow, httpTrustDialog);
 }
 
@@ -2019,7 +2025,7 @@ void MainInterface::displayScriptPane(std::shared_ptr<ScriptPane>& scriptPane, E
     });
     m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
     m_paneManager.bringPaneAdjacent(m_paneManager.registeredPane(MainInterfacePanes::Inventory),
-        scriptPane, Root::singleton().assets()->json("/interface.config:bringAdjacentWindowGap").toFloat());
+        scriptPane, m_guiContext->root().assets()->json("/interface.config:bringAdjacentWindowGap").toFloat());
   } else {
     m_paneManager.displayPane(layer, scriptPane);
   }

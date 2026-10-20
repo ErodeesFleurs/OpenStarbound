@@ -19,11 +19,12 @@ import star.vector;
 namespace Star {
 
 class World;
+class Root;
 class EntitySplashHelper;
 
 struct EntitySplashConfig {
   EntitySplashConfig();
-  EntitySplashConfig(Json const& config);
+  EntitySplashConfig(Root& root, Json const& config);
   float splashSpeedMin;
   Vec2F splashBottomSensor;
   Vec2F splashTopSensor;

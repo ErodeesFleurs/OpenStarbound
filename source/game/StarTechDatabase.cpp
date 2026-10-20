@@ -22,9 +22,6 @@ import star.version;
 
 import star.asset_source;
 import star.assets;
-import star.root_base;
-import star.configuration;
-import star.root;
 
 import star.tech_database;
 
@@ -36,8 +33,7 @@ extern EnumMap<TechType> const TechTypeNames{
   {TechType::Legs, "Legs"}
 };
 
-TechDatabase::TechDatabase() {
-  auto assets = Root::singleton().assets();
+TechDatabase::TechDatabase(std::shared_ptr<Assets const> assets) {
   auto& files = assets->scanExtension("tech");
   assets->queueJsons(files);
   for (auto& file : files) {
@@ -61,8 +57,6 @@ TechConfig TechDatabase::tech(String const& techName) const {
 
 TechConfig TechDatabase::parseTech(Json const& config, String const& path) const {
   try {
-    auto assets = Root::singleton().assets();
-
     TechConfig tech;
     tech.name = config.getString("name");
     tech.path = path;

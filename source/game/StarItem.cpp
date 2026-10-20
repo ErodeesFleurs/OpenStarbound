@@ -40,45 +40,45 @@ import star.root;
 
 namespace Star {
 
-Item::Item(Json config, String directory, Json parameters) {
+Item::Item(Root& root, Json config, String directory, Json parameters) : m_root(&root) {
   m_config = std::move(config);
   m_directory = std::move(directory);
   m_parameters = std::move(parameters);
   m_name = m_config.getString("itemName");
   m_count = 1;
 
-  m_maxStack = instanceValue("maxStack", Root::singleton().assets()->json("/items/defaultParameters.config:defaultMaxStack").toInt()).toInt();
+  m_maxStack = instanceValue("maxStack", root.assets()->json("/items/defaultParameters.config:defaultMaxStack").toInt()).toInt();
   m_shortDescription = instanceValue("shortdescription", "").toString();
   m_description = instanceValue("description", "").toString();
 
   m_rarity = RarityNames.getLeft(instanceValue("rarity").toString());
 
-  auto inventoryIcon = instanceValue("inventoryIcon", Root::singleton().assets()->json("/items/defaultParameters.config:missingIcon"));
+  auto inventoryIcon = instanceValue("inventoryIcon", root.assets()->json("/items/defaultParameters.config:missingIcon"));
   if (inventoryIcon.type() == Json::Type::Array) {
     setIconDrawables(inventoryIcon.toArray().transformed([&](Json config) -> Drawable {
       if (auto image = config.optString("image"))
-        return Drawable(config.set("image", AssetPath::relativeTo(m_directory, *image)));
-      return Drawable(config);
+        return Drawable(*root.imageMetadataDatabase(), config.set("image", AssetPath::relativeTo(m_directory, *image)));
+      return Drawable(*root.imageMetadataDatabase(), config);
     }));
   } else {
     auto image = AssetPath::relativeTo(m_directory, inventoryIcon.toString());
-    setIconDrawables({Drawable::makeImage(image, 1.0f, true, Vec2F())});
+    setIconDrawables({Drawable::makeImage(*root.imageMetadataDatabase(), image, 1.0f, true, Vec2F())});
   }
   auto secondaryIcon = instanceValue("secondaryIcon", Json());
   if (secondaryIcon.type() == Json::Type::Array) {
     setSecondaryIconDrawables(secondaryIcon.toArray().transformed([&](Json config) -> Drawable {
       if (auto image = config.optString("image"))
-        return Drawable(config.set("image", AssetPath::relativeTo(m_directory, *image)));
-      return Drawable(config);
+        return Drawable(*root.imageMetadataDatabase(), config.set("image", AssetPath::relativeTo(m_directory, *image)));
+      return Drawable(*root.imageMetadataDatabase(), config);
     }));
   } else if (secondaryIcon.type() == Json::Type::String) {
     auto image = AssetPath::relativeTo(m_directory, secondaryIcon.toString());
-    setSecondaryIconDrawables(Maybe<List<Drawable>>({Drawable::makeImage(image, 1.0f, true, Vec2F())}));
+    setSecondaryIconDrawables(Maybe<List<Drawable>>({Drawable::makeImage(*root.imageMetadataDatabase(), image, 1.0f, true, Vec2F())}));
   } else {
     setSecondaryIconDrawables(Maybe<List<Drawable>>());
   }
 
-  auto assets = Root::singleton().assets();
+  auto assets = root.assets();
   m_twoHanded = instanceValue("twoHanded", false).toBool();
   m_price = instanceValue("price", assets->json("/items/defaultParameters.config:defaultPrice")).toInt();
   m_tooltipKind = instanceValue("tooltipKind", "").toString();
@@ -91,7 +91,7 @@ Item::Item(Json config, String directory, Json parameters) {
   if (!m_pickupSounds.size())
     m_pickupSounds = jsonToStringSet(assets->json("/items/defaultParameters.config:pickupSounds"));
 
-  m_timeToLive = instanceValue("timeToLive", Root::singleton().assets()->json("/items/defaultParameters.config:defaultTimeToLive").toFloat()).toFloat();
+  m_timeToLive = instanceValue("timeToLive", root.assets()->json("/items/defaultParameters.config:defaultTimeToLive").toFloat()).toFloat();
 
   for (auto b : jsonToStringList(instanceValue("learnBlueprintsOnPickup", JsonArray{})))
     m_learnBlueprintsOnPickup.append(ItemDescriptor(b));
@@ -101,6 +101,10 @@ Item::Item(Json config, String directory, Json parameters) {
 }
 
 Item::~Item() {}
+
+Root& Item::root() const {
+  return *m_root;
+}
 
 String Item::name() const {
   return m_name;
@@ -171,7 +175,7 @@ std::shared_ptr<Item> Item::take(std::uint64_t max) {
       newItems->setCount(takeCount, false);
       return newItems;
     } else {
-      Logger::warn("Could not clone {}, not moving {} items as requested.", friendlyName(), takeCount);
+      root().logger().warn("Could not clone {}, not moving {} items as requested.", friendlyName(), takeCount);
     }
   }
 
@@ -210,7 +214,7 @@ bool Item::hasSecondaryDrawables() const {
   return m_secondaryIconDrawables.isValid();
 }
 
-List<Drawable> Item::dropDrawables() const {
+List<Drawable> Item::dropDrawables(TileDrawer*) const {
   auto drawables = iconDrawables();
   Drawable::scaleAll(drawables, 1.0f / TilePixels);
   return drawables;
@@ -241,7 +245,7 @@ String Item::category() const {
 }
 
 String Item::pickupSound() const {
-  return Random::randFrom(m_pickupSounds);
+  return root().random().randFrom(m_pickupSounds);
 }
 
 void Item::setMaxStack(std::uint64_t maxStack) {
@@ -266,7 +270,7 @@ void Item::setPrice(std::uint64_t price) {
 
 void Item::setIconDrawables(List<Drawable> drawables) {
   m_iconDrawables = std::move(drawables);
-  auto boundBox = Drawable::boundBoxAll(m_iconDrawables, true);
+  auto boundBox = Drawable::boundBoxAll(*root().imageMetadataDatabase(), m_iconDrawables, true);
   if (!boundBox.isEmpty()) {
     for (auto& drawable : m_iconDrawables)
       drawable.translate(-boundBox.center());
@@ -285,7 +289,7 @@ void Item::setSecondaryIconDrawables(Maybe<List<Drawable>> drawables) {
   if (m_secondaryIconDrawables.isNothing())
     return;
 
-  auto boundBox = Drawable::boundBoxAll(*m_secondaryIconDrawables, true);
+  auto boundBox = Drawable::boundBoxAll(*root().imageMetadataDatabase(), *m_secondaryIconDrawables, true);
   if (!boundBox.isEmpty()) {
     for (auto& drawable : *m_secondaryIconDrawables)
       drawable.translate(-boundBox.center());
@@ -308,7 +312,9 @@ void Item::setTimeToLive(float timeToLive) {
 }
 
 List<QuestArcDescriptor> Item::pickupQuestTemplates() const {
-  return instanceValue("pickupQuestTemplates", JsonArray{}).toArray().transformed(&QuestArcDescriptor::fromJson);
+  return instanceValue("pickupQuestTemplates", JsonArray{}).toArray().transformed([this](Json const& quest) {
+    return QuestArcDescriptor::fromJson(root(), quest);
+  });
 }
 
 StringSet Item::itemTags() const {
@@ -359,8 +365,8 @@ StringMap<String> Item::collectablesOnPickup() const {
   return m_collectablesOnPickup;
 }
 
-GenericItem::GenericItem(Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters) {}
+GenericItem::GenericItem(Root& root, Json const& config, String const& directory, Json const& parameters)
+  : Item(root, config, directory, parameters) {}
 
 std::shared_ptr<Item> GenericItem::clone() const {
   return std::make_shared<GenericItem>(*this);

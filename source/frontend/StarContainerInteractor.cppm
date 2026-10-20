@@ -28,10 +28,14 @@ import star.container_entity;
 
 namespace Star {
 
+class Root;
+
 typedef List<std::shared_ptr<Item>> ContainerResult;
 
 class ContainerInteractor {
 public:
+  ContainerInteractor(Root& root);
+
   void openContainer(std::shared_ptr<ContainerEntity> containerEntity);
   void closeContainer();
 
@@ -58,6 +62,7 @@ public:
 private:
   static ContainerResult resultFromItem(std::shared_ptr<Item> const& items);
 
+  Root* m_root;
   mutable std::shared_ptr<ContainerEntity> m_openContainer;
   List<RpcPromise<ContainerResult>> m_pendingResults;
 };

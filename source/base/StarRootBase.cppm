@@ -17,15 +17,11 @@ using RootException = StarError<RootExceptionTag, StarException>;
 
 class RootBase {
 public:
-  static RootBase* singletonPtr();
-  static RootBase& singleton();
-
   virtual std::shared_ptr<Assets const> assets() = 0;
   virtual std::shared_ptr<Configuration> configuration() = 0;
+  virtual ~RootBase() = default;
 protected:
-  RootBase();
-
-  static std::atomic<RootBase*> s_singleton;
+  RootBase() = default;
 };
 
 }

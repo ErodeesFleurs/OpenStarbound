@@ -205,7 +205,7 @@ import star.item_bag;
 
 namespace Star {
 
-ContainerPane::ContainerPane(std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor) {
+ContainerPane::ContainerPane(GuiContext& guiContext, std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, std::shared_ptr<ContainerInteractor> containerInteractor) : Pane(guiContext), m_reader(guiContext) {
   m_worldClient = worldClient;
   m_player = player;
   m_containerInteractor = std::move(containerInteractor);
@@ -219,14 +219,14 @@ ContainerPane::ContainerPane(std::shared_ptr<WorldClient> worldClient, std::shar
 
   if (auto scripts = guiConfig.opt("scripts").apply(jsonToStringList)) {
     if (!m_script) {
-      m_script.emplace();
+      m_script.emplace(context()->root());
       m_script->setScripts(*scripts);
     }
-    m_script->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(this));
+    m_script->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(*context(), this));
     m_script->addCallbacks("config", LuaBindings::makeConfigCallbacks( [guiConfig](String const& name, Json const& def) {
         return guiConfig.query(name, def);
       }));
-    m_script->addCallbacks("player", LuaBindings::makePlayerCallbacks(m_player.get()));
+    m_script->addCallbacks("player", LuaBindings::makePlayerCallbacks(context()->root(), m_player.get()));
     m_script->addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_player->statusController()));
 
     LuaCallbacks containerPaneCallbacks;
@@ -247,7 +247,7 @@ ContainerPane::ContainerPane(std::shared_ptr<WorldClient> worldClient, std::shar
     auto callbackContainer = m_containerInteractor->openContainer();
 
     if (!callbackContainer) {
-      Logger::warn("rightClickCallback failed in ContainerPane because we do not have an open container!");
+      context()->root().logger().warn("rightClickCallback failed in ContainerPane because we do not have an open container!");
       return;
     }
 
@@ -326,7 +326,7 @@ ContainerPane::ContainerPane(std::shared_ptr<WorldClient> worldClient, std::shar
   if (auto countWidget = fetchChild<LabelWidget>("count"))
     countWidget->setText(countWidget->text().replace("<slots>", toString(container->containerSize())));
 
-  m_itemBag = std::make_shared<ItemBag>(container->containerSize());
+  m_itemBag = std::make_shared<ItemBag>(context()->root(), container->containerSize());
   auto items = container->containerItems();
 
   fetchChild<ItemGridWidget>("itemGrid")->setItemBag(m_itemBag);
@@ -336,9 +336,9 @@ ContainerPane::ContainerPane(std::shared_ptr<WorldClient> worldClient, std::shar
     fetchChild<ItemGridWidget>("outputItemGrid")->setItemBag(m_itemBag);
 
   if (container->iconItem()) {
-    auto itemDatabase = Root::singleton().itemDatabase();
+    auto itemDatabase = context()->root().itemDatabase();
     auto iconItem = itemDatabase->itemShared(container->iconItem());
-    auto icon = std::make_shared<ItemSlotWidget>(iconItem, "/interface/inventory/portrait.png");
+    auto icon = std::make_shared<ItemSlotWidget>(*context(), iconItem, "/interface/inventory/portrait.png");
     icon->showDurability(false);
     icon->showRarity(false);
     icon->setBackingImageAffinity(true, true);
@@ -411,7 +411,7 @@ std::shared_ptr<Pane> ContainerPane::createTooltip(Vec2I const& screenPosition) 
       item = itemGrid->itemAt(screenPosition);
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(item, m_player);
+    return ItemTooltipBuilder::buildItemTooltip(*context(), item, m_player);
   return {};
 }
 
@@ -445,7 +445,7 @@ void ContainerPane::toggleCrafting() {
     else
       startCrafting();
   else
-    Logger::warn("ContainerPane::toggleCrafting failed because we don't have an open container!");
+    context()->root().logger().warn("ContainerPane::toggleCrafting failed because we don't have an open container!");
 }
 
 void ContainerPane::clear() {
@@ -463,7 +463,7 @@ void ContainerPane::update(float dt) {
     m_script->update(m_script->updateDt(dt));
 
   m_itemBag->clearItems();
-  Input& input = Input::singleton();
+  Input& input = context()->input();
 
   if (!m_containerInteractor->containerOpen())
     return dismiss();

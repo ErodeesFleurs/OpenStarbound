@@ -55,8 +55,8 @@ class Player;
 
 class PortraitWidget : public Widget {
 public:
-  PortraitWidget(std::shared_ptr<PortraitEntity> entity, PortraitMode mode = PortraitMode::Full);
-  PortraitWidget();
+  PortraitWidget(GuiContext& context, std::shared_ptr<PortraitEntity> entity, PortraitMode mode = PortraitMode::Full);
+  PortraitWidget(GuiContext& context);
   virtual ~PortraitWidget() {}
 
   void setEntity(std::shared_ptr<PortraitEntity> entity);

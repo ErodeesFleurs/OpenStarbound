@@ -161,7 +161,7 @@ import star.shaders_menu;
 
 namespace Star {
 
-ShadersMenu::ShadersMenu(Json const& config, std::shared_ptr<UniverseClient> client) : BaseScriptPane(config) {
+ShadersMenu::ShadersMenu(GuiContext& guiContext, Json const& config, std::shared_ptr<UniverseClient> client) : BaseScriptPane(guiContext, config) {
   m_client = std::move(client);
 }
 

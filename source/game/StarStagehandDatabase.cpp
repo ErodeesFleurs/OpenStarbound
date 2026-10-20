@@ -43,8 +43,8 @@ import star.stagehand_database;
 
 namespace Star {
 
-StagehandDatabase::StagehandDatabase() {
-  auto assets = Root::singleton().assets();
+StagehandDatabase::StagehandDatabase(Root& root) : m_root(root) {
+  auto assets = m_root.assets();
   auto& files = assets->scanExtension("stagehand");
   assets->queueJsons(files);
   for (auto& file : files) {
@@ -66,7 +66,7 @@ StagehandDatabase::StagehandDatabase() {
 
 std::shared_ptr<Stagehand> StagehandDatabase::createStagehand(String const& stagehandType, Json const& extraConfig) const {
   auto finalConfig = jsonMerge(m_stagehandTypes.get(stagehandType), extraConfig);
-  return std::make_shared<Stagehand>(finalConfig);
+  return std::make_shared<Stagehand>(m_root, finalConfig);
 }
 
 }

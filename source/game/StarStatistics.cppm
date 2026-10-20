@@ -12,10 +12,11 @@ namespace Star {
 class LuaCallbacks;
 class LuaRoot;
 class StatisticsService;
+class Root;
 
 class Statistics {
 public:
-  Statistics(String const& storageDirectory, std::shared_ptr<StatisticsService> service = {});
+  Statistics(Root& root, String const& storageDirectory, std::shared_ptr<StatisticsService> service = {});
 
   void writeStatistics();
 
@@ -53,6 +54,7 @@ private:
   template <typename Result = LuaValue, typename... V>
   Maybe<Result> runStatScript(StringList const& scripts, Json const& config, String const& functionName, V&&... args);
 
+  Root& m_root;
   std::shared_ptr<StatisticsService> m_service;
   String m_storageDirectory;
   bool m_initialized;

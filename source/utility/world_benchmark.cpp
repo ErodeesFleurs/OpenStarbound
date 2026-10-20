@@ -1,4 +1,5 @@
 import star.json;
+import star.native_runtime;
 import star.file;
 import star.xx_hash;
 import star.lexical_cast;
@@ -121,6 +122,7 @@ import star.world_template;
 using namespace Star;
 
 int main(int argc, char** argv) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   try {
     RootLoader rootLoader({{}, {}, {}, LogLevel::Error, false, {}});
     rootLoader.addArgument("dungeon", OptionParser::Required, "name of the dungeon to spawn in the world to benchmark");
@@ -141,11 +143,11 @@ int main(int argc, char** argv) {
     coutf(" done\n");
 
     String dungeon = options.arguments.first();
-    std::shared_ptr<::Star::VisitableWorldParameters> worldParameters = generateFloatingDungeonWorldParameters(dungeon);
-    std::uint64_t worldSeed = Random::randu64();
+    std::shared_ptr<::Star::VisitableWorldParameters> worldParameters = generateFloatingDungeonWorldParameters(*root, dungeon);
+    std::uint64_t worldSeed = root->random().randu64();
     if (options.parameters.contains("seed"))
       worldSeed = lexicalCast<std::uint64_t>(options.parameters.get("seed").first());
-    auto worldTemplate = std::make_shared<WorldTemplate>(worldParameters, SkyParameters(), worldSeed);
+    auto worldTemplate = std::make_shared<WorldTemplate>(*root, worldParameters, SkyParameters(), worldSeed);
 
     auto fidelity = options.parameters.maybe("fidelity").apply([](StringList p) { return p.maybeFirst(); }).value({});
     root->configuration()->set("serverFidelity", fidelity.value("high"));
@@ -175,7 +177,7 @@ int main(int argc, char** argv) {
 
     double sumTime = 0.0;
     for (std::uint64_t i = 0; i < times; ++i) {
-      WorldServer worldServer(worldTemplate, File::ephemeralFile());
+      WorldServer worldServer(*root, worldTemplate, File::ephemeralFile(root->random()));
 
       coutf("Starting world simulation for {} steps\n", steps);
       double start = Time::monotonicTime();
@@ -195,7 +197,7 @@ int main(int argc, char** argv) {
           lastReport = Time::monotonicTime();
           coutf("[{}] {}s | FPS: {} | Entities: {}\n", j, Time::monotonicTime() - start, fps, entityCount);
         }
-        worldServer.update(ServerGlobalTimestep * GlobalTimescale);
+        worldServer.update(root->timing().serverTimestep * root->timing().timescale);
       }
       double totalTime = Time::monotonicTime() - start;
       coutf("Finished run of running dungeon world '{}' with seed {} for {} steps in {} seconds, average FPS: {}\n",

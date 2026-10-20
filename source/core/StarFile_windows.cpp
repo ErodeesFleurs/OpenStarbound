@@ -154,35 +154,35 @@ String File::relativeTo(String const& relativeTo, String const& path) {
   return finalPath;
 }
 
-String File::temporaryFileName() {
+String File::temporaryFileName(RandomService& random) {
   WCHAR tempPath[MAX_PATH];
   if (!GetTempPathW(MAX_PATH, tempPath)) {
     auto error = GetLastError();
     throw IOException(strf("Could not call GetTempPath {}", error));
   }
 
-  return relativeTo(utf16ToString(tempPath), strf("starbound.tmpfile.{}", hexEncode(Random::randBytes(16))));
+  return relativeTo(utf16ToString(tempPath), strf("starbound.tmpfile.{}", hexEncode(random.randBytes(16))));
 }
 
-std::shared_ptr<File> File::temporaryFile() {
-  return open(temporaryFileName(), IOMode::ReadWrite);
+std::shared_ptr<File> File::temporaryFile(RandomService& random) {
+  return open(temporaryFileName(random), IOMode::ReadWrite);
 }
 
-std::shared_ptr<File> File::ephemeralFile() {
-  auto file = temporaryFile();
+std::shared_ptr<File> File::ephemeralFile(RandomService& random) {
+  auto file = temporaryFile(random);
   DeleteFileW(stringToUtf16(file->fileName()).get());
   file->m_filename = "";
   return file;
 }
 
-String File::temporaryDirectory() {
+String File::temporaryDirectory(RandomService& random) {
   WCHAR tempPath[MAX_PATH];
   if (!GetTempPathW(MAX_PATH, tempPath)) {
     auto error = GetLastError();
     throw IOException(strf("Could not call GetTempPath {}", error));
   }
 
-  String dirname = relativeTo(utf16ToString(tempPath), strf("starbound.tmpdir.{}", hexEncode(Random::randBytes(16))));
+  String dirname = relativeTo(utf16ToString(tempPath), strf("starbound.tmpdir.{}", hexEncode(random.randBytes(16))));
   makeDirectory(dirname);
   return dirname;
 }

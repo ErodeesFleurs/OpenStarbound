@@ -1,3 +1,4 @@
+#include <winsock2.h>
 #include <windows.h>
 #include <dbghelp.h>
 
@@ -9,41 +10,54 @@ import star.logging;
 import star.casting;
 import star.string_windows;
 import star.version;
+import star.native_runtime;
 
 
 import star.array;
 import star.math_common;
 namespace Star {
 
-struct WindowsSymInitializer {
-  WindowsSymInitializer() {
+// DbgHelp is process-native and not thread-safe. Its lock must remain usable
+// through entry-point teardown without a dynamically initialized global owner.
+struct DbgHelpLock {
+  void lock() {
+    AcquireSRWLockExclusive(&nativeLock);
+  }
+
+  void unlock() {
+    ReleaseSRWLockExclusive(&nativeLock);
+  }
+
+  SRWLOCK nativeLock = SRWLOCK_INIT;
+};
+static_assert(std::is_trivially_destructible_v<DbgHelpLock>);
+static constinit DbgHelpLock g_dbgHelpLock;
+// Protected by g_dbgHelpLock; overlapping explicit owners share one session.
+static constinit std::size_t g_diagnosticsOwners = 0;
+
+NativeRuntime::NativeRuntime() {
+  WSADATA wsaData;
+  if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+    fatalError("WSAStartup failed", false);
+
+  std::lock_guard lock(g_dbgHelpLock);
+  if (g_diagnosticsOwners == 0) {
     DWORD options = SymGetOptions();
     SymSetOptions(options | SYMOPT_LOAD_LINES);
     if (!SymInitialize(GetCurrentProcess(), NULL, TRUE))
       fatalError("SymInitialize failed", false);
   }
-};
-static WindowsSymInitializer g_windowsSymInitializer;
+  ++g_diagnosticsOwners;
+}
 
-struct DbgHelpLock {
-  DbgHelpLock() {
-    InitializeCriticalSection(&criticalSection);
+NativeRuntime::~NativeRuntime() {
+  {
+    std::lock_guard lock(g_dbgHelpLock);
+    if (--g_diagnosticsOwners == 0)
+      SymCleanup(GetCurrentProcess());
   }
-  ~DbgHelpLock() {
-    DeleteCriticalSection(&criticalSection);
-  }
-
-  void lock() {
-    EnterCriticalSection(&criticalSection);
-  }
-
-  void unlock() {
-    LeaveCriticalSection(&criticalSection);
-  }
-
-  CRITICAL_SECTION criticalSection;
-};
-static DbgHelpLock g_dbgHelpLock;
+  WSACleanup();
+}
 
 static std::size_t const StackLimit = 256;
 
@@ -233,7 +247,7 @@ OutputProxy outputException(std::exception const& e, bool fullStacktrace) {
 }
 
 void printStack(char const* message) {
-  Logger::info("Stack Trace ({})...\n{}", message, outputStack(captureStack()));
+  EmergencyLog::info("Stack Trace ({})...\n{}", message, outputStack(captureStack()));
 }
 
 void fatalError(char const* message, bool showStackTrace) {
@@ -243,7 +257,7 @@ void fatalError(char const* message, bool showStackTrace) {
   if (showStackTrace)
     ss << outputStack(captureStack());
 
-  Logger::log(LogLevel::Error, ss.str().c_str());
+  EmergencyLog::log(LogLevel::Error, ss.str().c_str());
   MessageBoxW(NULL, stringToUtf16(ss.str()).get(), stringToUtf16("Error").get(), MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);
 
   std::abort();
@@ -256,7 +270,7 @@ void fatalException(std::exception const& e, bool showStackTrace) {
   if (showStackTrace)
     ss << "Caught at:" << std::endl << outputStack(captureStack());
 
-  Logger::log(LogLevel::Error, ss.str().c_str());
+  EmergencyLog::log(LogLevel::Error, ss.str().c_str());
   MessageBoxW(NULL, stringToUtf16(ss.str()).get(), stringToUtf16("Error").get(), MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);
 
   std::abort();

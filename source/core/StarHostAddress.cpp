@@ -34,9 +34,6 @@ import star.hash;
 
 namespace Star {
 
-#ifdef STAR_SYSTEM_FAMILY_WINDOWS
-static WindowsSocketInitializer g_windowsSocketInitializer;
-#endif
 
 HostAddress HostAddress::localhost(NetworkMode mode) {
   if (mode == NetworkMode::IPv4) {

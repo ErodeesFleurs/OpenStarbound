@@ -22,6 +22,8 @@ import star.world_geometry;
 import star.dungeon_generator;
 
 namespace Star {
+class Root;
+
 
 namespace Tiled {
 
@@ -59,14 +61,14 @@ namespace Tiled {
 
   class Tile : public Dungeon::Tile {
   public:
-    Tile(Properties const& properties, TileLayer layer, bool flipX = false);
+    Tile(Root& root, Properties const& properties, TileLayer layer, bool flipX = false);
 
     Properties properties;
   };
 
   class Tileset {
   public:
-    Tileset(Json const& json);
+    Tileset(Root& root, Json const& json);
 
     std::shared_ptr<Tile const> const& getTile(std::size_t id, TileLayer layer) const;
     std::size_t size() const;
@@ -80,13 +82,14 @@ namespace Tiled {
 
 class TilesetDatabase {
 public:
-  TilesetDatabase();
+  explicit TilesetDatabase(Root& root);
 
   std::shared_ptr<Tiled::Tileset const> get(String const& path) const;
 
 private:
-  static std::shared_ptr<Tiled::Tileset const> readTileset(String const& path);
+  std::shared_ptr<Tiled::Tileset const> readTileset(String const& path) const;
 
+  Root& m_root;
   mutable Mutex m_cacheMutex;
   mutable HashLruCache<String, std::shared_ptr<Tiled::Tileset const>> m_tilesetCache;
 };

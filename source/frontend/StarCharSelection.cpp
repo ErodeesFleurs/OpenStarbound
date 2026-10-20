@@ -129,20 +129,20 @@ import star.player_storage;
 
 namespace Star {
 
-CharSelectionPane::CharSelectionPane(std::shared_ptr<PlayerStorage> playerStorage,
+CharSelectionPane::CharSelectionPane(GuiContext& guiContext, std::shared_ptr<PlayerStorage> playerStorage,
     CreateCharCallback createCallback,
     SelectCharacterCallback selectCallback,
     DeleteCharacterCallback deleteCallback)
-  : m_playerStorage(playerStorage),
+  : Pane(guiContext), m_playerStorage(playerStorage),
     m_downScroll(0),
     m_search(""),
     m_filteredList({}),
     m_createCallback(createCallback),
     m_selectCallback(selectCallback),
     m_deleteCallback(deleteCallback) {
-  auto& root = Root::singleton();
+  auto& root = context()->root();
 
-  GuiReader guiReader;
+  GuiReader guiReader(*context());
 
   guiReader.registerCallback("playerUpButton", [this](Widget*) { shiftCharacters(-1); });
   guiReader.registerCallback("playerDownButton", [this](Widget*) { shiftCharacters(1); });
@@ -159,8 +159,8 @@ CharSelectionPane::CharSelectionPane(std::shared_ptr<PlayerStorage> playerStorag
   guiReader.registerCallback("clearSearch", [this](Widget*) {
     fetchChild<TextBoxWidget>("searchCharacter")->setText("");
   });
-  guiReader.registerCallback("toggleDismissCheckbox", [=](Widget* widget) {
-    auto configuration = Root::singleton().configuration();
+  guiReader.registerCallback("toggleDismissCheckbox", [this](Widget* widget) {
+    auto configuration = context()->root().configuration();
     configuration->set("characterSwapDismisses", as<ButtonWidget>(widget)->isChecked());
   });
 
@@ -197,11 +197,11 @@ void CharSelectionPane::shiftCharacters(int shift) {
 
 void CharSelectionPane::selectCharacter(unsigned buttonIndex) {
   if (m_downScroll + buttonIndex < m_filteredList.size()) {
-    auto playerUuid = m_filteredList.get(m_downScroll + buttonIndex);
+    auto playerUuid = m_filteredList[m_downScroll + buttonIndex];
     auto player = m_playerStorage->loadPlayer(playerUuid);
     if (player->isPermaDead() && !player->isAdmin()) {
-      auto sound = Random::randValueFrom(
-                       Root::singleton().assets()->json("/interface.config:buttonClickFailSound").toArray(), "")
+      auto sound = context()->root().random().randValueFrom(
+                       context()->root().assets()->json("/interface.config:buttonClickFailSound").toArray(), "")
                        .toString();
       if (!sound.empty())
         context()->playAudio(sound);
@@ -218,7 +218,7 @@ void CharSelectionPane::updateCharacterPlates() {
     auto charSelector = fetchChild<LargeCharPlateWidget>(name);
 
     if (m_filteredList.size() > 0 && scrollPosition < m_filteredList.size()) {
-      auto playerUuid = m_filteredList.get(scrollPosition);
+      auto playerUuid = m_filteredList[scrollPosition];
       if (auto player = m_playerStorage->loadPlayer(playerUuid)) {
         charSelector->show();
         player->humanoid()->setFacingDirection(Direction::Right);

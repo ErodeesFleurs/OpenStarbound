@@ -69,8 +69,8 @@ import star.button_widget;
 
 namespace Star {
 
-KeybindingsMenu::KeybindingsMenu() : m_activeKeybinding(nullptr) {
-  GuiReader reader;
+KeybindingsMenu::KeybindingsMenu(GuiContext& guiContext) : Pane(guiContext), m_activeKeybinding(nullptr) {
+  GuiReader reader(*context());
   reader.registerCallback("cancel",
       [&](Widget*) {
         revert();
@@ -83,7 +83,7 @@ KeybindingsMenu::KeybindingsMenu() : m_activeKeybinding(nullptr) {
       });
   reader.registerCallback("setDefault", [&](Widget*) { resetDefaults(); });
 
-  auto assets = Root::singleton().assets();
+  auto assets = context()->root().assets();
 
   m_maxBindings = assets->json("/interface/windowconfig/keybindingsmenu.config:maxBindings").toUInt();
 
@@ -152,7 +152,7 @@ bool KeybindingsMenu::sendEvent(InputEvent const& event) {
 }
 
 void KeybindingsMenu::show() {
-  m_origConfiguration = Root::singleton().configuration()->get("bindings");
+  m_origConfiguration = context()->root().configuration()->get("bindings");
   Pane::show();
 }
 
@@ -175,7 +175,7 @@ void KeybindingsMenu::buildListsFromConfig() {
 
     list->registerMemberCallback("deleteBinding", [this](Widget*) { clearActive(); });
 
-    auto config = Root::singleton().configuration();
+    auto config = context()->root().configuration();
     auto bindings = config->get("bindings");
 
     for (auto const& keybind : keybinds.iterateArray()) {
@@ -187,7 +187,7 @@ void KeybindingsMenu::buildListsFromConfig() {
         for (auto const& bindingEntry : bindings.get(actionString).iterateArray())
           inputDesc.append(inputDescriptorFromJson(bindingEntry));
       } catch (StarException const& e) {
-        Logger::warn("Could not load keybinding for {}. {}\n", actionString, e.what());
+        context()->root().logger().warn("Could not load keybinding for {}. {}\n", actionString, e.what());
       }
 
       m_childToAction.insert({newListMember->fetchChild<ButtonWidget>("boundKeys").get(), action});
@@ -197,7 +197,7 @@ void KeybindingsMenu::buildListsFromConfig() {
     }
   };
 
-  auto assets = Root::singleton().assets();
+  auto assets = context()->root().assets();
   doKeybindingsFor(m_playerList, assets->json("/interface/windowconfig/keybindingsmenu.config:keyActions.player"));
   doKeybindingsFor(m_toolBarList, assets->json("/interface/windowconfig/keybindingsmenu.config:keyActions.toolbar"));
   doKeybindingsFor(m_gameList, assets->json("/interface/windowconfig/keybindingsmenu.config:keyActions.game"));
@@ -219,7 +219,7 @@ void KeybindingsMenu::setKeybinding(KeyChord desc) {
 
   auto out = inputDescriptorToJson(desc);
 
-  auto config = Root::singleton().configuration();
+  auto config = context()->root().configuration();
   auto base = config->get("bindings");
 
   auto action = m_childToAction.get(m_activeKeybinding);
@@ -260,7 +260,7 @@ void KeybindingsMenu::clearActive() {
   if (!m_activeKeybinding)
     return;
 
-  auto config = Root::singleton().configuration();
+  auto config = context()->root().configuration();
   auto base = config->get("bindings").toObject();
 
   auto action = m_childToAction.get(m_activeKeybinding);
@@ -290,14 +290,14 @@ void KeybindingsMenu::apply() {
 }
 
 void KeybindingsMenu::revert() {
-  Root::singleton().configuration()->set("bindings", m_origConfiguration);
+  context()->root().configuration()->set("bindings", m_origConfiguration);
   apply();
 
   buildListsFromConfig();
 }
 
 void KeybindingsMenu::resetDefaults() {
-  auto config = Root::singleton().configuration();
+  auto config = context()->root().configuration();
   config->set("bindings", config->getDefault("bindings"));
   apply();
 

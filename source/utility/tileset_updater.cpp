@@ -44,8 +44,8 @@ StringSet TileDatabase::tileNames() const {
   return StringSet::from(m_tiles.keys());
 }
 
-Tileset::Tileset(String const& source, String const& name, std::shared_ptr<::Star::TileDatabase> const& database)
-  : m_source(source), m_name(name), m_tiles(), m_database(database) {}
+Tileset::Tileset(Logger& logger, String const& source, String const& name, std::shared_ptr<::Star::TileDatabase> const& database)
+  : m_logger(logger), m_source(source), m_name(name), m_tiles(), m_database(database) {}
 
 void Tileset::defineTile(std::shared_ptr<::Star::Tile> const& tile) {
   // Each tileset must be exported from a single database. When a tile switches
@@ -90,7 +90,7 @@ void Tileset::exportTileset() const {
   String exportDir = tilesetExportDir(sourcePath, sourceName);
   String tilesetPath = unixFileJoin(exportDir, m_name + ".json");
   File::makeDirectoryRecursive(File::dirName(tilesetPath));
-  Logger::info("Updating tileset at {}", tilesetPath);
+  m_logger.info("Updating tileset at {}", tilesetPath);
 
   exportTilesetImages(exportDir);
 
@@ -174,9 +174,9 @@ void Tileset::exportTilesetImages(String const& exportDir) const {
     String imageDir = unixFileJoin(imageDirName(exportDir), tile->database);
     File::makeDirectoryRecursive(imageDir);
     String imageName = unixFileJoin(imageDir, tile->name + ".png");
-    Logger::info("Updating image {}", imageName);
+    m_logger.info("Updating image {}", imageName);
     auto outputFile = File::open(imageName, IOMode::Write);
-    tile->image->writePng(outputFile);
+    tile->image->writePng(m_logger, outputFile);
     outputFile->close();
   }
 }
@@ -185,7 +185,7 @@ Json Tileset::getTilesetJson(String const& tilesetPath) const {
   if (File::exists(tilesetPath)) {
     return Json::parseJson(File::readFileString(tilesetPath));
   } else {
-    Logger::warn(
+    m_logger.warn(
         "Tileset {} wasn't already present. Creating it from scratch. Any maps already using this tileset may be "
         "broken.",
         tilesetPath);
@@ -262,6 +262,8 @@ void Tileset::invalidateTiles(StringSet const& invalidTiles,
   }
 }
 
+TilesetUpdater::TilesetUpdater(Logger& logger) : m_logger(logger) {}
+
 void TilesetUpdater::defineAssetSource(String const& source) {
   auto parsedSource = parseAssetSource(source);
   if (!parsedSource)
@@ -274,7 +276,7 @@ void TilesetUpdater::defineAssetSource(String const& source) {
   String tilesetDir = tilesetExportDir(sourcePath, sourceName);
   String imageDir = imageExportDirName(tilesetDir, sourceName);
 
-  Logger::info("Scanning {} for images...", imageDir);
+  m_logger.info("Scanning {} for images...", imageDir);
   if (!File::isDirectory(imageDir))
     return;
 
@@ -282,14 +284,14 @@ void TilesetUpdater::defineAssetSource(String const& source) {
     // Never follow a symlinked directory: it can point outside of the asset
     // source, or at one of its own parents.
     if (File::isSymlink(unixFileJoin(imageDir, entry.first))) {
-      Logger::warn("TilesetUpdater: Not scanning '{}' because it is a symlink", entry.first);
+      m_logger.warn("TilesetUpdater: Not scanning '{}' because it is a symlink", entry.first);
       continue;
     }
 
     if (entry.second) {
       String databaseName = entry.first;
       String databasePath = unixFileJoin(imageDir, databaseName);
-      Logger::info("Scanning database {}...", databaseName);
+      m_logger.info("Scanning database {}...", databaseName);
       for (std::pair<String, bool> image : File::dirList(databasePath)) {
         if constexpr (Star::DebugEnabled) {
           Star::starAssertFailed((!image.second));
@@ -313,7 +315,7 @@ void TilesetUpdater::exportTilesets() {
   for (auto const& tilesets : m_tilesets) {
     auto parsedAssetSource = parseAssetSource(tilesets.first);
     if (!parsedAssetSource) {
-      Logger::info("Not updating tilesets in {} because it is packed", tilesets.first);
+      m_logger.info("Not updating tilesets in {} because it is packed", tilesets.first);
       continue;
     }
     String sourceName;
@@ -354,6 +356,6 @@ std::shared_ptr<::Star::Tileset> const& TilesetUpdater::getTileset(std::shared_p
   std::shared_ptr<::Star::TileDatabase> database = getDatabase(tile);
   auto& tilesets = m_tilesets[tile->source];
   if (!tilesets.contains(tile->tileset))
-    tilesets[tile->tileset] = std::make_shared<Tileset>(tile->source, tile->tileset, database);
+    tilesets[tile->tileset] = std::make_shared<Tileset>(m_logger, tile->source, tile->tileset, database);
   return tilesets[tile->tileset];
 }

@@ -73,17 +73,16 @@ import star.label_widget;
 
 namespace Star {
 
-ErrorScreen::ErrorScreen() {
-  m_paneManager = std::make_shared<PaneManager>();
+ErrorScreen::ErrorScreen(GuiContext& context)
+  : m_guiContext(&context), m_cursor(context) {
+  m_paneManager = std::make_shared<PaneManager>(context);
 
   m_accepted = true;
 
-  auto assets = Root::singleton().assets();
+  auto assets = context.root().assets();
 
-  m_guiContext = GuiContext::singletonPtr();
-
-  m_errorPane = std::make_shared<Pane>();
-  GuiReader reader;
+  m_errorPane = std::make_shared<Pane>(context);
+  GuiReader reader(context);
   reader.registerCallback("btnOk", [this](Widget*) {
       m_accepted = true;
     });

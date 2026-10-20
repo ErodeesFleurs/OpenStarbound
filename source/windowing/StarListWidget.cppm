@@ -53,8 +53,8 @@ namespace Star {
 
 class ListWidget : public Widget {
 public:
-  ListWidget(Json const& schema);
-  ListWidget();
+  ListWidget(GuiContext& context, Json const& schema);
+  ListWidget(GuiContext& context);
 
   RectI relativeBoundRect() const override;
 

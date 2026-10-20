@@ -101,14 +101,6 @@ void main() {
 }
 )SHADER";
 
-/*
-static void GLAPIENTRY GlMessageCallback(GLenum, GLenum type, GLuint, GLenum, GLsizei, const GLchar* message, const void* renderer) {
-  if (type == GL_DEBUG_TYPE_ERROR) {
-    Logger::error("GL ERROR: {}", message);
-    __debugbreak();
-  }
-}
-*/
 
 extern EnumMap<BoolSettingMode> const BoolSettingModeNames{
   {BoolSettingMode::Enabled, "Enabled"},
@@ -124,12 +116,12 @@ bool settingModeValue(BoolSettingMode const& mode, bool const& setting) {
   }
 }
 
-OpenGlRenderer::OpenGlRenderer() {
+OpenGlRenderer::OpenGlRenderer(Logger& logger) : m_logger(logger) {
   auto glewResult = glewInit();
   if (glewResult != GLEW_OK && glewResult != GLEW_ERROR_NO_GLX_DISPLAY)
     throw RendererException::format("Could not initialize GLEW: {}", (char*)glewGetErrorString(glewResult));
 
-  Logger::info("OpenGL version: '{}' vendor: '{}' renderer: '{}' shader: '{}'",
+  m_logger.info("OpenGL version: '{}' vendor: '{}' renderer: '{}' shader: '{}'",
       (const char*)glGetString(GL_VERSION),
       (const char*)glGetString(GL_VENDOR),
       (const char*)glGetString(GL_RENDERER),
@@ -139,10 +131,6 @@ OpenGlRenderer::OpenGlRenderer() {
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glDisable(GL_DEPTH_TEST);
-  if (GLEW_VERSION_4_3) {
-    //glEnable(GL_DEBUG_OUTPUT);
-    //glDebugMessageCallback(GlMessageCallback, this);
-  }
 
   m_limitTextureGroupSize = false;
   m_useMultiTexturing = true;
@@ -341,7 +329,7 @@ void OpenGlRenderer::loadConfig(Json const& config) {
     Json config = pair.second;
     config = config.set("multisample", m_multiSampling);
     config = config.set("hdrSetting", m_hdrSetting);
-    Logger::info("Creating framebuffer {}", pair.first);
+    m_logger.info("Creating framebuffer {}", pair.first);
     auto buf = make_ref<GlFrameBuffer>(config);
     if (config.getBool("double",false)) {
       buf->makeAlt(Vec2U(256, 256));
@@ -355,7 +343,7 @@ void OpenGlRenderer::loadConfig(Json const& config) {
 
 void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConfig, StringMap<String> const& shaders) {
   if (auto effect = m_effects.ptr(name)) {
-    Logger::info("Reloading OpenGL effect {}", name);
+    m_logger.info("Reloading OpenGL effect {}", name);
     glDeleteProgram(effect->program);
     m_effects.erase(name);
   }
@@ -387,7 +375,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
     fragmentShader = compileShader(GL_FRAGMENT_SHADER, "fragment");
   }
   catch (RendererException const& e) {
-    Logger::error("Shader compile error, using default: {}", e.what());
+    m_logger.error("Shader compile error, using default: {}", e.what());
     if (vertexShader) glDeleteShader(vertexShader);
     if (fragmentShader) glDeleteShader(fragmentShader);
     vertexShader = compileShader(GL_VERTEX_SHADER, DefaultVertexShader);
@@ -428,7 +416,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
 
     effectParameter.parameterUniform = glGetUniformLocation(m_program, p.second.getString("uniform").utf8Ptr());
     if (effectParameter.parameterUniform == -1) {
-      Logger::warn("OpenGL20 effect parameter '{}' in effect '{}' has no associated uniform, skipping", p.first, name);
+      m_logger.warn("OpenGL20 effect parameter '{}' in effect '{}' has no associated uniform, skipping", p.first, name);
     } else {
       String type = p.second.getString("type");
       if (type == "bool") {
@@ -494,7 +482,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
     EffectTexture effectTexture;
     effectTexture.textureUniform = glGetUniformLocation(m_program, p.second.getString("textureUniform").utf8Ptr());
     if (effectTexture.textureUniform == -1) {
-      Logger::warn("OpenGL20 effect parameter '{}' has no associated uniform, skipping", p.first);
+      m_logger.warn("OpenGL20 effect parameter '{}' has no associated uniform, skipping", p.first);
     } else {
         effectTexture.textureUnit = parameterTextureUnit++;
         glUniform1i(effectTexture.textureUniform, effectTexture.textureUnit);
@@ -504,7 +492,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
         if (auto tsu = p.second.optString("textureSizeUniform")) {
           effectTexture.textureSizeUniform = glGetUniformLocation(m_program, tsu->utf8Ptr());
           if (effectTexture.textureSizeUniform == -1)
-            Logger::warn("OpenGL20 effect parameter '{}' has textureSizeUniform '{}' with no associated uniform", p.first, *tsu);
+            m_logger.warn("OpenGL20 effect parameter '{}' has textureSizeUniform '{}' with no associated uniform", p.first, *tsu);
         }
 
       effect.textures[p.first] = effectTexture;
@@ -644,7 +632,7 @@ bool OpenGlRenderer::switchEffectConfig(String const& name) {
     effectScreenSize = m_screenSize / (buf->sizeDiv);
     if (effect.doubleBuffered) {
       if (!buf->hasAlt) {
-        Logger::warn("Effect {} should be double buffered, but framebuffer {} doesn't have an alt! Making one!", name, *outFrameBufferId);
+        m_logger.warn("Effect {} should be double buffered, but framebuffer {} doesn't have an alt! Making one!", name, *outFrameBufferId);
         buf->makeAlt(m_screenSize);
       }
       buf->swap();
@@ -756,7 +744,7 @@ std::shared_ptr<TextureGroup> OpenGlRenderer::createTextureGroup(TextureGroupSiz
   else // TextureGroupSize::Small
     atlasNumCells = 64;
 
-  Logger::info("detected supported OpenGL texture size {}, using atlasNumCells {}", maxTextureSize, atlasNumCells);
+  m_logger.info("detected supported OpenGL texture size {}, using atlasNumCells {}", maxTextureSize, atlasNumCells);
 
   auto glTextureGroup = std::make_shared<GlTextureGroup>(atlasNumCells);
   glTextureGroup->textureAtlasSet.textureFiltering = filtering;
@@ -1170,24 +1158,24 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
 
 bool OpenGlRenderer::logGlErrorSummary(String prefix) {
   if (GLenum error = glGetError()) {
-    Logger::error("{}: ", prefix);
+    EmergencyLog::error("{}: ", prefix);
     do {
       if (error == GL_INVALID_ENUM) {
-        Logger::error("GL_INVALID_ENUM");
+        EmergencyLog::error("GL_INVALID_ENUM");
       } else if (error == GL_INVALID_VALUE) {
-        Logger::error("GL_INVALID_VALUE");
+        EmergencyLog::error("GL_INVALID_VALUE");
       } else if (error == GL_INVALID_OPERATION) {
-        Logger::error("GL_INVALID_OPERATION");
+        EmergencyLog::error("GL_INVALID_OPERATION");
       } else if (error == GL_INVALID_FRAMEBUFFER_OPERATION) {
-        Logger::error("GL_INVALID_FRAMEBUFFER_OPERATION");
+        EmergencyLog::error("GL_INVALID_FRAMEBUFFER_OPERATION");
       } else if (error == GL_OUT_OF_MEMORY) {
-        Logger::error("GL_OUT_OF_MEMORY");
+        EmergencyLog::error("GL_OUT_OF_MEMORY");
       } else if (error == GL_STACK_UNDERFLOW) {
-        Logger::error("GL_STACK_UNDERFLOW");
+        EmergencyLog::error("GL_STACK_UNDERFLOW");
       } else if (error == GL_STACK_OVERFLOW) {
-        Logger::error("GL_STACK_OVERFLOW");
+        EmergencyLog::error("GL_STACK_OVERFLOW");
       } else {
-        Logger::error("<UNRECOGNIZED GL ERROR>");
+        EmergencyLog::error("<UNRECOGNIZED GL ERROR>");
       }
     } while ((error = glGetError()));
     return true;

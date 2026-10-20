@@ -171,8 +171,8 @@ import star.gui_context;
 
 namespace Star {
 
-NameplatePainter::NameplatePainter() {
-  auto assets = Root::singleton().assets();
+NameplatePainter::NameplatePainter(GuiContext& context) : m_guiContext(&context) {
+  auto assets = context.root().assets();
 
   Json nametagConfig = assets->json("/interface.config:nametag");
   m_showMasterNames = nametagConfig.getBool("showMasterNames");
@@ -192,7 +192,8 @@ NameplatePainter::NameplatePainter() {
 void NameplatePainter::update(float dt, std::shared_ptr<WorldClient> const& world, WorldCamera const& camera, bool inspectionMode) {
   m_camera = camera;
 
-  Set<EntityId> foundEntities;
+  auto& foundEntities = m_foundEntities;
+  foundEntities.clear();
   for (auto const& entity : world->query<NametagEntity>(camera.worldScreenRect())) {
     if ((entity->isMaster() && !m_showMasterNames) || !entity->displayNametag())
       continue;
@@ -230,12 +231,12 @@ void NameplatePainter::update(float dt, std::shared_ptr<WorldClient> const& worl
     }
   });
 
-  m_entitiesWithNametags = std::move(foundEntities);
+  std::swap(m_entitiesWithNametags, m_foundEntities);
   m_nametags.update(dt);
 }
 
 void NameplatePainter::render() {
-  auto& context = GuiContext::singleton();
+  auto& context = *m_guiContext;
 
   m_nametags.forEach([&context, this](BubbleState<Nametag> const& bubble, Nametag const& nametag) {
     if (nametag.opacity == 0.0f)
@@ -261,14 +262,14 @@ TextPositioning NameplatePainter::namePosition(Vec2F bubblePosition) const {
 }
 
 TextPositioning NameplatePainter::statusPosition(Vec2F bubblePosition) const {
-  auto& context = GuiContext::singleton();
+  auto& context = *m_guiContext;
   return TextPositioning(
       bubblePosition + m_statusOffset * context.interfaceScale(),
       HorizontalAnchor::HMidAnchor, VerticalAnchor::BottomAnchor);
 }
 
 RectF NameplatePainter::determineBoundBox(Vec2F bubblePosition, Nametag const& nametag) const {
-  auto& context = GuiContext::singleton();
+  auto& context = *m_guiContext;
   context.setTextStyle(m_textStyle);
   RectF nametagBox = context.determineTextSize(nametag.name, namePosition(bubblePosition));
   if (nametag.statusText) {

@@ -197,12 +197,12 @@ import star.player_factory;
 
 namespace Star {
 
-CharCreationPane::CharCreationPane(std::function<void(std::shared_ptr<Player>)> requestCloseFunc) {
-  auto& root = Root::singleton();
+CharCreationPane::CharCreationPane(GuiContext& guiContext, std::function<void(std::shared_ptr<Player>)> requestCloseFunc) : Pane(guiContext) {
+  auto& root = context()->root();
 
   m_speciesList = jsonToStringList(root.assets()->json("/interface/windowconfig/charcreation.config:speciesOrdering"));
 
-  GuiReader guiReader;
+  GuiReader guiReader(*context());
   guiReader.registerCallback("cancel", [=](Widget*) { requestCloseFunc({}); });
   guiReader.registerCallback("saveChar", [=, this](Widget*) {
       if (fetchChild<ButtonWidget>("btnSkipIntro")->isChecked())
@@ -324,7 +324,7 @@ CharCreationPane::CharCreationPane(std::function<void(std::shared_ptr<Player>)> 
 
   createPlayer();
 
-  RandomSource random;
+  RandomSource random(context()->root().random().randu64());
   m_speciesChoice = random.randu32() % m_speciesList.size();
   m_genderChoice = random.randu32();
   m_modeChoice = 1;
@@ -333,7 +333,7 @@ CharCreationPane::CharCreationPane(std::function<void(std::shared_ptr<Player>)> 
 }
 
 void CharCreationPane::createPlayer() {
-  m_previewPlayer = Root::singleton().playerFactory()->create();
+  m_previewPlayer = context()->root().playerFactory()->create();
   try {
     auto portrait = fetchChild<PortraitWidget>("charPreview");
     if ((bool)portrait) {
@@ -342,12 +342,12 @@ void CharCreationPane::createPlayer() {
       throw CharCreationException("The charPreview portrait has the wrong type.");
     }
   } catch (CharCreationException const& e) {
-    Logger::error("Character Preview portrait was not found in the json specification. {}", outputException(e, false));
+    context()->root().logger().error("Character Preview portrait was not found in the json specification. {}", outputException(e, false));
   }
 }
 
 void CharCreationPane::randomize() {
-  RandomSource random;
+  RandomSource random(context()->root().random().randu64());
   m_bodyColor = random.randu32();
   m_hairChoice = random.randu32();
   m_alty = random.randu32();
@@ -405,11 +405,11 @@ bool CharCreationPane::sendEvent(InputEvent const& event) {
 }
 
 void CharCreationPane::randomizeName() {
-  auto species = Root::singleton().speciesDatabase()->species(m_speciesList[m_speciesChoice]);
+  auto species = context()->root().speciesDatabase()->species(m_speciesList[m_speciesChoice]);
   auto tb = fetchChild<TextBoxWidget>("name");
   auto genderOption = species->options().genderOptions.wrap(m_genderChoice);
   int limiter = 100;
-  while (!tb->setText(Root::singleton().nameGenerator()->generateName(species->nameGen(genderOption.gender)))) {
+  while (!tb->setText(context()->root().nameGenerator()->generateName(species->nameGen(genderOption.gender)))) {
     if (limiter == 0)
       break;
     limiter--;
@@ -418,10 +418,10 @@ void CharCreationPane::randomizeName() {
 }
 
 void CharCreationPane::changed() {
-  auto& root = Root::singleton();
+  auto& root = context()->root();
 
   auto textBox = fetchChild<TextBoxWidget>("name");
-  auto speciesDefinition = Root::singleton().speciesDatabase()->species(m_speciesList[m_speciesChoice]);
+  auto speciesDefinition = context()->root().speciesDatabase()->species(m_speciesList[m_speciesChoice]);
   auto species = speciesDefinition->options();
   auto genderOptions = species.genderOptions.wrap(m_genderChoice);
   int genderIdx = pmod<std::int64_t>(m_genderChoice, species.genderOptions.size());
@@ -531,20 +531,20 @@ std::shared_ptr<Pane> CharCreationPane::createTooltip(Vec2I const& screenPositio
         return {};
 
       String speciesName = m_speciesList[speciesIndex];
-      std::shared_ptr<SpeciesDefinition> speciesDefinition = Root::singleton().speciesDatabase()->species(speciesName);
+      std::shared_ptr<SpeciesDefinition> speciesDefinition = context()->root().speciesDatabase()->species(speciesName);
 
       // make a tooltip from the config file
-      std::shared_ptr<Pane> tooltip = std::make_shared<Pane>();
+      std::shared_ptr<Pane> tooltip = std::make_shared<Pane>(*context());
       tooltip->removeAllChildren();
-      GuiReader reader;
-      auto& root = Root::singleton();
+      GuiReader reader(*context());
+      auto& root = context()->root();
       String tooltipKind = "/interface/tooltips/species.tooltip";
       reader.construct(root.assets()->json(tooltipKind), tooltip.get());
 
       // find out the gender option block from the currently selected gender
       auto genderOption = speciesDefinition->options().genderOptions.wrap(m_genderChoice);
       // makes an icon out of the default gendered character image
-      std::shared_ptr<Widget> titleIcon = std::make_shared<ImageWidget>(genderOption.characterImage);
+      std::shared_ptr<Widget> titleIcon = std::make_shared<ImageWidget>(*context(), genderOption.characterImage);
 
       // read the description out of the already loaded species database.
       String title = speciesDefinition->tooltip().title;

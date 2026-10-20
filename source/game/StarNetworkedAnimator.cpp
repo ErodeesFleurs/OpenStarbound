@@ -43,6 +43,7 @@ import star.light_source;
 import star.networked_animator;
 import star.asset_source;
 import star.assets;
+import star.image_metadata_database;
 import star.root_base;
 import star.configuration;
 import star.root;
@@ -107,7 +108,7 @@ void NetworkedAnimator::DynamicTarget::clearFinishedAudio() {
     });
 }
 
-NetworkedAnimator::NetworkedAnimator() {
+NetworkedAnimator::NetworkedAnimator(Root& root) : m_root(&root) {
   m_zoom.set(1.0f);
   m_flipped.set(false);
   m_flippedRelativeCenterLine.set(0.0f);
@@ -116,8 +117,7 @@ NetworkedAnimator::NetworkedAnimator() {
   setupNetStates();
 }
 
-NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : NetworkedAnimator() {
-  auto& root = Root::singleton();
+NetworkedAnimator::NetworkedAnimator(Root& root, Json config, String relativePath) : NetworkedAnimator(root) {
 
   if (config.isNull())
     return;
@@ -134,7 +134,7 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
 
   if (version() > 0) {
     if (config.contains("includes"))
-      config = mergeIncludes(config, config.get("includes"), relativePath);
+      config = mergeIncludes(root, config, config.get("includes"), relativePath);
   }
 
   m_animatedParts = AnimatedPartSet(config.get("animatedParts", JsonObject()), version());
@@ -211,6 +211,7 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
 
     if (lightConfig.contains("flickerPeriod")) {
       light.flicker = PeriodicFunction<float>(
+          root.random(),
           lightConfig.getFloat("flickerPeriod"),
           lightConfig.getFloat("flickerMinIntensity", 0.0),
           lightConfig.getFloat("flickerMaxIntensity", 0.0),
@@ -292,6 +293,7 @@ NetworkedAnimator::NetworkedAnimator(NetworkedAnimator const& animator) {
 }
 
 NetworkedAnimator& NetworkedAnimator::operator=(NetworkedAnimator&& animator) {
+  m_root = animator.m_root;
   m_relativePath = std::move(animator.m_relativePath);
   m_animatedParts = std::move(animator.m_animatedParts);
   m_stateInfo = std::move(animator.m_stateInfo);
@@ -318,6 +320,7 @@ NetworkedAnimator& NetworkedAnimator::operator=(NetworkedAnimator&& animator) {
 }
 
 NetworkedAnimator& NetworkedAnimator::operator=(NetworkedAnimator const& animator) {
+  m_root = animator.m_root;
   m_relativePath = animator.m_relativePath;
   m_animatedParts = animator.m_animatedParts;
   m_stateInfo = animator.m_stateInfo;
@@ -981,7 +984,7 @@ List<std::pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F co
         if (usedImage[0] != '/')
           relativeImage = AssetPath::relativeTo(m_relativePath, usedImage);
 
-        Drawable drawable = Drawable::makeImage(!relativeImage.empty() ? relativeImage : usedImage, 1.0f / TilePixels, centered, Vec2F());
+        Drawable drawable = Drawable::makeImage(*m_root->imageMetadataDatabase(), !relativeImage.empty() ? relativeImage : usedImage, 1.0f / TilePixels, centered, Vec2F());
         if (find == m_cachedPartDrawables.end())
           find = m_cachedPartDrawables.emplace(partName, std::pair{ hash, std::move(drawable) }).first;
         else {
@@ -993,7 +996,7 @@ List<std::pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F co
       Drawable drawable = find->second.second;
       auto& imagePart = drawable.imagePart();
       for (Directives const& directives : baseProcessingDirectives)
-        imagePart.addDirectives(directives, centered);
+        imagePart.addDirectives(*m_root->imageMetadataDatabase(), directives, centered);
       drawable.fullbright = fullbright;
       drawable.transform(transformation);
       drawables.append({std::move(drawable), std::get<2>(entry)});
@@ -1072,7 +1075,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
         if (persistentSound.isType(Json::Type::String))
           persistentSoundFile = persistentSound.toString();
         else if (persistentSound.isType(Json::Type::Array))
-          persistentSoundFile = Random::randValueFrom(persistentSound.toArray(), "").toString();
+          persistentSoundFile = m_root->random().randValueFrom(persistentSound.toArray(), "").toString();
 
         if (!persistentSoundFile.empty())
           persistentSoundFile = AssetPath::relativeTo(m_relativePath, persistentSoundFile);
@@ -1086,7 +1089,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
             activePersistentSound.audio->stop(activePersistentSound.stopRampTime);
 
           if (!persistentSoundFile.empty()) {
-            activePersistentSound.audio = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(persistentSoundFile));
+            activePersistentSound.audio = std::make_shared<AudioInstance>(*m_root->assets()->audio(persistentSoundFile));
             activePersistentSound.audio->setRangeMultiplier(activeState.properties.value("persistentSoundRangeMultiplier", 1.0f).toFloat());
             activePersistentSound.audio->setLoops(-1);
             activePersistentSound.audio->setPosition(globalTransformation().transformVec2(Vec2F()));
@@ -1103,7 +1106,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
         if (immediateSound.isType(Json::Type::String))
           immediateSoundFile = immediateSound.toString();
         else if (immediateSound.isType(Json::Type::Array))
-          immediateSoundFile = Random::randValueFrom(immediateSound.toArray(), "").toString();
+          immediateSoundFile = m_root->random().randValueFrom(immediateSound.toArray(), "").toString();
 
         if (!immediateSoundFile.empty())
           immediateSoundFile = AssetPath::relativeTo(m_relativePath, immediateSoundFile);
@@ -1114,7 +1117,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
         if (changedImmediateSound) {
           activeImmediateSound.sound = std::move(immediateSound);
           if (!immediateSoundFile.empty()) {
-            activeImmediateSound.audio = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(immediateSoundFile));
+            activeImmediateSound.audio = std::make_shared<AudioInstance>(*m_root->assets()->audio(immediateSoundFile));
             activeImmediateSound.audio->setRangeMultiplier(activeState.properties.value("immediateSoundRangeMultiplier", 1.0f).toFloat());
             activeImmediateSound.audio->setPosition(globalTransformation().transformVec2(Vec2F()));
             dynamicTarget->pendingAudios.append(activeImmediateSound.audio);
@@ -1198,8 +1201,8 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
         particle.position += config.offset;
 
         if (!offsetRegion.isNull()) {
-          particle.position[0] += Random::randf() * offsetRegion.width() + offsetRegion.xMin();
-          particle.position[1] += Random::randf() * offsetRegion.height() + offsetRegion.yMin();
+          particle.position[0] += m_root->random().randf() * offsetRegion.width() + offsetRegion.xMin();
+          particle.position[1] += m_root->random().randf() * offsetRegion.height() + offsetRegion.yMin();
         }
 
         float speed = particle.velocity.magnitude();
@@ -1242,7 +1245,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
         if (pair.second.timer <= 0.0f) {
           // timer causes us to emit one set
           ++numEmissionCycles;
-          pair.second.timer = 1.0f / (pair.second.emissionRate.get() + Random::randf(-pair.second.emissionRateVariance, pair.second.emissionRateVariance));
+          pair.second.timer = 1.0f / (pair.second.emissionRate.get() + m_root->random().randf(-pair.second.emissionRateVariance, pair.second.emissionRateVariance));
         } else {
           pair.second.timer -= dt;
         }
@@ -1262,7 +1265,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
               addParticles(particleConfig, rect, transformation);
           } else {
             List<ParticleEmitter::ParticleConfig> shuffledList = pair.second.particleList;
-            Random::shuffle(shuffledList);
+            m_root->random().shuffle(shuffledList);
 
             for (unsigned i = 0; i < numToSelect; ++i)
               addParticles(shuffledList.at(i), rect, transformation);
@@ -1280,9 +1283,9 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
           for (auto& sound : take(dynamicTarget->independentSounds[soundName]))
             sound->stop(soundEntry.volumeRampTime.get());
         } else if (signal == SoundSignal::Play) {
-          String soundFile = Random::randValueFrom(soundEntry.soundPool.get());
+          String soundFile = m_root->random().randValueFrom(soundEntry.soundPool.get());
           if (!soundFile.empty()) {
-            auto sound = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(soundFile));
+            auto sound = std::make_shared<AudioInstance>(*m_root->assets()->audio(soundFile));
             sound->setRangeMultiplier(soundEntry.rangeMultiplier);
             sound->setLoops(soundEntry.loops.get());
             sound->setPosition(globalTransformation().transformVec2(Vec2F(soundEntry.xPosition.get(), soundEntry.yPosition.get())));
@@ -1496,12 +1499,12 @@ std::uint8_t NetworkedAnimator::version() const {
   return m_animatorVersion;
 }
 
-Json NetworkedAnimator::mergeIncludes(Json config, Json includes, String relativePath){
+Json NetworkedAnimator::mergeIncludes(Root& root, Json config, Json includes, String relativePath){
   Json includedConfigs;
   for (Json const& path : includes.iterateArray()) {
-    auto includeConfig = Root::singleton().assets()->json(AssetPath::relativeTo(relativePath, path.toString()));
+    auto includeConfig = root.assets()->json(AssetPath::relativeTo(relativePath, path.toString()));
     if (includeConfig.contains("includes"))
-      includeConfig = mergeIncludes(includeConfig, includeConfig.get("includes"), relativePath);
+      includeConfig = mergeIncludes(root, includeConfig, includeConfig.get("includes"), relativePath);
     includedConfigs = jsonMerge(includedConfigs, includeConfig);
   }
   return jsonMerge(includedConfigs, config);

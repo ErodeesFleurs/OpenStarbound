@@ -79,11 +79,11 @@ import star.image_widget;
 import star.math_common;
 namespace Star {
 
-RadioMessagePopup::RadioMessagePopup() {
-  auto assets = Root::singleton().assets();
+RadioMessagePopup::RadioMessagePopup(GuiContext& guiContext) : Pane(guiContext) {
+  auto assets = context()->root().assets();
   auto config = assets->json("/interface/radiomessage/radiomessage.config");
 
-  GuiReader reader;
+  GuiReader reader(*context());
   reader.construct(config.get("paneLayout"), this);
 
   m_messageLabel = fetchChild<LabelWidget>("lblMessage");
@@ -154,7 +154,7 @@ void RadioMessagePopup::setMessage(RadioMessage message) {
   if (!message.chatterSound.empty() && message.textSpeed > 0) {
     if (m_chatterSound)
       m_chatterSound->stop();
-    auto assets = Root::singleton().assets();
+    auto assets = context()->root().assets();
     m_chatterSound = std::make_shared<AudioInstance>(*assets->audio(message.chatterSound));
     m_chatterSound->setLoops(-1);
   }
@@ -211,7 +211,7 @@ void RadioMessagePopup::enterStage(PopupStage newStage) {
       m_messageLabel->setTextCharLimit(0);
       setBG(m_backgroundImage);
       if (m_chatterSound)
-        GuiContext::singleton().playAudio(m_chatterSound);
+        context()->playAudio(m_chatterSound);
     }
   } else if (m_popupStage == PopupStage::Persist) {
     m_stageTimer = GameTimer(m_message.persistTime);

@@ -62,25 +62,12 @@ import star.image_metadata_database;
 import star.byte_array;
 namespace Star {
 
-GuiContext* GuiContext::s_singleton;
+class Input;
+class Voice;
+class TileDrawer;
 
-GuiContext* GuiContext::singletonPtr() {
-  return s_singleton;
-}
-
-GuiContext& GuiContext::singleton() {
-  if (!s_singleton)
-    throw GuiContextException("GuiContext::singleton() called with no GuiContext instance available");
-  else
-    return *s_singleton;
-}
-
-GuiContext::GuiContext(std::shared_ptr<Mixer> mixer, std::shared_ptr<ApplicationController> appController) {
-  if (s_singleton)
-    throw GuiContextException("Singleton GuiContext has been constructed twice");
-
-  s_singleton = this;
-
+GuiContext::GuiContext(Root& root, std::shared_ptr<Mixer> mixer, std::shared_ptr<ApplicationController> appController)
+  : m_root(root) {
   m_mixer = std::move(mixer);
   m_applicationController = std::move(appController);
 
@@ -91,16 +78,46 @@ GuiContext::GuiContext(std::shared_ptr<Mixer> mixer, std::shared_ptr<Application
   refreshKeybindings();
 }
 
-GuiContext::~GuiContext() {
-  s_singleton = nullptr;
+GuiContext::~GuiContext() = default;
+
+Root& GuiContext::root() const {
+  return m_root;
+}
+
+void GuiContext::bindInput(Input& input) {
+  m_input = &input;
+}
+
+Input& GuiContext::input() const {
+  if (!m_input)
+    throw GuiContextException("GuiContext::input() called before bindInput");
+  return *m_input;
+}
+
+void GuiContext::bindVoice(Voice& voice) {
+  m_voice = &voice;
+}
+
+Voice& GuiContext::voice() const {
+  if (!m_voice)
+    throw GuiContextException("GuiContext::voice() called before bindVoice");
+  return *m_voice;
+}
+
+void GuiContext::setTileDrawer(TileDrawer* tileDrawer) {
+  m_tileDrawer = tileDrawer;
+}
+
+TileDrawer* GuiContext::tileDrawer() const {
+  return m_tileDrawer;
 }
 
 void GuiContext::renderInit(std::shared_ptr<Renderer> renderer) {
   m_renderer = std::move(renderer);
   auto textureGroup = m_renderer->createTextureGroup();
-  m_textureCollection = std::make_shared<AssetTextureGroup>(textureGroup);
+  m_textureCollection = std::make_shared<AssetTextureGroup>(m_root, textureGroup);
   m_drawablePainter = std::make_shared<DrawablePainter>(m_renderer, m_textureCollection);
-  m_textPainter = std::make_shared<TextPainter>(m_renderer, textureGroup);
+  m_textPainter = std::make_shared<TextPainter>(m_root, m_renderer, textureGroup);
 }
 
 std::shared_ptr<Mixer> const& GuiContext::mixer() const {
@@ -184,7 +201,7 @@ Set<InterfaceAction> GuiContext::actionsForKey(Key key) const {
 }
 
 void GuiContext::refreshKeybindings() {
-  m_keyBindings = KeyBindings(Root::singleton().configuration()->get("bindings"));
+  m_keyBindings = KeyBindings(m_root, m_root.configuration()->get("bindings"));
 }
 
 void GuiContext::setInterfaceScissorRect(RectI const& scissor) {
@@ -375,7 +392,7 @@ bool GuiContext::trySetCursor(Drawable const& drawable, Vec2I const& offset, int
   if (!drawable.isImage())
     return false;
 
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
   auto& imagePath = drawable.imagePart().image;
   return applicationController()->setCursorImage(AssetPath::join(imagePath), assets->image(imagePath), pixelRatio, offset);
 }
@@ -496,8 +513,7 @@ void GuiContext::playAudio(std::shared_ptr<AudioInstance> audioInstance) {
 }
 
 std::shared_ptr<AudioInstance> GuiContext::playAudio(String const& audioAsset, int loops, float volume, float pitch) {
-  auto assets = Root::singleton().assets();
-  auto config = Root::singleton().configuration();
+  auto assets = m_root.assets();
   auto audioInstance = std::make_shared<AudioInstance>(*assets->audio(audioAsset));
   audioInstance->setVolume(volume);
   audioInstance->setPitchMultiplier(pitch);
@@ -531,7 +547,7 @@ float GuiContext::getDisplayScale() const {
 }
 
 void GuiContext::cleanup() {
-  std::int64_t textureTimeout = Root::singleton().assets()->json("/rendering.config:textureTimeout").toInt();
+  std::int64_t textureTimeout = m_root.assets()->json("/rendering.config:textureTimeout").toInt();
   if (m_textureCollection)
     m_textureCollection->cleanup(textureTimeout);
   if (m_textPainter)

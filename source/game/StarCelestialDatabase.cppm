@@ -42,6 +42,10 @@ import star.celestial_types;
 import star.perlin;
 
 namespace Star {
+class Root;
+class Assets;
+class RandomService;
+
 
 class CelestialDatabase {
 public:
@@ -100,8 +104,7 @@ protected:
 
 class CelestialMasterDatabase : public CelestialDatabase {
 public:
-  CelestialMasterDatabase();
-  CelestialMasterDatabase(Maybe<String> databaseFile);
+  explicit CelestialMasterDatabase(Root& root, Maybe<String> databaseFile = {});
 
   CelestialBaseInformation baseInformation() const;
   CelestialResponse respondToRequest(CelestialRequest const& requests);
@@ -204,6 +207,7 @@ protected:
   List<CelestialConstellation> produceConstellations(
       RandomSource& random, List<Vec2I> const& constellationCandidates) const;
 
+  Root& m_root;
   GenerationInformation m_generationInformation;
   
   bool m_chunksAlwaysPersistent = false;
@@ -220,7 +224,7 @@ protected:
 
 class CelestialSlaveDatabase : public CelestialDatabase {
 public:
-  CelestialSlaveDatabase(CelestialBaseInformation baseInformation);
+  CelestialSlaveDatabase(std::shared_ptr<Assets const> const& assets, RandomService& random, CelestialBaseInformation baseInformation);
 
   // Signal that the given region should be requested from the master database.
   void signalRegion(RectI const& region);

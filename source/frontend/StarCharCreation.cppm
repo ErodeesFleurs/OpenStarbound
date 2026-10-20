@@ -63,7 +63,7 @@ public:
   // The callback here is either called with null (when the user hits the
   // cancel button) or the newly created player (when the user hits the save
   // button).
-  CharCreationPane(std::function<void(std::shared_ptr<Player>)> requestCloseFunc);
+  CharCreationPane(GuiContext& guiContext, std::function<void(std::shared_ptr<Player>)> requestCloseFunc);
 
   void randomize();
   void randomizeName();

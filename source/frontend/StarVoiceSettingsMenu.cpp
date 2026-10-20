@@ -70,9 +70,9 @@ import star.voice_lua_bindings;
 
 namespace Star {
 
-VoiceSettingsMenu::VoiceSettingsMenu(Json const& config) : BaseScriptPane(config) {
-  m_script.setLuaRoot(std::make_shared<LuaRoot>());
-  m_script.addCallbacks("voice", LuaBindings::makeVoiceCallbacks());
+VoiceSettingsMenu::VoiceSettingsMenu(GuiContext& guiContext, Json const& config) : BaseScriptPane(guiContext, config) {
+  m_script.setLuaRoot(std::make_shared<LuaRoot>(context()->root()));
+  m_script.addCallbacks("voice", LuaBindings::makeVoiceCallbacks(context()->voice()));
 }
 
 void VoiceSettingsMenu::show() {

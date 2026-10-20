@@ -4,10 +4,12 @@ import star.file;
 import star.json;
 
 import star.versioning_database;
+import star.native_runtime;
 
 using namespace Star;
 
 int main(int argc, char** argv) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   try {
     if (argc != 3) {
       coutf("Usage, {} <versioned_json_json> <versioned_json_binary>\n", argv[0]);

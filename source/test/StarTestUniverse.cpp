@@ -153,16 +153,15 @@ import star.player_factory;
 
 namespace Star {
 
-TestUniverse::TestUniverse(Vec2U clientWindowSize) {
-  auto& root = Root::singleton();
+TestUniverse::TestUniverse(Root& root, Vec2U clientWindowSize) {
 
   m_clientWindowSize = clientWindowSize;
 
-  m_storagePath = File::temporaryDirectory();
-  auto playerStorage = std::make_shared<PlayerStorage>(File::relativeTo(m_storagePath, "player"));
-  auto statistics = std::make_shared<Statistics>(File::relativeTo(m_storagePath, "statistics"));
-  m_server = std::make_shared<UniverseServer>(File::relativeTo(m_storagePath, "universe"));
-  m_client = std::make_shared<UniverseClient>(playerStorage, statistics, File::relativeTo(m_storagePath, "universeclient"));
+  m_storagePath = File::temporaryDirectory(root.random());
+  auto playerStorage = std::make_shared<PlayerStorage>(root, File::relativeTo(m_storagePath, "player"));
+  auto statistics = std::make_shared<Statistics>(root, File::relativeTo(m_storagePath, "statistics"));
+  m_server = std::make_shared<UniverseServer>(root, File::relativeTo(m_storagePath, "universe"));
+  m_client = std::make_shared<UniverseClient>(root, playerStorage, statistics, File::relativeTo(m_storagePath, "universeclient"));
 
   m_server->start();
 
@@ -179,10 +178,9 @@ TestUniverse::TestUniverse(Vec2U clientWindowSize) {
   m_mainPlayer->setAdmin(true);
   m_mainPlayer->setModeType(PlayerMode::Survival);
   m_client->setMainPlayer(m_mainPlayer);
-  // The real client provides the 'input' callback table to player scripts
-  // (StarClientApplication::setLuaCallbacks -> LuaBindings::makeInputCallbacks).
-  // That binds to the global Input, which a headless harness never initializes,
-  // so provide a stub where nothing is ever bound.  OpenStarbound's player
+  // The real client supplies input callbacks bound to its explicit Input owner.
+  // This headless fixture has no input device or client Input, so provide
+  // callbacks where nothing is ever bound. OpenStarbound's player
   // scripts (e.g. /scripts/opensb/player/copy_paste.lua) call input.bindDown
   // from update() and would otherwise log a Lua error every frame.
   LuaCallbacks inputCallbacks;
@@ -263,7 +261,7 @@ List<Drawable> TestUniverse::currentClientDrawables() {
   WorldRenderData renderData;
   auto worldClient = m_client->worldClient();
   worldClient->centerClientWindowOnPlayer(m_clientWindowSize);
-  worldClient->render(renderData, 0);
+  worldClient->render(renderData, 0, nullptr);
 
   List<Drawable> drawables;
   for (auto& ed : renderData.entityDrawables) {

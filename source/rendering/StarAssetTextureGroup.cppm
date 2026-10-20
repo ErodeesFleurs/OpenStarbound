@@ -21,13 +21,14 @@ import star.directives;
 import star.asset_path;
 
 namespace Star {
+class Root;
+
 
 // Creates a renderer texture group for textures loaded directly from Assets.
 class AssetTextureGroup {
 public:
-  // Creates a texture group using the given renderer and textureFiltering for
-  // the managed textures.
-  AssetTextureGroup(std::shared_ptr<TextureGroup> textureGroup);
+  // Root outlives this group; texture loads resolve its current Assets after reload.
+  AssetTextureGroup(Root& root, std::shared_ptr<TextureGroup> textureGroup);
 
   // Load the given texture into the texture group if it is not loaded, and
   // return the texture pointer.
@@ -50,6 +51,7 @@ private:
   // immediately
   TexturePtr loadTexture(AssetPath const& imagePath, bool tryTexture);
 
+  Root& m_root;
   std::shared_ptr<TextureGroup> m_textureGroup;
   HashMap<AssetPath, std::pair<TexturePtr, std::int64_t>> m_textureMap;
   HashMap<std::shared_ptr<Image const>, TexturePtr> m_textureDeduplicationMap;

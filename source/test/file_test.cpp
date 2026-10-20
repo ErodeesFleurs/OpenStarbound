@@ -11,6 +11,7 @@ import star.io_device;
 import star.string;
 import star.buffer;
 import star.format;
+import star.random;
 
 import std;
 
@@ -58,13 +59,14 @@ namespace {
 }
 
 TEST(FileTest, All) {
-  auto file = File::ephemeralFile();
+  RandomService random;
+  auto file = File::ephemeralFile(random);
   file->resize(1000);
   file->resize(0);
   file->resize(500);
   EXPECT_EQ(file->size(), 500);
 
-  auto dir = File::temporaryDirectory();
+  auto dir = File::temporaryDirectory(random);
   File::makeDirectory(File::relativeTo(dir, "inner"));
   EXPECT_TRUE(File::isDirectory(File::relativeTo(dir, "inner") + "/"));
   File::removeDirectoryRecursive(dir);
@@ -102,10 +104,11 @@ TEST(FileTest, All) {
 }
 
 TEST(FileTest, RemoveDirectoryRecursiveKeepsSymlinkTargets) {
+  RandomService random;
   // The removal used to descend into directory symlinks, so a link pointing
   // outside of the directory deleted the target's contents.
-  auto dir = File::temporaryDirectory();
-  auto outside = File::temporaryDirectory();
+  auto dir = File::temporaryDirectory(random);
+  auto outside = File::temporaryDirectory(random);
   auto finallyGuard = finally([&dir, &outside]() {
     removeTree(dir);
     removeTree(outside);
@@ -130,10 +133,11 @@ TEST(FileTest, RemoveDirectoryRecursiveKeepsSymlinkTargets) {
 }
 
 TEST(FileTest, RemoveDirectoryRecursiveHandlesSymlinkLoops) {
+  RandomService random;
   // A symlink pointing at one of its own parent directories used to make the
   // removal walk the same tree over and over until it errored out half way
   // through ("remove error: No such file or directory").
-  auto dir = File::temporaryDirectory();
+  auto dir = File::temporaryDirectory(random);
   auto finallyGuard = finally([&dir]() { removeTree(dir); });
 
   std::error_code ec;
@@ -184,7 +188,8 @@ namespace {
 }
 
 TEST(FileTest, AppendSeekFailureReleasesDescriptor) {
-  auto dir = File::temporaryDirectory();
+  RandomService random;
+  auto dir = File::temporaryDirectory(random);
   auto cleanup = finally([&]() { removeTree(dir); });
   auto path = File::relativeTo(dir, "pipe");
   ASSERT_EQ(::mkfifo(path.utf8Ptr(), 0600), 0);
@@ -195,7 +200,8 @@ TEST(FileTest, AppendSeekFailureReleasesDescriptor) {
 }
 
 TEST(FileTest, FailedCloseConsumesDescriptorOwnership) {
-  auto file = File::temporaryFile();
+  RandomService random;
+  auto file = File::temporaryFile(random);
   auto path = file->fileName();
   auto cleanup = finally([&]() { File::remove(path); });
   int descriptor = descriptorForFile(path);
@@ -210,7 +216,8 @@ TEST(FileTest, FailedCloseConsumesDescriptorOwnership) {
 }
 
 TEST(FileTest, DestructorReportsCloseFailureWithoutTerminating) {
-  auto file = File::temporaryFile();
+  RandomService random;
+  auto file = File::temporaryFile(random);
   auto path = file->fileName();
   auto cleanup = finally([&]() { File::remove(path); });
   int descriptor = descriptorForFile(path);

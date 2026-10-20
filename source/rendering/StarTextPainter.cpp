@@ -72,15 +72,16 @@ TextPositioning TextPositioning::translated(Vec2F translation) const {
   return {pos + translation, hAnchor, vAnchor, wrapWidth, charLimit};
 }
 
-TextPainter::TextPainter(std::shared_ptr<Renderer> renderer, std::shared_ptr<TextureGroup> textureGroup)
-  : m_renderer(renderer),
-    m_fontTextureGroup(textureGroup),
+TextPainter::TextPainter(Root& root, std::shared_ptr<Renderer> renderer, std::shared_ptr<TextureGroup> textureGroup)
+  : m_root(root),
+    m_renderer(renderer),
+    m_fontTextureGroup(root, textureGroup),
     m_defaultRenderSettings(),
     m_renderSettings(),
     m_savedRenderSettings() {
   reloadFonts();
   m_reloadTracker = std::make_shared<TrackerListener>();
-  m_reloadSubscription = Root::singleton().registerReloadListener(m_reloadTracker);
+  m_reloadSubscription = m_root.registerReloadListener(m_reloadTracker);
 }
 
 RectF TextPainter::renderText(StringView s, TextPositioning const& position) {
@@ -355,7 +356,7 @@ void TextPainter::addFont(std::shared_ptr<Font> const& font, String const& name)
 void TextPainter::reloadFonts() {
   m_fontTextureGroup.clearFonts();
   m_fontTextureGroup.cleanup(0);
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
   auto loadFontsByExtension = [&](String const& ext) {
     for (auto& fontPath : assets->scanExtension(ext)) {
       auto font = assets->font(fontPath);
@@ -568,7 +569,7 @@ std::shared_ptr<Font> TextPainter::loadFont(String const& fontPath, Maybe<String
     fontName.emplace(name.substr(0, name.findLast(".")));
   }
 
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
 
   auto font = assets->font(fontPath)->clone();
   if (auto fontConfig = assets->json("/interface.config:font").opt(*fontName)) {

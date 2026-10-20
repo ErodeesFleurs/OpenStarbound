@@ -23,6 +23,11 @@ import star.asset_source;
 import star.assets;
 import star.root_base;
 import star.configuration;
+import star.random;
+import star.game_types;
+import star.curve25519;
+import star.songbook;
+import star.worker_pool;
 
 namespace Star {
 
@@ -65,12 +70,10 @@ class SpawnTypeDatabase;
 class RadioMessageDatabase;
 class CollectionDatabase;
 
-// Singleton Root object for starbound providing access to the unique
-// Configuration class, as well as the assets, root factories, and databases.
-// Root, and all members of Root, should be thread safe.  Root initialization
-// should be completed before any code dependent on Root is started in any
-// thread, and all Root dependent code in any thread should be finished before
-// letting Root destruct.
+// Instance-owned configuration, assets, factories, and databases.
+// Root and its resources are thread safe. Initialization must finish before
+// dependent work starts; all borrowers and dependent threads must finish before
+// the owning Root is destroyed.
 class Root final : public RootBase {
 public:
   struct Settings {
@@ -112,14 +115,6 @@ public:
     Maybe<String> runtimeConfigFile;
   };
 
-  // Get pointer to the singleton root instance, if it exists.  Otherwise,
-  // returns nullptr.
-  static Root* singletonPtr();
-
-  // Gets reference to root singleton, throws RootException if root is not
-  // initialized.
-  static Root& singleton();
-
   // Initializes the starbound root object and does the initial load.  All of
   // the Root members will be just in time loaded as they are accessed, unless
   // fullyLoad is called beforehand.
@@ -128,7 +123,7 @@ public:
   Root(Root const&) = delete;
   Root& operator=(Root const&) = delete;
 
-  ~Root();
+  ~Root() override;
 
   // Clears existing Root members, allowing them to be loaded fresh from disk.
   void reload();
@@ -203,15 +198,38 @@ public:
 
   Settings& settings();
 
+  Logger& logger() { return m_logger; }
+  LogMap& logMap() { return m_logMap; }
+  SpatialLogger& spatialLogger() { return m_spatialLogger; }
+  RandomService& random() { return m_random; }
+  GameTiming& timing() { return m_timing; }
+  Curve25519::KeySet const& identity() const { return m_identity; }
+  SongbookSynchronization& songbookSynchronization() { return m_songbookSynchronization; }
+  WorkerPool& workers();
+  bool& humanoidHeadRotation();
+
 private:
-  static StringList scanForAssetSources(StringList const& directories, StringList const& manual = {});
+  StringList scanForAssetSources(StringList const& directories, StringList const& manual = {});
   template <typename T, typename... Params>
-  static std::shared_ptr<T> loadMember(std::shared_ptr<T>& ptr, Mutex& mutex, char const* name, Params&&... params);
+  std::shared_ptr<T> loadMember(std::shared_ptr<T>& ptr, Mutex& mutex, char const* name, Params&&... params);
   template <typename T>
-  static std::shared_ptr<T> loadMemberFunction(std::shared_ptr<T>& ptr, Mutex& mutex, char const* name, std::function<std::shared_ptr<T>()> loadFunction);
+  std::shared_ptr<T> loadMemberFunction(std::shared_ptr<T>& ptr, Mutex& mutex, char const* name, std::function<std::shared_ptr<T>()> loadFunction);
 
   // m_configurationMutex must be held when calling
   void writeConfig();
+
+  // Services outlive the resource catalogs and all work borrowing them.
+  Logger m_logger;
+  LogMap m_logMap;
+  SpatialLogger m_spatialLogger;
+  RandomService m_random;
+  GameTiming m_timing;
+  Curve25519::KeySet m_identity;
+  SongbookSynchronization m_songbookSynchronization;
+  WorkerPool m_workers;
+  std::once_flag m_workersStarted;
+  std::once_flag m_headRotationInitialized;
+  bool m_humanoidHeadRotation = true;
 
   Settings m_settings;
 

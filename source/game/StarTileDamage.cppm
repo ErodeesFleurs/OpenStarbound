@@ -16,6 +16,8 @@ import star.net_element_group;
 
 namespace Star {
 
+class Assets;
+
 struct TileDamageExceptionTag {
   static constexpr char const* name() { return "TileDamageException"; }
 };
@@ -63,7 +65,7 @@ public:
 
   // If 'config' is a string type, it is assumed to be a descriptor file,
   // otherwise it should contain map configuration data.
-  explicit TileDamageParameters(Json config, Maybe<float> healthOverride = {}, Maybe<unsigned> requiredHarvestLevelOverride = {});
+  explicit TileDamageParameters(Assets const& assets, Json config, Maybe<float> healthOverride = {}, Maybe<unsigned> requiredHarvestLevelOverride = {});
 
   float damageDone(TileDamage const& damage) const;
   float recoveryPerSecond() const;

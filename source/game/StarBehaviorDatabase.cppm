@@ -11,6 +11,8 @@ import star.game_types;
 
 namespace Star {
 
+class Assets;
+
 struct ActionNode;
 struct DecoratorNode;
 struct SequenceNode;
@@ -132,7 +134,7 @@ struct BehaviorTree {
 
 class BehaviorDatabase {
 public:
-  BehaviorDatabase();
+  explicit BehaviorDatabase(std::shared_ptr<Assets const> assets);
 
   std::shared_ptr<BehaviorTree const> behaviorTree(String const& name) const;
   std::shared_ptr<BehaviorTree const> buildTree(Json const& config, StringMap<NodeParameterValue> const& overrides = {}) const;

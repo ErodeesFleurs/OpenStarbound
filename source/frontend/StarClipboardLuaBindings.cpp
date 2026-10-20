@@ -34,16 +34,19 @@ import star.input;
 import star.asset_source;
 import star.assets;
 import star.root_base;
+import star.logging;
 
 module star.clipboard_lua_bindings;
 
 import star.byte_array;
 namespace Star {
 
-LuaCallbacks LuaBindings::makeClipboardCallbacks(std::shared_ptr<ApplicationController> appController, bool alwaysAllow) {
+LuaCallbacks LuaBindings::makeClipboardCallbacks(Input& input, RootBase& root, Logger& logger, std::shared_ptr<ApplicationController> appController, bool alwaysAllow) {
   LuaCallbacks callbacks;
 
-  auto available = [=]() { return alwaysAllow || (appController->isFocused() && Input::singleton().clipboardAllowed()); };
+  auto available = [appController, alwaysAllow, &input]() {
+    return alwaysAllow || (appController->isFocused() && input.clipboardAllowed());
+  };
 
   callbacks.registerCallback("available", [=]() -> bool {
     return available();
@@ -79,16 +82,16 @@ LuaCallbacks LuaBindings::makeClipboardCallbacks(std::shared_ptr<ApplicationCont
     return false;
   });
 
-  callbacks.registerCallback("setImage", [=](LuaValue const& imgOrPath) -> bool {
+  callbacks.registerCallback("setImage", [appController, &root, &logger](LuaValue const& imgOrPath) -> bool {
     if (appController->isFocused()) {
       auto buffer = std::make_shared<Buffer>();
       if (imgOrPath.is<LuaUserData>() && imgOrPath.get<LuaUserData>().is<Image>()) {
         auto& image = imgOrPath.get<LuaUserData>().get<Image>();
-        image.writePng(buffer);
+        image.writePng(logger, buffer);
         return appController->setClipboardImage(image, &buffer->data());
       } else {
-        auto image = RootBase::singleton().assets()->image(imgOrPath.get<LuaString>().toString());
-        image->writePng(buffer);
+        auto image = root.assets()->image(imgOrPath.get<LuaString>().toString());
+        image->writePng(logger, buffer);
         return appController->setClipboardImage(*image, &buffer->data());
       }
     }

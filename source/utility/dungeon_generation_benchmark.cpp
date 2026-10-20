@@ -1,4 +1,5 @@
 import star.json;
+import star.native_runtime;
 import star.file;
 import star.xx_hash;
 import star.ordered_map;
@@ -122,6 +123,7 @@ import star.lexical_cast;
 using namespace Star;
 
 int main(int argc, char** argv) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   try {
     unsigned repetitions = 5;
     unsigned reportEvery = 1;
@@ -161,9 +163,9 @@ int main(int argc, char** argv) {
         coutf("[{}] {}s | Generations Per Second: {}\n", i, Time::monotonicTime() - start, gps);
       }
 
-      std::shared_ptr<::Star::VisitableWorldParameters> worldParameters = generateFloatingDungeonWorldParameters(dungeonWorldName);
-      auto worldTemplate = std::make_shared<WorldTemplate>(worldParameters, SkyParameters(), 1234);
-      WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile());
+      std::shared_ptr<::Star::VisitableWorldParameters> worldParameters = generateFloatingDungeonWorldParameters(*root, dungeonWorldName);
+      auto worldTemplate = std::make_shared<WorldTemplate>(*root, worldParameters, SkyParameters(), 1234);
+      WorldServer worldServer(*root, std::move(worldTemplate), File::ephemeralFile(root->random()));
       worldServer.close();
     }
 

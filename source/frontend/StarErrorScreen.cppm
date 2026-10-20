@@ -32,7 +32,7 @@ class GuiContext;
 
 class ErrorScreen {
 public:
-  ErrorScreen();
+  ErrorScreen(GuiContext& context);
 
   // Resets accepted
   void setMessage(String const& message);

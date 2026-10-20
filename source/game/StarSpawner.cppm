@@ -54,9 +54,12 @@ public:
   virtual void despawnEntity(EntityId entityId) = 0;
 };
 
+class Root;
 class Spawner {
+  Root& m_root;
+  Root& root() const { return m_root; }
 public:
-  Spawner();
+  Spawner(Root& root);
 
   void init(std::shared_ptr<SpawnerFacade> facade);
   // Despawns all spawned entities before shutting down

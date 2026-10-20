@@ -37,17 +37,17 @@ module star.camera_lua_bindings;
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeCameraCallbacks(WorldCamera* camera) {
+LuaCallbacks LuaBindings::makeCameraCallbacks(Root& root, WorldCamera* camera) {
   LuaCallbacks callbacks;
 
   callbacks.registerCallbackWithSignature<Vec2F>("position", std::bind(&WorldCamera::centerWorldPosition, camera));
   callbacks.registerCallbackWithSignature<float>("pixelRatio", std::bind(&WorldCamera::pixelRatio, camera));
-  callbacks.registerCallback("setPixelRatio", [camera](float pixelRatio, Maybe<bool> smooth) {
+  callbacks.registerCallback("setPixelRatio", [&root, camera](float pixelRatio, Maybe<bool> smooth) {
     if (smooth.value())
       camera->setTargetPixelRatio(pixelRatio);
     else
       camera->setPixelRatio(pixelRatio);
-    Root::singleton().configuration()->set("zoomLevel", pixelRatio);
+    root.configuration()->set("zoomLevel", pixelRatio);
   });
 
   callbacks.registerCallbackWithSignature<Vec2U>("screenSize", std::bind(&WorldCamera::screenSize, camera));

@@ -219,9 +219,9 @@ import star.statistics;
 
 namespace Star {
 
-ClientCommandProcessor::ClientCommandProcessor(std::shared_ptr<UniverseClient> universeClient, std::shared_ptr<Cinematic> cinematicOverlay,
+ClientCommandProcessor::ClientCommandProcessor(GuiContext& context, std::shared_ptr<UniverseClient> universeClient, std::shared_ptr<Cinematic> cinematicOverlay,
   MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands)
-  : m_universeClient(std::move(universeClient)), m_cinematicOverlay(std::move(cinematicOverlay)),
+  : m_context(context), m_universeClient(std::move(universeClient)), m_cinematicOverlay(std::move(cinematicOverlay)),
   m_paneManager(paneManager), m_macroCommands(std::move(macroCommands)) {}
 
 CaseInsensitiveStringMap<ClientCommandProcessor::BuiltinCommand> ClientCommandProcessor::makeBuiltinCommands() {
@@ -268,14 +268,14 @@ CaseInsensitiveStringMap<ClientCommandProcessor::BuiltinCommand> ClientCommandPr
 const CaseInsensitiveStringMap<ClientCommandProcessor::BuiltinCommand> ClientCommandProcessor::s_builtinCommands = makeBuiltinCommands();
 
 bool ClientCommandProcessor::adminCommandAllowed() const {
-  return Root::singleton().configuration()->get("allowAdminCommandsFromAnyone").toBool() ||
+  return m_context.root().configuration()->get("allowAdminCommandsFromAnyone").toBool() ||
     m_universeClient->mainPlayer()->isAdmin();
 }
 
 String ClientCommandProcessor::previewQuestPane(StringList const& arguments, std::function<std::shared_ptr<Pane>(std::shared_ptr<Quest>)> createPane) {
   Maybe<String> templateId = {};
   templateId = arguments[0];
-  if (auto quest = createPreviewQuest(*templateId, arguments.at(1), arguments.at(2), m_universeClient->mainPlayer().get())) {
+  if (auto quest = createPreviewQuest(m_context.root(), *templateId, arguments.at(1), arguments.at(2), m_universeClient->mainPlayer().get())) {
     auto pane = createPane(quest);
     m_paneManager->displayPane(PaneLayer::ModalWindow, pane);
     return "Previewed quest";
@@ -286,7 +286,7 @@ String ClientCommandProcessor::previewQuestPane(StringList const& arguments, std
 StringList ClientCommandProcessor::handleCommand(String const& commandLine, bool userInput) {
   Maybe<Input::ClipboardUnlock> unlock;
   if (userInput) // allow clipboard usage during this code
-    unlock = Input::singleton().unlockClipboard();
+    unlock = m_context.input().unlockClipboard();
   try {
     if (!commandLine.beginsWith("/"))
       throw StarException("ClientCommandProcessor expected command, does not start with '/'");
@@ -314,7 +314,7 @@ StringList ClientCommandProcessor::handleCommand(String const& commandLine, bool
           else if (!res->isNull())
             result.append(res->repr(1, true));
         } else {
-          Uuid uuid;
+          Uuid uuid(m_context.root().random());
           m_commandPromises[uuid] = messageResult->get<RpcPromise<Json>>();
         }
       } else {
@@ -323,10 +323,10 @@ StringList ClientCommandProcessor::handleCommand(String const& commandLine, bool
     }
     return result;
   } catch (ShellParsingException const& e) {
-    Logger::error("Shell parsing exception: {}", outputException(e, false));
+    m_context.root().logger().error("Shell parsing exception: {}", outputException(e, false));
     return {"Shell parsing exception"};
   } catch (std::exception const& e) {
-    Logger::error("Exception caught handling client command {}: {}", commandLine, outputException(e, true));
+    m_context.root().logger().error("Exception caught handling client command {}: {}", commandLine, outputException(e, true));
     return {strf("Exception caught handling client command {}", commandLine)};
   }
 }
@@ -363,12 +363,12 @@ bool ClientCommandProcessor::fixedCameraEnabled() const {
 }
 
 String ClientCommandProcessor::reload() {
-  Root::singleton().reload();
+  m_context.root().reload();
   return "Client Star::Root reloaded";
 }
 
 String ClientCommandProcessor::hotReload() {
-  Root::singleton().hotReload();
+  m_context.root().hotReload();
   return "Hot-reloaded assets";
 }
 
@@ -440,8 +440,8 @@ String ClientCommandProcessor::fixedCamera() {
 }
 
 String ClientCommandProcessor::monochromeLighting() {
-  bool monochrome = !Root::singleton().configuration()->get("monochromeLighting").toBool();
-  Root::singleton().configuration()->set("monochromeLighting", monochrome);
+  bool monochrome = !m_context.root().configuration()->get("monochromeLighting").toBool();
+  m_context.root().configuration()->set("monochromeLighting", monochrome);
   return strf("Monochrome lighting {}", monochrome ? "enabled" : "disabled");
 }
 
@@ -478,8 +478,8 @@ String ClientCommandProcessor::startQuest(String const& argumentsString) {
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
-  auto questArc = QuestArcDescriptor::fromJson(Json::parseSequence(arguments.at(0)).get(0));
-  m_universeClient->questManager()->offer(std::make_shared<Quest>(questArc, 0, m_universeClient->mainPlayer().get()));
+  auto questArc = QuestArcDescriptor::fromJson(m_context.root(), Json::parseSequence(arguments.at(0)).get(0));
+  m_universeClient->questManager()->offer(std::make_shared<Quest>(m_context.root(), questArc, 0, m_universeClient->mainPlayer().get()));
   return "Quest started";
 }
 
@@ -507,7 +507,7 @@ String ClientCommandProcessor::previewNewQuest(String const& argumentsString) {
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](std::shared_ptr<Quest> const& quest) {
-    return std::make_shared<NewQuestInterface>(m_universeClient->questManager(), quest, m_universeClient->mainPlayer());
+    return std::make_shared<NewQuestInterface>(m_context, m_universeClient->questManager(), quest, m_universeClient->mainPlayer());
   });
 }
 
@@ -517,7 +517,7 @@ String ClientCommandProcessor::previewQuestComplete(String const& argumentsStrin
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](std::shared_ptr<Quest> const& quest) {
-    return std::make_shared<QuestCompleteInterface>(quest, m_universeClient->mainPlayer(), std::shared_ptr<Cinematic>{});
+    return std::make_shared<QuestCompleteInterface>(m_context, quest, m_universeClient->mainPlayer(), std::shared_ptr<Cinematic>{});
   });
 }
 
@@ -527,7 +527,7 @@ String ClientCommandProcessor::previewQuestFailed(String const& argumentsString)
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](std::shared_ptr<Quest> const& quest) {
-    return std::make_shared<QuestFailedInterface>(quest, m_universeClient->mainPlayer());
+    return std::make_shared<QuestFailedInterface>(m_context, quest, m_universeClient->mainPlayer());
   });
 }
 
@@ -553,7 +553,7 @@ String ClientCommandProcessor::cinema(String const& argumentsString) {
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
-  m_cinematicOverlay->load(Root::singleton().assets()->json(arguments.at(0)));
+  m_cinematicOverlay->load(m_context.root().assets()->json(arguments.at(0)));
   if (arguments.size() > 1)
     m_cinematicOverlay->setTime(lexicalCast<float>(arguments.at(1)));
   return strf("Started cinematic {} at {}", arguments.at(0), arguments.size() > 1 ? arguments.at(1) : "beginning");
@@ -602,7 +602,7 @@ String ClientCommandProcessor::giveEssentialItem(String const& argumentsString) 
     return "Not enough arguments to /giveessentialitem";
 
   try {
-    auto item = Root::singleton().itemDatabase()->item(ItemDescriptor(arguments.at(0)));
+    auto item = m_context.root().itemDatabase()->item(ItemDescriptor(arguments.at(0)));
     auto slot = EssentialItemNames.getLeft(arguments.at(1));
     m_universeClient->mainPlayer()->inventory()->setEssentialItem(slot, item);
     return strf("Put {} in player slot {}", item->name(), arguments.at(1));
@@ -770,7 +770,7 @@ String ClientCommandProcessor::render(String const& path) {
     if (!assetPath.basePath.beginsWith("/"))
       assetPath.basePath = "/assetmissing.png" + assetPath.basePath;
   }
-  auto assets = Root::singleton().assets();
+  auto assets = m_context.root().assets();
   std::shared_ptr<Image const> image;
   if (outputSheet) {
     auto sheet = std::make_shared<Image>(*assets->image(assetPath.basePath));
@@ -818,18 +818,18 @@ String ClientCommandProcessor::render(String const& path) {
   }
   if (image->size().min() == 0)
     return "^red;Resulting image is empty^reset;";
-  auto outputDirectory = Root::singleton().toStoragePath("output");
+  auto outputDirectory = m_context.root().toStoragePath("output");
   auto outputPath = File::relativeTo(outputDirectory, strf("{}.png", outputName));
   if (!File::isDirectory(outputDirectory))
     File::makeDirectory(outputDirectory);
 
   auto buffer = std::make_shared<Buffer>();
-  image->writePng(buffer);
+  image->writePng(m_context.root().logger(), buffer);
   auto file = File::open(outputPath, IOMode::Write | IOMode::Truncate);
   file->writeFull(buffer->ptr(), buffer->size());
   file->close();
   auto fullPath = File::fullPath(outputPath);
-  GuiContext::singleton().setClipboardImage(*image, &buffer->data(), &fullPath);
+  m_context.setClipboardImage(*image, &buffer->data(), &fullPath);
   return strf("Saved '{}.png' ({}x{}) and copied to clipboard", outputName, image->width(), image->height());
 }
 

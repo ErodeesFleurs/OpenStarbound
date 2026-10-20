@@ -147,8 +147,7 @@ Json StoredConfigFunction::get(double value) const {
   return m_data.get(value);
 }
 
-FunctionDatabase::FunctionDatabase() {
-  auto assets = Root::singleton().assets();
+FunctionDatabase::FunctionDatabase(std::shared_ptr<Assets const> const& assets) {
 
   auto& functions = assets->scanExtension("functions");
   auto& sndFunctions = assets->scanExtension("2functions");

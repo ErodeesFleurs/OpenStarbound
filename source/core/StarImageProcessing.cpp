@@ -70,7 +70,6 @@ FadeToColorImageOperation::FadeToColorImageOperation(Vec3B color, float amount) 
 ImageOperation imageOperationFromString(StringView string) {
   try {
     std::string_view view = string.utf8();
-    //double time = view.size() > 10000 ? Time::monotonicTime() : 0.0;
     auto firstBitEnd = view.find_first_of("=;");
     if (view.substr(0, firstBitEnd).compare("replace") == 0 && (firstBitEnd + 1) != view.size()) {
       //Perform optimized replace parse
@@ -134,8 +133,6 @@ ImageOperation imageOperationFromString(StringView string) {
           break;
       }
 
-      //if (time != 0.0)
-      //  Logger::logf(LogLevel::Debug, "Parsed %u long directives to %u replace operations in %fs", view.size(), operation.colorReplaceMap.size(), Time::monotonicTime() - time);
       return operation;
     }
 
@@ -546,7 +543,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
   } else if (auto op = operation.ptr<ScaleImageOperation>()) {
     auto scale = op->scale;
     if (scale[0] < 0.0f || scale[1] < 0.0f) {
-      Logger::warn("Negative scale in ScaleImageOperation ({})", scale);
+      EmergencyLog::warn("Negative scale in ScaleImageOperation ({})", scale);
       scale = scale.piecewiseMax(Vec2F::filled(0.f));
     }
     if (op->mode == ScaleImageOperation::Nearest)

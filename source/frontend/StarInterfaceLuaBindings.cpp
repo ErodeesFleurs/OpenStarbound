@@ -214,8 +214,8 @@ LuaCallbacks LuaBindings::makeInterfaceCallbacks(MainInterface* mainInterface) {
       paneManager->displayRegisteredPane(pane);
   });
 
-  callbacks.registerCallback("scale", []() {
-    return GuiContext::singleton().interfaceScale();
+  callbacks.registerCallback("scale", [mainInterface]() {
+    return mainInterface->context().interfaceScale();
   });
 
   callbacks.registerCallback("queueMessage", [mainInterface](String const& message, Maybe<float> cooldown, Maybe<float> springState) {

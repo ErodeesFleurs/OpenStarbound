@@ -44,7 +44,9 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
+class Root;
 class Rebuilder;
+class ItemDatabase;
 class Item;
 class Npc;
 
@@ -95,10 +97,10 @@ struct NpcVariant {
 
 class NpcDatabase {
 public:
-  NpcDatabase();
+  explicit NpcDatabase(Root& root);
 
-  NpcVariant generateNpcVariant(String const& species, String const& typeName, float level) const;
-  NpcVariant generateNpcVariant(String const& species, String const& typeName, float level, std::uint64_t seed, Json const& overrides) const;
+  NpcVariant generateNpcVariant(String const& species, String const& typeName, float level, ItemDatabase const* itemCatalog = nullptr) const;
+  NpcVariant generateNpcVariant(String const& species, String const& typeName, float level, std::uint64_t seed, Json const& overrides, ItemDatabase const* itemCatalog = nullptr) const;
 
   ByteArray writeNpcVariant(NpcVariant const& variant, NetCompatibilityRules rules = {}) const;
   NpcVariant readNpcVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const;
@@ -110,7 +112,7 @@ public:
   std::shared_ptr<Npc> diskLoadNpc(Json const& diskStore) const;
   std::shared_ptr<Npc> netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
-  List<Drawable> npcPortrait(NpcVariant const& npcVariant, PortraitMode mode) const;
+  List<Drawable> npcPortrait(NpcVariant const& npcVariant, PortraitMode mode, ItemDatabase const* itemCatalog = nullptr) const;
 
   Json buildConfig(String const& typeName, Json const& overrides = Json()) const;
 
@@ -118,6 +120,8 @@ private:
   // Recursively merges maps and lets any non-null merger (including lists)
   // override any base value
   Json mergeConfigValues(Json const& base, Json const& merger) const;
+
+  Root& m_root;
 
   std::shared_ptr<Rebuilder> m_rebuilder;
 

@@ -141,13 +141,14 @@ public:
     ReturnToTitle
   };
 
-  MainInterface(std::shared_ptr<UniverseClient> client, std::shared_ptr<WorldPainter> painter, std::shared_ptr<Cinematic> cinematicOverlay);
+  MainInterface(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<WorldPainter> painter, std::shared_ptr<Cinematic> cinematicOverlay);
 
   ~MainInterface();
 
   RunningState currentState() const;
 
   MainInterfacePaneManager* paneManager();
+  GuiContext& context() const;
 
   bool escapeDialogOpen() const;
 

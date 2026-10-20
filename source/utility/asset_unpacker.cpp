@@ -16,10 +16,12 @@ import star.format;
 import star.version;
 import star.version_option_parser;
 import star.packed_asset_source;
+import star.native_runtime;
 
 using namespace Star;
 
 int main(int argc, char** argv) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   try {
     double startTime = Time::monotonicTime();
 

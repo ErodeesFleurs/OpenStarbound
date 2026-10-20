@@ -1,6 +1,7 @@
 module;
 
 namespace Star {
+class Root;
 class LuaCallbacks;
 class Player;
 }
@@ -8,5 +9,5 @@ class Player;
 export module star.player_lua_bindings;
 
 export namespace Star::LuaBindings {
-  LuaCallbacks makePlayerCallbacks(Player* player);
+  LuaCallbacks makePlayerCallbacks(Root& root, Player* player);
 }

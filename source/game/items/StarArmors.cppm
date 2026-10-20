@@ -77,12 +77,12 @@ enum class ArmorType : std::uint8_t {
   Legs,
   Back
 };
-extern EnumMap<ArmorType> ArmorTypeNames;
+extern EnumMap<ArmorType> const ArmorTypeNames;
 
 
 class ArmorItem : public Item, public EffectSourceItem, public SwingableItem {
 public:
-  ArmorItem(Json const& config, String const& directory, Json const& data);
+  ArmorItem(Root& root, Json const& config, String const& directory, Json const& data);
   virtual ~ArmorItem() {}
 
   virtual List<PersistentStatusEffect> statusEffects() const override;
@@ -133,7 +133,7 @@ private:
 
 class HeadArmor : public ArmorItem, public PreviewableItem {
 public:
-  HeadArmor(Json const& config, String const& directory, Json const& data);
+  HeadArmor(Root& root, Json const& config, String const& directory, Json const& data);
   virtual ~HeadArmor() {}
 
   virtual std::shared_ptr<Item> clone() const override;
@@ -143,7 +143,7 @@ public:
   String const& frameset(Gender gender) const;
   Directives const& maskDirectives() const;
 
-  virtual List<Drawable> preview(std::shared_ptr<Player> const& viewer = {}) const override;
+  virtual List<Drawable> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
 
 private:
   String m_maleImage;
@@ -153,7 +153,7 @@ private:
 
 class ChestArmor : public ArmorItem, public PreviewableItem {
 public:
-  ChestArmor(Json const& config, String const& directory, Json const& data);
+  ChestArmor(Root& root, Json const& config, String const& directory, Json const& data);
   virtual ~ChestArmor() {}
 
   virtual std::shared_ptr<Item> clone() const override;
@@ -168,7 +168,7 @@ public:
   // Same as FSleeve
   String const& backSleeveFrameset(Gender gender) const;
 
-  virtual List<Drawable> preview(std::shared_ptr<Player> const& viewer = {}) const override;
+  virtual List<Drawable> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
 
 private:
   String m_maleBodyImage;
@@ -182,7 +182,7 @@ private:
 
 class LegsArmor : public ArmorItem, public PreviewableItem {
 public:
-  LegsArmor(Json const& config, String const& directory, Json const& data);
+  LegsArmor(Root& root, Json const& config, String const& directory, Json const& data);
   virtual ~LegsArmor() {}
 
   virtual std::shared_ptr<Item> clone() const override;
@@ -192,7 +192,7 @@ public:
   // Will have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
   String const& frameset(Gender gender) const;
 
-  virtual List<Drawable> preview(std::shared_ptr<Player> const& viewer = {}) const override;
+  virtual List<Drawable> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
 
 private:
   String m_maleImage;
@@ -201,7 +201,7 @@ private:
 
 class BackArmor : public ArmorItem, public PreviewableItem {
 public:
-  BackArmor(Json const& config, String const& directory, Json const& data);
+  BackArmor(Root& root, Json const& config, String const& directory, Json const& data);
   virtual ~BackArmor() {}
 
   virtual std::shared_ptr<Item> clone() const override;
@@ -211,7 +211,7 @@ public:
   // Will have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
   String const& frameset(Gender gender) const;
 
-  virtual List<Drawable> preview(std::shared_ptr<Player> const& viewer = {}) const override;
+  virtual List<Drawable> preview(TileDrawer*, std::shared_ptr<Player> const& viewer = {}) const override;
 
 private:
   String m_maleImage;

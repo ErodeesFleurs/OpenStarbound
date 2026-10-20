@@ -254,8 +254,11 @@ EnumMap<Player::State> const Player::StateNames{
   {Player::State::Lounge, "lounge"}
 };
 
-Player::Player(std::shared_ptr<PlayerConfig> config, Uuid uuid) {
-  auto assets = Root::singleton().assets();
+Player::Player(Root& root, std::shared_ptr<PlayerConfig> config)
+  : Player(root, std::move(config), Uuid(root.random())) {}
+
+Player::Player(Root& rootOwner, std::shared_ptr<PlayerConfig> config, Uuid uuid) : Entity(rootOwner), m_netHumanoid([&rootOwner] { return std::make_shared<NetHumanoid>(rootOwner); }), m_scriptedAnimator(rootOwner) {
+  auto assets = root().assets();
 
   m_config = config;
   m_client = nullptr;
@@ -275,36 +278,36 @@ Player::Player(std::shared_ptr<PlayerConfig> config, Uuid uuid) {
   m_identity = m_config->defaultIdentity;
   m_identityUpdated = true;
 
-  m_questManager = std::make_shared<QuestManager>(this);
-  m_tools = std::make_shared<ToolUser>();
-  m_armor = std::make_shared<ArmorWearer>();
-  m_companions = std::make_shared<PlayerCompanions>(config->companionsConfig);
+  m_questManager = std::make_shared<QuestManager>(root(), this);
+  m_tools = std::make_shared<ToolUser>(root());
+  m_armor = std::make_shared<ArmorWearer>(root());
+  m_companions = std::make_shared<PlayerCompanions>(root(), config->companionsConfig);
 
   for (auto& p : config->genericScriptContexts) {
-    auto scriptComponent = std::make_shared<GenericScriptComponent>();
+    auto scriptComponent = std::make_shared<GenericScriptComponent>(root());
     scriptComponent->setScript(p.second);
     m_genericScriptContexts.set(p.first, scriptComponent);
   }
 
   // all of these are defaults and won't include the correct humanoid config for the species
-  m_netHumanoid.addNetElement(std::make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json()));
+  m_netHumanoid.addNetElement(std::make_shared<NetHumanoid>(root(), m_identity, m_humanoidParameters, Json()));
   auto movementParameters = ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters)));
   if (!movementParameters.physicsEffectCategories)
     movementParameters.physicsEffectCategories = StringSet({"player"});
-  m_movementController = std::make_shared<ActorMovementController>(movementParameters);
+  m_movementController = std::make_shared<ActorMovementController>(root(), movementParameters);
   m_zeroGMovementParameters = ActorMovementParameters(m_config->zeroGMovementParameters);
 
-  m_techController = std::make_shared<TechController>();
-  m_statusController = std::make_shared<StatusController>(m_config->statusControllerSettings);
-  m_deployment = std::make_shared<PlayerDeployment>(m_config->deploymentConfig);
+  m_techController = std::make_shared<TechController>(root());
+  m_statusController = std::make_shared<StatusController>(root(), m_config->statusControllerSettings);
+  m_deployment = std::make_shared<PlayerDeployment>(root(), m_config->deploymentConfig);
 
-  m_inventory = std::make_shared<PlayerInventory>();
+  m_inventory = std::make_shared<PlayerInventory>(root());
   m_inventory->setPlayer(this);
 
   m_blueprints = std::make_shared<PlayerBlueprints>();
   m_universeMap = std::make_shared<PlayerUniverseMap>();
-  m_codexes = std::make_shared<PlayerCodexes>();
-  m_techs = std::make_shared<PlayerTech>();
+  m_codexes = std::make_shared<PlayerCodexes>(root());
+  m_techs = std::make_shared<PlayerTech>(root());
   m_log = std::make_shared<PlayerLog>();
 
   setModeType(PlayerMode::Casual);
@@ -316,8 +319,8 @@ Player::Player(std::shared_ptr<PlayerConfig> config, Uuid uuid) {
   m_footstepVolumeVariance = assets->json("/sfx.config:footstepVolumeVariance").toFloat();
   m_landingVolume = assets->json("/sfx.config:landingVolume").toFloat();
 
-  m_effectsAnimator = std::make_shared<NetworkedAnimator>(assets->fetchJson(m_config->effectsAnimator));
-  m_effectEmitter = std::make_shared<EffectEmitter>();
+  m_effectsAnimator = std::make_shared<NetworkedAnimator>(root(), assets->fetchJson(m_config->effectsAnimator));
+  m_effectEmitter = std::make_shared<EffectEmitter>(root());
 
   m_interactRadius = assets->json("/player.config:interactRadius").toFloat();
 
@@ -339,7 +342,7 @@ Player::Player(std::shared_ptr<PlayerConfig> config, Uuid uuid) {
 
   m_interruptRadioMessage = false;
 
-  m_songbook = std::make_shared<Songbook>(species());
+  m_songbook = std::make_shared<Songbook>(root(), species());
 
   m_lastDamagedOtherTimer = 0;
   m_lastDamagedTarget = NullEntityId;
@@ -406,7 +409,7 @@ Player::Player(std::shared_ptr<PlayerConfig> config, Uuid uuid) {
   m_netGroup.setNeedsStoreCallback(std::bind(&Player::setNetStates, this));
 }
 
-Player::Player(std::shared_ptr<PlayerConfig> config, ByteArray const& netStore, NetCompatibilityRules rules) : Player(config, Uuid()) {
+Player::Player(Root& rootOwner, std::shared_ptr<PlayerConfig> config, ByteArray const& netStore, NetCompatibilityRules rules) : Player(rootOwner, config, Uuid(rootOwner.random())) {
   DataStreamBuffer ds(netStore);
   ds.setStreamCompatibilityVersion(rules);
 
@@ -420,13 +423,13 @@ Player::Player(std::shared_ptr<PlayerConfig> config, ByteArray const& netStore, 
   }
 
   m_netHumanoid.clearNetElements();
-  m_netHumanoid.addNetElement(std::make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json()));
+  m_netHumanoid.addNetElement(std::make_shared<NetHumanoid>(root(), m_identity, m_humanoidParameters, Json()));
   m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
   m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
 }
 
 
-Player::Player(std::shared_ptr<PlayerConfig> config, Json const& diskStore) : Player(config, Uuid()) {
+Player::Player(Root& rootOwner, std::shared_ptr<PlayerConfig> config, Json const& diskStore) : Player(rootOwner, config, Uuid(rootOwner.random())) {
   diskLoad(diskStore);
 }
 
@@ -440,8 +443,8 @@ void Player::diskLoad(Json const& diskStore) {
   if (m_clientContext)
     m_universeMap->setServerUuid(m_clientContext->serverUuid());
 
-  m_codexes = std::make_shared<PlayerCodexes>(diskStore.get("codexes"));
-  m_techs = std::make_shared<PlayerTech>(diskStore.get("techs"));
+  m_codexes = std::make_shared<PlayerCodexes>(root(), diskStore.get("codexes"));
+  m_techs = std::make_shared<PlayerTech>(root(), diskStore.get("techs"));
   m_identity = HumanoidIdentity(diskStore.get("identity"));
   m_identityUpdated = true;
 
@@ -457,7 +460,7 @@ void Player::diskLoad(Json const& diskStore) {
 
   m_log = std::make_shared<PlayerLog>(diskStore.get("log"));
 
-  auto speciesDatabase = Root::singleton().speciesDatabase();
+  auto speciesDatabase = root().speciesDatabase();
   auto speciesDef = speciesDatabase->species(m_identity.species);
   m_shipSpecies = diskStore.getString("shipSpecies", m_identity.species);
 
@@ -468,7 +471,7 @@ void Player::diskLoad(Json const& diskStore) {
   m_humanoidParameters = diskStore.getObject("humanoidParameters", JsonObject());
 
   m_netHumanoid.clearNetElements();
-  m_netHumanoid.addNetElement(std::make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json()));
+  m_netHumanoid.addNetElement(std::make_shared<NetHumanoid>(root(), m_identity, m_humanoidParameters, Json()));
   m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
   m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
   m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
@@ -549,7 +552,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
   m_movementController->setIgnorePhysicsEntities({entityId});
   m_statusController->init(this, m_movementController.get());
   m_techController->init(this, m_movementController.get(), m_statusController.get());
-  auto speciesDefinition = Root::singleton().speciesDatabase()->species(m_identity.species);
+  auto speciesDefinition = root().speciesDatabase()->species(m_identity.species);
 
   if (mode == EntityMode::Master) {
     m_scriptedAnimationParameters.clear();
@@ -565,18 +568,18 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
 
     for (auto& p : m_genericScriptContexts) {
       p.second->addActorMovementCallbacks(m_movementController.get());
-      p.second->addCallbacks("player", LuaBindings::makePlayerCallbacks(this));
+      p.second->addCallbacks("player", LuaBindings::makePlayerCallbacks(root(), this));
       p.second->addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
       p.second->addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController.get()));
       p.second->addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(m_songbook.get()));
       p.second->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
       if (m_client)
-        p.second->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client));
+        p.second->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(root(), m_client));
       p.second->init(world);
     }
 
     for (auto& p : m_inventory->pullOverflow()) {
-      world->addEntity(ItemDrop::createRandomizedDrop(p, m_movementController->position(), true));
+      world->addEntity(ItemDrop::createRandomizedDrop(root(), p, m_movementController->position(), true));
     }
 
     setNetArmorSecrets();
@@ -654,11 +657,11 @@ List<Drawable> Player::drawables() const {
       for (auto& drawable : humanoid()->render()) {
         drawable.translate(position() + m_techController->parentOffset());
         if (drawable.isImage()) {
-          drawable.imagePart().addDirectivesGroup(humanoidDirectives, true);
+          drawable.imagePart().addDirectivesGroup(*root().imageMetadataDatabase(), humanoidDirectives, true);
 
           if (auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
             if (auto& directives = anchor->directives)
-              drawable.imagePart().addDirectives(*directives, true);
+              drawable.imagePart().addDirectives(*root().imageMetadataDatabase(), *directives, true);
           }
         }
         drawables.append(std::move(drawable));
@@ -833,7 +836,7 @@ void Player::destroy(RenderCallback* renderCallback) {
             return ItemTypeNames.getLeft(typeName);
           });
         Set<ItemType> dropSet = Set<ItemType>::from(dropList);
-        auto itemDb = Root::singleton().itemDatabase();
+        auto itemDb = root().itemDatabase();
         dropSelectedItems([dropSet, itemDb](std::shared_ptr<Item> item) {
             return dropSet.contains(itemDb->itemType(item->name()));
           });
@@ -1008,7 +1011,7 @@ void Player::dropItem() {
   for (auto& throwSlot : {m_inventory->primaryHeldSlot(), m_inventory->secondaryHeldSlot()}) {
     if (throwSlot) {
       if (auto drop = m_inventory->takeSlot(*throwSlot)) {
-        world()->addEntity(ItemDrop::throwDrop(drop, position(), velocity(), throwDirection));
+        world()->addEntity(ItemDrop::throwDrop(root(), drop, position(), velocity(), throwDirection));
         break;
       }
     }
@@ -1059,7 +1062,7 @@ Maybe<ChainableJsonMessageResponse> Player::receiveMessage(ConnectionId fromConn
   } else if (message == "addCollectable") {
     auto collection = args.get(0).toString();
     auto collectable = args.get(1).toString();
-    if (Root::singleton().collectionDatabase()->hasCollectable(collection, collectable))
+    if (root().collectionDatabase()->hasCollectable(collection, collectable))
       addCollectable(collection, collectable);
   } else {
     Maybe<ChainableJsonMessageResponse> result = m_tools->receiveMessage(message, localMessage, args);
@@ -1094,14 +1097,14 @@ void Player::update(float dt, std::uint64_t) {
       m_dance = {};
 
     if (m_chatMessageUpdated) {
-      auto state = Root::singleton().emoteProcessor()->detectEmotes(m_chatMessage);
+      auto state = root().emoteProcessor()->detectEmotes(m_chatMessage);
       if (state != HumanoidEmote::Idle)
         addEmote(state);
       m_chatMessageUpdated = false;
     }
 
     if (m_blinkCooldownTimer.tick(dt)) {
-      m_blinkCooldownTimer = GameTimer(Random::randf(m_blinkInterval[0], m_blinkInterval[1]));
+      m_blinkCooldownTimer = GameTimer(root().random().randf(m_blinkInterval[0], m_blinkInterval[1]));
       auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
       if (m_emoteState == HumanoidEmote::Idle && (!loungeAnchor || !loungeAnchor->emote))
         addEmote(HumanoidEmote::Blink);
@@ -1142,7 +1145,7 @@ void Player::update(float dt, std::uint64_t) {
           if (loungeAnchor->emote)
             requestEmote(*loungeAnchor->emote);
 
-          auto itemDatabase = Root::singleton().itemDatabase();
+          auto itemDatabase = root().itemDatabase();
           if (auto headOverride = loungeAnchor->armorCosmeticOverrides.maybe("head")) {
             auto overrideItem = itemDatabase->item(ItemDescriptor(*headOverride));
             if (m_inventory->itemAllowedAsEquipment(overrideItem, EquipmentSlot::HeadCosmetic))
@@ -1230,10 +1233,10 @@ void Player::update(float dt, std::uint64_t) {
       m_statusController->resetResource("breath");
     }
 
-    m_log->addPlayTime(GlobalTimestep);
+    m_log->addPlayTime(root().timing().timestep);
 
     if (m_ageItemsTimer.wrapTick(dt)) {
-      auto itemDatabase = Root::singleton().itemDatabase();
+      auto itemDatabase = root().itemDatabase();
       m_inventory->forEveryItem([&](InventorySlot const&, std::shared_ptr<Item>& item) {
           itemDatabase->ageItem(item, m_ageItemsTimer.time);
         });
@@ -1350,7 +1353,7 @@ void Player::update(float dt, std::uint64_t) {
     }
     if (calculateHeadRotation) { // master or not an OpenStarbound player
       float headRotation = 0.f;
-      if (Humanoid::globalHeadRotation() && (humanoid()->handHoldingItem(ToolHand::Primary) || humanoid()->handHoldingItem(ToolHand::Alt) || humanoid()->dance())) {
+      if (root().humanoidHeadRotation() && (humanoid()->handHoldingItem(ToolHand::Primary) || humanoid()->handHoldingItem(ToolHand::Alt) || humanoid()->dance())) {
         auto primary = m_tools->primaryHandItem();
         auto alt = m_tools->altHandItem();
         String const disableFlag = "disableHeadRotation";
@@ -1377,7 +1380,7 @@ void Player::update(float dt, std::uint64_t) {
   m_pendingMoves.clear();
 
   if (isClient)
-    SpatialLogger::logPoly("world", m_movementController->collisionBody(), isMaster() ? Color::Orange.toRgba() : Color::Yellow.toRgba());
+    root().spatialLogger().logPoly("world", m_movementController->collisionBody(), isMaster() ? Color::Orange.toRgba() : Color::Yellow.toRgba());
 }
 
 float Player::timeSinceLastGaveDamage() const {
@@ -1404,7 +1407,7 @@ void Player::render(RenderCallback* renderCallback) {
   String footstepSound = getFootstepSound(footstepSensor);
 
   if (!footstepSound.empty() && !m_techController->parentState() && !m_techController->parentHidden()) {
-    auto footstepAudio = Root::singleton().assets()->audio(footstepSound);
+    auto footstepAudio = root().assets()->audio(footstepSound);
     if (m_landingNoisePending) {
       auto landingNoise = std::make_shared<AudioInstance>(*footstepAudio);
       landingNoise->setPosition(position() + feetOffset());
@@ -1415,7 +1418,7 @@ void Player::render(RenderCallback* renderCallback) {
     if (m_footstepPending) {
       auto stepNoise = std::make_shared<AudioInstance>(*footstepAudio);
       stepNoise->setPosition(position() + feetOffset());
-      stepNoise->setVolume(1 - Random::randf(0, m_footstepVolumeVariance));
+      stepNoise->setVolume(1 - root().random().randf(0, m_footstepVolumeVariance));
       renderCallback->addAudio(std::move(stepNoise));
     }
   } else {
@@ -1432,7 +1435,7 @@ void Player::render(RenderCallback* renderCallback) {
   renderCallback->addAudios(m_humanoidDynamicTarget.pullNewAudios());
 
   for (auto const& p : take(m_callbackSounds)) {
-    auto audio = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(std::get<0>(p)));
+    auto audio = std::make_shared<AudioInstance>(*root().assets()->audio(std::get<0>(p)));
     audio->setVolume(std::get<1>(p));
     audio->setPitchMultiplier(std::get<2>(p));
     audio->setPosition(position());
@@ -1501,10 +1504,10 @@ std::shared_ptr<Item> Player::pickupItems(std::shared_ptr<Item> const& items, bo
     if (items->pickupSound().size()) {
       m_effectsAnimator->setSoundPool("pickup", {items->pickupSound()});
       float pitch = 1.f - ((float)items->count() / (float)items->maxStack()) * 0.5f;
-      m_effectsAnimator->setSoundPitchMultiplier("pickup", clamp(pitch * Random::randf(0.8f, 1.2f), 0.f, 2.f));
+      m_effectsAnimator->setSoundPitchMultiplier("pickup", clamp(pitch * root().random().randf(0.8f, 1.2f), 0.f, 2.f));
       m_effectsAnimator->playSound("pickup");
     }
-    auto itemDb = Root::singleton().itemDatabase();
+    auto itemDb = root().itemDatabase();
     queueItemPickupMessage(itemDb->itemShared(items->descriptor()));
   }
 
@@ -1513,7 +1516,7 @@ std::shared_ptr<Item> Player::pickupItems(std::shared_ptr<Item> const& items, bo
 
 void Player::giveItem(std::shared_ptr<Item> const& item) {
   if (auto spill = pickupItems(item, false))
-    world()->addEntity(ItemDrop::createRandomizedDrop(spill->descriptor(), position()));
+    world()->addEntity(ItemDrop::createRandomizedDrop(root(), spill->descriptor(), position()));
 }
 
 void Player::triggerPickupEvents(std::shared_ptr<Item> const& item) {
@@ -1538,7 +1541,7 @@ void Player::triggerPickupEvents(std::shared_ptr<Item> const& item) {
 
     for (auto const& quest : item->pickupQuestTemplates()) {
       if (m_questManager->canStart(quest))
-        m_questManager->offer(std::make_shared<Quest>(quest, 0, this));
+        m_questManager->offer(std::make_shared<Quest>(root(), quest, 0, this));
     }
 
     if (auto consume = item->instanceValue("consumeOnPickup", Json())) {
@@ -1571,7 +1574,7 @@ ItemDescriptor Player::takeItem(ItemDescriptor const& descriptor, bool consumePa
 }
 
 void Player::giveItem(ItemDescriptor const& descriptor) {
-  giveItem(Root::singleton().itemDatabase()->item(descriptor));
+  giveItem(root().itemDatabase()->item(descriptor));
 }
 
 void Player::clearSwap() {
@@ -1579,7 +1582,7 @@ void Player::clearSwap() {
   // world.
   if (!m_inventory->clearSwap()) {
     if (auto world = worldPtr())
-      world->addEntity(ItemDrop::createRandomizedDrop(m_inventory->takeSlot(SwapSlot()), position()));
+      world->addEntity(ItemDrop::createRandomizedDrop(root(), m_inventory->takeSlot(SwapSlot()), position()));
   }
 
   // Interrupt all firing in case the item being dropped was in use.
@@ -1636,9 +1639,9 @@ bool Player::addBlueprint(ItemDescriptor const& descriptor, bool showFailure) {
   if (descriptor.isNull())
     return false;
 
-  auto itemDb = Root::singleton().itemDatabase();
+  auto itemDb = root().itemDatabase();
   auto item = itemDb->item(descriptor);
-  auto assets = Root::singleton().assets();
+  auto assets = root().assets();
   if (!m_blueprints->isKnown(descriptor)) {
     m_blueprints->add(descriptor);
     queueUIMessage(assets->json("/player.config:blueprintUnlock").toString().replace("<ItemName>", item->friendlyName()));
@@ -1659,11 +1662,11 @@ bool Player::blueprintKnown(ItemDescriptor const& descriptor) const {
 
 bool Player::addCollectable(String const& collectionName, String const& collectableName) {
   if (m_log->addCollectable(collectionName, collectableName)) {
-    auto collectionDatabase = Root::singleton().collectionDatabase();
+    auto collectionDatabase = root().collectionDatabase();
 
     auto collection = collectionDatabase->collection(collectionName);
     auto collectable = collectionDatabase->collectable(collectionName, collectableName);
-    queueUIMessage(Root::singleton().assets()->json("/player.config:collectableUnlock").toString().replace("<collectable>", collectable.title).replace("<collection>", collection.title));
+    queueUIMessage(root().assets()->json("/player.config:collectableUnlock").toString().replace("<collectable>", collectable.title).replace("<collection>", collection.title));
     return true;
   } else {
     return false;
@@ -1748,7 +1751,7 @@ void Player::interactWithEntity(std::shared_ptr<InteractiveEntity> entity) {
 
   for (auto questArc : entity->offeredQuests()) {
     if (m_questManager->canStart(questArc)) {
-      auto quest = std::make_shared<Quest>(questArc, 0, this);
+      auto quest = std::make_shared<Quest>(root(), questArc, 0, this);
       quest->setWorldId(clientContext()->playerWorldId());
       quest->setServerUuid(clientContext()->serverUuid());
       quest->setEntityParameter("questGiver", entity);
@@ -2185,7 +2188,7 @@ void Player::processStateChanges(float dt) {
 }
 
 String Player::getFootstepSound(Vec2I const& sensor) const {
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabase = root().materialDatabase();
 
   String fallback = materialDatabase->defaultFootstepSound();
   List<Vec2I> scanOrder{{0, 0}, {0, -1}, {-1, 0}, {1, 0}, {-1, -1}, {1, -1}};
@@ -2277,7 +2280,7 @@ void Player::setNetStates() {
 void Player::setNetArmorSecret(EquipmentSlot slot, std::shared_ptr<ArmorItem> const& armor, bool visible) {
   String const& slotName = EquipmentSlotNames.getRight(slot);
   ItemDescriptor descriptor = visible ? itemSafeDescriptor(armor) : ItemDescriptor();
-  setSecretProperty(strf("armorWearer.{}.data", slotName), descriptor.diskStore());
+  setSecretProperty(strf("armorWearer.{}.data", slotName), descriptor.diskStore(*root().versioningDatabase()));
   if (m_armorSecretNetVersions.empty())
     setSecretProperty("armorWearer.replicating", true);
   setSecretProperty(strf("armorWearer.{}.version", slotName), ++m_armorSecretNetVersions[slot]);
@@ -2297,7 +2300,7 @@ void Player::setNetArmorSecrets(bool includeEmpty) {
 
 void Player::getNetArmorSecrets() {
   if (isSlave() && getSecretPropertyPtr("armorWearer.replicating") != nullptr) {
-    auto itemDatabase = Root::singleton().itemDatabase();
+    auto itemDatabase = root().itemDatabase();
 
     for (std::uint8_t i = 0; i != 12; ++i) {
       auto slot = EquipmentSlot((std::uint8_t)EquipmentSlot::Cosmetic1 + i);
@@ -2377,7 +2380,7 @@ void Player::teleportIn() {
   m_effectsAnimator->setState("teleport", m_teleportAnimationType + "In");
   m_teleportTimer = m_deployment->isDeployed() ? m_config->deployInTime : m_config->teleportInTime;
 
-  auto statusEffects = Root::singleton().assets()->json("/player.config:teleportInStatusEffects").toArray().transformed(jsonToEphemeralStatusEffect);
+  auto statusEffects = root().assets()->json("/player.config:teleportInStatusEffects").toArray().transformed(jsonToEphemeralStatusEffect);
   m_statusController->addEphemeralEffects(statusEffects);
 }
 
@@ -2412,7 +2415,7 @@ PlayerMode Player::modeType() const {
 void Player::setModeType(PlayerMode mode) {
   m_modeType = mode;
 
-  auto assets = Root::singleton().assets();
+  auto assets = root().assets();
   m_modeConfig = PlayerModeConfig(assets->json("/playermodes.config").get(PlayerModeNames.getRight(mode)));
 }
 
@@ -2461,7 +2464,7 @@ bool Player::displayNametag() const {
 }
 
 Vec3B Player::nametagColor() const {
-  auto assets = Root::singleton().assets();
+  auto assets = root().assets();
   return jsonToVec3B(assets->json("/player.config:nametagColor"));
 }
 
@@ -2568,7 +2571,7 @@ void Player::setFacialMask(String const& group, String const& type, String const
 }
 
 void Player::setSpecies(String const& species) {
-  Root::singleton().speciesDatabase()->species(species); // throw if non-existent
+  root().speciesDatabase()->species(species); // throw if non-existent
   m_identity.species = species;
   updateIdentity();
 }
@@ -2655,7 +2658,7 @@ void Player::setDance(Maybe<String> const& danceName) {
   m_dance = danceName;
 
   if (danceName.isValid()) {
-    auto danceDatabase = Root::singleton().danceDatabase();
+    auto danceDatabase = root().danceDatabase();
     std::shared_ptr<Dance> dance = danceDatabase->getDance(*danceName);
     m_danceCooldownTimer = GameTimer(dance->duration);
   }
@@ -2804,19 +2807,19 @@ ByteArray Player::netStore(NetCompatibilityRules rules) {
 
 void Player::finalizeCreation() {
   m_blueprints = std::make_shared<PlayerBlueprints>();
-  m_techs = std::make_shared<PlayerTech>();
+  m_techs = std::make_shared<PlayerTech>(root());
 
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto itemDatabase = root().itemDatabase();
   for (auto const& descriptor : m_config->defaultItems)
     m_inventory->addItems(itemDatabase->item(descriptor));
 
-  for (auto const& descriptor : Root::singleton().speciesDatabase()->species(m_identity.species)->defaultItems())
+  for (auto const& descriptor : root().speciesDatabase()->species(m_identity.species)->defaultItems())
     m_inventory->addItems(itemDatabase->item(descriptor));
 
   for (auto const& descriptor : m_config->defaultBlueprints)
     m_blueprints->add(descriptor);
 
-  for (auto const& descriptor : Root::singleton().speciesDatabase()->species(m_identity.species)->defaultBlueprints())
+  for (auto const& descriptor : root().speciesDatabase()->species(m_identity.species)->defaultBlueprints())
     m_blueprints->add(descriptor);
 
   refreshEquipment();
@@ -2859,7 +2862,7 @@ void Player::dropSelectedItems(std::function<bool(std::shared_ptr<Item>)> filter
 
   m_inventory->forEveryItem([&](InventorySlot const&, std::shared_ptr<Item>& item) {
       if (item && (!filter || filter(item)))
-        world()->addEntity(ItemDrop::throwDrop(take(item), position(), velocity(), Vec2F::withAngle(Random::randf(-std::numbers::pi, std::numbers::pi)), true));
+        world()->addEntity(ItemDrop::throwDrop(root(), take(item), position(), velocity(), Vec2F::withAngle(root().random().randf(-std::numbers::pi, std::numbers::pi)), true));
     });
 }
 
@@ -2893,20 +2896,20 @@ Maybe<RadioMessage> Player::pullPendingRadioMessage() {
 void Player::queueRadioMessage(Json const& messageConfig, float delay) {
   RadioMessage message;
   try {
-    message = Root::singleton().radioMessageDatabase()->createRadioMessage(messageConfig);
+    message = root().radioMessageDatabase()->createRadioMessage(messageConfig);
 
     while (message.speciesAiMessage.contains(shipSpecies()) || message.speciesMessage.contains(species()))
       message = message.speciesAiMessage.value(shipSpecies(), message.speciesMessage.value(species()));
 
-    if (message.type == RadioMessageType::Tutorial && !Root::singleton().configuration()->get("tutorialMessages").toBool())
+    if (message.type == RadioMessageType::Tutorial && !root().configuration()->get("tutorialMessages").toBool())
       return;
 
     // non-absolute portrait image paths are assumed to be a frame name within the player's species-specific AI
 
     if (!message.portraitImage.empty() && message.portraitImage[0] != '/')
-      message.portraitImage = Root::singleton().aiDatabase()->portraitImage(shipSpecies(), message.portraitImage);
+      message.portraitImage = root().aiDatabase()->portraitImage(shipSpecies(), message.portraitImage);
   } catch (RadioMessageDatabaseException const& e) {
-    Logger::error("Couldn't queue radio message '{}': {}", messageConfig, e.what());
+    root().logger().error("Couldn't queue radio message '{}': {}", messageConfig, e.what());
     return;
   }
 
@@ -3085,7 +3088,7 @@ Json Player::getSecretProperty(String const& name, Json defaultValue) const {
     try
       { return buffer.read<Json>(); }
     catch (StarException const& e)
-      { Logger::error("Exception reading secret player property '{}': {}", name, e.what()); }
+      { root().logger().error("Exception reading secret player property '{}': {}", name, e.what()); }
   }
 
   return defaultValue;
@@ -3103,13 +3106,13 @@ void Player::setSecretProperty(String const& name, Json const& value) {
 }
 
 void Player::refreshHumanoidParameters() {
-  auto speciesDatabase = Root::singleton().speciesDatabase();
+  auto speciesDatabase = root().speciesDatabase();
   auto speciesDef = speciesDatabase->species(m_identity.species);
 
   if (isMaster() || !inWorld()) {
     m_refreshedHumanoidParameters.trigger();
     m_netHumanoid.clearNetElements();
-    m_netHumanoid.addNetElement(std::make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json()));
+    m_netHumanoid.addNetElement(std::make_shared<NetHumanoid>(root(), m_identity, m_humanoidParameters, Json()));
     m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
     m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
     m_statusController->setStatusProperty("ouchNoise", speciesDef->ouchNoise(m_identity.gender));

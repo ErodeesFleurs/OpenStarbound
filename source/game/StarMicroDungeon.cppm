@@ -10,6 +10,7 @@ import star.set;
 import star.vector;
 namespace Star {
 class DungeonGeneratorWorldFacade;
+class Root;
 }
 
 export module star.micro_dungeon;
@@ -17,8 +18,9 @@ export module star.micro_dungeon;
 export namespace Star {
 
 class MicroDungeonFactory {
+  Root& m_root;
 public:
-  MicroDungeonFactory();
+  MicroDungeonFactory(Root& root);
 
   Maybe<std::pair<List<RectI>, Set<Vec2I>>> generate(RectI const& bounds,
       String const& dungeonName,

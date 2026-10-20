@@ -11,6 +11,8 @@ import star.set;
 
 namespace Star {
 
+class Root;
+
 enum class InterfaceAction {
   None,
   PlayerUp,
@@ -114,7 +116,7 @@ String printInputDescriptor(KeyChord chord);
 class KeyBindings {
 public:
   KeyBindings();
-  explicit KeyBindings(Json const& json);
+  KeyBindings(Root& root, Json const& json);
 
   Set<InterfaceAction> actions(Key key) const;
   Set<InterfaceAction> actions(InputEvent const& event) const;

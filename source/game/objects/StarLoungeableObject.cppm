@@ -67,10 +67,11 @@ import star.lounging_entities;
 
 
 namespace Star {
+class Root;
 
 class LoungeableObject : public Object, public virtual LoungeableEntity {
 public:
-  LoungeableObject(std::shared_ptr<ObjectConfig const> config, Json const& parameters = Json());
+  LoungeableObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters = Json());
 
   void render(RenderCallback* renderCallback) override;
 

@@ -128,15 +128,15 @@ String File::fullPath(const String& fileName) {
   return String(buffer);
 }
 
-String File::temporaryFileName() {
-  return relativeTo(P_tmpdir, strf("starbound.tmpfile.{}", hexEncode(Random::randBytes(16))));
+String File::temporaryFileName(RandomService& random) {
+  return relativeTo(P_tmpdir, strf("starbound.tmpfile.{}", hexEncode(random.randBytes(16))));
 }
 
-std::shared_ptr<File> File::temporaryFile() {
-  return open(temporaryFileName(), IOMode::ReadWrite);
+std::shared_ptr<File> File::temporaryFile(RandomService& random) {
+  return open(temporaryFileName(random), IOMode::ReadWrite);
 }
 
-std::shared_ptr<File> File::ephemeralFile() {
+std::shared_ptr<File> File::ephemeralFile(RandomService&) {
   auto file = std::make_shared<File>();
   ByteArray path = ByteArray::fromCStringWithNull(relativeTo(P_tmpdir, "starbound.tmpfile.XXXXXXXX").utf8Ptr());
   auto res = mkstemp(path.ptr());
@@ -152,8 +152,8 @@ std::shared_ptr<File> File::ephemeralFile() {
   return file;
 }
 
-String File::temporaryDirectory() {
-  String dirname = relativeTo(P_tmpdir, strf("starbound.tmpdir.{}", hexEncode(Random::randBytes(16))));
+String File::temporaryDirectory(RandomService& random) {
+  String dirname = relativeTo(P_tmpdir, strf("starbound.tmpdir.{}", hexEncode(random.randBytes(16))));
   makeDirectory(dirname);
   return dirname;
 }

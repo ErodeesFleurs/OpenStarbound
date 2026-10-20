@@ -22,8 +22,13 @@ import star.asset_path;
 import star.ref_ptr;
 
 import star.asset_source;
+import star.font;
 
 namespace Star {
+
+class Logger;
+class RandomService;
+class LogMap;
 
 class Font;
 class Audio;
@@ -174,7 +179,7 @@ public:
     List<std::pair<String, std::shared_ptr<AssetSource>>> patchSources;
   };
 
-  Assets(Settings settings, StringList assetSources);
+  Assets(Logger& logger, RandomService& random, LogMap& logMap, Settings settings, StringList assetSources);
   ~Assets();
 
   void hotReload() const;
@@ -333,6 +338,9 @@ private:
 
   // Updates time on the given asset (with smearing).
   void freshen(std::shared_ptr<AssetData> const& asset) const;
+
+  Logger& m_logger;
+  FontLibrary m_fontLibrary;
 
   Settings m_settings;
 

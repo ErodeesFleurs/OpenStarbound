@@ -16,6 +16,7 @@ namespace Star {
 namespace {
 
 struct PngState {
+  Logger& logger;
   IODevice* device;
   bool writing;
   png_structp png = nullptr;
@@ -40,7 +41,7 @@ struct PngState {
 
 void logPngMessage(PngState& state, char const* kind, png_const_charp message) noexcept {
   try {
-    Logger::debug("PNG {} in file: '{}', {}", kind, state.device->deviceName(), message);
+    state.logger.debug("PNG {} in file: '{}', {}", kind, state.device->deviceName(), message);
   } catch (...) {
     state.exception = std::current_exception();
   }
@@ -186,9 +187,9 @@ bool Image::isPng(std::shared_ptr<IODevice> device) {
   return !png_sig_cmp(header, 0, device->readAbsolute(0, (char*)header, sizeof(header)));
 }
 
-Image Image::readPng(std::shared_ptr<IODevice> device) {
+Image Image::readPng(Logger& logger, std::shared_ptr<IODevice> device) {
   readPngSignature(*device);
-  PngState state{device.get(), false};
+  PngState state{logger, device.get(), false};
   initializePng(state);
   PngMetadata metadata{};
   state.check(readPngInfo(state, metadata, true), "Internal error reading png.");
@@ -205,9 +206,9 @@ Image Image::readPng(std::shared_ptr<IODevice> device) {
   return image;
 }
 
-std::tuple<Vec2U, PixelFormat> Image::readPngMetadata(std::shared_ptr<IODevice> device) {
+std::tuple<Vec2U, PixelFormat> Image::readPngMetadata(Logger& logger, std::shared_ptr<IODevice> device) {
   readPngSignature(*device);
-  PngState state{device.get(), false};
+  PngState state{logger, device.get(), false};
   initializePng(state);
   PngMetadata metadata{};
   state.check(readPngInfo(state, metadata, false), "Internal error reading png.");
@@ -489,8 +490,8 @@ Image Image::convert(PixelFormat pixelFormat) const {
   return converted;
 }
 
-void Image::writePng(std::shared_ptr<IODevice> device) const {
-  PngState state{device.get(), true};
+void Image::writePng(Logger& logger, std::shared_ptr<IODevice> device) const {
+  PngState state{logger, device.get(), true};
   initializePng(state);
   unsigned channels = m_pixelFormat == PixelFormat::RGB24 ? 3 : 4;
   auto rows = std::make_unique<png_bytep[]>(m_height);

@@ -54,7 +54,7 @@ namespace Star {
 TreeVariant::TreeVariant()
   : stemHueShift(), foliageHueShift(), ceiling(), ephemeral() {}
 
-TreeVariant::TreeVariant(Json const& variant) {
+TreeVariant::TreeVariant(Assets const& assets, Json const& variant) {
   stemName = variant.getString("stemName");
   foliageName = variant.getString("foliageName");
   stemDirectory = variant.getString("stemDirectory");
@@ -68,7 +68,7 @@ TreeVariant::TreeVariant(Json const& variant) {
   ephemeral = variant.getBool("ephemeral");
   stemDropConfig = variant.get("stemDropConfig");
   foliageDropConfig = variant.get("foliageDropConfig");
-  tileDamageParameters = TileDamageParameters(variant.get("tileDamageParameters"));
+  tileDamageParameters = TileDamageParameters(assets, variant.get("tileDamageParameters"));
 }
 
 Json TreeVariant::toJson() const {
@@ -92,7 +92,7 @@ Json TreeVariant::toJson() const {
 
 GrassVariant::GrassVariant() : hueShift(), ceiling(), ephemeral() {}
 
-GrassVariant::GrassVariant(Json const& variant) {
+GrassVariant::GrassVariant(Assets const& assets, Json const& variant) {
   name = variant.getString("name");
   directory = variant.getString("directory");
   images = jsonToStringList(variant.get("images"));
@@ -100,7 +100,7 @@ GrassVariant::GrassVariant(Json const& variant) {
   descriptions = variant.get("descriptions");
   ceiling = variant.getBool("ceiling");
   ephemeral = variant.getBool("ephemeral");
-  tileDamageParameters = TileDamageParameters(variant.get("tileDamageParameters"));
+  tileDamageParameters = TileDamageParameters(assets, variant.get("tileDamageParameters"));
 }
 
 Json GrassVariant::toJson() const {
@@ -116,7 +116,7 @@ Json GrassVariant::toJson() const {
 
 BushVariant::BushVariant() : baseHueShift(), modHueShift(), ceiling(), ephemeral() {}
 
-BushVariant::BushVariant(Json const& variant) {
+BushVariant::BushVariant(Assets const& assets, Json const& variant) {
   bushName = variant.getString("bushName");
   modName = variant.getString("modName");
   directory = variant.getString("directory");
@@ -128,7 +128,7 @@ BushVariant::BushVariant(Json const& variant) {
   descriptions = variant.get("descriptions");
   ceiling = variant.getBool("ceiling");
   ephemeral = variant.getBool("ephemeral");
-  tileDamageParameters = TileDamageParameters(variant.get("tileDamageParameters"));
+  tileDamageParameters = TileDamageParameters(assets, variant.get("tileDamageParameters"));
 }
 
 Json BushVariant::toJson() const {
@@ -146,8 +146,8 @@ Json BushVariant::toJson() const {
       {"tileDamageParameters", tileDamageParameters.toJson()}};
 }
 
-PlantDatabase::PlantDatabase() {
-  auto assets = Root::singleton().assets();
+PlantDatabase::PlantDatabase(Root& root) : m_root(root) {
+  auto assets = m_root.assets();
 
   auto& stems = assets->scanExtension("modularstem");
   auto& foliages = assets->scanExtension("modularfoliage");
@@ -252,7 +252,7 @@ TreeVariant PlantDatabase::buildTreeVariant(
 
   treeVariant.ephemeral = stemConfig.settings.getBool("allowsBlockPlacement", false);
 
-  treeVariant.tileDamageParameters = TileDamageParameters(
+  treeVariant.tileDamageParameters = TileDamageParameters(*m_root.assets(),
       stemConfig.settings.get("damageTable", "/plants/treeDamage.config"),
       stemConfig.settings.getFloat("health", 1.0f));
 
@@ -287,7 +287,7 @@ TreeVariant PlantDatabase::buildTreeVariant(String const& stemName, float stemHu
 
   treeVariant.ephemeral = stemConfig.settings.getBool("ephemeral", false);
 
-  treeVariant.tileDamageParameters = TileDamageParameters(
+  treeVariant.tileDamageParameters = TileDamageParameters(*m_root.assets(),
       stemConfig.settings.get("damageTable", "/plants/treeDamage.config"),
       stemConfig.settings.getFloat("health", 1.0f));
 
@@ -325,7 +325,7 @@ GrassVariant PlantDatabase::buildGrassVariant(String const& name, float hueShift
   grassVariant.descriptions = descriptions;
 
   grassVariant.ephemeral = config.settings.getBool("ephemeral", true);
-  grassVariant.tileDamageParameters = TileDamageParameters(
+  grassVariant.tileDamageParameters = TileDamageParameters(*m_root.assets(),
       config.settings.get("damageTable", "/plants/grassDamage.config"),
       config.settings.getFloat("health", 1.0f));
 
@@ -377,7 +377,7 @@ BushVariant PlantDatabase::buildBushVariant(String const& bushName, float baseHu
   bushVariant.descriptions = descriptions;
 
   bushVariant.ephemeral = config.settings.getBool("ephemeral", true);
-  bushVariant.tileDamageParameters = TileDamageParameters(
+  bushVariant.tileDamageParameters = TileDamageParameters(*m_root.assets(),
       config.settings.get("damageTable", "/plants/bushDamage.config"),
       config.settings.getFloat("health", 1.0f));
   return bushVariant;
@@ -385,7 +385,7 @@ BushVariant PlantDatabase::buildBushVariant(String const& bushName, float baseHu
 
 std::shared_ptr<Plant> PlantDatabase::createPlant(TreeVariant const& treeVariant, std::uint64_t seed) const {
   try {
-    return std::make_shared<Plant>(treeVariant, seed);
+    return std::make_shared<Plant>(m_root, treeVariant, seed);
   } catch (std::exception const& e) {
     throw PlantDatabaseException(strf("Error constructing plant from tree variant stem: {} foliage: {}", treeVariant.stemName, treeVariant.foliageName), e);
   }
@@ -393,7 +393,7 @@ std::shared_ptr<Plant> PlantDatabase::createPlant(TreeVariant const& treeVariant
 
 std::shared_ptr<Plant> PlantDatabase::createPlant(GrassVariant const& grassVariant, std::uint64_t seed) const {
   try {
-    return std::make_shared<Plant>(grassVariant, seed);
+    return std::make_shared<Plant>(m_root, grassVariant, seed);
   } catch (std::exception const& e) {
     throw PlantDatabaseException(strf("Error constructing plant from grass variant name: {}", grassVariant.name), e);
   }
@@ -401,7 +401,7 @@ std::shared_ptr<Plant> PlantDatabase::createPlant(GrassVariant const& grassVaria
 
 std::shared_ptr<Plant> PlantDatabase::createPlant(BushVariant const& bushVariant, std::uint64_t seed) const {
   try {
-    return std::make_shared<Plant>(bushVariant, seed);
+    return std::make_shared<Plant>(m_root, bushVariant, seed);
   } catch (std::exception const& e) {
     throw PlantDatabaseException(
         strf("Error constructing plant from bush variant name: {} mod: {}", bushVariant.bushName, bushVariant.modName),

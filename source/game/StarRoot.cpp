@@ -177,19 +177,7 @@ namespace {
   unsigned const RootLoadThreads = 4;
 }
 
-Root* Root::singletonPtr() {
-  return dynamic_cast<Root*>(s_singleton.load());
-}
-
-Root& Root::singleton() {
-  auto ptr = singletonPtr();
-  if (!ptr)
-    throw RootException("Root::singleton() called with no Root instance available");
-  else
-    return *ptr;
-}
-
-Root::Root(Settings settings) : RootBase() {
+Root::Root(Settings settings) : m_identity(m_random), m_workers("Root CPU") {
   m_settings = std::move(settings);
   if (m_settings.runtimeConfigFile)
     m_runtimeConfigFile = toStoragePath(*m_settings.runtimeConfigFile);
@@ -204,14 +192,14 @@ Root::Root(Settings settings) : RootBase() {
       File::makeDirectory(oldLogDirectory);
 
     File::backupFileInSequence(logFile, File::relativeTo(oldLogDirectory, *m_settings.logFile), m_settings.logFileBackups);
-    Logger::addSink(std::make_shared<FileLogSink>(logFile, m_settings.logLevel, true));
+    m_logger.addSink(std::make_shared<FileLogSink>(logFile, m_settings.logLevel, true));
   }
-  Logger::stdoutSink()->setLevel(m_settings.logLevel);
+  m_logger.stdoutSink()->setLevel(m_settings.logLevel);
 
   if (m_settings.quiet)
-    Logger::removeStdoutSink();
+    m_logger.removeStdoutSink();
 
-  Logger::info("Root: Preparing...");
+  m_logger.info("Root: Preparing...");
 
   m_stopMaintenanceThread = false;
   m_maintenanceThread = Thread::invoke("Root::maintenanceMain", [this]() {
@@ -262,7 +250,7 @@ Root::Root(Settings settings) : RootBase() {
           }
         }
 
-        Random::addEntropy();
+        m_random.addEntropy();
 
         {
           MutexLocker locker(m_configurationMutex);
@@ -273,11 +261,11 @@ Root::Root(Settings settings) : RootBase() {
       }
     });
 
-  Logger::info("Root: Done preparing Root.");
+  m_logger.info("Root: Done preparing Root.");
 }
 
 Root::~Root() {
-  Logger::info("Root: Shutting down Root");
+  m_logger.info("Root: Shutting down Root");
 
   {
     MutexLocker locker(m_maintenanceStopMutex);
@@ -285,16 +273,16 @@ Root::~Root() {
     m_maintenanceStopCondition.signal();
   }
   m_maintenanceThread.finish();
+  m_workers.finish();
 
   m_reloadListeners.clearAllListeners();
 
   writeConfig();
 
-  s_singleton.store(nullptr);
 }
 
 void Root::reload() {
-  Logger::info("Root: Reloading from disk");
+  m_logger.info("Root: Reloading from disk");
 
   {
     // We need to lock all the mutexes to reset everything to cause it to be
@@ -481,7 +469,7 @@ void Root::fullyLoad() {
   auto startSeconds = Time::monotonicTime();
   for (auto& loader : loaders)
     loader.finish();
-  Logger::info("Root: Loaded everything in {} seconds", Time::monotonicTime() - startSeconds);
+  m_logger.info("Root: Loaded everything in {} seconds", Time::monotonicTime() - startSeconds);
 
   {
     MutexLocker locker(m_assetsMutex);
@@ -509,8 +497,8 @@ std::shared_ptr<Assets const> Root::assets() {
       assetDirectories.appendAll(m_modDirectories);
       StringList assetSources = scanForAssetSources(assetDirectories, m_settings.assetSources);
 
-      auto assets = std::make_shared<Assets>(m_settings.assetsSettings, assetSources);
-      Logger::info("Assets digest is {}", hexEncode(assets->digest()));
+      auto assets = std::make_shared<Assets>(m_logger, m_random, m_logMap, m_settings.assetsSettings, assetSources);
+      m_logger.info("Assets digest is {}", hexEncode(assets->digest()));
       return assets;
     });
 }
@@ -521,7 +509,7 @@ std::shared_ptr<Configuration> Root::configuration() {
 
       if (m_runtimeConfigFile) {
         if (!File::isFile(*m_runtimeConfigFile)) {
-          Logger::info("Root: no runtime config file, creating new default runtime config");
+          m_logger.info("Root: no runtime config file, creating new default runtime config");
           currentConfig = m_settings.defaultConfiguration;
         } else {
           try {
@@ -540,7 +528,7 @@ std::shared_ptr<Configuration> Root::configuration() {
 
             currentConfig = config;
           } catch (std::exception const& e) {
-            Logger::warn("Root: Failed to load user configuration file {}, resetting user config: {}", *m_runtimeConfigFile, outputException(e, false));
+            m_logger.warn("Root: Failed to load user configuration file {}, resetting user config: {}", *m_runtimeConfigFile, outputException(e, false));
             currentConfig = m_settings.defaultConfiguration;
             File::rename(*m_runtimeConfigFile, *m_runtimeConfigFile + ".old");
           }
@@ -554,155 +542,181 @@ std::shared_ptr<Configuration> Root::configuration() {
 }
 
 std::shared_ptr<ObjectDatabase const> Root::objectDatabase() {
-  return loadMember(m_objectDatabase, m_objectDatabaseMutex, "ObjectDatabase");
+  return loadMember(m_objectDatabase, m_objectDatabaseMutex, "ObjectDatabase", *this);
 }
 
 std::shared_ptr<PlantDatabase const> Root::plantDatabase() {
-  return loadMember(m_plantDatabase, m_plantDatabaseMutex, "PlantDatabase");
+  return loadMember(m_plantDatabase, m_plantDatabaseMutex, "PlantDatabase", *this);
 }
 
 std::shared_ptr<ProjectileDatabase const> Root::projectileDatabase() {
-  return loadMember(m_projectileDatabase, m_projectileDatabaseMutex, "ProjectileDatabase");
+  return loadMember(m_projectileDatabase, m_projectileDatabaseMutex, "ProjectileDatabase", *this);
 }
 
 std::shared_ptr<MonsterDatabase const> Root::monsterDatabase() {
-  return loadMember(m_monsterDatabase, m_monsterDatabaseMutex, "MonsterDatabase");
+  return loadMember(m_monsterDatabase, m_monsterDatabaseMutex, "MonsterDatabase", *this);
 }
 
 std::shared_ptr<NpcDatabase const> Root::npcDatabase() {
-  return loadMember(m_npcDatabase, m_npcDatabaseMutex, "NpcDatabase");
+  return loadMember(m_npcDatabase, m_npcDatabaseMutex, "NpcDatabase", *this);
 }
 
 std::shared_ptr<StagehandDatabase const> Root::stagehandDatabase() {
-  return loadMember(m_stagehandDatabase, m_stagehandDatabaseMutex, "StagehandDatabase");
+  return loadMember(m_stagehandDatabase, m_stagehandDatabaseMutex, "StagehandDatabase", *this);
 }
 
 std::shared_ptr<VehicleDatabase const> Root::vehicleDatabase() {
-  return loadMember(m_vehicleDatabase, m_vehicleDatabaseMutex, "VehicleDatabase");
+  return loadMember(m_vehicleDatabase, m_vehicleDatabaseMutex, "VehicleDatabase", *this);
 }
 
 std::shared_ptr<PlayerFactory const> Root::playerFactory() {
-  return loadMember(m_playerFactory, m_playerFactoryMutex, "PlayerFactory");
+  return loadMember(m_playerFactory, m_playerFactoryMutex, "PlayerFactory", *this);
 }
 
 std::shared_ptr<EntityFactory const> Root::entityFactory() {
-  return loadMember(m_entityFactory, m_entityFactoryMutex, "EntityFactory");
+  return loadMember(m_entityFactory, m_entityFactoryMutex, "EntityFactory", *this);
 }
 
 std::shared_ptr<PatternedNameGenerator const> Root::nameGenerator() {
-  return loadMember(m_nameGenerator, m_nameGeneratorMutex, "NameGenerator");
+  return loadMember(m_nameGenerator, m_nameGeneratorMutex, "NameGenerator", *this);
 }
 
 std::shared_ptr<ItemDatabase const> Root::itemDatabase() {
-  return loadMember(m_itemDatabase, m_itemDatabaseMutex, "ItemDatabase");
+  return loadMember(m_itemDatabase, m_itemDatabaseMutex, "ItemDatabase", *this);
 }
 
 std::shared_ptr<MaterialDatabase const> Root::materialDatabase() {
-  return loadMember(m_materialDatabase, m_materialDatabaseMutex, "MaterialDatabase");
+  return loadMemberFunction<MaterialDatabase>(m_materialDatabase, m_materialDatabaseMutex, "MaterialDatabase", [this] {
+    return std::make_shared<MaterialDatabase>(assets(), particleDatabase(), *imageMetadataDatabase(), logger(), random());
+  });
 }
 
 std::shared_ptr<TerrainDatabase const> Root::terrainDatabase() {
-  return loadMember(m_terrainDatabase, m_terrainDatabaseMutex, "TerrainDatabase");
+  return loadMemberFunction<TerrainDatabase>(m_terrainDatabase, m_terrainDatabaseMutex, "TerrainDatabase", [this] {
+    return std::make_shared<TerrainDatabase>(assets(), random());
+  });
 }
 
 std::shared_ptr<BiomeDatabase const> Root::biomeDatabase() {
-  return loadMember(m_biomeDatabase, m_biomeDatabaseMutex, "BiomeDatabase");
+  return loadMember(m_biomeDatabase, m_biomeDatabaseMutex, "BiomeDatabase", *this);
 }
 
 std::shared_ptr<LiquidsDatabase const> Root::liquidsDatabase() {
-  return loadMember(m_liquidsDatabase, m_liquidsDatabaseMutex, "LiquidsDatabase");
+  return loadMemberFunction<LiquidsDatabase>(m_liquidsDatabase, m_liquidsDatabaseMutex, "LiquidsDatabase", [this] {
+    return std::make_shared<LiquidsDatabase>(assets(), materialDatabase());
+  });
 }
 
 std::shared_ptr<StatusEffectDatabase const> Root::statusEffectDatabase() {
-  return loadMember(m_statusEffectDatabase, m_statusEffectDatabaseMutex, "StatusEffectDatabase");
+  return loadMemberFunction<StatusEffectDatabase>(m_statusEffectDatabase, m_statusEffectDatabaseMutex, "StatusEffectDatabase", [this] {
+    return std::make_shared<StatusEffectDatabase>(assets());
+  });
 }
 
 std::shared_ptr<DamageDatabase const> Root::damageDatabase() {
-  return loadMember(m_damageDatabase, m_damageDatabaseMutex, "DamageDatabase");
+  return loadMemberFunction<DamageDatabase>(m_damageDatabase, m_damageDatabaseMutex, "DamageDatabase", [this] {
+    return std::make_shared<DamageDatabase>(assets());
+  });
 }
 
 std::shared_ptr<ParticleDatabase const> Root::particleDatabase() {
-  return loadMember(m_particleDatabase, m_particleDatabaseMutex, "ParticleDatabase");
+  return loadMember(m_particleDatabase, m_particleDatabaseMutex, "ParticleDatabase", *this);
 }
 
 std::shared_ptr<EffectSourceDatabase const> Root::effectSourceDatabase() {
-  return loadMember(m_effectSourceDatabase, m_effectSourceDatabaseMutex, "EffectSourceDatabase");
+  return loadMember(m_effectSourceDatabase, m_effectSourceDatabaseMutex, "EffectSourceDatabase", *this);
 }
 
 std::shared_ptr<FunctionDatabase const> Root::functionDatabase() {
-  return loadMember(m_functionDatabase, m_functionDatabaseMutex, "FunctionDatabase");
+  return loadMemberFunction<FunctionDatabase>(m_functionDatabase, m_functionDatabaseMutex, "FunctionDatabase", [this] {
+    return std::make_shared<FunctionDatabase>(assets());
+  });
 }
 
 std::shared_ptr<TreasureDatabase const> Root::treasureDatabase() {
-  return loadMember(m_treasureDatabase, m_treasureDatabaseMutex, "TreasureDatabase");
+  return loadMember(m_treasureDatabase, m_treasureDatabaseMutex, "TreasureDatabase", *this);
 }
 
 std::shared_ptr<DungeonDefinitions const> Root::dungeonDefinitions() {
-  return loadMember(m_dungeonDefinitions, m_dungeonDefinitionsMutex, "DungeonDefinitions");
+  return loadMember(m_dungeonDefinitions, m_dungeonDefinitionsMutex, "DungeonDefinitions", *this);
 }
 
 std::shared_ptr<TilesetDatabase const> Root::tilesetDatabase() {
-  return loadMember(m_tilesetDatabase, m_tilesetDatabaseMutex, "TilesetDatabase");
+  return loadMember(m_tilesetDatabase, m_tilesetDatabaseMutex, "TilesetDatabase", *this);
 }
 
 std::shared_ptr<StatisticsDatabase const> Root::statisticsDatabase() {
-  return loadMember(m_statisticsDatabase, m_statisticsDatabaseMutex, "StatisticsDatabase");
+  return loadMember(m_statisticsDatabase, m_statisticsDatabaseMutex, "StatisticsDatabase", *this);
 }
 
 std::shared_ptr<EmoteProcessor const> Root::emoteProcessor() {
-  return loadMember(m_emoteProcessor, m_emoteProcessorMutex, "EmoteProcessor");
+  return loadMemberFunction<EmoteProcessor>(m_emoteProcessor, m_emoteProcessorMutex, "EmoteProcessor", [this] {
+    return std::make_shared<EmoteProcessor>(assets());
+  });
 }
 
 std::shared_ptr<SpeciesDatabase const> Root::speciesDatabase() {
-  return loadMember(m_speciesDatabase, m_speciesDatabaseMutex, "SpeciesDatabase");
+  return loadMember(m_speciesDatabase, m_speciesDatabaseMutex, "SpeciesDatabase", *this);
 }
 
 std::shared_ptr<ImageMetadataDatabase const> Root::imageMetadataDatabase() {
-  return loadMember(m_imageMetadataDatabase, m_imageMetadataDatabaseMutex, "ImageMetadataDatabase");
+  return loadMember(m_imageMetadataDatabase, m_imageMetadataDatabaseMutex, "ImageMetadataDatabase", *this);
 }
 
 std::shared_ptr<VersioningDatabase const> Root::versioningDatabase() {
-  return loadMember(m_versioningDatabase, m_versioningDatabaseMutex, "VersioningDatabase");
+  return loadMember(m_versioningDatabase, m_versioningDatabaseMutex, "VersioningDatabase", *this);
 }
 
 std::shared_ptr<QuestTemplateDatabase const> Root::questTemplateDatabase() {
-  return loadMember(m_questTemplateDatabase, m_questTemplateDatabaseMutex, "QuestTemplateDatabase");
+  return loadMemberFunction<QuestTemplateDatabase>(m_questTemplateDatabase, m_questTemplateDatabaseMutex, "QuestTemplateDatabase", [this] {
+    return std::make_shared<QuestTemplateDatabase>(assets(), logger());
+  });
 }
 
 std::shared_ptr<AiDatabase const> Root::aiDatabase() {
-  return loadMember(m_aiDatabase, m_aiDatabaseMutex, "AiDatabase");
+  return loadMember(m_aiDatabase, m_aiDatabaseMutex, "AiDatabase", *this);
 }
 
 std::shared_ptr<TechDatabase const> Root::techDatabase() {
-  return loadMember(m_techDatabase, m_techDatabaseMutex, "TechDatabase");
+  return loadMemberFunction<TechDatabase>(m_techDatabase, m_techDatabaseMutex, "TechDatabase", [this] {
+    return std::make_shared<TechDatabase>(assets());
+  });
 }
 
 std::shared_ptr<CodexDatabase const> Root::codexDatabase() {
-  return loadMember(m_codexDatabase, m_codexDatabaseMutex, "CodexDatabase");
+  return loadMemberFunction<CodexDatabase>(m_codexDatabase, m_codexDatabaseMutex, "CodexDatabase", [this] {
+    return std::make_shared<CodexDatabase>(assets());
+  });
 }
 
 std::shared_ptr<BehaviorDatabase const> Root::behaviorDatabase() {
-  return loadMember(m_behaviorDatabase, m_behaviorDatabaseMutex, "BehaviorDatabase");
+  return loadMemberFunction<BehaviorDatabase>(m_behaviorDatabase, m_behaviorDatabaseMutex, "BehaviorDatabase", [this] {
+    return std::make_shared<BehaviorDatabase>(assets());
+  });
 }
 
 std::shared_ptr<TenantDatabase const> Root::tenantDatabase() {
-  return loadMember(m_tenantDatabase, m_tenantDatabaseMutex, "TenantDatabase");
+  return loadMember(m_tenantDatabase, m_tenantDatabaseMutex, "TenantDatabase", *this);
 }
 
 std::shared_ptr<DanceDatabase const> Root::danceDatabase() {
-  return loadMember(m_danceDatabase, m_danceDatabaseMutex, "DanceDatabase");
+  return loadMemberFunction<DanceDatabase>(m_danceDatabase, m_danceDatabaseMutex, "DanceDatabase", [this] {
+    return std::make_shared<DanceDatabase>(assets(), logger());
+  });
 }
 
 std::shared_ptr<SpawnTypeDatabase const> Root::spawnTypeDatabase() {
-  return loadMember(m_spawnTypeDatabase, m_spawnTypeDatabaseMutex, "SpawnTypeDatabase");
+  return loadMemberFunction<SpawnTypeDatabase>(m_spawnTypeDatabase, m_spawnTypeDatabaseMutex, "SpawnTypeDatabase", [this] {
+    return std::make_shared<SpawnTypeDatabase>(assets());
+  });
 }
 
 std::shared_ptr<RadioMessageDatabase const> Root::radioMessageDatabase() {
-  return loadMember(m_radioMessageDatabase, m_radioMessageDatabaseMutex, "RadioMessageDatabase");
+  return loadMember(m_radioMessageDatabase, m_radioMessageDatabaseMutex, "RadioMessageDatabase", *this);
 }
 
 std::shared_ptr<CollectionDatabase const> Root::collectionDatabase() {
-  return loadMember(m_collectionDatabase, m_collectionDatabaseMutex, "CollectionDatabase");
+  return loadMember(m_collectionDatabase, m_collectionDatabaseMutex, "CollectionDatabase", *this);
 }
 
 Root::Settings& Root::settings() {
@@ -725,13 +739,13 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
     std::shared_ptr<Star::AssetSource> source;
     auto name = File::baseName(sourcePath);
     if (name.beginsWith(".") || name.beginsWith("_"))
-      Logger::info("Root: Skipping hidden '{}' in asset directory", name);
+      m_logger.info("Root: Skipping hidden '{}' in asset directory", name);
     else if (isDirectory)
-      source = std::make_shared<DirectoryAssetSource>(sourcePath);
+      source = std::make_shared<DirectoryAssetSource>(m_logger, sourcePath);
     else if (sourcePath.endsWith(".pak"))
       source = std::make_shared<PackedAssetSource>(sourcePath);
     else
-      Logger::warn("Root: Unrecognized file in asset directory '{}', skipping", name);
+      m_logger.warn("Root: Unrecognized file in asset directory '{}', skipping", name);
 
     if (!source)
       return false;
@@ -754,11 +768,11 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
     if (assetSource->name) {
       if (auto oldAssetSource = namedSources.value(*assetSource->name)) {
         if (oldAssetSource->priority <= assetSource->priority) {
-          Logger::warn("Root: Overriding duplicate asset source '{}' named '{}' with higher or equal priority source '{}",
+          m_logger.warn("Root: Overriding duplicate asset source '{}' named '{}' with higher or equal priority source '{}",
               oldAssetSource->path, *assetSource->name, assetSource->path);
           *oldAssetSource = *assetSource;
         } else {
-          Logger::warn("Root: Skipping duplicate asset source '{}' named '{}', previous source '{}' has higher priority",
+          m_logger.warn("Root: Skipping duplicate asset source '{}' named '{}', previous source '{}' has higher priority",
               assetSource->path, *assetSource->name, oldAssetSource->priority);
         }
       } else {
@@ -778,11 +792,11 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
 
   for (auto const& directory : directories) {
     if (!File::isDirectory(directory)) {
-      Logger::info("Root: Skipping asset directory '{}', directory not found", directory);
+      m_logger.info("Root: Skipping asset directory '{}', directory not found", directory);
       continue;
     }
 
-    Logger::info("Root: Scanning for asset sources in directory '{}'", directory);
+    m_logger.info("Root: Scanning for asset sources in directory '{}'", directory);
     for (auto& entry : File::dirList(directory, true).sorted())
       processEntry(File::relativeTo(directory, entry.first), entry.second);
   }
@@ -845,9 +859,9 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
   for (auto const& source : dependencySortedSources) {
     auto path = File::convertDirSeparators(source->path);
     if (source->name)
-      Logger::info("Root: Detected asset source named '{}'{} at '{}'", *source->name, source->version ? strf(" version '{}'", *source->version) : "", path);
+      m_logger.info("Root: Detected asset source named '{}'{} at '{}'", *source->name, source->version ? strf(" version '{}'", *source->version) : "", path);
     else
-      Logger::info("Root: Detected unnamed asset source at '{}'", path);
+      m_logger.info("Root: Detected unnamed asset source at '{}'", path);
     sourcePaths.append(path);
   }
 
@@ -859,12 +873,26 @@ void Root::writeConfig() {
     auto currentConfig = m_configuration->currentConfiguration();
     if (m_lastRuntimeConfig != currentConfig) {
       if (m_runtimeConfigFile) {
-        Logger::info("Root: Writing runtime configuration to '{}'", *m_runtimeConfigFile);
+        m_logger.info("Root: Writing runtime configuration to '{}'", *m_runtimeConfigFile);
         File::overwriteFileWithRename(m_configuration->printConfiguration(), *m_runtimeConfigFile);
       }
       m_lastRuntimeConfig = currentConfig;
     }
   }
+}
+
+WorkerPool& Root::workers() {
+  std::call_once(m_workersStarted, [this] {
+    m_workers.start(std::max(1u, std::thread::hardware_concurrency()));
+  });
+  return m_workers;
+}
+
+bool& Root::humanoidHeadRotation() {
+  std::call_once(m_headRotationInitialized, [this] {
+    m_humanoidHeadRotation = configuration()->get("humanoidHeadRotation").optBool().value(true);
+  });
+  return m_humanoidHeadRotation;
 }
 
 template <typename T, typename... Params>
@@ -880,7 +908,7 @@ std::shared_ptr<T> Root::loadMemberFunction(std::shared_ptr<T>& ptr, Mutex& mute
   if (!ptr) {
     auto startSeconds = Time::monotonicTime();
     ptr = loadFunction();
-    Logger::info("Root: Loaded {} in {} seconds", name, Time::monotonicTime() - startSeconds);
+    m_logger.info("Root: Loaded {} in {} seconds", name, Time::monotonicTime() - startSeconds);
   }
   return ptr;
 }

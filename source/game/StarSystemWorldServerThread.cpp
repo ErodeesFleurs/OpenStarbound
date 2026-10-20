@@ -150,7 +150,7 @@ void SystemWorldServerThread::run() {
   TickRateApproacher tickApproacher(1.0 / SystemWorldTimestep, 0.5);
 
   while (!m_stop) {
-    LogMap::set(strf("system_{}_update_rate", m_systemLocation), strf("{:4.2f}Hz", tickApproacher.rate()));
+    m_systemWorld->root().logMap().set(strf("system_{}_update_rate", m_systemLocation), strf("{:4.2f}Hz", tickApproacher.rate()));
 
     update();
 
@@ -186,7 +186,7 @@ void SystemWorldServerThread::update() {
     p.second(m_systemWorld->clientShip(p.first).get());
 
   if (!m_pause || *m_pause == false)
-    m_systemWorld->update(SystemWorldTimestep * GlobalTimescale);
+    m_systemWorld->update(SystemWorldTimestep * m_systemWorld->root().timing().timescale);
   m_triggerStorage = m_systemWorld->triggeredStorage();
 
   // important to set destinations before getting locations
@@ -268,8 +268,8 @@ void SystemWorldServerThread::store() {
   Json store = m_systemWorld->diskStore();
   locker.unlock();
 
-  Logger::debug("Trigger disk storage for system world {}:{}:{}", m_systemLocation.x(), m_systemLocation.y(), m_systemLocation.z());
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+  m_systemWorld->root().logger().debug("Trigger disk storage for system world {}:{}:{}", m_systemLocation.x(), m_systemLocation.y(), m_systemLocation.z());
+  auto versioningDatabase = m_systemWorld->root().versioningDatabase();
   auto versionedStore = versioningDatabase->makeCurrentVersionedJson("System", store);
   VersionedJson::writeFile(versionedStore, m_storageFile);
 }

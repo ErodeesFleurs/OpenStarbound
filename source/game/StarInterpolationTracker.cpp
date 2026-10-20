@@ -19,7 +19,6 @@ import star.version;
 
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.configuration;
 import star.root;
 
@@ -30,15 +29,21 @@ namespace Star {
 
 constexpr double VanillaStepsPerSecond = 60.0;
 
-InterpolationTracker::InterpolationTracker() : InterpolationTracker(Json()) {}
+InterpolationTracker::InterpolationTracker() {
+  readConfig(JsonObject{});
+}
 
-InterpolationTracker::InterpolationTracker(Json config) {
+InterpolationTracker::InterpolationTracker(Root& root, Json config) {
   if (config.isNull()) {
     config = JsonObject();
   } else if (config.type() == Json::Type::String) {
-    auto assets = Root::singleton().assets();
+    auto assets = root.assets();
     config = assets->json(config.toString());
   }
+  readConfig(config);
+}
+
+void InterpolationTracker::readConfig(Json const& config) {
 
   m_interpolationEnabled = config.getBool("interpolationEnabled", false);
   m_entityUpdateDelta = config.getDouble("entityUpdateDelta", 3) / VanillaStepsPerSecond;

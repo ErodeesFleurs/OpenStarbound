@@ -42,7 +42,7 @@ namespace Star {
 
 class ConfirmationDialog : public Pane {
 public:
-  ConfirmationDialog();
+  ConfirmationDialog(GuiContext& guiContext);
 
   virtual ~ConfirmationDialog() {}
 

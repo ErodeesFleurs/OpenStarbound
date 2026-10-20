@@ -37,7 +37,7 @@ import star.force_regions;
 import star.world_parameters;
 import star.asset_source;
 import star.assets;
-import star.root_base;
+
 import star.configuration;
 import star.root;
 
@@ -501,8 +501,8 @@ std::shared_ptr<VisitableWorldParameters> netLoadVisitableWorldParameters(ByteAr
   return parameters;
 }
 
-std::shared_ptr<TerrestrialWorldParameters> generateTerrestrialWorldParameters(String const& typeName, String const& sizeName, std::uint64_t seed) {
-  auto& root = Root::singleton();
+std::shared_ptr<TerrestrialWorldParameters> generateTerrestrialWorldParameters(Root& root, String const& typeName, String const& sizeName, std::uint64_t seed) {
+
   auto assets = root.assets();
   auto liquidsDatabase = root.liquidsDatabase();
   auto biomeDatabase = root.biomeDatabase();
@@ -677,8 +677,8 @@ std::shared_ptr<TerrestrialWorldParameters> generateTerrestrialWorldParameters(S
   return parameters;
 }
 
-std::shared_ptr<AsteroidsWorldParameters> generateAsteroidsWorldParameters(std::uint64_t seed) {
-  auto& root = Root::singleton();
+std::shared_ptr<AsteroidsWorldParameters> generateAsteroidsWorldParameters(Root& root, std::uint64_t seed) {
+
   auto assets = root.assets();
 
   auto parameters = std::make_shared<AsteroidsWorldParameters>();
@@ -708,8 +708,8 @@ std::shared_ptr<AsteroidsWorldParameters> generateAsteroidsWorldParameters(std::
   return parameters;
 }
 
-std::shared_ptr<FloatingDungeonWorldParameters> generateFloatingDungeonWorldParameters(String const& dungeonWorldName) {
-  auto& root = Root::singleton();
+std::shared_ptr<FloatingDungeonWorldParameters> generateFloatingDungeonWorldParameters(Root& root, String const& dungeonWorldName) {
+
   auto assets = root.assets();
 
   auto worldConfig = assets->json("/dungeon_worlds.config:" + dungeonWorldName);

@@ -22,6 +22,8 @@ struct OpusDecoder;
 struct OpusEncoder;
 
 namespace Star {
+class Root;
+
 
 inline String const VoiceBroadcastPrefix = std::string("Voice\0", sizeof("Voice\0") - 1);
 
@@ -101,15 +103,7 @@ public:
     Json toJson() const;
   };
 
-  // Get pointer to the singleton Voice instance, if it exists.  Otherwise,
-  // returns nullptr.
-  static Voice* singletonPtr();
-
-  // Gets reference to Voice singleton, throws VoiceException if root
-  // is not initialized.
-  static Voice& singleton();
-
-  Voice(std::shared_ptr<ApplicationController> appController);
+  Voice(Root& root, std::shared_ptr<ApplicationController> appController);
   ~Voice();
 
   Voice(Voice const&) = delete;
@@ -154,7 +148,7 @@ public:
   static OpusDecoder* createDecoder(int channels);
   static OpusEncoder* createEncoder(int channels);
 private:
-  static Voice* s_singleton;
+  Root& m_root;
   void resetEncoder();
   void resetDevice();
   void openDevice();
@@ -206,6 +200,9 @@ private:
 
   std::vector<std::int16_t> m_decodeBuffer;
   std::vector<std::int16_t> m_resampleBuffer;
+  std::vector<std::int16_t> m_mixFinalBuffer;
+  std::vector<std::int16_t> m_mixSpeakerBuffer;
+  std::vector<std::int32_t> m_mixSharedBuffer;
 
   std::shared_ptr<ApplicationController> m_applicationController;
 

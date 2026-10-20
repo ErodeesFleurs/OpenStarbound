@@ -33,8 +33,8 @@ public:
 
   // Return item using the given randomness source
   Item select(RandomSource& rand) const;
-  // Return item using the global randomness source
-  Item select() const;
+  // Return item using the owning service's randomness source
+  Item select(RandomService& rand) const;
   // Return item using fast static randomness from the given seed
   Item select(std::uint64_t seed) const;
 
@@ -42,11 +42,11 @@ public:
   // n is the lesser of the desiredCount and the size of the pool.
   // This INFLUENCES PROBABILITIES so it should not be used where a
   // correct statistical distribution is required.
-  List<Item> selectUniques(std::size_t desiredCount) const;
+  List<Item> selectUniques(std::size_t desiredCount, RandomService& rand) const;
   List<Item> selectUniques(std::size_t desiredCount, std::uint64_t seed) const;
 
   std::size_t selectIndex(RandomSource& rand) const;
-  std::size_t selectIndex() const;
+  std::size_t selectIndex(RandomService& rand) const;
   std::size_t selectIndex(std::uint64_t seed) const;
 
 private:
@@ -122,11 +122,11 @@ Item WeightedPool<Item>::select(RandomSource& rand) const {
 }
 
 template <typename Item>
-Item WeightedPool<Item>::select() const {
+Item WeightedPool<Item>::select(RandomService& rand) const {
   if (m_items.empty())
     return Item();
 
-  return m_items[selectIndex()].second;
+  return m_items[selectIndex(rand)].second;
 }
 
 template <typename Item>
@@ -138,8 +138,8 @@ Item WeightedPool<Item>::select(std::uint64_t seed) const {
 }
 
 template <typename Item>
-List<Item> WeightedPool<Item>::selectUniques(std::size_t desiredCount) const {
-  return selectUniques(desiredCount, Random::randu64());
+List<Item> WeightedPool<Item>::selectUniques(std::size_t desiredCount, RandomService& rand) const {
+  return selectUniques(desiredCount, rand.randu64());
 }
 
 template <typename Item>
@@ -160,8 +160,8 @@ std::size_t WeightedPool<Item>::selectIndex(RandomSource& rand) const {
 }
 
 template <typename Item>
-std::size_t WeightedPool<Item>::selectIndex() const {
-  return selectIndex(Random::randd());
+std::size_t WeightedPool<Item>::selectIndex(RandomService& rand) const {
+  return selectIndex(rand.randd());
 }
 
 template <typename Item>

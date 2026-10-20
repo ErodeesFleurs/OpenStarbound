@@ -31,7 +31,7 @@ import star.root;
 
 namespace Star {
 
-// Parses command line flags and loads and returns the Root singleton based on
+// Parses command line flags and returns an owned Root instance configured from
 // them.
 //
 // It is designed to load settings first from the settings passed into the

@@ -10,9 +10,10 @@ import star.math_common;
 using namespace Star;
 
 TEST(PolyTest, ConvexHull) {
+  RandomService random;
   PolyF::VertexList inputVertexes;
   for (unsigned i = 0; i < 1000; ++i) {
-    float angle = Random::randf() * 2 * std::numbers::pi;
+    float angle = random.randf() * 2 * std::numbers::pi;
     inputVertexes.append({std::sin(angle), std::cos(angle)});
   }
 
@@ -20,7 +21,7 @@ TEST(PolyTest, ConvexHull) {
 
   PolyF::VertexList testVertexes;
   for (unsigned i = 0; i < 1000; ++i) {
-    float angle = Random::randf() * 2 * std::numbers::pi;
+    float angle = random.randf() * 2 * std::numbers::pi;
     testVertexes.append({std::sin(angle) * 0.75f, std::cos(angle) * 0.75f});
   }
 

@@ -28,7 +28,7 @@ enum class WarpMode : std::uint8_t {
   DeployOnly,
   BeamOrDeploy
 };
-extern EnumMap<WarpMode> WarpModeNames;
+extern EnumMap<WarpMode> const WarpModeNames;
 
 struct InstanceWorldId {
   friend DataStream& operator>>(DataStream& ds, InstanceWorldId& instanceWorldId);
@@ -65,7 +65,6 @@ struct ClientCustomWorldId {
   Uuid uuid;
   String name;
 
-  ClientCustomWorldId();
   ClientCustomWorldId(Uuid uuid, String name);
 
   bool operator==(ClientCustomWorldId const& rhs) const;
@@ -123,7 +122,6 @@ DataStream& operator<<(DataStream& ds, ClientCustomWorldId const& clientWorldId)
     friend std::ostream& operator<<(std::ostream& os, ClientShipWorldIdWrapper<Uuid> const& worldId);
     using BaseType::BaseType;
 
-    ClientShipWorldIdWrapper() : BaseType() {}
 
     ClientShipWorldIdWrapper(ClientShipWorldIdWrapper const& nt) : BaseType(nt) {}
 
@@ -305,7 +303,6 @@ template <typename BaseType>
 struct WarpToPlayerWrapper : BaseType {
   using BaseType::BaseType;
 
-  WarpToPlayerWrapper() : BaseType() {}
 
   WarpToPlayerWrapper(WarpToPlayerWrapper const& nt) : BaseType(nt) {}
 
@@ -352,6 +349,14 @@ JsonObject warpActionToJson(WarpAction const& warpAction);
 DataStream& operator>>(DataStream& ds, WarpToWorld& warpToWorld);
 DataStream& operator<<(DataStream& ds, WarpToWorld const& warpToWorld);
 
+// Construct identity-bearing values from their wire fields, never a generated ID.
+template <>
+ClientShipWorldId DataStream::read<ClientShipWorldId>();
+template <>
+ClientCustomWorldId DataStream::read<ClientCustomWorldId>();
+template <>
+WarpToPlayer DataStream::read<WarpToPlayer>();
+
 }
 
 export module star.warping;
@@ -361,6 +366,17 @@ export namespace Star {
   struct hash<InstanceWorldId>;
   template <>
   struct hash<ClientCustomWorldId>;
+}
+
+export extern "C++" {
+namespace Star {
+  template <>
+  ClientShipWorldId DataStream::read<ClientShipWorldId>();
+  template <>
+  ClientCustomWorldId DataStream::read<ClientCustomWorldId>();
+  template <>
+  WarpToPlayer DataStream::read<WarpToPlayer>();
+}
 }
 
 

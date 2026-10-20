@@ -41,13 +41,13 @@ import star.particle_database;
 
 namespace Star {
 
-EffectSourceDatabase::EffectSourceDatabase() {
-  auto assets = Root::singleton().assets();
+EffectSourceDatabase::EffectSourceDatabase(Root& root) {
+  auto assets = root.assets();
 
   auto& files = assets->scanExtension("effectsource");
   assets->queueJsons(files);
   for (auto const& file : files) {
-    auto sourceConfig = std::make_shared<EffectSourceConfig>(assets->json(file));
+    auto sourceConfig = std::make_shared<EffectSourceConfig>(root, assets->json(file));
     if (m_sourceConfigs.contains(sourceConfig->kind()))
       throw StarException(
           strf("Duplicate effect source asset kind Name {}. configfile {}", sourceConfig->kind(), file));
@@ -63,7 +63,7 @@ std::shared_ptr<EffectSourceConfig> EffectSourceDatabase::effectSourceConfig(Str
   return m_sourceConfigs.get(k);
 }
 
-EffectSourceConfig::EffectSourceConfig(Json const& config) {
+EffectSourceConfig::EffectSourceConfig(Root& root, Json const& config) : m_root(root) {
   m_kind = config.getString("kind");
   m_config = config;
 }
@@ -73,17 +73,17 @@ String const& EffectSourceConfig::kind() {
 }
 
 std::shared_ptr<EffectSource> EffectSourceConfig::instance(String const& suggestedSpawnLocation) {
-  return std::make_shared<EffectSource>(kind(), suggestedSpawnLocation, m_config.getObject("definition"));
+  return std::make_shared<EffectSource>(m_root, kind(), suggestedSpawnLocation, m_config.getObject("definition"));
 }
 
-EffectSource::EffectSource(String const& kind, String suggestedSpawnLocation, Json const& definition) {
+EffectSource::EffectSource(Root& root, String const& kind, String suggestedSpawnLocation, Json const& definition) : m_root(root) {
   m_kind = kind;
   m_config = definition;
   m_expired = false;
   m_loopDuration = m_config.getFloat("duration", 0);
   m_durationVariance = m_config.getFloat("durationVariance", 0);
   m_loops = m_config.getBool("loops", m_loopDuration != 0);
-  m_timer = Random::randf() * (m_loopDuration + 0.5 * m_durationVariance);
+  m_timer = m_root.random().randf() * (m_loopDuration + 0.5 * m_durationVariance);
   m_stop = false;
   m_initialTick = true;
   m_loopTick = false;
@@ -107,7 +107,7 @@ void EffectSource::stop() {
 void EffectSource::tick(float dt) {
   m_timer -= dt;
   if ((m_timer <= 0) && m_loops) {
-    m_timer = m_loopDuration + m_durationVariance * Random::randf(-0.5f, 0.5f);
+    m_timer = m_loopDuration + m_durationVariance * m_root.random().randf(-0.5f, 0.5f);
     m_loopTick = true;
   }
   if (m_stop || (m_timer <= 0))
@@ -116,8 +116,8 @@ void EffectSource::tick(float dt) {
 }
 
 List<String> EffectSource::particles() {
-  auto pickParticleSources = [](Json const& config, List<String>& particles) {
-    particles.appendAll(jsonToStringList(Random::randValueFrom(config.toArray(), JsonArray())));
+  auto pickParticleSources = [this](Json const& config, List<String>& particles) {
+    particles.appendAll(jsonToStringList(m_root.random().randValueFrom(config.toArray(), JsonArray())));
   };
   List<String> result;
   if (m_initialTick)
@@ -132,15 +132,15 @@ List<String> EffectSource::particles() {
 List<std::shared_ptr<AudioInstance>> EffectSource::sounds(Vec2F offset) {
   List<std::shared_ptr<AudioInstance>> result;
   if (m_initialTick) {
-    result.appendAll(soundsFromDefinition(m_config.get("start", JsonObject()).get("sounds", Json()), offset));
+    result.appendAll(soundsFromDefinition(m_root, m_config.get("start", JsonObject()).get("sounds", Json()), offset));
 
-    m_mainSounds = soundsFromDefinition(m_config.get("sounds", Json()), offset);
+    m_mainSounds = soundsFromDefinition(m_root, m_config.get("sounds", Json()), offset);
     result.appendAll(m_mainSounds);
   }
   if (m_finalTick) {
     for (auto& s : m_mainSounds)
       s->stop();
-    result.appendAll(soundsFromDefinition(m_config.get("stop", JsonObject()).get("sounds", Json()), offset));
+    result.appendAll(soundsFromDefinition(m_root, m_config.get("stop", JsonObject()).get("sounds", Json()), offset));
   }
   return result;
 }
@@ -164,10 +164,10 @@ String EffectSource::suggestedSpawnLocation() const {
   return m_suggestedSpawnLocation;
 }
 
-List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position) {
+List<Particle> particlesFromDefinition(Root& root, Json const& config, Vec2F const& position) {
   Json particles;
   if (config.type() == Json::Type::Array)
-    particles = Random::randValueFrom(config.toArray(), Json());
+    particles = root.random().randValueFrom(config.toArray(), Json());
   else
     particles = config;
   if (!particles.isNull()) {
@@ -176,11 +176,11 @@ List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position
     List<Particle> result;
     for (auto entry : particles.iterateArray()) {
       if (entry.type() != Json::Type::Object) {
-        result.append(Root::singleton().particleDatabase()->particle(entry.toString()));
+        result.append(root.particleDatabase()->particle(entry.toString()));
       } else {
-        Particle particle(entry.toObject());
-        Particle variance(entry.getObject("variance", {}));
-        particle.applyVariance(variance);
+        Particle particle(root, entry.toObject());
+        Particle variance(root, entry.getObject("variance", {}));
+        particle.applyVariance(root, variance);
         particle.position += position;
         result.append(particle);
       }
@@ -190,17 +190,17 @@ List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position
   return {};
 }
 
-List<std::shared_ptr<AudioInstance>> soundsFromDefinition(Json const& config, Vec2F const& position) {
+List<std::shared_ptr<AudioInstance>> soundsFromDefinition(Root& root, Json const& config, Vec2F const& position) {
   Json sound;
   if (config.type() == Json::Type::Array)
-    sound = Random::randValueFrom(config.toArray(), Json());
+    sound = root.random().randValueFrom(config.toArray(), Json());
   else
     sound = config;
   if (!sound.isNull()) {
     if (sound.type() != Json::Type::Array)
       sound = JsonArray{sound};
     List<std::shared_ptr<AudioInstance>> result;
-    auto assets = Root::singleton().assets();
+    auto assets = root.assets();
     for (auto entry : sound.iterateArray()) {
       if (entry.type() != Json::Type::Object) {
         JsonObject t;
@@ -211,7 +211,7 @@ List<std::shared_ptr<AudioInstance>> soundsFromDefinition(Json const& config, Ve
       auto sample = std::make_shared<AudioInstance>(*assets->audio(entry.getString("resource")));
       sample->setLoops(entry.getInt("loops", 0));
       sample->setVolume(entry.getFloat("volume", 1.0f));
-      sample->setPitchMultiplier(entry.getFloat("pitch", 1.0f) + Random::randf(-1, 1) * entry.getFloat("pitchVariability", 0.0f));
+      sample->setPitchMultiplier(entry.getFloat("pitch", 1.0f) + root.random().randf(-1, 1) * entry.getFloat("pitchVariability", 0.0f));
       sample->setRangeMultiplier(entry.getFloat("audioRangeMultiplier", 1.0f));
       sample->setPosition(position);
 

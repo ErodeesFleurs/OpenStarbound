@@ -13,7 +13,7 @@ namespace Star {
 
 JsonRpcInterface::~JsonRpcInterface() {}
 
-JsonRpc::JsonRpc() {
+JsonRpc::JsonRpc(Logger& logger) : m_logger(logger) {
   m_requestId = 0;
 }
 
@@ -90,7 +90,7 @@ void JsonRpc::receive(ByteArray const& inbuffer) {
             {"result", m_handlers[handlerName](request.get("arguments"))}
           });
       } catch (std::exception& e) {
-        Logger::error("Exception while handling variant rpc request handler call. {}", outputException(e, false));
+        m_logger.error("Exception while handling variant rpc request handler call. {}", outputException(e, false));
         JsonObject response;
         response["command"] = "fail";
         response["id"] = request.get("id");
@@ -105,7 +105,7 @@ void JsonRpc::receive(ByteArray const& inbuffer) {
         auto responseHandler = m_pendingResponse.take(request.getUInt("id"));
         responseHandler.fulfill(request.get("result"));
       } catch (std::exception& e) {
-        Logger::error("Exception while handling variant rpc response handler call. {}", outputException(e, true));
+        m_logger.error("Exception while handling variant rpc response handler call. {}", outputException(e, true));
       }
 
     } else if (request.get("command") == "fail") {
@@ -113,7 +113,7 @@ void JsonRpc::receive(ByteArray const& inbuffer) {
         auto responseHandler = m_pendingResponse.take(request.getUInt("id"));
         responseHandler.fulfill({});
       } catch (std::exception& e) {
-        Logger::error("Exception while handling variant rpc failure handler call. {}", outputException(e, true));
+        m_logger.error("Exception while handling variant rpc failure handler call. {}", outputException(e, true));
       }
     }
   }

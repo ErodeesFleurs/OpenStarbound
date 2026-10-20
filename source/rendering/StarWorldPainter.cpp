@@ -97,12 +97,12 @@ import star.animation;
 
 namespace Star {
 
-WorldPainter::WorldPainter() {
-  m_assets = Root::singleton().assets();
+WorldPainter::WorldPainter(Root& root) : m_root(root) {
+  m_assets = m_root.assets();
 
   m_camera.setScreenSize({800, 600});
   m_camera.setCenterWorldPosition(Vec2F());
-  m_camera.setPixelRatio(Root::singleton().configuration()->get("zoomLevel").toFloat());
+  m_camera.setPixelRatio(m_root.configuration()->get("zoomLevel").toFloat());
 
   m_highlightConfig = m_assets->json("/highlights.config");
   for (auto p : m_highlightConfig.get("highlightDirectives").iterateObject())
@@ -116,14 +116,14 @@ WorldPainter::WorldPainter() {
 }
 
 void WorldPainter::renderInit(std::shared_ptr<Renderer> renderer) {
-  m_assets = Root::singleton().assets();
+  m_assets = m_root.assets();
 
   m_renderer = std::move(renderer);
   auto textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
-  m_textPainter = std::make_shared<TextPainter>(m_renderer, textureGroup);
-  m_tilePainter = std::make_shared<TilePainter>(m_renderer);
-  m_drawablePainter = std::make_shared<DrawablePainter>(m_renderer, std::make_shared<AssetTextureGroup>(textureGroup));
-  m_environmentPainter = std::make_shared<EnvironmentPainter>(m_renderer);
+  m_textPainter = std::make_shared<TextPainter>(m_root, m_renderer, textureGroup);
+  m_tilePainter = std::make_shared<TilePainter>(m_root, m_renderer);
+  m_drawablePainter = std::make_shared<DrawablePainter>(m_renderer, std::make_shared<AssetTextureGroup>(m_root, textureGroup));
+  m_environmentPainter = std::make_shared<EnvironmentPainter>(m_root, m_renderer);
 }
 
 void WorldPainter::setCameraPosition(WorldGeometry const& geometry, Vec2F const& position) {
@@ -135,15 +135,20 @@ WorldCamera& WorldPainter::camera() {
   return m_camera;
 }
 
+TileDrawer* WorldPainter::tileDrawer() const {
+  return m_tilePainter.get();
+}
+
 void WorldPainter::update(float dt) {
   m_environmentPainter->update(dt);
 }
 
 void WorldPainter::render(WorldRenderData& renderData, std::function<bool()> lightWaiter) {
   m_camera.setScreenSize(m_renderer->screenSize());
-  m_camera.setTargetPixelRatio(Root::singleton().configuration()->get("zoomLevel").toFloat());
+  m_camera.setTargetPixelRatio(m_root.configuration()->get("zoomLevel").toFloat());
 
-  m_assets = Root::singleton().assets();
+  m_assets = m_root.assets();
+  m_imageMetadata = m_root.imageMetadataDatabase();
 
   m_tilePainter->setup(m_camera, renderData);
 
@@ -298,14 +303,14 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
     } else if (particle.type == Particle::Type::Textured || particle.type == Particle::Type::Animated) {
       Drawable drawable;
       if (particle.type == Particle::Type::Textured)
-        drawable = Drawable::makeImage(particle.image, 1.0f / TilePixels, true, Vec2F(0, 0));
+        drawable = Drawable::makeImage(*m_imageMetadata, particle.image, 1.0f / TilePixels, true, Vec2F(0, 0));
       else
         drawable = particle.animation->drawable(1.0f / TilePixels);
 
       if (particle.flip && particle.flippable)
         drawable.scale(Vec2F(-1, 1));
       if (drawable.isImage() && particle.type != Particle::Type::Animated)
-        drawable.imagePart().addDirectivesGroup(particle.directives, true);
+        drawable.imagePart().addDirectivesGroup(*m_imageMetadata, particle.directives, true);
       drawable.fullbright = particle.fullbright;
       drawable.color = particle.color;
       drawable.rotate(particle.rotation);
@@ -336,7 +341,7 @@ void WorldPainter::renderBars(WorldRenderData& renderData) {
     offset += m_entityBarSpacing;
     if (bar.icon) {
       auto iconDrawPosition = position - (m_entityBarSize / 2).round() + m_entityBarIconOffset;
-      drawDrawable(Drawable::makeImage(*bar.icon, 1.0f / TilePixels, true, iconDrawPosition));
+      drawDrawable(Drawable::makeImage(*m_imageMetadata, *bar.icon, 1.0f / TilePixels, true, iconDrawPosition));
     }
 
     if (!bar.detailOnly) {
@@ -364,7 +369,7 @@ void WorldPainter::drawEntityLayer(List<Drawable> drawables, EntityHighlightEffe
           auto underlayDrawable = Drawable(d);
           underlayDrawable.fullbright = true;
           underlayDrawable.color = Color::rgbaf(1, 1, 1, highlightEffect.level * d.color.alphaF());
-          underlayDrawable.imagePart().addDirectives(underlayDirectives, true);
+          underlayDrawable.imagePart().addDirectives(*m_imageMetadata, underlayDirectives, true);
           drawDrawable(std::move(underlayDrawable));
         }
       }
@@ -378,7 +383,7 @@ void WorldPainter::drawEntityLayer(List<Drawable> drawables, EntityHighlightEffe
         auto overlayDrawable = Drawable(d);
         overlayDrawable.fullbright = true;
         overlayDrawable.color = Color::rgbaf(1, 1, 1, highlightEffect.level * d.color.alphaF());
-        overlayDrawable.imagePart().addDirectives(overlayDirectives, true);
+        overlayDrawable.imagePart().addDirectives(*m_imageMetadata, overlayDirectives, true);
         drawDrawable(std::move(overlayDrawable));
       }
     }
@@ -398,9 +403,9 @@ void WorldPainter::drawDrawable(Drawable drawable) {
   // draw the drawable if it's on screen
   // if it's not on screen, there's a random chance to pre-load
   // pre-load is not done on every tick because it's expensive to look up images with long paths
-  if (RectF::withSize(Vec2F(), Vec2F(m_camera.screenSize())).intersects(drawable.boundBox(false)))
+  if (RectF::withSize(Vec2F(), Vec2F(m_camera.screenSize())).intersects(drawable.boundBox(*m_imageMetadata, false)))
     m_drawablePainter->drawDrawable(drawable);
-  else if (drawable.isImage() && Random::randf() < m_preloadTextureChance)
+  else if (drawable.isImage() && m_root.random().randf() < m_preloadTextureChance)
     m_assets->tryImage(drawable.imagePart().image);
 }
 

@@ -1,4 +1,5 @@
 import star.json;
+import star.native_runtime;
 import star.file;
 import star.lexical_cast;
 import star.image;
@@ -42,6 +43,7 @@ import star.math_common;
 using namespace Star;
 
 int main(int argc, char** argv) {
+  [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   try {
     RootLoader rootLoader({{}, {}, {}, LogLevel::Error, false, {}});
 
@@ -60,7 +62,7 @@ int main(int argc, char** argv) {
 
     auto size = Vec2U(lexicalCast<unsigned>(options.parameters["size"].first().split(",")[0]), lexicalCast<unsigned>(options.parameters["size"].first().split(",")[1]));
 
-    auto seed = Random::randu64();
+    auto seed = root->random().randu64();
     if (!options.parameters["seed"].empty())
       seed = lexicalCast<std::uint64_t>(options.parameters["seed"].first());
 
@@ -86,7 +88,7 @@ int main(int argc, char** argv) {
         {"commonality", commonality}
       });
 
-    auto selector = Root::singleton().terrainDatabase()->createNamedSelector(options.parameters["selector"].first(), selectorParameters);
+    auto selector = root->terrainDatabase()->createNamedSelector(options.parameters["selector"].first(), selectorParameters);
 
     MultiArray<float, 2> terrainResult({size[0], size[1]}, 0.0f);
     for (std::size_t x = 0; x < size[0]; ++x) {
@@ -119,7 +121,7 @@ int main(int argc, char** argv) {
     }
 
     auto outputFile = File::open("terrain.png", IOMode::Write);
-    outputImage->writePng(outputFile);
+    outputImage->writePng(root->logger(), outputFile);
     outputFile->close();
     return 0;
   } catch (std::exception const& e) {

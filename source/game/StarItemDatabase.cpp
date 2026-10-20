@@ -120,12 +120,13 @@ import star.item_lua_bindings;
 import star.codex_database;
 import star.codex;
 import star.object_database;
+import star.versioning_database;
 
 import star.math_common;
 import star.algorithm;
 namespace Star {
 
-EnumMap<ItemType> ItemTypeNames{
+extern EnumMap<ItemType> const ItemTypeNames{
   {ItemType::Generic, "generic"},
   {ItemType::LiquidItem, "liquid"},
   {ItemType::MaterialItem, "material"},
@@ -228,11 +229,15 @@ bool ItemDatabase::canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescripto
   return true;
 }
 
-ItemDatabase::ItemDatabase()
-  : m_luaRoot(std::make_shared<LuaRoot>()), m_rebuilder(std::make_shared<Rebuilder>("item")) {
+ItemDatabase::ItemDatabase(Root& root)
+  : m_root(root), m_luaRoot(std::make_shared<LuaRoot>(root)),
+    m_itemCache(root.random()) {
   scanItems();
   addObjectItems();
   addCodexes();
+  // Builders below can query the complete base catalog without re-entering
+  // Root's still-unpublished ItemDatabase loader.
+  m_rebuilder = std::make_shared<Rebuilder>(root, "item", this);
   scanRecipes();
   addBlueprints();
 }
@@ -246,9 +251,13 @@ void ItemDatabase::cleanup() {
   }
 }
 
+
+ItemDescriptor ItemDatabase::loadDescriptor(Json const& store) const {
+  return ItemDescriptor::loadStore(*m_root.versioningDatabase(), store);
+}
 std::shared_ptr<Item> ItemDatabase::diskLoad(Json const& diskStore) const {
   if (diskStore) {
-    return item(ItemDescriptor::loadStore(diskStore));
+    return item(loadDescriptor(diskStore));
   } else {
     return {};
   }
@@ -260,7 +269,7 @@ std::shared_ptr<Item> ItemDatabase::fromJson(Json const& spec) const {
 
 Json ItemDatabase::diskStore(std::shared_ptr<Item const> const& itemPtr) const {
   if (itemPtr)
-    return itemPtr->descriptor().diskStore();
+    return itemPtr->descriptor().diskStore(*m_root.versioningDatabase());
   else
     return Json();
 }
@@ -293,7 +302,7 @@ ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json p
 
   ItemConfig itemConfig;
   if (data.assetsConfig)
-    itemConfig.config = Root::singleton().assets()->json(*data.assetsConfig);
+    itemConfig.config = m_root.assets()->json(*data.assetsConfig);
   itemConfig.directory = data.directory;
   itemConfig.config = jsonMerge(itemConfig.config, data.customConfig);
   itemConfig.parameters = parameters;
@@ -301,8 +310,8 @@ ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json p
   if (auto builder = itemConfig.config.optString("builder")) {
     RecursiveMutexLocker locker(m_luaMutex);
     auto context = m_luaRoot->createContext(*builder);
-    context.setCallbacks("root", LuaBindings::makeRootCallbacks());
-    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
+    context.setCallbacks("root", LuaBindings::makeRootCallbacks(m_root, this));
+    context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks(m_root.random(), m_root.logger(), m_root.logMap()));
     luaTie(itemConfig.config, itemConfig.parameters) = context.invokePath<LuaTupleReturn<Json, Json>>(
         "build", itemConfig.directory, itemConfig.config, itemConfig.parameters, level, seed);
   }
@@ -464,7 +473,7 @@ ItemRecipe ItemDatabase::parseRecipe(Json const& config) const {
     }
 
     res.output = ItemDescriptor(config.get("output"));
-    res.duration = config.getFloat("duration", Root::singleton().assets()->json("/items/defaultParameters.config:defaultCraftDuration").toFloat());
+    res.duration = config.getFloat("duration", m_root.assets()->json("/items/defaultParameters.config:defaultCraftDuration").toFloat());
     res.groups = StringSet::from(jsonToStringList(config.get("groups", JsonArray())));
     if (auto item = ItemDatabase::itemShared(res.output, {}, {})) {
       res.outputRarity = item->rarity();
@@ -496,7 +505,9 @@ HashSet<ItemRecipe> ItemDatabase::allRecipes(StringSet const& types) const {
 std::shared_ptr<Item> ItemDatabase::applyAugment(std::shared_ptr<Item> const item, AugmentItem* augment) const {
   if (item) {
     RecursiveMutexLocker locker(m_luaMutex);
-    LuaBaseComponent script;
+    LuaBaseComponent script(m_root);
+    script.removeCallbacks("root");
+    script.addCallbacks("root", LuaBindings::makeRootCallbacks(m_root, this));
     script.setLuaRoot(m_luaRoot);
     script.setScripts(augment->augmentScripts());
     script.addCallbacks("item", LuaBindings::makeItemCallbacks(augment));
@@ -528,7 +539,9 @@ bool ItemDatabase::ageItem(std::shared_ptr<Item>& item, double aging) const {
   ItemDescriptor original = item->descriptor();
 
   RecursiveMutexLocker locker(m_luaMutex);
-  LuaBaseComponent script;
+  LuaBaseComponent script(m_root);
+  script.removeCallbacks("root");
+  script.addCallbacks("root", LuaBindings::makeRootCallbacks(m_root, this));
   script.setLuaRoot(m_luaRoot);
   script.setScripts(itemData.agingScripts);
   script.init();
@@ -548,57 +561,57 @@ List<String> ItemDatabase::allItems() const {
   return m_items.keys();
 }
 
-std::shared_ptr<Item> ItemDatabase::createItem(ItemType type, ItemConfig const& config) {
+std::shared_ptr<Item> ItemDatabase::createItem(ItemType type, ItemConfig const& config) const {
   if (type == ItemType::Generic) {
-    return std::make_shared<GenericItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<GenericItem>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::LiquidItem) {
-    return std::make_shared<LiquidItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<LiquidItem>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::MaterialItem) {
-    return std::make_shared<MaterialItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<MaterialItem>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::ObjectItem) {
-    return std::make_shared<ObjectItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<ObjectItem>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::CurrencyItem) {
-    return std::make_shared<CurrencyItem>(config.config, config.directory);
+    return std::make_shared<CurrencyItem>(m_root, config.config, config.directory);
   } else if (type == ItemType::MiningTool) {
-    return std::make_shared<MiningTool>(config.config, config.directory, config.parameters);
+    return std::make_shared<MiningTool>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::Flashlight) {
-    return std::make_shared<Flashlight>(config.config, config.directory, config.parameters);
+    return std::make_shared<Flashlight>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::WireTool) {
-    return std::make_shared<WireTool>(config.config, config.directory, config.parameters);
+    return std::make_shared<WireTool>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::BeamMiningTool) {
-    return std::make_shared<BeamMiningTool>(config.config, config.directory, config.parameters);
+    return std::make_shared<BeamMiningTool>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::PaintingBeamTool) {
-    return std::make_shared<PaintingBeamTool>(config.config, config.directory, config.parameters);
+    return std::make_shared<PaintingBeamTool>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::TillingTool) {
-    return std::make_shared<TillingTool>(config.config, config.directory, config.parameters);
+    return std::make_shared<TillingTool>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::HarvestingTool) {
-    return std::make_shared<HarvestingTool>(config.config, config.directory, config.parameters);
+    return std::make_shared<HarvestingTool>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::HeadArmor) {
-    return std::make_shared<HeadArmor>(config.config, config.directory, config.parameters);
+    return std::make_shared<HeadArmor>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::ChestArmor) {
-    return std::make_shared<ChestArmor>(config.config, config.directory, config.parameters);
+    return std::make_shared<ChestArmor>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::LegsArmor) {
-    return std::make_shared<LegsArmor>(config.config, config.directory, config.parameters);
+    return std::make_shared<LegsArmor>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::BackArmor) {
-    return std::make_shared<BackArmor>(config.config, config.directory, config.parameters);
+    return std::make_shared<BackArmor>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::Consumable) {
-    return std::make_shared<ConsumableItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<ConsumableItem>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::Blueprint) {
-    return std::make_shared<BlueprintItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<BlueprintItem>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::Codex) {
-    return std::make_shared<CodexItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<CodexItem>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::InspectionTool) {
-    return std::make_shared<InspectionTool>(config.config, config.directory, config.parameters);
+    return std::make_shared<InspectionTool>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::InstrumentItem) {
-    return std::make_shared<InstrumentItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<InstrumentItem>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::ThrownItem) {
-    return std::make_shared<ThrownItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<ThrownItem>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::UnlockItem) {
-    return std::make_shared<UnlockItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<UnlockItem>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::ActiveItem) {
-    return std::make_shared<ActiveItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<ActiveItem>(m_root, config.config, config.directory, config.parameters);
   } else if (type == ItemType::AugmentItem) {
-    return std::make_shared<AugmentItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<AugmentItem>(m_root, config.config, config.directory, config.parameters);
   } else {
     throw ItemException(strf("Unknown item type {}", (int)type));
   }
@@ -629,11 +642,11 @@ std::shared_ptr<Item> ItemDatabase::tryCreateItem(ItemDescriptor const& descript
 
       if (!success) {
         if (descriptor.name() == "perfectlygenericitem") {
-          Logger::error("Could not re-instantiate item '{}'. {}", descriptor, outputException(e, false));
+          m_root.logger().error("Could not re-instantiate item '{}'. {}", descriptor, outputException(e, false));
           result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", descriptor.parameters(), level, seed));
           result->setCount(descriptor.count());
         } else {
-          Logger::error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
+          m_root.logger().error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
           result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", JsonObject({
             {"genericItemStorage", descriptor.toJson().eraseKey("count")},
             {"shortdescription", descriptor.name()},
@@ -668,7 +681,7 @@ ItemRecipe ItemDatabase::makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor 
 }
 
 void ItemDatabase::addItemSet(ItemType type, String const& extension) {
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
   for (auto& file : assets->scanExtension(extension)) {
     ItemData data;
     try {
@@ -695,7 +708,7 @@ void ItemDatabase::addItemSet(ItemType type, String const& extension) {
 }
 
 void ItemDatabase::addObjectDropItem(String const& objectPath, Json const& objectConfig) {
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
 
   ItemData data;
   data.type = ItemType::ObjectItem;
@@ -708,7 +721,7 @@ void ItemDatabase::addObjectDropItem(String const& objectPath, Json const& objec
   JsonObject customConfig = objectConfig.toObject();
   if (!customConfig.contains("inventoryIcon")) {
     customConfig["inventoryIcon"] = assets->json("/objects/defaultParameters.config:missingIcon");
-    Logger::warn("Missing inventoryIcon for {}, using default", data.name);
+    m_root.logger().warn("Missing inventoryIcon for {}, using default", data.name);
   }
   customConfig["itemName"] = data.name;
   if (!customConfig.contains("tooltipKind"))
@@ -731,7 +744,7 @@ void ItemDatabase::addObjectDropItem(String const& objectPath, Json const& objec
 }
 
 void ItemDatabase::scanItems() {
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
 
   List<std::pair<ItemType, String>> itemSets;
   auto scanItemType = [&itemSets, assets](ItemType type, String const& extension) {
@@ -768,7 +781,7 @@ void ItemDatabase::scanItems() {
 }
 
 void ItemDatabase::addObjectItems() {
-  auto objectDatabase = Root::singleton().objectDatabase();
+  auto objectDatabase = m_root.objectDatabase();
 
   for (auto const& objectName : objectDatabase->allObjects()) {
     auto objectConfig = objectDatabase->getConfig(objectName);
@@ -779,7 +792,7 @@ void ItemDatabase::addObjectItems() {
 }
 
 void ItemDatabase::scanRecipes() {
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
 
   auto& files = assets->scanExtension("recipe");
   assets->queueJsons(files);
@@ -787,13 +800,13 @@ void ItemDatabase::scanRecipes() {
     try {
       m_recipes.add(parseRecipe(assets->json(file)));
     } catch (std::exception const& e) {
-      Logger::error("Could not load recipe {}: {}", file, outputException(e, false));
+      m_root.logger().error("Could not load recipe {}: {}", file, outputException(e, false));
     }
   }
 }
 
 void ItemDatabase::addBlueprints() {
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
 
   for (auto const& recipe : m_recipes) {
     auto baseDesc = recipe.output;
@@ -836,20 +849,20 @@ void ItemDatabase::addBlueprints() {
 
       m_items[blueprintData.name] = blueprintData;
     } catch (std::exception const& e) {
-      Logger::error("Could not create blueprint item from recipe: {}", outputException(e, false));
+      m_root.logger().error("Could not create blueprint item from recipe: {}", outputException(e, false));
     }
   }
 }
 
 void ItemDatabase::addCodexes() {
-  auto assets = Root::singleton().assets();
+  auto assets = m_root.assets();
   auto codexConfig = assets->json("/codex.config");
 
-  auto codexDatabase = Root::singleton().codexDatabase();
+  auto codexDatabase = m_root.codexDatabase();
   for (auto const& codexPair : codexDatabase->codexes()) {
     String codexItemName = strf("{}-codex", codexPair.second->id());
     if (m_items.contains(codexItemName)) {
-      Logger::warn("Couldn't create codex item {} because an item with that name is already defined", codexItemName);
+      m_root.logger().warn("Couldn't create codex item {} because an item with that name is already defined", codexItemName);
       continue;
     }
 
@@ -871,7 +884,7 @@ void ItemDatabase::addCodexes() {
 
       m_items[codexItemName] = codexItemData;
     } catch (std::exception const& e) {
-      Logger::error("Could not create item for codex {}: {}", codexPair.second->id(), outputException(e, false));
+      m_root.logger().error("Could not create item for codex {}: {}", codexPair.second->id(), outputException(e, false));
     }
   }
 }

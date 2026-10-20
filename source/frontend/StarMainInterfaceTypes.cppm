@@ -78,7 +78,7 @@ extern EnumMap<MainInterfacePanes> const MainInterfacePanesNames;
 typedef RegisteredPaneManager<MainInterfacePanes> MainInterfacePaneManager;
 
 struct MainInterfaceConfig {
-  static std::shared_ptr<MainInterfaceConfig> loadFromAssets();
+  static std::shared_ptr<MainInterfaceConfig> loadFromAssets(GuiContext& context);
 
   TextStyle textStyle;
 

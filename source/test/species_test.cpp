@@ -27,23 +27,24 @@ import star.root;
 #include "gtest/gtest.h"
 
 import star.species_database;
+import star.game_test;
 
 using namespace Star;
 
-TEST(SpeciesTest, NameGenAndOuchNoisesMustCoverEveryGender) {
-  auto assets = Root::singleton().assets();
+const GameTestRegistration speciesGenderCoverage("SpeciesTest", "NameGenAndOuchNoisesMustCoverEveryGender", [](GameTest& fixture) {
+  auto assets = fixture.root().assets();
   auto speciesFiles = assets->scanExtension("species");
   ASSERT_FALSE(speciesFiles.empty());
 
   Json config = assets->json(*speciesFiles.begin());
-  EXPECT_NO_THROW((void)SpeciesDefinition(config));
+  EXPECT_NO_THROW((void)SpeciesDefinition(fixture.root(), config));
 
   // Both lists are indexed by Gender, so a species has to provide an entry for
   // every gender.  A shorter list used to be read with operator[], which is out
   // of bounds (upstream #599: an empty ouchNoises array was an access
   // violation).
   for (auto key : {String("nameGen"), String("ouchNoises")}) {
-    EXPECT_THROW((void)SpeciesDefinition(config.set(key, JsonArray())), StarException);
-    EXPECT_THROW((void)SpeciesDefinition(config.set(key, JsonArray{config.get(key).get(0)})), StarException);
+    EXPECT_THROW((void)SpeciesDefinition(fixture.root(), config.set(key, JsonArray())), StarException);
+    EXPECT_THROW((void)SpeciesDefinition(fixture.root(), config.set(key, JsonArray{config.get(key).get(0)})), StarException);
   }
-}
+});

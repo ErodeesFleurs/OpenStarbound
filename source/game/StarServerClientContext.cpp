@@ -118,7 +118,6 @@ import star.tile_entity;
 import star.container_entity;
 import star.asset_source;
 import star.assets;
-import star.root_base;
 import star.configuration;
 import star.root;
 import star.server_client_context;
@@ -130,9 +129,10 @@ import star.byte_array;
 import star.algorithm;
 namespace Star {
 
-ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
+ServerClientContext::ServerClientContext(Root& root, ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
     String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks, StringSet validShipSpecies, String account)
-  : m_clientId(clientId),
+  : m_root(root),
+    m_clientId(clientId),
     m_remoteAddress(remoteAddress),
     m_netRules(netRules),
     m_playerUuid(playerUuid),
@@ -141,7 +141,8 @@ ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddres
     m_shipSpecies(shipSpecies),
     m_validShipSpecies(std::move(validShipSpecies)),
     m_canBecomeAdmin(canBecomeAdmin),
-    m_shipChunks(std::move(initialShipChunks)) {
+    m_shipChunks(std::move(initialShipChunks)),
+    m_rpc(root.logger()) {
   m_rpc.registerHandler("ship.applyShipUpgrades", [this](Json const& args) -> Json {
       RecursiveMutexLocker locker(m_mutex);
       setShipUpgrades(shipUpgrades().apply(args));
@@ -154,7 +155,7 @@ ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddres
       // The species decides which ship world structure the server builds, and
       // any client is free to send this rpc, so it cannot be trusted.
       if (!m_validShipSpecies.contains(newSpecies)) {
-        Logger::warn("ServerClientContext: <User: {}> tried to set unknown ship species '{}'", m_playerName, newSpecies);
+        m_root.logger().warn("ServerClientContext: <User: {}> tried to set unknown ship species '{}'", m_playerName, newSpecies);
         return false;
       }
       setShipSpecies(std::move(newSpecies));
@@ -168,7 +169,7 @@ ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddres
         m_worldThread->executeAction([args, &overflow](WorldServerThread*, WorldServer* server) {
           EntityId entityId = args.getInt("entityId");
           Json items = args.get("items");
-          auto itemDatabase = Root::singleton().itemDatabase();
+          auto itemDatabase = server->root().itemDatabase();
           if (auto containerEntity = as<ContainerEntity>(server->entity(entityId))) {
             overflow.clear();
             for (auto const& itemDescriptor : items.iterateArray()) {
@@ -522,7 +523,7 @@ void ServerClientContext::cleanInactiveCustomWorlds() {
     if (m_customWorlds.contains(worldName)) {
       auto &world = m_customWorlds.get(worldName);
       if (!world.active && world.chunksUpdate.empty()) {
-        Logger::info("Removing inactive custom world '{}' for client '{}'",worldName,m_playerUuid.hex());
+        m_root.logger().info("Removing inactive custom world '{}' for client '{}'",worldName,m_playerUuid.hex());
         m_customWorlds.remove(worldName);
       }
     }

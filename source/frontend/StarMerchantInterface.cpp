@@ -197,13 +197,13 @@ import star.quest_manager;
 import star.algorithm;
 namespace Star {
 
-MerchantPane::MerchantPane(
-    std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, Json const& settings, EntityId sourceEntityId) {
+MerchantPane::MerchantPane(GuiContext& guiContext,
+    std::shared_ptr<WorldClient> worldClient, std::shared_ptr<Player> player, Json const& settings, EntityId sourceEntityId) : Pane(guiContext) {
   m_worldClient = std::move(worldClient);
   m_player = std::move(player);
   m_sourceEntityId = sourceEntityId;
 
-  auto assets = Root::singleton().assets();
+  auto assets = context()->root().assets();
   auto baseConfig = settings.get("config", "/interface/windowconfig/merchant.config");
   m_settings = jsonMerge(assets->fetchJson(baseConfig), settings);
 
@@ -212,11 +212,11 @@ MerchantPane::MerchantPane(
   m_buyFactor = m_settings.getFloat("buyFactor", assets->json("/merchant.config:defaultBuyFactor").toFloat());
   m_sellFactor = m_settings.getFloat("sellFactor", assets->json("/merchant.config:defaultSellFactor").toFloat());
 
-  m_itemBag = std::make_shared<ItemBag>(m_settings.getUInt("sellContainerSize"));
+  m_itemBag = std::make_shared<ItemBag>(context()->root(), m_settings.getUInt("sellContainerSize"));
 
   m_maxBuyCount = m_settings.getUInt("maxSpinCount", assets->json("/interface/windowconfig/crafting.config:default").getUInt("maxSpinCount", 1000));
 
-  GuiReader reader;
+  GuiReader reader(*context());
   reader.registerCallback("spinCount.up", [this](Widget*) {
       if (m_selectedIndex != NPos) {
         if (m_buyCount < maxBuyCount())
@@ -306,13 +306,13 @@ std::shared_ptr<Pane> MerchantPane::createTooltip(Vec2I const& screenPosition) {
       auto entry = m_itemGuiList->itemAt(i);
       if (entry->getChildAt(screenPosition)) {
         auto itemConfig = m_itemList.get(i);
-        std::shared_ptr<Item> item = Root::singleton().itemDatabase()->itemShared(ItemDescriptor(itemConfig.get("item")));
-        return ItemTooltipBuilder::buildItemTooltip(item, m_player);
+        std::shared_ptr<Item> item = context()->root().itemDatabase()->itemShared(ItemDescriptor(itemConfig.get("item")));
+        return ItemTooltipBuilder::buildItemTooltip(*context(), item, m_player);
       }
     }
   } else {
     if (auto item = m_itemGrid->itemAt(screenPosition))
-      return ItemTooltipBuilder::buildItemTooltip(item, m_player);
+      return ItemTooltipBuilder::buildItemTooltip(*context(), item, m_player);
   }
   return {};
 }
@@ -323,7 +323,7 @@ void MerchantPane::update(float dt) {
   if (m_sourceEntityId != NullEntityId && !m_worldClient->playerCanReachEntity(m_sourceEntityId))
     dismiss();
 
-  if (m_refreshTimer.wrapTick()) {
+  if (m_refreshTimer.wrapTick(context()->root().timing().timestep)) {
     for (std::size_t i = 0; i < m_itemList.size(); ++i) {
       auto itemConfig = m_itemList.get(i);
       auto itemWidget = m_itemGuiList->itemAt(i);
@@ -372,7 +372,7 @@ void MerchantPane::buildItemList() {
   m_itemGuiList->clear();
   m_itemList = m_settings.getArray("items");
 
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto itemDatabase = context()->root().itemDatabase();
   filter(m_itemList, [&](Json const& itemConfig) {
       if (!itemDatabase->hasItem(ItemDescriptor(itemConfig.get("item")).name()))
         return false;
@@ -409,7 +409,7 @@ void MerchantPane::buildItemList() {
 }
 
 void MerchantPane::setupWidget(std::shared_ptr<Widget> const& widget, Json const& itemConfig) {
-  auto& root = Root::singleton();
+  auto& root = context()->root();
   auto assets = root.assets();
   std::shared_ptr<Item> item = root.itemDatabase()->itemShared(ItemDescriptor(itemConfig.get("item")));
 
@@ -444,7 +444,7 @@ void MerchantPane::updateSelection() {
 
     if (m_selectedIndex != NPos) {
       auto itemConfig = m_itemList.get(m_selectedIndex);
-      m_selectedItem = Root::singleton().itemDatabase()->itemShared(ItemDescriptor(itemConfig.get("item")));
+      m_selectedItem = context()->root().itemDatabase()->itemShared(ItemDescriptor(itemConfig.get("item")));
       findChild<ButtonWidget>("spinCount.up")->enable();
       findChild<ButtonWidget>("spinCount.down")->enable();
       m_countTextBox->setColor(Color::White);
@@ -497,8 +497,8 @@ void MerchantPane::buy() {
     if (m_sourceEntityId != NullEntityId)
       m_worldClient->sendEntityMessage(m_sourceEntityId, "onBuy", {buySummary});
 
-    auto& guiContext = GuiContext::singleton();
-    guiContext.playAudio(Root::singleton().assets()->json("/merchant.config:buySound").toString());
+    auto& guiContext = *context();
+    guiContext.playAudio(context()->root().assets()->json("/merchant.config:buySound").toString());
 
     buildItemList();
 
@@ -528,14 +528,14 @@ void MerchantPane::sell() {
     m_itemBag->clearItems();
     updateSellTotal();
 
-    auto& guiContext = GuiContext::singleton();
-    guiContext.playAudio(Root::singleton().assets()->json("/merchant.config:sellSound").toString());
+    auto& guiContext = *context();
+    guiContext.playAudio(context()->root().assets()->json("/merchant.config:sellSound").toString());
   }
 }
 
 int MerchantPane::maxBuyCount() {
   if (auto selected = m_itemGuiList->selectedWidget()) {
-    auto assets = Root::singleton().assets();
+    auto assets = context()->root().assets();
     auto unitPrice = selected->data().toUInt();
     if (unitPrice == 0)
       return m_maxBuyCount;

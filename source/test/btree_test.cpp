@@ -603,6 +603,7 @@ std::size_t removeAll(SimpleBTree& db, List<int> keys) {
 }
 
 void testBTree(std::size_t maxIndexSize, std::size_t maxLeafSize) {
+  RandomService random;
   std::srand(std::time(0));
 
   SimpleBTree db(maxIndexSize, maxLeafSize);
@@ -618,25 +619,25 @@ void testBTree(std::size_t maxIndexSize, std::size_t maxLeafSize) {
   }
 
   // record writes/reads repeated WriteRepeat times randomly each cycle
-  Random::shuffle(keys);
+  random.shuffle(keys);
   putAll(db, keys);
 
   EXPECT_EQ(db.recordCount(), TestCount);
 
-  Random::shuffle(keys);
+  random.shuffle(keys);
   checkAll(db, keys);
 
   // Random reads/writes with ShrinkCount cycles...
   for (std::size_t i = 0; i < ShrinkCount; ++i) {
-    Random::shuffle(keys);
+    random.shuffle(keys);
     List<int> keysTemp = keys.slice(0, keys.size() / 2);
 
     removeAll(db, keysTemp);
 
-    Random::shuffle(keysTemp);
+    random.shuffle(keysTemp);
     putAll(db, keysTemp);
 
-    Random::shuffle(keysTemp);
+    random.shuffle(keysTemp);
     checkAll(db, keys);
   }
 

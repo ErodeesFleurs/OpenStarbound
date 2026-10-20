@@ -77,6 +77,7 @@ namespace Star {
 class Assets;
 class MaterialDatabase;
 class TilePainter;
+class Root;
 
 class TileDrawer {
 public:
@@ -88,13 +89,11 @@ public:
 
   enum class TerrainLayer { Background, Midground, Foreground };
 
-  static RenderTile DefaultRenderTile;
+  static RenderTile const DefaultRenderTile;
 
-  static TileDrawer* singletonPtr();
-  static TileDrawer& singleton();
-
-  TileDrawer();
-  ~TileDrawer();
+  // Root must outlive this drawer. Runtime consumers borrow this instance
+  // explicitly; absent renderers pass nullptr rather than constructing a drawer.
+  explicit TileDrawer(Root& root);
 
   bool produceTerrainDrawables(Drawables& drawables, TerrainLayer terrainLayer, Vec2I const& pos,
     WorldRenderData const& renderData, float scale = 1.0f, Vec2I variantOffset = {}, Maybe<TerrainLayer> variantLayer = {});
@@ -107,8 +106,6 @@ public:
 private:
   friend class TilePainter;
 
-  static TileDrawer* s_singleton;
-
   static RenderTile const& getRenderTile(WorldRenderData const& renderData, Vec2I const& worldPos);
 
   static QuadZLevel materialZLevel(std::uint32_t zLevel, MaterialId material, MaterialHue hue, MaterialColorVariant colorVariant);
@@ -118,6 +115,7 @@ private:
   static bool determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, std::shared_ptr<MaterialDatabase const> const& materialDb, MaterialRenderMatchList const& matchList,
     WorldRenderData const& renderData, Vec2I const& basePos, TileLayer layer, bool isMod);
 
+  Root& m_root;
   Vec4B m_backgroundLayerColor;
   Vec4B m_foregroundLayerColor;
   Vec2F m_liquidDrawLevels;

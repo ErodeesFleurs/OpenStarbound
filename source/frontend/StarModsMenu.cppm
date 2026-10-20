@@ -45,7 +45,7 @@ class ListWidget;
 
 class ModsMenu : public Pane {
 public:
-  ModsMenu();
+  ModsMenu(GuiContext& guiContext);
 
   void update(float dt) override;
 

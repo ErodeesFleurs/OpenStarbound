@@ -11,6 +11,8 @@ import star.tile_damage;
 
 namespace Star {
 
+class Assets;
+class Root;
 class Plant;
 
 struct PlantDatabaseExceptionTag {
@@ -21,7 +23,7 @@ using PlantDatabaseException = StarError<PlantDatabaseExceptionTag, StarExceptio
 // Configuration for a specific tree variant
 struct TreeVariant {
   TreeVariant();
-  TreeVariant(Json const& json);
+  TreeVariant(Assets const& assets, Json const& json);
 
   Json toJson() const;
 
@@ -50,7 +52,7 @@ struct TreeVariant {
 // Configuration for a specific grass variant
 struct GrassVariant {
   GrassVariant();
-  GrassVariant(Json const& json);
+  GrassVariant(Assets const& assets, Json const& json);
 
   Json toJson() const;
 
@@ -76,7 +78,7 @@ struct BushVariant {
   };
 
   BushVariant();
-  BushVariant(Json const& json);
+  BushVariant(Assets const& assets, Json const& json);
 
   Json toJson() const;
 
@@ -99,7 +101,7 @@ struct BushVariant {
 
 class PlantDatabase {
 public:
-  PlantDatabase();
+  explicit PlantDatabase(Root& root);
 
   StringList treeStemNames(bool ceiling = false) const;
   StringList treeFoliageNames() const;
@@ -133,6 +135,8 @@ private:
     Json settings;
     Json toJson() const;
   };
+
+  Root& m_root;
 
   StringMap<Config> m_treeStemConfigs;
   StringMap<Config> m_treeFoliageConfigs;

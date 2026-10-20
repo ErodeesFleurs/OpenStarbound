@@ -58,9 +58,9 @@ import star.image_widget;
 
 namespace Star {
 
-ImageWidget::ImageWidget() : ImageWidget(String{}) {}
+ImageWidget::ImageWidget(GuiContext& context) : ImageWidget(context, String{}) {}
 
-ImageWidget::ImageWidget(String const& image) {
+ImageWidget::ImageWidget(GuiContext& context, String const& image) : Widget(context) {
   m_centered = false;
   m_trim = false;
   m_scale = 1;
@@ -85,7 +85,7 @@ void ImageWidget::setImage(String const& image) {
   if (image.empty())
     setDrawables({});
   else
-    setDrawables({Drawable::makeImage(image, 1.0f, false, Vec2F())});
+    setDrawables({Drawable::makeImage(*this->context()->root().imageMetadataDatabase(), image, 1.0f, false, Vec2F())});
 }
 
 void ImageWidget::setScale(float scale) {
@@ -167,11 +167,11 @@ void ImageWidget::transformDrawables() {
   // When 'centered' is true, the drawables provided are pre-centered
   // around 0,0. Tooltips use this, as well as quest dialog portraits.
   if (m_centered) {
-    auto boundBox = Drawable::boundBoxAll(m_drawables, m_trim);
+    auto boundBox = Drawable::boundBoxAll(*this->context()->root().imageMetadataDatabase(), m_drawables, m_trim);
     Drawable::translateAll(m_drawables, -boundBox.center());
   }
 
-  auto boundBox = Drawable::boundBoxAll(m_drawables, m_trim);
+  auto boundBox = Drawable::boundBoxAll(*this->context()->root().imageMetadataDatabase(), m_drawables, m_trim);
   auto size = boundBox.size().piecewiseMax({0, 0});
   if (size[0] && size[1]) {
     if ((size[0] > m_maxSize[0]) || (size[1] > m_maxSize[1])) {

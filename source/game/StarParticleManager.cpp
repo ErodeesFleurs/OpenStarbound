@@ -44,12 +44,13 @@ import star.collision_generator;
 import star.world_tiles;
 
 import star.particle_manager;
+import star.root;
 
 import star.line;
 namespace Star {
 
-ParticleManager::ParticleManager(WorldGeometry const& worldGeometry, std::shared_ptr<ClientTileSectorArray> const& tileSectorArray)
-  : m_worldGeometry(worldGeometry), m_undergroundLevel(0.0f), m_tileSectorArray(tileSectorArray) {}
+ParticleManager::ParticleManager(Root& root, WorldGeometry const& worldGeometry, std::shared_ptr<ClientTileSectorArray> const& tileSectorArray)
+  : m_root(root), m_worldGeometry(worldGeometry), m_undergroundLevel(0.0f), m_tileSectorArray(tileSectorArray) {}
 
 void ParticleManager::add(Particle particle) {
   m_particles.push_back(std::move(particle));
@@ -89,7 +90,7 @@ void ParticleManager::update(float dt, RectF const& cullRegion, float wind) {
     if (!inRegion)
       continue;
 
-    particle.update(dt, Vec2F(wind, 0));
+    particle.update(m_root, dt, Vec2F(wind, 0));
     Vec2I pos(particle.position.floor());
     TileType tiletype;
     auto const& tile = m_tileSectorArray->tile(pos);
