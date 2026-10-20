@@ -21,7 +21,6 @@ import star.ref_ptr;
 import star.listener;
 import std;
 import star.string;
-import star.maybe;
 import star.version;
 import star.logging;
 
@@ -279,14 +278,14 @@ String MaterialDatabase::materialName(MaterialId materialId) const {
     return getMetaMaterialInfo(materialId)->name;
 }
 
-Maybe<String> MaterialDatabase::materialPath(MaterialId materialId) const {
+std::optional<String> MaterialDatabase::materialPath(MaterialId materialId) const {
   if (isRealMaterial(materialId))
     return getMaterialInfo(materialId)->path;
   else
     return {};
 }
 
-Maybe<Json> MaterialDatabase::materialConfig(MaterialId materialId) const {
+std::optional<Json> MaterialDatabase::materialConfig(MaterialId materialId) const {
   if (isRealMaterial(materialId))
     return getMaterialInfo(materialId)->config;
   else
@@ -345,14 +344,14 @@ String const& MaterialDatabase::modName(ModId mod) const {
     return m_metaModIndex.getLeft(mod);
 }
 
-Maybe<String> MaterialDatabase::modPath(ModId mod) const {
+std::optional<String> MaterialDatabase::modPath(ModId mod) const {
   if (isRealMod(mod))
     return getModInfo(mod)->path;
   else
     return {};
 }
 
-Maybe<Json> MaterialDatabase::modConfig(ModId mod) const {
+std::optional<Json> MaterialDatabase::modConfig(ModId mod) const {
   if (isRealMod(mod))
     return getModInfo(mod)->config;
   else

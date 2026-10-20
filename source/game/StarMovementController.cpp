@@ -2,7 +2,6 @@ import star.json;
 import star.json_extra;
 import star.interpolation;
 import star.id_map;
-import star.maybe;
 import star.poly;
 import star.variant;
 import star.casting;
@@ -30,6 +29,7 @@ import star.logging;
 import star.listener;
 import std;
 import star.set;
+import star.string;
 import star.version;
 
 import star.damage_types;
@@ -83,7 +83,7 @@ MovementParameters::MovementParameters(Json const& config) {
   maximumCorrection = config.optFloat("maximumCorrection");
   speedLimit = config.optFloat("speedLimit");
   discontinuityThreshold = config.optFloat("discontinuityThreshold");
-  collisionPoly = config.opt("collisionPoly").apply(jsonToPolyF);
+  collisionPoly = config.opt("collisionPoly").transform(jsonToPolyF);
   stickyCollision = config.optBool("stickyCollision");
   stickyForce = config.optFloat("stickyForce");
   airFriction = config.optFloat("airFriction");
@@ -95,70 +95,70 @@ MovementParameters::MovementParameters(Json const& config) {
   ignorePlatformCollision = config.optBool("ignorePlatformCollision");
   maximumPlatformCorrection = config.optFloat("maximumPlatformCorrection");
   maximumPlatformCorrectionVelocityFactor = config.optFloat("maximumPlatformCorrectionVelocityFactor");
-  physicsEffectCategories = config.opt("physicsEffectCategories").apply(jsonToStringSet);
+  physicsEffectCategories = config.opt("physicsEffectCategories").transform(jsonToStringSet);
   restDuration = config.optInt("restDuration");
 }
 
 MovementParameters MovementParameters::merge(MovementParameters const& rhs) const {
   MovementParameters merged;
 
-  merged.mass = rhs.mass.orMaybe(mass);
-  merged.gravityMultiplier = rhs.gravityMultiplier.orMaybe(gravityMultiplier);
-  merged.liquidBuoyancy = rhs.liquidBuoyancy.orMaybe(liquidBuoyancy);
-  merged.airBuoyancy = rhs.airBuoyancy.orMaybe(airBuoyancy);
-  merged.bounceFactor = rhs.bounceFactor.orMaybe(bounceFactor);
-  merged.stopOnFirstBounce = rhs.stopOnFirstBounce.orMaybe(stopOnFirstBounce);
-  merged.enableSurfaceSlopeCorrection = rhs.enableSurfaceSlopeCorrection.orMaybe(enableSurfaceSlopeCorrection);
-  merged.slopeSlidingFactor = rhs.slopeSlidingFactor.orMaybe(slopeSlidingFactor);
-  merged.maxMovementPerStep = rhs.maxMovementPerStep.orMaybe(maxMovementPerStep);
-  merged.maximumCorrection = rhs.maximumCorrection.orMaybe(maximumCorrection);
-  merged.speedLimit = rhs.speedLimit.orMaybe(speedLimit);
-  merged.discontinuityThreshold = rhs.discontinuityThreshold.orMaybe(discontinuityThreshold);
-  merged.collisionPoly = rhs.collisionPoly.orMaybe(collisionPoly);
-  merged.stickyCollision = rhs.stickyCollision.orMaybe(stickyCollision);
-  merged.stickyForce = rhs.stickyForce.orMaybe(stickyForce);
-  merged.airFriction = rhs.airFriction.orMaybe(airFriction);
-  merged.liquidFriction = rhs.liquidFriction.orMaybe(liquidFriction);
-  merged.groundFriction = rhs.groundFriction.orMaybe(groundFriction);
-  merged.collisionEnabled = rhs.collisionEnabled.orMaybe(collisionEnabled);
-  merged.frictionEnabled = rhs.frictionEnabled.orMaybe(frictionEnabled);
-  merged.gravityEnabled = rhs.gravityEnabled.orMaybe(gravityEnabled);
-  merged.ignorePlatformCollision = rhs.ignorePlatformCollision.orMaybe(ignorePlatformCollision);
-  merged.maximumPlatformCorrection = rhs.maximumPlatformCorrection.orMaybe(maximumPlatformCorrection);
-  merged.maximumPlatformCorrectionVelocityFactor = rhs.maximumPlatformCorrectionVelocityFactor.orMaybe(maximumPlatformCorrectionVelocityFactor);
-  merged.physicsEffectCategories = rhs.physicsEffectCategories.orMaybe(physicsEffectCategories);
-  merged.restDuration = rhs.restDuration.orMaybe(restDuration);
+  merged.mass = (rhs.mass ? rhs.mass : mass);
+  merged.gravityMultiplier = (rhs.gravityMultiplier ? rhs.gravityMultiplier : gravityMultiplier);
+  merged.liquidBuoyancy = (rhs.liquidBuoyancy ? rhs.liquidBuoyancy : liquidBuoyancy);
+  merged.airBuoyancy = (rhs.airBuoyancy ? rhs.airBuoyancy : airBuoyancy);
+  merged.bounceFactor = (rhs.bounceFactor ? rhs.bounceFactor : bounceFactor);
+  merged.stopOnFirstBounce = (rhs.stopOnFirstBounce ? rhs.stopOnFirstBounce : stopOnFirstBounce);
+  merged.enableSurfaceSlopeCorrection = (rhs.enableSurfaceSlopeCorrection ? rhs.enableSurfaceSlopeCorrection : enableSurfaceSlopeCorrection);
+  merged.slopeSlidingFactor = (rhs.slopeSlidingFactor ? rhs.slopeSlidingFactor : slopeSlidingFactor);
+  merged.maxMovementPerStep = (rhs.maxMovementPerStep ? rhs.maxMovementPerStep : maxMovementPerStep);
+  merged.maximumCorrection = (rhs.maximumCorrection ? rhs.maximumCorrection : maximumCorrection);
+  merged.speedLimit = (rhs.speedLimit ? rhs.speedLimit : speedLimit);
+  merged.discontinuityThreshold = (rhs.discontinuityThreshold ? rhs.discontinuityThreshold : discontinuityThreshold);
+  merged.collisionPoly = (rhs.collisionPoly ? rhs.collisionPoly : collisionPoly);
+  merged.stickyCollision = (rhs.stickyCollision ? rhs.stickyCollision : stickyCollision);
+  merged.stickyForce = (rhs.stickyForce ? rhs.stickyForce : stickyForce);
+  merged.airFriction = (rhs.airFriction ? rhs.airFriction : airFriction);
+  merged.liquidFriction = (rhs.liquidFriction ? rhs.liquidFriction : liquidFriction);
+  merged.groundFriction = (rhs.groundFriction ? rhs.groundFriction : groundFriction);
+  merged.collisionEnabled = (rhs.collisionEnabled ? rhs.collisionEnabled : collisionEnabled);
+  merged.frictionEnabled = (rhs.frictionEnabled ? rhs.frictionEnabled : frictionEnabled);
+  merged.gravityEnabled = (rhs.gravityEnabled ? rhs.gravityEnabled : gravityEnabled);
+  merged.ignorePlatformCollision = (rhs.ignorePlatformCollision ? rhs.ignorePlatformCollision : ignorePlatformCollision);
+  merged.maximumPlatformCorrection = (rhs.maximumPlatformCorrection ? rhs.maximumPlatformCorrection : maximumPlatformCorrection);
+  merged.maximumPlatformCorrectionVelocityFactor = (rhs.maximumPlatformCorrectionVelocityFactor ? rhs.maximumPlatformCorrectionVelocityFactor : maximumPlatformCorrectionVelocityFactor);
+  merged.physicsEffectCategories = (rhs.physicsEffectCategories ? rhs.physicsEffectCategories : physicsEffectCategories);
+  merged.restDuration = (rhs.restDuration ? rhs.restDuration : restDuration);
 
   return merged;
 }
 
 Json MovementParameters::toJson() const {
   return JsonObject{
-    {"mass", jsonFromMaybe(mass)},
-    {"gravityMultiplier", jsonFromMaybe(gravityMultiplier)},
-    {"liquidBuoyancy", jsonFromMaybe(liquidBuoyancy)},
-    {"airBuoyancy", jsonFromMaybe(airBuoyancy)},
-    {"stopOnFirstBounce", jsonFromMaybe(stopOnFirstBounce)},
-    {"enableSurfaceSlopeCorrection", jsonFromMaybe(enableSurfaceSlopeCorrection)},
-    {"slopeSlidingFactor", jsonFromMaybe(slopeSlidingFactor)},
-    {"maxMovementPerStep", jsonFromMaybe(maxMovementPerStep)},
-    {"maximumCorrection", jsonFromMaybe(maximumCorrection)},
-    {"speedLimit", jsonFromMaybe(speedLimit)},
-    {"discontinuityThreshold", jsonFromMaybe(discontinuityThreshold)},
-    {"collisionPoly", jsonFromMaybe(collisionPoly, jsonFromPolyF)},
-    {"stickyCollision", jsonFromMaybe(stickyCollision)},
-    {"stickyForce", jsonFromMaybe(stickyForce)},
-    {"airFriction", jsonFromMaybe(airFriction)},
-    {"liquidFriction", jsonFromMaybe(liquidFriction)},
-    {"groundFriction", jsonFromMaybe(groundFriction)},
-    {"collisionEnabled", jsonFromMaybe(collisionEnabled)},
-    {"frictionEnabled", jsonFromMaybe(frictionEnabled)},
-    {"gravityEnabled", jsonFromMaybe(gravityEnabled)},
-    {"ignorePlatformCollision", jsonFromMaybe(ignorePlatformCollision)},
-    {"maximumPlatformCorrection", jsonFromMaybe(maximumPlatformCorrection)},
-    {"maximumPlatformCorrectionVelocityFactor", jsonFromMaybe(maximumPlatformCorrectionVelocityFactor)},
-    {"physicsEffectCategories", jsonFromMaybe(physicsEffectCategories, jsonFromStringSet)},
-    {"restDuration", jsonFromMaybe(restDuration)}
+    {"mass", jsonFromOptional(mass)},
+    {"gravityMultiplier", jsonFromOptional(gravityMultiplier)},
+    {"liquidBuoyancy", jsonFromOptional(liquidBuoyancy)},
+    {"airBuoyancy", jsonFromOptional(airBuoyancy)},
+    {"stopOnFirstBounce", jsonFromOptional(stopOnFirstBounce)},
+    {"enableSurfaceSlopeCorrection", jsonFromOptional(enableSurfaceSlopeCorrection)},
+    {"slopeSlidingFactor", jsonFromOptional(slopeSlidingFactor)},
+    {"maxMovementPerStep", jsonFromOptional(maxMovementPerStep)},
+    {"maximumCorrection", jsonFromOptional(maximumCorrection)},
+    {"speedLimit", jsonFromOptional(speedLimit)},
+    {"discontinuityThreshold", jsonFromOptional(discontinuityThreshold)},
+    {"collisionPoly", jsonFromOptional(collisionPoly, jsonFromPolyF)},
+    {"stickyCollision", jsonFromOptional(stickyCollision)},
+    {"stickyForce", jsonFromOptional(stickyForce)},
+    {"airFriction", jsonFromOptional(airFriction)},
+    {"liquidFriction", jsonFromOptional(liquidFriction)},
+    {"groundFriction", jsonFromOptional(groundFriction)},
+    {"collisionEnabled", jsonFromOptional(collisionEnabled)},
+    {"frictionEnabled", jsonFromOptional(frictionEnabled)},
+    {"gravityEnabled", jsonFromOptional(gravityEnabled)},
+    {"ignorePlatformCollision", jsonFromOptional(ignorePlatformCollision)},
+    {"maximumPlatformCorrection", jsonFromOptional(maximumPlatformCorrection)},
+    {"maximumPlatformCorrectionVelocityFactor", jsonFromOptional(maximumPlatformCorrectionVelocityFactor)},
+    {"physicsEffectCategories", jsonFromOptional(physicsEffectCategories, jsonFromStringSet)},
+    {"restDuration", jsonFromOptional(restDuration)}
   };
 }
 
@@ -368,7 +368,7 @@ bool MovementController::isCollisionStuck() const {
   return m_collisionStuck.get();
 }
 
-Maybe<float> MovementController::stickingDirection() const {
+std::optional<float> MovementController::stickingDirection() const {
   return m_stickingDirection.get();
 }
 
@@ -424,9 +424,9 @@ void MovementController::translate(Vec2F const& direction) {
 }
 
 void MovementController::setVelocity(Vec2F vel) {
-  if (m_parameters.speedLimit && vel.magnitude() > *m_parameters.speedLimit) {
+  if (m_parameters.speedLimit && vel.magnitude() > m_parameters.speedLimit.value()) {
     vel.normalize();
-    vel *= *m_parameters.speedLimit;
+    vel *= m_parameters.speedLimit.value();
   }
 
   if ((velocity() - vel).magnitude() > 0.0001)
@@ -539,9 +539,9 @@ void MovementController::tickMaster(float dt) {
   setTimestep(dt);
   auto geometry = world()->geometry();
 
-  m_zeroG.set(!*m_parameters.gravityEnabled || *m_parameters.gravityMultiplier == 0 || world()->gravity(position()) == 0);
+  m_zeroG.set(!m_parameters.gravityEnabled.value() || m_parameters.gravityMultiplier.value() == 0 || world()->gravity(position()) == 0);
 
-  Maybe<PhysicsMovingCollision> surfaceCollision;
+  std::optional<PhysicsMovingCollision> surfaceCollision;
   if (auto movingCollisionId = m_surfaceMovingCollision.get()) {
     if (auto physicsEntity = world()->get<PhysicsEntity>(movingCollisionId->physicsEntityId))
       surfaceCollision = physicsEntity->movingCollision(movingCollisionId->collisionIndex);
@@ -577,7 +577,7 @@ void MovementController::tickMaster(float dt) {
   m_surfaceMovingCollision.set({});
 
   unsigned steps;
-  float maxMovementPerStep = *m_parameters.maxMovementPerStep;
+  float maxMovementPerStep = m_parameters.maxMovementPerStep.value();
   if (maxMovementPerStep > 0.0f)
     steps = std::floor(vmag(relativeVelocity) * dt / maxMovementPerStep) + 1;
   else
@@ -591,7 +591,7 @@ void MovementController::tickMaster(float dt) {
     float dtSteps = dt / steps;
     Vec2F movement = relativeVelocity * dtSteps;
 
-    if (!*m_parameters.collisionEnabled || collisionPoly().isNull()) {
+    if (!m_parameters.collisionEnabled.value() || collisionPoly().isNull()) {
       setPosition(position() + movement);
       m_surfaceSlope = Vec2F(1, 0);
       m_surfaceVelocity = Vec2F(0, 0);
@@ -608,16 +608,16 @@ void MovementController::tickMaster(float dt) {
       float velocityMagnitude = vmag(relativeVelocity);
       Vec2F velocityDirection = relativeVelocity / velocityMagnitude;
 
-      bool ignorePlatforms = *m_parameters.ignorePlatformCollision || relativeVelocity[1] > 0;
-      float maximumCorrection = *m_parameters.maximumCorrection;
-      float maximumPlatformCorrection = *m_parameters.maximumPlatformCorrection
-          + *m_parameters.maximumPlatformCorrectionVelocityFactor * velocityMagnitude;
+      bool ignorePlatforms = m_parameters.ignorePlatformCollision.value() || relativeVelocity[1] > 0;
+      float maximumCorrection = m_parameters.maximumCorrection.value();
+      float maximumPlatformCorrection = m_parameters.maximumPlatformCorrection.value()
+          + m_parameters.maximumPlatformCorrectionVelocityFactor.value() * velocityMagnitude;
       Vec2F bodyCenter = body.center();
 
       RectF queryBounds = body.boundBox().padded(maximumCorrection);
       queryBounds.combine(queryBounds.translated(movement));
       queryCollisions(queryBounds);
-      auto result = collisionMove(m_workingCollisions, body, movement, ignorePlatforms, *m_parameters.enableSurfaceSlopeCorrection && !zeroG(),
+      auto result = collisionMove(m_workingCollisions, body, movement, ignorePlatforms, m_parameters.enableSurfaceSlopeCorrection.value() && !zeroG(),
           maximumCorrection, maximumPlatformCorrection, bodyCenter, dtSteps);
 
       setPosition(position() + result.movement);
@@ -641,10 +641,10 @@ void MovementController::tickMaster(float dt) {
 
       // If we have collided, apply either sticky or normal (bouncing) collision physics
       if (correction != Vec2F()) {
-        if (*m_parameters.stickyCollision && result.collisionKind != CollisionKind::Slippery) {
+        if (m_parameters.stickyCollision.value() && result.collisionKind != CollisionKind::Slippery) {
           // When sticking, cancel all velocity and apply stickyForce in the
           // opposite of the direction of collision correction.
-          relativeVelocity = -normCorrection * *m_parameters.stickyForce / mass() * dtSteps;
+          relativeVelocity = -normCorrection * m_parameters.stickyForce.value() / mass() * dtSteps;
           m_stickingDirection.set(-normCorrection.angle());
           break;
         } else {
@@ -653,10 +653,10 @@ void MovementController::tickMaster(float dt) {
           float correctionMagnitude = vmag(correction);
           Vec2F correctionDirection = correction / correctionMagnitude;
 
-          if (*m_parameters.bounceFactor != 0.0f) {
+          if (m_parameters.bounceFactor.value() != 0.0f) {
             Vec2F adjustment = correctionDirection * (velocityMagnitude * (correctionDirection * -velocityDirection));
-            relativeVelocity += adjustment + *m_parameters.bounceFactor * adjustment;
-            if (*m_parameters.stopOnFirstBounce) {
+            relativeVelocity += adjustment + m_parameters.bounceFactor.value() * adjustment;
+            if (m_parameters.stopOnFirstBounce.value()) {
               // When bouncing, stop integrating at the moment of bounce.  This
               // prevents the frame of contact from being missed due to multiple
               // iterations per frame.
@@ -711,13 +711,13 @@ void MovementController::tickMaster(float dt) {
   // having to account for one timestep of passive forces in order to result
   // in the correct controlled movement.
   if (!zeroG() && !stickingDirection()) {
-    float buoyancy = *m_parameters.liquidBuoyancy * m_liquidPercentage + *m_parameters.airBuoyancy * (1.0f - liquidPercentage());
-    float gravity = world()->gravity(position()) * *m_parameters.gravityMultiplier * (1.0f - buoyancy);
+    float buoyancy = m_parameters.liquidBuoyancy.value() * m_liquidPercentage + m_parameters.airBuoyancy.value() * (1.0f - liquidPercentage());
+    float gravity = world()->gravity(position()) * m_parameters.gravityMultiplier.value() * (1.0f - buoyancy);
     Vec2F environmentVelocity;
     environmentVelocity[1] -= gravity * dt;
 
-    if (onGround() && *m_parameters.slopeSlidingFactor != 0 && m_surfaceSlope[1] != 0)
-      environmentVelocity += -m_surfaceSlope * (m_surfaceSlope[0] * m_surfaceSlope[1]) * *m_parameters.slopeSlidingFactor;
+    if (onGround() && m_parameters.slopeSlidingFactor.value() != 0 && m_surfaceSlope[1] != 0)
+      environmentVelocity += -m_surfaceSlope * (m_surfaceSlope[0] * m_surfaceSlope[1]) * m_parameters.slopeSlidingFactor.value();
 
     newVelocity += environmentVelocity;
   }
@@ -731,14 +731,14 @@ void MovementController::tickMaster(float dt) {
       originalMovement[1] * gravity() <= 0.0 &&
       std::abs(originalMovement[1] + m_collisionCorrection[1]) < 0.0001) {
     m_resting = true;
-    m_restTicks = m_parameters.restDuration.value(0);
+    m_restTicks = m_parameters.restDuration.value_or(0);
   }
 
-  if (*m_parameters.frictionEnabled) {
+  if (m_parameters.frictionEnabled.value()) {
     Vec2F refVel;
-    float friction = liquidPercentage() * *m_parameters.liquidFriction + (1.0f - liquidPercentage()) * *m_parameters.airFriction;
+    float friction = liquidPercentage() * m_parameters.liquidFriction.value() + (1.0f - liquidPercentage()) * m_parameters.airFriction.value();
     if (onGround()) {
-      friction = std::max(friction, *m_parameters.groundFriction);
+      friction = std::max(friction, m_parameters.groundFriction.value());
       refVel = m_surfaceVelocity;
     }
 
@@ -783,7 +783,7 @@ void MovementController::forEachMovingCollision(RectF const& region, std::functi
       continue;
     for (std::size_t i = 0; i < physicsEntity->movingCollisionCount(); ++i) {
       if (auto mc = physicsEntity->movingCollision(i)) {
-        if (mc->categoryFilter.check(m_parameters.physicsEffectCategories.value())) {
+        if (mc->categoryFilter.check(m_parameters.physicsEffectCategories.value_or(StringSet{}))) {
           PolyF poly = std::move(mc->collision);
           poly.translate(geometry.nearestTo(region.min(), mc->position));
           RectF polyBounds = poly.boundBox();
@@ -808,7 +808,7 @@ void MovementController::updateForceRegions(float) {
   m_appliedForceRegion = false;
   auto handleForceRegions = [&](List<PhysicsForceRegion> const& forces) {
       for (auto const& force : forces) {
-        bool categoryCheck = force.call([myCategories = m_parameters.physicsEffectCategories.value()](auto& fr) {
+        bool categoryCheck = force.call([myCategories = m_parameters.physicsEffectCategories.value_or(StringSet{})](auto& fr) {
             return fr.categoryFilter.check(myCategories);
           });
         if (!categoryCheck)
@@ -930,7 +930,7 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
   PolyF checkBody = translatedBody;
   Vec2F totalCorrection = Vec2F();
   CollisionKind maxCollided = CollisionKind::None;
-  Maybe<MovingCollisionId> surfaceMovingCollisionId;
+  std::optional<MovingCollisionId> surfaceMovingCollisionId;
 
   CollisionSeparation separation = {};
 
@@ -1118,8 +1118,8 @@ MovementController::CollisionSeparation MovementController::collisionSeparate(Li
 
 void MovementController::updateParameters(MovementParameters parameters) {
   m_parameters = std::move(parameters);
-  m_collisionPoly.set(*m_parameters.collisionPoly);
-  m_mass.set(*m_parameters.mass);
+  m_collisionPoly.set(m_parameters.collisionPoly.value());
+  m_mass.set(m_parameters.mass.value());
   updatePositionInterpolators();
 }
 
@@ -1178,8 +1178,8 @@ void MovementController::queryCollisions(RectF const& region) {
 }
 
 float MovementController::gravity() {
-  float buoyancy = *m_parameters.liquidBuoyancy * m_liquidPercentage + *m_parameters.airBuoyancy * (1.0f - liquidPercentage());
-  return world()->gravity(position()) * *m_parameters.gravityMultiplier * (1.0f - buoyancy);
+  float buoyancy = m_parameters.liquidBuoyancy.value() * m_liquidPercentage + m_parameters.airBuoyancy.value() * (1.0f - liquidPercentage());
+  return world()->gravity(position()) * m_parameters.gravityMultiplier.value() * (1.0f - buoyancy);
 }
 
 }

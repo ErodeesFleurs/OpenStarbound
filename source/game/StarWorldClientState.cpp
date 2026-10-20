@@ -18,7 +18,6 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
-import star.maybe;
 import star.version;
 
 import star.asset_source;
@@ -83,7 +82,7 @@ void WorldClientState::setClientPresenceEntities(List<EntityId> entities) {
   m_clientPresenceEntities.set(std::move(entities));
 }
 
-List<RectI> WorldClientState::monitoringRegions(std::function<Maybe<RectI>(EntityId)> entityBounds) const {
+List<RectI> WorldClientState::monitoringRegions(std::function<std::optional<RectI>(EntityId)> entityBounds) const {
   List<RectI> regions;
   
   auto windowRegion = window().padded(m_windowMonitoringBorder);

@@ -25,7 +25,6 @@ import star.string;
 import star.text;
 import star.poly;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -286,11 +285,11 @@ void TextBoxWidget::setOnEscapeKeyCallback(WidgetCallbackFunc onEscapeKey) {
   m_onEscapeKey = onEscapeKey;
 }
 
-void TextBoxWidget::setNextFocus(Maybe<String> nextFocus) {
+void TextBoxWidget::setNextFocus(std::optional<String> nextFocus) {
   m_nextFocus = nextFocus;
 }
 
-void TextBoxWidget::setPrevFocus(Maybe<String> prevFocus) {
+void TextBoxWidget::setPrevFocus(std::optional<String> prevFocus) {
   m_prevFocus = prevFocus;
 }
 
@@ -324,7 +323,7 @@ KeyboardCaptureMode TextBoxWidget::keyboardCaptureMode() const {
   return KeyboardCaptureMode::None;
 }
 
-Maybe<std::pair<RectI, int>> TextBoxWidget::keyboardCaptureArea() const {
+std::optional<std::pair<RectI, int>> TextBoxWidget::keyboardCaptureArea() const {
   if (active() && hasFocus()) {
     return std::make_pair(screenBoundRect().scaled(context()->interfaceScale()), getCursorDrawOffset());
   }

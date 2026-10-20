@@ -21,7 +21,6 @@ import star.directives;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.set;
 import star.audio;
@@ -74,7 +73,7 @@ public:
 
   void update(float dt) override;
 
-  Maybe<String> cursorOverride(Vec2I const& screenPosition) override;
+  std::optional<String> cursorOverride(Vec2I const& screenPosition) override;
 
 private:
   struct CustomBarEntry {
@@ -103,7 +102,7 @@ private:
   std::shared_ptr<ImageWidget> m_essentialSelectedWidget;
 
   SelectedActionBarLocation m_emptyHandsPreviousActionBarLocation;
-  Maybe<std::pair<CustomBarIndex, bool>> m_customBarHover;
+  std::optional<std::pair<CustomBarIndex, bool>> m_customBarHover;
 };
 
 }

@@ -40,7 +40,6 @@ import std;
 import star.worker_pool;
 
 import star.sector_array_2d;
-import star.maybe;
 import star.variant;
 import star.image;
 import star.net_compatibility;
@@ -129,7 +128,7 @@ import star.byte_array;
 import star.algorithm;
 namespace Star {
 
-ServerClientContext::ServerClientContext(Root& root, ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
+ServerClientContext::ServerClientContext(Root& root, ConnectionId clientId, std::optional<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
     String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks, StringSet validShipSpecies, String account)
   : m_root(root),
     m_clientId(clientId),
@@ -173,7 +172,7 @@ ServerClientContext::ServerClientContext(Root& root, ConnectionId clientId, Mayb
           if (auto containerEntity = as<ContainerEntity>(server->entity(entityId))) {
             overflow.clear();
             for (auto const& itemDescriptor : items.iterateArray()) {
-              if (auto left = containerEntity->addItems(itemDatabase->item(ItemDescriptor(itemDescriptor))).result().value())
+              if (auto left = containerEntity->addItems(itemDatabase->item(ItemDescriptor(itemDescriptor))).result().value_or(std::shared_ptr<Item>{}))
                 overflow.append(left->descriptor());
             }
           }
@@ -207,7 +206,7 @@ ConnectionId ServerClientContext::clientId() const {
   return m_clientId;
 }
 
-Maybe<HostAddress> const& ServerClientContext::remoteAddress() const {
+std::optional<HostAddress> const& ServerClientContext::remoteAddress() const {
   return m_remoteAddress;
 }
 
@@ -265,12 +264,12 @@ void ServerClientContext::setShipLocation(SystemLocation location) {
   m_shipSystemLocation = location;
 }
 
-Maybe<std::pair<WarpAction, WarpMode>> ServerClientContext::orbitWarpAction() const {
+std::optional<std::pair<WarpAction, WarpMode>> ServerClientContext::orbitWarpAction() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_orbitWarpActionNetState.get();
 }
 
-void ServerClientContext::setOrbitWarpAction(Maybe<std::pair<WarpAction, WarpMode>> warpAction) {
+void ServerClientContext::setOrbitWarpAction(std::optional<std::pair<WarpAction, WarpMode>> warpAction) {
   RecursiveMutexLocker locker(m_mutex);
   m_orbitWarpActionNetState.set(warpAction);
 }
@@ -486,7 +485,7 @@ void ServerClientContext::failWorldRequests() {
   m_worldRequests = {};
 }
 
-Maybe<WorldChunks> ServerClientContext::customWorldChunks(String name) const {
+std::optional<WorldChunks> ServerClientContext::customWorldChunks(String name) const {
   RecursiveMutexLocker locker(m_mutex);
   if (m_customWorlds.contains(name)) {
     return m_customWorlds.get(name).chunks;

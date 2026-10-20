@@ -1,6 +1,5 @@
 import std;
 import star.string;
-import star.maybe;
 import star.json;
 import star.json_extra;
 import star.lexical_cast;
@@ -34,8 +33,8 @@ namespace JsonPath {
         buffer.append(*iterator++);
     }
 
-    Maybe<std::size_t> index = maybeLexicalCast<std::size_t>(buffer);
-    if (index.isValid() || (buffer == "-" && iterator == end))
+    std::optional<std::size_t> index = maybeLexicalCast<std::size_t>(buffer);
+    if (index.has_value() || (buffer == "-" && iterator == end))
       return TypeHint::Array;
     return TypeHint::Object;
   }

@@ -1,5 +1,4 @@
 import std;
-import star.maybe;
 import star.format;
 import star.xx_hash;
 import star.thread;

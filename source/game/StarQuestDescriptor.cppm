@@ -3,7 +3,6 @@ import std;
 import star.string;
 import star.list;
 import star.variant;
-import star.maybe;
 import star.json;
 
 import star.game_types;
@@ -115,16 +114,16 @@ struct QuestEntity {
 
   bool operator==(QuestEntity const& rhs) const;
 
-  Maybe<String> uniqueId;
-  Maybe<String> species;
-  Maybe<Gender> gender;
+  std::optional<String> uniqueId;
+  std::optional<String> species;
+  std::optional<Gender> gender;
 };
 
 // A location within the world, which could represent a spawn point or a dungeon
 struct QuestLocation {
   bool operator==(QuestLocation const& rhs) const;
 
-  Maybe<String> uniqueId;
+  std::optional<String> uniqueId;
   RectF region;
 };
 
@@ -147,7 +146,7 @@ struct QuestNpcType {
   String species;
   String typeName;
   JsonObject parameters;
-  Maybe<std::uint64_t> seed;
+  std::optional<std::uint64_t> seed;
 };
 
 struct QuestCoordinate {
@@ -176,9 +175,9 @@ struct QuestParam {
   bool operator==(QuestParam const& rhs) const;
 
   QuestParamDetail detail;
-  Maybe<String> name;
-  Maybe<Json> portrait;
-  Maybe<String> indicator;
+  std::optional<String> name;
+  std::optional<Json> portrait;
+  std::optional<String> indicator;
 };
 
 struct QuestDescriptor {
@@ -212,7 +211,7 @@ struct QuestArcDescriptor {
   bool operator==(QuestArcDescriptor const& rhs) const;
 
   List<QuestDescriptor> quests;
-  Maybe<String> stagehandUniqueId;
+  std::optional<String> stagehandUniqueId;
 };
 
 String questParamText(Root& root, QuestParam const& param);

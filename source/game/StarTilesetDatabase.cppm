@@ -3,7 +3,6 @@ import std;
 import star.string;
 import star.list;
 import star.format;
-import star.maybe;
 import star.json;
 import star.image;
 import star.data_stream;
@@ -50,7 +49,7 @@ namespace Tiled {
     T get(String const& name) const;
 
     template <typename T>
-    Maybe<T> opt(String const& name) const;
+    std::optional<T> opt(String const& name) const;
 
     template <typename T>
     void set(String const& name, T const& value);
@@ -123,8 +122,8 @@ namespace Tiled {
   }
 
   template <typename T>
-  Maybe<T> optProperty(Json const& properties, String const& propertyName) {
-    if (Maybe<String> propertyValue = properties.optString(propertyName))
+  std::optional<T> optProperty(Json const& properties, String const& propertyName) {
+    if (std::optional<String> propertyValue = properties.optString(propertyName))
       return PropertyConverter<T>::to(*propertyValue);
     return {};
   }
@@ -140,7 +139,7 @@ namespace Tiled {
   }
 
   template <typename T>
-  Maybe<T> Properties::opt(String const& name) const {
+  std::optional<T> Properties::opt(String const& name) const {
     return optProperty<T>(m_properties, name);
   }
 

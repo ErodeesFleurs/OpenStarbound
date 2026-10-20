@@ -9,7 +9,6 @@ import star.strong_typedef;
 import star.bi_map;
 import star.list;
 import star.rpc_promise;
-import star.maybe;
 import star.string;
 import star.color;
 import star.image_processing;

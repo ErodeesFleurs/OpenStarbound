@@ -1,7 +1,7 @@
 module;
 
 import std;
-import star.maybe;
+import star.optional;
 import star.list;
 import star.map;
 import star.set;
@@ -44,9 +44,66 @@ namespace AStar {
         bool returnBestIfFailed = false,
         // In returnBestIfFailed mode, validateEnd checks the end of the path
         // is valid, e.g. not floating in the air.
-        Maybe<ValidateEndFunction> validateEnd = {},
-        Maybe<double> maxFScore = {},
-        Maybe<unsigned> maxNodesToSearch = {});
+        std::optional<ValidateEndFunction> validateEnd = {},
+        std::optional<double> maxFScore = {},
+        std::optional<unsigned> maxNodesToSearch = {});
+
+    Search(Search const&) = default;
+    Search& operator=(Search const&) = default;
+    Search(Search&& other)
+      : m_heuristicCost(std::move(other.m_heuristicCost)),
+        m_getAdjacent(std::move(other.m_getAdjacent)),
+        m_goalReached(std::move(other.m_goalReached)),
+        m_returnBestIfFailed(other.m_returnBestIfFailed),
+        m_validateEnd(std::move(other.m_validateEnd)),
+        m_maxFScore((other.m_validateEnd.reset(), std::move(other.m_maxFScore))),
+        m_maxNodesToSearch((other.m_maxFScore.reset(), std::move(other.m_maxNodesToSearch))),
+        m_goal((other.m_maxNodesToSearch.reset(), std::move(other.m_goal))),
+        m_nodeMeta(std::move(other.m_nodeMeta)),
+        m_openQueue(std::move(other.m_openQueue)),
+        m_openSet(std::move(other.m_openSet)),
+        m_closedSet(std::move(other.m_closedSet)),
+        m_earlyExploration(std::move(other.m_earlyExploration)),
+        m_finished((other.m_earlyExploration.reset(), other.m_finished)),
+        m_result(std::move(other.m_result)) {
+      other.m_result.reset();
+    }
+
+    Search& operator=(Search&& other) {
+      if (this != &other) {
+        m_heuristicCost = std::move(other.m_heuristicCost);
+        m_getAdjacent = std::move(other.m_getAdjacent);
+        m_goalReached = std::move(other.m_goalReached);
+        m_returnBestIfFailed = other.m_returnBestIfFailed;
+        if (other.m_validateEnd)
+          m_validateEnd.emplace(takeOptional(other.m_validateEnd));
+        else
+          m_validateEnd.reset();
+        if (other.m_maxFScore)
+          m_maxFScore.emplace(takeOptional(other.m_maxFScore));
+        else
+          m_maxFScore.reset();
+        if (other.m_maxNodesToSearch)
+          m_maxNodesToSearch.emplace(takeOptional(other.m_maxNodesToSearch));
+        else
+          m_maxNodesToSearch.reset();
+        m_goal = std::move(other.m_goal);
+        m_nodeMeta = std::move(other.m_nodeMeta);
+        m_openQueue = std::move(other.m_openQueue);
+        m_openSet = std::move(other.m_openSet);
+        m_closedSet = std::move(other.m_closedSet);
+        if (other.m_earlyExploration)
+          m_earlyExploration.emplace(takeOptional(other.m_earlyExploration));
+        else
+          m_earlyExploration.reset();
+        m_finished = other.m_finished;
+        if (other.m_result)
+          m_result.emplace(takeOptional(other.m_result));
+        else
+          m_result.reset();
+      }
+      return *this;
+    }
 
     // Start a new exploration, resets result if it was found before.
     void start(Node startNode, Node goalNode);
@@ -56,13 +113,13 @@ namespace AStar {
     // false to signal failure.  On success, will return true.  If the given
     // maxExploreNodes is exhausted before success or failure, will return
     // nothing.
-    Maybe<bool> explore(Maybe<unsigned> maxExploreNodes = {});
+    std::optional<bool> explore(std::optional<unsigned> maxExploreNodes = {});
     // Returns the result if it was found.
-    Maybe<Path<Edge>> const& result() const;
+    std::optional<Path<Edge>> const& result() const;
 
     // Convenience, equivalent to calling start, then explore({}) and returns
     // result()
-    Maybe<Path<Edge>> const& findPath(Node startNode, Node goalNode);
+    std::optional<Path<Edge>> const& findPath(Node startNode, Node goalNode);
 
   private:
     struct ScoredNode {
@@ -76,7 +133,7 @@ namespace AStar {
 
     struct NodeMeta {
       Score score;
-      Maybe<Edge> cameFrom;
+      std::optional<Edge> cameFrom;
     };
 
     Path<Edge> reconstructPath(Node currentNode);
@@ -85,19 +142,19 @@ namespace AStar {
     NeighborFunction m_getAdjacent;
     GoalFunction m_goalReached;
     bool m_returnBestIfFailed;
-    Maybe<ValidateEndFunction> m_validateEnd;
-    Maybe<double> m_maxFScore;
-    Maybe<unsigned> m_maxNodesToSearch;
+    std::optional<ValidateEndFunction> m_validateEnd;
+    std::optional<double> m_maxFScore;
+    std::optional<unsigned> m_maxNodesToSearch;
 
     Node m_goal;
     Map<Node, NodeMeta, std::less<Node>, BlockAllocator<std::pair<Node const, NodeMeta>, 1024>> m_nodeMeta;
     std::priority_queue<ScoredNode> m_openQueue;
     Set<Node, std::less<Node>, BlockAllocator<Node, 1024>> m_openSet;
     Set<Node, std::less<Node>, BlockAllocator<Node, 1024>> m_closedSet;
-    Maybe<ScoredNode> m_earlyExploration;
+    std::optional<ScoredNode> m_earlyExploration;
 
     bool m_finished = false;
-    Maybe<Path<Edge>> m_result;
+    std::optional<Path<Edge>> m_result;
   };
 
   inline Score::Score() : gScore(std::numeric_limits<double>::max()), hScore(0), fScore(std::numeric_limits<double>::max()) {}
@@ -107,9 +164,9 @@ namespace AStar {
       NeighborFunction getAdjacent,
       GoalFunction goalReached,
       bool returnBestIfFailed,
-      Maybe<ValidateEndFunction> validateEnd,
-      Maybe<double> maxFScore,
-      Maybe<unsigned> maxNodesToSearch)
+      std::optional<ValidateEndFunction> validateEnd,
+      std::optional<double> maxFScore,
+      std::optional<unsigned> maxNodesToSearch)
     : m_heuristicCost(heuristicCost),
       m_getAdjacent(getAdjacent),
       m_goalReached(goalReached),
@@ -140,9 +197,9 @@ namespace AStar {
   }
 
   template <class Edge, class Node>
-  Maybe<bool> Search<Edge, Node>::explore(Maybe<unsigned> maxExploreNodes) {
+  std::optional<bool> Search<Edge, Node>::explore(std::optional<unsigned> maxExploreNodes) {
     if (m_finished)
-      return m_result.isValid();
+      return m_result.has_value();
 
     List<Edge> neighbors;
     while (true) {
@@ -154,7 +211,7 @@ namespace AStar {
         // or return nothing.
         if (m_returnBestIfFailed) {
           double bestScore = std::numeric_limits<double>::max();
-          Maybe<Node> bestNode;
+          std::optional<Node> bestNode;
           for (Node node : m_closedSet) {
             NodeMeta const& nodeMeta = m_nodeMeta[node];
             if (m_validateEnd && nodeMeta.cameFrom && !(*m_validateEnd)(*nodeMeta.cameFrom))
@@ -180,7 +237,7 @@ namespace AStar {
 
       ScoredNode currentScoredNode;
       if (m_earlyExploration) {
-        currentScoredNode = m_earlyExploration.take();
+        currentScoredNode = takeOptional(m_earlyExploration);
       } else {
         currentScoredNode = m_openQueue.top();
         m_openQueue.pop();
@@ -226,7 +283,7 @@ namespace AStar {
           // openQueue/openSet
           // if they're at least as good as the current node.
           if (targetScore.fScore <= currentScore.fScore) {
-            if (m_earlyExploration.isNothing()) {
+            if (!m_earlyExploration.has_value()) {
               m_earlyExploration = ScoredNode{targetScore, edge.target};
               continue;
             } else if (m_earlyExploration->score.fScore > targetScore.fScore) {
@@ -244,12 +301,12 @@ namespace AStar {
   }
 
   template <class Edge, class Node>
-  Maybe<Path<Edge>> const& Search<Edge, Node>::result() const {
+  std::optional<Path<Edge>> const& Search<Edge, Node>::result() const {
     return m_result;
   }
 
   template <class Edge, class Node>
-  Maybe<Path<Edge>> const& Search<Edge, Node>::findPath(Node startNode, Node goalNode) {
+  std::optional<Path<Edge>> const& Search<Edge, Node>::findPath(Node startNode, Node goalNode) {
     start(std::move(startNode), std::move(goalNode));
     explore();
     return result();
@@ -259,8 +316,8 @@ namespace AStar {
   Path<Edge> Search<Edge, Node>::reconstructPath(Node currentNode) {
     Path<Edge> res; // this will be backwards, we reverse it before returning it.
     while (m_nodeMeta.find(currentNode) != m_nodeMeta.end()) {
-      Maybe<Edge> currentEdge = m_nodeMeta[currentNode].cameFrom;
-      if (currentEdge.isNothing())
+      std::optional<Edge> currentEdge = m_nodeMeta[currentNode].cameFrom;
+      if (!currentEdge.has_value())
         break;
       res.append(*currentEdge);
       currentNode = currentEdge->source;

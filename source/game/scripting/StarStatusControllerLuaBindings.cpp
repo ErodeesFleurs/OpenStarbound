@@ -25,7 +25,6 @@ import star.bi_map;
 import star.audio;
 import star.map;
 import star.set;
-import star.maybe;
 
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
@@ -68,8 +67,8 @@ namespace Star::LuaBindings::StatusControllerCallbacks {
   void setResourceLocked(StatusController* statController, String const& arg1, bool arg2);
   void resetResource(StatusController* statController, String const& arg1);
   void resetAllResources(StatusController* statController);
-  Maybe<float> resourceMax(StatusController* statController, String const& arg1);
-  Maybe<float> resourcePercentage(StatusController* statController, String const& arg1);
+  std::optional<float> resourceMax(StatusController* statController, String const& arg1);
+  std::optional<float> resourcePercentage(StatusController* statController, String const& arg1);
   float setResourcePercentage(StatusController* statController, String const& arg1, float arg2);
   float modifyResourcePercentage(StatusController* statController, String const& arg1, float arg2);
   JsonArray getPersistentEffects(StatusController* statController, String const& arg1);
@@ -80,15 +79,15 @@ namespace Star::LuaBindings::StatusControllerCallbacks {
   void clearAllPersistentEffects(StatusController* statController);
   void addEphemeralEffect(StatusController* statController,
       String const& uniqueEffect,
-      Maybe<float> duration,
-      Maybe<EntityId> sourceEntityId);
-  void addEphemeralEffects(StatusController* statController, JsonArray const& arg1, Maybe<EntityId> sourceEntityId);
+      std::optional<float> duration,
+      std::optional<EntityId> sourceEntityId);
+  void addEphemeralEffects(StatusController* statController, JsonArray const& arg1, std::optional<EntityId> sourceEntityId);
   void removeEphemeralEffect(StatusController* statController, String const& arg1);
   void clearEphemeralEffects(StatusController* statController);
-  LuaTupleReturn<List<Json>, std::uint64_t> damageTakenSince(StatusController* statController, Maybe<std::uint64_t> timestep);
-  LuaTupleReturn<List<Json>, std::uint64_t> inflictedHitsSince(StatusController* statController, Maybe<std::uint64_t> timestep);
+  LuaTupleReturn<List<Json>, std::uint64_t> damageTakenSince(StatusController* statController, std::optional<std::uint64_t> timestep);
+  LuaTupleReturn<List<Json>, std::uint64_t> inflictedHitsSince(StatusController* statController, std::optional<std::uint64_t> timestep);
   LuaTupleReturn<List<Json>, std::uint64_t> inflictedDamageSince(
-      StatusController* statController, Maybe<std::uint64_t> timestep);
+      StatusController* statController, std::optional<std::uint64_t> timestep);
   List<JsonArray> activeUniqueStatusEffectSummary(StatusController* statController);
   bool uniqueStatusEffectActive(StatusController* statController, String const& effectName);
 }
@@ -132,9 +131,9 @@ LuaCallbacks LuaBindings::makeStatusControllerCallbacks(StatusController* statCo
       "resetResource", std::bind(StatusControllerCallbacks::resetResource, statController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void>(
       "resetAllResources", std::bind(StatusControllerCallbacks::resetAllResources, statController));
-  callbacks.registerCallbackWithSignature<Maybe<float>, String>(
+  callbacks.registerCallbackWithSignature<std::optional<float>, String>(
       "resourceMax", std::bind(StatusControllerCallbacks::resourceMax, statController, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<Maybe<float>, String>(
+  callbacks.registerCallbackWithSignature<std::optional<float>, String>(
       "resourcePercentage", std::bind(StatusControllerCallbacks::resourcePercentage, statController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<float, String, float>(
       "setResourcePercentage", std::bind(StatusControllerCallbacks::setResourcePercentage, statController, std::placeholders::_1, std::placeholders::_2));
@@ -152,19 +151,19 @@ LuaCallbacks LuaBindings::makeStatusControllerCallbacks(StatusController* statCo
       "clearPersistentEffects", std::bind(StatusControllerCallbacks::clearPersistentEffects, statController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void>(
       "clearAllPersistentEffects", std::bind(StatusControllerCallbacks::clearAllPersistentEffects, statController));
-  callbacks.registerCallbackWithSignature<void, String, Maybe<float>, Maybe<EntityId>>(
+  callbacks.registerCallbackWithSignature<void, String, std::optional<float>, std::optional<EntityId>>(
       "addEphemeralEffect", std::bind(StatusControllerCallbacks::addEphemeralEffect, statController, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-  callbacks.registerCallbackWithSignature<void, JsonArray, Maybe<EntityId>>(
+  callbacks.registerCallbackWithSignature<void, JsonArray, std::optional<EntityId>>(
       "addEphemeralEffects", std::bind(StatusControllerCallbacks::addEphemeralEffects, statController, std::placeholders::_1, std::placeholders::_2));
   callbacks.registerCallbackWithSignature<void, String>(
       "removeEphemeralEffect", std::bind(StatusControllerCallbacks::removeEphemeralEffect, statController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void>(
       "clearEphemeralEffects", std::bind(StatusControllerCallbacks::clearEphemeralEffects, statController));
-  callbacks.registerCallbackWithSignature<LuaTupleReturn<List<Json>, std::uint64_t>, Maybe<std::uint64_t>>(
+  callbacks.registerCallbackWithSignature<LuaTupleReturn<List<Json>, std::uint64_t>, std::optional<std::uint64_t>>(
       "damageTakenSince", std::bind(StatusControllerCallbacks::damageTakenSince, statController, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<LuaTupleReturn<List<Json>, std::uint64_t>, Maybe<std::uint64_t>>(
+  callbacks.registerCallbackWithSignature<LuaTupleReturn<List<Json>, std::uint64_t>, std::optional<std::uint64_t>>(
       "inflictedHitsSince", std::bind(StatusControllerCallbacks::inflictedHitsSince, statController, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<LuaTupleReturn<List<Json>, std::uint64_t>, Maybe<std::uint64_t>>(
+  callbacks.registerCallbackWithSignature<LuaTupleReturn<List<Json>, std::uint64_t>, std::optional<std::uint64_t>>(
       "inflictedDamageSince", std::bind(StatusControllerCallbacks::inflictedDamageSince, statController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<List<JsonArray>>("activeUniqueStatusEffectSummary",
       std::bind(&StatusControllerCallbacks::activeUniqueStatusEffectSummary, statController));
@@ -172,7 +171,7 @@ LuaCallbacks LuaBindings::makeStatusControllerCallbacks(StatusController* statCo
       std::bind(&StatusControllerCallbacks::uniqueStatusEffectActive, statController, std::placeholders::_1));
 
   callbacks.registerCallbackWithSignature<Directives>("primaryDirectives", std::bind(&StatusController::primaryDirectives, statController));
-  callbacks.registerCallback("setPrimaryDirectives", [statController](Maybe<String> const& directives) { statController->setPrimaryDirectives(directives.value()); });
+  callbacks.registerCallback("setPrimaryDirectives", [statController](std::optional<String> const& directives) { statController->setPrimaryDirectives(directives.value_or(String{})); });
 
   callbacks.registerCallbackWithSignature<void, DamageRequest>("applySelfDamageRequest", std::bind(&StatusController::applySelfDamageRequest, statController, std::placeholders::_1));
 
@@ -255,11 +254,11 @@ void LuaBindings::StatusControllerCallbacks::resetAllResources(StatusController*
   statController->resetAllResources();
 }
 
-Maybe<float> LuaBindings::StatusControllerCallbacks::resourceMax(StatusController* statController, String const& arg1) {
+std::optional<float> LuaBindings::StatusControllerCallbacks::resourceMax(StatusController* statController, String const& arg1) {
   return statController->resourceMax(arg1);
 }
 
-Maybe<float> LuaBindings::StatusControllerCallbacks::resourcePercentage(
+std::optional<float> LuaBindings::StatusControllerCallbacks::resourcePercentage(
     StatusController* statController, String const& arg1) {
   return statController->resourcePercentage(arg1);
 }
@@ -304,12 +303,12 @@ void LuaBindings::StatusControllerCallbacks::clearAllPersistentEffects(StatusCon
 }
 
 void LuaBindings::StatusControllerCallbacks::addEphemeralEffect(
-    StatusController* statController, String const& arg1, Maybe<float> arg2, Maybe<EntityId> sourceEntityId) {
+    StatusController* statController, String const& arg1, std::optional<float> arg2, std::optional<EntityId> sourceEntityId) {
   statController->addEphemeralEffect(EphemeralStatusEffect{UniqueStatusEffect{arg1}, arg2}, sourceEntityId);
 }
 
 void LuaBindings::StatusControllerCallbacks::addEphemeralEffects(
-    StatusController* statController, JsonArray const& arg1, Maybe<EntityId> sourceEntityId) {
+    StatusController* statController, JsonArray const& arg1, std::optional<EntityId> sourceEntityId) {
   statController->addEphemeralEffects(arg1.transformed(jsonToEphemeralStatusEffect), sourceEntityId);
 }
 
@@ -323,29 +322,29 @@ void LuaBindings::StatusControllerCallbacks::clearEphemeralEffects(StatusControl
 }
 
 LuaTupleReturn<List<Json>, std::uint64_t> LuaBindings::StatusControllerCallbacks::damageTakenSince(
-    StatusController* statController, Maybe<std::uint64_t> timestep) {
-  auto pair = statController->damageTakenSince(timestep.value());
+    StatusController* statController, std::optional<std::uint64_t> timestep) {
+  auto pair = statController->damageTakenSince(timestep.value_or(std::uint64_t{}));
   return luaTupleReturn(pair.first.transformed(std::mem_fn(&DamageNotification::toJson)), pair.second);
 }
 
 LuaTupleReturn<List<Json>, std::uint64_t> LuaBindings::StatusControllerCallbacks::inflictedHitsSince(
-    StatusController* statController, Maybe<std::uint64_t> timestep) {
-  auto pair = statController->inflictedHitsSince(timestep.value());
+    StatusController* statController, std::optional<std::uint64_t> timestep) {
+  auto pair = statController->inflictedHitsSince(timestep.value_or(std::uint64_t{}));
   return luaTupleReturn(
       pair.first.transformed([](auto const& p) { return p.second.toJson().set("targetEntityId", p.first); }),
       pair.second);
 }
 
 LuaTupleReturn<List<Json>, std::uint64_t> LuaBindings::StatusControllerCallbacks::inflictedDamageSince(
-    StatusController* statController, Maybe<std::uint64_t> timestep) {
-  auto pair = statController->inflictedDamageSince(timestep.value());
+    StatusController* statController, std::optional<std::uint64_t> timestep) {
+  auto pair = statController->inflictedDamageSince(timestep.value_or(std::uint64_t{}));
   return luaTupleReturn(pair.first.transformed(std::mem_fn(&DamageNotification::toJson)), pair.second);
 }
 
 List<JsonArray> LuaBindings::StatusControllerCallbacks::activeUniqueStatusEffectSummary(
     StatusController* statController) {
   auto summary = statController->activeUniqueStatusEffectSummary();
-  return summary.transformed([](std::pair<UniqueStatusEffect, Maybe<float>> effect) {
+  return summary.transformed([](std::pair<UniqueStatusEffect, std::optional<float>> effect) {
     JsonArray effectJson = {effect.first};
     if (effect.second)
       effectJson.append(*effect.second);

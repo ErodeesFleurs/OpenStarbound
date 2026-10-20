@@ -17,7 +17,6 @@ import star.bi_map;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -53,7 +52,7 @@ public:
 
   virtual ~PopupInterface() {}
 
-  void displayMessage(String const& message, String const& title, String const& subtitle, Maybe<String> const& onShowSound = {});
+  void displayMessage(String const& message, String const& title, String const& subtitle, std::optional<String> const& onShowSound = {});
 
 private:
 };

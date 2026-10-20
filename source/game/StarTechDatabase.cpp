@@ -65,7 +65,7 @@ TechConfig TechDatabase::parseTech(Json const& config, String const& path) const
     tech.type = TechTypeNames.getLeft(config.getString("type"));
 
     tech.scripts = jsonToStringList(config.get("scripts")).transformed(std::bind(AssetPath::relativeTo, path, std::placeholders::_1));
-    tech.animationConfig = config.optString("animator").apply(std::bind(&AssetPath::relativeTo, path, std::placeholders::_1));
+    tech.animationConfig = config.optString("animator").transform(std::bind(&AssetPath::relativeTo, path, std::placeholders::_1));
 
     tech.description = config.getString("description");
     tech.shortDescription = config.getString("shortDescription");

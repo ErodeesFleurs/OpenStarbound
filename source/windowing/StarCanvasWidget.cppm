@@ -20,7 +20,6 @@ import star.string;
 import star.text;
 import star.poly;
 import star.asset_path;
-import star.maybe;
 import star.text_painter;
 import star.drawable;
 import star.widget;

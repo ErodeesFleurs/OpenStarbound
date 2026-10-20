@@ -4,7 +4,6 @@ import star.string;
 import star.list;
 import star.map;
 import star.variant;
-import star.maybe;
 import star.format;
 import star.json;
 
@@ -29,14 +28,14 @@ using TenantException = StarError<TenantExceptionTag, StarException>;
 struct TenantNpcSpawnable {
   List<String> species;
   String type;
-  Maybe<float> level;
-  Maybe<Json> overrides;
+  std::optional<float> level;
+  std::optional<Json> overrides;
 };
 
 struct TenantMonsterSpawnable {
   String type;
-  Maybe<float> level;
-  Maybe<Json> overrides;
+  std::optional<float> level;
+  std::optional<Json> overrides;
 };
 
 typedef MVariant<TenantNpcSpawnable, TenantMonsterSpawnable> TenantSpawnable;
@@ -58,7 +57,7 @@ struct Tenant {
 
   List<TenantSpawnable> tenants;
 
-  Maybe<TenantRent> rent;
+  std::optional<TenantRent> rent;
 
   // The Json this tenant was parsed from
   Json config;

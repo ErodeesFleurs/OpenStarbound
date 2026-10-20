@@ -9,7 +9,6 @@ module;
 import std;
 import star.byte_array;
 
-import star.maybe;
 import star.string;
 import star.list;
 import star.map;
@@ -43,10 +42,10 @@ public:
   void setJoinUnavailable() override;
   void setJoinLocal(std::uint32_t capacity) override;
   void setJoinRemote(HostAddressWithPort location) override;
-  void setActivityData(const char* title, const char* details, std::int64_t startTime, Maybe<std::pair<std::uint16_t, std::uint16_t>>) override;
+  void setActivityData(const char* title, const char* details, std::int64_t startTime, std::optional<std::pair<std::uint16_t, std::uint16_t>>) override;
 
   MVariant<P2PNetworkingPeerId, HostAddressWithPort> pullPendingJoin() override;
-  Maybe<std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> pullJoinRequest() override;
+  std::optional<std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> pullJoinRequest() override;
 
   void setAcceptingP2PConnections(bool acceptingP2PConnections) override;
   List<std::unique_ptr<P2PSocket>> acceptP2PConnections() override;
@@ -140,7 +139,7 @@ private:
 
     bool isOpen() override;
     bool sendMessage(ByteArray const& message) override;
-    Maybe<ByteArray> receiveMessage() override;
+    std::optional<ByteArray> receiveMessage() override;
 
     Mutex mutex;
     PcP2PNetworkingService* parent = nullptr;
@@ -181,7 +180,7 @@ private:
 
     bool isOpen() override;
     bool sendMessage(ByteArray const& message) override;
-    Maybe<ByteArray> receiveMessage() override;
+    std::optional<ByteArray> receiveMessage() override;
 
     Mutex mutex;
     std::shared_ptr<PcPlatformServicesState> state;
@@ -238,11 +237,11 @@ private:
   String m_discordActivityTitle;
   String m_discordActivityDetails;
   std::int64_t m_discordActivityStartTime = 0;
-  Maybe<std::pair<std::uint16_t, std::uint16_t>> m_discordPartySize;
+  std::optional<std::pair<std::uint16_t, std::uint16_t>> m_discordPartySize;
   bool m_discordForceUpdateActivity = false;
   bool m_discordUpdatingActivity = false;
   // Hosted lobbies retain their secret; a remote membership has an empty secret.
-  Maybe<std::pair<discord::LobbyId, String>> m_discordServerLobby = {};
+  std::optional<std::pair<discord::LobbyId, String>> m_discordServerLobby = {};
 
   int m_discordOnActivityJoinToken = -1;
   int m_discordOnActivityRequestToken = -1;

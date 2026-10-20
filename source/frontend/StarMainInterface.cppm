@@ -20,7 +20,6 @@ import star.string;
 import star.text;
 import star.poly;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.set;
 import star.audio;
@@ -183,7 +182,7 @@ public:
 
   void doChat(String const& chat, bool addToHistory);
 
-  void queueMessage(String const& message, Maybe<float> cooldown, float spring);
+  void queueMessage(String const& message, std::optional<float> cooldown, float spring);
   void queueMessage(String const& message);
 
   void queueItemPickupText(std::shared_ptr<Item> const& item);
@@ -279,7 +278,7 @@ private:
   Vec2F m_cursorScreenPos{};
   Vec2I m_cursorScreenIPos{};
   std::shared_ptr<ItemSlotWidget> m_cursorItem;
-  Maybe<String> m_cursorTooltip;
+  std::optional<String> m_cursorTooltip;
 
   std::shared_ptr<LabelWidget> m_planetText;
   GameTimer m_planetNameTimer;

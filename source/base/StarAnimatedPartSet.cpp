@@ -200,7 +200,7 @@ void AnimatedPartSet::forEachActivePart(std::function<void(String const&, Active
 
 std::size_t AnimatedPartSet::activeStateIndex(String const& stateTypeName) const {
   auto const& stateType = m_stateTypes.get(stateTypeName);
-  return *stateType.states.indexOf(stateType.activeState.stateName);
+  return stateType.states.indexOf(stateType.activeState.stateName).value();
 }
 bool AnimatedPartSet::activeStateReverse(String const& stateTypeName) const {
   auto const& stateType = m_stateTypes.get(stateTypeName);
@@ -374,11 +374,11 @@ void AnimatedPartSet::freshenActivePart(Part const& part) const {
           } else if (action == "translate") {
             mat.translate(jsonToVec2F(v.getArray(1)));
           } else if (action == "rotate") {
-            mat.rotate(v.getFloat(1), jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
+            mat.rotate(v.getFloat(1), jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value_or(JsonArray({0,0})).toArray())));
           } else if (action == "rotateDegrees") { // because radians are fucking annoying
-            mat.rotate(v.getFloat(1) * std::numbers::pi / 180, jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
+            mat.rotate(v.getFloat(1) * std::numbers::pi / 180, jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value_or(JsonArray({0,0})).toArray())));
           } else if (action == "scale") {
-            mat.scale(jsonToVec2F(v.getArray(1)), jsonToVec2F(v.getArray(2, properties.maybe("scalingCenter").value(JsonArray({0,0})).toArray())));
+            mat.scale(jsonToVec2F(v.getArray(1)), jsonToVec2F(v.getArray(2, properties.maybe("scalingCenter").value_or(JsonArray({0,0})).toArray())));
           } else if (action == "transform") {
             mat = Mat3F(v.getFloat(1), v.getFloat(2), v.getFloat(3), v.getFloat(4), v.getFloat(5), v.getFloat(6), 0, 0, 1) * mat;
           }
@@ -389,7 +389,7 @@ void AnimatedPartSet::freshenActivePart(Part const& part) const {
 
       if (auto transforms = activePart.properties.ptr("transforms")) {
         auto mat = processTransforms(activePart.animationAffineTransform(), *transforms, activePart.properties);
-        if (activePart.properties.maybe("interpolated").value(false).toBool()) {
+        if (activePart.properties.maybe("interpolated").value_or(false).toBool()) {
           if (auto nextTransforms = activePart.nextProperties.ptr("transforms")) {
             auto nextMat = processTransforms(activePart.animationAffineTransform(), *nextTransforms, activePart.nextProperties);
             activePart.setAnimationAffineTransform(mat, nextMat, activePart.activeState ? activePart.activeState->frameProgress : 1);
@@ -439,18 +439,18 @@ Json AnimatedPartSet::getStateFrameProperty(String const & stateTypeName, String
   auto stateType = m_stateTypes.get(stateTypeName);
   auto state = stateType.states.get(stateName);
   if (auto frameProperty = state->stateFrameProperties.maybe(propertyName))
-    if (frame >= 0 && static_cast<std::size_t>(frame) < frameProperty.value().size())
-      return frameProperty.value().get(frame);
-  return state->stateProperties.maybe(propertyName).value(stateType.stateTypeProperties.maybe(propertyName).value(Json()));
+    if (frame >= 0 && static_cast<std::size_t>(frame) < frameProperty.value_or(Json{}).size())
+      return frameProperty.value_or(Json{}).get(frame);
+  return state->stateProperties.maybe(propertyName).value_or(stateType.stateTypeProperties.maybe(propertyName).value_or(Json()));
 }
 
 Json AnimatedPartSet::getPartStateFrameProperty(String const & partName, String const & propertyName, String const & stateTypeName, String stateName, int frame) const {
   auto part = m_parts.get(partName);
   auto state = part.partStates.get(stateTypeName).get(stateName);
   if (auto frameProperty = state.partStateFrameProperties.maybe(propertyName))
-    if (frame >= 0 && static_cast<std::size_t>(frame) < frameProperty.value().size())
-      return frameProperty.value().get(frame);
-  return state.partStateProperties.maybe(propertyName).value(part.partProperties.maybe(propertyName).value(Json()));
+    if (frame >= 0 && static_cast<std::size_t>(frame) < frameProperty.value_or(Json{}).size())
+      return frameProperty.value_or(Json{}).get(frame);
+  return state.partStateProperties.maybe(propertyName).value_or(part.partProperties.maybe(propertyName).value_or(Json()));
 }
 
 

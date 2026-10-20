@@ -3,7 +3,6 @@ import std;
 import star.string;
 import star.list;
 import star.map;
-import star.maybe;
 import star.format;
 import star.json;
 
@@ -157,10 +156,10 @@ public:
   // will simply be cleared.  If a primary slot is set to a two handed item, it
   // will clear the secondary slot.  Any secondary slot that is set must be a
   // one handed item.
-  Maybe<InventorySlot> customBarPrimarySlot(CustomBarIndex customBarIndex) const;
-  Maybe<InventorySlot> customBarSecondarySlot(CustomBarIndex customBarIndex) const;
-  void setCustomBarPrimarySlot(CustomBarIndex customBarIndex, Maybe<InventorySlot> slot);
-  void setCustomBarSecondarySlot(CustomBarIndex customBarIndex, Maybe<InventorySlot> slot);
+  std::optional<InventorySlot> customBarPrimarySlot(CustomBarIndex customBarIndex) const;
+  std::optional<InventorySlot> customBarSecondarySlot(CustomBarIndex customBarIndex) const;
+  void setCustomBarPrimarySlot(CustomBarIndex customBarIndex, std::optional<InventorySlot> slot);
+  void setCustomBarSecondarySlot(CustomBarIndex customBarIndex, std::optional<InventorySlot> slot);
 
   // Add the given slot to a free place in the custom bar if one is available.
   void addToCustomBar(InventorySlot slot);
@@ -187,8 +186,8 @@ public:
 
   // If the primary / secondary held items are valid manageable slots, returns
   // them.
-  Maybe<InventorySlot> primaryHeldSlot() const;
-  Maybe<InventorySlot> secondaryHeldSlot() const;
+  std::optional<InventorySlot> primaryHeldSlot() const;
+  std::optional<InventorySlot> secondaryHeldSlot() const;
 
   List<std::shared_ptr<Item>> pullOverflow();
   void setEquipmentVisibility(EquipmentSlot slot, bool visible);
@@ -221,7 +220,7 @@ public:
   bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
 
 private:
-  typedef std::pair<Maybe<InventorySlot>, Maybe<InventorySlot>> CustomBarLink;
+  typedef std::pair<std::optional<InventorySlot>, std::optional<InventorySlot>> CustomBarLink;
 
   PlayerInventory(Root& root, Json inventoryConfig, Json currenciesConfig);
 
@@ -247,7 +246,7 @@ private:
   Map<EquipmentSlot, std::shared_ptr<Item>> m_equipment;
   Map<String, std::shared_ptr<ItemBag>> m_bags;
   std::shared_ptr<Item> m_swapSlot;
-  Maybe<InventorySlot> m_swapReturnSlot;
+  std::optional<InventorySlot> m_swapReturnSlot;
   std::shared_ptr<Item> m_trashSlot;
   Map<EssentialItem, std::shared_ptr<Item>> m_essential;
   StringMap<std::uint64_t> m_currencies;

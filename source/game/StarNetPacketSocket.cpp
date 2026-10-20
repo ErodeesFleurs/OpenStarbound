@@ -18,7 +18,6 @@ import star.version;
 import star.ordered_map;
 import star.variant;
 import star.color;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.image_processing;
@@ -156,11 +155,11 @@ void PacketStatCollector::calculate() {
   }
 }
 
-Maybe<PacketStats> PacketSocket::incomingStats() const {
+std::optional<PacketStats> PacketSocket::incomingStats() const {
   return {};
 }
 
-Maybe<PacketStats> PacketSocket::outgoingStats() const {
+std::optional<PacketStats> PacketSocket::outgoingStats() const {
   return {};
 }
 void PacketSocket::setNetRules(NetCompatibilityRules netRules) { m_netRules = netRules; }
@@ -490,11 +489,11 @@ void TcpPacketSocket::waitForData(bool writable, std::chrono::steady_clock::time
   m_socket->waitForData(writable, deadline);
 }
 
-Maybe<PacketStats> TcpPacketSocket::incomingStats() const {
+std::optional<PacketStats> TcpPacketSocket::incomingStats() const {
   return m_incomingStats.stats();
 }
 
-Maybe<PacketStats> TcpPacketSocket::outgoingStats() const {
+std::optional<PacketStats> TcpPacketSocket::outgoingStats() const {
   return m_outgoingStats.stats();
 }
 
@@ -667,11 +666,11 @@ void P2PPacketSocket::waitForData(bool, std::chrono::steady_clock::time_point de
       [&] { return m_closed; });
 }
 
-Maybe<PacketStats> P2PPacketSocket::incomingStats() const {
+std::optional<PacketStats> P2PPacketSocket::incomingStats() const {
   return m_incomingStats.stats();
 }
 
-Maybe<PacketStats> P2PPacketSocket::outgoingStats() const {
+std::optional<PacketStats> P2PPacketSocket::outgoingStats() const {
   return m_outgoingStats.stats();
 }
 

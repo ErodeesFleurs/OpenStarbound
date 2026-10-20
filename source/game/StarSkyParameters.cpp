@@ -11,7 +11,6 @@ import star.game_types;
 import star.color;
 import star.bi_map;
 import star.sky_types;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -165,9 +164,9 @@ SkyParameters::SkyParameters(Json const& config) : SkyParameters() {
 Json SkyParameters::toJson() const {
   return JsonObject{
       {"seed", seed},
-      {"dayLength", jsonFromMaybe<float>(dayLength)},
+      {"dayLength", jsonFromOptional<float>(dayLength)},
       {"planet",
-          jsonFromMaybe<std::pair<List<std::pair<String, float>>, Vec2F>>(nearbyPlanet,
+          jsonFromOptional<std::pair<List<std::pair<String, float>>, Vec2F>>(nearbyPlanet,
               [](std::pair<List<std::pair<String, float>>, Vec2F> p) -> Json {
                 return JsonObject{
                     {"layers",
@@ -197,10 +196,10 @@ Json SkyParameters::toJson() const {
               })},
       {"horizonClouds", horizonClouds},
       {"skyType", SkyTypeNames.getRight(skyType)},
-      {"skyColoring", jsonFromMaybe<SkyColoring>(skyColoring.maybeLeft(), [](SkyColoring c) { return c.toJson(); })},
-      {"ambientLightLevel", jsonFromMaybe<Color>(skyColoring.maybeRight(), [](Color c) { return jsonFromColor(c); })},
-      {"spaceLevel", jsonFromMaybe<float>(spaceLevel)},
-      {"surfaceLevel", jsonFromMaybe<float>(surfaceLevel)},
+      {"skyColoring", jsonFromOptional<SkyColoring>(skyColoring.maybeLeft(), [](SkyColoring c) { return c.toJson(); })},
+      {"ambientLightLevel", jsonFromOptional<Color>(skyColoring.maybeRight(), [](Color c) { return jsonFromColor(c); })},
+      {"spaceLevel", jsonFromOptional<float>(spaceLevel)},
+      {"surfaceLevel", jsonFromOptional<float>(surfaceLevel)},
       {"sunType", sunType},
       {"settings", settings}
   };

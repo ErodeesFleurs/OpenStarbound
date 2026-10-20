@@ -9,7 +9,6 @@ import star.random;
 import star.ttl_cache;
 import star.casting;
 import star.game_types;
-import star.maybe;
 import star.variant;
 import star.list;
 import star.rpc_promise;
@@ -151,7 +150,7 @@ QuestParamDetail questParamDetailFromJson(Json const& json) {
     return QuestEntity{
         json.optString("uniqueId"),
         json.optString("species"),
-        json.optString("gender").apply([](String const& gender) { return GenderNames.getLeft(gender); })
+        json.optString("gender").transform([](String const& gender) { return GenderNames.getLeft(gender); })
       };
 
   } else if (type == "location") {
@@ -223,16 +222,16 @@ Json questParamDetailToJson(QuestParamDetail const& detail) {
     QuestEntity entity = detail.get<QuestEntity>();
     return JsonObject{
         {"type", "entity"},
-        {"uniqueId", jsonFromMaybe(entity.uniqueId)},
-        {"species", jsonFromMaybe(entity.species)},
-        {"gender", jsonFromMaybe(entity.gender.apply([](Gender gender) { return GenderNames.getRight(gender); }))}
+        {"uniqueId", jsonFromOptional(entity.uniqueId)},
+        {"species", jsonFromOptional(entity.species)},
+        {"gender", jsonFromOptional(entity.gender.transform([](Gender gender) { return GenderNames.getRight(gender); }))}
       };
 
   } else if (detail.is<QuestLocation>()) {
     QuestLocation location = detail.get<QuestLocation>();
     return JsonObject{
         {"type", "location"},
-        {"uniqueId", jsonFromMaybe<String>(location.uniqueId)},
+        {"uniqueId", jsonFromOptional<String>(location.uniqueId)},
         {"region", jsonFromRectF(location.region)}
       };
 
@@ -248,7 +247,7 @@ Json questParamDetailToJson(QuestParamDetail const& detail) {
         {"species", npcType.species},
         {"typeName", npcType.typeName},
         {"parameters", npcType.parameters},
-        {"seed", jsonFromMaybe(npcType.seed)}
+        {"seed", jsonFromOptional(npcType.seed)}
     };
 
   } else if (detail.is<QuestCoordinate>()) {
@@ -270,9 +269,9 @@ Json questParamDetailToJson(QuestParamDetail const& detail) {
 
 Json QuestParam::toJson() const {
   Json detailJson = questParamDetailToJson(detail);
-  return detailJson.set("name", jsonFromMaybe(name))
-      .set("portrait", jsonFromMaybe(portrait))
-      .set("indicator", jsonFromMaybe(indicator));
+  return detailJson.set("name", jsonFromOptional(name))
+      .set("portrait", jsonFromOptional(portrait))
+      .set("indicator", jsonFromOptional(indicator));
 }
 
 Json questParamDetailDiskStore(Root& root, QuestParamDetail const& detail) {
@@ -290,9 +289,9 @@ Json questParamDetailDiskStore(Root& root, QuestParamDetail const& detail) {
 
 Json QuestParam::diskStore(Root& root) const {
   Json detailJson = questParamDetailDiskStore(root, detail);
-  return detailJson.set("name", jsonFromMaybe(name))
-      .set("portrait", jsonFromMaybe(portrait))
-      .set("indicator", jsonFromMaybe(indicator));
+  return detailJson.set("name", jsonFromOptional(name))
+      .set("portrait", jsonFromOptional(portrait))
+      .set("indicator", jsonFromOptional(indicator));
 }
 
 bool QuestParam::operator==(QuestParam const& rhs) const {
@@ -355,13 +354,13 @@ QuestArcDescriptor QuestArcDescriptor::diskLoad(Root& root, Json const& spec) {
 
 Json QuestArcDescriptor::toJson() const {
   return JsonObject{{"quests", quests.transformed(std::mem_fn(&QuestDescriptor::toJson))},
-      {"stagehandUniqueId", jsonFromMaybe(stagehandUniqueId)}};
+      {"stagehandUniqueId", jsonFromOptional(stagehandUniqueId)}};
 }
 
 Json QuestArcDescriptor::diskStore(Root& root) const {
   auto versioningDatabase = root.versioningDatabase();
   auto res = JsonObject{{"quests", quests.transformed([&root](QuestDescriptor const& quest) { return quest.diskStore(root); })},
-      {"stagehandUniqueId", jsonFromMaybe(stagehandUniqueId)}};
+      {"stagehandUniqueId", jsonFromOptional(stagehandUniqueId)}};
 
   return versioningDatabase->makeCurrentVersionedJson("QuestArcDescriptor", res).toJson();
 }

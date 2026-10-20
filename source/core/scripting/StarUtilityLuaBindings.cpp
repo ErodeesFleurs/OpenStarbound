@@ -1,6 +1,5 @@
 import std;
 import star.lua;
-import star.maybe;
 import star.format;
 import star.json;
 import star.xx_hash;
@@ -43,9 +42,9 @@ struct LuaUserDataMethods<LuaRandomSource> {
   static LuaMethods<LuaRandomSource> make() {
     LuaMethods<LuaRandomSource> methods;
 
-    methods.registerMethod("init", [](LuaRandomSource& source, Maybe<std::uint64_t> seed)
+    methods.registerMethod("init", [](LuaRandomSource& source, std::optional<std::uint64_t> seed)
       { source.init(seed ? *seed : source.owner.randu64()); });
-    methods.registerMethod("addEntropy", [](LuaRandomSource& source, Maybe<std::uint64_t> seed)
+    methods.registerMethod("addEntropy", [](LuaRandomSource& source, std::optional<std::uint64_t> seed)
       { source.addEntropy(seed ? *seed : source.owner.randu64()); });
 
     methods.registerMethodWithSignature<std::uint32_t, LuaRandomSource&>("randu32", std::mem_fn(&RandomSource::randu32));
@@ -53,16 +52,16 @@ struct LuaUserDataMethods<LuaRandomSource> {
     methods.registerMethodWithSignature<std::int32_t, LuaRandomSource&>("randi32", std::mem_fn(&RandomSource::randi32));
     methods.registerMethodWithSignature<std::int64_t, LuaRandomSource&>("randi64", std::mem_fn(&RandomSource::randi64));
 
-    methods.registerMethod("randf", [](LuaRandomSource& source, Maybe<float> arg1, Maybe<float> arg2)
+    methods.registerMethod("randf", [](LuaRandomSource& source, std::optional<float> arg1, std::optional<float> arg2)
       { return (arg1 && arg2) ? source.randf(*arg1, *arg2) : source.randf(); });
-    methods.registerMethod("randd", [](LuaRandomSource& source, Maybe<double> arg1, Maybe<double> arg2)
+    methods.registerMethod("randd", [](LuaRandomSource& source, std::optional<double> arg1, std::optional<double> arg2)
       { return (arg1 && arg2) ? source.randd(*arg1, *arg2) : source.randd(); });
 
     methods.registerMethodWithSignature<bool, LuaRandomSource&>("randb", std::mem_fn(&RandomSource::randb));
 
-    methods.registerMethod("randInt", [](LuaRandomSource& source, std::int64_t arg1, Maybe<std::int64_t> arg2)
+    methods.registerMethod("randInt", [](LuaRandomSource& source, std::int64_t arg1, std::optional<std::int64_t> arg2)
       { return arg2 ? source.randInt(arg1, *arg2) : source.randInt(arg1); });
-    methods.registerMethod("randUInt", [](LuaRandomSource& source, std::uint64_t arg1, Maybe<std::uint64_t> arg2)
+    methods.registerMethod("randUInt", [](LuaRandomSource& source, std::uint64_t arg1, std::optional<std::uint64_t> arg2)
       { return arg2 ? source.randUInt(arg1, *arg2) : source.randUInt(arg1); });
     return methods;
   }
@@ -77,7 +76,7 @@ struct LuaUserDataMethods<PerlinF> {
     LuaMethods<PerlinF> methods;
 
     methods.registerMethod("get",
-        [](PerlinF& perlinF, float x, Maybe<float> y, Maybe<float> z) {
+        [](PerlinF& perlinF, float x, std::optional<float> y, std::optional<float> z) {
           if (y && z)
             return perlinF.get(x, *y, *z);
           else if (y)
@@ -130,7 +129,7 @@ String LuaBindings::formatLua(String const& string, List<LuaValue> const& args) 
 LuaCallbacks LuaBindings::makeUtilityCallbacks(RandomService& random, Logger& logger, LogMap& logMap) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallback("nrand", [&random](Maybe<double> const& stdev, Maybe<double> const& mean) {
+  callbacks.registerCallback("nrand", [&random](std::optional<double> const& stdev, std::optional<double> const& mean) {
     return UtilityCallbacks::nrand(random, stdev, mean);
   });
   callbacks.registerCallback("makeUuid", [&random]() { return UtilityCallbacks::makeUuid(random); });
@@ -150,7 +149,7 @@ LuaCallbacks LuaBindings::makeUtilityCallbacks(RandomService& random, Logger& lo
   callbacks.registerCallback("jsonMerge", [](Json const& a, Json const& b) { return jsonMerge(a, b); });
   callbacks.registerCallback("jsonEqual", [](Json const& a, Json const& b) { return a == b; });
   callbacks.registerCallback("jsonQuery", [](Json const& json, String const& path, Json const& def) { return json.query(path, def); });
-  callbacks.registerCallback("makeRandomSource", [&random](Maybe<std::uint64_t> seed) { return LuaRandomSource(random, seed ? *seed : random.randu64()); });
+  callbacks.registerCallback("makeRandomSource", [&random](std::optional<std::uint64_t> seed) { return LuaRandomSource(random, seed ? *seed : random.randu64()); });
   callbacks.registerCallback("makePerlinSource", [](Json const& config) { return PerlinF(config); });
 
   callbacks.copyCallback("parseJson", "jsonFromString"); // SE compat
@@ -211,8 +210,8 @@ LuaCallbacks LuaBindings::makeUtilityCallbacks(RandomService& random, Logger& lo
   return callbacks;
 }
 
-double LuaBindings::UtilityCallbacks::nrand(RandomService& random, Maybe<double> const& stdev, Maybe<double> const& mean) {
-  return random.nrandd(stdev.value(1.0), mean.value(0));
+double LuaBindings::UtilityCallbacks::nrand(RandomService& random, std::optional<double> const& stdev, std::optional<double> const& mean) {
+  return random.nrandd(stdev.value_or(1.0), mean.value_or(0));
 }
 
 String LuaBindings::UtilityCallbacks::makeUuid(RandomService& random) {
@@ -239,8 +238,8 @@ Json LuaBindings::UtilityCallbacks::parseJson(String const& str) {
   return Json::parse(str);
 }
 
-String LuaBindings::UtilityCallbacks::printJson(Json const& arg, Maybe<int> pretty) {
-  return arg.repr(pretty.value());
+String LuaBindings::UtilityCallbacks::printJson(Json const& arg, std::optional<int> pretty) {
+  return arg.repr(pretty.value_or(0));
 }
 
 String LuaBindings::UtilityCallbacks::print(LuaValue const& value) {
@@ -250,7 +249,7 @@ String LuaBindings::UtilityCallbacks::print(LuaValue const& value) {
 LuaValue LuaBindings::UtilityCallbacks::interpolateSinEase(LuaEngine& engine, double offset, LuaValue const& value1, LuaValue const& value2) {
   if (auto floatValue1 = engine.luaMaybeTo<double>(value1)) {
     auto floatValue2 = engine.luaMaybeTo<double>(value2);
-    return sinEase(offset, *floatValue1, *floatValue2);
+    return sinEase(offset, *floatValue1, floatValue2.value());
   } else {
     return engine.luaFrom<Vec2F>(sinEase(offset, engine.luaTo<Vec2F>(value1), engine.luaTo<Vec2F>(value2)));
   }

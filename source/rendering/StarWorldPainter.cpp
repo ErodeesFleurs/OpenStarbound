@@ -11,7 +11,6 @@ import star.map;
 import star.math_common;
 import star.vector;
 import star.either;
-import star.maybe;
 import star.rect;
 import star.image_processing;
 import star.hash;
@@ -209,7 +208,7 @@ void WorldPainter::render(WorldRenderData& renderData, std::function<bool()> lig
   }
 
   auto entityDrawableIterator = entityDrawables.begin();
-  auto renderEntitiesUntil = [this, &entityDrawables, &entityDrawableIterator](Maybe<EntityRenderLayer> until) {
+  auto renderEntitiesUntil = [this, &entityDrawables, &entityDrawableIterator](std::optional<EntityRenderLayer> until) {
     while (true) {
       if (entityDrawableIterator == entityDrawables.end())
         break;

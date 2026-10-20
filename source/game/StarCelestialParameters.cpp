@@ -4,7 +4,6 @@ import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -144,15 +143,15 @@ Json CelestialParameters::randomizeParameterRange(String const& name, std::int32
 }
 
 Json CelestialParameters::randomizeParameterRange(
-    JsonArray const& range, std::int32_t mix, Maybe<String> const& name) const {
+    JsonArray const& range, std::int32_t mix, std::optional<String> const& name) const {
   if (range[0].type() == Json::Type::Int) {
     std::int64_t min = range[0].toInt();
     std::int64_t max = range[1].toInt();
-    return staticRandomU64(mix, m_seed, name.value("")) % (max - min + 1) + min;
+    return staticRandomU64(mix, m_seed, name.value_or("")) % (max - min + 1) + min;
   } else {
     double min = range[0].toDouble();
     double max = range[1].toDouble();
-    return staticRandomDouble(mix, m_seed, name.value("")) * (max - min) + min;
+    return staticRandomDouble(mix, m_seed, name.value_or("")) * (max - min) + min;
   }
 }
 

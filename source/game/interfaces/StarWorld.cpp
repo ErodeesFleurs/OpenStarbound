@@ -1,5 +1,4 @@
 import std;
-import star.maybe;
 import star.json;
 import star.id_map;
 import star.poly;
@@ -115,7 +114,7 @@ bool World::modifyTile(Vec2I const& pos, TileModification const& modification, b
   return applyTileModifications({{pos, modification}}, allowEntityOverlap).empty();
 }
 
-TileDamageResult World::damageTile(Vec2I const& tilePosition, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, Maybe<EntityId> sourceEntity) {
+TileDamageResult World::damageTile(Vec2I const& tilePosition, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, std::optional<EntityId> sourceEntity) {
   return damageTiles({tilePosition}, layer, sourcePosition, tileDamage, sourceEntity);
 }
 
@@ -139,10 +138,10 @@ bool World::pointCollision(Vec2F const& point, CollisionSet const& collisionSet)
   return collided;
 }
 
-Maybe<std::pair<Vec2F, Maybe<Vec2F>>> World::lineCollision(Line2F const& line, CollisionSet const& collisionSet) const {
+std::optional<std::pair<Vec2F, std::optional<Vec2F>>> World::lineCollision(Line2F const& line, CollisionSet const& collisionSet) const {
   auto geometry = this->geometry();
-  Maybe<PolyF> intersectPoly;
-  Maybe<PolyF::LineIntersectResult> closestIntersection;
+  std::optional<PolyF> intersectPoly;
+  std::optional<PolyF::LineIntersectResult> closestIntersection;
 
   forEachCollisionBlock(RectI::integral(RectF::boundBoxOf(line.min(), line.max()).padded(1)), [&](CollisionBlock const& block) {
       if (block.poly.isNull() || !isColliding(block.kind, collisionSet))
@@ -158,7 +157,7 @@ Maybe<std::pair<Vec2F, Maybe<Vec2F>>> World::lineCollision(Line2F const& line, C
 
   if (closestIntersection) {
     auto point = line.eval(closestIntersection->along);
-    auto normal = closestIntersection->intersectedSide.apply([&](std::uint64_t side) { return intersectPoly->normal(side); });
+    auto normal = closestIntersection->intersectedSide.transform([&](std::uint64_t side) { return intersectPoly->normal(side); });
     return std::make_pair(point, normal);
   }
   return {};

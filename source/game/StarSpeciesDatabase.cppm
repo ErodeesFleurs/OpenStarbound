@@ -20,7 +20,6 @@ import star.ordered_map;
 import star.audio;
 import star.map;
 import star.set;
-import star.maybe;
 import star.strong_typedef;
 import star.id_map;
 
@@ -144,7 +143,7 @@ public:
   Json humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json(), ItemDatabase const* itemCatalog = nullptr) const;
   CharacterCreationResult createHumanoid(String name, String speciesChoice, std::size_t genderChoice, std::size_t bodyColor, std::size_t alty, std::size_t hairChoice, std::size_t heady, std::size_t shirtChoice, std::size_t shirtColor, std::size_t pantsChoice, std::size_t pantsColor, std::size_t personality, LuaVariadic<LuaValue> ext = {}, ItemDatabase const* itemCatalog = nullptr) const;
 
-  CharacterCreationResult generateHumanoid(String species, std::int64_t seed, Maybe<Gender> = {}, ItemDatabase const* itemCatalog = nullptr) const;
+  CharacterCreationResult generateHumanoid(String species, std::int64_t seed, std::optional<Gender> = {}, ItemDatabase const* itemCatalog = nullptr) const;
 
 private:
   Root& m_root;

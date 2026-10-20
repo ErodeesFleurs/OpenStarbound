@@ -18,7 +18,6 @@ import star.vector;
 import star.game_types;
 import star.strong_typedef;
 import star.bi_map;
-import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;

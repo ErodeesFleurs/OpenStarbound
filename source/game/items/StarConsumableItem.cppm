@@ -18,7 +18,6 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
@@ -121,7 +120,7 @@ private:
   void maybeConsume();
 
   StringSet m_blockingEffects;
-  Maybe<float> m_foodValue;
+  std::optional<float> m_foodValue;
   StringSet m_emitters;
   String m_emote;
   bool m_consuming;

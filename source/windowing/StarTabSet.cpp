@@ -23,7 +23,6 @@ import star.format;
 import star.version;
 import star.string;
 import star.text;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -144,7 +143,7 @@ void TabSetWidget::tabSelect(std::size_t page) {
 }
 
 std::size_t TabSetWidget::selectedTab() const {
-  return m_lastSelected.value(NPos);
+  return m_lastSelected.value_or(NPos);
 }
 
 void TabSetWidget::setCallback(WidgetCallbackFunc callback) {

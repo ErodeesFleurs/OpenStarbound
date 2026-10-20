@@ -20,7 +20,6 @@ import star.version;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -139,7 +138,7 @@ void QuestTrackerPane::update(float dt) {
         m_questObjectiveList->show();
         if (m_expanded) {
           String listText = "";
-          for (auto objective : objectiveList.value()) {
+          for (auto objective : objectiveList.value_or(JsonArray{})) {
             if (objective.get(1).toBool())
               listText += m_completeObjectiveTemplate.replaceTags(StringMap<String>{{"objective", objective.get(0).toString()}});
             else
@@ -148,7 +147,7 @@ void QuestTrackerPane::update(float dt) {
           m_questObjectiveList->setText(listText);
         } else {
           String displayObjective = "";
-          for (auto objective : objectiveList.value()) {
+          for (auto objective : objectiveList.value_or(JsonArray{})) {
             if (displayObjective.empty() || !objective.get(1).toBool()) {
               if (objective.get(1).toBool()) {
                 displayObjective = m_completeObjectiveTemplate.replaceTags(StringMap<String>{{"objective", objective.get(0).toString()}});

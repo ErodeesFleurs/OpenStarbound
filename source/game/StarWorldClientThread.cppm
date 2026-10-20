@@ -17,7 +17,6 @@ import star.thread;
 import star.directives;
 import star.asset_path;
 import star.either;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.casting;

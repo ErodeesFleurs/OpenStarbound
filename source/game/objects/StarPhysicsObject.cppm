@@ -20,7 +20,6 @@ import star.lua;
 import star.audio;
 import star.thread;
 import star.map;
-import star.maybe;
 import star.string;
 import star.rect;
 import star.image_processing;
@@ -98,7 +97,7 @@ public:
   List<PhysicsForceRegion> forceRegions() const override;
 
   std::size_t movingCollisionCount() const override;
-  Maybe<PhysicsMovingCollision> movingCollision(std::size_t positionIndex) const override;
+  std::optional<PhysicsMovingCollision> movingCollision(std::size_t positionIndex) const override;
 
 private:
   struct PhysicsForceConfig {

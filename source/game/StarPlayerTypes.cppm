@@ -3,7 +3,6 @@ module;
 import std;
 import star.string;
 import star.data_stream;
-import star.maybe;
 import star.json;
 import star.bi_map;
 import star.either;
@@ -26,7 +25,7 @@ extern EnumMap<PlayerBusyState> const PlayerBusyStateNames;
 
 struct PlayerWarpRequest {
   String action;
-  Maybe<String> animation;
+  std::optional<String> animation;
   bool deploy;
 };
 

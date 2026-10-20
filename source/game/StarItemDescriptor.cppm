@@ -1,7 +1,6 @@
 module;
 import std;
 import star.string;
-import star.maybe;
 import star.stream_formatter;
 import star.hash;
 import star.json;
@@ -22,6 +21,10 @@ public:
 
   ItemDescriptor();
   ItemDescriptor(String name, std::uint64_t count, Json parameters = Json());
+  ItemDescriptor(ItemDescriptor const&) = default;
+  ItemDescriptor& operator=(ItemDescriptor const&) = default;
+  ItemDescriptor(ItemDescriptor&& rhs) noexcept(std::is_nothrow_move_constructible_v<String> && std::is_nothrow_move_constructible_v<Json>);
+  ItemDescriptor& operator=(ItemDescriptor&& rhs) noexcept(std::is_nothrow_move_assignable_v<String> && std::is_nothrow_move_assignable_v<Json>);
 
   // Populate from a configuration JsonArray containing up to 3 elements, the
   // name, count, and then any item parameters.  If the json is a map, looks
@@ -66,14 +69,14 @@ public:
   friend struct hash<ItemDescriptor>;
 
 private:
-  ItemDescriptor(String name, std::uint64_t count, Json parameters, Maybe<std::size_t> parametersHash);
+  ItemDescriptor(String name, std::uint64_t count, Json parameters, std::optional<std::size_t> parametersHash);
 
   std::size_t parametersHash() const;
 
   String m_name;
   std::uint64_t m_count;
   Json m_parameters;
-  mutable Maybe<std::size_t> m_parametersHash;
+  mutable std::optional<std::size_t> m_parametersHash;
 };
 
 template <>

@@ -18,7 +18,6 @@ import star.audio;
 import star.thread;
 import star.list;
 import star.map;
-import star.maybe;
 import star.bi_map;
 import star.string;
 import star.image_processing;

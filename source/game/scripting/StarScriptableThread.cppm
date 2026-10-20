@@ -4,7 +4,6 @@ import star.string;
 import star.list;
 import star.json;
 import star.lua;
-import star.maybe;
 import star.thread;
 import star.lua_root;
 import star.lua_components;
@@ -51,7 +50,7 @@ protected:
 
 private:
   void update();
-  Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, JsonArray const& args);
+  std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, JsonArray const& args);
 
   mutable RecursiveMutex m_mutex;
   

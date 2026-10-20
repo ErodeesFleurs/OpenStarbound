@@ -32,7 +32,7 @@ import star.asset_path;
 import star.variant;
 import star.rpc_promise;
 import star.set;
-import star.maybe;
+import star.optional;
 import star.a_star;
 import star.ordered_set;
 import star.audio;
@@ -291,7 +291,7 @@ Player::Player(Root& rootOwner, std::shared_ptr<PlayerConfig> config, Uuid uuid)
 
   // all of these are defaults and won't include the correct humanoid config for the species
   m_netHumanoid.addNetElement(std::make_shared<NetHumanoid>(root(), m_identity, m_humanoidParameters, Json()));
-  auto movementParameters = ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters)));
+  auto movementParameters = ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value_or(m_config->movementParameters)));
   if (!movementParameters.physicsEffectCategories)
     movementParameters.physicsEffectCategories = StringSet({"player"});
   m_movementController = std::make_shared<ActorMovementController>(root(), movementParameters);
@@ -424,7 +424,7 @@ Player::Player(Root& rootOwner, std::shared_ptr<PlayerConfig> config, ByteArray 
 
   m_netHumanoid.clearNetElements();
   m_netHumanoid.addNetElement(std::make_shared<NetHumanoid>(root(), m_identity, m_humanoidParameters, Json()));
-  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
+  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value_or(m_config->movementParameters))));
   m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
 }
 
@@ -472,7 +472,7 @@ void Player::diskLoad(Json const& diskStore) {
 
   m_netHumanoid.clearNetElements();
   m_netHumanoid.addNetElement(std::make_shared<NetHumanoid>(root(), m_identity, m_humanoidParameters, Json()));
-  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
+  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value_or(m_config->movementParameters))));
   m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
   m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
 
@@ -490,7 +490,7 @@ void Player::diskLoad(Json const& diskStore) {
     script.second->setScriptStorage({});
 
   for (auto& p : diskStore.get("genericScriptStorage", JsonObject{}).toObject()) {
-    if (auto script = m_genericScriptContexts.maybe(p.first).value({})) {
+    if (auto script = m_genericScriptContexts.maybe(p.first).value_or(std::shared_ptr<GenericScriptComponent>{})) {
       script->setScriptStorage(p.second.toObject());
     }
   }
@@ -764,7 +764,7 @@ RectF Player::metaBoundBox() const {
   return m_config->metaBoundBox;
 }
 
-Maybe<HitType> Player::queryHit(DamageSource const& source) const {
+std::optional<HitType> Player::queryHit(DamageSource const& source) const {
   if (!inWorld() || isDead() || m_isAdmin || isTeleporting() || m_statusController->statPositive("invulnerable"))
     return {};
 
@@ -777,7 +777,7 @@ Maybe<HitType> Player::queryHit(DamageSource const& source) const {
   return {};
 }
 
-Maybe<PolyF> Player::hitPoly() const {
+std::optional<PolyF> Player::hitPoly() const {
   return m_movementController->collisionBody();
 }
 
@@ -847,7 +847,7 @@ void Player::destroy(RenderCallback* renderCallback) {
   m_songbook->stop();
 }
 
-Maybe<EntityAnchorState> Player::loungingIn() const {
+std::optional<EntityAnchorState> Player::loungingIn() const {
   if (is<LoungeAnchor>(m_movementController->entityAnchor()))
     return m_movementController->anchorState();
   return {};
@@ -1018,7 +1018,7 @@ void Player::dropItem() {
   }
 }
 
-Maybe<ChainableJsonMessageResponse> Player::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
+std::optional<ChainableJsonMessageResponse> Player::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
   bool localMessage = fromConnection == world()->connection();
   if (message == "queueRadioMessage" && args.size() > 0) {
     float delay = 0;
@@ -1027,7 +1027,7 @@ Maybe<ChainableJsonMessageResponse> Player::receiveMessage(ConnectionId fromConn
 
     queueRadioMessage(args.get(0), delay);
   } else if (message == "warp") {
-    Maybe<String> animation;
+    std::optional<String> animation;
     if (args.size() > 1)
       animation = args.get(1).toString();
 
@@ -1051,12 +1051,12 @@ Maybe<ChainableJsonMessageResponse> Player::receiveMessage(ConnectionId fromConn
       trackList = jsonToStringList(args.get(0).toArray());
     else
       trackList = StringList();
-    m_pendingAltMusic = std::pair<Maybe<std::pair<StringList, int>>, float>(std::make_pair(trackList, loops), fadeTime);
+    m_pendingAltMusic = std::pair<std::optional<std::pair<StringList, int>>, float>(std::make_pair(trackList, loops), fadeTime);
   } else if (message == "stopAltMusic") {
     float fadeTime = 0;
     if (args.size() > 0)
       fadeTime = args.get(0).toFloat();
-    m_pendingAltMusic = std::pair<Maybe<std::pair<StringList, int>>, float>({}, fadeTime);
+    m_pendingAltMusic = std::pair<std::optional<std::pair<StringList, int>>, float>({}, fadeTime);
   } else if (message == "recordEvent") {
     statistics()->recordEvent(args.at(0).toString(), args.at(1));
   } else if (message == "addCollectable") {
@@ -1065,7 +1065,7 @@ Maybe<ChainableJsonMessageResponse> Player::receiveMessage(ConnectionId fromConn
     if (root().collectionDatabase()->hasCollectable(collection, collectable))
       addCollectable(collection, collectable);
   } else {
-    Maybe<ChainableJsonMessageResponse> result = m_tools->receiveMessage(message, localMessage, args);
+    std::optional<ChainableJsonMessageResponse> result = m_tools->receiveMessage(message, localMessage, args);
     if (!result)
       result = m_statusController->receiveMessage(message, localMessage, args);
     if (!result)
@@ -1214,7 +1214,7 @@ void Player::update(float dt, std::uint64_t) {
 
       if (!m_statusController->resourcePositive("food"))
         m_statusController->setPersistentEffects("hunger", m_foodEmptyStatusEffects);
-      else if (m_statusController->resourcePercentage("food").value() <= m_foodLowThreshold)
+      else if (m_statusController->resourcePercentage("food").value_or(0.0f) <= m_foodLowThreshold)
         m_statusController->setPersistentEffects("hunger", m_foodLowStatusEffects);
       else
         m_statusController->setPersistentEffects("hunger", {});
@@ -1246,7 +1246,7 @@ void Player::update(float dt, std::uint64_t) {
       if (auto inspectionTool = as<InspectionTool>(tool)) {
         for (auto& ir : inspectionTool->pullInspectionResults()) {
           if (ir.objectName) {
-            m_questManager->receiveMessage("objectScanned", true, {*ir.objectName, *ir.entityId});
+            m_questManager->receiveMessage("objectScanned", true, {*ir.objectName, ir.entityId.value()});
             m_log->addScannedObject(*ir.objectName);
           }
 
@@ -1471,7 +1471,7 @@ void Player::renderLightSources(RenderCallback* renderCallback) {
   m_deployment->renderLightSources(renderCallback);
 }
 
-void Player::setRenderLayer(Maybe<EntityRenderLayer> layer) {
+void Player::setRenderLayer(std::optional<EntityRenderLayer> layer) {
   setSecretProperty("overrideRenderLayer", layer ? Json(*layer) : Json());
 }
 
@@ -1617,7 +1617,7 @@ void Player::refreshArmor() {
 void Player::refreshHumanoid() const {
   try {
     if (m_armor->setupHumanoid(*humanoid(), forceNude())) {
-      m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
+      m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value_or(m_config->movementParameters))));
     }
   }
   catch (std::exception const&) {
@@ -1685,7 +1685,7 @@ std::shared_ptr<PlayerTech> Player::techs() const {
   return m_techs;
 }
 
-void Player::overrideTech(Maybe<StringList> const& techModules) {
+void Player::overrideTech(std::optional<StringList> const& techModules) {
   if (techModules)
     m_techController->setOverrideTech(*techModules);
   else
@@ -1796,7 +1796,7 @@ Vec2F Player::armAdjustment() const {
   return humanoid()->armAdjustment();
 }
 
-void Player::setCameraFocusEntity(Maybe<EntityId> const& cameraFocusEntity) {
+void Player::setCameraFocusEntity(std::optional<EntityId> const& cameraFocusEntity) {
   m_cameraFocusEntity = cameraFocusEntity;
 }
 
@@ -1808,7 +1808,7 @@ bool Player::canUseTool() const {
   bool canUse = !isDead() && !isTeleporting() && !m_techController->toolUsageSuppressed() && !m_statusController->toolUsageSuppressed();
   if (canUse) {
     if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor()))
-      if (loungeAnchor->suppressTools.value(loungeAnchor->controllable))
+      if (loungeAnchor->suppressTools.value_or(loungeAnchor->controllable))
         return false;
   }
   return canUse;
@@ -1863,7 +1863,7 @@ List<InteractAction> Player::pullInteractActions() {
   List<InteractAction> results;
   eraseWhere(m_pendingInteractActions, [&results](auto& promise) {
       if (auto res = promise.result())
-        results.append(res.take());
+        results.append(takeOptional(res));
       return promise.finished();
     });
   return results;
@@ -1878,7 +1878,7 @@ float Player::health() const {
 }
 
 float Player::maxHealth() const {
-  return *m_statusController->resourceMax("health");
+  return m_statusController->resourceMax("health").value();
 }
 
 DamageBarType Player::damageBar() const {
@@ -1886,7 +1886,7 @@ DamageBarType Player::damageBar() const {
 }
 
 float Player::healthPercentage() const {
-  return *m_statusController->resourcePercentage("health");
+  return m_statusController->resourcePercentage("health").value();
 }
 
 float Player::energy() const {
@@ -1894,15 +1894,15 @@ float Player::energy() const {
 }
 
 float Player::maxEnergy() const {
-  return *m_statusController->resourceMax("energy");
+  return m_statusController->resourceMax("energy").value();
 }
 
 float Player::energyPercentage() const {
-  return *m_statusController->resourcePercentage("energy");
+  return m_statusController->resourcePercentage("energy").value();
 }
 
 float Player::energyRegenBlockPercent() const {
-  return *m_statusController->resourcePercentage("energyRegenBlock");
+  return m_statusController->resourcePercentage("energyRegenBlock").value();
 }
 
 bool Player::fullEnergy() const {
@@ -1920,7 +1920,7 @@ bool Player::consumeEnergy(float energy) {
 }
 
 float Player::foodPercentage() const {
-  return *m_statusController->resourcePercentage("food");
+  return m_statusController->resourcePercentage("food").value();
 }
 
 float Player::breath() const {
@@ -1928,7 +1928,7 @@ float Player::breath() const {
 }
 
 float Player::maxBreath() const {
-  return *m_statusController->resourceMax("breath");
+  return m_statusController->resourceMax("breath").value();
 }
 
 float Player::protection() const {
@@ -2405,7 +2405,7 @@ std::shared_ptr<Item> Player::altHandItem() const {
 }
 
 Uuid Player::uuid() const {
-  return Uuid(*uniqueId());
+  return Uuid(uniqueId().value());
 }
 
 PlayerMode Player::modeType() const {
@@ -2455,7 +2455,7 @@ void Player::setName(String const& name) {
   updateIdentity();
 }
 
-Maybe<String> Player::statusText() const {
+std::optional<String> Player::statusText() const {
   return {};
 }
 
@@ -2479,7 +2479,7 @@ String Player::nametag() const {
     return name();
 }
 
-void Player::setNametag(Maybe<String> nametag) {
+void Player::setNametag(std::optional<String> nametag) {
   setSecretProperty("nametag", nametag ? Json(*nametag) : Json());
 }
 
@@ -2493,8 +2493,8 @@ void Player::updateIdentity() {
   }
 }
 
-void Player::setHumanoidParameter(String key, Maybe<Json> value) {
-  if (value.isValid())
+void Player::setHumanoidParameter(String key, std::optional<Json> value) {
+  if (value.has_value())
     m_humanoidParameters.set(key, value.value());
   else
     m_humanoidParameters.erase(key);
@@ -2502,7 +2502,7 @@ void Player::setHumanoidParameter(String key, Maybe<Json> value) {
   m_netHumanoid.netElements().last()->setHumanoidParameters(m_humanoidParameters);
 }
 
-Maybe<Json> Player::getHumanoidParameter(String key) {
+std::optional<Json> Player::getHumanoidParameter(String key) {
   return m_humanoidParameters.maybe(key);
 }
 
@@ -2594,7 +2594,7 @@ void Player::setPersonality(Personality const& personality) {
   updateIdentity();
 }
 
-void Player::setImagePath(Maybe<String> const& imagePath) {
+void Player::setImagePath(std::optional<String> const& imagePath) {
   m_identity.imagePath = imagePath;
   updateIdentity();
 }
@@ -2643,21 +2643,21 @@ void Player::addChatMessage(String const& message, Json const& config) {
   m_pendingChatActions.append(SayChatAction{entityId(), message, mouthPosition(), config});
 }
 
-void Player::addEmote(HumanoidEmote const& emote, Maybe<float> emoteCooldown) {
+void Player::addEmote(HumanoidEmote const& emote, std::optional<float> emoteCooldown) {
   if constexpr (Star::DebugEnabled) {
     Star::starAssertFailed((!isSlave()));
   }
   m_emoteState = emote;
-  m_emoteCooldownTimer = GameTimer(emoteCooldown.value(m_emoteCooldown));
+  m_emoteCooldownTimer = GameTimer(emoteCooldown.value_or(m_emoteCooldown));
 }
-void Player::setDance(Maybe<String> const& danceName) {
+void Player::setDance(std::optional<String> const& danceName) {
   if constexpr (Star::DebugEnabled) {
     Star::starAssertFailed((!isSlave()));
   }
   assert(!isSlave());
   m_dance = danceName;
 
-  if (danceName.isValid()) {
+  if (danceName.has_value()) {
     auto danceDatabase = root().danceDatabase();
     std::shared_ptr<Dance> dance = danceDatabase->getDance(*danceName);
     m_danceCooldownTimer = GameTimer(dance->duration);
@@ -2676,16 +2676,16 @@ List<ChatAction> Player::pullPendingChatActions() {
   return take(m_pendingChatActions);
 }
 
-Maybe<String> Player::inspectionLogName() const {
+std::optional<String> Player::inspectionLogName() const {
   auto identifier = uniqueId();
-  if (String* str = identifier.ptr()) {
+  if (String* str = optionalPtr(identifier)) {
     auto hash = xxHash3_128(str->utf8Ptr(), str->utf8Size());
     return String("Player #") + hexEncode((const char*)&hash, sizeof(hash));
   }
   return identifier;
 }
 
-Maybe<String> Player::inspectionDescription(String const&) const {
+std::optional<String> Player::inspectionDescription(String const&) const {
   return m_description;
 }
 
@@ -2765,7 +2765,7 @@ Json Player::diskStore() {
   }
 
   return JsonObject{
-    {"uuid", *uniqueId()},
+    {"uuid", uniqueId().value()},
     {"description", m_description},
     {"modeType", PlayerModeNames.getRight(m_modeType)},
     {"shipUpgrades", m_shipUpgrades.toJson()},
@@ -2795,7 +2795,7 @@ ByteArray Player::netStore(NetCompatibilityRules rules) {
   DataStreamBuffer ds;
   ds.setStreamCompatibilityVersion(rules);
 
-  ds.write(*uniqueId());
+  ds.write(uniqueId().value());
   ds.write(m_description);
   ds.write(m_modeType);
   ds.write(m_identity);
@@ -2884,7 +2884,7 @@ bool Player::interruptRadioMessage() {
   return false;
 }
 
-Maybe<RadioMessage> Player::pullPendingRadioMessage() {
+std::optional<RadioMessage> Player::pullPendingRadioMessage() {
   if (m_pendingRadioMessages.count()) {
     if (m_pendingRadioMessages.at(0).unique)
       m_log->addRadioMessage(m_pendingRadioMessages.at(0).messageId);
@@ -2952,7 +2952,7 @@ void Player::queueRadioMessage(RadioMessage message) {
   }
 }
 
-Maybe<Json> Player::pullPendingCinematic() {
+std::optional<Json> Player::pullPendingCinematic() {
   if (m_pendingCinematic && m_pendingCinematic->isType(Json::Type::String))
     m_log->addCinematic(m_pendingCinematic->toString());
   return take(m_pendingCinematic);
@@ -2971,23 +2971,23 @@ void Player::setInCinematic(bool inCinematic) {
     m_statusController->setPersistentEffects("cinematic", {});
 }
 
-Maybe<std::pair<Maybe<std::pair<StringList, int>>, float>> Player::pullPendingAltMusic() {
+std::optional<std::pair<std::optional<std::pair<StringList, int>>, float>> Player::pullPendingAltMusic() {
   if (m_pendingAltMusic)
-    return m_pendingAltMusic.take();
+    return takeOptional(m_pendingAltMusic);
   return {};
 }
 
-Maybe<PlayerWarpRequest> Player::pullPendingWarp() {
+std::optional<PlayerWarpRequest> Player::pullPendingWarp() {
   if (m_pendingWarp)
-    return m_pendingWarp.take();
+    return takeOptional(m_pendingWarp);
   return {};
 }
 
-void Player::setPendingWarp(String const& action, Maybe<String> const& animation, bool deploy) {
+void Player::setPendingWarp(String const& action, std::optional<String> const& animation, bool deploy) {
   m_pendingWarp = PlayerWarpRequest{action, animation, deploy};
 }
 
-Maybe<std::pair<Json, RpcPromiseKeeper<Json>>> Player::pullPendingConfirmation() {
+std::optional<std::pair<Json, RpcPromiseKeeper<Json>>> Player::pullPendingConfirmation() {
   if (m_pendingConfirmations.count() > 0)
     return m_pendingConfirmations.takeFirst();
   return {};
@@ -3038,7 +3038,7 @@ Vec2F Player::cameraPosition() {
   if (inWorld()) {
     if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
       if (loungeAnchor->cameraFocus) {
-        if (auto anchoredEntity = world()->entity(m_movementController->anchorState()->entityId))
+        if (auto anchoredEntity = world()->entity(m_movementController->anchorState().value().entityId))
           return anchoredEntity->position();
       }
     }
@@ -3059,7 +3059,7 @@ std::shared_ptr<NetworkedAnimator> Player::effectsAnimator() {
 
 const String secretProprefix = std::string("\0JsonProperty\0", sizeof("\0JsonProperty\0") - 1);
 
-Maybe<StringView> Player::getSecretPropertyView(String const& name) const {
+std::optional<StringView> Player::getSecretPropertyView(String const& name) const {
   if (auto tag = m_effectsAnimator->globalTagPtr(secretProprefix + name)) {
     auto& view = tag->utf8();
     DataStreamExternalBuffer buffer(view.data(), view.size());
@@ -3125,7 +3125,7 @@ void Player::refreshHumanoidParameters() {
   m_armor->diskLoad(armor);
   m_armor->setupHumanoid(*humanoid(), forceNude());
 
-  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
+  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value_or(m_config->movementParameters))));
 
   if (inWorld()) {
     if (isMaster()) {

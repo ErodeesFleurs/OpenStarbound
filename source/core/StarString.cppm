@@ -6,7 +6,6 @@ import star.format;
 import std;
 
 import star.byte_array;
-import star.maybe;
 import star.list;
 import star.map;
 import star.set;
@@ -221,7 +220,7 @@ public:
 
   // StringView variant
   template <typename Lookup>
-  Maybe<String> maybeLookupTagsView(Lookup&& lookup) const;
+  std::optional<String> maybeLookupTagsView(Lookup&& lookup) const;
 
   template <typename Lookup>
   String lookupTagsView(Lookup&& lookup) const;
@@ -469,7 +468,7 @@ String String::lookupTags(Lookup&& lookup) const {
 }
 
 template <typename Lookup>
-Maybe<String> String::maybeLookupTagsView(Lookup&& lookup) const {
+std::optional<String> String::maybeLookupTagsView(Lookup&& lookup) const {
   std::string finalString;
   std::string_view view(utf8());
 
@@ -480,7 +479,7 @@ Maybe<String> String::maybeLookupTagsView(Lookup&& lookup) const {
 
     std::size_t beginTag = view.find_first_of('<', start);
     if (beginTag == NPos && !start)
-      return Maybe<String>();
+      return std::optional<String>();
 
     std::size_t endTag = view.find_first_of('>', beginTag);
     if (beginTag != NPos && endTag != NPos) {
@@ -502,7 +501,7 @@ Maybe<String> String::maybeLookupTagsView(Lookup&& lookup) const {
 template <typename Lookup>
 String String::lookupTagsView(Lookup&& lookup) const {
   auto result = maybeLookupTagsView(lookup);
-  return result ? std::move(result.take()) : String();
+  return result ? std::move(result.value()) : String();
 }
 
 template <typename MapType>

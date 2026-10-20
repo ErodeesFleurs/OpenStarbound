@@ -3,7 +3,6 @@ import std;
 import star.string;
 import star.list;
 import star.map;
-import star.maybe;
 import star.json;
 
 import star.data_stream;
@@ -41,7 +40,7 @@ public:
   void reset();
 
   // Will return nothing if nick is not found.
-  Maybe<ConnectionId> findNick(String const& nick) const;
+  std::optional<ConnectionId> findNick(String const& nick) const;
   String connectionNick(ConnectionId connectionId) const;
   String renick(ConnectionId clientId, String const& nick);
 

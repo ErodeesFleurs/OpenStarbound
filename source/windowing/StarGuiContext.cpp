@@ -20,7 +20,6 @@ import star.string;
 import star.vector;
 import star.text;
 import star.poly;
-import star.maybe;
 import star.listener;
 import star.input_event;
 import star.game_types;
@@ -171,7 +170,7 @@ void GuiContext::setInterfaceScale(float interfaceScale) {
   m_interfaceScale = interfaceScale;
 }
 
-Maybe<Vec2I> GuiContext::mousePosition(InputEvent const& event, float pixelRatio) const {
+std::optional<Vec2I> GuiContext::mousePosition(InputEvent const& event, float pixelRatio) const {
   auto getInterfacePosition = [pixelRatio](Vec2F pos) {
     return Vec2I(pos / pixelRatio);
   };
@@ -188,7 +187,7 @@ Maybe<Vec2I> GuiContext::mousePosition(InputEvent const& event, float pixelRatio
     return {};
 }
 
-Maybe<Vec2I> GuiContext::mousePosition(InputEvent const& event) const {
+std::optional<Vec2I> GuiContext::mousePosition(InputEvent const& event) const {
   return mousePosition(event, interfaceScale());
 }
 
@@ -406,7 +405,7 @@ RectF GuiContext::renderInterfaceText(String const& s, TextPositioning const& po
       position.pos * interfaceScale(),
       position.hAnchor,
       position.vAnchor,
-      position.wrapWidth.apply(std::bind(std::multiplies<int>(), std::placeholders::_1, interfaceScale())),
+      position.wrapWidth.transform(std::bind(std::multiplies<int>(), std::placeholders::_1, interfaceScale())),
       position.charLimit
     });
   return RectF(res).scaled(1.0f / interfaceScale());
@@ -421,7 +420,7 @@ RectF GuiContext::determineInterfaceTextSize(String const& s, TextPositioning co
       positioning.pos * interfaceScale(),
       positioning.hAnchor,
       positioning.vAnchor,
-      positioning.wrapWidth.apply(std::bind(std::multiplies<int>(), std::placeholders::_1, interfaceScale()))
+      positioning.wrapWidth.transform(std::bind(std::multiplies<int>(), std::placeholders::_1, interfaceScale()))
     });
   return RectF(res).scaled(1.0f / interfaceScale());
 }
@@ -490,11 +489,11 @@ int GuiContext::stringInterfaceWidth(String const& s) {
   return 0;
 }
 
-StringList GuiContext::wrapText(String const& s, Maybe<unsigned> wrapWidth) {
+StringList GuiContext::wrapText(String const& s, std::optional<unsigned> wrapWidth) {
   return textPainter()->wrapText(s, wrapWidth);
 }
 
-StringList GuiContext::wrapInterfaceText(String const& s, Maybe<unsigned> wrapWidth) {
+StringList GuiContext::wrapInterfaceText(String const& s, std::optional<unsigned> wrapWidth) {
   if (wrapWidth)
     *wrapWidth *= interfaceScale();
   return wrapText(s, wrapWidth);
@@ -523,7 +522,7 @@ std::shared_ptr<AudioInstance> GuiContext::playAudio(String const& audioAsset, i
 }
 
 String GuiContext::getClipboard() const {
-  return m_applicationController->getClipboard().value();
+  return m_applicationController->getClipboard().value_or(String{});
 }
 
 bool GuiContext::setClipboard(String text) {

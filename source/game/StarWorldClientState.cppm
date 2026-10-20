@@ -1,7 +1,6 @@
 module;
 import std;
 import star.list;
-import star.maybe;
 
 import star.rect;
 import star.vector;
@@ -38,7 +37,7 @@ public:
 
   // All areas of the server monitored by the client, takes a function to
   // resolve an entity id to its bound box.
-  List<RectI> monitoringRegions(std::function<Maybe<RectI>(EntityId)> entityBounds) const;
+  List<RectI> monitoringRegions(std::function<std::optional<RectI>(EntityId)> entityBounds) const;
 
   ByteArray writeDelta();
   void readDelta(ByteArray delta);

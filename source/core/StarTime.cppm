@@ -1,7 +1,6 @@
 module;
 import std;
 import star.string;
-import star.maybe;
 import star.thread;
 
 namespace Star {
@@ -74,7 +73,7 @@ private:
 
   mutable RecursiveMutex m_mutex;
   mutable std::int64_t m_elapsedTicks;
-  mutable Maybe<std::int64_t> m_lastTicks;
+  mutable std::optional<std::int64_t> m_lastTicks;
   bool m_running;
 };
 

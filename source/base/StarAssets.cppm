@@ -2,7 +2,6 @@ module;
 import std;
 import star.string;
 import star.map;
-import star.maybe;
 import star.format;
 import star.json;
 import star.either;
@@ -47,7 +46,7 @@ using AssetException = StarError<AssetExceptionTag, StarException>;
 struct FramesSpecification {
   // Get the target sub-rect of a given frame name (which can be an alias).
   // Returns nothing if the frame name is not found.
-  Maybe<RectU> getRect(String const& frame) const;
+  std::optional<RectU> getRect(String const& frame) const;
   // Converts to Json.
   Json toJson() const;
   // The full path to the .frames file from which this was loaded.
@@ -78,10 +77,10 @@ public:
 
     // If given, if an image is unable to load, will log the error and load
     // this path instead
-    Maybe<String> missingImage;
+    std::optional<String> missingImage;
 
     // Same, but for audio
-    Maybe<String> missingAudio;
+    std::optional<String> missingAudio;
 
     // When loading assets from a directory, will automatically ignore any
     // files whose asset paths matching any of the given patterns.
@@ -248,12 +247,12 @@ public:
   // sub-paths or directives.
   bool assetExists(String const& path) const;
 
-  Maybe<AssetFileDescriptor> assetDescriptor(String const& path) const;
+  std::optional<AssetFileDescriptor> assetDescriptor(String const& path) const;
 
   // The name of the asset source within which the path exists.
   String assetSource(String const& path) const;
 
-  Maybe<String> assetSourcePath(std::shared_ptr<AssetSource> const& source) const;
+  std::optional<String> assetSourcePath(std::shared_ptr<AssetSource> const& source) const;
 
   // Scans for all assets with the given suffix in any directory.
   StringList scan(String const& suffix) const;
@@ -362,7 +361,7 @@ private:
 
   Json readJson(String const& basePath) const;
   Json applyJsonPatches(Json const& input, String const& path, List<std::pair<String, std::shared_ptr<AssetSource>>> patches) const;
-  Json checkPatchArray(String const& path, std::shared_ptr<AssetSource> const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const;
+  Json checkPatchArray(String const& path, std::shared_ptr<AssetSource> const& source, Json const result, JsonArray const patchData, std::optional<Json> const external) const;
 
   // Load / post process an asset and log any exception.  Returns true if the
   // work was performed (whether successful or not), false if the work is

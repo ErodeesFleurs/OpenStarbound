@@ -3,7 +3,6 @@ import star.string;
 import star.list;
 import star.map;
 import star.variant;
-import star.maybe;
 import star.stream_formatter;
 
 import std;
@@ -65,6 +64,10 @@ public:
   static FormattedJson ofType(Json::Type type);
 
   FormattedJson();
+  FormattedJson(FormattedJson const&) = default;
+  FormattedJson& operator=(FormattedJson const&) = default;
+  FormattedJson(FormattedJson&& other);
+  FormattedJson& operator=(FormattedJson&& other);
   FormattedJson(Json const&);
 
   Json const& toJson() const;
@@ -124,9 +127,9 @@ private:
   Json m_jsonValue;
   ElementList m_elements;
   // Used to preserve the formatting of numbers, i.e. -0 vs 0, 1.0 vs 1:
-  Maybe<String> m_formatting;
+  std::optional<String> m_formatting;
 
-  Maybe<ElementLocation> m_lastKey, m_lastValue;
+  std::optional<ElementLocation> m_lastKey, m_lastValue;
   Map<String, std::pair<ElementLocation, ElementLocation>> m_objectEntryLocations;
   List<ElementLocation> m_arrayElementLocations;
 };

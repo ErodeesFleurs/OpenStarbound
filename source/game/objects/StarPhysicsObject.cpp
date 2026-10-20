@@ -20,7 +20,6 @@ import star.lua;
 import star.audio;
 import star.thread;
 import star.map;
-import star.maybe;
 import star.string;
 import star.rect;
 import star.image_processing;
@@ -180,7 +179,7 @@ std::size_t PhysicsObject::movingCollisionCount() const {
   return m_physicsCollisions.size();
 }
 
-Maybe<PhysicsMovingCollision> PhysicsObject::movingCollision(std::size_t positionIndex) const {
+std::optional<PhysicsMovingCollision> PhysicsObject::movingCollision(std::size_t positionIndex) const {
   auto const& collisionConfig = m_physicsCollisions.valueAt(positionIndex);
   if (!collisionConfig.enabled.get())
     return {};

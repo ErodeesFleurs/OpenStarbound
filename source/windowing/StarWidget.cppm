@@ -10,7 +10,6 @@ import star.casting;
 import star.input_event;
 import star.string;
 import star.poly;
-import star.maybe;
 import star.list;
 import star.map;
 
@@ -142,7 +141,7 @@ public:
 
   virtual std::shared_ptr<Widget> keyboardCapturer() const;
   virtual KeyboardCaptureMode keyboardCaptureMode() const;
-  virtual Maybe<std::pair<RectI, int>> keyboardCaptureArea() const;
+  virtual std::optional<std::pair<RectI, int>> keyboardCaptureArea() const;
 
   void setData(Json const& data);
   Json const& data();

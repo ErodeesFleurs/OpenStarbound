@@ -8,7 +8,6 @@ import star.data_stream;
 import star.multi_array;
 import star.color;
 import star.poly;
-import star.maybe;
 import star.either;
 import star.ordered_map;
 import star.ordered_set;
@@ -20,6 +19,13 @@ import star.line;
 import star.rect;
 import star.algorithm;
 namespace Star {
+
+// Declare the std-owned optional codec before generic containers instantiate
+// dependent stream expressions; its payload need not associate namespace Star.
+template <typename T>
+DataStream& operator<<(DataStream& ds, std::optional<T> const& value);
+template <typename T>
+DataStream& operator>>(DataStream& ds, std::optional<T>& value);
 
 struct DataStreamWriteFunctor {
   DataStreamWriteFunctor(DataStream& ds) : ds(ds) {}
@@ -298,11 +304,11 @@ DataStream& operator>>(DataStream& ds, MVariant<AllowedTypes...>& mvariant) {
   return ds;
 }
 
-// Writes / reads a Maybe type if the underlying type has operator<< /
+// Writes / reads a std::optional type if the underlying type has operator<< /
 // operator>> defined for DataStream
 
 template <typename T, typename WriteFunction>
-void writeMaybe(DataStream& ds, Maybe<T> const& maybe, WriteFunction&& writeFunction) {
+void writeOptional(DataStream& ds, std::optional<T> const& maybe, WriteFunction&& writeFunction) {
   if (maybe) {
     ds.write<bool>(true);
     writeFunction(ds, *maybe);
@@ -312,27 +318,27 @@ void writeMaybe(DataStream& ds, Maybe<T> const& maybe, WriteFunction&& writeFunc
 }
 
 template <typename T, typename ReadFunction>
-void readMaybe(DataStream& ds, Maybe<T>& maybe, ReadFunction&& readFunction) {
+void readOptional(DataStream& ds, std::optional<T>& maybe, ReadFunction&& readFunction) {
   bool set = ds.read<bool>();
   if (set) {
     T t;
     readFunction(ds, t);
-    maybe = std::move(t);
+    maybe.emplace(std::move(t));
   } else {
     maybe.reset();
   }
 }
 
 template <typename T>
-DataStream& operator<<(DataStream& ds, Maybe<T> const& maybe) {
-  writeMaybe(ds, maybe, [](DataStream& ds, T const& t) { ds << t; });
+DataStream& operator<<(DataStream& ds, std::optional<T> const& maybe) {
+  writeOptional(ds, maybe, [](DataStream& ds, T const& t) { ds << t; });
   return ds;
 }
 
 template <typename T>
-DataStream& operator>>(DataStream& ds, Maybe<T>& maybe) {
+DataStream& operator>>(DataStream& ds, std::optional<T>& maybe) {
   if (ds.read<bool>())
-    maybe = ds.read<T>();
+    maybe.emplace(ds.read<T>());
   else
     maybe.reset();
   return ds;
@@ -411,6 +417,6 @@ export namespace Star {
   using ::Star::DataStreamReadFunctor;
   using ::Star::operator<<;
   using ::Star::operator>>;
-  using ::Star::writeMaybe;
-  using ::Star::readMaybe;
+  using ::Star::writeOptional;
+  using ::Star::readOptional;
 }

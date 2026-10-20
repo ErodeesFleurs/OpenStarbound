@@ -4,7 +4,6 @@
 #include <unistd.h>
 import std;
 import star.format;
-import star.maybe;
 import star.string;
 import star.lock_file;
 import star.thread;
@@ -15,7 +14,7 @@ namespace Star {
 
 std::int64_t const LockFile::MaximumSleepMillis;
 
-Maybe<LockFile> LockFile::acquireLock(String const& filename, std::int64_t lockTimeout) {
+std::optional<LockFile> LockFile::acquireLock(String const& filename, std::int64_t lockTimeout) {
   LockFile lock(std::move(filename));
   if (lock.lock(lockTimeout))
     return lock;

@@ -26,7 +26,6 @@ import star.string_view;
 import star.directives;
 import star.asset_path;
 import star.either;
-import star.maybe;
 import star.weighted_pool;
 import star.casting;
 import star.strong_typedef;
@@ -96,7 +95,7 @@ public:
   explicit TileDrawer(Root& root);
 
   bool produceTerrainDrawables(Drawables& drawables, TerrainLayer terrainLayer, Vec2I const& pos,
-    WorldRenderData const& renderData, float scale = 1.0f, Vec2I variantOffset = {}, Maybe<TerrainLayer> variantLayer = {});
+    WorldRenderData const& renderData, float scale = 1.0f, Vec2I variantOffset = {}, std::optional<TerrainLayer> variantLayer = {});
 
   WorldRenderData& renderData();
   MutexLocker lockRenderData();

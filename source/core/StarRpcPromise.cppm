@@ -1,6 +1,5 @@
 module;
 import std;
-import star.maybe;
 import star.format;
 import star.string;
 import star.thread;
@@ -65,11 +64,11 @@ public:
 
   // Returns the result of the rpc call on success, nothing on failure or when
   // not yet finished.
-  Maybe<Result> result() const;
+  std::optional<Result> result() const;
 
   // Returns the error of a failed rpc call.  Returns nothing if the call is
   // successful or not yet finished.
-  Maybe<Error> error() const;
+  std::optional<Error> error() const;
 
   // Wrap this RpcPromise into another promise which returns instead the result
   // of this function when fulfilled. Evaluation is lazy and its successful
@@ -255,26 +254,26 @@ bool RpcPromise<Result, Error>::failed() const {
 }
 
 template <typename Result, typename Error>
-Maybe<Result> RpcPromise<Result, Error>::result() const {
+std::optional<Result> RpcPromise<Result, Error>::result() const {
   auto& val = state();
   MutexLocker lock(val.mutex);
   val.poll();
   if (auto chained = std::get_if<Chained>(&val.outcome))
     return chained->promise.result();
   if (auto fulfilled = std::get_if<Fulfilled>(&val.outcome))
-    return fulfilled->value;
+    return std::optional<Result>(std::in_place, fulfilled->value);
   return {};
 }
 
 template <typename Result, typename Error>
-Maybe<Error> RpcPromise<Result, Error>::error() const {
+std::optional<Error> RpcPromise<Result, Error>::error() const {
   auto& val = state();
   MutexLocker lock(val.mutex);
   val.poll();
   if (auto chained = std::get_if<Chained>(&val.outcome))
     return chained->promise.error();
   if (auto failed = std::get_if<Failed>(&val.outcome))
-    return failed->value;
+    return std::optional<Error>(std::in_place, failed->value);
   return {};
 }
 

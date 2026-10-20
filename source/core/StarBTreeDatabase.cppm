@@ -5,7 +5,6 @@ import star.string;
 import star.list;
 import star.map;
 import star.io_device;
-import star.maybe;
 import star.format;
 import star.set;
 import star.btree;
@@ -72,7 +71,7 @@ public:
 
   bool contains(ByteArray const& k);
 
-  Maybe<ByteArray> find(ByteArray const& k);
+  std::optional<ByteArray> find(ByteArray const& k);
   List<std::pair<ByteArray, ByteArray>> find(ByteArray const& lower, ByteArray const& upper);
 
   void forEach(ByteArray const& lower, ByteArray const& upper, std::function<void(ByteArray, ByteArray)> v);
@@ -159,7 +158,7 @@ private:
 
     BlockIndex self;
     std::uint8_t level;
-    Maybe<BlockIndex> beginPointer;
+    std::optional<BlockIndex> beginPointer;
     ElementList pointers;
   };
 
@@ -207,7 +206,7 @@ private:
     Index loadIndex(Pointer pointer);
     bool indexNeedsShift(Index const& index);
     bool indexShift(Index const& left, Key const& mid, Index const& right);
-    Maybe<std::pair<Key, Index>> indexSplit(Index const& index);
+    std::optional<std::pair<Key, Index>> indexSplit(Index const& index);
     Pointer storeIndex(Index index);
     void deleteIndex(Index index);
 
@@ -215,7 +214,7 @@ private:
     Leaf loadLeaf(Pointer pointer);
     bool leafNeedsShift(Leaf const& l);
     bool leafShift(Leaf& left, Leaf& right);
-    Maybe<Leaf> leafSplit(Leaf& leaf);
+    std::optional<Leaf> leafSplit(Leaf& leaf);
     Pointer storeLeaf(Leaf leaf);
     void deleteLeaf(Leaf leaf);
 
@@ -234,8 +233,8 @@ private:
     Data leafData(Leaf const& leaf, std::size_t i);
     void leafInsert(Leaf& leaf, std::size_t i, Key k, Data d);
     void leafRemove(Leaf& leaf, std::size_t i);
-    Maybe<Pointer> nextLeaf(Leaf const& leaf);
-    void setNextLeaf(Leaf& leaf, Maybe<Pointer> n);
+    std::optional<Pointer> nextLeaf(Leaf const& leaf);
+    void setNextLeaf(Leaf& leaf, std::optional<Pointer> n);
 
     BTreeDatabase* parent;
   };
@@ -323,14 +322,14 @@ public:
 
   // Keys can be arbitrary size, actual key is the SHA-256 checksum of the key.
   bool contains(ByteArray const& key);
-  Maybe<ByteArray> find(ByteArray const& key);
+  std::optional<ByteArray> find(ByteArray const& key);
   bool insert(ByteArray const& key, ByteArray const& value);
   bool remove(ByteArray const& key);
 
   // Convenience string versions of access methods.  Equivalent to the utf8
   // bytes of the string minus the null terminator.
   bool contains(String const& key);
-  Maybe<ByteArray> find(String const& key);
+  std::optional<ByteArray> find(String const& key);
   bool insert(String const& key, ByteArray const& value);
   bool remove(String const& key);
 

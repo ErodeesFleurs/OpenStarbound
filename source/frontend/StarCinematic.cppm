@@ -20,7 +20,6 @@ import star.text;
 import star.audio;
 import star.map;
 import star.set;
-import star.maybe;
 
 import star.drawable;
 import star.font_texture_group;
@@ -119,7 +118,7 @@ private:
   GuiContext* m_guiContext;
 
   List<TimeSkip> m_timeSkips;
-  Maybe<TimeSkip> m_currentTimeSkip;
+  std::optional<TimeSkip> m_currentTimeSkip;
 
   List<CameraKeyFrame> m_cameraKeyFrames;
   List<std::shared_ptr<Panel>> m_panels;
@@ -130,7 +129,7 @@ private:
   Clock m_timer;
   float m_completionTime{};
 
-  Maybe<Vec4B> m_backgroundColor;
+  std::optional<Vec4B> m_backgroundColor;
   float m_backgroundFadeTime{};
 
   float m_cameraZoom{1.0f};

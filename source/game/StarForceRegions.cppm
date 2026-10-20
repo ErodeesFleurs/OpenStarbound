@@ -2,7 +2,6 @@ module;
 import std;
 import star.string;
 import star.data_stream;
-import star.maybe;
 import star.json;
 
 import star.poly;
@@ -49,8 +48,8 @@ struct DirectionalForceRegion {
   bool operator==(DirectionalForceRegion const& rhs) const;
 
   PolyF region;
-  Maybe<float> xTargetVelocity;
-  Maybe<float> yTargetVelocity;
+  std::optional<float> xTargetVelocity;
+  std::optional<float> yTargetVelocity;
   float controlForce;
   PhysicsCategoryFilter categoryFilter;
 };

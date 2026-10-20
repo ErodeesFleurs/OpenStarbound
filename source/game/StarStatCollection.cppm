@@ -3,7 +3,6 @@ module;
 import std;
 import star.string;
 import star.list;
-import star.maybe;
 import star.json;
 import star.either;
 import star.strong_typedef;
@@ -52,8 +51,8 @@ public:
   void resetResource(String const& resourceName);
   void resetAllResources();
 
-  Maybe<float> resourceMax(String const& resourceName) const;
-  Maybe<float> resourcePercentage(String const& resourceName) const;
+  std::optional<float> resourceMax(String const& resourceName) const;
+  std::optional<float> resourcePercentage(String const& resourceName) const;
   float setResourcePercentage(String const& resourceName, float resourcePercentage);
   float modifyResourcePercentage(String const& resourceName, float resourcePercentage);
 

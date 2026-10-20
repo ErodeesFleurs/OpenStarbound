@@ -307,6 +307,8 @@ DirectivesGroup::DirectivesGroup(String&& directives) : m_count(0) {
   }
 }
 
+DirectivesGroup::~DirectivesGroup() = default;
+
 bool DirectivesGroup::empty() const {
   return m_count == 0;
 }

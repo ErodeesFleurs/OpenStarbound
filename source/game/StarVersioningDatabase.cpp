@@ -6,7 +6,6 @@ import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -30,6 +29,7 @@ import star.multi_array_interpolator;
 import star.multi_table;
 import star.listener;
 import std;
+import star.optional;
 import star.string;
 import star.lua;
 import star.version;
@@ -125,14 +125,23 @@ VersionedJson VersionedJson::fromJson(Json const& source) {
   // Old versions of VersionedJson used '__' to distinguish between actual
   // content and versioned content, but this is no longer necessary or
   // relevant.
-  auto id = source.optString("id").orMaybe(source.optString("__id"));
-  auto version = source.optUInt("version").orMaybe(source.optUInt("__version"));
-  auto content = source.opt("content").orMaybe(source.opt("__content"));
+  auto id = source.optString("id");
+  auto legacyId = source.optString("__id");
+  if (!id)
+    id = std::move(legacyId);
+  auto version = source.optUInt("version");
+  auto legacyVersion = source.optUInt("__version");
+  if (!version)
+    version = std::move(legacyVersion);
+  auto content = source.opt("content");
+  auto legacyContent = source.opt("__content");
+  if (!content)
+    content = std::move(legacyContent);
   StringMap<VersionNumber> subVersions;
   for (auto const& p : source.getObject("subVersions", JsonObject()))
     subVersions[p.first] = p.second.toUInt();
 
-  return {*id, (VersionNumber)*version, *content, subVersions};
+  return {id.value(), (VersionNumber)version.value(), content.value(), subVersions};
 }
 
 bool VersionedJson::empty() const {
@@ -150,7 +159,7 @@ DataStream& operator>>(DataStream& ds, VersionedJson& versionedJson) {
   // This is a holdover from when the verison number was optional in
   // VersionedJson.  We should convert versioned json binary files and the
   // celestial chunk database and world storage to a new format eventually
-  versionedJson.version = ds.read<Maybe<VersionNumber>>().value();
+  versionedJson.version = ds.read<std::optional<VersionNumber>>().value_or(VersionNumber{});
   ds.read(versionedJson.content);
 
   // this is a holdover from when sub versions were smuggled into content without realizing this caused issues, can potentially be removed later
@@ -164,7 +173,7 @@ DataStream& operator>>(DataStream& ds, VersionedJson& versionedJson) {
 
 DataStream& operator<<(DataStream& ds, VersionedJson const& versionedJson) {
   ds.write(versionedJson.identifier);
-  ds.write(Maybe<VersionNumber>(versionedJson.version));
+  ds.write(std::optional<VersionNumber>(versionedJson.version));
   ds.write(versionedJson.content);
   return ds;
 }
@@ -253,7 +262,7 @@ VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versi
   CelestialMasterDatabase celestialDatabase(root);
 
   VersionedJson result = versionedJson;
-  Maybe<VersionNumber> targetVersion = m_currentVersions.maybe(versionedJson.identifier);
+  std::optional<VersionNumber> targetVersion = m_currentVersions.maybe(versionedJson.identifier);
   if (!targetVersion)
     throw VersioningDatabaseException::format("Versioned JSON has an unregistered identifier '{}'", versionedJson.identifier);
 
@@ -293,7 +302,7 @@ VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versi
             if (!result.content) {
               throw VersioningDatabaseException::format(
                   "Could not bring versionedJson with identifier '{}' and version {} forward to current version of {}, conversion script of sub identifier '{}' from {} to {} returned null (un-upgradeable)",
-                  versionedJson.identifier, result.version, targetVersion, subVersionScripts.first, subVersionUpdateScript.fromVersion, subVersionUpdateScript.toVersion);
+                  versionedJson.identifier, result.version, outputOptional(targetVersion), subVersionScripts.first, subVersionUpdateScript.fromVersion, subVersionUpdateScript.toVersion);
             }
             root.logger().debug("Brought versionedJson '{}' sub identifier '{}' from version {} to {}",
                 versionedJson.identifier, subVersionScripts.first, result.subVersions.value(subVersionScripts.first), subVersionUpdateScript.toVersion);
@@ -310,7 +319,7 @@ VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versi
         if (!result.content) {
           throw VersioningDatabaseException::format(
               "Could not bring versionedJson with identifier '{}' and version {} forward to current version of {}, conversion script from {} to {} returned null (un-upgradeable)",
-              versionedJson.identifier, result.version, targetVersion, updateScript.fromVersion, updateScript.toVersion);
+              versionedJson.identifier, result.version, outputOptional(targetVersion), updateScript.fromVersion, updateScript.toVersion);
         }
         root.logger().debug("Brought versionedJson '{}' from version {} to {}",
             versionedJson.identifier, result.version, updateScript.toVersion);
@@ -320,19 +329,19 @@ VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versi
   } catch (std::exception const&) {
     ExceptionDiagnostic const e(std::current_exception());
     throw VersioningDatabaseException(strf("Could not bring versionedJson with identifier '{}' and version {} forward to current version of {}",
-            versionedJson.identifier, result.version, targetVersion), e);
+            versionedJson.identifier, result.version, outputOptional(targetVersion)), e);
   }
 
   if (result.version > *targetVersion) {
     throw VersioningDatabaseException::format(
         "VersionedJson with identifier '{}' and version {} is newer than current version of {}, cannot load",
-        versionedJson.identifier, result.version, targetVersion);
+        versionedJson.identifier, result.version, outputOptional(targetVersion));
   }
 
   if (result.version != *targetVersion) {
     throw VersioningDatabaseException::format(
         "Could not bring VersionedJson with identifier '{}' and version {} forward to current version of {}, best version was {}",
-        versionedJson.identifier, result.version, targetVersion, result.version);
+        versionedJson.identifier, result.version, outputOptional(targetVersion), result.version);
   }
 
   return result;

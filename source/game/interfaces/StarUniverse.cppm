@@ -4,7 +4,6 @@ import std;
 import star.type_identity;
 import star.string;
 import star.variant;
-import star.maybe;
 import star.rpc_promise;
 import star.game_types;
 import star.data_stream;
@@ -35,7 +34,7 @@ public:
   // Sends a universe message to the target universe's main universe script context.
   virtual RpcPromise<Json> sendUniverseMessage(ConnectionId const& connectionId, String const& message, JsonArray const& args = {}) = 0;
   
-  virtual Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool const& local, JsonArray const& args) = 0;
+  virtual std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, bool const& local, JsonArray const& args) = 0;
 };
 
 }

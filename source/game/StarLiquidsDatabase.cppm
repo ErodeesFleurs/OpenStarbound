@@ -1,7 +1,6 @@
 module;
 import std;
 import star.string;
-import star.maybe;
 import star.format;
 import star.json;
 import star.either;
@@ -47,7 +46,7 @@ struct LiquidSettings {
   ItemDescriptor itemDrop;
   JsonArray statusEffects;
 
-  HashMap<LiquidId, Maybe<LiquidInteractionResult>> interactions;
+  HashMap<LiquidId, std::optional<LiquidInteractionResult>> interactions;
 };
 
 class LiquidsDatabase {
@@ -69,15 +68,15 @@ public:
   String liquidName(LiquidId liquidId) const;
   String liquidDescription(LiquidId liquidId, String const& species) const;
   String liquidDescription(LiquidId liquidId) const;
-  Maybe<String> liquidPath(LiquidId liquidId) const;
-  Maybe<Json> liquidConfig(LiquidId liquidId) const;
+  std::optional<String> liquidPath(LiquidId liquidId) const;
+  std::optional<Json> liquidConfig(LiquidId liquidId) const;
 
   // Returns null on EmptyLiquidId or invalid liquid id
   std::shared_ptr<LiquidSettings const> liquidSettings(LiquidId liquidId) const;
 
   Vec3F radiantLight(LiquidLevel level) const;
 
-  Maybe<LiquidInteractionResult> interact(LiquidId target, LiquidId other) const;
+  std::optional<LiquidInteractionResult> interact(LiquidId target, LiquidId other) const;
 
 private:
   LiquidCellEngineParameters m_liquidEngineParameters;

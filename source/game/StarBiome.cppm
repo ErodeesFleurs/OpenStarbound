@@ -1,7 +1,6 @@
 module;
 import std;
 import star.string;
-import star.maybe;
 import star.json;
 import star.bi_map;
 import star.random;
@@ -59,7 +58,7 @@ struct BiomePlaceables {
 
   // If any of the item distributions contain trees, this returns the first
   // tree type.
-  Maybe<TreeVariant> firstTreeType() const;
+  std::optional<TreeVariant> firstTreeType() const;
 
   ModId grassMod;
   float grassModDensity;

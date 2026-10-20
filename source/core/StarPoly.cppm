@@ -2,7 +2,6 @@ module;
 
 import std;
 import star.list;
-import star.maybe;
 
 import star.math_common;
 import star.algorithm;
@@ -35,7 +34,7 @@ public:
     DataType along;
     // Side that the line first intersected, if the line starts inside the
     // polygon, this will not be set.
-    Maybe<std::size_t> intersectedSide;
+    std::optional<std::size_t> intersectedSide;
   };
 
   typedef List<Vertex> VertexList;
@@ -146,7 +145,7 @@ public:
   IntersectResult directionalSatIntersection(Polygon const& p, Vertex const& direction, bool chooseSign) const;
 
   // Returns the closest intersection with the poly, if any.
-  Maybe<LineIntersectResult> lineIntersection(Line const& l) const;
+  std::optional<LineIntersectResult> lineIntersection(Line const& l) const;
 
   bool intersects(Polygon const& p) const;
   bool intersects(Line const& l) const;
@@ -698,11 +697,11 @@ typename Polygon<DataType>::IntersectResult Polygon<DataType>::directionalSatInt
 }
 
 template <typename DataType>
-auto Polygon<DataType>::lineIntersection(Line const& l) const -> Maybe<LineIntersectResult> {
+auto Polygon<DataType>::lineIntersection(Line const& l) const -> std::optional<LineIntersectResult> {
   if (contains(l.min()))
     return LineIntersectResult{l.min(), DataType(0), {}};
 
-  Maybe<LineIntersectResult> nearestIntersection;
+  std::optional<LineIntersectResult> nearestIntersection;
   for (std::size_t i = 0; i < m_vertexes.size(); ++i) {
     auto intersection = l.intersection(sideAt(i));
     if (intersection.intersects) {

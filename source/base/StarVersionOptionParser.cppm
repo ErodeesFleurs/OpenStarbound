@@ -6,7 +6,6 @@ import star.variant;
 import star.ordered_map;
 import star.ordered_set;
 import star.option_parser;
-import star.maybe;
 import star.version;
 
 namespace Star {
@@ -28,7 +27,7 @@ public:
   Options commandParseOrDie(int argc, char** argv);
 
 private:
-  Maybe<String> m_versionName;
+  std::optional<String> m_versionName;
 };
 
 }

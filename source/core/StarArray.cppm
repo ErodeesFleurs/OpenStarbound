@@ -3,6 +3,7 @@ module;
 import star.memory;
 import std;
 import star.hash;
+import star.optional;
 
 namespace Star {
 
@@ -202,7 +203,10 @@ template <typename Element, std::size_t Size>
 std::ostream& operator<<(std::ostream& os, Array<Element, Size> const& a) {
   os << '[';
   for (std::size_t i = 0; i < Size; ++i) {
-    os << a[i];
+    if constexpr (requires { outputOptional(a[i]); })
+      os << outputOptional(a[i]);
+    else
+      os << a[i];
     if (i != Size - 1)
       os << ", ";
   }

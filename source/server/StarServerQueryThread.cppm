@@ -24,7 +24,6 @@ import star.time;
 import star.format;
 import star.version;
 import star.id_map;
-import star.maybe;
 import star.lock_file;
 import star.game_types;
 import star.rpc_promise;

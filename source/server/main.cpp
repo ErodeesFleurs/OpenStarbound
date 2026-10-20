@@ -11,7 +11,6 @@ import star.lexical_cast;
 import star.logging;
 import star.id_map;
 import star.format;
-import star.maybe;
 import star.string;
 import star.lock_file;
 import star.game_types;

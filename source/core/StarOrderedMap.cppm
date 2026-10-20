@@ -5,7 +5,6 @@ import star.stream_formatter;
 import star.map;
 import star.flat_hash_map;
 import star.list;
-import star.maybe;
 import star.hash;
 import star.format;
 
@@ -62,7 +61,7 @@ public:
   // Return def if key not found
   mapped_type value(key_type const& k, mapped_type d = mapped_type()) const;
 
-  Maybe<mapped_type> maybe(key_type const& k) const;
+  std::optional<mapped_type> maybe(key_type const& k) const;
 
   mapped_const_ptr ptr(key_type const& k) const;
   mapped_ptr ptr(key_type const& k);
@@ -104,7 +103,7 @@ public:
   // found.
   mapped_type take(key_type const& k);
 
-  Maybe<value_type> maybeTake(key_type const& k);
+  std::optional<value_type> maybeTake(key_type const& k);
 
   const_iterator begin() const;
   const_iterator end() const;
@@ -126,7 +125,7 @@ public:
   iterator find(key_type const& k);
   const_iterator find(key_type const& k) const;
 
-  Maybe<std::size_t> indexOf(key_type const& k) const;
+  std::optional<std::size_t> indexOf(key_type const& k) const;
 
   key_type const& keyAt(std::size_t i) const;
   mapped_type const& valueAt(std::size_t i) const;
@@ -269,12 +268,12 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::value(key_type c
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::maybe(key_type const& k) const -> Maybe<mapped_type> {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::maybe(key_type const& k) const -> std::optional<mapped_type> {
   auto i = find(k);
   if (i == end())
     return {};
   else
-    return i->second;
+    return std::optional<mapped_type>(std::in_place, i->second);
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
@@ -431,12 +430,12 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::take(key_type co
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::maybeTake(key_type const& k) -> Maybe<value_type> {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::maybeTake(key_type const& k) -> std::optional<value_type> {
   iterator i = find(k);
   if (i != end()) {
     value_type v = *i;
     erase(i);
-    return v;
+    return std::optional<value_type>(std::in_place, std::move(v));
   }
 
   return {};
@@ -519,7 +518,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::find(key_type co
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::indexOf(key_type const& k) const -> Maybe<std::size_t> {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::indexOf(key_type const& k) const -> std::optional<std::size_t> {
   typename MapType::const_iterator i = m_map.find(k);
   if (i == m_map.end())
     return {};

@@ -2,7 +2,7 @@ import std;
 import star.memory;
 import star.string;
 import star.list;
-import star.maybe;
+import star.optional;
 import star.format;
 import star.json;
 import star.lexical_cast;
@@ -38,9 +38,9 @@ private:
   void push(FormattedJson const& v);
   FormattedJson pop();
   FormattedJson& current();
-  void putValue(Json const& value, Maybe<String> formatting = {});
+  void putValue(Json const& value, std::optional<String> formatting = {});
 
-  Maybe<FormattedJson> m_root;
+  std::optional<FormattedJson> m_root;
   List<FormattedJson> m_stack;
 };
 
@@ -90,6 +90,37 @@ FormattedJson FormattedJson::ofType(Json::Type type) {
 
 FormattedJson::FormattedJson() : FormattedJson(Json()) {}
 
+FormattedJson::FormattedJson(FormattedJson&& other)
+  : m_jsonValue(std::move(other.m_jsonValue)),
+    m_elements(std::move(other.m_elements)),
+    m_formatting(std::move(other.m_formatting)),
+    m_lastKey((other.m_formatting.reset(), std::move(other.m_lastKey))),
+    m_lastValue((other.m_lastKey.reset(), std::move(other.m_lastValue))),
+    m_objectEntryLocations((other.m_lastValue.reset(), std::move(other.m_objectEntryLocations))),
+    m_arrayElementLocations(std::move(other.m_arrayElementLocations)) {}
+
+FormattedJson& FormattedJson::operator=(FormattedJson&& other) {
+  if (this != &other) {
+    m_jsonValue = std::move(other.m_jsonValue);
+    m_elements = std::move(other.m_elements);
+    if (other.m_formatting)
+      m_formatting.emplace(takeOptional(other.m_formatting));
+    else
+      m_formatting.reset();
+    if (other.m_lastKey)
+      m_lastKey.emplace(takeOptional(other.m_lastKey));
+    else
+      m_lastKey.reset();
+    if (other.m_lastValue)
+      m_lastValue.emplace(takeOptional(other.m_lastValue));
+    else
+      m_lastValue.reset();
+    m_objectEntryLocations = std::move(other.m_objectEntryLocations);
+    m_arrayElementLocations = std::move(other.m_arrayElementLocations);
+  }
+  return *this;
+}
+
 FormattedJson::FormattedJson(Json const& json)
   : m_jsonValue(Json::ofType(json.type())),
     m_elements(),
@@ -116,8 +147,8 @@ FormattedJson FormattedJson::get(String const& key) const {
   if (type() != Json::Type::Object)
     throw JsonException::format("Cannot call get with key on FormattedJson type {}, must be Object type", typeName());
 
-  Maybe<std::pair<ElementLocation, ElementLocation>> entry = m_objectEntryLocations.maybe(key);
-  if (entry.isNothing())
+  std::optional<std::pair<ElementLocation, ElementLocation>> entry = m_objectEntryLocations.maybe(key);
+  if (!entry.has_value())
     throw JsonException::format("No such key in FormattedJson::get(\"{}\")", key);
 
   return getFormattedJson(entry->second);
@@ -318,8 +349,8 @@ FormattedJson FormattedJson::eraseKey(String const& key) const {
   if (type() != Json::Type::Object)
     throw JsonException::format("Cannot call erase with key on FormattedJson type {}, must be Object type", typeName());
 
-  Maybe<std::pair<ElementLocation, ElementLocation>> maybeEntry = m_objectEntryLocations.maybe(key);
-  if (maybeEntry.isNothing())
+  std::optional<std::pair<ElementLocation, ElementLocation>> maybeEntry = m_objectEntryLocations.maybe(key);
+  if (!maybeEntry.has_value())
     return *this;
 
   ElementLocation loc = maybeEntry->first;
@@ -404,7 +435,7 @@ String FormattedJson::typeName() const {
 String FormattedJson::toFormattedDouble() const {
   if (!isType(Json::Type::Float))
     throw JsonException::format("Cannot call toFormattedDouble on Json type {}, must be Float", typeName());
-  if (m_formatting.isValid())
+  if (m_formatting.has_value())
     return *m_formatting;
   return toJson().repr();
 }
@@ -412,13 +443,13 @@ String FormattedJson::toFormattedDouble() const {
 String FormattedJson::toFormattedInt() const {
   if (!isType(Json::Type::Int))
     throw JsonException::format("Cannot call toFormattedInt on Json type {}, must be Int", typeName());
-  if (m_formatting.isValid())
+  if (m_formatting.has_value())
     return *m_formatting;
   return toJson().repr();
 }
 
 String FormattedJson::repr() const {
-  if (m_formatting.isValid())
+  if (m_formatting.has_value())
     return *m_formatting;
   String result;
   outputUtf32Json<std::back_insert_iterator<String>, FormattedJson>(*this, std::back_inserter(result), 0, false);
@@ -469,8 +500,8 @@ FormattedJson FormattedJson::objectInsert(String const& key, FormattedJson const
   if (type() != Json::Type::Object)
     throw JsonException::format("Cannot call set with key on FormattedJson type {}, must be Object type", typeName());
 
-  Maybe<std::pair<ElementLocation, ElementLocation>> maybeEntry = m_objectEntryLocations.maybe(key);
-  if (maybeEntry.isValid()) {
+  std::optional<std::pair<ElementLocation, ElementLocation>> maybeEntry = m_objectEntryLocations.maybe(key);
+  if (maybeEntry.has_value()) {
     ElementList elements = m_elements;
     elements.at(maybeEntry->second) = ValueElement{value};
     return object(elements);
@@ -494,7 +525,7 @@ void FormattedJson::appendElement(JsonElement const& elem) {
   } else if (elem.is<ValueElement>()) {
     m_lastValue = loc;
 
-    if (m_lastKey.isValid()) {
+    if (m_lastKey.has_value()) {
       if constexpr (Star::DebugEnabled) {
         Star::starAssertFailed((isType(Json::Type::Object)));
       }
@@ -596,7 +627,7 @@ void FormattedJsonBuilderStream::putComma() {
 }
 
 FormattedJson FormattedJsonBuilderStream::takeTop() {
-  return m_root.take();
+  return takeOptional(m_root);
 }
 
 void FormattedJsonBuilderStream::push(FormattedJson const& v) {
@@ -613,9 +644,9 @@ FormattedJson& FormattedJsonBuilderStream::current() {
   return m_stack.back();
 }
 
-void FormattedJsonBuilderStream::putValue(Json const& value, Maybe<String> formatting) {
+void FormattedJsonBuilderStream::putValue(Json const& value, std::optional<String> formatting) {
   FormattedJson formattedValue = value;
-  if (formatting.isValid())
+  if (formatting.has_value())
     formattedValue = formattedValue.formattedAs(*formatting);
 
   if (m_stack.size() > 0)

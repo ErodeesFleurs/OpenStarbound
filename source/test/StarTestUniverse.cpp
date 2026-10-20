@@ -23,7 +23,6 @@ import star.variant;
 import star.rpc_promise;
 import star.strong_typedef;
 import star.game_types;
-import star.maybe;
 import star.vector;
 import star.a_star;
 import star.ordered_set;
@@ -184,9 +183,9 @@ TestUniverse::TestUniverse(Root& root, Vec2U clientWindowSize) {
   // scripts (e.g. /scripts/opensb/player/copy_paste.lua) call input.bindDown
   // from update() and would otherwise log a Lua error every frame.
   LuaCallbacks inputCallbacks;
-  auto bindState = [](String const&, String const&) -> Maybe<unsigned> { return {}; };
-  auto noKey = [](String const&) -> Maybe<unsigned> { return {}; };
-  auto noButton = [](String const&) -> Maybe<List<Vec2F>> { return {}; };
+  auto bindState = [](String const&, String const&) -> std::optional<unsigned> { return {}; };
+  auto noKey = [](String const&) -> std::optional<unsigned> { return {}; };
+  auto noButton = [](String const&) -> std::optional<List<Vec2F>> { return {}; };
   inputCallbacks.registerCallback("bindDown", bindState);
   inputCallbacks.registerCallback("bindUp", bindState);
   inputCallbacks.registerCallback("bindHeld", [](String const&, String const&) -> bool { return false; });

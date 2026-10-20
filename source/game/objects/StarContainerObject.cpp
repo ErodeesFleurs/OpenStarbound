@@ -9,7 +9,6 @@ import star.random;
 import star.ttl_cache;
 import star.casting;
 import star.game_types;
-import star.maybe;
 import star.variant;
 import star.strong_typedef;
 import star.rpc_promise;
@@ -252,7 +251,7 @@ void ContainerObject::destroy(RenderCallback* renderCallback) {
   }
 }
 
-Maybe<ChainableJsonMessageResponse> ContainerObject::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+std::optional<ChainableJsonMessageResponse> ContainerObject::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
   auto itemDb = this->root().itemDatabase();
 
   if (message.equalsIgnoreCase("startCrafting")) {
@@ -277,7 +276,7 @@ Maybe<ChainableJsonMessageResponse> ContainerObject::receiveMessage(ConnectionId
     return ChainableJsonMessageResponse(itemSafeDescriptor(doTakeItems(args.at(0).toUInt(), args.at(1).toUInt())).toJson());
 
   } else if (message.equalsIgnoreCase("swapItems")) {
-    return ChainableJsonMessageResponse(itemSafeDescriptor(doSwapItems(args.at(0).toUInt(), itemDb->fromJson(args.at(1)), args.get(2).optBool().value(true))).toJson());
+    return ChainableJsonMessageResponse(itemSafeDescriptor(doSwapItems(args.at(0).toUInt(), itemDb->fromJson(args.at(1)), args.get(2).optBool().value_or(true))).toJson());
 
   } else if (message.equalsIgnoreCase("applyAugment")) {
     return ChainableJsonMessageResponse(itemSafeDescriptor(doApplyAugment(args.at(0).toUInt(), itemDb->fromJson(args.at(1)))).toJson());
@@ -544,7 +543,7 @@ ItemRecipe ContainerObject::recipeForMaterials(List<std::shared_ptr<Item>> const
   if (!recipeGroup.isNull())
     return itemDatabase->getPreciseRecipeForMaterials(recipeGroup.toString(), inputItems, {});
 
-  Maybe<Json> result = m_scriptComponent.invoke<Json>("craftingRecipe", inputItems.filtered([](std::shared_ptr<Item> const& item) {
+  std::optional<Json> result = m_scriptComponent.invoke<Json>("craftingRecipe", inputItems.filtered([](std::shared_ptr<Item> const& item) {
       return (bool)item;
     }).transformed([](std::shared_ptr<Item> const& item) {
       return item->descriptor().toJson();

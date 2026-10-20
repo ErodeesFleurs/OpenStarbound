@@ -3,7 +3,6 @@ import star.format;
 import std;
 
 import star.byte_array;
-import star.maybe;
 import star.unicode;
 
 namespace Star {

@@ -7,7 +7,6 @@ import star.lru_cache;
 import star.bi_map;
 import star.random;
 import star.perlin;
-import star.maybe;
 import star.weighted_pool;
 import star.color;
 import star.list;
@@ -81,7 +80,7 @@ public:
 
   struct WeatherLayer {
     String name;
-    Maybe<String> domain;
+    std::optional<String> domain;
     int minHeight;
     int maxHeight;
   };
@@ -148,7 +147,7 @@ public:
 
   Json store() const;
 
-  Maybe<CelestialParameters> const& celestialParameters() const;
+  std::optional<CelestialParameters> const& celestialParameters() const;
   std::shared_ptr<VisitableWorldParameters const> worldParameters() const;
   SkyParameters skyParameters() const;
   std::shared_ptr<WorldLayout> worldLayout() const;
@@ -177,7 +176,7 @@ public:
   // acceptable player start area.  The block returned will be an empty block
   // above a terrain block, in a region of free space.  If no such block can be
   // found or the player start search region is not specified, returns nothing.
-  Maybe<Vec2I> findSensiblePlayerStart() const;
+  std::optional<Vec2I> findSensiblePlayerStart() const;
 
   // Add either a solid region hint or a space region hint for the given
   // polygonal region.  Blending size and weighting is configured in the
@@ -231,7 +230,7 @@ public:
   WeatherLayer const* weatherLayerAt(Vec2I const& position) const;
 
   // Return potential items that would spawn at the given block.
-	void addPotentialBiomeItems(int x, int y, PotentialBiomeItems& items, List<BiomeItemDistribution> const& distributions, BiomePlacementArea area, Maybe<BiomePlacementMode> mode = {}) const;
+	void addPotentialBiomeItems(int x, int y, PotentialBiomeItems& items, List<BiomeItemDistribution> const& distributions, BiomePlacementArea area, std::optional<BiomePlacementMode> mode = {}) const;
   PotentialBiomeItems potentialBiomeItemsAt(int x, int y) const;
 
   // Return only the potential items that can spawn at the given block.
@@ -264,7 +263,7 @@ private:
   float m_customTerrainBlendSize;
   float m_customTerrainBlendWeight;
 
-  Maybe<CelestialParameters> m_celestialParameters;
+  std::optional<CelestialParameters> m_celestialParameters;
   std::shared_ptr<VisitableWorldParameters const> m_worldParameters;
   SkyParameters m_skyParameters;
   std::uint64_t m_seed;

@@ -19,7 +19,6 @@ import star.bi_map;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -73,7 +72,7 @@ protected:
 private:
   struct StatusEffectIndicator {
     String icon;
-    Maybe<float> durationPercentage;
+    std::optional<float> durationPercentage;
     String label;
     RectF screenRect;
   };

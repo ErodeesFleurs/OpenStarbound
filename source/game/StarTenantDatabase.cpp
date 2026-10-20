@@ -16,7 +16,6 @@ import star.logging;
 import star.listener;
 import std;
 import star.string;
-import star.maybe;
 import star.format;
 import star.version;
 
@@ -119,7 +118,7 @@ std::shared_ptr<Tenant> TenantDatabase::readTenant(Assets const& assets, String 
       }
     });
 
-    Maybe<TenantRent> rent = config.opt("rent").apply([](Json const& json) {
+    std::optional<TenantRent> rent = config.opt("rent").transform([](Json const& json) {
       return TenantRent{jsonToVec2F(json.get("periodRange")), json.getString("pool")};
     });
 

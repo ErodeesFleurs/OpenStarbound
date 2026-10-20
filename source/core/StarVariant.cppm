@@ -2,9 +2,9 @@ module;
 import star.stream_formatter;
 
 import std;
+import star.optional;
 
 
-import star.maybe;
 import star.format;
 
 namespace Star {
@@ -90,7 +90,7 @@ public:
   T& get();
 
   template <typename T, typename = ValidateType<T>>
-  Maybe<T> maybe() const;
+  std::optional<T> maybe() const;
 
   // ptr() does not throw if this Variant does not hold the given type, instead
   // simply returns nullptr.
@@ -189,7 +189,7 @@ private:
 
 // A version of Variant that has always has a default "empty" state, useful
 // when there is no good default type for a Variant but it needs to be default
-// constructed, and is slightly more convenient than Maybe<Variant<Types...>>.
+// constructed, and is slightly more convenient than std::optional<Variant<Types...>>.
 template <typename... Types>
 class MVariant {
 public:
@@ -261,10 +261,10 @@ public:
   T& get();
 
   // maybe() and ptr() do not throw if this MVariant does not hold the given
-  // type, instead simply returns Nothing / nullptr.
+  // type, instead simply returns an empty optional / nullptr.
 
   template <typename T, typename = ValidateType<T>>
-  Maybe<T> maybe() const;
+  std::optional<T> maybe() const;
 
   template <typename T, typename = ValidateType<T>>
   T const* ptr() const;
@@ -442,10 +442,10 @@ T& Variant<FirstType, RestTypes...>::get() {
 
 template <typename FirstType, typename... RestTypes>
 template <typename T, typename>
-Maybe<T> Variant<FirstType, RestTypes...>::maybe() const {
+std::optional<T> Variant<FirstType, RestTypes...>::maybe() const {
   if (!is<T>())
     return {};
-  return *ptr<T>();
+  return std::optional<T>(std::in_place, *ptr<T>());
 }
 
 template <typename FirstType, typename... RestTypes>
@@ -575,12 +575,30 @@ template <typename FirstType, typename... RestTypes>
 template <typename T>
 void Variant<FirstType, RestTypes...>::assign(T&& x) {
   typedef typename std::decay<T>::type AssignType;
-  if (auto p = ptr<AssignType>()) {
-    *p = std::forward<T>(x);
+  if constexpr (requires { optionalPtr(x); }) {
+    if (auto p = ptr<AssignType>()) {
+      if (p == std::addressof(x))
+        return;
+      if (x)
+        p->emplace(std::forward<T>(x).value());
+      else
+        p->reset();
+    } else {
+      destruct();
+      std::construct_at(reinterpret_cast<AssignType*>(&m_buffer), std::forward<T>(x));
+      m_typeIndex = TypeIndex<AssignType>::value;
+    }
+    // Preserve source consumption when moving a direct optional alternative.
+    if constexpr (std::is_rvalue_reference_v<T&&> && !std::is_const_v<std::remove_reference_t<T>>)
+      x.reset();
   } else {
-    destruct();
-    std::construct_at(reinterpret_cast<AssignType*>(&m_buffer), std::forward<T>(x));
-    m_typeIndex = TypeIndex<AssignType>::value;
+    if (auto p = ptr<AssignType>()) {
+      *p = std::forward<T>(x);
+    } else {
+      destruct();
+      std::construct_at(reinterpret_cast<AssignType*>(&m_buffer), std::forward<T>(x));
+      m_typeIndex = TypeIndex<AssignType>::value;
+    }
   }
 }
 
@@ -793,7 +811,7 @@ T& MVariant<Types...>::get() {
 
 template <typename... Types>
 template <typename T, typename>
-Maybe<T> MVariant<Types...>::maybe() const {
+std::optional<T> MVariant<Types...>::maybe() const {
   return m_variant.template maybe<T>();
 }
 

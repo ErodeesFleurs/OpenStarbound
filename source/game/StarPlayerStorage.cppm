@@ -26,7 +26,6 @@ import std;
 import star.worker_pool;
 
 import star.sector_array_2d;
-import star.maybe;
 import star.color;
 import star.image_processing;
 import star.hash;
@@ -84,16 +83,16 @@ public:
 
   std::size_t playerCount() const;
   // Returns nothing if index is out of bounds.
-  Maybe<Uuid> playerUuidAt(std::size_t index);
+  std::optional<Uuid> playerUuidAt(std::size_t index);
   // Returns nothing if name doesn't match a player.
-  Maybe<Uuid> playerUuidByName(String const& name, Maybe<Uuid> except = {});
+  std::optional<Uuid> playerUuidByName(String const& name, std::optional<Uuid> except = {});
   // Returns nothing if name doesn't match a player.
-  List<Uuid> playerUuidListByName(String const& name, Maybe<Uuid> except = {});
+  List<Uuid> playerUuidListByName(String const& name, std::optional<Uuid> except = {});
 
   // Also returns the diskStore Json if needed.
   Json savePlayer(std::shared_ptr<Player> const& player);
 
-  Maybe<Json> maybeGetPlayerData(Uuid const& uuid);
+  std::optional<Json> maybeGetPlayerData(Uuid const& uuid);
   Json getPlayerData(Uuid const& uuid);
   std::shared_ptr<Player> loadPlayer(Uuid const& uuid);
   void deletePlayer(Uuid const& uuid);

@@ -29,7 +29,6 @@ import star.game_types;
 import star.material_types;
 import star.audio;
 import star.map;
-import star.maybe;
 import star.string;
 import star.variant;
 import star.ordered_set;
@@ -98,7 +97,7 @@ void scanMaterials(Root& root, TilesetUpdater& updater) {
 
   for (String materialName : materials->materialNames()) {
     MaterialId id = materials->materialId(materialName);
-    Maybe<String> path = materials->materialPath(id);
+    std::optional<String> path = materials->materialPath(id);
     if (!path)
       continue;
     String source = root.assets()->assetSource(*path);
@@ -225,7 +224,7 @@ void defineObjectOrientation(Root& root, TilesetUpdater& updater,
   properties.set("//shortdescription", example->shortDescription());
   properties.set("//description", example->description());
 
-  if (orientation->directionAffinity.isValid()) {
+  if (orientation->directionAffinity.has_value()) {
     Direction direction = *orientation->directionAffinity;
     if (orientation->flipImages)
       direction = -direction;

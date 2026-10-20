@@ -1,7 +1,6 @@
 module;
 import std;
 import star.string;
-import star.maybe;
 import star.format;
 import star.json;
 
@@ -310,25 +309,25 @@ Json jsonFromMap(MapType const& map) {
 }
 
 template <typename T, typename Converter>
-Json jsonFromMaybe(Maybe<T> const& m, Converter&& converter) {
-  return m.apply(converter).value();
+Json jsonFromOptional(std::optional<T> const& m, Converter&& converter) {
+  return m ? Json(converter(*m)) : Json();
 }
 
 template <typename T>
-Json jsonFromMaybe(Maybe<T> const& m) {
-  return jsonFromMaybe(m, construct<Json>());
+Json jsonFromOptional(std::optional<T> const& m) {
+  return jsonFromOptional(m, construct<Json>());
 }
 
 template <typename T, typename Converter>
-Maybe<T> jsonToMaybe(Json v, Converter&& converter) {
+std::optional<T> jsonToOptional(Json v, Converter&& converter) {
   if (v.isNull())
     return {};
-  return converter(v);
+  return std::optional<T>(std::in_place, converter(v));
 }
 
 template <typename T>
-Maybe<T> jsonToMaybe(Json const& v) {
-  return jsonToMaybe<T>(v, construct<T>());
+std::optional<T> jsonToOptional(Json const& v) {
+  return jsonToOptional<T>(v, construct<T>());
 }
 
 template <typename T>
@@ -476,8 +475,8 @@ export namespace Star {
   using ::Star::jsonFromMapK;
   using ::Star::jsonFromMapV;
   using ::Star::jsonFromMap;
-  using ::Star::jsonFromMaybe;
-  using ::Star::jsonToMaybe;
+  using ::Star::jsonFromOptional;
+  using ::Star::jsonToOptional;
 
   extern "C++" {
   template <>

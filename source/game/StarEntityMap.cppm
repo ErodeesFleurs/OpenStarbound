@@ -2,7 +2,6 @@ module;
 import std;
 import star.string;
 import star.list;
-import star.maybe;
 import star.format;
 import star.json;
 import star.id_map;
@@ -54,7 +53,7 @@ public:
   // Get the next free id in the entity id space.
   EntityId reserveEntityId();
   // Or a specific one, can fail.
-  Maybe<EntityId> maybeReserveEntityId(EntityId entityId);
+  std::optional<EntityId> maybeReserveEntityId(EntityId entityId);
   // If it doesn't matter that we don't get the one want
   EntityId reserveEntityId(EntityId entityId);
 

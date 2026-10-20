@@ -2,7 +2,6 @@ module;
 import std;
 import star.string;
 import star.variant;
-import star.maybe;
 import star.format;
 import star.json;
 import star.bi_map;
@@ -155,7 +154,7 @@ public:
     PerlinF weight;
   };
 
-  static Maybe<BiomeItem> createItem(Root& root, Json const& itemSettings, RandomSource& rand, float biomeHueShift);
+  static std::optional<BiomeItem> createItem(Root& root, Json const& itemSettings, RandomSource& rand, float biomeHueShift);
 
   BiomeItemDistribution();
   BiomeItemDistribution(Root& root, Json const& config, std::uint64_t seed, float biomeHueShift = 0.0f);
@@ -168,7 +167,7 @@ public:
 
   // Returns the best BiomeItem for this position out of the weighted item set,
   // if the density function specifies that an item should go in this position.
-  Maybe<BiomeItemPlacement> itemToPlace(int x, int y) const;
+  std::optional<BiomeItemPlacement> itemToPlace(int x, int y) const;
 
 private:
   enum class DistributionType {

@@ -6,7 +6,6 @@ import star.json;
 import star.bi_map;
 import star.random;
 import star.perlin;
-import star.maybe;
 import star.weighted_pool;
 import star.color;
 import star.list;
@@ -115,8 +114,8 @@ public:
 
   Json toJson() const;
 
-  Maybe<BlockNoise> const& blockNoise() const;
-  Maybe<PerlinF> const& blendNoise() const;
+  std::optional<BlockNoise> const& blockNoise() const;
+  std::optional<PerlinF> const& blendNoise() const;
 
   List<RectI> playerStartSearchRegions() const;
 
@@ -150,13 +149,13 @@ private:
   struct RegionParams {
     int baseHeight;
     float threatLevel;
-    Maybe<String> biomeName;
-    Maybe<String> terrainSelector;
-    Maybe<String> fgCaveSelector;
-    Maybe<String> bgCaveSelector;
-    Maybe<String> fgOreSelector;
-    Maybe<String> bgOreSelector;
-    Maybe<String> subBlockSelector;
+    std::optional<String> biomeName;
+    std::optional<String> terrainSelector;
+    std::optional<String> fgCaveSelector;
+    std::optional<String> bgCaveSelector;
+    std::optional<String> fgOreSelector;
+    std::optional<String> bgOreSelector;
+    std::optional<String> subBlockSelector;
     WorldRegionLiquids regionLiquids;
   };
 
@@ -185,8 +184,8 @@ private:
   List<WorldLayer> m_layers;
 
   float m_regionBlending;
-  Maybe<BlockNoise> m_blockNoise;
-  Maybe<PerlinF> m_blendNoise;
+  std::optional<BlockNoise> m_blockNoise;
+  std::optional<PerlinF> m_blendNoise;
   List<RectI> m_playerStartSearchRegions;
 };
 

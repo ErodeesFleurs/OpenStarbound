@@ -20,7 +20,6 @@ import star.io_device;
 import star.ref_ptr;
 import star.listener;
 import std;
-import star.maybe;
 import star.version;
 import star.random;
 import star.logging;
@@ -73,9 +72,9 @@ Item::Item(Root& root, Json config, String directory, Json parameters) : m_root(
     }));
   } else if (secondaryIcon.type() == Json::Type::String) {
     auto image = AssetPath::relativeTo(m_directory, secondaryIcon.toString());
-    setSecondaryIconDrawables(Maybe<List<Drawable>>({Drawable::makeImage(*root.imageMetadataDatabase(), image, 1.0f, true, Vec2F())}));
+    setSecondaryIconDrawables(List<Drawable>{Drawable::makeImage(*root.imageMetadataDatabase(), image, 1.0f, true, Vec2F())});
   } else {
-    setSecondaryIconDrawables(Maybe<List<Drawable>>());
+    setSecondaryIconDrawables(std::optional<List<Drawable>>());
   }
 
   auto assets = root.assets();
@@ -206,12 +205,12 @@ List<Drawable> Item::iconDrawables() const {
   return m_iconDrawables;
 }
 
-Maybe<List<Drawable>> Item::secondaryDrawables() const {
+std::optional<List<Drawable>> Item::secondaryDrawables() const {
   return m_secondaryIconDrawables;
 }
 
 bool Item::hasSecondaryDrawables() const {
-  return m_secondaryIconDrawables.isValid();
+  return m_secondaryIconDrawables.has_value();
 }
 
 List<Drawable> Item::dropDrawables(TileDrawer*) const {
@@ -284,9 +283,9 @@ void Item::setIconDrawables(List<Drawable> drawables) {
   }
 }
 
-void Item::setSecondaryIconDrawables(Maybe<List<Drawable>> drawables) {
+void Item::setSecondaryIconDrawables(std::optional<List<Drawable>> drawables) {
   m_secondaryIconDrawables = std::move(drawables);
-  if (m_secondaryIconDrawables.isNothing())
+  if (!m_secondaryIconDrawables.has_value())
     return;
 
   auto boundBox = Drawable::boundBoxAll(*root().imageMetadataDatabase(), *m_secondaryIconDrawables, true);

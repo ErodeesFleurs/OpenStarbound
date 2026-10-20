@@ -1,7 +1,6 @@
 module;
 import std;
 import star.string;
-import star.maybe;
 import star.format;
 import star.json;
 
@@ -47,8 +46,8 @@ struct AiSpeciesMissionText {
 struct AiMission {
   String missionName;
   String missionUniqueWorld;
-  Maybe<String> warpAnimation;
-  Maybe<bool> warpDeploy;
+  std::optional<String> warpAnimation;
+  std::optional<bool> warpDeploy;
   String icon;
   StringMap<AiSpeciesMissionText> speciesText;
 };

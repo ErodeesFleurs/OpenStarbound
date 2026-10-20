@@ -18,7 +18,6 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
@@ -124,7 +123,7 @@ public:
   virtual void addParticles(List<Particle> const& particles) = 0;
   virtual void addSound(String const& sound, float volume = 1.0f, float pitch = 1.0f) = 0;
 
-  virtual void setCameraFocusEntity(Maybe<EntityId> const& cameraFocusEntity) = 0;
+  virtual void setCameraFocusEntity(std::optional<EntityId> const& cameraFocusEntity) = 0;
 };
 
 }

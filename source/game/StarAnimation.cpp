@@ -63,7 +63,7 @@ Animation::Animation(Root& root, Json config, String const& directory) : m_root(
   m_offset = jsonToVec2F(config.get("offset", JsonArray{0.0f, 0.0f}));
   m_centered = config.getBool("centered", true);
   m_processing = config.getString("processing", "");
-  m_color = config.opt("color").apply(jsonToColor).value(Color::White);
+  m_color = config.opt("color").transform(jsonToColor).value_or(Color::White);
   m_variantOffset = root.random().randInt(config.getInt("variants", 1) - 1) * m_frameNumber;
 
   reset();

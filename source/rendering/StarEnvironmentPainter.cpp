@@ -4,7 +4,6 @@ import star.xx_hash;
 import star.format;
 import star.json_extra;
 import star.id_map;
-import star.maybe;
 import star.color;
 import star.list;
 import star.rect;
@@ -376,10 +375,10 @@ void EnvironmentPainter::renderParallaxLayers(
     // vertical top and bottom cutoff points in *parallax space*
     float tileLimitTop = top;
     if (layer.tileLimitTop)
-      tileLimitTop = (layer.parallaxOffset[1] - layer.tileLimitTop.value()) / parallaxSize[1];
+      tileLimitTop = (layer.parallaxOffset[1] - layer.tileLimitTop.value_or(0.0f)) / parallaxSize[1];
     float tileLimitBottom = bottom;
     if (layer.tileLimitBottom)
-      tileLimitBottom = (layer.parallaxOffset[1] - layer.tileLimitBottom.value()) / parallaxSize[1];
+      tileLimitBottom = (layer.parallaxOffset[1] - layer.tileLimitBottom.value_or(0.0f)) / parallaxSize[1];
 
     float lightMapMultiplier = (!layer.unlit && layer.lightMapped) ? 1.0f : 0.0f;
 

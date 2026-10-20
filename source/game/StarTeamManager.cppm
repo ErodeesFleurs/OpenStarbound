@@ -22,7 +22,6 @@ import star.warping;
 import star.damage_types;
 import std;
 import star.map;
-import star.maybe;
 import star.version;
 
 namespace Star {
@@ -44,7 +43,7 @@ public:
 
   TeamNumber getPvpTeam(Uuid const& playerUuid);
   HashMap<Uuid, TeamNumber> getPvpTeams();
-  Maybe<Uuid> getTeam(Uuid const& playerUuid) const;
+  std::optional<Uuid> getTeam(Uuid const& playerUuid) const;
 
 private:
   struct TeamMember {

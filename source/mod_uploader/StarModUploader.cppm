@@ -16,7 +16,6 @@ import std;
 import star.io_device;
 import star.json;
 import star.map;
-import star.maybe;
 import star.asset_source;
 import star.string;
 import star.directory_asset_source;
@@ -61,15 +60,15 @@ private:
   QWidget* m_editorSection;
   HashMap<String, QCheckBox*> m_categorySelectors;
 
-  Maybe<String> m_modDirectory;
-  Maybe<DirectoryAssetSource> m_assetSource;
+  std::optional<String> m_modDirectory;
+  std::optional<DirectoryAssetSource> m_assetSource;
   QImage m_modPreview;
 
   SteamDispatch m_steamDispatch;
   bool m_closing = false;
 
-  Maybe<std::pair<CreateItemResult_t, bool>> m_steamItemCreateResult;
-  Maybe<std::pair<SubmitItemUpdateResult_t, bool>> m_steamItemSubmitResult;
+  std::optional<std::pair<CreateItemResult_t, bool>> m_steamItemCreateResult;
+  std::optional<std::pair<SubmitItemUpdateResult_t, bool>> m_steamItemSubmitResult;
 };
 
 }

@@ -1,5 +1,6 @@
 import star.json_extra;
 import std;
+import star.optional;
 import star.json;
 import star.xx_hash;
 import star.algorithm;
@@ -21,7 +22,6 @@ import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.logging;
@@ -630,7 +630,7 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
         return true;
       }
     } else if (!m_paneManager.keyboardCapturedWidget()) {
-      Maybe<InventorySlot> swapSlot;
+      std::optional<InventorySlot> swapSlot;
 
       for (auto action : m_guiContext->actions(event)) {
         switch (action) {
@@ -1016,7 +1016,7 @@ void MainInterface::update(float dt) {
         if (*cinematic) {
           Json definition;
           try {
-            definition = m_guiContext->root().assets()->fetchJson(cinematic.take());
+            definition = m_guiContext->root().assets()->fetchJson(takeOptional(cinematic));
           } catch (std::exception const& e) {
             m_guiContext->root().logger().warn("MainInterface: failed to fetch cinematic: {}", e.what());
             definition = Json();
@@ -1257,8 +1257,8 @@ void MainInterface::doChat(String const& chat, bool addToHistory) {
     m_chat->addHistory(chat);
 }
 
-void MainInterface::queueMessage(String const& message, Maybe<float> cooldown, float spring) {
-  auto guiMessage = std::make_shared<GuiMessage>(message, cooldown.value(m_config->messageTime), spring);
+void MainInterface::queueMessage(String const& message, std::optional<float> cooldown, float spring) {
+  auto guiMessage = std::make_shared<GuiMessage>(message, cooldown.value_or(m_config->messageTime), spring);
   m_messages.append(guiMessage);
 }
 
@@ -1470,7 +1470,7 @@ void MainInterface::renderMessages() {
 
   Vec2F totalOffset = {};
   auto imgMetadata = m_guiContext->root().imageMetadataDatabase();
-  unsigned bottomOffset = m_guiContext->root().configuration()->getPath("inventory.bottomActionBar").optBool().value(false) ? 32 : 0;
+  unsigned bottomOffset = m_guiContext->root().configuration()->getPath("inventory.bottomActionBar").optBool().value_or(false) ? 32 : 0;
   for (auto& message : m_messages) {
     Vec2F hiddenOffset = Vec2F(m_config->messageHiddenOffset);
     Vec2F activeOffset = Vec2F(m_config->messageActiveOffset);
@@ -1853,17 +1853,17 @@ void MainInterface::renderDebug() {
 }
 
 void MainInterface::updateCursor() {
-  Maybe<String> cursorOverride = m_actionBar->cursorOverride(m_cursorScreenIPos);
+  std::optional<String> cursorOverride = m_actionBar->cursorOverride(m_cursorScreenIPos);
 
   if (!cursorOverride) {
     if (auto pane = m_paneManager.getPaneAt(m_cursorScreenIPos / interfaceScale())) {
-      cursorOverride = cursorOverride.orMaybe(pane->cursorOverride(m_cursorScreenIPos / interfaceScale()));
+      cursorOverride = pane->cursorOverride(m_cursorScreenIPos / interfaceScale());
     } else {
       auto player = m_client->mainPlayer();
       if (auto anchorState = m_client->mainPlayer()->loungingIn()) {
         if (auto loungeable = m_client->worldClient()->get<LoungeableEntity>(anchorState->entityId)) {
           if (auto loungeAnchor = loungeable->loungeAnchor(anchorState->positionIndex))
-            cursorOverride = cursorOverride.orMaybe(loungeAnchor->cursorOverride);
+            cursorOverride = loungeAnchor->cursorOverride;
         }
       }
       if (!cursorOverride) {
@@ -1883,7 +1883,7 @@ void MainInterface::updateCursor() {
   }
 
   if (cursorOverride)
-    m_cursor.setCursor(cursorOverride.take());
+    m_cursor.setCursor(takeOptional(cursorOverride));
   else
     m_cursor.resetCursor();
 }

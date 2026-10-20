@@ -1,5 +1,4 @@
 import std;
-import star.maybe;
 import star.json;
 import star.json_extra;
 import star.id_map;
@@ -27,7 +26,7 @@ namespace Star {
 
 PhysicsMovingCollision PhysicsMovingCollision::fromJson(Json const& json) {
   PhysicsMovingCollision pmc;
-  pmc.position = json.opt("position").apply(jsonToVec2F).value();
+  pmc.position = json.opt("position").transform(jsonToVec2F).value_or(Vec2F{});
   pmc.collision = jsonToPolyF(json.get("collision"));
   pmc.collisionKind = CollisionKindNames.getLeft(json.getString("collisionKind", "block"));
   pmc.categoryFilter = jsonToPhysicsCategoryFilter(json);
@@ -99,7 +98,7 @@ std::size_t PhysicsEntity::movingCollisionCount() const {
   return 0;
 }
 
-Maybe<PhysicsMovingCollision> PhysicsEntity::movingCollision(std::size_t) const {
+std::optional<PhysicsMovingCollision> PhysicsEntity::movingCollision(std::size_t) const {
   return {};
 }
 

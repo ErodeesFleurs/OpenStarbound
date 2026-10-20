@@ -1,5 +1,6 @@
 import star.memory;
 import std;
+import star.optional;
 import star.json;
 import star.json_extra;
 import star.color;
@@ -147,6 +148,81 @@ Particle::Particle(Root& root, Json const& config, String const& path) {
   ignoreWind = config.getBool("ignoreWind", true);
 
   trail = config.getBool("trail", false);
+}
+
+Particle::Particle(Particle&& other)
+  : type(other.type),
+    size(other.size),
+    baseSize(other.baseSize),
+    string(std::move(other.string)),
+    image(std::move(other.image)),
+    directives(std::move(other.directives)),
+    color(std::move(other.color)),
+    light(std::move(other.light)),
+    fade(other.fade),
+    fullbright(other.fullbright),
+    position(std::move(other.position)),
+    velocity(std::move(other.velocity)),
+    finalVelocity(std::move(other.finalVelocity)),
+    approach(std::move(other.approach)),
+    flippable(other.flippable),
+    flip(other.flip),
+    rotation(other.rotation),
+    angularVelocity(other.angularVelocity),
+    length(other.length),
+    destructionAction(other.destructionAction),
+    destructionImage(std::move(other.destructionImage)),
+    destructionTime(other.destructionTime),
+    destructionSet(other.destructionSet),
+    timeToLive(other.timeToLive),
+    layer(other.layer),
+    collidesForeground(other.collidesForeground),
+    collidesLiquid(other.collidesLiquid),
+    underwaterOnly(other.underwaterOnly),
+    ignoreWind(other.ignoreWind),
+    trail(other.trail),
+    animation(std::move(other.animation)) {
+  other.animation.reset();
+}
+
+Particle& Particle::operator=(Particle&& other) {
+  if (this != &other) {
+    type = other.type;
+    size = other.size;
+    baseSize = other.baseSize;
+    string = std::move(other.string);
+    image = std::move(other.image);
+    directives = std::move(other.directives);
+    color = std::move(other.color);
+    light = std::move(other.light);
+    fade = other.fade;
+    fullbright = other.fullbright;
+    position = std::move(other.position);
+    velocity = std::move(other.velocity);
+    finalVelocity = std::move(other.finalVelocity);
+    approach = std::move(other.approach);
+    flippable = other.flippable;
+    flip = other.flip;
+    rotation = other.rotation;
+    angularVelocity = other.angularVelocity;
+    length = other.length;
+    destructionAction = other.destructionAction;
+    destructionImage = std::move(other.destructionImage);
+    destructionTime = other.destructionTime;
+    destructionSet = other.destructionSet;
+    timeToLive = other.timeToLive;
+    layer = other.layer;
+    collidesForeground = other.collidesForeground;
+    collidesLiquid = other.collidesLiquid;
+    underwaterOnly = other.underwaterOnly;
+    ignoreWind = other.ignoreWind;
+    trail = other.trail;
+    if (other.animation)
+      animation.emplace(takeOptional(other.animation));
+    else
+      animation.reset();
+  }
+  return *this;
 }
 
 Json Particle::toJson() const {

@@ -1,6 +1,5 @@
 import star.json_extra;
 import std;
-import star.maybe;
 import star.json;
 import star.color;
 import star.string;
@@ -125,14 +124,14 @@ PreviewTile::PreviewTile(Vec2I const& position, LiquidId liqId)
 OverheadBar::OverheadBar() : percentage(0.0f), detailOnly(false) {}
 
 OverheadBar::OverheadBar(Json const& json) {
-  entityPosition = json.opt("position").apply(jsonToVec2F).value();
+  entityPosition = json.opt("position").transform(jsonToVec2F).value_or(Vec2F{});
   icon = json.optString("icon");
   percentage = json.getFloat("percentage");
   color = jsonToColor(json.get("color"));
   detailOnly = json.getBool("detailOnly", false);
 }
 
-OverheadBar::OverheadBar(Maybe<String> icon, float percentage, Color color, bool detailOnly)
+OverheadBar::OverheadBar(std::optional<String> icon, float percentage, Color color, bool detailOnly)
   : icon(std::move(icon)), percentage(percentage), color(std::move(color)), detailOnly(detailOnly) {}
 
 extern EnumMap<EntityHighlightEffectType> const EntityHighlightEffectTypeNames{

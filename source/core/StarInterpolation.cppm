@@ -1,6 +1,5 @@
 module;
 import std;
-import star.maybe;
 import star.format;
 
 import star.math_common;
@@ -38,7 +37,7 @@ T2 lerp(T1 const& offset, T2 const& f0, T2 const& f1) {
 }
 
 template <typename T1, typename T2>
-T2 lerpWithLimit(Maybe<T2> const& limit, T1 const& offset, T2 const& f0, T2 const& f1) {
+T2 lerpWithLimit(std::optional<T2> const& limit, T1 const& offset, T2 const& f0, T2 const& f1) {
   if (limit && std::abs(f1 - f0) > *limit)
     return f1;
   return lerp(offset, f0, f1);

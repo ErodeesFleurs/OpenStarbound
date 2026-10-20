@@ -21,7 +21,6 @@ import star.thread;
 import star.map;
 import star.set;
 import star.vector;
-import star.maybe;
 import star.color;
 import star.string;
 import star.image_processing;
@@ -107,8 +106,8 @@ public:
 
   struct InspectionResult {
     String message;
-    Maybe<String> objectName = {};
-    Maybe<EntityId> entityId = {};
+    std::optional<String> objectName = {};
+    std::optional<EntityId> entityId = {};
   };
 
   InspectionTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
@@ -153,7 +152,7 @@ private:
   float m_ambientInspectionRadius;
   std::size_t m_fullInspectionSpaces;
   float m_minimumInspectionLevel;
-  Maybe<HashSet<EntityType>> m_inspectableTypeFilter;
+  std::optional<HashSet<EntityType>> m_inspectableTypeFilter;
 
   FireMode m_lastFireMode;
   List<InspectionResult> m_inspectionResults;
@@ -291,14 +290,14 @@ InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) 
 
   // if there's a candidate InspectableEntity at the position, make sure that entity's total inspection level
   // is above the minimum threshold
-  auto check = [&](std::shared_ptr<InspectableEntity> entity) -> Maybe<InspectionTool::InspectionResult> {
+  auto check = [&](std::shared_ptr<InspectableEntity> entity) -> std::optional<InspectionTool::InspectionResult> {
     if (m_inspectableTypeFilter && !m_inspectableTypeFilter->contains(entity->entityType()))
       return {};
     if (entity->inspectable() && inspectionLevel(entity) >= m_minimumInspectionLevel) {
       if (m_allowScanning)
-        return { { entity->inspectionDescription(species).value(), entity->inspectionLogName(), entity->entityId() } };
+        return InspectionResult{entity->inspectionDescription(species).value_or(String{}), entity->inspectionLogName(), entity->entityId()};
       else
-        return { { entity->inspectionDescription(species).value(), {}, {} } };
+        return InspectionResult{entity->inspectionDescription(species).value_or(String{}), {}, {}};
     }
     return {};
   };

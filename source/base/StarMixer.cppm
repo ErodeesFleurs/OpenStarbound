@@ -8,7 +8,6 @@ import star.list;
 import star.map;
 import star.set;
 import star.vector;
-import star.maybe;
 import star.bi_map;
 
 namespace Star {
@@ -35,8 +34,8 @@ class AudioInstance {
 public:
   AudioInstance(Audio const& audio);
 
-  Maybe<Vec2F> position() const;
-  void setPosition(Maybe<Vec2F> position);
+  std::optional<Vec2F> position() const;
+  void setPosition(std::optional<Vec2F> position);
   // If the audio has no position, sets the position to zero before translating
   void translate(Vec2F const& distance);
 
@@ -64,8 +63,8 @@ public:
 
   // If set, uses wall clock time in milliseconds to set precise start and stop
   // times for the AudioInstance
-  void setClockStart(Maybe<std::int64_t> clockStartTime);
-  void setClockStop(Maybe<std::int64_t> clockStopTime, std::int64_t fadeOutTime = 0);
+  void setClockStart(std::optional<std::int64_t> clockStartTime);
+  void setClockStop(std::optional<std::int64_t> clockStopTime, std::int64_t fadeOutTime = 0);
 
   void stop(float rampTime = 0.0f);
   bool finished() const;
@@ -89,11 +88,11 @@ private:
   bool m_stopping;
   bool m_finished;
 
-  Maybe<Vec2F> m_position;
+  std::optional<Vec2F> m_position;
   float m_rangeMultiplier;
 
-  Maybe<std::int64_t> m_clockStart;
-  Maybe<std::int64_t> m_clockStop;
+  std::optional<std::int64_t> m_clockStart;
+  std::optional<std::int64_t> m_clockStop;
   std::int64_t m_clockStopFadeOut;
 };
 

@@ -28,7 +28,6 @@ import std;
 import star.format;
 import star.version;
 import star.id_map;
-import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.lua;
@@ -297,7 +296,7 @@ StringSet ItemDatabase::itemTags(String const& itemName) const {
   return itemData(itemName).itemTags;
 }
 
-ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json parameters, Maybe<float> level, Maybe<std::uint64_t> seed) const {
+ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json parameters, std::optional<float> level, std::optional<std::uint64_t> seed) const {
   auto const& data = itemData(itemName);
 
   ItemConfig itemConfig;
@@ -319,7 +318,7 @@ ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json p
   return itemConfig;
 }
 
-Maybe<String> ItemDatabase::itemFile(String const& itemName) const {
+std::optional<String> ItemDatabase::itemFile(String const& itemName) const {
   if (!hasItem(itemName)) {
     return {};
   }
@@ -327,7 +326,7 @@ Maybe<String> ItemDatabase::itemFile(String const& itemName) const {
   return data.directory + data.filename;
 }
 
-std::shared_ptr<Item> ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, Maybe<std::uint64_t> seed) const {
+std::shared_ptr<Item> ItemDatabase::itemShared(ItemDescriptor descriptor, std::optional<float> level, std::optional<std::uint64_t> seed) const {
   if (!descriptor)
     return {};
 
@@ -346,7 +345,7 @@ std::shared_ptr<Item> ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<
   }
 }
 
-std::shared_ptr<Item> ItemDatabase::item(ItemDescriptor descriptor, Maybe<float> level, Maybe<std::uint64_t> seed, bool ignoreInvalid) const {
+std::shared_ptr<Item> ItemDatabase::item(ItemDescriptor descriptor, std::optional<float> level, std::optional<std::uint64_t> seed, bool ignoreInvalid) const {
   if (!descriptor)
     return {};
   else
@@ -513,13 +512,13 @@ std::shared_ptr<Item> ItemDatabase::applyAugment(std::shared_ptr<Item> const ite
     script.addCallbacks("item", LuaBindings::makeItemCallbacks(augment));
     script.addCallbacks("config", LuaBindings::makeConfigCallbacks(std::bind(&Item::instanceValue, augment, std::placeholders::_1, std::placeholders::_2)));
     script.init();
-    auto luaResult = script.invoke<LuaTupleReturn<Json, Maybe<std::uint64_t>>>("apply", item->descriptor().toJson());
+    auto luaResult = script.invoke<LuaTupleReturn<Json, std::optional<std::uint64_t>>>("apply", item->descriptor().toJson());
     script.uninit();
     locker.unlock();
 
     if (luaResult) {
       if (!std::get<0>(*luaResult).isNull()) {
-        augment->take(std::get<1>(*luaResult).value(1));
+        augment->take(std::get<1>(*luaResult).value_or(1));
         return ItemDatabase::item(ItemDescriptor(std::get<0>(*luaResult)), {}, {}, false);
       }
     }
@@ -545,7 +544,7 @@ bool ItemDatabase::ageItem(std::shared_ptr<Item>& item, double aging) const {
   script.setLuaRoot(m_luaRoot);
   script.setScripts(itemData.agingScripts);
   script.init();
-  auto aged = script.invoke<Json>("ageItem", original.toJson(), aging).apply(construct<ItemDescriptor>());
+  auto aged = script.invoke<Json>("ageItem", original.toJson(), aging).transform(construct<ItemDescriptor>());
   script.uninit();
   locker.unlock();
 
@@ -617,7 +616,7 @@ std::shared_ptr<Item> ItemDatabase::createItem(ItemType type, ItemConfig const& 
   }
 }
 
-std::shared_ptr<Item> ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level, Maybe<std::uint64_t> seed, bool ignoreInvalid) const {
+std::shared_ptr<Item> ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, std::optional<float> level, std::optional<std::uint64_t> seed, bool ignoreInvalid) const {
   std::shared_ptr<Item> result;
   ItemDescriptor newDescriptor = descriptor;
 
@@ -692,8 +691,8 @@ void ItemDatabase::addItemSet(ItemType type, String const& extension) {
       data.assetsConfig = file;
       data.name = config.get("itemName").toString();
       data.friendlyName = config.getString("shortdescription", {});
-      data.itemTags = config.opt("itemTags").apply(jsonToStringSet).value();
-      data.agingScripts = config.opt("itemAgingScripts").apply(jsonToStringList).value();
+      data.itemTags = config.opt("itemTags").transform(jsonToStringSet).value_or(StringSet{});
+      data.agingScripts = config.opt("itemAgingScripts").transform(jsonToStringList).value_or(StringList{});
       data.directory = AssetPath::directory(file);
       data.filename = AssetPath::filename(file);
 
@@ -717,8 +716,8 @@ void ItemDatabase::addObjectDropItem(String const& objectPath, Json const& objec
   data.type = ItemType::ObjectItem;
   data.name = objectConfig.get("objectName").toString();
   data.friendlyName = objectConfig.getString("shortdescription", {});
-  data.itemTags = objectConfig.opt("itemTags").apply(jsonToStringSet).value();
-  data.agingScripts = objectConfig.opt("itemAgingScripts").apply(jsonToStringList).value();
+  data.itemTags = objectConfig.opt("itemTags").transform(jsonToStringSet).value_or(StringSet{});
+  data.agingScripts = objectConfig.opt("itemAgingScripts").transform(jsonToStringList).value_or(StringList{});
   data.directory = AssetPath::directory(objectPath);
   data.filename = AssetPath::filename(objectPath);
   JsonObject customConfig = objectConfig.toObject();

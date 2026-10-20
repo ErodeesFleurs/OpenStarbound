@@ -2,7 +2,6 @@ module;
 
 import std;
 import star.string;
-import star.maybe;
 import star.format;
 import star.json;
 import star.bi_map;
@@ -32,7 +31,7 @@ struct TechConfig {
   TechType type;
 
   StringList scripts;
-  Maybe<String> animationConfig;
+  std::optional<String> animationConfig;
 
   String description;
   String shortDescription;

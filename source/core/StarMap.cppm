@@ -5,7 +5,7 @@ import std;
 
 import star.flat_hash_map;
 import star.list;
-import star.maybe;
+import star.optional;
 import star.hash;
 import star.format;
 
@@ -55,7 +55,7 @@ public:
   // Throws exception if key not found
   mapped_type take(key_type const& k);
 
-  Maybe<mapped_type> maybeTake(key_type const& k);
+  std::optional<mapped_type> maybeTake(key_type const& k);
 
   // Throws exception if key not found
   mapped_type& get(key_type const& k);
@@ -64,7 +64,7 @@ public:
   // Return d if key not found
   mapped_type value(key_type const& k, mapped_type d = mapped_type()) const;
 
-  Maybe<mapped_type> maybe(key_type const& k) const;
+  std::optional<mapped_type> maybe(key_type const& k) const;
 
   mapped_const_ptr ptr(key_type const& k) const;
   mapped_ptr ptr(key_type const& k);
@@ -112,11 +112,11 @@ public:
 
   template <typename LookupKey>
     requires requires(Base const& base, LookupKey const& key) { base.find(key); }
-  Maybe<mapped_type> maybe(LookupKey const& key) const {
+  std::optional<mapped_type> maybe(LookupKey const& key) const {
     auto position = Base::find(key);
     if (position == Base::end())
       return {};
-    return position->second;
+    return std::optional<mapped_type>(std::in_place, position->second);
   }
 
   template <typename LookupKey>
@@ -223,17 +223,17 @@ bool MapMixin<BaseMap>::removeValues(mapped_type const& v) {
 template <typename BaseMap>
 auto MapMixin<BaseMap>::take(key_type const& k) -> mapped_type {
   if (auto v = maybeTake(k))
-    return v.take();
+    return std::move(v.value());
   throw MapException(strf("Key '{}' not found in Map::take()", outputAny(k)));
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::maybeTake(key_type const& k) -> Maybe<mapped_type> {
+auto MapMixin<BaseMap>::maybeTake(key_type const& k) -> std::optional<mapped_type> {
   const_iterator i = Base::find(k);
   if (i != Base::end()) {
     mapped_type v = std::move(i->second);
     Base::erase(i);
-    return v;
+    return std::optional<mapped_type>(std::in_place, std::move(v));
   }
 
   return {};
@@ -265,12 +265,12 @@ auto MapMixin<BaseMap>::value(key_type const& k, mapped_type d) const -> mapped_
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::maybe(key_type const& k) const -> Maybe<mapped_type> {
+auto MapMixin<BaseMap>::maybe(key_type const& k) const -> std::optional<mapped_type> {
   auto i = Base::find(k);
   if (i == Base::end())
     return {};
   else
-    return i->second;
+    return std::optional<mapped_type>(std::in_place, i->second);
 }
 
 template <typename BaseMap>
@@ -357,7 +357,16 @@ void printMap(std::ostream& os, MapType const& m) {
       os << "\"";
     else
       os << ", \"";
-    os << i->first << "\" : \"" << i->second << "\"";
+    if constexpr (requires { outputOptional(i->first); })
+      os << outputOptional(i->first);
+    else
+      os << i->first;
+    os << "\" : \"";
+    if constexpr (requires { outputOptional(i->second); })
+      os << outputOptional(i->second);
+    else
+      os << i->second;
+    os << "\"";
   }
   os << " }";
 }

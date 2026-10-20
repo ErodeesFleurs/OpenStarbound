@@ -1,7 +1,6 @@
 module;
 import std;
 import star.map;
-import star.maybe;
 import star.format;
 import star.string;
 import star.either;
@@ -55,7 +54,7 @@ public:
   // ready for I/O or have had error events occur on them within the timeout,
   // nothing otherwise.  If socket hangup occurs during this call, this will
   // automatically shut down the socket.
-  static Maybe<SocketPollResult> poll(SocketPollQuery const& query, unsigned timeout);
+  static std::optional<SocketPollResult> poll(SocketPollQuery const& query, unsigned timeout);
 
   // Wait for native read/write readiness or shutdown until a steady deadline.
   // Retains the native handle, not m_mutex, so close can shut down and wake it.

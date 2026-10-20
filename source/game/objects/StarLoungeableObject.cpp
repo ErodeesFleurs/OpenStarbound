@@ -24,7 +24,6 @@ import star.set;
 import star.lua;
 import star.audio;
 import star.map;
-import star.maybe;
 import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
@@ -105,7 +104,7 @@ void LoungeableObject::render(RenderCallback* renderCallback) {
 InteractAction LoungeableObject::interact(InteractRequest const& request) {
   auto res = Object::interact(request);
   if (res.type == InteractActionType::None && !m_sitPositions.empty()) {
-    Maybe<std::size_t> index;
+    std::optional<std::size_t> index;
     Vec2F interactOffset =
         direction() == Direction::Right ? position() - request.interactPosition : request.interactPosition - position();
     for (std::size_t i = 0; i < m_sitPositions.size(); ++i) {

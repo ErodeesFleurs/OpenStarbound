@@ -5,7 +5,6 @@ import star.format;
 import star.json;
 import star.id_map;
 import star.game_types;
-import star.maybe;
 import star.poly;
 import star.variant;
 import star.casting;
@@ -55,20 +54,20 @@ struct ActorJumpProfile {
 
   ActorJumpProfile merge(ActorJumpProfile const& rhs) const;
 
-  Maybe<float> jumpSpeed;
-  Maybe<float> jumpControlForce;
-  Maybe<float> jumpInitialPercentage;
+  std::optional<float> jumpSpeed;
+  std::optional<float> jumpControlForce;
+  std::optional<float> jumpInitialPercentage;
 
   // If this is greater than 0.0, jump hold time is limited by this factor.
-  Maybe<float> jumpHoldTime;
+  std::optional<float> jumpHoldTime;
   // If this is greater than 0.0, then the total jump time for *all jumps in a
   // multi jump set* is limited by this factor.
-  Maybe<float> jumpTotalHoldTime;
+  std::optional<float> jumpTotalHoldTime;
 
-  Maybe<bool> multiJump;
-  Maybe<float> reJumpDelay;
-  Maybe<bool> autoJump;
-  Maybe<bool> collisionCancelled;
+  std::optional<bool> multiJump;
+  std::optional<float> reJumpDelay;
+  std::optional<bool> autoJump;
+  std::optional<bool> collisionCancelled;
 };
 
 DataStream& operator>>(DataStream& ds, ActorJumpProfile& movementParameters);
@@ -95,60 +94,60 @@ struct ActorMovementParameters {
   // set parameters in rhs overwriting the ones in this set.
   ActorMovementParameters merge(ActorMovementParameters const& rhs) const;
 
-  Maybe<float> mass;
-  Maybe<float> gravityMultiplier;
-  Maybe<float> liquidBuoyancy;
-  Maybe<float> airBuoyancy;
-  Maybe<float> bounceFactor;
-  Maybe<bool> stopOnFirstBounce;
-  Maybe<bool> enableSurfaceSlopeCorrection;
-  Maybe<float> slopeSlidingFactor;
-  Maybe<float> maxMovementPerStep;
-  Maybe<float> maximumCorrection;
-  Maybe<float> speedLimit;
+  std::optional<float> mass;
+  std::optional<float> gravityMultiplier;
+  std::optional<float> liquidBuoyancy;
+  std::optional<float> airBuoyancy;
+  std::optional<float> bounceFactor;
+  std::optional<bool> stopOnFirstBounce;
+  std::optional<bool> enableSurfaceSlopeCorrection;
+  std::optional<float> slopeSlidingFactor;
+  std::optional<float> maxMovementPerStep;
+  std::optional<float> maximumCorrection;
+  std::optional<float> speedLimit;
 
-  Maybe<PolyF> standingPoly;
-  Maybe<PolyF> crouchingPoly;
+  std::optional<PolyF> standingPoly;
+  std::optional<PolyF> crouchingPoly;
 
-  Maybe<bool> stickyCollision;
-  Maybe<float> stickyForce;
+  std::optional<bool> stickyCollision;
+  std::optional<float> stickyForce;
 
-  Maybe<float> walkSpeed;
-  Maybe<float> runSpeed;
-  Maybe<float> flySpeed;
+  std::optional<float> walkSpeed;
+  std::optional<float> runSpeed;
+  std::optional<float> flySpeed;
 
-  Maybe<float> airFriction;
-  Maybe<float> liquidFriction;
+  std::optional<float> airFriction;
+  std::optional<float> liquidFriction;
 
-  Maybe<float> minimumLiquidPercentage;
-  Maybe<float> liquidImpedance;
+  std::optional<float> minimumLiquidPercentage;
+  std::optional<float> liquidImpedance;
 
-  Maybe<float> normalGroundFriction;
-  Maybe<float> ambulatingGroundFriction;
+  std::optional<float> normalGroundFriction;
+  std::optional<float> ambulatingGroundFriction;
 
-  Maybe<float> groundForce;
-  Maybe<float> airForce;
-  Maybe<float> liquidForce;
+  std::optional<float> groundForce;
+  std::optional<float> airForce;
+  std::optional<float> liquidForce;
 
   ActorJumpProfile airJumpProfile;
   ActorJumpProfile liquidJumpProfile;
 
-  Maybe<float> fallStatusSpeedMin;
-  Maybe<int> fallThroughSustainFrames;
-  Maybe<float> maximumPlatformCorrection;
-  Maybe<float> maximumPlatformCorrectionVelocityFactor;
+  std::optional<float> fallStatusSpeedMin;
+  std::optional<int> fallThroughSustainFrames;
+  std::optional<float> maximumPlatformCorrection;
+  std::optional<float> maximumPlatformCorrectionVelocityFactor;
 
-  Maybe<StringSet> physicsEffectCategories;
+  std::optional<StringSet> physicsEffectCategories;
 
-  Maybe<float> groundMovementMinimumSustain;
-  Maybe<float> groundMovementMaximumSustain;
-  Maybe<float> groundMovementCheckDistance;
+  std::optional<float> groundMovementMinimumSustain;
+  std::optional<float> groundMovementMaximumSustain;
+  std::optional<float> groundMovementCheckDistance;
 
-  Maybe<bool> collisionEnabled;
-  Maybe<bool> frictionEnabled;
-  Maybe<bool> gravityEnabled;
+  std::optional<bool> collisionEnabled;
+  std::optional<bool> frictionEnabled;
+  std::optional<bool> gravityEnabled;
 
-  Maybe<float> pathExploreRate;
+  std::optional<float> pathExploreRate;
 };
 
 DataStream& operator>>(DataStream& ds, ActorMovementParameters& movementParameters);
@@ -225,7 +224,7 @@ public:
   // AnchorableEntity state.
   void setAnchorState(EntityAnchorState anchorState);
   void resetAnchorState();
-  Maybe<EntityAnchorState> anchorState() const;
+  std::optional<EntityAnchorState> anchorState() const;
   std::shared_ptr<EntityAnchor const> entityAnchor() const;
 
   // ActorMovementController position and rotation honor the entity anchor, if
@@ -274,8 +273,8 @@ public:
   void controlJump(bool jumpEvenIfUnable = false);
   void controlFly(Vec2F const& velocity);
 
-  Maybe<std::pair<Vec2F, bool>> pathMove(Vec2F const& pathPosition, bool run = false, Maybe<PlatformerAStar::Parameters> const& parameters = {});
-  Maybe<std::pair<Vec2F, bool>> controlPathMove(Vec2F const& pathPosition, bool run = false, Maybe<PlatformerAStar::Parameters> const& parameters = {});
+  std::optional<std::pair<Vec2F, bool>> pathMove(Vec2F const& pathPosition, bool run = false, std::optional<PlatformerAStar::Parameters> const& parameters = {});
+  std::optional<std::pair<Vec2F, bool>> controlPathMove(Vec2F const& pathPosition, bool run = false, std::optional<PlatformerAStar::Parameters> const& parameters = {});
 
   // Used for user controller input.
   void setMoveSpeedMultiplier(float multiplier = 1.0f);
@@ -304,7 +303,7 @@ private:
   };
 
   void applyMCParameters(ActorMovementParameters const& parameters);
-  void doSetAnchorState(Maybe<EntityAnchorState> anchorState);
+  void doSetAnchorState(std::optional<EntityAnchorState> anchorState);
 
   ActorMovementParameters m_baseParameters;
   ActorMovementModifiers m_baseModifiers;
@@ -322,7 +321,7 @@ private:
   NetElementBool m_jumping;
   NetElementBool m_groundMovement;
   NetElementBool m_liquidMovement;
-  NetElementData<Maybe<EntityAnchorState>> m_anchorState;
+  NetElementData<std::optional<EntityAnchorState>> m_anchorState;
   std::shared_ptr<EntityAnchor const> m_entityAnchor;
 
   // Command data
@@ -333,18 +332,18 @@ private:
   List<ApproachVelocityCommand> m_controlApproachVelocities;
   List<ApproachVelocityAlongAngleCommand> m_controlApproachVelocityAlongAngles;
 
-  Maybe<Direction> m_controlMove;
-  Maybe<Direction> m_controlFace;
+  std::optional<Direction> m_controlMove;
+  std::optional<Direction> m_controlFace;
   bool m_controlRun;
   bool m_controlCrouch;
   bool m_controlDown;
   bool m_controlJump;
   bool m_controlJumpAnyway;
 
-  Maybe<Vec2F> m_controlFly;
+  std::optional<Vec2F> m_controlFly;
 
-  Maybe<std::pair<Vec2F, bool>> m_controlPathMove;
-  Maybe<std::pair<Vec2F, bool>> m_pathMoveResult;
+  std::optional<std::pair<Vec2F, bool>> m_controlPathMove;
+  std::optional<std::pair<Vec2F, bool>> m_pathMoveResult;
   std::shared_ptr<PathController> m_pathController;
 
   ActorMovementParameters m_controlParameters;
@@ -358,7 +357,7 @@ private:
   float m_moveSpeedMultiplier;
 
   GameTimer m_reJumpTimer;
-  Maybe<GameTimer> m_jumpHoldTimer;
+  std::optional<GameTimer> m_jumpHoldTimer;
   GameTimer m_groundMovementSustainTimer;
 
   // Target horizontal velocity for walking / running
@@ -373,13 +372,13 @@ public:
   void setParameters(PlatformerAStar::Parameters const& parameters);
   void reset();
   bool pathfinding() const;
-  Maybe<Vec2F> targetPosition() const;
-  Maybe<Direction> facing() const;
-  Maybe<PlatformerAStar::Action> curAction() const;
+  std::optional<Vec2F> targetPosition() const;
+  std::optional<Direction> facing() const;
+  std::optional<PlatformerAStar::Action> curAction() const;
 
   // return true for reaching goal, false for failing to find path, nothing for running
-  Maybe<bool> findPath(ActorMovementController& movementController, Vec2F const& targetPosition);
-  Maybe<bool> move(ActorMovementController& movementController, ActorMovementParameters const& parameters, ActorMovementModifiers const& modifiers, bool run, float dt);
+  std::optional<bool> findPath(ActorMovementController& movementController, Vec2F const& targetPosition);
+  std::optional<bool> move(ActorMovementController& movementController, ActorMovementParameters const& parameters, ActorMovementModifiers const& modifiers, bool run, float dt);
 private:
   bool validateEdge(ActorMovementController& movementController, PlatformerAStar::Edge const& edge);
   bool movingCollision(ActorMovementController& movementController, PolyF const& collisionPoly);
@@ -390,15 +389,15 @@ private:
   World* m_world;
   PlatformerAStar::Parameters m_parameters;
 
-  Maybe<Vec2F> m_startPosition;
-  Maybe<Vec2F> m_targetPosition;
+  std::optional<Vec2F> m_startPosition;
+  std::optional<Vec2F> m_targetPosition;
   std::shared_ptr<PlatformerAStar::PathFinder> m_pathFinder;
 
-  Maybe<Direction> m_controlFace;
+  std::optional<Direction> m_controlFace;
 
   std::size_t m_edgeIndex;
   float m_edgeTimer;
-  Maybe<PlatformerAStar::Path> m_path;
+  std::optional<PlatformerAStar::Path> m_path;
 };
 
 }

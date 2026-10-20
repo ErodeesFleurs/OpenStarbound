@@ -19,7 +19,6 @@ import star.ordered_map;
 import star.audio;
 import star.map;
 import star.set;
-import star.maybe;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;

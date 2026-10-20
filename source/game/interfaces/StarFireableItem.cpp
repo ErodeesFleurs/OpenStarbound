@@ -17,7 +17,6 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
@@ -116,7 +115,7 @@ void FireableItem::init(ToolUserEntity* owner, ToolHand hand) {
   m_fireWhenReady = false;
   m_startWhenReady = false;
 
-  auto scripts = m_fireableParams.opt("scripts").apply(jsonToStringList);
+  auto scripts = m_fireableParams.opt("scripts").transform(jsonToStringList);
   if (entityMode() == EntityMode::Master && scripts) {
     if (!m_scriptComponent) {
       m_scriptComponent.emplace(owner->root());

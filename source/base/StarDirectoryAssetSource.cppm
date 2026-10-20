@@ -3,7 +3,6 @@ import std;
 import star.byte_array;
 
 import star.list;
-import star.maybe;
 import star.json;
 import star.io_device;
 import star.asset_source;
@@ -49,7 +48,7 @@ private:
   Logger& m_logger;
   String m_baseDirectory;
   List<String> m_ignorePatterns;
-  Maybe<String> m_metadataFile;
+  std::optional<String> m_metadataFile;
   JsonObject m_metadata;
   StringList m_assetPaths;
 };

@@ -16,7 +16,6 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
@@ -80,13 +79,13 @@ ToolUserEntity* ToolUserItem::owner() const {
 EntityMode ToolUserItem::entityMode() const {
   if (!m_owner)
     throw ToolUserItemException("Not initialized in ToolUserItem::entityMode");
-  return *m_owner->entityMode();
+  return m_owner->entityMode().value();
 }
 
 ToolHand ToolUserItem::hand() const {
   if (!m_owner)
     throw ToolUserItemException("Not initialized in ToolUserItem::hand");
-  return *m_hand;
+  return m_hand.value();
 }
 
 World* ToolUserItem::world() const {

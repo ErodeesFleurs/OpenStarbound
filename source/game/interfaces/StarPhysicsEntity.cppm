@@ -1,7 +1,6 @@
 module;
 import std;
 import star.type_identity;
-import star.maybe;
 import star.json;
 import star.id_map;
 import star.poly;
@@ -82,7 +81,7 @@ public:
   virtual List<PhysicsForceRegion> forceRegions() const;
 
   virtual std::size_t movingCollisionCount() const;
-  virtual Maybe<PhysicsMovingCollision> movingCollision(std::size_t positionIndex) const;
+  virtual std::optional<PhysicsMovingCollision> movingCollision(std::size_t positionIndex) const;
 };
 
 }

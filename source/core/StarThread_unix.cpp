@@ -17,7 +17,6 @@ import std;
 import star.unique_function;
 import star.thread;
 import star.string;
-import star.maybe;
 import star.format;
 import star.time;
 import star.logging;
@@ -381,7 +380,7 @@ ConditionVariable::~ConditionVariable() {}
 
 ConditionVariable& ConditionVariable::operator=(ConditionVariable&&) = default;
 
-void ConditionVariable::wait(Mutex& mutex, Maybe<unsigned> millis) {
+void ConditionVariable::wait(Mutex& mutex, std::optional<unsigned> millis) {
   if (millis)
     m_impl->wait(mutex, *millis);
   else

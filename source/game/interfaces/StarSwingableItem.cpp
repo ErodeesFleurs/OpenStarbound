@@ -15,7 +15,6 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
@@ -71,7 +70,7 @@ void SwingableItem::setParams(Json const& params) {
   m_swingStart = params.getFloat("swingStart", 60) * std::numbers::pi / 180;
   m_swingFinish = params.getFloat("swingFinish", -40) * std::numbers::pi / 180;
   m_swingAimFactor = params.getFloat("swingAimFactor", 1);
-  m_coolingDownAngle = params.optFloat("coolingDownAngle").apply([](float angle) { return angle * std::numbers::pi / 180; });
+  m_coolingDownAngle = params.optFloat("coolingDownAngle").transform([](float angle) { return angle * std::numbers::pi / 180; });
   FireableItem::setParams(params);
 }
 

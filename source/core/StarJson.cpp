@@ -5,7 +5,6 @@ import star.xx_hash;
 import star.string;
 import star.list;
 import star.map;
-import star.maybe;
 import star.variant;
 import star.data_stream;
 import star.algorithm;
@@ -272,55 +271,55 @@ Json::IteratorWrapper<JsonObject> Json::iterateObject() const {
   return IteratorWrapper<JsonObject>{objectPtr()};
 }
 
-Maybe<Json> Json::opt() const {
+std::optional<Json> Json::opt() const {
   if (isNull())
     return {};
   return *this;
 }
 
-Maybe<double> Json::optDouble() const {
+std::optional<double> Json::optDouble() const {
   if (isNull())
     return {};
   return toDouble();
 }
 
-Maybe<float> Json::optFloat() const {
+std::optional<float> Json::optFloat() const {
   if (isNull())
     return {};
   return toFloat();
 }
 
-Maybe<bool> Json::optBool() const {
+std::optional<bool> Json::optBool() const {
   if (isNull())
     return {};
   return toBool();
 }
 
-Maybe<std::int64_t> Json::optInt() const {
+std::optional<std::int64_t> Json::optInt() const {
   if (isNull())
     return {};
   return toInt();
 }
 
-Maybe<std::uint64_t> Json::optUInt() const {
+std::optional<std::uint64_t> Json::optUInt() const {
   if (isNull())
     return {};
   return toUInt();
 }
 
-Maybe<String> Json::optString() const {
+std::optional<String> Json::optString() const {
   if (isNull())
     return {};
   return toString();
 }
 
-Maybe<JsonArray> Json::optArray() const {
+std::optional<JsonArray> Json::optArray() const {
   if (isNull())
     return {};
   return toArray();
 }
 
-Maybe<JsonObject> Json::optObject() const {
+std::optional<JsonObject> Json::optObject() const {
   if (isNull())
     return {};
   return toObject();
@@ -534,63 +533,63 @@ JsonObject Json::getObject(String const& key, JsonObject def) const {
   return def;
 }
 
-Maybe<Json> Json::opt(String const& key) const {
+std::optional<Json> Json::opt(String const& key) const {
   auto p = ptr(key);
   if (p && *p)
     return *p;
   return {};
 }
 
-Maybe<double> Json::optDouble(String const& key) const {
+std::optional<double> Json::optDouble(String const& key) const {
   auto p = ptr(key);
   if (p && *p)
     return p->toDouble();
   return {};
 }
 
-Maybe<float> Json::optFloat(String const& key) const {
+std::optional<float> Json::optFloat(String const& key) const {
   auto p = ptr(key);
   if (p && *p)
     return p->toFloat();
   return {};
 }
 
-Maybe<bool> Json::optBool(String const& key) const {
+std::optional<bool> Json::optBool(String const& key) const {
   auto p = ptr(key);
   if (p && *p)
     return p->toBool();
   return {};
 }
 
-Maybe<std::int64_t> Json::optInt(String const& key) const {
+std::optional<std::int64_t> Json::optInt(String const& key) const {
   auto p = ptr(key);
   if (p && *p)
     return p->toInt();
   return {};
 }
 
-Maybe<std::uint64_t> Json::optUInt(String const& key) const {
+std::optional<std::uint64_t> Json::optUInt(String const& key) const {
   auto p = ptr(key);
   if (p && *p)
     return p->toUInt();
   return {};
 }
 
-Maybe<String> Json::optString(String const& key) const {
+std::optional<String> Json::optString(String const& key) const {
   auto p = ptr(key);
   if (p && *p)
     return p->toString();
   return {};
 }
 
-Maybe<JsonArray> Json::optArray(String const& key) const {
+std::optional<JsonArray> Json::optArray(String const& key) const {
   auto p = ptr(key);
   if (p && *p)
     return p->toArray();
   return {};
 }
 
-Maybe<JsonObject> Json::optObject(String const& key) const {
+std::optional<JsonObject> Json::optObject(String const& key) const {
   auto p = ptr(key);
   if (p && *p)
     return p->toObject();
@@ -695,63 +694,63 @@ JsonObject Json::queryObject(String const& query, JsonObject def) const {
   return def;
 }
 
-Maybe<Json> Json::optQuery(String const& path) const {
+std::optional<Json> Json::optQuery(String const& path) const {
   auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
   if (json && *json)
     return *json;
   return {};
 }
 
-Maybe<double> Json::optQueryDouble(String const& path) const {
+std::optional<double> Json::optQueryDouble(String const& path) const {
   auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
   if (json && *json)
     return json->toDouble();
   return {};
 }
 
-Maybe<float> Json::optQueryFloat(String const& path) const {
+std::optional<float> Json::optQueryFloat(String const& path) const {
   auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
   if (json && *json)
     return json->toFloat();
   return {};
 }
 
-Maybe<bool> Json::optQueryBool(String const& path) const {
+std::optional<bool> Json::optQueryBool(String const& path) const {
   auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
   if (json && *json)
     return json->toBool();
   return {};
 }
 
-Maybe<std::int64_t> Json::optQueryInt(String const& path) const {
+std::optional<std::int64_t> Json::optQueryInt(String const& path) const {
   auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
   if (json && *json)
     return json->toInt();
   return {};
 }
 
-Maybe<std::uint64_t> Json::optQueryUInt(String const& path) const {
+std::optional<std::uint64_t> Json::optQueryUInt(String const& path) const {
   auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
   if (json && *json)
     return json->toUInt();
   return {};
 }
 
-Maybe<String> Json::optQueryString(String const& path) const {
+std::optional<String> Json::optQueryString(String const& path) const {
   auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
   if (json && *json)
     return json->toString();
   return {};
 }
 
-Maybe<JsonArray> Json::optQueryArray(String const& path) const {
+std::optional<JsonArray> Json::optQueryArray(String const& path) const {
   auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
   if (json && *json)
     return json->toArray();
   return {};
 }
 
-Maybe<JsonObject> Json::optQueryObject(String const& path) const {
+std::optional<JsonObject> Json::optQueryObject(String const& path) const {
   auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, path);
   if (json && *json)
     return json->toObject();

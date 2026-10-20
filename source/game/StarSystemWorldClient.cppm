@@ -7,7 +7,6 @@ import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -101,7 +100,7 @@ public:
 
   CelestialCoordinate currentSystem() const;
 
-  Maybe<Vec2F> shipPosition() const;
+  std::optional<Vec2F> shipPosition() const;
   SystemLocation shipLocation() const;
   SystemLocation shipDestination() const;
   bool flying() const;
@@ -115,7 +114,7 @@ public:
   List<std::shared_ptr<SystemClientShip>> ships() const;
   std::shared_ptr<SystemClientShip> getShip(Uuid const& uuid) const;
 
-  Uuid spawnObject(String typeName, Maybe<Vec2F> position = {}, Maybe<Uuid> const& uuid = {}, JsonObject parameters = {});
+  Uuid spawnObject(String typeName, std::optional<Vec2F> position = {}, std::optional<Uuid> const& uuid = {}, JsonObject parameters = {});
 
   // returns whether the packet was handled
   bool handleIncomingPacket(std::shared_ptr<Packet> packet);

@@ -6,7 +6,6 @@ import star.list;
 import star.map;
 import star.set;
 import star.variant;
-import star.maybe;
 import star.format;
 import star.json;
 import star.game_types;
@@ -54,7 +53,7 @@ private:
   Set<std::pair<NodeParameterType, String>> m_ephemeral;
 };
 
-typedef Maybe<Variant<ActionState,DecoratorState,CompositeState>> NodeState;
+typedef std::optional<Variant<ActionState,DecoratorState,CompositeState>> NodeState;
 
 typedef std::pair<LuaFunction, LuaThread> Coroutine;
 
@@ -86,7 +85,7 @@ struct CompositeState {
 
 class BehaviorState {
 public:
-  BehaviorState(std::shared_ptr<BehaviorTree const> tree, LuaTable context, Maybe<std::weak_ptr<Blackboard>> blackboard = {});
+  BehaviorState(std::shared_ptr<BehaviorTree const> tree, LuaTable context, std::optional<std::weak_ptr<Blackboard>> blackboard = {});
 
   NodeStatus run(float dt);
   void clear();

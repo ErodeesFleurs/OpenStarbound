@@ -2,7 +2,6 @@ import star.json_extra;
 import star.json;
 import star.id_map;
 import star.game_types;
-import star.maybe;
 import star.variant;
 import star.casting;
 import star.strong_typedef;
@@ -300,7 +299,7 @@ MonsterVariant MonsterDatabase::readMonsterVariantFromJson(Json const& variant) 
 }
 
 std::shared_ptr<Monster> MonsterDatabase::createMonster(
-    MonsterVariant monsterVariant, Maybe<float> level, Json uniqueParameters) const {
+    MonsterVariant monsterVariant, std::optional<float> level, Json uniqueParameters) const {
   if (uniqueParameters) {
     monsterVariant.uniqueParameters = jsonMerge(monsterVariant.uniqueParameters, uniqueParameters);
     monsterVariant.parameters = jsonMerge(monsterVariant.parameters, monsterVariant.uniqueParameters);
@@ -342,7 +341,7 @@ List<Drawable> MonsterDatabase::monsterPortrait(MonsterVariant const& variant) c
   for (auto const& pair : variant.animatorPartTags)
     animator.setPartTag(pair.first, "partImage", pair.second);
   animator.setZoom(variant.animatorZoom);
-  auto colorSwap = variant.colorSwap.value(this->colorSwap(variant.parameters.getString("colors", "default"), variant.seed));
+  auto colorSwap = variant.colorSwap.value_or(this->colorSwap(variant.parameters.getString("colors", "default"), variant.seed));
   if (!colorSwap.empty())
     animator.setProcessingDirectives(imageOperationToString(ColorReplaceImageOperation{colorSwap}));
   auto drawables = animator.drawables();
@@ -438,8 +437,8 @@ Json MonsterDatabase::mergeFinalParameters(JsonArray const& parameters) {
       // Hard-coded merge for scripts and skills parameters, otherwise merge.
       if (pair.first == "scripts" || pair.first == "skills" || pair.first == "specialSkills"
           || pair.first == "baseSkills") {
-        auto array = value.optArray().value();
-        array.appendAll(pair.second.optArray().value());
+        auto array = value.optArray().value_or(JsonArray{});
+        array.appendAll(pair.second.optArray().value_or(JsonArray{}));
         value = std::move(array);
       } else {
         value = jsonMerge(value, pair.second);
@@ -453,14 +452,15 @@ Json MonsterDatabase::mergeFinalParameters(JsonArray const& parameters) {
 }
 
 void MonsterDatabase::readCommonParameters(MonsterVariant& variant) {
-  variant.shortDescription = variant.parameters.optString("shortdescription").orMaybe(variant.shortDescription);
+  auto shortDescription = variant.parameters.optString("shortdescription");
+  variant.shortDescription = shortDescription ? std::move(shortDescription) : variant.shortDescription;
   variant.dropPoolConfig = variant.parameters.get("dropPools", variant.dropPoolConfig);
   variant.scripts = jsonToStringList(variant.parameters.get("scripts"));
   variant.animationScripts = jsonToStringList(variant.parameters.getArray("animationScripts", {}));
   variant.animatorConfig = jsonMerge(variant.animatorConfig, variant.parameters.get("animationCustom", JsonObject()));
   variant.initialScriptDelta = variant.parameters.getUInt("initialScriptDelta", 5);
   variant.metaBoundBox = jsonToRectF(variant.parameters.get("metaBoundBox"));
-  variant.renderLayer = variant.parameters.optString("renderLayer").apply(parseRenderLayer).value(RenderLayerMonster);
+  variant.renderLayer = variant.parameters.optString("renderLayer").transform(parseRenderLayer).value_or(RenderLayerMonster);
   variant.scale = variant.parameters.getFloat("scale");
   variant.movementSettings = ActorMovementParameters(variant.parameters.get("movementSettings", {}));
   variant.walkMultiplier = variant.parameters.getFloat("walkMultiplier", 1.0f);
@@ -493,7 +493,7 @@ void MonsterDatabase::readCommonParameters(MonsterVariant& variant) {
 
   variant.nametagColor = jsonToVec3B(variant.parameters.get("nametagColor", JsonArray{255, 255, 255}));
 
-  variant.colorSwap = variant.parameters.optObject("colorSwap").apply([](JsonObject const& json) -> ColorReplaceMap {
+  variant.colorSwap = variant.parameters.optObject("colorSwap").transform([](JsonObject const& json) -> ColorReplaceMap {
       ColorReplaceMap swaps;
       for (auto pair : json) {
         swaps.insert(Color::fromHex(pair.first).toRgba(), Color::fromHex(pair.second.toString()).toRgba());
@@ -623,8 +623,8 @@ std::pair<Json, Json> MonsterDatabase::chooseSkills(
 Json MonsterDatabase::MonsterType::toJson() const {
   return JsonObject{
     {"type", typeName},
-    {"shortdescription", shortDescription.value()},
-    {"description", description.value()},
+    {"shortdescription", shortDescription.value_or(String{})},
+    {"description", description.value_or(String{})},
     {"categories", jsonFromStringList(categories)},
     {"parts", jsonFromStringList(partTypes)},
     {"animation", animationConfigPath},

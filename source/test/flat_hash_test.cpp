@@ -86,7 +86,7 @@ TEST(FlatHashMap, BorrowedLookupPreservesBytesAndCaseRules) {
   EXPECT_EQ(stable.get(query), 8);
   *values.ptr(query) = 9;
   EXPECT_EQ(values.value(query), 9);
-  EXPECT_EQ(values.maybe(query).get(), 9);
+  EXPECT_EQ(values.maybe(query).value(), 9);
   CaseInsensitiveStringMap<int> insensitive{{"MiXeD中", 10}};
   EXPECT_EQ(insensitive.get(StringView("mixed中")), 10);
   EXPECT_EQ(Color(StringView("RED")), Color::Red);

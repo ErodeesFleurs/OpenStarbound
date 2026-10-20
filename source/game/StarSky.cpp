@@ -8,7 +8,6 @@ import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -25,6 +24,7 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
+import star.optional;
 import star.string;
 import star.version;
 import star.time;
@@ -111,7 +111,7 @@ void Sky::startFlying(bool enterHyperspace, bool startInWarp, Json settings) {
   }
 }
 
-void Sky::stopFlyingAt(Maybe<SkyParameters> dest) {
+void Sky::stopFlyingAt(std::optional<SkyParameters> dest) {
   m_destWorld = dest;
 }
 
@@ -233,13 +233,13 @@ void Sky::update(double dt) {
       if (m_warpPhase == WarpPhase::SpeedingUp && m_flyingTimer >= speedupTime()
           && !m_enterHyperspace
           && m_destWorld) {
-        jumpTo(m_destWorld.take());
+        jumpTo(takeOptional(m_destWorld));
         m_warpPhase = WarpPhase::SlowingDown;
       } else if (m_warpPhase == WarpPhase::SpeedingUp && m_flyingTimer >= speedupTime() && m_enterHyperspace) {
         m_warpPhase = WarpPhase::Maintain;
       } else if (m_warpPhase == WarpPhase::Maintain && m_flyingTimer >= m_settings.queryFloat("flyingTimer")
           && m_destWorld) {
-        jumpTo(m_destWorld.take());
+        jumpTo(takeOptional(m_destWorld));
         m_warpPhase = WarpPhase::SlowingDown;
       } else if (m_warpPhase == WarpPhase::SlowingDown && m_flyingTimer >= slowdownTime()) {
         m_flyingType = FlyingType::Arriving;
@@ -277,7 +277,7 @@ std::uint64_t Sky::seed() const {
 }
 
 float Sky::dayLength() const {
-  return m_skyParameters.dayLength.value(DefaultDayLength);
+  return m_skyParameters.dayLength.value_or(DefaultDayLength);
 }
 
 std::uint32_t Sky::day() const {

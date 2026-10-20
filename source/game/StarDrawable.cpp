@@ -153,8 +153,8 @@ Drawable::Drawable(ImageMetadataDatabase const& imageMetadata, Json const& json)
 
     part = ImagePart{std::move(imageString), std::move(transformation)};
   }
-  position = json.opt("position").apply(jsonToVec2F).value();
-  color = json.opt("color").apply(jsonToColor).value(Color::White);
+  position = json.opt("position").transform(jsonToVec2F).value_or(Vec2F{});
+  color = json.opt("color").transform(jsonToColor).value_or(Color::White);
   fullbright = json.getBool("fullbright", false);
 }
 

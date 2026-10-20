@@ -9,7 +9,6 @@ import star.random;
 import star.ttl_cache;
 import star.casting;
 import star.game_types;
-import star.maybe;
 import star.variant;
 import star.strong_typedef;
 import star.rpc_promise;
@@ -186,8 +185,8 @@ Root::Root(Settings settings) : m_identity(m_random), m_workers("Root CPU") {
     File::makeDirectory(m_settings.storageDirectory);
 
   if (m_settings.logFile) {
-    String logFile = File::relativeTo(m_settings.logDirectory.value(m_settings.storageDirectory), *m_settings.logFile);
-    String oldLogDirectory = m_settings.logDirectory.value(File::relativeTo(m_settings.storageDirectory, "logs"));
+    String logFile = File::relativeTo(m_settings.logDirectory.value_or(m_settings.storageDirectory), *m_settings.logFile);
+    String oldLogDirectory = m_settings.logDirectory.value_or(File::relativeTo(m_settings.storageDirectory, "logs"));
     if (!File::isDirectory(oldLogDirectory))
       File::makeDirectory(oldLogDirectory);
 
@@ -727,8 +726,8 @@ Root::Settings& Root::settings() {
 StringList Root::scanForAssetSources(StringList const& directories, StringList const& manual) {
   struct AssetSource {
     String path;
-    Maybe<String> name;
-    Maybe<String> version;
+    std::optional<String> name;
+    std::optional<String> version;
     float priority;
     StringList requires_;
     StringList includes;
@@ -755,15 +754,15 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
 
     auto assetSource = std::make_shared<AssetSource>();
     assetSource->path = sourcePath;
-    assetSource->name = metadata.maybe("name").apply(std::mem_fn(&Json::toString));
-    assetSource->version = metadata.maybe("version").apply(std::mem_fn(&Json::printString));
+    assetSource->name = metadata.maybe("name").transform([](Json const& value) { return value.toString(); });
+    assetSource->version = metadata.maybe("version").transform(std::mem_fn(&Json::printString));
     assetSource->priority = metadata.value("priority", 0.0f).toFloat();
     assetSource->requires_ = jsonToStringList(metadata.value("requires", JsonArray{}));
     assetSource->includes = jsonToStringList(metadata.value("includes", JsonArray{}));
 
-    if (assetSource->name.value() == "opensb_base" && assetSource->version.value() != OpenStarVersionString) {
+    if (assetSource->name.value_or(String{}) == "opensb_base" && assetSource->version.value_or(String{}) != OpenStarVersionString) {
       throw AssetSourceException(strf("\n\nOpenStarbound assets version mismatch!\nOpenStarbound v{}, but opensb.pak is v{}\n",
-        OpenStarVersionString, assetSource->version.value()), false);
+        OpenStarVersionString, assetSource->version.value_or(String{})), false);
     }
 
     if (assetSource->name) {
@@ -813,7 +812,7 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
   assetSources.sort([](auto const& a, auto const& b) {
       return 
         a->priority == b->priority ? 
-          a->name.value(a->path) < b->name.value(b->path) : 
+          a->name.value_or(a->path) < b->name.value_or(b->path) : 
           a->priority < b->priority;
     });
 
@@ -891,7 +890,7 @@ WorkerPool& Root::workers() {
 
 bool& Root::humanoidHeadRotation() {
   std::call_once(m_headRotationInitialized, [this] {
-    m_humanoidHeadRotation = configuration()->get("humanoidHeadRotation").optBool().value(true);
+    m_humanoidHeadRotation = configuration()->get("humanoidHeadRotation").optBool().value_or(true);
   });
   return m_humanoidHeadRotation;
 }

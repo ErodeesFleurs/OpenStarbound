@@ -31,7 +31,6 @@ import std;
 import star.worker_pool;
 
 import star.sector_array_2d;
-import star.maybe;
 import star.color;
 import star.image_processing;
 import star.hash;
@@ -92,11 +91,11 @@ class Root;
 
 class ServerClientContext {
 public:
-  ServerClientContext(Root& root, ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
+  ServerClientContext(Root& root, ConnectionId clientId, std::optional<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
       String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks, StringSet validShipSpecies, String account);
 
   ConnectionId clientId() const;
-  Maybe<HostAddress> const& remoteAddress() const;
+  std::optional<HostAddress> const& remoteAddress() const;
   Uuid const& playerUuid() const;
   String const& playerName() const;
   String const& shipSpecies() const;
@@ -118,8 +117,8 @@ public:
 
   // Warp action and warp mode to the planet the player is currently orbiting
   // valid when the player is on any ship world orbiting a location
-  Maybe<std::pair<WarpAction, WarpMode>> orbitWarpAction() const;
-  void setOrbitWarpAction(Maybe<std::pair<WarpAction, WarpMode>> warpAction);
+  std::optional<std::pair<WarpAction, WarpMode>> orbitWarpAction() const;
+  void setOrbitWarpAction(std::optional<std::pair<WarpAction, WarpMode>> warpAction);
 
   bool isAdmin() const;
   void setAdmin(bool admin);
@@ -167,7 +166,7 @@ public:
   void customWorldReceived(String name, WorldChunks chunks);
   void failWorldRequests();
   
-  Maybe<WorldChunks> customWorldChunks(String name) const;
+  std::optional<WorldChunks> customWorldChunks(String name) const;
   void updateCustomWorldChunks(String name, WorldChunks newWorldChunks);
   void setCustomWorldActive(String name, bool active);
   List<String> customWorlds() const;
@@ -195,7 +194,7 @@ private:
   
   Root& m_root;
   ConnectionId const m_clientId;
-  Maybe<HostAddress> const m_remoteAddress;
+  std::optional<HostAddress> const m_remoteAddress;
   NetCompatibilityRules m_netRules;
   Uuid const m_playerUuid;
   String const m_playerName;
@@ -231,7 +230,7 @@ private:
   StringMap<RpcPromiseKeeper<WorldChunks>> m_worldRequests;
   StringMap<CustomWorld> m_customWorlds;
 
-  NetElementData<Maybe<std::pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
+  NetElementData<std::optional<std::pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
   NetElementData<WorldId> m_playerWorldIdNetState;
   NetElementBool m_isAdminNetState;
   NetElementData<EntityDamageTeam> m_teamNetState;

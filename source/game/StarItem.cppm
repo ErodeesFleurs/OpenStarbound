@@ -2,7 +2,6 @@ module;
 import star.memory;
 import std;
 import star.type_identity;
-import star.maybe;
 import star.format;
 import star.json;
 import star.set;
@@ -115,7 +114,7 @@ public:
   std::uint64_t price() const;
 
   virtual List<Drawable> iconDrawables() const;
-  virtual Maybe<List<Drawable>> secondaryDrawables() const;
+  virtual std::optional<List<Drawable>> secondaryDrawables() const;
   virtual bool hasSecondaryDrawables() const;
 
   virtual List<Drawable> dropDrawables(TileDrawer* tileDrawer) const;
@@ -163,7 +162,7 @@ protected:
   void setPrice(std::uint64_t price);
   // icon drawables are pixels, not tile, based
   void setIconDrawables(List<Drawable> drawables);
-  void setSecondaryIconDrawables(Maybe<List<Drawable>> drawables);
+  void setSecondaryIconDrawables(std::optional<List<Drawable>> drawables);
   void setTwoHanded(bool twoHanded);
   void setTimeToLive(float timeToLive);
 
@@ -185,7 +184,7 @@ private:
   String m_description;
   Rarity m_rarity;
   List<Drawable> m_iconDrawables;
-  Maybe<List<Drawable>> m_secondaryIconDrawables;
+  std::optional<List<Drawable>> m_secondaryIconDrawables;
   bool m_twoHanded;
   float m_timeToLive;
   std::uint64_t m_price;

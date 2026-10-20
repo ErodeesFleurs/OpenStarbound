@@ -1,6 +1,5 @@
 module;
 import std;
-import star.maybe;
 import star.json;
 import star.lua;
 import star.lua_converters;
@@ -56,7 +55,7 @@ LuaCallbacks LuaBindings::makeClipboardCallbacks(Input& input, RootBase& root, L
     return available() && appController->hasClipboard();
   });
 
-  callbacks.registerCallback("getText", [=]() -> Maybe<String> {
+  callbacks.registerCallback("getText", [=]() -> std::optional<String> {
     if (!available())
       return {};
     else

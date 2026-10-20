@@ -17,7 +17,6 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
@@ -104,7 +103,7 @@ protected:
   float m_swingStart;
   float m_swingFinish;
   float m_swingAimFactor;
-  Maybe<float> m_coolingDownAngle;
+  std::optional<float> m_coolingDownAngle;
 };
 
 }

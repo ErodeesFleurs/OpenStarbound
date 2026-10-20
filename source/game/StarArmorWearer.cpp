@@ -29,7 +29,6 @@ import star.asset_path;
 import star.periodic_function;
 import star.audio;
 import star.map;
-import star.maybe;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;

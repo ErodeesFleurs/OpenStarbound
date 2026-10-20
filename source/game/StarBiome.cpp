@@ -19,7 +19,6 @@ import star.thread;
 import star.directives;
 import star.asset_path;
 import star.strong_typedef;
-import star.maybe;
 import star.color;
 
 import star.damage_types;
@@ -77,7 +76,7 @@ Json BiomePlaceables::toJson() const {
   };
 }
 
-Maybe<TreeVariant> BiomePlaceables::firstTreeType() const {
+std::optional<TreeVariant> BiomePlaceables::firstTreeType() const {
   for (auto const& itemDistribution : itemDistributions) {
     for (auto const& biomeItem : itemDistribution.allItems()) {
       if (biomeItem.is<TreePair>())

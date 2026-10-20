@@ -8,7 +8,6 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-import star.maybe;
 import star.color;
 import star.vector;
 import star.bi_map;
@@ -87,8 +86,8 @@ Json ParallaxLayer::store() const {
       {"animationCycle", animationCycle},
       {"parallaxValue", jsonFromVec2F(parallaxValue)},
       {"repeat", jsonFromVec2B(repeat)},
-      {"tileLimitTop", jsonFromMaybe(tileLimitTop)},
-      {"tileLimitBottom", jsonFromMaybe(tileLimitBottom)},
+      {"tileLimitTop", jsonFromOptional(tileLimitTop)},
+      {"tileLimitBottom", jsonFromOptional(tileLimitBottom)},
       {"verticalOrigin", verticalOrigin},
       {"zLevel", zLevel},
       {"parallaxOffset", jsonFromVec2F(parallaxOffset)},
@@ -96,7 +95,7 @@ Json ParallaxLayer::store() const {
       {"speed",  speed[0]},
       {"speedY", speed[1]},
       {"followsWind", followsWind},
-      {"windSpeedMultiplier", jsonFromMaybe(windSpeedMultiplier)},
+      {"windSpeedMultiplier", jsonFromOptional(windSpeedMultiplier)},
       {"unlit", unlit},
       {"lightMapped", lightMapped},
       {"fadePercent", fadePercent}};
@@ -174,7 +173,7 @@ Parallax::Parallax(Root& root, String const& assetFile,
     std::uint64_t seed,
     float verticalOrigin,
     float hueShift,
-    Maybe<TreeVariant> parallaxTreeVariant) : m_root(root) {
+    std::optional<TreeVariant> parallaxTreeVariant) : m_root(root) {
   m_seed = seed;
   m_verticalOrigin = verticalOrigin;
   m_parallaxTreeVariant = parallaxTreeVariant;

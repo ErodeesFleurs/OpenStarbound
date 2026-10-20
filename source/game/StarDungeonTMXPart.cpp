@@ -28,8 +28,8 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
-import star.maybe;
 import star.format;
+import star.optional;
 import star.version;
 import star.vector;
 import star.game_types;
@@ -300,7 +300,7 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
   TMXTilesets::TMXTilesets(Root& root, Json const& tmx) {
     for (Json const& tilesetJson : tmx.iterateArray()) {
       if (!tilesetJson.contains("source"))
-        throw StarException::format("Tiled map has embedded tileset {}", tilesetJson.optString("name"));
+        throw StarException::format("Tiled map has embedded tileset {}", outputOptional(tilesetJson.optString("name")));
 
       String sourcePath = tilesetAssetPath(tilesetJson.getString("source"));
       std::shared_ptr<Tiled::Tileset const> tileset = root.tilesetDatabase()->get(sourcePath);
@@ -338,11 +338,11 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
     return a.firstGid > b.firstGid;
   }
 
-  TMXObject::TMXObject(Root& root, Maybe<Json> const& groupProperties, Json const& tmx, std::shared_ptr<TMXTilesets> tilesets) {
+  TMXObject::TMXObject(Root& root, std::optional<Json> const& groupProperties, Json const& tmx, std::shared_ptr<TMXTilesets> tilesets) {
     m_objectId = tmx.getUInt("id");
 
     // convert object properties in array format to object format
-    Maybe<Json> objectProperties = tmx.opt("properties").apply([](Json const& properties) -> Json {
+    std::optional<Json> objectProperties = tmx.opt("properties").transform([](Json const& properties) -> Json {
         if (properties.type() == Json::Type::Array) {
           JsonObject objectProperties;
           for (auto& p : properties.toArray())
@@ -355,7 +355,7 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
 
     m_layer = getLayer(groupProperties, objectProperties);
 
-    Maybe<TileObjectInfo> tileObjectInfo = getTileObjectInfo(tmx, tilesets, m_layer);
+    std::optional<TileObjectInfo> tileObjectInfo = getTileObjectInfo(tmx, tilesets, m_layer);
 
     // Merge properties in this order:
     //   Object
@@ -364,14 +364,14 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
     Tiled::Properties properties;
     if (objectProperties)
       properties = properties.inherit(*objectProperties);
-    if (tileObjectInfo.isValid())
+    if (tileObjectInfo.has_value())
       properties = properties.inherit(tileObjectInfo->tileProperties);
-    if (groupProperties.isValid())
+    if (groupProperties.has_value())
       properties = properties.inherit(*groupProperties);
 
     // Check whether the object was flipped horizontally before creating this
     // object's Tile
-    bool flipX = tileObjectInfo.isValid() && (tileObjectInfo->flipBits & TileFlip::Horizontal) != 0;
+    bool flipX = tileObjectInfo.has_value() && (tileObjectInfo->flipBits & TileFlip::Horizontal) != 0;
 
     m_kind = getObjectKind(tmx, objectProperties);
 
@@ -386,12 +386,12 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
       computedProperties["broadcastArea"] = jsonFromRectI(broadcastArea).repr();
     }
 
-    Maybe<float> rotation = tmx.optFloat("rotation");
-    if (rotation.isValid() && *rotation != 0.0f)
+    std::optional<float> rotation = tmx.optFloat("rotation");
+    if (rotation.has_value() && *rotation != 0.0f)
       throw tmxObjectError(tmx, "object is rotated, which is not supported");
 
-    Maybe<JsonArray> polyline = tmx.optArray("polyline");
-    if (polyline.isValid()) {
+    std::optional<JsonArray> polyline = tmx.optArray("polyline");
+    if (polyline.has_value()) {
       for (Json const& point : *polyline)
         m_polyline.append(getPos(point));
       computedProperties["wire"] = "_polylineWire" + toString(m_objectId);
@@ -410,12 +410,12 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
   }
 
   Vec2I TMXObject::getImagePosition(Tiled::Properties const& properties) {
-    int x = (int)(properties.opt<float>("imagePositionX").value(0) / TilePixels);
-    int y = (int)(properties.opt<float>("imagePositionY").value(0) / TilePixels);
+    int x = (int)(properties.opt<float>("imagePositionX").value_or(0) / TilePixels);
+    int y = (int)(properties.opt<float>("imagePositionY").value_or(0) / TilePixels);
     return Vec2I(x, -y);
   }
 
-  ObjectKind TMXObject::getObjectKind(Json const& tmx, Maybe<Json> const& objectProperties) {
+  ObjectKind TMXObject::getObjectKind(Json const& tmx, std::optional<Json> const& objectProperties) {
     if (objectProperties && objectProperties->contains("stagehand"))
       return ObjectKind::Stagehand;
     else if (tmx.contains("gid"))
@@ -433,10 +433,10 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
       return ObjectKind::Rectangle;
   }
 
-  Maybe<TMXObject::TileObjectInfo> TMXObject::getTileObjectInfo(
+  std::optional<TMXObject::TileObjectInfo> TMXObject::getTileObjectInfo(
       Json const& tmx, std::shared_ptr<TMXTilesets> tilesets, TileLayer layer) {
-    Maybe<unsigned> optGid = tmx.optUInt("gid");
-    if (optGid.isNothing())
+    std::optional<unsigned> optGid = tmx.optUInt("gid");
+    if (!optGid.has_value())
       return {};
 
     unsigned flipBits = *optGid & TileFlip::AllBits;
@@ -449,10 +449,10 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
     return TileObjectInfo{gidTile.properties, flipBits};
   }
 
-  TileLayer TMXObject::getLayer(Maybe<Json> const& groupProperties, Maybe<Json> const& objectProperties) {
-    if (objectProperties.isValid() && objectProperties->contains("layer"))
+  TileLayer TMXObject::getLayer(std::optional<Json> const& groupProperties, std::optional<Json> const& objectProperties) {
+    if (objectProperties.has_value() && objectProperties->contains("layer"))
       return Tiled::LayerNames.getLeft(objectProperties->getString("layer"));
-    if (groupProperties.isValid() && groupProperties->contains("layer"))
+    if (groupProperties.has_value() && groupProperties->contains("layer"))
       return Tiled::LayerNames.getLeft(groupProperties->getString("layer"));
     return TileLayer::Foreground;
   }
@@ -470,7 +470,7 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
     m_name = tmx.getString("name");
     
     // convert group properties in array format to object format
-    Maybe<JsonObject> groupProperties = tmx.opt("properties").apply([](Json const& properties) {
+    std::optional<JsonObject> groupProperties = tmx.opt("properties").transform([](Json const& properties) {
         if (properties.type() == Json::Type::Array) {
           JsonObject objectProperties;
           for (auto& p : properties.toArray())

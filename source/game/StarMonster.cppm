@@ -17,7 +17,6 @@ import star.list;
 import star.map;
 import star.set;
 import star.vector;
-import star.maybe;
 import star.bi_map;
 import star.color;
 import star.string;
@@ -123,7 +122,7 @@ public:
     String image;
   };
 
-  Monster(Root& rootContext, MonsterVariant const& variant, Maybe<float> level = {});
+  Monster(Root& rootContext, MonsterVariant const& variant, std::optional<float> level = {});
   Monster(Root& rootContext, Json const& diskStore);
 
   Json diskStore() const;
@@ -156,8 +155,8 @@ public:
 
   List<LightSource> lightSources() const override;
 
-  Maybe<HitType> queryHit(DamageSource const& source) const override;
-  Maybe<PolyF> hitPoly() const override;
+  std::optional<HitType> queryHit(DamageSource const& source) const override;
+  std::optional<PolyF> hitPoly() const override;
 
   void hitOther(EntityId targetEntityId, DamageRequest const& damageRequest) override;
   void damagedOther(DamageNotification const& damage) override;
@@ -181,7 +180,7 @@ public:
 
   void setPosition(Vec2F const& pos);
 
-  Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  std::optional<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
   float maxHealth() const override;
   float health() const override;
@@ -194,7 +193,7 @@ public:
   String typeName() const;
   MonsterVariant monsterVariant() const;
 
-  Maybe<String> statusText() const override;
+  std::optional<String> statusText() const override;
   bool displayNametag() const override;
   Vec3B nametagColor() const override;
   Vec2F nametagOrigin() const override;
@@ -202,8 +201,8 @@ public:
 
   bool aggressive() const override;
 
-  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  Maybe<LuaValue> evalScript(String const& code) override;
+  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  std::optional<LuaValue> evalScript(String const& code) override;
 
   virtual Vec2F mouthPosition() const override;
   virtual Vec2F mouthPosition(bool ignoreAdjustments) const override;
@@ -236,10 +235,10 @@ private:
 
   NetElementTopGroup m_netGroup;
 
-  NetElementData<Maybe<String>> m_uniqueIdNetState;
+  NetElementData<std::optional<String>> m_uniqueIdNetState;
   NetElementData<EntityDamageTeam> m_teamNetState;
   MonsterVariant m_monsterVariant;
-  Maybe<float> m_monsterLevel;
+  std::optional<float> m_monsterLevel;
 
   NetworkedAnimator m_networkedAnimator;
   NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
@@ -271,7 +270,7 @@ private:
 
   NetElementData<List<PhysicsForceRegion>> m_physicsForces;
 
-  NetElementData<Maybe<float>> m_monsterLevelNetState;
+  NetElementData<std::optional<float>> m_monsterLevelNetState;
   NetElementBool m_damageOnTouchNetState;
   NetElementData<StringSet> m_animationDamageParts;
   NetElementData<List<DamageSource>> m_damageSources;
@@ -281,7 +280,7 @@ private:
   NetElementString m_deathParticleBurstNetState;
   NetElementString m_deathSoundNetState;
   NetElementString m_activeSkillNameNetState;
-  NetElementData<Maybe<String>> m_name;
+  NetElementData<std::optional<String>> m_name;
   NetElementBool m_displayNametag;
   NetElementBool m_interactive;
 

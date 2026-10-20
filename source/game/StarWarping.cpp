@@ -1,6 +1,5 @@
 import std;
 import star.string;
-import star.maybe;
 import star.format;
 import star.hash;
 import star.json;
@@ -44,7 +43,7 @@ WarpToPlayer DataStream::read<WarpToPlayer>() {
 
 InstanceWorldId::InstanceWorldId() {}
 
-InstanceWorldId::InstanceWorldId(String instance, Maybe<Uuid> uuid, Maybe<float> level)
+InstanceWorldId::InstanceWorldId(String instance, std::optional<Uuid> uuid, std::optional<float> level)
   : instance(std::move(instance)), uuid(std::move(uuid)), level(std::move(level)) {}
 
 bool InstanceWorldId::operator==(InstanceWorldId const& rhs) const {
@@ -133,7 +132,7 @@ WorldId parseWorldId(String const& printedId) {
     auto rest = parts.at(1).split(":", 2);
     if (rest.size() == 0 || rest.size() > 3)
       throw StarException::format("Wrong number of parts in InstanceWorldId");
-    auto getOptPart = [](String part) -> Maybe<String> {
+    auto getOptPart = [](String part) -> std::optional<String> {
       if (part.empty() || part == "-")
         return {};
       return part;

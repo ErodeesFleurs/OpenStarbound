@@ -1,7 +1,6 @@
 module;
 import std;
 import star.list;
-import star.maybe;
 import star.json;
 
 import star.array;
@@ -100,8 +99,8 @@ private:
   Array<std::uint8_t, 4> m_wornCosmeticTypes;
   // only works under the assumption that this ArmorWearer
   // will only ever touch one Humanoid (which is true!)
-  Maybe<Gender> m_lastGender;
-  Maybe<Direction> m_lastDirection;
+  std::optional<Gender> m_lastGender;
+  std::optional<Direction> m_lastDirection;
   bool m_lastNude;
 };
 

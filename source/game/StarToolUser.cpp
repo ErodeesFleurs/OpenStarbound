@@ -19,7 +19,6 @@ import star.casting;
 import star.audio;
 import star.map;
 import star.set;
-import star.maybe;
 import std;
 import star.format;
 import star.rpc_promise;
@@ -269,7 +268,7 @@ List<PersistentStatusEffect> ToolUser::statusEffects() const {
   return statusEffects;
 }
 
-Maybe<float> ToolUser::toolRadius() const {
+std::optional<float> ToolUser::toolRadius() const {
   if (m_suppress.get())
     return {};
   else if (is<BeamItem>(m_primaryHandItem.get()) || is<BeamItem>(m_altHandItem.get()))
@@ -327,15 +326,15 @@ List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walki
   return {};
 }
 
-Maybe<Direction> ToolUser::setupHumanoidHandItems(Humanoid& humanoid, Vec2F position, Vec2F aimPosition) const {
+std::optional<Direction> ToolUser::setupHumanoidHandItems(Humanoid& humanoid, Vec2F position, Vec2F aimPosition) const {
   if (m_suppress.get() || !m_user) {
     humanoid.setHandParameters(ToolHand::Primary, false, 0.0f, 0.0f, false, false, false);
     humanoid.setHandParameters(ToolHand::Alt, false, 0.0f, 0.0f, false, false, false);
     return {};
   }
 
-  auto inner = [&](bool primary) -> Maybe<Direction> {
-    Maybe<Direction> overrideFacingDirection;
+  auto inner = [&](bool primary) -> std::optional<Direction> {
+    std::optional<Direction> overrideFacingDirection;
 
     auto setRotation = [&](bool holdingItem, float angle, float itemAngle, bool twoHanded, bool recoil, bool outsideOfHand) {
       ToolHand hand = primary || twoHanded ? ToolHand::Primary : ToolHand::Alt;
@@ -375,12 +374,13 @@ Maybe<Direction> ToolUser::setupHumanoidHandItems(Humanoid& humanoid, Vec2F posi
     return overrideFacingDirection;
   };
 
-  Maybe<Direction> overrideFacingDirection;
-  overrideFacingDirection = overrideFacingDirection.orMaybe(inner(true));
+  std::optional<Direction> overrideFacingDirection;
+  overrideFacingDirection = inner(true);
   if (itemSafeTwoHanded(m_primaryHandItem.get()))
     humanoid.setHandParameters(ToolHand::Alt, false, 0.0f, 0.0f, false, false, false);
   else
-    overrideFacingDirection = overrideFacingDirection.orMaybe(inner(false));
+    if (auto altFacingDirection = inner(false); !overrideFacingDirection)
+      overrideFacingDirection = altFacingDirection;
 
   return overrideFacingDirection;
 }
@@ -423,7 +423,7 @@ void ToolUser::setupHumanoidHandItemDrawables(Humanoid& humanoid) const {
       setRotated("", "", pointableItem->drawables(), handItem->twoHanded());
 
     } else if (auto activeItem = as<ActiveItem>(handItem)) {
-      setRotated(activeItem->backArmFrame().value(), activeItem->frontArmFrame().value(),
+      setRotated(activeItem->backArmFrame().value_or(String{}), activeItem->frontArmFrame().value_or(String{}),
           activeItem->handDrawables(), activeItem->twoHandedGrip());
 
     } else if (auto beamItem = as<BeamItem>(handItem)) {
@@ -663,7 +663,7 @@ void ToolUser::render(RenderCallback* renderCallback, bool, bool shifting, Entit
   for (auto item : {m_primaryHandItem.get(), m_altHandItem.get()}) {
     if (auto activeItem = as<ActiveItem>(item)) {
       for (auto drawablePair : activeItem->entityDrawables())
-        renderCallback->addDrawable(drawablePair.first, drawablePair.second.value(renderLayer));
+        renderCallback->addDrawable(drawablePair.first, drawablePair.second.value_or(renderLayer));
       renderCallback->addAudios(activeItem->pullNewAudios());
       renderCallback->addParticles(activeItem->pullNewParticles());
     }
@@ -710,8 +710,8 @@ void ToolUser::suppressItems(bool suppress) {
   m_suppress.set(suppress);
 }
 
-Maybe<ChainableJsonMessageResponse> ToolUser::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
-  Maybe<ChainableJsonMessageResponse> result;
+std::optional<ChainableJsonMessageResponse> ToolUser::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+  std::optional<ChainableJsonMessageResponse> result;
   for (auto item : {m_primaryHandItem.get(), m_altHandItem.get()}) {
     if (auto activeItem = as<ActiveItem>(item))
       result = activeItem->receiveMessage(message, localMessage, args);

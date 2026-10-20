@@ -22,7 +22,6 @@ import star.version;
 import star.ordered_map;
 import star.variant;
 import star.color;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.image_processing;

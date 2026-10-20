@@ -1,6 +1,6 @@
 module;
 import std;
-import star.maybe;
+import star.optional;
 import star.format;
 import star.variant;
 
@@ -69,8 +69,8 @@ public:
   Left& left();
   Right& right();
 
-  Maybe<Left> maybeLeft() const;
-  Maybe<Right> maybeRight() const;
+  std::optional<Left> maybeLeft() const;
+  std::optional<Right> maybeRight() const;
 
   // leftPtr() and rightPtr() do not throw on invalid access
 
@@ -124,7 +124,12 @@ Either<Left, Right>::Either(Either const& rhs)
 
 template <typename Left, typename Right>
 Either<Left, Right>::Either(Either&& rhs)
-  : m_value(std::move(rhs.m_value)) {}
+  : m_value(std::move(rhs.m_value)) {
+  rhs.m_value.call([](auto& side) {
+    if constexpr (requires { optionalPtr(side.value); })
+      side.value.reset();
+  });
+}
 
 template <typename Left, typename Right>
 Either<Left, Right>& Either<Left, Right>::operator=(Either const& rhs) {
@@ -134,7 +139,13 @@ Either<Left, Right>& Either<Left, Right>::operator=(Either const& rhs) {
 
 template <typename Left, typename Right>
 Either<Left, Right>& Either<Left, Right>::operator=(Either&& rhs) {
+  if (this == &rhs)
+    return *this;
   m_value = std::move(rhs.m_value);
+  rhs.m_value.call([](auto& side) {
+    if constexpr (requires { optionalPtr(side.value); })
+      side.value.reset();
+  });
   return *this;
 }
 
@@ -201,16 +212,16 @@ Right& Either<Left, Right>::right() {
 }
 
 template <typename Left, typename Right>
-Maybe<Left> Either<Left, Right>::maybeLeft() const {
+std::optional<Left> Either<Left, Right>::maybeLeft() const {
   if (auto l = leftPtr())
-    return *l;
+    return std::optional<Left>(std::in_place, *l);
   return {};
 }
 
 template <typename Left, typename Right>
-Maybe<Right> Either<Left, Right>::maybeRight() const {
+std::optional<Right> Either<Left, Right>::maybeRight() const {
   if (auto r = rightPtr())
-    return *r;
+    return std::optional<Right>(std::in_place, *r);
   return {};
 }
 

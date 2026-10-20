@@ -19,7 +19,6 @@ import star.thread;
 import star.list;
 import star.map;
 import star.set;
-import star.maybe;
 import star.color;
 import star.string;
 import star.image_processing;
@@ -226,14 +225,14 @@ private:
   bool m_shifting;
   bool m_multiplace;
   StringList m_placeSounds;
-  Maybe<Vec2F> m_lastAimPosition;
+  std::optional<Vec2F> m_lastAimPosition;
   TileCollisionOverride m_collisionOverride;
 
   mutable Vec2F m_lastTileAreaOriginCache;
   mutable float m_lastTileAreaRadiusCache;
   mutable List<Vec2I> m_tileAreasCache;
 
-  mutable Maybe<List<Drawable>> m_generatedPreviewCache;
+  mutable std::optional<List<Drawable>> m_generatedPreviewCache;
   mutable bool m_generatedPreviewUsesTileDrawer = false;
 };
 
@@ -271,7 +270,7 @@ MaterialItem::MaterialItem(Root& root, Json const& config, String const& directo
   setCooldownTime(config.queryFloat("materialItems.cooldown", defaultParameters.queryFloat("materialItems.cooldown")));
   m_blockRadius = config.getFloat("blockRadius", defaultParameters.getFloat("blockRadius"));
   m_altBlockRadius = config.getFloat("altBlockRadius", defaultParameters.getFloat("altBlockRadius"));
-  m_collisionOverride = TileCollisionOverrideNames.maybeLeft(config.getString("collisionOverride", "None")).value(TileCollisionOverride::None);
+  m_collisionOverride = TileCollisionOverrideNames.maybeLeft(config.getString("collisionOverride", "None")).value_or(TileCollisionOverride::None);
   m_blockSwap = false;
 
   m_multiplace = config.getBool("allowMultiplace", BlockCollisionSet.contains(materialDatabase->materialCollisionKind(m_material)));
@@ -625,7 +624,7 @@ void MaterialItem::updatePropertiesFromPlayer(Player* player) {
 
   auto collisionOverride = player->getSecretProperty(CollisionOverridePropertyKey);
   if (collisionOverride.isType(Json::Type::String))
-    m_collisionOverride = TileCollisionOverrideNames.maybeLeft(collisionOverride.toString()).value(TileCollisionOverride::None);
+    m_collisionOverride = TileCollisionOverrideNames.maybeLeft(collisionOverride.toString()).value_or(TileCollisionOverride::None);
   
   auto blockSwap = player->getSecretProperty(BlockSwapPropertyKey);
   if (blockSwap.isType(Json::Type::Bool))

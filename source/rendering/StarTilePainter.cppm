@@ -27,7 +27,6 @@ import star.string_view;
 import star.directives;
 import star.asset_path;
 import star.either;
-import star.maybe;
 import star.weighted_pool;
 import star.casting;
 import star.strong_typedef;
@@ -176,7 +175,7 @@ private:
   List<std::shared_ptr<TerrainChunk const>> m_pendingTerrainChunks;
   List<std::shared_ptr<LiquidChunk const>> m_pendingLiquidChunks;
 
-  Maybe<Vec2F> m_lastCameraCenter;
+  std::optional<Vec2F> m_lastCameraCenter;
   Vec2F m_cameraPan;
 };
 

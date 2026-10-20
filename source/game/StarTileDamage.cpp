@@ -20,7 +20,6 @@ import star.listener;
 import std;
 import star.string;
 import star.map;
-import star.maybe;
 import star.version;
 
 import star.asset_source;
@@ -93,7 +92,7 @@ DataStream& operator<<(DataStream& ds, TileDamage const& tileDamage) {
 TileDamageParameters::TileDamageParameters()
   : m_damageRecoveryPerSecond(0.0f), m_maximumEffectTime(0.0f), m_totalHealth(0), m_requiredHarvestLevel(0) {}
 
-TileDamageParameters::TileDamageParameters(Assets const& assets, Json config, Maybe<float> healthOverride, Maybe<unsigned> harvestLevelOverride) {
+TileDamageParameters::TileDamageParameters(Assets const& assets, Json config, std::optional<float> healthOverride, std::optional<unsigned> harvestLevelOverride) {
   if (config.type() == Json::Type::String)
     config = assets.json(config.toString());
 

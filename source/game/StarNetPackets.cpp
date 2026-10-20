@@ -16,7 +16,6 @@ import star.ordered_map;
 import star.either;
 import star.variant;
 import star.color;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.image_processing;
@@ -291,7 +290,7 @@ std::shared_ptr<Packet> createPacket(PacketType type) {
   }
 }
 
-std::shared_ptr<Packet> createPacket(RandomService& random, PacketType type, Maybe<Json> const& args) {
+std::shared_ptr<Packet> createPacket(RandomService& random, PacketType type, std::optional<Json> const& args) {
   auto packet = createPacket(type);
   // The raw Lua packet API also permits omitted JSON fields. Preserve its
   // generated identities explicitly; decoding through createPacket(type) never
@@ -942,7 +941,7 @@ void ReplaceTileListPacket::write(DataStream& ds) const {
 DamageTileGroupPacket::DamageTileGroupPacket() : layer(TileLayer::Foreground) {}
 
 DamageTileGroupPacket::DamageTileGroupPacket(
-    List<Vec2I> tilePositions, TileLayer layer, Vec2F sourcePosition, TileDamage tileDamage, Maybe<EntityId> sourceEntity)
+    List<Vec2I> tilePositions, TileLayer layer, Vec2F sourcePosition, TileDamage tileDamage, std::optional<EntityId> sourceEntity)
   : tilePositions(std::move(tilePositions)), layer(layer), sourcePosition(sourcePosition), tileDamage(std::move(tileDamage)), sourceEntity(std::move(sourceEntity)) {}
 
 void DamageTileGroupPacket::read(DataStream& ds) {
@@ -1354,7 +1353,7 @@ Json UpdateTileProtectionPacket::writeJson() const {
 
 SetDungeonGravityPacket::SetDungeonGravityPacket() {}
 
-SetDungeonGravityPacket::SetDungeonGravityPacket(DungeonId dungeonId, Maybe<float> gravity)
+SetDungeonGravityPacket::SetDungeonGravityPacket(DungeonId dungeonId, std::optional<float> gravity)
   : dungeonId(std::move(dungeonId)), gravity(std::move(gravity)) {}
 
 void SetDungeonGravityPacket::read(DataStream& ds) {
@@ -1375,13 +1374,13 @@ void SetDungeonGravityPacket::readJson(Json const& json) {
 Json SetDungeonGravityPacket::writeJson() const {
   return JsonObject{
     {"dungeonId", dungeonId},
-    {"gravity", jsonFromMaybe<float>(gravity)}
+    {"gravity", jsonFromOptional<float>(gravity)}
   };
 }
 
 SetDungeonBreathablePacket::SetDungeonBreathablePacket() {}
 
-SetDungeonBreathablePacket::SetDungeonBreathablePacket(DungeonId dungeonId, Maybe<bool> breathable)
+SetDungeonBreathablePacket::SetDungeonBreathablePacket(DungeonId dungeonId, std::optional<bool> breathable)
   : dungeonId(std::move(dungeonId)), breathable(std::move(breathable)) {}
 
 void SetDungeonBreathablePacket::read(DataStream& ds) {
@@ -1402,7 +1401,7 @@ void SetDungeonBreathablePacket::readJson(Json const& json) {
 Json SetDungeonBreathablePacket::writeJson() const {
   return JsonObject{
     {"dungeonId", dungeonId},
-    {"breathable", jsonFromMaybe<bool>(breathable)}
+    {"breathable", jsonFromOptional<bool>(breathable)}
   };
 }
 
@@ -1434,7 +1433,7 @@ Json SetPlayerStartPacket::writeJson() const {
 
 FindUniqueEntityResponsePacket::FindUniqueEntityResponsePacket() {}
 
-FindUniqueEntityResponsePacket::FindUniqueEntityResponsePacket(String uniqueEntityId, Maybe<Vec2F> entityPosition)
+FindUniqueEntityResponsePacket::FindUniqueEntityResponsePacket(String uniqueEntityId, std::optional<Vec2F> entityPosition)
   : uniqueEntityId(std::move(uniqueEntityId)), entityPosition(std::move(entityPosition)) {}
 
 void FindUniqueEntityResponsePacket::read(DataStream& ds) {
@@ -1577,7 +1576,7 @@ void SystemShipDestroyPacket::write(DataStream& ds) const {
 
 SystemObjectSpawnPacket::SystemObjectSpawnPacket() : uuid(unfilledPacketUuid()) {}
 
-SystemObjectSpawnPacket::SystemObjectSpawnPacket(String typeName, Uuid uuid, Maybe<Vec2F> position, JsonObject parameters)
+SystemObjectSpawnPacket::SystemObjectSpawnPacket(String typeName, Uuid uuid, std::optional<Vec2F> position, JsonObject parameters)
   : typeName(std::move(typeName)), uuid(std::move(uuid)), position(std::move(position)), parameters(std::move(parameters)) {}
 
 void SystemObjectSpawnPacket::read(DataStream& ds) {

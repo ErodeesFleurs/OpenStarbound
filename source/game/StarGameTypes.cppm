@@ -1,6 +1,5 @@
 module;
 import star.variant;
-import star.maybe;
 import star.json;
 
 import star.string;
@@ -27,7 +26,7 @@ inline Direction operator-(Direction dir) {
   return Direction::Left;
 }
 
-inline int numericalDirection(Maybe<Direction> direction) {
+inline int numericalDirection(std::optional<Direction> direction) {
   if (!direction)
     return 0;
   else
@@ -35,7 +34,7 @@ inline int numericalDirection(Maybe<Direction> direction) {
 }
 
 template <typename NumType>
-inline Maybe<Direction> directionOf(NumType const& n) {
+inline std::optional<Direction> directionOf(NumType const& n) {
   if (n == 0)
     return {};
   else

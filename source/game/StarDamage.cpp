@@ -22,7 +22,6 @@ import star.logging;
 import star.listener;
 import std;
 import star.string;
-import star.maybe;
 import star.format;
 import star.version;
 
@@ -89,8 +88,8 @@ DamageSource::DamageSource(DamageType damageType,
     bool trackSourceEntity,
     EntityId sourceEntityId,
     EntityDamageTeam team,
-    Maybe<String> damageRepeatGroup,
-    Maybe<float> damageRepeatTimeout,
+    std::optional<String> damageRepeatGroup,
+    std::optional<float> damageRepeatTimeout,
     String damageSourceKind,
     List<EphemeralStatusEffect> statusEffects,
     Knockback knockback,
@@ -127,8 +126,8 @@ Json DamageSource::toJson() const {
       {"trackSourceEntity", trackSourceEntity},
       {"sourceEntityId", sourceEntityId},
       {"team", team.toJson()},
-      {"damageRepeatGroup", jsonFromMaybe(damageRepeatGroup)},
-      {"damageRepeatTimeout", jsonFromMaybe(damageRepeatTimeout)},
+      {"damageRepeatGroup", jsonFromOptional(damageRepeatGroup)},
+      {"damageRepeatTimeout", jsonFromOptional(damageRepeatTimeout)},
       {"damageSourceKind", damageSourceKind},
       {"statusEffects", statusEffects.transformed(jsonFromEphemeralStatusEffect)},
       {"knockback", knockbackJson},

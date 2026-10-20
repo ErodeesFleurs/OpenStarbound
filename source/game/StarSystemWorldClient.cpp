@@ -8,7 +8,6 @@ import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -108,7 +107,7 @@ CelestialCoordinate SystemWorldClient::currentSystem() const {
   return CelestialCoordinate(m_location);
 }
 
-Maybe<Vec2F> SystemWorldClient::shipPosition() const {
+std::optional<Vec2F> SystemWorldClient::shipPosition() const {
   if (m_ship)
     return m_ship->position();
   else
@@ -145,7 +144,7 @@ void SystemWorldClient::update(float dt) {
   auto location = m_ship->systemLocation();
   if (auto uuid = location.maybe<Uuid>()) {
     if (auto object = getObject(*uuid)) {
-      Maybe<CelestialOrbit> orbit;
+      std::optional<CelestialOrbit> orbit;
 
       if (object->permanent())
         m_universeMap->addMappedObject(CelestialCoordinate(m_location), *uuid, object->name(), object->orbit(), object->parameters());
@@ -183,7 +182,7 @@ List<Uuid> SystemWorldClient::objectKeys() const {
 }
 
 std::shared_ptr<SystemObject> SystemWorldClient::getObject(Uuid const& uuid) const {
-  return m_objects.maybe(uuid).value({});
+  return m_objects.maybe(uuid).value_or(std::shared_ptr<SystemObject>{});
 }
 
 List<std::shared_ptr<SystemClientShip>> SystemWorldClient::ships() const
@@ -193,11 +192,11 @@ List<std::shared_ptr<SystemClientShip>> SystemWorldClient::ships() const
 
 std::shared_ptr<SystemClientShip> SystemWorldClient::getShip(Uuid const & uuid) const
 {
-  return m_clientShips.maybe(uuid).value({});
+  return m_clientShips.maybe(uuid).value_or(std::shared_ptr<SystemClientShip>{});
 }
 
-Uuid SystemWorldClient::spawnObject(String typeName, Maybe<Vec2F> position, Maybe<Uuid> const& uuid, JsonObject overrides) {
-  Uuid objectUuid = uuid.value(Uuid(this->root().random()));
+Uuid SystemWorldClient::spawnObject(String typeName, std::optional<Vec2F> position, std::optional<Uuid> const& uuid, JsonObject overrides) {
+  Uuid objectUuid = uuid.value_or(Uuid(this->root().random()));
   m_outgoingPackets.append(std::make_shared<SystemObjectSpawnPacket>(std::move(typeName), objectUuid, std::move(position), std::move(overrides)));
   return objectUuid;
 }

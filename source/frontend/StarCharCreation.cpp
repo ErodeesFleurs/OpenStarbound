@@ -11,7 +11,6 @@ import star.random;
 import star.ttl_cache;
 import star.casting;
 import star.game_types;
-import star.maybe;
 import star.variant;
 import star.strong_typedef;
 import star.rpc_promise;
@@ -501,7 +500,7 @@ void CharCreationPane::changed() {
   m_previewPlayer->refreshHumanoidParameters();
   for (auto p : EquipmentSlotNames) {
     if (auto equipment = results.armor.maybe(p.second)) {
-      m_previewPlayer->inventory()->setItem(InventorySlot(p.first), root.itemDatabase()->item(ItemDescriptor(equipment.value())));
+      m_previewPlayer->inventory()->setItem(InventorySlot(p.first), root.itemDatabase()->item(ItemDescriptor(equipment.value_or(Json{}))));
     } else {
       m_previewPlayer->inventory()->consumeSlot(InventorySlot(p.first));
     }

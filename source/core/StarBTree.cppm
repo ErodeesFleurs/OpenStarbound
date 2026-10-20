@@ -1,7 +1,7 @@
 module;
 import std;
+import star.optional;
 import star.list;
-import star.maybe;
 import star.format;
 
 namespace Star {
@@ -53,7 +53,7 @@ namespace Star {
 //
 //   // If a split has occurred, split right and return the mid-key and new
 //   // right node.
-//   Maybe<pair<Key, Index>> indexSplit(Index& index);
+//   std::optional<pair<Key, Index>> indexSplit(Index& index);
 //
 //   // Index updated, needs storing.  Return pointer to stored index (may
 //   // change).  Index will not be used after store.
@@ -76,8 +76,8 @@ namespace Star {
 //
 //   // Set and get next-leaf pointers.  It is not required that next-leaf
 //   // pointers be kept or that they be valid, so nextLeaf may return nothing.
-//   void setNextLeaf(Leaf& leaf, Maybe<Pointer> n);
-//   Maybe<Pointer> nextLeaf(Leaf const& leaf);
+//   void setNextLeaf(Leaf& leaf, std::optional<Pointer> n);
+//   std::optional<Pointer> nextLeaf(Leaf const& leaf);
 //
 //   // Should return true if leaf should try to shift elements into this leaf
 //   // from sibling leaf.
@@ -88,7 +88,7 @@ namespace Star {
 //   bool leafShift(Leaf& left, Leaf& right);
 //
 //   // Always split right and return new right node if split occurs.
-//   Maybe<Leaf> leafSplit(Leaf& leaf);
+//   std::optional<Leaf> leafSplit(Leaf& leaf);
 //
 //   // Leaf has been updated, and needs to be written to storage.  Return new
 //   // pointer (may be different).  Leaf will not be used after store.
@@ -110,7 +110,7 @@ public:
 
   bool contains(Key const& k);
 
-  Maybe<Data> find(Key const& k);
+  std::optional<Data> find(Key const& k);
 
   // Range is inclusve on lower bound and exclusive on upper bound.
   List<std::pair<Key, Data>> find(Key const& lower, Key const& upper);
@@ -220,8 +220,8 @@ private:
   bool contains(Index const& index, Key const& k);
   bool contains(Leaf const& leaf, Key const& k);
 
-  Maybe<Data> find(Index const& index, Key const& k);
-  Maybe<Data> find(Leaf const& leaf, Key const& k);
+  std::optional<Data> find(Index const& index, Key const& k);
+  std::optional<Data> find(Leaf const& leaf, Key const& k);
 
   // Returns the highest key for the last leaf we have searched
   template <typename Visitor>
@@ -266,7 +266,7 @@ bool BTreeMixin<Base>::contains(Key const& k) {
 }
 
 template <typename Base>
-auto BTreeMixin<Base>::find(Key const& k) -> Maybe<Data> {
+auto BTreeMixin<Base>::find(Key const& k) -> std::optional<Data> {
   if (Base::rootIsLeaf())
     return find(Base::loadLeaf(Base::rootPointer()), k);
   else
@@ -443,7 +443,7 @@ bool BTreeMixin<Base>::contains(Leaf const& leaf, Key const& k) {
 }
 
 template <typename Base>
-auto BTreeMixin<Base>::find(Index const& index, Key const& k) -> Maybe<Data> {
+auto BTreeMixin<Base>::find(Index const& index, Key const& k) -> std::optional<Data> {
   std::size_t i = indexFind(index, k);
   if (Base::indexLevel(index) == 0)
     return find(Base::loadLeaf(Base::indexPointer(index, i)), k);
@@ -452,10 +452,10 @@ auto BTreeMixin<Base>::find(Index const& index, Key const& k) -> Maybe<Data> {
 }
 
 template <typename Base>
-auto BTreeMixin<Base>::find(Leaf const& leaf, Key const& k) -> Maybe<Data> {
+auto BTreeMixin<Base>::find(Leaf const& leaf, Key const& k) -> std::optional<Data> {
   std::pair<std::size_t, bool> res = leafFind(leaf, k);
   if (res.second)
-    return Base::leafData(leaf, res.first);
+    return std::optional<Data>(std::in_place, Base::leafData(leaf, res.first));
   else
     return {};
 }
@@ -619,7 +619,7 @@ void BTreeMixin<Base>::modify(Leaf& leafNode, ModifyInfo& info) {
   if (splitResult) {
     Base::setNextLeaf(*splitResult, Base::nextLeaf(leafNode));
     info.newKey = Base::leafKey(*splitResult, 0);
-    info.newPointer = Base::storeLeaf(splitResult.take());
+    info.newPointer = Base::storeLeaf(takeOptional(splitResult));
 
     Base::setNextLeaf(leafNode, info.newPointer);
     info.state = LeafSplit;
@@ -787,7 +787,7 @@ void BTreeMixin<Base>::modify(Index& indexNode, ModifyInfo& info) {
   auto splitResult = Base::indexSplit(indexNode);
   if (splitResult) {
     info.newKey = splitResult->first;
-    info.newPointer = Base::storeIndex(splitResult.take().second);
+    info.newPointer = Base::storeIndex(takeOptional(splitResult).second);
     info.state = IndexSplit;
     selfUpdated = true;
   } else if (Base::indexNeedsShift(indexNode)) {

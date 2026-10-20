@@ -1,6 +1,5 @@
 import std;
 import star.string;
-import star.maybe;
 import star.json;
 import star.json_extra;
 import star.strong_typedef;
@@ -124,7 +123,7 @@ EphemeralStatusEffect jsonToEphemeralStatusEffect(Json const& config) {
     return EphemeralStatusEffect{UniqueStatusEffect(config.toString()), {}};
   } else if (config.isType(Json::Type::Object)) {
     String effectName = config.getString("effect");
-    Maybe<float> duration = config.optFloat("duration");
+    std::optional<float> duration = config.optFloat("duration");
     return EphemeralStatusEffect{UniqueStatusEffect(effectName), duration};
   } else {
     throw JsonException("Json is wrong type for ephemeral stat effect config");
@@ -132,7 +131,7 @@ EphemeralStatusEffect jsonToEphemeralStatusEffect(Json const& config) {
 }
 
 Json jsonFromEphemeralStatusEffect(EphemeralStatusEffect const& effect) {
-  return JsonObject{{"effect", effect.uniqueEffect}, {"duration", jsonFromMaybe(effect.duration)}};
+  return JsonObject{{"effect", effect.uniqueEffect}, {"duration", jsonFromOptional(effect.duration)}};
 }
 
 }

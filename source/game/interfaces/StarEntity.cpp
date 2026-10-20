@@ -1,7 +1,6 @@
 import std;
 import star.string;
 import star.list;
-import star.maybe;
 import star.format;
 import star.json;
 import star.id_map;
@@ -112,11 +111,11 @@ void Entity::hitOther(EntityId, DamageRequest const&) {}
 
 void Entity::damagedOther(DamageNotification const&) {}
 
-Maybe<HitType> Entity::queryHit(DamageSource const&) const {
+std::optional<HitType> Entity::queryHit(DamageSource const&) const {
   return {};
 }
 
-Maybe<PolyF> Entity::hitPoly() const {
+std::optional<PolyF> Entity::hitPoly() const {
   return {};
 }
 
@@ -134,7 +133,7 @@ bool Entity::shouldDestroy() const {
 
 void Entity::destroy(RenderCallback*) {}
 
-Maybe<ChainableJsonMessageResponse> Entity::receiveMessage(ConnectionId, String const&, JsonArray const&) {
+std::optional<ChainableJsonMessageResponse> Entity::receiveMessage(ConnectionId, String const&, JsonArray const&) {
   return {};
 }
 
@@ -185,11 +184,11 @@ bool Entity::keepAlive() const {
   return m_keepAlive;
 }
 
-Maybe<String> Entity::uniqueId() const {
+std::optional<String> Entity::uniqueId() const {
   return m_uniqueId;
 }
 
-Maybe<EntityMode> Entity::entityMode() const {
+std::optional<EntityMode> Entity::entityMode() const {
   return m_entityMode;
 }
 
@@ -220,7 +219,7 @@ void Entity::setKeepAlive(bool keepAlive) {
   m_keepAlive = keepAlive;
 }
 
-void Entity::setUniqueId(Maybe<String> uniqueId) {
+void Entity::setUniqueId(std::optional<String> uniqueId) {
   m_uniqueId = uniqueId;
 }
 

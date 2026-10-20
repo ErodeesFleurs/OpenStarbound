@@ -10,10 +10,10 @@ import star.random;
 import star.ttl_cache;
 import star.casting;
 import star.game_types;
-import star.maybe;
 import star.variant;
 import star.list;
 import star.rpc_promise;
+import star.optional;
 import star.bi_map;
 import star.a_star;
 import star.data_stream;
@@ -677,9 +677,9 @@ void PlayerInventory::sortBag(String const& bagType) {
 
   savedCustomBar.forEach([&](auto const& index, auto const& savedItems) {
       if (savedItems.first)
-        m_customBar.at(index).first.set(BagSlot(bagType, itemIndexes.get(savedItems.first)));
+        m_customBar.at(index).first.emplace(BagSlot(bagType, itemIndexes.get(savedItems.first)));
       if (savedItems.second)
-        m_customBar.at(index).second.set(BagSlot(bagType, itemIndexes.get(savedItems.second)));
+        m_customBar.at(index).second.emplace(BagSlot(bagType, itemIndexes.get(savedItems.second)));
     });
 }
 
@@ -733,7 +733,7 @@ bool PlayerInventory::clearSwap() {
   };
 
   if (m_swapReturnSlot)
-    trySlot(m_swapReturnSlot.take());
+    trySlot(takeOptional(m_swapReturnSlot));
 
   trySlot(EquipmentSlot::Head);
   trySlot(EquipmentSlot::Chest);
@@ -794,15 +794,15 @@ bool PlayerInventory::consumeCurrency(String const& currencyType, std::uint64_t 
   }
 }
 
-Maybe<InventorySlot> PlayerInventory::customBarPrimarySlot(CustomBarIndex customBarIndex) const {
+std::optional<InventorySlot> PlayerInventory::customBarPrimarySlot(CustomBarIndex customBarIndex) const {
   return m_customBar.at(m_customBarGroup, customBarIndex).first;
 }
 
-Maybe<InventorySlot> PlayerInventory::customBarSecondarySlot(CustomBarIndex customBarIndex) const {
+std::optional<InventorySlot> PlayerInventory::customBarSecondarySlot(CustomBarIndex customBarIndex) const {
   return m_customBar.at(m_customBarGroup, customBarIndex).second;
 }
 
-void PlayerInventory::setCustomBarPrimarySlot(CustomBarIndex customBarIndex, Maybe<InventorySlot> slot) {
+void PlayerInventory::setCustomBarPrimarySlot(CustomBarIndex customBarIndex, std::optional<InventorySlot> slot) {
   // The primary slot is not allowed to point to an empty item.
   if (slot) {
     if (!itemsAt(*slot))
@@ -819,7 +819,7 @@ void PlayerInventory::setCustomBarPrimarySlot(CustomBarIndex customBarIndex, May
   }
 }
 
-void PlayerInventory::setCustomBarSecondarySlot(CustomBarIndex customBarIndex, Maybe<InventorySlot> slot) {
+void PlayerInventory::setCustomBarSecondarySlot(CustomBarIndex customBarIndex, std::optional<InventorySlot> slot) {
   auto& cbl = m_customBar.at(m_customBarGroup, customBarIndex);
   // The secondary slot is not allowed to point to an empty item or a two
   // handed item.
@@ -844,7 +844,7 @@ void PlayerInventory::addToCustomBar(InventorySlot slot) {
   for (std::size_t j = 0; j < m_customBar.size(1); ++j) {
     auto& cbl = m_customBar.at(m_customBarGroup, j);
     if (!cbl.first && !cbl.second) {
-      cbl.first.set(slot);
+      cbl.first.emplace(slot);
       break;
     }
   }
@@ -905,7 +905,7 @@ std::shared_ptr<Item> PlayerInventory::secondaryHeldItem() const {
   return {};
 }
 
-Maybe<InventorySlot> PlayerInventory::primaryHeldSlot() const {
+std::optional<InventorySlot> PlayerInventory::primaryHeldSlot() const {
   if (swapSlotItem())
     return InventorySlot(SwapSlot());
   if (m_selectedActionBar.is<CustomBarIndex>())
@@ -913,7 +913,7 @@ Maybe<InventorySlot> PlayerInventory::primaryHeldSlot() const {
   return {};
 }
 
-Maybe<InventorySlot> PlayerInventory::secondaryHeldSlot() const {
+std::optional<InventorySlot> PlayerInventory::secondaryHeldSlot() const {
   if (swapSlotItem() || itemSafeTwoHanded(primaryHeldItem()))
     return {};
   if (m_selectedActionBar.is<CustomBarIndex>())
@@ -973,7 +973,7 @@ void PlayerInventory::load(Json const& store) {
   for (std::size_t i = 0; i < m_customBar.size(0); ++i) {
     for (std::size_t j = 0; j < m_customBar.size(1); ++j) {
       Json cbl = store.get("customBar").get(i, JsonArray()).get(j, JsonArray());
-      auto validateLink = [this](Maybe<InventorySlot> link) -> Maybe<InventorySlot> {
+      auto validateLink = [this](std::optional<InventorySlot> link) -> std::optional<InventorySlot> {
         if (link && link->is<BagSlot>()) {
           auto& slot = link->get<BagSlot>();
           if (m_bags.contains(slot.first) && std::size_t(slot.second) < m_bags[slot.first]->size())
@@ -984,8 +984,8 @@ void PlayerInventory::load(Json const& store) {
         return link;
       };
       m_customBar.at(i, j) = CustomBarLink{
-        validateLink(jsonToMaybe<InventorySlot>(cbl.get(0, {}), jsonToInventorySlot)),
-        validateLink(jsonToMaybe<InventorySlot>(cbl.get(1, {}), jsonToInventorySlot))
+        validateLink(jsonToOptional<InventorySlot>(cbl.get(0, {}), jsonToInventorySlot)),
+        validateLink(jsonToOptional<InventorySlot>(cbl.get(1, {}), jsonToInventorySlot))
       };
     }
   }
@@ -998,7 +998,7 @@ void PlayerInventory::load(Json const& store) {
   m_essential[EssentialItem::PaintTool] = itemDatabase->diskLoad(store.get("paintTool"));
   m_essential[EssentialItem::InspectionTool] = itemDatabase->diskLoad(store.get("inspectionTool"));
 
-  m_equipmentVisibilityMask = (unsigned)store.optUInt("equipmentVisibilityMask").value(0xFFFFFFFF);
+  m_equipmentVisibilityMask = (unsigned)store.optUInt("equipmentVisibilityMask").value_or(0xFFFFFFFF);
 }
 
 Json PlayerInventory::store() const {
@@ -1009,7 +1009,7 @@ Json PlayerInventory::store() const {
     JsonArray customBarGroup;
     for (std::size_t j = 0; j < m_customBar.size(1); ++j) {
       auto const& cbl  = m_customBar.at(i, j);
-      customBarGroup.append(JsonArray{jsonFromMaybe(cbl.first, jsonFromInventorySlot), jsonFromMaybe(cbl.second, jsonFromInventorySlot)});
+      customBarGroup.append(JsonArray{jsonFromOptional(cbl.first, jsonFromInventorySlot), jsonFromOptional(cbl.second, jsonFromInventorySlot)});
     }
     customBar.append(take(customBarGroup));
   }
@@ -1154,14 +1154,14 @@ bool PlayerInventory::checkInventoryFilter(std::shared_ptr<Item> const& items, S
 
   auto itemFilters = items->instanceValue("inventoryFilters");
   if (itemFilters.isType(Json::Type::Object)) {
-    filterConfig = itemFilters.opt(filterName).value();
+    filterConfig = itemFilters.opt(filterName).value_or(Json{});
     if (!filterConfig.isType(Json::Type::Object))
-      filterConfig = itemFilters.opt("default").value();
+      filterConfig = itemFilters.opt("default").value_or(Json{});
   }
 
   if (!filterConfig.isType(Json::Type::Object)) {
     auto config = m_root->assets()->json("/player.config:inventoryFilters");
-    filterConfig = config.opt(filterName).value();
+    filterConfig = config.opt(filterName).value_or(Json{});
     if (!filterConfig.isType(Json::Type::Object))
       filterConfig = config.get("default", JsonObject());
   }

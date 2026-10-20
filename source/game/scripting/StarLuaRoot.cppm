@@ -1,7 +1,6 @@
 module;
 import std;
 import star.string;
-import star.maybe;
 import star.thread;
 import star.lua;
 import star.listener;
@@ -54,7 +53,7 @@ public:
   LuaContext createContext(String const& script);
   LuaContext createContext(StringList const& scriptPaths = {});
 
-  void collectGarbage(Maybe<unsigned> steps = {});
+  void collectGarbage(std::optional<unsigned> steps = {});
   void setAutoGarbageCollection(bool autoGarbageColleciton);
   void tuneAutoGarbageCollection(float pause, float stepMultiplier);
   std::size_t luaMemoryUsage() const;

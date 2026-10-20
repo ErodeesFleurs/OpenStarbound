@@ -26,7 +26,6 @@ import star.listener;
 import std;
 import star.type_identity;
 import star.string;
-import star.maybe;
 import star.version;
 
 import star.damage_types;
@@ -89,14 +88,14 @@ public:
   
   ClientEntityMode clientEntityMode() const override;
 
-  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  Maybe<LuaValue> evalScript(String const& code) override;
+  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  std::optional<LuaValue> evalScript(String const& code) override;
 
   String typeName() const;
   
   Json configValue(String const& name, Json const& def = Json()) const;
 
-  Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  std::optional<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
   using Entity::setUniqueId;
 
@@ -120,7 +119,7 @@ private:
   NetElementFloat m_xPosition;
   NetElementFloat m_yPosition;
 
-  NetElementData<Maybe<String>> m_uniqueIdNetState;
+  NetElementData<std::optional<String>> m_uniqueIdNetState;
 
   bool m_scripted = false;
   List<std::shared_ptr<BehaviorState>> m_behaviors;

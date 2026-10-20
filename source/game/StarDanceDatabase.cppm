@@ -16,7 +16,6 @@ import star.logging;
 import star.listener;
 import std;
 import star.string;
-import star.maybe;
 import star.version;
 
 
@@ -27,9 +26,9 @@ import star.vector;
 namespace Star {
 
 struct DanceStep {
-  Maybe<String> bodyFrame;
-  Maybe<String> frontArmFrame;
-  Maybe<String> backArmFrame;
+  std::optional<String> bodyFrame;
+  std::optional<String> frontArmFrame;
+  std::optional<String> backArmFrame;
   Vec2F headOffset;
   Vec2F frontArmOffset;
   Vec2F backArmOffset;

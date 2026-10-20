@@ -10,7 +10,6 @@ import star.audio;
 import star.list;
 import star.map;
 import star.set;
-import star.maybe;
 import star.data_stream;
 import star.game_types;
 import star.strong_typedef;
@@ -393,8 +392,8 @@ Json NpcDatabase::writeNpcVariantToJson(NpcVariant const& variant) const {
     {"damageTeamType", TeamTypeNames.getRight(variant.damageTeamType)},
     {"humanoidParameters", variant.humanoidParameters}
   };
-  if (variant.description.isValid())
-    store.set("description", variant.description.value());
+  if (variant.description.has_value())
+    store.set("description", variant.description.value_or(String{}));
   return store;
 }
 

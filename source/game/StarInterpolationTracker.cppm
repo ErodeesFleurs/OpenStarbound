@@ -1,7 +1,6 @@
 module;
 
 import std;
-import star.maybe;
 import star.json;
 
 namespace Star {
@@ -38,8 +37,8 @@ private:
   double m_timeMaxDistance;
 
   double m_currentTime;
-  Maybe<double> m_lastTimeUpdate;
-  Maybe<double> m_predictedTime;
+  std::optional<double> m_lastTimeUpdate;
+  std::optional<double> m_predictedTime;
 };
 
 }

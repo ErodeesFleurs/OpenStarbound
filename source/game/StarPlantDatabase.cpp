@@ -21,7 +21,6 @@ import star.logging;
 import star.listener;
 import std;
 import star.string;
-import star.maybe;
 import star.format;
 import star.version;
 
@@ -205,13 +204,13 @@ String PlantDatabase::treeFoliageShape(String const& foliageName) const {
   return m_treeFoliageConfigs.get(foliageName).settings.get("shape").toString();
 }
 
-Maybe<String> PlantDatabase::treeStemDirectory(String const& stemName) const {
+std::optional<String> PlantDatabase::treeStemDirectory(String const& stemName) const {
   if (auto stem = m_treeStemConfigs.maybe(stemName))
     return stem->directory;
   return {};
 }
 
-Maybe<String> PlantDatabase::treeFoliageDirectory(String const& foliageName) const {
+std::optional<String> PlantDatabase::treeFoliageDirectory(String const& foliageName) const {
   if (auto foliage = m_treeFoliageConfigs.maybe(foliageName))
     return foliage->directory;
   return {};
@@ -342,7 +341,7 @@ StringList PlantDatabase::bushNames(bool ceiling) const {
 }
 
 StringList PlantDatabase::bushMods(String const& bushName) const {
-  return m_bushConfigs.get(bushName).settings.opt("mods").apply(jsonToStringList).value();
+  return m_bushConfigs.get(bushName).settings.opt("mods").transform(jsonToStringList).value_or(StringList{});
 }
 
 BushVariant PlantDatabase::buildBushVariant(String const& bushName, float baseHueShift, String const& modName, float modHueShift) const {

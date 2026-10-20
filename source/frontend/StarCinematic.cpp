@@ -1,4 +1,5 @@
 import std;
+import star.optional;
 import star.json;
 import star.xx_hash;
 import star.json_extra;
@@ -18,7 +19,6 @@ import star.string;
 import star.vector;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.input_event;
 import star.game_types;
@@ -206,7 +206,7 @@ void Cinematic::load(Json const& definition) {
     panel->text = panelDefinition.getString("text", "");
     panel->textPosition = TextPositioning(panelDefinition.get("textPosition", JsonObject()));
     panel->textStyle = panelDefinition.get("textStyle", Json());
-    panel->textStyle.color = panelDefinition.opt("fontColor").apply(jsonToVec4B).value(panel->textStyle.color);
+    panel->textStyle.color = panelDefinition.opt("fontColor").transform(jsonToVec4B).value_or(panel->textStyle.color);
     panel->textStyle.fontSize = panelDefinition.getUInt("fontSize", panel->textStyle.fontSize);
     panel->avatar = panelDefinition.getString("avatar", "");
     panel->startTime = panelDefinition.getFloat("startTime", 0);
@@ -310,7 +310,7 @@ void Cinematic::render() {
   }
 
   if (m_backgroundColor) {
-    Vec4B backgroundColor = m_backgroundColor.get();
+    Vec4B backgroundColor = m_backgroundColor.value();
     backgroundColor[3] *= fadeFactor;
     renderer->render(renderFlatRect(RectF::withSize(Vec2F(0, 0), m_windowSize), backgroundColor, 0.0f));
   }
@@ -377,7 +377,7 @@ void Cinematic::render() {
       Vec2F position = (m_offset + values.position + Vec2F(panel->textPosition.pos)) * drawableScale + drawableTranslation;
       TextPositioning tp = TextPositioning(position, panel->textPosition.hAnchor, panel->textPosition.vAnchor, {}, {});
       if (panel->textPosition.wrapWidth)
-        tp.wrapWidth = std::floor(panel->textPosition.wrapWidth.get() * drawableScale);
+        tp.wrapWidth = std::floor(panel->textPosition.wrapWidth.value() * drawableScale);
       if (values.textPercentage < 1.0)
         tp.charLimit = std::floor(panel->text.length() * values.textPercentage);
       textPainter->renderText(panel->text, tp);
@@ -703,7 +703,7 @@ bool Cinematic::handleInputEvent(InputEvent const& event) {
     return false;
   if (event.is<KeyDownEvent>()) {
     if (m_currentTimeSkip) {
-      setTime(m_currentTimeSkip.take().skipToTime);
+      setTime(takeOptional(m_currentTimeSkip).skipToTime);
       return true;
     } else if (m_skippable && m_guiContext->actions(event).contains(InterfaceAction::CinematicSkip)) {
       stop();

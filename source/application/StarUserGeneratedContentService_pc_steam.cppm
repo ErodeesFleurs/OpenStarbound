@@ -8,7 +8,6 @@ module;
 #include "discord/discord.h"
 #endif
 import std;
-import star.maybe;
 import star.thread;
 import star.input_event;
 import star.application;
@@ -32,7 +31,7 @@ public:
   SteamUserGeneratedContentService(std::shared_ptr<PcPlatformServicesState> state);
 
   StringList subscribedContentIds() const override;
-  Maybe<String> contentDownloadDirectory(String const& contentId) const override;
+  std::optional<String> contentDownloadDirectory(String const& contentId) const override;
   UserGeneratedContentService::UGCState triggerContentDownload() override;
 
 private:

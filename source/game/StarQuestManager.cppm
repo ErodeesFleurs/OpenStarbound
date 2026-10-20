@@ -2,7 +2,6 @@ module;
 import std;
 import star.string;
 import star.list;
-import star.maybe;
 import star.json;
 
 import star.set;
@@ -57,30 +56,30 @@ public:
   bool isActive(String const& questId) const;
   bool isCurrent(String const& questId) const;
   bool isTracked(String const& questId) const;
-  void setAsTracked(Maybe<String> const& questId);
+  void setAsTracked(std::optional<String> const& questId);
   void markAsRead(String const& questId);
   bool hasCompleted(String const& questId) const;
   bool canTurnIn(String const& questId) const;
 
-  Maybe<std::shared_ptr<Quest>> getFirstNewQuest();
-  Maybe<std::shared_ptr<Quest>> getFirstCompletableQuest();
-  Maybe<std::shared_ptr<Quest>> getFirstFailableQuest();
-  Maybe<std::shared_ptr<Quest>> getFirstMainQuest();
+  std::optional<std::shared_ptr<Quest>> getFirstNewQuest();
+  std::optional<std::shared_ptr<Quest>> getFirstCompletableQuest();
+  std::optional<std::shared_ptr<Quest>> getFirstFailableQuest();
+  std::optional<std::shared_ptr<Quest>> getFirstMainQuest();
 
   List<std::shared_ptr<Quest>> listActiveQuests() const;
   List<std::shared_ptr<Quest>> listCompletedQuests() const;
   List<std::shared_ptr<Quest>> listFailedQuests() const;
 
-  Maybe<String> currentQuestId() const;
-  Maybe<std::shared_ptr<Quest>> currentQuest() const;
-  Maybe<String> trackedQuestId() const;
-  Maybe<std::shared_ptr<Quest>> trackedQuest() const;
-  Maybe<QuestIndicator> getQuestIndicator(std::shared_ptr<Entity> const& entity) const;
+  std::optional<String> currentQuestId() const;
+  std::optional<std::shared_ptr<Quest>> currentQuest() const;
+  std::optional<String> trackedQuestId() const;
+  std::optional<std::shared_ptr<Quest>> trackedQuest() const;
+  std::optional<QuestIndicator> getQuestIndicator(std::shared_ptr<Entity> const& entity) const;
 
   // Handled at this level to allow multiple active quests to specify interestingObjects
   StringSet interestingObjects();
 
-  Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
   void update(float dt);
 
 private:
@@ -95,9 +94,9 @@ private:
 
   StringMap<std::shared_ptr<Quest>> m_quests;
 
-  Maybe<String> m_trackedQuestId;
+  std::optional<String> m_trackedQuestId;
   bool m_trackOnWorldQuests;
-  Maybe<String> m_onWorldQuestId;
+  std::optional<String> m_onWorldQuestId;
 };
 
 }

@@ -18,7 +18,6 @@ import star.bi_map;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -75,8 +74,8 @@ public:
   bool interactive() const override;
 
   std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition) override;
-  Maybe<String> cursorOverride(Vec2I const& screenPosition) override;
-  Maybe<std::shared_ptr<Item>> shiftItemFromInventory(std::shared_ptr<Item> const& input) override;
+  std::optional<String> cursorOverride(Vec2I const& screenPosition) override;
+  std::optional<std::shared_ptr<Item>> shiftItemFromInventory(std::shared_ptr<Item> const& input) override;
 
 protected:
   virtual std::shared_ptr<GuiReader> reader() override;

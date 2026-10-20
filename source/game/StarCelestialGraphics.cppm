@@ -9,7 +9,6 @@ import star.game_types;
 import star.color;
 import star.bi_map;
 import star.sky_types;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -49,7 +48,7 @@ public:
   // Specify the shadowing parameters in order to use the shadowing
   // information from that body instead of the primary one.
   static List<std::pair<String, float>> drawWorld(
-      Root& root, CelestialParameters const& celestialParameters, Maybe<CelestialParameters> const& shadowingParameters = {});
+      Root& root, CelestialParameters const& celestialParameters, std::optional<CelestialParameters> const& shadowingParameters = {});
   static List<std::pair<String, String>> worldHorizonImages(Root& root, CelestialParameters const& celestialParameters);
   static int worldRadialPosition(Root& root, CelestialParameters const& celestialParameters);
 

@@ -1,7 +1,6 @@
 module;
 import std;
 import star.string;
-import star.maybe;
 import star.format;
 import star.json;
 
@@ -64,7 +63,7 @@ public:
   struct ActivePartInformation {
     String partName;
     // If a state match is found, this will be set.
-    Maybe<ActiveStateInformation> activeState;
+    std::optional<ActiveStateInformation> activeState;
     JsonObject properties;
     JsonObject nextProperties;
 

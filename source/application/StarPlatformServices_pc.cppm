@@ -8,7 +8,6 @@ module;
 #include "discord/discord.h"
 #endif
 import std;
-import star.maybe;
 import star.thread;
 import star.input_event;
 import star.application;
@@ -51,7 +50,7 @@ struct PcPlatformServicesState {
 
   std::unique_ptr<discord::Core> discordCore;
   
-  Maybe<discord::User> discordCurrentUser;
+  std::optional<discord::User> discordCurrentUser;
   ThreadFunction<void> discordEventThread;
   std::atomic<bool> discordEventShutdown;
 #endif

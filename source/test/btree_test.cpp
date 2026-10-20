@@ -2,7 +2,7 @@ import star.btree;
 import std;
 import star.list;
 import star.format;
-import star.maybe;
+import star.optional;
 import star.string;
 import star.map;
 import star.set;
@@ -46,7 +46,7 @@ struct SimpleBTreeIndex {
 
   Pointer self;
   std::size_t level;
-  Maybe<Pointer> beginPointer;
+  std::optional<Pointer> beginPointer;
   ElementList pointers;
 };
 
@@ -59,8 +59,8 @@ struct SimpleBTreeLeaf {
   void insert(std::size_t i, Key k, Data d);
   void remove(std::size_t i);
 
-  Maybe<Pointer> nextLeaf() const;
-  void setNextLeaf(Maybe<Pointer> n);
+  std::optional<Pointer> nextLeaf() const;
+  void setNextLeaf(std::optional<Pointer> n);
 
   // count is number of elements to shift left
   void shiftLeft(SimpleBTreeLeaf& right, std::size_t count);
@@ -78,7 +78,7 @@ struct SimpleBTreeLeaf {
   };
   typedef List<Element> ElementList;
 
-  Maybe<Pointer> next;
+  std::optional<Pointer> next;
   Pointer self;
   ElementList elements;
 };
@@ -184,7 +184,7 @@ void SimpleBTreeIndex<Key, Pointer>::shiftRight(Key const& mid, SimpleBTreeIndex
     beginPointer = left.pointers.at(left.pointers.size() - 1).pointer;
     left.pointers.eraseAt(left.pointers.size() - 1);
   } else {
-    beginPointer = left.beginPointer.take();
+    beginPointer = takeOptional(left.beginPointer);
   }
 }
 
@@ -269,12 +269,12 @@ void SimpleBTreeLeaf<Key, Data, Pointer>::split(SimpleBTreeLeaf& right, std::siz
 }
 
 template <typename Key, typename Data, typename Pointer>
-Maybe<Pointer> SimpleBTreeLeaf<Key, Data, Pointer>::nextLeaf() const {
+std::optional<Pointer> SimpleBTreeLeaf<Key, Data, Pointer>::nextLeaf() const {
   return next;
 }
 
 template <typename Key, typename Data, typename Pointer>
-void SimpleBTreeLeaf<Key, Data, Pointer>::setNextLeaf(Maybe<Pointer> n) {
+void SimpleBTreeLeaf<Key, Data, Pointer>::setNextLeaf(std::optional<Pointer> n) {
   next = std::move(n);
 }
 
@@ -348,7 +348,7 @@ struct SimpleBTreeBase {
     }
   }
 
-  Maybe<Leaf> leafSplit(Leaf& leaf) {
+  std::optional<Leaf> leafSplit(Leaf& leaf) {
     if (leaf.count() <= maxLeafSize) {
       return {};
     } else {
@@ -413,7 +413,7 @@ struct SimpleBTreeBase {
     }
   }
 
-  Maybe<std::pair<Key, Index>> indexSplit(Index& index) {
+  std::optional<std::pair<Key, Index>> indexSplit(Index& index) {
     if (index.pointerCount() <= maxIndexSize) {
       return {};
     } else {
@@ -499,11 +499,11 @@ struct SimpleBTreeBase {
     return leaf.remove(i);
   }
 
-  Maybe<Pointer> nextLeaf(Leaf const& leaf) {
+  std::optional<Pointer> nextLeaf(Leaf const& leaf) {
     return leaf.nextLeaf();
   }
 
-  void setNextLeaf(Leaf& leaf, Maybe<Pointer> n) {
+  void setNextLeaf(Leaf& leaf, std::optional<Pointer> n) {
     leaf.setNextLeaf(n);
   }
 
@@ -542,7 +542,7 @@ struct SimpleBTree : public BTreeMixin<SimpleBTreeBase> {
   struct Printer {
     bool operator()(Index const& index) {
       std::cout << "[" << index.level << ":" << index.self << "]"
-           << " " << index.beginPointer << " ";
+           << " " << outputOptional(index.beginPointer) << " ";
       for (Index::Element e : index.pointers) {
         std::cout << "(" << e.key << ")"
              << " " << e.pointer << " ";

@@ -7,7 +7,6 @@ import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -67,7 +66,7 @@ void validateWorld(Root& root, TestUniverse& testUniverse) {
 
 const GameTestRegistration randomCelestialWorld("SpawnTest", "RandomCelestialWorld", [](GameTest& fixture) {
   CelestialMasterDatabase celestialDatabase(fixture.root());
-  Maybe<CelestialCoordinate> celestialWorld = celestialDatabase.findRandomWorld(10, 50, [&](CelestialCoordinate const& coord) {
+  std::optional<CelestialCoordinate> celestialWorld = celestialDatabase.findRandomWorld(10, 50, [&](CelestialCoordinate const& coord) {
       return celestialDatabase.parameters(coord)->isVisitable();
     });
   ASSERT_TRUE((bool)celestialWorld);

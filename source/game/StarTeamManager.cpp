@@ -16,7 +16,6 @@ import star.game_types;
 import std;
 import star.time;
 import star.map;
-import star.maybe;
 import star.version;
 import star.random;
 import star.ordered_map;
@@ -51,7 +50,7 @@ TeamManager::TeamManager(Root& root)
   m_pvpTeamCounter = 1;
   m_maxTeamSize = m_root.configuration()->get("maxTeamSize").toUInt();
   m_polledInvitationTimeout = m_root.configuration()->getPath("teamInvitationTimeout", Json(600.0)).toDouble();
-  m_secureTeams = m_root.configuration()->getPath("security.secureTeams").optBool().value(true);
+  m_secureTeams = m_root.configuration()->getPath("security.secureTeams").optBool().value_or(true);
 }
 
 JsonRpcHandlers TeamManager::rpcHandlers() {
@@ -119,7 +118,7 @@ HashMap<Uuid, TeamNumber> TeamManager::getPvpTeams() {
   return result;
 }
 
-Maybe<Uuid> TeamManager::getTeam(Uuid const& playerUuid) const {
+std::optional<Uuid> TeamManager::getTeam(Uuid const& playerUuid) const {
   for (auto const& teamPair : m_teams) {
     if (teamPair.second.members.contains(playerUuid))
       return teamPair.first;

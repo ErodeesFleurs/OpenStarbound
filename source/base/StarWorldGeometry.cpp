@@ -1,7 +1,6 @@
 import std;
 import star.format;
 import star.list;
-import star.maybe;
 import star.poly;
 import star.world_geometry;
 
@@ -33,7 +32,7 @@ std::function<Vec2F(Vec2F, Vec2F)> WorldGeometry::diffFunction() const {
   }
 }
 
-std::function<float(float, float, float)> WorldGeometry::xLerpFunction(Maybe<float> discontinuityThreshold) const {
+std::function<float(float, float, float)> WorldGeometry::xLerpFunction(std::optional<float> discontinuityThreshold) const {
   if (m_size[0] == 0) {
     return [](float, float min, float) -> float { return min; };
   } else {
@@ -47,7 +46,7 @@ std::function<float(float, float, float)> WorldGeometry::xLerpFunction(Maybe<flo
   }
 }
 
-std::function<Vec2F(float, Vec2F, Vec2F)> WorldGeometry::lerpFunction(Maybe<float> discontinuityThreshold) const {
+std::function<Vec2F(float, Vec2F, Vec2F)> WorldGeometry::lerpFunction(std::optional<float> discontinuityThreshold) const {
   if (m_size[0] == 0) {
     return [](float, Vec2F const& min, Vec2F const&) -> Vec2F { return min; };
   } else {
@@ -345,7 +344,7 @@ bool WorldGeometry::lineIntersectsCircle(Line2F const& line, Vec2F const& center
   return false;
 }
 
-Maybe<Vec2F> WorldGeometry::lineIntersectsPolyAt(Line2F const& line, PolyF const& poly) const {
+std::optional<Vec2F> WorldGeometry::lineIntersectsPolyAt(Line2F const& line, PolyF const& poly) const {
   for (auto a : splitLine(line, true)) {
     for (auto b : splitPoly(poly)) {
       if (auto intersection = b.lineIntersection(a))

@@ -24,7 +24,6 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.strong_typedef;
@@ -311,7 +310,7 @@ List<std::shared_ptr<Packet>> WorldServerThread::pullOutgoingPackets(ConnectionI
   return take(m_outgoingPacketQueue[clientId]);
 }
 
-Maybe<Vec2F> WorldServerThread::playerRevivePosition(ConnectionId clientId) const {
+std::optional<Vec2F> WorldServerThread::playerRevivePosition(ConnectionId clientId) const {
   try {
     RecursiveMutexLocker locker(m_mutex);
     if (auto player = m_worldServer->clientPlayer(clientId))
@@ -325,7 +324,7 @@ Maybe<Vec2F> WorldServerThread::playerRevivePosition(ConnectionId clientId) cons
   }
 }
 
-Maybe<std::pair<String, String>> WorldServerThread::pullNewPlanetType() {
+std::optional<std::pair<String, String>> WorldServerThread::pullNewPlanetType() {
   try {
     RecursiveMutexLocker locker(m_mutex);
     return m_worldServer->pullNewPlanetType();
@@ -383,7 +382,7 @@ void WorldServerThread::run() {
     double fidelityIncrementScore = root.assets()->json("/universe_server.config:fidelityIncrementScore").toDouble();
 
     String serverFidelityMode = root.configuration()->get("serverFidelity").toString();
-    Maybe<WorldServerFidelity> lockedFidelity;
+    std::optional<WorldServerFidelity> lockedFidelity;
     if (!serverFidelityMode.equalsIgnoreCase("automatic"))
       lockedFidelity = WorldServerFidelityNames.getLeft(serverFidelityMode);
 
@@ -395,7 +394,7 @@ void WorldServerThread::run() {
     WorldServerFidelity automaticFidelity = WorldServerFidelity::Medium;
 
     while (!m_stop && !m_errorOccurred) {
-      auto fidelity = lockedFidelity.value(automaticFidelity);
+      auto fidelity = lockedFidelity.value_or(automaticFidelity);
       m_worldServer->root().logMap().set(strf("server_{}_fidelity", m_worldId), WorldServerFidelityNames.getRight(fidelity));
       m_worldServer->root().logMap().set(strf("server_{}_update", m_worldId), strf("{:4.2f}Hz", tickApproacher.rate()));
 

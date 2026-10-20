@@ -5,7 +5,6 @@ import star.variant;
 import star.ordered_map;
 import star.ordered_set;
 import std;
-import star.maybe;
 import star.version;
 import star.bi_map;
 import star.thread;
@@ -63,7 +62,7 @@ public:
 
     // Name of the log file that should be written, if any, relative to the
     // storage directory
-    Maybe<String> logFile;
+    std::optional<String> logFile;
 
     // The minimum log level to write to any log sink
     LogLevel logLevel;
@@ -74,7 +73,7 @@ public:
 
     // If given, will write changed configuration to the given file within the
     // storage directory.
-    Maybe<String> runtimeConfigFile;
+    std::optional<String> runtimeConfigFile;
   };
 
   RootLoader(Defaults defaults);

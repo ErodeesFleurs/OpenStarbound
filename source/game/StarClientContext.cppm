@@ -27,7 +27,6 @@ import std;
 import star.worker_pool;
 
 import star.sector_array_2d;
-import star.maybe;
 import star.color;
 import star.image_processing;
 import star.hash;
@@ -98,7 +97,7 @@ public:
   // orbiting.
   CelestialCoordinate shipCoordinate() const;
 
-  Maybe<std::pair<WarpAction, WarpMode>> orbitWarpAction() const;
+  std::optional<std::pair<WarpAction, WarpMode>> orbitWarpAction() const;
 
   // The current world id of the player
   WorldId playerWorldId() const;
@@ -132,7 +131,7 @@ private:
   std::shared_ptr<JsonRpc> m_rpc;
 
   NetElementTopGroup m_netGroup;
-  NetElementData<Maybe<std::pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
+  NetElementData<std::optional<std::pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
   NetElementData<WorldId> m_playerWorldIdNetState;
   NetElementBool m_isAdminNetState;
   NetElementData<EntityDamageTeam> m_teamNetState;

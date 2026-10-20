@@ -7,7 +7,6 @@ import star.list;
 import star.map;
 import star.set;
 import star.vector;
-import star.maybe;
 import star.bi_map;
 import star.mixer;
 import star.interpolation;
@@ -54,12 +53,12 @@ AudioInstance::AudioInstance(Audio const& audio)
   m_clockStopFadeOut = 0.0f;
 }
 
-Maybe<Vec2F> AudioInstance::position() const {
+std::optional<Vec2F> AudioInstance::position() const {
   MutexLocker locker(m_mutex);
   return m_position;
 }
 
-void AudioInstance::setPosition(Maybe<Vec2F> position) {
+void AudioInstance::setPosition(std::optional<Vec2F> position) {
   MutexLocker locker(m_mutex);
   m_position = position;
 }
@@ -155,12 +154,12 @@ void AudioInstance::setMixerGroup(MixerGroup mixerGroup) {
   m_mixerGroup = mixerGroup;
 }
 
-void AudioInstance::setClockStart(Maybe<std::int64_t> clockStartTime) {
+void AudioInstance::setClockStart(std::optional<std::int64_t> clockStartTime) {
   MutexLocker locker(m_mutex);
   m_clockStart = clockStartTime;
 }
 
-void AudioInstance::setClockStop(Maybe<std::int64_t> clockStopTime, std::int64_t fadeOutTime) {
+void AudioInstance::setClockStop(std::optional<std::int64_t> clockStopTime, std::int64_t fadeOutTime) {
   MutexLocker locker(m_mutex);
   m_clockStop = clockStopTime;
   m_clockStopFadeOut = fadeOutTime;

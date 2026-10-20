@@ -14,7 +14,6 @@ import star.worker_pool;
 
 import star.sector_array_2d;
 import star.perlin;
-import star.maybe;
 import star.weighted_pool;
 import star.color;
 import star.image_processing;
@@ -84,7 +83,7 @@ void FallingBlocksAgent::update() {
       FallingBlockType thisBlock = m_facade->blockType(pos);
       FallingBlockType belowBlock = m_facade->blockType(belowPos);
 
-      Maybe<Vec2I> moveTo;
+      std::optional<Vec2I> moveTo;
 
       if (thisBlock == FallingBlockType::Falling) {
         if (belowBlock == FallingBlockType::Open)

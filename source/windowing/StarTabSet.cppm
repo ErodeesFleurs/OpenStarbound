@@ -29,7 +29,6 @@ import star.directives;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -94,7 +93,7 @@ private:
   std::shared_ptr<FlowLayout> m_tabBar;
   std::shared_ptr<StackWidget> m_stack;
   WidgetCallbackFunc m_callback;
-  Maybe<std::size_t> m_lastSelected;
+  std::optional<std::size_t> m_lastSelected;
 };
 
 }

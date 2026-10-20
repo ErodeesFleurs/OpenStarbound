@@ -1,7 +1,6 @@
 module;
 import std;
 import star.string;
-import star.maybe;
 import star.json;
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
@@ -20,12 +19,12 @@ LuaCallbacks LuaBindings::makeTeamClientCallbacks(TeamClient* teamClient) {
   callbacks.registerCallbackWithSignature<void>("isMemberOfTeam", std::bind(std::mem_fn(&TeamClient::isMemberOfTeam), teamClient));
   callbacks.registerCallbackWithSignature<void, String>("invitePlayer", std::bind(std::mem_fn(&TeamClient::invitePlayer), teamClient, std::placeholders::_1));
 
-  callbacks.registerCallback("isTeamLeader", [teamClient](Maybe<String>  const& playerUuid) -> bool {
+  callbacks.registerCallback("isTeamLeader", [teamClient](std::optional<String>  const& playerUuid) -> bool {
       if (playerUuid)
         return teamClient->isTeamLeader(Uuid(*playerUuid));
       return teamClient->isTeamLeader();
     });
-  callbacks.registerCallback("currentTeam", [teamClient]() -> Maybe<String> {
+  callbacks.registerCallback("currentTeam", [teamClient]() -> std::optional<String> {
       auto teamUuid = teamClient->currentTeam();
       if (teamUuid)
         return teamUuid->hex();

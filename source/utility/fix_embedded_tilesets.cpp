@@ -1,6 +1,5 @@
 import star.json;
 import star.native_runtime;
-import star.maybe;
 import star.file;
 import star.logging;
 import star.string;
@@ -62,7 +61,7 @@ String createRelativePath(String fromFile, String toFile) {
   return relativeParts.join("/");
 }
 
-Maybe<Json> repairTileset(Json tileset, String const& mapPath, String const& tilesetPath) {
+std::optional<Json> repairTileset(Json tileset, String const& mapPath, String const& tilesetPath) {
   if (tileset.contains("source"))
     return {};
   std::size_t firstGid = tileset.getUInt("firstgid");
@@ -73,11 +72,11 @@ Maybe<Json> repairTileset(Json tileset, String const& mapPath, String const& til
   return {JsonObject{{"firstgid", firstGid}, {"source", createRelativePath(mapPath, tilesetFileName)}}};
 }
 
-Maybe<Json> repair(Json mapJson, String const& mapPath, String const& tilesetPath) {
+std::optional<Json> repair(Json mapJson, String const& mapPath, String const& tilesetPath) {
   JsonArray tilesets = mapJson.getArray("tilesets");
   bool changed = false;
   for (std::size_t i = 0; i < tilesets.size(); ++i) {
-    if (Maybe<Json> tileset = repairTileset(tilesets[i], mapPath, tilesetPath)) {
+    if (std::optional<Json> tileset = repairTileset(tilesets[i], mapPath, tilesetPath)) {
       tilesets[i] = *tileset;
       changed = true;
     }
@@ -108,7 +107,7 @@ void fixEmbeddedTilesets(Logger& logger, String const& searchRoot, String const&
   forEachRecursiveFileMatch(logger, searchRoot, ".json", [&logger, tilesetPath](String const& path) {
       Json json = Json::parseJson(File::readFileString(path));
       if (json.contains("tilesets")) {
-        if (Maybe<Json> fixed = repair(json, path, tilesetPath)) {
+        if (std::optional<Json> fixed = repair(json, path, tilesetPath)) {
           File::writeFile(fixed->repr(2, true), path);
           logger.info("Repaired {}", path);
         }

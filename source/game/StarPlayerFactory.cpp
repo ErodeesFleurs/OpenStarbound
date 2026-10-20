@@ -17,7 +17,6 @@ import star.variant;
 import star.rpc_promise;
 import star.strong_typedef;
 import star.game_types;
-import star.maybe;
 import star.a_star;
 import star.ordered_set;
 import star.audio;
@@ -142,7 +141,7 @@ PlayerConfig::PlayerConfig(Root& root, JsonObject const& cfg) : humanoidTiming(r
 
   bodyMaterialKind = cfg.get("bodyMaterialKind").toString();
 
-  for (auto& p : cfg.get("genericScriptContexts").optObject().value(JsonObject()))
+  for (auto& p : cfg.get("genericScriptContexts").optObject().value_or(JsonObject()))
     genericScriptContexts[p.first] = p.second.toString();
 }
 

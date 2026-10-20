@@ -1,7 +1,6 @@
 import std;
 import star.ordered_map;
 import star.list;
-import star.maybe;
 import star.lru_cache;
 import star.ttl_cache;
 import star.random;
@@ -65,7 +64,7 @@ TEST(OrderedMap, ConstGetters) {
   EXPECT_EQ(map.ptr(3), &map.get(3));
 
   EXPECT_EQ(map.value(4, 4), 4);
-  EXPECT_EQ(map.maybe(5), Maybe<int>());
+  EXPECT_EQ(map.maybe(5), std::optional<int>());
 }
 
 TEST(OrderedMap, Sorting) {

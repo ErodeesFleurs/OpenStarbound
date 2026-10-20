@@ -5,7 +5,6 @@ import star.json;
 
 import star.game_types;
 import star.material_types;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.color;

@@ -21,6 +21,7 @@ import star.string;
 import star.set;
 import star.format;
 import star.version;
+import star.optional;
 
 import star.asset_source;
 import star.assets;
@@ -165,7 +166,7 @@ SpawnTypeDatabase::SpawnTypeDatabase(std::shared_ptr<Assets const> const& assets
 
 SpawnType SpawnTypeDatabase::spawnType(String const& typeName) const {
   if (auto spawnType = m_spawnTypes.maybe(typeName))
-    return spawnType.take();
+    return takeOptional(spawnType);
   throw SpawnTypeDatabaseException::format("No such spawnType '{}'", typeName);
 }
 

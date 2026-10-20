@@ -4,7 +4,6 @@ import std;
 import star.string;
 import star.map;
 import star.list;
-import star.maybe;
 import star.hash;
 import star.format;
 
@@ -67,15 +66,15 @@ public:
   Right valueRight(Left const& left, Right const& def = Right()) const;
   Left valueLeft(Right const& right, Left const& def = Left()) const;
 
-  Maybe<Right> maybeRight(Left const& left) const;
+  std::optional<Right> maybeRight(Left const& left) const;
 
-  Maybe<Left> maybeLeft(Right const& right) const;
+  std::optional<Left> maybeLeft(Right const& right) const;
 
   Right takeRight(Left const& left);
   Left takeLeft(Right const& right);
 
-  Maybe<Right> maybeTakeRight(Left const& left);
-  Maybe<Left> maybeTakeLeft(Right const& right);
+  std::optional<Right> maybeTakeRight(Left const& left);
+  std::optional<Left> maybeTakeLeft(Right const& right);
 
   Right const* rightPtr(Left const& left) const;
   Left const* leftPtr(Right const& right) const;
@@ -229,61 +228,61 @@ LeftT const& BiMap<LeftT, RightT, LeftMapT, RightMapT>::getLeft(Right const& rig
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
 RightT BiMap<LeftT, RightT, LeftMapT, RightMapT>::valueRight(Left const& left, Right const& def) const {
-  return maybeRight(left).value(def);
+  return maybeRight(left).value_or(def);
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
 LeftT BiMap<LeftT, RightT, LeftMapT, RightMapT>::valueLeft(Right const& right, Left const& def) const {
-  return maybeLeft(right).value(def);
+  return maybeLeft(right).value_or(def);
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-Maybe<RightT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeRight(Left const& left) const {
+std::optional<RightT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeRight(Left const& left) const {
   auto i = m_leftMap.find(left);
   if (i != m_leftMap.end())
-    return *i->second;
+    return std::optional<RightT>(std::in_place, *i->second);
   return {};
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-Maybe<LeftT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeLeft(Right const& right) const {
+std::optional<LeftT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeLeft(Right const& right) const {
   auto i = m_rightMap.find(right);
   if (i != m_rightMap.end())
-    return *i->second;
+    return std::optional<LeftT>(std::in_place, *i->second);
   return {};
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
 RightT BiMap<LeftT, RightT, LeftMapT, RightMapT>::takeRight(Left const& left) {
   if (auto right = maybeTakeRight(left))
-    return right.take();
+    return std::move(right.value());
   throw MapException::format("No such key in BiMap::takeRight", outputAny(left));
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
 LeftT BiMap<LeftT, RightT, LeftMapT, RightMapT>::takeLeft(Right const& right) {
   if (auto left = maybeTakeLeft(right))
-    return left.take();
+    return std::move(left.value());
   throw MapException::format("No such key in BiMap::takeLeft", outputAny(right));
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-Maybe<RightT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeTakeRight(Left const& left) {
-  if (auto rightPtr = m_leftMap.maybeTake(left).value()) {
+std::optional<RightT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeTakeRight(Left const& left) {
+  if (auto rightPtr = m_leftMap.maybeTake(left).value_or(nullptr)) {
     Right right = *rightPtr;
     m_rightMap.remove(*rightPtr);
-    return right;
+    return std::optional<RightT>(std::in_place, std::move(right));
   } else {
     return {};
   }
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-Maybe<LeftT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeTakeLeft(Right const& right) {
-  if (auto leftPtr = m_rightMap.maybeTake(right).value()) {
+std::optional<LeftT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeTakeLeft(Right const& right) {
+  if (auto leftPtr = m_rightMap.maybeTake(right).value_or(nullptr)) {
     Left left = *leftPtr;
     m_leftMap.remove(*leftPtr);
-    return left;
+    return std::optional<LeftT>(std::in_place, std::move(left));
   } else {
     return {};
   }

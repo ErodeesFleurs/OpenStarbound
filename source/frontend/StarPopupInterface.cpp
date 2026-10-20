@@ -20,7 +20,6 @@ import star.version;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -75,11 +74,11 @@ PopupInterface::PopupInterface(GuiContext& guiContext) : Pane(guiContext) {
   reader.construct(assets->json("/interface/windowconfig/popup.config:paneLayout"), this);
 }
 
-void PopupInterface::displayMessage(String const& message, String const& title, String const& subtitle, Maybe<String> const& onShowSound) {
+void PopupInterface::displayMessage(String const& message, String const& title, String const& subtitle, std::optional<String> const& onShowSound) {
   setTitleString(title, subtitle);
   fetchChild<LabelWidget>("message")->setText(message);
   show();
-  auto sound = onShowSound.value(context()->root().random().randValueFrom(context()->root().assets()->json("/interface/windowconfig/popup.config:onShowSound").toArray(), "").toString());
+  auto sound = onShowSound.value_or(context()->root().random().randValueFrom(context()->root().assets()->json("/interface/windowconfig/popup.config:onShowSound").toArray(), "").toString());
   if (!sound.empty())
     context()->playAudio(sound);
 }

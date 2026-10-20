@@ -21,7 +21,6 @@ import star.ref_ptr;
 import star.logging;
 import star.version;
 import star.text;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;

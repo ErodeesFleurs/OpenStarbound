@@ -32,7 +32,6 @@ import star.version;
 import star.id_map;
 import star.variant;
 import star.rpc_promise;
-import star.maybe;
 import star.a_star;
 import star.ordered_set;
 import star.audio;
@@ -225,7 +224,7 @@ Json QuestManager::diskStore() {
 
   return JsonObject{
       {"quests", jsonFromMapV<StringMap<std::shared_ptr<Quest>>>(m_quests, questPtrToJson)},
-      {"currentQuest", jsonFromMaybe(m_trackedQuestId)}
+      {"currentQuest", jsonFromOptional(m_trackedQuestId)}
     };
 }
 
@@ -322,14 +321,14 @@ bool QuestManager::isActive(String const& questId) const {
 }
 
 bool QuestManager::isCurrent(String const& questId) const {
-  return m_onWorldQuestId.orMaybe(m_trackedQuestId) == questId;
+  return (m_onWorldQuestId ? m_onWorldQuestId : m_trackedQuestId) == questId;
 }
 
 bool QuestManager::isTracked(String const& questId) const {
   return m_trackedQuestId == questId;
 }
 
-void QuestManager::setAsTracked(Maybe<String> const& questId) {
+void QuestManager::setAsTracked(std::optional<String> const& questId) {
   if (questId && isActive(*questId)) {
     m_trackedQuestId = questId;
     if (m_onWorldQuestId) {
@@ -364,7 +363,7 @@ bool QuestManager::canTurnIn(String const& questId) const {
   return false;
 }
 
-Maybe<std::shared_ptr<Quest>> QuestManager::getFirstNewQuest() {
+std::optional<std::shared_ptr<Quest>> QuestManager::getFirstNewQuest() {
   for (auto& q : m_quests) {
     if (questValidOnServer(q.second) && q.second->state() == QuestState::Offer)
       return q.second;
@@ -372,7 +371,7 @@ Maybe<std::shared_ptr<Quest>> QuestManager::getFirstNewQuest() {
   return {};
 }
 
-Maybe<std::shared_ptr<Quest>> QuestManager::getFirstCompletableQuest() {
+std::optional<std::shared_ptr<Quest>> QuestManager::getFirstCompletableQuest() {
   for (auto& q : m_quests) {
     if (questValidOnServer(q.second) && q.second->state() == QuestState::Complete && q.second->showDialog())
       return q.second;
@@ -380,7 +379,7 @@ Maybe<std::shared_ptr<Quest>> QuestManager::getFirstCompletableQuest() {
   return {};
 }
 
-Maybe<std::shared_ptr<Quest>> QuestManager::getFirstFailableQuest() {
+std::optional<std::shared_ptr<Quest>> QuestManager::getFirstFailableQuest() {
   for (auto& q : m_quests) {
     if (questValidOnServer(q.second) && q.second->state() == QuestState::Failed && q.second->showDialog())
       return q.second;
@@ -388,7 +387,7 @@ Maybe<std::shared_ptr<Quest>> QuestManager::getFirstFailableQuest() {
   return {};
 }
 
-Maybe<std::shared_ptr<Quest>> QuestManager::getFirstMainQuest() {
+std::optional<std::shared_ptr<Quest>> QuestManager::getFirstMainQuest() {
   for (auto& q : m_quests) {
     if (questValidOnServer(q.second) && q.second->state() == QuestState::Active && q.second->mainQuest())
       return q.second;
@@ -435,12 +434,12 @@ List<std::shared_ptr<Quest>> QuestManager::listFailedQuests() const {
   return result;
 }
 
-Maybe<String> QuestManager::currentQuestId() const {
+std::optional<String> QuestManager::currentQuestId() const {
   return m_trackedQuestId;
 }
 
-Maybe<std::shared_ptr<Quest>> QuestManager::currentQuest() const {
-  auto questId = m_onWorldQuestId.orMaybe(m_trackedQuestId);
+std::optional<std::shared_ptr<Quest>> QuestManager::currentQuest() const {
+  auto questId = (m_onWorldQuestId ? m_onWorldQuestId : m_trackedQuestId);
   if (questId && isActive(*questId)) {
     auto current = getQuest(*questId);
     if (current->showInLog())
@@ -449,11 +448,11 @@ Maybe<std::shared_ptr<Quest>> QuestManager::currentQuest() const {
   return {};
 }
 
-Maybe<String> QuestManager::trackedQuestId() const {
+std::optional<String> QuestManager::trackedQuestId() const {
   return m_trackedQuestId;
 }
 
-Maybe<std::shared_ptr<Quest>> QuestManager::trackedQuest() const {
+std::optional<std::shared_ptr<Quest>> QuestManager::trackedQuest() const {
   if (m_trackedQuestId && isActive(*m_trackedQuestId)) {
     auto current = getQuest(*m_trackedQuestId);
     if (current->showInLog())
@@ -462,8 +461,8 @@ Maybe<std::shared_ptr<Quest>> QuestManager::trackedQuest() const {
   return {};
 }
 
-Maybe<QuestIndicator> QuestManager::getQuestIndicator(std::shared_ptr<Entity> const& entity) const {
-  Maybe<String> indicatorType;
+std::optional<QuestIndicator> QuestManager::getQuestIndicator(std::shared_ptr<Entity> const& entity) const {
+  std::optional<String> indicatorType;
   Vec2F indicatorPos = entity->position() + Vec2F(0, 2.75);
   auto questGiver = as<InteractiveEntity>(entity);
 
@@ -524,13 +523,17 @@ StringSet QuestManager::interestingObjects() {
   return result;
 }
 
-Maybe<ChainableJsonMessageResponse> QuestManager::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+std::optional<ChainableJsonMessageResponse> QuestManager::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   if constexpr (Star::DebugEnabled) {
     Star::starAssertFailed((m_world));
   }
-  Maybe<ChainableJsonMessageResponse> result;
+  std::optional<ChainableJsonMessageResponse> result;
   m_quests.values().exec([&result, message, localMessage, args](
-      std::shared_ptr<Quest> const& quest) { result = result.orMaybe(quest->receiveMessage(message, localMessage, args)); });
+      std::shared_ptr<Quest> const& quest) {
+        auto response = quest->receiveMessage(message, localMessage, args);
+        if (!result)
+          result = std::move(response);
+      });
   return result;
 }
 
@@ -551,7 +554,7 @@ void QuestManager::update(float dt) {
       m_onWorldQuestId = {};
   } else if (m_trackOnWorldQuests) {
     auto playerWorldId = m_client->clientContext()->playerWorldId();
-    auto trackedWorld = currentQuest().sequence([](std::shared_ptr<Quest> q) { return q->worldId(); });
+    auto trackedWorld = currentQuest().and_then([](std::shared_ptr<Quest> q) { return q->worldId(); });
     if (!trackedWorld || playerWorldId != *trackedWorld) {
       // the currently tracked quest is not on this world, track another quest on this world
       for (auto quest : listActiveQuests()) {
@@ -600,7 +603,7 @@ void QuestManager::setMostRecentQuestCurrent() {
 }
 
 bool QuestManager::questValidOnServer(std::shared_ptr<Quest> q) const {
-  return !(q->hideCrossServer() && q->serverUuid().isValid() && *q->serverUuid() != m_player->clientContext()->serverUuid());
+  return !(q->hideCrossServer() && q->serverUuid().has_value() && *q->serverUuid() != m_player->clientContext()->serverUuid());
 }
 
 }

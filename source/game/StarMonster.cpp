@@ -25,7 +25,6 @@ import star.ttl_cache;
 import star.audio;
 import star.map;
 import star.set;
-import star.maybe;
 import star.color;
 import star.string;
 import star.rect;
@@ -123,7 +122,7 @@ import star.line;
 import star.algorithm;
 namespace Star {
 
-Monster::Monster(Root& rootContext, MonsterVariant const& monsterVariant, Maybe<float> level) : Entity(rootContext), m_networkedAnimator(rootContext), m_effectEmitter(rootContext), m_scriptComponent(rootContext), m_scriptedAnimator(rootContext) {
+Monster::Monster(Root& rootContext, MonsterVariant const& monsterVariant, std::optional<float> level) : Entity(rootContext), m_networkedAnimator(rootContext), m_effectEmitter(rootContext), m_scriptComponent(rootContext), m_scriptedAnimator(rootContext) {
   m_monsterLevel = level;
 
   m_damageOnTouch = false;
@@ -144,13 +143,13 @@ Monster::Monster(Root& rootContext, MonsterVariant const& monsterVariant, Maybe<
   for (auto const& pair : m_monsterVariant.animatorPartTags)
     m_networkedAnimator.setPartTag(pair.first, "partImage", pair.second);
   m_networkedAnimator.setZoom(m_monsterVariant.animatorZoom);
-  auto colorSwap = m_monsterVariant.colorSwap.value(this->root().monsterDatabase()->colorSwap(m_monsterVariant.parameters.getString("colors", "default"), m_monsterVariant.seed));
+  auto colorSwap = m_monsterVariant.colorSwap.value_or(this->root().monsterDatabase()->colorSwap(m_monsterVariant.parameters.getString("colors", "default"), m_monsterVariant.seed));
   if (!colorSwap.empty())
     m_networkedAnimator.setProcessingDirectives(imageOperationToString(ColorReplaceImageOperation{colorSwap}));
 
   m_statusController = std::make_shared<StatusController>(this->root(), m_monsterVariant.statusSettings);
 
-  m_scriptComponent.setScripts(m_monsterVariant.parameters.optArray("scripts").apply(jsonToStringList).value(m_monsterVariant.scripts));
+  m_scriptComponent.setScripts(m_monsterVariant.parameters.optArray("scripts").transform(jsonToStringList).value_or(m_monsterVariant.scripts));
   m_scriptComponent.setUpdateDelta(m_monsterVariant.initialScriptDelta);
 
   auto movementParameters = ActorMovementParameters::sensibleDefaults(this->root()).merge(ActorMovementParameters(monsterVariant.movementSettings));
@@ -194,7 +193,7 @@ Monster::Monster(Root& rootContext, Json const& diskStore)
 
 Json Monster::diskStore() const {
   return JsonObject{
-    {"monsterLevel", jsonFromMaybe(m_monsterLevel)},
+    {"monsterLevel", jsonFromOptional(m_monsterLevel)},
     {"movementState", m_movementController->storeState()},
     {"statusController", m_statusController->diskStore()},
     {"damageOnTouch", m_damageOnTouch},
@@ -206,7 +205,7 @@ Json Monster::diskStore() const {
     {"effectEmitter", m_effectEmitter.toJson()},
     {"monsterVariant", this->root().monsterDatabase()->writeMonsterVariantToJson(m_monsterVariant)},
     {"scriptStorage", m_scriptComponent.getScriptStorage()},
-    {"uniqueId", jsonFromMaybe(uniqueId())},
+    {"uniqueId", jsonFromOptional(uniqueId())},
     {"team", getTeam().toJson()}
   };
 }
@@ -235,7 +234,7 @@ void Monster::init(World* world, EntityId entityId, EntityMode mode) {
 
   if (isMaster()) {
     auto functionDatabase = this->root().functionDatabase();
-    float healthMultiplier = m_monsterVariant.healthMultiplier * functionDatabase->function(m_monsterVariant.healthLevelFunction)->evaluate(*m_monsterLevel);
+    float healthMultiplier = m_monsterVariant.healthMultiplier * functionDatabase->function(m_monsterVariant.healthLevelFunction)->evaluate(m_monsterLevel.value());
     m_statusController->setPersistentEffects("innate", {StatModifier(StatBaseMultiplier{"maxHealth", healthMultiplier})});
 
     m_scriptComponent.addCallbacks("monster", makeMonsterCallbacks());
@@ -328,24 +327,25 @@ void Monster::disableInterpolation() {
 }
 
 String Monster::name() const {
-  return m_name.get().orMaybe(m_monsterVariant.shortDescription).value("");
+  auto const& name = m_name.get();
+  return (name ? name : m_monsterVariant.shortDescription).value_or("");
 }
 
 String Monster::description() const {
-  return m_monsterVariant.description.value("Some indescribable horror");
+  return m_monsterVariant.description.value_or("Some indescribable horror");
 }
 
-Maybe<HitType> Monster::queryHit(DamageSource const& source) const {
+std::optional<HitType> Monster::queryHit(DamageSource const& source) const {
   if (!inWorld() || m_knockedOut || m_statusController->statPositive("invulnerable"))
     return {};
 
-  if (source.intersectsWithPoly(world()->geometry(), hitPoly().get()))
+  if (source.intersectsWithPoly(world()->geometry(), hitPoly().value()))
     return HitType::Hit;
 
   return {};
 }
 
-Maybe<PolyF> Monster::hitPoly() const {
+std::optional<PolyF> Monster::hitPoly() const {
   PolyF hitBody = m_monsterVariant.selfDamagePoly;
   hitBody.rotate(m_movementController->rotation());
   hitBody.translate(position());
@@ -384,7 +384,7 @@ List<DamageNotification> Monster::selfDamageNotifications() {
 List<DamageSource> Monster::damageSources() const {
   List<DamageSource> damageSources = m_damageSources.get();
 
-  float levelPowerMultiplier = this->root().functionDatabase()->function(m_monsterVariant.powerLevelFunction)->evaluate(*m_monsterLevel);
+  float levelPowerMultiplier = this->root().functionDatabase()->function(m_monsterVariant.powerLevelFunction)->evaluate(m_monsterLevel.value());
   if (m_damageOnTouch && !m_monsterVariant.touchDamageConfig.isNull()) {
     DamageSource damageSource(m_monsterVariant.touchDamageConfig);
     if (auto damagePoly = damageSource.damageArea.ptr<PolyF>())
@@ -419,12 +419,12 @@ List<DamageSource> Monster::damageSources() const {
     List<DamageSource> partSources;
     if (auto line = ds.damageArea.maybe<Line2F>()) {
       if (pair.second.getBool("checkLineCollision", false)) {
-        Line2F worldLine = line.value().translated(position());
+        Line2F worldLine = line.value_or(Line2F{}).translated(position());
         float length = worldLine.length();
 
         auto bounces = pair.second.getInt("bounces", 0);
         while (auto collision = world()->lineTileCollisionPoint(worldLine.min(), worldLine.max())) {
-          worldLine = Line2F(worldLine.min(), collision.value().first);
+          worldLine = Line2F(worldLine.min(), collision.value_or(std::pair<Vec2F, Vec2I>{}).first);
           ds.damageArea = worldLine.translated(-position());
           length = length - worldLine.length();
 
@@ -507,7 +507,7 @@ void Monster::destroy(RenderCallback* renderCallback) {
     }
 
     try {
-      for (auto const& treasureItem : treasureDatabase->createTreasure(treasurePool, *m_monsterLevel))
+      for (auto const& treasureItem : treasureDatabase->createTreasure(treasurePool, m_monsterLevel.value()))
         world()->addEntity(ItemDrop::createRandomizedDrop(this->root(), treasureItem, position()));
     } catch (StarException const& e) {
       this->root().logger().warn("Failed to create treasure for monster '{}': {}", m_monsterVariant.type, outputException(e, false));
@@ -612,7 +612,7 @@ void Monster::render(RenderCallback* renderCallback) {
   m_effectEmitter.render(renderCallback);
 
   for (auto drawablePair : m_scriptedAnimator.drawables())
-    renderCallback->addDrawable(drawablePair.first, drawablePair.second.value(m_monsterVariant.renderLayer));
+    renderCallback->addDrawable(drawablePair.first, drawablePair.second.value_or(m_monsterVariant.renderLayer));
   renderCallback->addAudios(m_scriptedAnimator.pullNewAudios());
   renderCallback->addParticles(m_scriptedAnimator.pullNewParticles());
 }
@@ -627,15 +627,15 @@ void Monster::setPosition(Vec2F const& pos) {
   m_movementController->setPosition(pos);
 }
 
-Maybe<ChainableJsonMessageResponse> Monster::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
-  Maybe<ChainableJsonMessageResponse> result = m_scriptComponent.handleMessage(message, world()->connection() == sendingConnection, args);
+std::optional<ChainableJsonMessageResponse> Monster::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+  std::optional<ChainableJsonMessageResponse> result = m_scriptComponent.handleMessage(message, world()->connection() == sendingConnection, args);
   if (!result)
     result = m_statusController->receiveMessage(message, world()->connection() == sendingConnection, args);
   return result;
 }
 
 float Monster::maxHealth() const {
-  return *m_statusController->resourceMax("health");
+  return m_statusController->resourceMax("health").value();
 }
 
 float Monster::health() const {
@@ -678,15 +678,15 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
     });
 
   callbacks.registerCallback("level", [this]() {
-      return *m_monsterLevel;
+      return m_monsterLevel.value();
     });
 
   callbacks.registerCallback("setDamageOnTouch", [this](bool arg1) {
       m_damageOnTouch = arg1;
     });
 
-  callbacks.registerCallback("setDamageSources", [this](Maybe<JsonArray> const& damageSources) {
-      m_damageSources.set(damageSources.value().transformed(construct<DamageSource>()));
+  callbacks.registerCallback("setDamageSources", [this](std::optional<JsonArray> const& damageSources) {
+      m_damageSources.set(damageSources.value_or(JsonArray{}).transformed(construct<DamageSource>()));
     });
 
   callbacks.registerCallback("setDamageParts", [this](StringSet const& parts) {
@@ -697,8 +697,8 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
       m_aggressive = arg1;
     });
 
-  callbacks.registerCallback("setActiveSkillName", [this](Maybe<String> const& activeSkillName) {
-      m_activeSkillName = activeSkillName.value();
+  callbacks.registerCallback("setActiveSkillName", [this](std::optional<String> const& activeSkillName) {
+      m_activeSkillName = activeSkillName.value_or(String{});
     });
 
   callbacks.registerCallback("setDropPool", [this](Json dropPool) {
@@ -720,12 +720,12 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
       m_movementController->controlFly(world()->geometry().diff(arg1, position()));
     });
 
-  callbacks.registerCallback("setDeathParticleBurst", [this](Maybe<String> const& arg1) {
-      m_deathParticleBurst = arg1.value();
+  callbacks.registerCallback("setDeathParticleBurst", [this](std::optional<String> const& arg1) {
+      m_deathParticleBurst = arg1.value_or(String{});
     });
 
-  callbacks.registerCallback("setDeathSound", [this](Maybe<String> const& arg1) {
-      m_deathSound = arg1.value();
+  callbacks.registerCallback("setDeathSound", [this](std::optional<String> const& arg1) {
+      m_deathSound = arg1.value_or(String{});
     });
 
   callbacks.registerCallback("setPhysicsForces", [this](JsonArray const& forces) {
@@ -739,7 +739,7 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
       m_displayNametag.set(display);
     });
 
-  callbacks.registerCallback("say", [this](String line, Maybe<StringMap<String>> const& tags) {
+  callbacks.registerCallback("say", [this](String line, std::optional<StringMap<String>> const& tags) {
       if (tags)
         line = line.replaceTags(*tags, false);
 
@@ -751,7 +751,7 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
       return false;
     });
 
-  callbacks.registerCallback("sayPortrait", [this](String line, String portrait, Maybe<StringMap<String>> const& tags) {
+  callbacks.registerCallback("sayPortrait", [this](String line, String portrait, std::optional<StringMap<String>> const& tags) {
       if (tags)
         line = line.replaceTags(*tags, false);
 
@@ -767,7 +767,7 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
       setTeam(EntityDamageTeam(team));
     });
 
-  callbacks.registerCallback("setUniqueId", [this](Maybe<String> uniqueId) {
+  callbacks.registerCallback("setUniqueId", [this](std::optional<String> uniqueId) {
       setUniqueId(uniqueId);
     });
 
@@ -871,7 +871,7 @@ void Monster::getNetStates(bool initial) {
 }
 
 float Monster::monsterLevel() const {
-  return *m_monsterLevel;
+  return m_monsterLevel.value();
 }
 
 Monster::SkillInfo Monster::activeSkillInfo() const {
@@ -907,7 +907,7 @@ MonsterVariant Monster::monsterVariant() const {
   return m_monsterVariant;
 }
 
-Maybe<String> Monster::statusText() const {
+std::optional<String> Monster::statusText() const {
   return {};
 }
 
@@ -931,11 +931,11 @@ bool Monster::aggressive() const {
   return m_aggressive;
 }
 
-Maybe<LuaValue> Monster::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
+std::optional<LuaValue> Monster::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
   return m_scriptComponent.invoke(func, args);
 }
 
-Maybe<LuaValue> Monster::evalScript(String const& code) {
+std::optional<LuaValue> Monster::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
@@ -956,7 +956,7 @@ List<PhysicsForceRegion> Monster::forceRegions() const {
 }
 
 InteractAction Monster::interact(InteractRequest const& request) {
-  auto result = m_scriptComponent.invoke<Json>("interact", JsonObject{{"sourceId", request.sourceId}, {"sourcePosition", jsonFromVec2F(request.sourcePosition)}}).value();
+  auto result = m_scriptComponent.invoke<Json>("interact", JsonObject{{"sourceId", request.sourceId}, {"sourcePosition", jsonFromVec2F(request.sourcePosition)}}).value_or(Json{});
 
   if (result.isNull())
     return {};

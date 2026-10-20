@@ -17,7 +17,6 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
@@ -66,7 +65,7 @@ namespace Star::LuaBindings::ItemCallbacks {
   std::size_t count(Item* item);
   std::size_t setCount(Item* item, std::size_t count);
   std::size_t maxStack(Item* item);
-  bool matches(Item* item, Json const& descriptor, Maybe<bool> exactMatch);
+  bool matches(Item* item, Json const& descriptor, std::optional<bool> exactMatch);
   Json matchingDescriptors(Item* item);
   bool consume(Item* item, std::size_t count);
   bool empty(Item* item);
@@ -98,7 +97,7 @@ LuaCallbacks LuaBindings::makeItemCallbacks(Item* item) {
   callbacks.registerCallbackWithSignature<std::size_t>("count", std::bind(ItemCallbacks::count, item));
   callbacks.registerCallbackWithSignature<std::size_t, std::size_t>("setCount", std::bind(ItemCallbacks::setCount, item, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<std::size_t>("maxStack", std::bind(ItemCallbacks::maxStack, item));
-  callbacks.registerCallbackWithSignature<bool, Json, Maybe<bool>>("matches", std::bind(ItemCallbacks::matches, item, std::placeholders::_1, std::placeholders::_2));
+  callbacks.registerCallbackWithSignature<bool, Json, std::optional<bool>>("matches", std::bind(ItemCallbacks::matches, item, std::placeholders::_1, std::placeholders::_2));
   callbacks.registerCallbackWithSignature<bool, std::size_t>("consume", std::bind(ItemCallbacks::consume, item, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<bool>("empty", std::bind(ItemCallbacks::empty, item));
   callbacks.registerCallbackWithSignature<Json>("descriptor", std::bind(ItemCallbacks::descriptor, item));
@@ -163,9 +162,9 @@ std::size_t LuaBindings::ItemCallbacks::maxStack(Item* item) {
 // @param descriptor A properly serialized item descriptor
 // @return A bool true if matches, false if not.
 //
-bool LuaBindings::ItemCallbacks::matches(Item* item, Json const& desc, Maybe<bool> exactMatch) {
+bool LuaBindings::ItemCallbacks::matches(Item* item, Json const& desc, std::optional<bool> exactMatch) {
   ItemDescriptor itemDesc = ItemDescriptor(desc);
-  return item->matches(itemDesc, exactMatch.value(false));
+  return item->matches(itemDesc, exactMatch.value_or(false));
 }
 
 // If the given number of this item is available, consumes that number and

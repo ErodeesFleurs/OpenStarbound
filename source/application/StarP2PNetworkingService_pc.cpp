@@ -6,7 +6,6 @@
 #include "discord/discord.h"
 #endif
 import std;
-import star.maybe;
 import star.format;
 import star.string;
 import star.list;
@@ -156,7 +155,7 @@ void Star::PcP2PNetworkingService::setActivityData(
   [[maybe_unused]] const char* title,
   [[maybe_unused]] const char* details,
   [[maybe_unused]] std::int64_t startTime,
-  [[maybe_unused]] Maybe<std::pair<std::uint16_t, std::uint16_t>> party) {
+  [[maybe_unused]] std::optional<std::pair<std::uint16_t, std::uint16_t>> party) {
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   MutexLocker discordLocker(m_state->discordMutex);
 #endif
@@ -225,7 +224,7 @@ MVariant<P2PNetworkingPeerId, HostAddressWithPort> PcP2PNetworkingService::pullP
   return take(m_pendingJoin);
 }
 
-Maybe<std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> Star::PcP2PNetworkingService::pullJoinRequest() {
+std::optional<std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> Star::PcP2PNetworkingService::pullJoinRequest() {
   MutexLocker serviceLocker(m_mutex);
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
@@ -361,7 +360,7 @@ bool PcP2PNetworkingService::SteamP2PSocket::sendMessage(ByteArray const& messag
   return true;
 }
 
-Maybe<ByteArray> PcP2PNetworkingService::SteamP2PSocket::receiveMessage() {
+std::optional<ByteArray> PcP2PNetworkingService::SteamP2PSocket::receiveMessage() {
   MutexLocker socketLocker(mutex);
   if (!incoming.empty())
     return incoming.takeFirst();
@@ -483,7 +482,7 @@ bool PcP2PNetworkingService::DiscordP2PSocket::sendMessage(ByteArray const& mess
   return true;
 }
 
-Maybe<ByteArray> PcP2PNetworkingService::DiscordP2PSocket::receiveMessage() {
+std::optional<ByteArray> PcP2PNetworkingService::DiscordP2PSocket::receiveMessage() {
   MutexLocker socketLocker(mutex);
   if (!incoming.empty())
     return incoming.takeFirst();
@@ -605,7 +604,7 @@ void PcP2PNetworkingService::discordOnReceiveMessage(discord::LobbyId lobbyId, d
 void PcP2PNetworkingService::discordOnLobbyMemberConnect(discord::LobbyId lobbyId, discord::UserId userId) {
   MutexLocker serviceLocker(m_mutex);
 
-  if (m_discordServerLobby && m_discordServerLobby->first == lobbyId && userId != m_state->discordCurrentUser->GetId()) {
+  if (m_discordServerLobby && m_discordServerLobby->first == lobbyId && userId != m_state->discordCurrentUser.value().GetId()) {
     if (!m_discordOpenSockets.contains(userId)) {
       std::unique_ptr<DiscordP2PSocket> socket(new DiscordP2PSocket);
       socket->state = m_state;
@@ -628,7 +627,7 @@ void PcP2PNetworkingService::discordOnLobbyMemberUpdate(discord::LobbyId lobbyId
 void PcP2PNetworkingService::discordOnLobbyMemberDisconnect(discord::LobbyId lobbyId, discord::UserId userId) {
   MutexLocker serviceLocker(m_mutex);
 
-  if (m_discordServerLobby && m_discordServerLobby->first == lobbyId && userId != m_state->discordCurrentUser->GetId()) {
+  if (m_discordServerLobby && m_discordServerLobby->first == lobbyId && userId != m_state->discordCurrentUser.value().GetId()) {
     if (auto socket = m_discordOpenSockets.value(userId)) {
       MutexLocker socketLocker(socket->mutex);
       discordCloseSocket(socket);

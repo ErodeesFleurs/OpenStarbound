@@ -10,7 +10,6 @@ import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -149,7 +148,7 @@ int main(int argc, char** argv) {
     } else {
       coordinate = celestialDatabase.findRandomWorld(100, 50, [&](CelestialCoordinate const& coord) {
           return celestialDatabase.parameters(coord)->isVisitable();
-        }).take();
+        }).value();
     }
 
     unsigned regionsToGenerate = 1000;
@@ -166,7 +165,7 @@ int main(int argc, char** argv) {
 
     coutf("testing generation on coordinate {}\n", coordinate);
 
-    auto worldParameters = celestialDatabase.parameters(coordinate).take();
+    auto worldParameters = celestialDatabase.parameters(coordinate).value();
     auto worldTemplate = std::make_shared<WorldTemplate>(*root, worldParameters.visitableParameters(), SkyParameters(), worldParameters.seed());
 
     auto rand = RandomSource(worldTemplate->worldSeed());

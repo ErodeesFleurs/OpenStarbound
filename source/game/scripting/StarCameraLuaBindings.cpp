@@ -20,7 +20,6 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
-import star.maybe;
 import star.version;
 
 import star.world_geometry;
@@ -42,8 +41,8 @@ LuaCallbacks LuaBindings::makeCameraCallbacks(Root& root, WorldCamera* camera) {
 
   callbacks.registerCallbackWithSignature<Vec2F>("position", std::bind(&WorldCamera::centerWorldPosition, camera));
   callbacks.registerCallbackWithSignature<float>("pixelRatio", std::bind(&WorldCamera::pixelRatio, camera));
-  callbacks.registerCallback("setPixelRatio", [&root, camera](float pixelRatio, Maybe<bool> smooth) {
-    if (smooth.value())
+  callbacks.registerCallback("setPixelRatio", [&root, camera](float pixelRatio, std::optional<bool> smooth) {
+    if (smooth.value_or(false))
       camera->setTargetPixelRatio(pixelRatio);
     else
       camera->setPixelRatio(pixelRatio);

@@ -8,7 +8,6 @@ import star.rpc_promise;
 import star.strong_typedef;
 import star.data_stream;
 import star.vector;
-import star.maybe;
 import star.string;
 import star.either;
 import star.variant;
@@ -237,7 +236,7 @@ LuaCallbacks LuaBindings::makeUniverseClientCallbacks(Root& root, UniverseClient
   });
   
   // primarily useful on the main world and other non-universe contexts, as universe is accessible everywhere on the main client thread
-  callbacks.registerCallback("callScriptContext", [universe](String const& contextName, String const& function, LuaVariadic<LuaValue> const& args) -> Maybe<LuaValue> {
+  callbacks.registerCallback("callScriptContext", [universe](String const& contextName, String const& function, LuaVariadic<LuaValue> const& args) -> std::optional<LuaValue> {
     auto context = universe->scriptContext(contextName);
     if (!context)
       throw StarException::format("Context {} does not exist", contextName);
@@ -245,7 +244,7 @@ LuaCallbacks LuaBindings::makeUniverseClientCallbacks(Root& root, UniverseClient
   });
   
   // primarily useful on universe contexts
-  callbacks.registerCallback("callMainWorldScriptContext", [universe](String const& contextName, String const& function, LuaVariadic<LuaValue> const& args) -> Maybe<LuaValue> {
+  callbacks.registerCallback("callMainWorldScriptContext", [universe](String const& contextName, String const& function, LuaVariadic<LuaValue> const& args) -> std::optional<LuaValue> {
     if (!universe->isConnected())
       throw StarException("Universe is not connected");
     auto world = universe->worldClient();

@@ -20,7 +20,6 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
@@ -67,7 +66,7 @@ export namespace Star::LuaBindings {
 }
 
 namespace Star::LuaBindings::FireableItemCallbacks {
-  void fire(FireableItem* fireableItem, Maybe<String> const& mode);
+  void fire(FireableItem* fireableItem, std::optional<String> const& mode);
   void triggerCooldown(FireableItem* fireableItem);
   void setCooldown(FireableItem* fireableItem, float cooldownTime);
   void endCooldown(FireableItem* fireableItem);
@@ -89,7 +88,7 @@ namespace Star {
 LuaCallbacks LuaBindings::makeFireableItemCallbacks(FireableItem* fireableItem) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<void, Maybe<String>>("fire", std::bind(FireableItemCallbacks::fire, fireableItem, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<void, std::optional<String>>("fire", std::bind(FireableItemCallbacks::fire, fireableItem, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void>("triggerCooldown", std::bind(FireableItemCallbacks::triggerCooldown, fireableItem));
   callbacks.registerCallbackWithSignature<void, float>("setCooldown", std::bind(FireableItemCallbacks::setCooldown, fireableItem, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void>("endCooldown", std::bind(FireableItemCallbacks::endCooldown, fireableItem));
@@ -116,7 +115,7 @@ LuaCallbacks LuaBindings::makeFireableItemCallbacks(FireableItem* fireableItem) 
 // @param[opt] fireMode fireMode to trigger; should be 'Primary' or 'Alt'
 // (defaults to Primary)
 // @return nil
-void LuaBindings::FireableItemCallbacks::fire(FireableItem* fireableItem, Maybe<String> const& mode) {
+void LuaBindings::FireableItemCallbacks::fire(FireableItem* fireableItem, std::optional<String> const& mode) {
   auto fireMode = FireMode::Primary;
   if (mode) {
     if (mode->equalsIgnoreCase("Alt"))

@@ -8,7 +8,6 @@ import star.list;
 import star.map;
 import star.set;
 import star.vector;
-import star.maybe;
 import star.bi_map;
 import star.mixer;
 import star.color;

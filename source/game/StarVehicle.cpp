@@ -24,7 +24,6 @@ import star.list;
 import star.map;
 import star.set;
 import star.vector;
-import star.maybe;
 import star.bi_map;
 import star.color;
 import star.string;
@@ -129,7 +128,7 @@ Vehicle::Vehicle(Root& rootContext, Json baseConfig, String path, Json dynamicCo
   m_slaveControlTimeout = configValue("slaveControlTimeout").toFloat();
   m_receiveExtraControls = configValue("receiveExtraControls", false).toBool();
   m_slaveHeartbeatTimer = GameTimer(configValue("slaveControlHeartbeat").toFloat());
-  m_damageTeam.set(configValue("damageTeam").opt().apply(construct<EntityDamageTeam>()).value());
+  m_damageTeam.set(configValue("damageTeam").opt().transform(construct<EntityDamageTeam>()).value_or(EntityDamageTeam{}));
   m_interactive.set(configValue("interactive", true).toBool());
   m_baseRenderLayer = parseRenderLayer(configValue("baseRenderLayer","Vehicle").toString());
   if (!configValue("overrideRenderLayer").isNull()) {
@@ -143,7 +142,7 @@ Vehicle::Vehicle(Root& rootContext, Json baseConfig, String path, Json dynamicCo
     auto& loungePosition = m_loungePositions[pair.first];
     loungePosition.part = pair.second.getString("part");
     loungePosition.partAnchor = pair.second.getString("partAnchor");
-    loungePosition.exitBottomOffset = pair.second.opt("exitBottomOffset").apply(jsonToVec2F);
+    loungePosition.exitBottomOffset = pair.second.opt("exitBottomOffset").transform(jsonToVec2F);
     loungePosition.armorCosmeticOverrides = pair.second.getObject("armorCosmeticOverrides", JsonObject());
     loungePosition.cursorOverride = pair.second.optString("cursorOverride");
     loungePosition.cameraFocus = pair.second.getBool("cameraFocus", false);
@@ -264,14 +263,14 @@ ClientEntityMode Vehicle::clientEntityMode() const {
   return m_clientEntityMode;
 }
 
-Maybe<HitType> Vehicle::queryHit(DamageSource const& source) const {
+std::optional<HitType> Vehicle::queryHit(DamageSource const& source) const {
   if (source.intersectsWithPoly(world()->geometry(), m_movementController.collisionBody()))
     return HitType::Hit;
 
   return {};
 }
 
-Maybe<PolyF> Vehicle::hitPoly() const {
+std::optional<PolyF> Vehicle::hitPoly() const {
   return m_movementController.collisionBody();
 }
 
@@ -279,11 +278,11 @@ List<DamageNotification> Vehicle::applyDamage(DamageRequest const& damage) {
   if (!inWorld())
     return {};
 
-  return m_scriptComponent.invoke<List<DamageNotification>>("applyDamage", damage).value();
+  return m_scriptComponent.invoke<List<DamageNotification>>("applyDamage", damage).value_or(List<DamageNotification>{});
 }
 
 List<DamageNotification> Vehicle::selfDamageNotifications() {
-  return m_scriptComponent.invoke<List<DamageNotification>>("selfDamageNotifications").value();
+  return m_scriptComponent.invoke<List<DamageNotification>>("selfDamageNotifications").value_or(List<DamageNotification>{});
 }
 
 void Vehicle::init(World* world, EntityId entityId, EntityMode mode) {
@@ -407,22 +406,22 @@ void Vehicle::update(float dt, std::uint64_t) {
             continue;
           allControlsHeld.append(LoungeControlNames.getRight(control));
         }
-        world()->sendEntityMessage(entityId(), "control_all", {*m_loungePositions.indexOf(p.first), std::move(allControlsHeld)});
+        world()->sendEntityMessage(entityId(), "control_all", {m_loungePositions.indexOf(p.first).value(), std::move(allControlsHeld)});
       } else {
         for (auto control : p.second.slaveNewControls.difference(p.second.slaveOldControls)) {
           if (control > LoungeControl::Special3 && !m_receiveExtraControls)
             continue;
-          world()->sendEntityMessage(entityId(), "control_on", {*m_loungePositions.indexOf(p.first), LoungeControlNames.getRight(control)});
+          world()->sendEntityMessage(entityId(), "control_on", {m_loungePositions.indexOf(p.first).value(), LoungeControlNames.getRight(control)});
         }
         for (auto control : p.second.slaveOldControls.difference(p.second.slaveNewControls)) {
           if (control > LoungeControl::Special3 && !m_receiveExtraControls)
             continue;
-          world()->sendEntityMessage(entityId(), "control_off", {*m_loungePositions.indexOf(p.first), LoungeControlNames.getRight(control)});
+          world()->sendEntityMessage(entityId(), "control_off", {m_loungePositions.indexOf(p.first).value(), LoungeControlNames.getRight(control)});
         }
       }
 
       if (p.second.slaveOldAimPosition != p.second.slaveNewAimPosition)
-        world()->sendEntityMessage(entityId(), "aim", {*m_loungePositions.indexOf(p.first), p.second.slaveNewAimPosition[0], p.second.slaveNewAimPosition[1]});
+        world()->sendEntityMessage(entityId(), "aim", {m_loungePositions.indexOf(p.first).value(), p.second.slaveNewAimPosition[0], p.second.slaveNewAimPosition[1]});
 
       p.second.slaveOldControls = take(p.second.slaveNewControls);
       p.second.slaveOldAimPosition = p.second.slaveNewAimPosition;
@@ -448,7 +447,7 @@ void Vehicle::render(RenderCallback* renderer) {
   renderer->addParticles(m_networkedAnimatorDynamicTarget.pullNewParticles());
 
   for (auto drawablePair : m_scriptedAnimator.drawables())
-    renderer->addDrawable(drawablePair.first, drawablePair.second.value(renderLayer(VehicleLayer::Front)));
+    renderer->addDrawable(drawablePair.first, drawablePair.second.value_or(renderLayer(VehicleLayer::Front)));
   renderer->addAudios(m_scriptedAnimator.pullNewAudios());
   renderer->addParticles(m_scriptedAnimator.pullNewParticles());
 }
@@ -476,7 +475,7 @@ void Vehicle::destroy(RenderCallback* renderCallback) {
   }
 }
 
-Maybe<ChainableJsonMessageResponse> Vehicle::receiveMessage(ConnectionId connectionId, String const& message, JsonArray const& args) {
+std::optional<ChainableJsonMessageResponse> Vehicle::receiveMessage(ConnectionId connectionId, String const& message, JsonArray const& args) {
   m_aliveMasterConnections[connectionId] = GameTimer(m_slaveControlTimeout);
   if (message.equalsIgnoreCase("control_on")) {
     auto& loungePosition = m_loungePositions.valueAt(args.at(0).toUInt());
@@ -520,14 +519,14 @@ InteractAction Vehicle::interact(InteractRequest const& request) {
       {"sourceId", request.sourceId},
       {"sourcePosition", jsonFromVec2F(request.sourcePosition)},
       {"interactPosition", jsonFromVec2F(request.interactPosition)}
-    }).value();
+    }).value_or(Json{});
 
   if (result.isType(Json::Type::String))
     return InteractAction(result.toString(), entityId(), Json());
   else if (!result.isNull())
     return InteractAction(result.getString(0), entityId(), result.get(1));
 
-  Maybe<std::size_t> index;
+  std::optional<std::size_t> index;
   for (std::size_t i = 0; i < m_loungePositions.size(); ++i) {
     if (!index) {
       index = i;
@@ -536,10 +535,10 @@ InteractAction Vehicle::interact(InteractRequest const& request) {
       if (!thisLounge.enabled.get())
         continue;
 
-      Vec2F thisLoungePosition = *m_networkedAnimator.partPoint(thisLounge.part, thisLounge.partAnchor) + position();
+      Vec2F thisLoungePosition = m_networkedAnimator.partPoint(thisLounge.part, thisLounge.partAnchor).value() + position();
 
       auto const& selectedLounge = m_loungePositions.valueAt(*index);
-      Vec2F selectedLoungePosition = *m_networkedAnimator.partPoint(selectedLounge.part, selectedLounge.partAnchor) + position();
+      Vec2F selectedLoungePosition = m_networkedAnimator.partPoint(selectedLounge.part, selectedLounge.partAnchor).value() + position();
 
       if (vmagSquared(thisLoungePosition - request.interactPosition) < vmagSquared(selectedLoungePosition - request.interactPosition))
         index = i;
@@ -567,7 +566,7 @@ std::shared_ptr<LoungeAnchor const> Vehicle::loungeAnchor(std::size_t positionIn
   auto loungePosition = std::make_shared<LoungeAnchor>();
   loungePosition->position = partTransformation.transformVec2(partAnchor) + position();
   if (positionConfig.exitBottomOffset)
-    loungePosition->exitBottomPosition = partTransformation.transformVec2(partAnchor + positionConfig.exitBottomOffset.value()) + position();
+    loungePosition->exitBottomPosition = partTransformation.transformVec2(partAnchor + positionConfig.exitBottomOffset.value_or(Vec2F{})) + position();
   loungePosition->direction = partTransformation.determinant() > 0 ? Direction::Right : Direction::Left;
   loungePosition->angle = partTransformation.transformAngle(0.0f);
   if (loungePosition->direction == Direction::Left)
@@ -610,7 +609,7 @@ List<PhysicsForceRegion> Vehicle::forceRegions() const {
 
       Vec2F translatePos = position();
       if (p.second.attachToPart) {
-        Mat3F partTransformation = m_networkedAnimator.finalPartTransformation(p.second.attachToPart.get());
+        Mat3F partTransformation = m_networkedAnimator.finalPartTransformation(p.second.attachToPart.value());
         Vec2F localTranslation = partTransformation.transformVec2(Vec2F());
         translatePos += localTranslation;
       }
@@ -629,7 +628,7 @@ List<DamageSource> Vehicle::damageSources() const {
       DamageSource damageSource = p.second.damageSource;
 
       if (p.second.attachToPart) {
-        Mat3F partTransformation = m_networkedAnimator.finalPartTransformation(p.second.attachToPart.get());
+        Mat3F partTransformation = m_networkedAnimator.finalPartTransformation(p.second.attachToPart.value());
         damageSource.damageArea.call([partTransformation](auto& da) { da.transform(partTransformation); });
       }
 
@@ -646,7 +645,7 @@ std::size_t Vehicle::movingCollisionCount() const {
   return m_movingCollisions.size();
 }
 
-Maybe<PhysicsMovingCollision> Vehicle::movingCollision(std::size_t positionIndex) const {
+std::optional<PhysicsMovingCollision> Vehicle::movingCollision(std::size_t positionIndex) const {
   auto const& collisionConfig = m_movingCollisions.valueAt(positionIndex);
   if (!collisionConfig.enabled.get())
     return {};
@@ -668,11 +667,11 @@ Maybe<PhysicsMovingCollision> Vehicle::movingCollision(std::size_t positionIndex
   return collision;
 }
 
-Maybe<LuaValue> Vehicle::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
+std::optional<LuaValue> Vehicle::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
   return m_scriptComponent.invoke(func, args);
 }
 
-Maybe<LuaValue> Vehicle::evalScript(String const& code) {
+std::optional<LuaValue> Vehicle::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
@@ -702,7 +701,7 @@ LuaCallbacks Vehicle::makeVehicleCallbacks() {
       if (mc.masterHeld || !mc.slavesHeld.empty())
         return true;
       else {
-        for (EntityId entity : entitiesLoungingIn(*m_loungePositions.indexOf(loungeName))) {
+        for (EntityId entity : entitiesLoungingIn(m_loungePositions.indexOf(loungeName).value())) {
           if (auto player = world()->get<Player>(entity))
             return player->shifting();
         }
@@ -715,7 +714,7 @@ LuaCallbacks Vehicle::makeVehicleCallbacks() {
     });
 
   callbacks.registerCallback("entityLoungingIn", [this](String const& name) -> LuaValue {
-      auto entitiesIn = entitiesLoungingIn(*m_loungePositions.indexOf(name));
+      auto entitiesIn = entitiesLoungingIn(m_loungePositions.indexOf(name).value());
       if (entitiesIn.empty())
         return LuaNil;
       return LuaInt(entitiesIn.first());
@@ -729,15 +728,15 @@ LuaCallbacks Vehicle::makeVehicleCallbacks() {
       m_loungePositions.get(name).orientation.set(LoungeOrientationNames.getLeft(orientation));
     });
 
-  callbacks.registerCallback("setLoungeEmote", [this](String const& name, Maybe<String> emote) {
+  callbacks.registerCallback("setLoungeEmote", [this](String const& name, std::optional<String> emote) {
       m_loungePositions.get(name).emote.set(std::move(emote));
     });
 
-  callbacks.registerCallback("setLoungeDance", [this](String const& name, Maybe<String> dance) {
+  callbacks.registerCallback("setLoungeDance", [this](String const& name, std::optional<String> dance) {
       m_loungePositions.get(name).dance.set(std::move(dance));
     });
 
-  callbacks.registerCallback("setLoungeDirectives", [this](String const& name, Maybe<String> directives) {
+  callbacks.registerCallback("setLoungeDirectives", [this](String const& name, std::optional<String> directives) {
       m_loungePositions.get(name).directives.set(std::move(directives));
     });
 

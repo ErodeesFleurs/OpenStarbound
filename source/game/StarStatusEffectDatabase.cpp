@@ -20,6 +20,7 @@ import std;
 import star.string;
 import star.version;
 import star.format;
+import star.optional;
 
 import star.status_types;
 import star.asset_source;
@@ -48,7 +49,7 @@ bool StatusEffectDatabase::isUniqueEffect(UniqueStatusEffect const& effect) cons
 
 UniqueStatusEffectConfig StatusEffectDatabase::uniqueEffectConfig(UniqueStatusEffect const& effect) const {
   if (auto uniqueEffect = m_uniqueEffects.maybe(effect))
-    return uniqueEffect.take();
+    return takeOptional(uniqueEffect);
   throw StatusEffectDatabaseException::format("No such unique stat effect '{}'", effect);
 }
 
@@ -62,10 +63,10 @@ UniqueStatusEffectConfig StatusEffectDatabase::parseUniqueEffect(Json const& con
     effect.scripts =
         jsonToStringList(config.get("scripts", JsonArray{})).transformed(std::bind(&AssetPath::relativeTo, path, std::placeholders::_1));
     effect.scriptDelta = config.getUInt("scriptDelta", 1);
-    effect.animationConfig = config.optString("animationConfig").apply(std::bind(&AssetPath::relativeTo, path, std::placeholders::_1));
+    effect.animationConfig = config.optString("animationConfig").transform(std::bind(&AssetPath::relativeTo, path, std::placeholders::_1));
     effect.label = config.getString("label", "");
     effect.description = config.getString("description", "");
-    effect.icon = config.optString("icon").apply(std::bind(&AssetPath::relativeTo, path, std::placeholders::_1));
+    effect.icon = config.optString("icon").transform(std::bind(&AssetPath::relativeTo, path, std::placeholders::_1));
     return effect;
   } catch (std::exception const&) {
     ExceptionDiagnostic const e(std::current_exception());
@@ -76,15 +77,15 @@ UniqueStatusEffectConfig StatusEffectDatabase::parseUniqueEffect(Json const& con
 JsonObject UniqueStatusEffectConfig::toJson() {
   return {
     {"name", name},
-    {"blockingStat", blockingStat.isValid() ? blockingStat.value() : Json()},
+    {"blockingStat", blockingStat.has_value() ? blockingStat.value() : Json()},
     {"effectConfig", effectConfig},
     {"defaultDuration", defaultDuration},
     {"scripts", jsonFromStringList(scripts)},
     {"scriptDelta", scriptDelta},
-    {"animationConfig", animationConfig.isValid() ? animationConfig.value() : Json()},
+    {"animationConfig", animationConfig.has_value() ? animationConfig.value() : Json()},
     {"label", label},
     {"description", description},
-    {"icon", icon.isValid() ? icon.value() : Json()}
+    {"icon", icon.has_value() ? icon.value() : Json()}
   };
 }
 

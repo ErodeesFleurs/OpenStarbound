@@ -15,7 +15,6 @@ import star.thread;
 import star.list;
 import star.map;
 import star.set;
-import star.maybe;
 import star.bi_map;
 import star.color;
 import star.string;

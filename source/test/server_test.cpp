@@ -1,7 +1,6 @@
 import star.json;
 import star.xx_hash;
 import star.id_map;
-import star.maybe;
 import star.string;
 import star.lock_file;
 import star.thread;

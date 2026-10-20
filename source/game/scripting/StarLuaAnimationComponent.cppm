@@ -6,7 +6,6 @@ import star.vector;
 import star.string;
 import star.color;
 import star.list;
-import star.maybe;
 import star.lua;
 import star.format;
 import star.lua_converters;
@@ -36,7 +35,7 @@ class LuaAnimationComponent : public Base {
 public:
   explicit LuaAnimationComponent(Root& root);
 
-  List<std::pair<Drawable, Maybe<EntityRenderLayer>>> const& drawables();
+  List<std::pair<Drawable, std::optional<EntityRenderLayer>>> const& drawables();
   List<LightSource> const& lightSources();
 
   List<Particle> pullNewParticles();
@@ -51,31 +50,31 @@ private:
   List<std::shared_ptr<AudioInstance>> m_pendingAudios;
   List<std::shared_ptr<AudioInstance>> m_activeAudio;
 
-  List<std::pair<Drawable, Maybe<EntityRenderLayer>>> m_drawables;
+  List<std::pair<Drawable, std::optional<EntityRenderLayer>>> m_drawables;
   List<LightSource> m_lightSources;
 };
 
 template <typename Base>
 LuaAnimationComponent<Base>::LuaAnimationComponent(Root& root) : Base(root) {
   LuaCallbacks animationCallbacks;
-  animationCallbacks.registerCallback("playAudio", [this](String const& sound, Maybe<int> loops, Maybe<float> volume) -> std::shared_ptr<AudioInstance> {
+  animationCallbacks.registerCallback("playAudio", [this](String const& sound, std::optional<int> loops, std::optional<float> volume) -> std::shared_ptr<AudioInstance> {
       auto audio = std::make_shared<AudioInstance>(*this->root().assets()->audio(sound));
-      audio->setLoops(loops.value(0));
-      audio->setVolume(volume.value(1.0f));
+      audio->setLoops(loops.value_or(0));
+      audio->setVolume(volume.value_or(1.0f));
       m_pendingAudios.append(audio);
       m_activeAudio.append(audio);
       return audio;
     });
-  animationCallbacks.registerCallback("spawnParticle", [this](Json const& particleConfig, Maybe<Vec2F> const& position) {
+  animationCallbacks.registerCallback("spawnParticle", [this](Json const& particleConfig, std::optional<Vec2F> const& position) {
       auto particle = this->root().particleDatabase()->particle(particleConfig);
-      particle.translate(position.value());
+      particle.translate(position.value_or(Vec2F{}));
       m_pendingParticles.append(particle);
     });
   animationCallbacks.registerCallback("clearDrawables", [this]() {
       m_drawables.clear();
     });
-  animationCallbacks.registerCallback("addDrawable", [this](Drawable drawable, Maybe<String> renderLayerName) {
-      Maybe<EntityRenderLayer> renderLayer;
+  animationCallbacks.registerCallback("addDrawable", [this](Drawable drawable, std::optional<String> renderLayerName) {
+      std::optional<EntityRenderLayer> renderLayer;
       if (renderLayerName)
         renderLayer = parseRenderLayer(*renderLayerName);
 
@@ -84,8 +83,8 @@ LuaAnimationComponent<Base>::LuaAnimationComponent(Root& root) : Base(root) {
 
       m_drawables.append({std::move(drawable), renderLayer});
     });
-  animationCallbacks.registerCallback("addJsonDrawable", [this](Json drawableConfig, Maybe<String> renderLayerName) {
-      Maybe<EntityRenderLayer> renderLayer;
+  animationCallbacks.registerCallback("addJsonDrawable", [this](Json drawableConfig, std::optional<String> renderLayerName) {
+      std::optional<EntityRenderLayer> renderLayer;
       Drawable drawable(*this->root().imageMetadataDatabase(), drawableConfig);
       if (renderLayerName)
         renderLayer = parseRenderLayer(*renderLayerName);
@@ -103,17 +102,17 @@ LuaAnimationComponent<Base>::LuaAnimationComponent(Root& root) : Base(root) {
       m_lightSources.append({
           lightSourceTable.get<Vec2F>("position"),
           lightSourceTable.get<Color>("color").toRgbF(),
-          (LightType)lightSourceTable.get<Maybe<bool>>("pointLight").value(),
-          lightSourceTable.get<Maybe<float>>("pointBeam").value(),
-          lightSourceTable.get<Maybe<float>>("beamAngle").value(),
-          lightSourceTable.get<Maybe<float>>("beamAmbience").value()
+          (LightType)lightSourceTable.get<std::optional<bool>>("pointLight").value_or(false),
+          lightSourceTable.get<std::optional<float>>("pointBeam").value_or(float{}),
+          lightSourceTable.get<std::optional<float>>("beamAngle").value_or(float{}),
+          lightSourceTable.get<std::optional<float>>("beamAmbience").value_or(float{})
         });
     });
   Base::addCallbacks("localAnimator", std::move(animationCallbacks));
 }
 
 template <typename Base>
-List<std::pair<Drawable, Maybe<EntityRenderLayer>>> const& LuaAnimationComponent<Base>::drawables() {
+List<std::pair<Drawable, std::optional<EntityRenderLayer>>> const& LuaAnimationComponent<Base>::drawables() {
   return m_drawables;
 }
 

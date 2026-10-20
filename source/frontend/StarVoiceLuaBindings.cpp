@@ -8,7 +8,6 @@ import star.lua_converters;
 import star.bi_map;
 import star.format;
 import star.game_types;
-import star.maybe;
 import star.thread;
 import star.data_stream_devices;
 
@@ -47,17 +46,17 @@ LuaCallbacks LuaBindings::makeVoiceCallbacks(Voice& owner) {
 
   callbacks.registerCallback("speakerPosition", [voice](SpeakerId speakerId) { return voice->speaker(speakerId)->position; });
 
-  callbacks.registerCallback("speaker",  [voice](Maybe<SpeakerId> speakerId) {
+  callbacks.registerCallback("speaker",  [voice](std::optional<SpeakerId> speakerId) {
     if (speakerId)
       return voice->speaker(*speakerId)->toJson();
     else
       return voice->localSpeaker()->toJson();
   });
 
-  callbacks.registerCallback("speakers", [voice](Maybe<bool> onlyPlaying) -> List<Json> {
+  callbacks.registerCallback("speakers", [voice](std::optional<bool> onlyPlaying) -> List<Json> {
     List<Json> list;
 
-    for (auto& speaker : voice->sortedSpeakers(onlyPlaying.value(true)))
+    for (auto& speaker : voice->sortedSpeakers(onlyPlaying.value_or(true)))
       list.append(speaker->toJson());
 
     return list;

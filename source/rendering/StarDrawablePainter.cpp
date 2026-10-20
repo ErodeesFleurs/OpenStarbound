@@ -1,4 +1,5 @@
 import std;
+import star.optional;
 import star.json;
 import star.string;
 import star.data_stream;
@@ -17,7 +18,6 @@ import star.image;
 import star.bi_map;
 import star.ref_ptr;
 import star.renderer;
-import star.maybe;
 import star.listener;
 import star.asset_texture_group;
 import star.drawable_painter;
@@ -47,7 +47,7 @@ void DrawablePainter::drawDrawable(Drawable const& drawable) {
       line.max() - left,
       line.max() + left,
       color, fullbright);
-    if (auto* endColor = linePart->endColor.ptr()) {
+    if (auto* endColor = optionalPtr(linePart->endColor)) {
       RenderQuad& quad = primitive.get<RenderQuad>();
       quad.c.color = quad.d.color = endColor->toRgba();
     }

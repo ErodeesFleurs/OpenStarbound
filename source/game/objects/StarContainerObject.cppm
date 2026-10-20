@@ -22,7 +22,6 @@ import star.lua;
 import star.audio;
 import star.thread;
 import star.map;
-import star.maybe;
 import star.string;
 import star.image_processing;
 import star.hash;
@@ -91,7 +90,7 @@ public:
   void destroy(RenderCallback* renderCallback) override;
   InteractAction interact(InteractRequest const& request) override;
 
-  Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  std::optional<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
   Json containerGuiConfig() const override;
   String containerDescription() const override;

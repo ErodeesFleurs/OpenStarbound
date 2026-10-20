@@ -11,7 +11,6 @@ import star.random;
 import star.ttl_cache;
 import star.casting;
 import star.game_types;
-import star.maybe;
 import star.variant;
 import star.strong_typedef;
 import star.rpc_promise;
@@ -217,7 +216,7 @@ ContainerPane::ContainerPane(GuiContext& guiContext, std::shared_ptr<WorldClient
 
   auto guiConfig = container->containerGuiConfig();
 
-  if (auto scripts = guiConfig.opt("scripts").apply(jsonToStringList)) {
+  if (auto scripts = guiConfig.opt("scripts").transform(jsonToStringList)) {
     if (!m_script) {
       m_script.emplace(context()->root());
       m_script->setScripts(*scripts);
@@ -230,7 +229,7 @@ ContainerPane::ContainerPane(GuiContext& guiContext, std::shared_ptr<WorldClient
     m_script->addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_player->statusController()));
 
     LuaCallbacks containerPaneCallbacks;
-    containerPaneCallbacks.registerCallback("containerEntityId", [this]() -> Maybe<EntityId> {
+    containerPaneCallbacks.registerCallback("containerEntityId", [this]() -> std::optional<EntityId> {
         return m_containerInteractor->openContainerId();
       });
     containerPaneCallbacks.registerCallback("playerEntityId", [this]() { return m_player->entityId(); });
@@ -317,7 +316,7 @@ ContainerPane::ContainerPane(GuiContext& guiContext, std::shared_ptr<WorldClient
 
   for (auto const& callbackName : jsonToStringList(guiConfig.get("scriptWidgetCallbacks", JsonArray{}))) {
     m_reader.registerCallback(callbackName, [this, callbackName](Widget* widget) {
-      m_script->invoke(callbackName, widget->name(), widget->data());
+      m_script.value().invoke(callbackName, widget->name(), widget->data());
     });
   }
 

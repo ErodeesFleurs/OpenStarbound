@@ -34,7 +34,6 @@ import star.periodic;
 import star.lua;
 import star.audio;
 import star.map;
-import star.maybe;
 import star.io_device;
 import star.ref_ptr;
 import star.listener;
@@ -168,7 +167,7 @@ bool ObjectOrientation::anchorsValid(World const* world, Vec2I const& position) 
   return anyValid;
 }
 
-std::size_t ObjectConfig::findValidOrientation(World const* world, Vec2I const& position, Maybe<Direction> directionAffinity) const {
+std::size_t ObjectConfig::findValidOrientation(World const* world, Vec2I const& position, std::optional<Direction> directionAffinity) const {
   // If we are given a direction affinity, try and find an orientation with a
   // matching affinity *first*
   if (directionAffinity) {
@@ -300,13 +299,13 @@ List<std::shared_ptr<ObjectOrientation>> ObjectDatabase::parseOrientations(Root&
 
     orientation->boundBox = RectI::boundBoxOfPoints(orientation->spaces);
 
-    orientation->metaBoundBox = orientationSettings.opt("metaBoundBox").apply(jsonToRectF);
+    orientation->metaBoundBox = orientationSettings.opt("metaBoundBox").transform([](Json const& value) { return jsonToRectF(value); });
 
     // Specify "anchors" to simplify fg / bg anchor listing
 
     bool tilled = orientationSettings.getBool("requireTilledAnchors", false);
     bool soil = orientationSettings.getBool("requireSoilAnchors", false);
-    Maybe<MaterialId> anchorMaterial;
+    std::optional<MaterialId> anchorMaterial;
     if (auto anchorMaterialName = orientationSettings.optString("anchorMaterial"))
       anchorMaterial = materialDatabase->materialId(*anchorMaterialName);
 
@@ -393,7 +392,7 @@ List<std::shared_ptr<ObjectOrientation>> ObjectDatabase::parseOrientations(Root&
     for (auto particleEmitterConfig : orientationSettings.getArray("particleEmitters", {}))
       orientation->particleEmitters.append(ObjectOrientation::parseParticleEmitter(root, path, particleEmitterConfig));
 
-    orientation->statusEffectArea = orientationSettings.opt("statusEffectArea").apply(jsonToPolyF);
+    orientation->statusEffectArea = orientationSettings.opt("statusEffectArea").transform([](Json const& value) { return jsonToPolyF(value); });
 
     orientation->touchDamageConfig = parseTouchDamage(root, path, orientationSettings);
 
@@ -527,7 +526,7 @@ std::shared_ptr<Object> ObjectDatabase::netLoadObject(ByteArray const& netStore,
 }
 
 bool ObjectDatabase::canPlaceObject(World const* world, Vec2I const& position, String const& objectName) const {
-  return getConfig(objectName)->findValidOrientation(world, position, Maybe<Direction>()) != NPos;
+  return getConfig(objectName)->findValidOrientation(world, position, std::optional<Direction>()) != NPos;
 }
 
 std::shared_ptr<Object> ObjectDatabase::createForPlacement(World const* world, String const& objectName, Vec2I const& position,

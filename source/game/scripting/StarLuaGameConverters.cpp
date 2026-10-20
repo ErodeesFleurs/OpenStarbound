@@ -1,10 +1,10 @@
 import std;
+import star.optional;
 import star.string;
 import star.list;
 import star.map;
 import star.json;
 import star.lua;
-import star.maybe;
 import star.format;
 import star.lua_game_converters;
 import star.lua_converters;
@@ -57,7 +57,7 @@ LuaValue LuaConverter<InventorySlot>::from(LuaEngine& engine, InventorySlot k) {
   else return {}; // avoid UB if every accounted-for case fails
 }
 
-Maybe<InventorySlot> LuaConverter<InventorySlot>::to(LuaEngine&, LuaValue const& v) {
+std::optional<InventorySlot> LuaConverter<InventorySlot>::to(LuaEngine&, LuaValue const& v) {
   if (auto str = v.ptr<LuaString>()) {
     auto string = str->toString();
     if (string.equalsIgnoreCase("swap"))
@@ -79,7 +79,7 @@ LuaValue LuaConverter<CollisionKind>::from(LuaEngine& engine, CollisionKind k) {
   return engine.createString(CollisionKindNames.getRight(k));
 }
 
-Maybe<CollisionKind> LuaConverter<CollisionKind>::to(LuaEngine&, LuaValue const& v) {
+std::optional<CollisionKind> LuaConverter<CollisionKind>::to(LuaEngine&, LuaValue const& v) {
   if (auto str = v.ptr<LuaString>())
     return CollisionKindNames.maybeLeft(str->ptr());
   return {};
@@ -96,7 +96,7 @@ LuaValue LuaConverter<CollisionSet>::from(LuaEngine& engine, CollisionSet const&
   return collisionTable;
 }
 
-Maybe<CollisionSet> LuaConverter<CollisionSet>::to(LuaEngine& engine, LuaValue const& v) {
+std::optional<CollisionSet> LuaConverter<CollisionSet>::to(LuaEngine& engine, LuaValue const& v) {
   auto table = v.ptr<LuaTable>();
   if (!table)
     return {};
@@ -142,14 +142,14 @@ LuaValue LuaConverter<PlatformerAStar::Path>::from(LuaEngine& engine, Platformer
 
 LuaMethods<PlatformerAStar::PathFinder> LuaUserDataMethods<PlatformerAStar::PathFinder>::make() {
   LuaMethods<PlatformerAStar::PathFinder> methods;
-  methods.registerMethodWithSignature<Maybe<bool>, PlatformerAStar::PathFinder&, Maybe<unsigned>>(
+  methods.registerMethodWithSignature<std::optional<bool>, PlatformerAStar::PathFinder&, std::optional<unsigned>>(
       "explore", std::mem_fn(&PlatformerAStar::PathFinder::explore));
-  methods.registerMethodWithSignature<Maybe<PlatformerAStar::Path>, PlatformerAStar::PathFinder&>(
+  methods.registerMethodWithSignature<std::optional<PlatformerAStar::Path>, PlatformerAStar::PathFinder&>(
       "result", std::mem_fn(&PlatformerAStar::PathFinder::result));
   return methods;
 }
 
-Maybe<PlatformerAStar::Parameters> LuaConverter<PlatformerAStar::Parameters>::to(LuaEngine&, LuaValue const& v) {
+std::optional<PlatformerAStar::Parameters> LuaConverter<PlatformerAStar::Parameters>::to(LuaEngine&, LuaValue const& v) {
   PlatformerAStar::Parameters p;
   p.returnBest = false;
   p.mustEndOnGround = false;
@@ -163,23 +163,23 @@ Maybe<PlatformerAStar::Parameters> LuaConverter<PlatformerAStar::Parameters>::to
     return {};
 
   try {
-    p.maxDistance = table->get<Maybe<float>>("maxDistance");
-    p.returnBest = table->get<Maybe<bool>>("returnBest").value(false);
-    p.mustEndOnGround = table->get<Maybe<bool>>("mustEndOnGround").value(false);
-    p.enableWalkSpeedJumps = table->get<Maybe<bool>>("enableWalkSpeedJumps").value(false);
-    p.enableVerticalJumpAirControl = table->get<Maybe<bool>>("enableVerticalJumpAirControl").value(false);
-    p.swimCost = table->get<Maybe<float>>("swimCost");
-    p.jumpCost = table->get<Maybe<float>>("jumpCost");
-    p.liquidJumpCost = table->get<Maybe<float>>("liquidJumpCost");
-    p.dropCost = table->get<Maybe<float>>("dropCost");
+    p.maxDistance = table->get<std::optional<float>>("maxDistance");
+    p.returnBest = table->get<std::optional<bool>>("returnBest").value_or(false);
+    p.mustEndOnGround = table->get<std::optional<bool>>("mustEndOnGround").value_or(false);
+    p.enableWalkSpeedJumps = table->get<std::optional<bool>>("enableWalkSpeedJumps").value_or(false);
+    p.enableVerticalJumpAirControl = table->get<std::optional<bool>>("enableVerticalJumpAirControl").value_or(false);
+    p.swimCost = table->get<std::optional<float>>("swimCost");
+    p.jumpCost = table->get<std::optional<float>>("jumpCost");
+    p.liquidJumpCost = table->get<std::optional<float>>("liquidJumpCost");
+    p.dropCost = table->get<std::optional<float>>("dropCost");
     p.boundBox = table->get<RectF>("boundBox");
     p.standingBoundBox = table->get<RectF>("standingBoundBox");
     p.droppingBoundBox = table->get<RectF>("droppingBoundBox");
-    p.smallJumpMultiplier = table->get<Maybe<float>>("smallJumpMultiplier");
-    p.jumpDropXMultiplier = table->get<Maybe<float>>("jumpDropXMultiplier");
+    p.smallJumpMultiplier = table->get<std::optional<float>>("smallJumpMultiplier");
+    p.jumpDropXMultiplier = table->get<std::optional<float>>("jumpDropXMultiplier");
     p.maxFScore = table->get<double>("maxFScore");
     p.maxNodesToSearch = table->get<unsigned>("maxNodesToSearch");
-    p.maxLandingVelocity = table->get<Maybe<float>>("maxLandingVelocity");
+    p.maxLandingVelocity = table->get<std::optional<float>>("maxLandingVelocity");
   } catch (LuaConversionException const&) {
     return {};
   }
@@ -201,7 +201,7 @@ LuaValue LuaConverter<ActorJumpProfile>::from(LuaEngine& engine, ActorJumpProfil
   return table;
 }
 
-Maybe<ActorJumpProfile> LuaConverter<ActorJumpProfile>::to(LuaEngine&, LuaValue const& v) {
+std::optional<ActorJumpProfile> LuaConverter<ActorJumpProfile>::to(LuaEngine&, LuaValue const& v) {
   if (v == LuaNil)
     return ActorJumpProfile();
 
@@ -211,15 +211,15 @@ Maybe<ActorJumpProfile> LuaConverter<ActorJumpProfile>::to(LuaEngine&, LuaValue 
 
   try {
     ActorJumpProfile ajp;
-    ajp.jumpSpeed = table->get<Maybe<float>>("jumpSpeed");
-    ajp.jumpControlForce = table->get<Maybe<float>>("jumpControlForce");
-    ajp.jumpInitialPercentage = table->get<Maybe<float>>("jumpInitialPercentage");
-    ajp.jumpHoldTime = table->get<Maybe<float>>("jumpHoldTime");
-    ajp.jumpTotalHoldTime = table->get<Maybe<float>>("jumpTotalHoldTime");
-    ajp.multiJump = table->get<Maybe<bool>>("multiJump");
-    ajp.reJumpDelay = table->get<Maybe<float>>("reJumpDelay");
-    ajp.autoJump = table->get<Maybe<bool>>("autoJump");
-    ajp.collisionCancelled = table->get<Maybe<bool>>("collisionCancelled");
+    ajp.jumpSpeed = table->get<std::optional<float>>("jumpSpeed");
+    ajp.jumpControlForce = table->get<std::optional<float>>("jumpControlForce");
+    ajp.jumpInitialPercentage = table->get<std::optional<float>>("jumpInitialPercentage");
+    ajp.jumpHoldTime = table->get<std::optional<float>>("jumpHoldTime");
+    ajp.jumpTotalHoldTime = table->get<std::optional<float>>("jumpTotalHoldTime");
+    ajp.multiJump = table->get<std::optional<bool>>("multiJump");
+    ajp.reJumpDelay = table->get<std::optional<float>>("reJumpDelay");
+    ajp.autoJump = table->get<std::optional<bool>>("autoJump");
+    ajp.collisionCancelled = table->get<std::optional<bool>>("collisionCancelled");
     return ajp;
   } catch (LuaConversionException const&) {
     return {};
@@ -269,7 +269,7 @@ LuaValue LuaConverter<ActorMovementParameters>::from(LuaEngine& engine, ActorMov
   return table;
 }
 
-Maybe<ActorMovementParameters> LuaConverter<ActorMovementParameters>::to(LuaEngine&, LuaValue const& v) {
+std::optional<ActorMovementParameters> LuaConverter<ActorMovementParameters>::to(LuaEngine&, LuaValue const& v) {
   if (v == LuaNil)
     return ActorMovementParameters();
 
@@ -279,44 +279,48 @@ Maybe<ActorMovementParameters> LuaConverter<ActorMovementParameters>::to(LuaEngi
 
   try {
     ActorMovementParameters amp;
-    amp.mass = table->get<Maybe<float>>("mass");
-    amp.gravityMultiplier = table->get<Maybe<float>>("gravityMultiplier");
-    amp.liquidBuoyancy = table->get<Maybe<float>>("liquidBuoyancy");
-    amp.airBuoyancy = table->get<Maybe<float>>("airBuoyancy");
-    amp.bounceFactor = table->get<Maybe<float>>("bounceFactor");
-    amp.slopeSlidingFactor = table->get<Maybe<float>>("slopeSlidingFactor");
-    amp.maxMovementPerStep = table->get<Maybe<float>>("maxMovementPerStep");
-    amp.maximumCorrection = table->get<Maybe<float>>("maximumCorrection");
-    amp.speedLimit = table->get<Maybe<float>>("speedLimit");
-    amp.standingPoly = table->get<Maybe<PolyF>>("standingPoly").orMaybe(table->get<Maybe<PolyF>>("collisionPoly"));
-    amp.crouchingPoly = table->get<Maybe<PolyF>>("crouchingPoly").orMaybe(table->get<Maybe<PolyF>>("collisionPoly"));
-    amp.stickyCollision = table->get<Maybe<bool>>("stickyCollision");
-    amp.stickyForce = table->get<Maybe<float>>("stickyForce");
-    amp.walkSpeed = table->get<Maybe<float>>("walkSpeed");
-    amp.runSpeed = table->get<Maybe<float>>("runSpeed");
-    amp.flySpeed = table->get<Maybe<float>>("flySpeed");
-    amp.airFriction = table->get<Maybe<float>>("airFriction");
-    amp.liquidFriction = table->get<Maybe<float>>("liquidFriction");
-    amp.minimumLiquidPercentage = table->get<Maybe<float>>("minimumLiquidPercentage");
-    amp.liquidImpedance = table->get<Maybe<float>>("liquidImpedance");
-    amp.normalGroundFriction = table->get<Maybe<float>>("normalGroundFriction");
-    amp.ambulatingGroundFriction = table->get<Maybe<float>>("ambulatingGroundFriction");
-    amp.groundForce = table->get<Maybe<float>>("groundForce");
-    amp.airForce = table->get<Maybe<float>>("airForce");
-    amp.liquidForce = table->get<Maybe<float>>("liquidForce");
+    amp.mass = table->get<std::optional<float>>("mass");
+    amp.gravityMultiplier = table->get<std::optional<float>>("gravityMultiplier");
+    amp.liquidBuoyancy = table->get<std::optional<float>>("liquidBuoyancy");
+    amp.airBuoyancy = table->get<std::optional<float>>("airBuoyancy");
+    amp.bounceFactor = table->get<std::optional<float>>("bounceFactor");
+    amp.slopeSlidingFactor = table->get<std::optional<float>>("slopeSlidingFactor");
+    amp.maxMovementPerStep = table->get<std::optional<float>>("maxMovementPerStep");
+    amp.maximumCorrection = table->get<std::optional<float>>("maximumCorrection");
+    amp.speedLimit = table->get<std::optional<float>>("speedLimit");
+    auto standingPoly = table->get<std::optional<PolyF>>("standingPoly");
+    auto standingPolyFallback = table->get<std::optional<PolyF>>("collisionPoly");
+    amp.standingPoly = standingPoly ? std::move(standingPoly) : std::move(standingPolyFallback);
+    auto crouchingPoly = table->get<std::optional<PolyF>>("crouchingPoly");
+    auto crouchingPolyFallback = table->get<std::optional<PolyF>>("collisionPoly");
+    amp.crouchingPoly = crouchingPoly ? std::move(crouchingPoly) : std::move(crouchingPolyFallback);
+    amp.stickyCollision = table->get<std::optional<bool>>("stickyCollision");
+    amp.stickyForce = table->get<std::optional<float>>("stickyForce");
+    amp.walkSpeed = table->get<std::optional<float>>("walkSpeed");
+    amp.runSpeed = table->get<std::optional<float>>("runSpeed");
+    amp.flySpeed = table->get<std::optional<float>>("flySpeed");
+    amp.airFriction = table->get<std::optional<float>>("airFriction");
+    amp.liquidFriction = table->get<std::optional<float>>("liquidFriction");
+    amp.minimumLiquidPercentage = table->get<std::optional<float>>("minimumLiquidPercentage");
+    amp.liquidImpedance = table->get<std::optional<float>>("liquidImpedance");
+    amp.normalGroundFriction = table->get<std::optional<float>>("normalGroundFriction");
+    amp.ambulatingGroundFriction = table->get<std::optional<float>>("ambulatingGroundFriction");
+    amp.groundForce = table->get<std::optional<float>>("groundForce");
+    amp.airForce = table->get<std::optional<float>>("airForce");
+    amp.liquidForce = table->get<std::optional<float>>("liquidForce");
     amp.airJumpProfile = table->get<ActorJumpProfile>("airJumpProfile");
     amp.liquidJumpProfile = table->get<ActorJumpProfile>("liquidJumpProfile");
-    amp.fallStatusSpeedMin = table->get<Maybe<float>>("fallStatusSpeedMin");
-    amp.fallThroughSustainFrames = table->get<Maybe<int>>("fallThroughSustainFrames");
-    amp.maximumPlatformCorrection = table->get<Maybe<float>>("maximumPlatformCorrection");
-    amp.maximumPlatformCorrectionVelocityFactor = table->get<Maybe<float>>("maximumPlatformCorrectionVelocityFactor");
-    amp.physicsEffectCategories = table->get<Maybe<StringSet>>("physicsEffectCategories");
-    amp.groundMovementMinimumSustain = table->get<Maybe<float>>("groundMovementMinimumSustain");
-    amp.groundMovementMaximumSustain = table->get<Maybe<float>>("groundMovementMaximumSustain");
-    amp.groundMovementCheckDistance = table->get<Maybe<float>>("groundMovementCheckDistance");
-    amp.collisionEnabled = table->get<Maybe<bool>>("collisionEnabled");
-    amp.frictionEnabled = table->get<Maybe<bool>>("frictionEnabled");
-    amp.gravityEnabled = table->get<Maybe<bool>>("gravityEnabled");
+    amp.fallStatusSpeedMin = table->get<std::optional<float>>("fallStatusSpeedMin");
+    amp.fallThroughSustainFrames = table->get<std::optional<int>>("fallThroughSustainFrames");
+    amp.maximumPlatformCorrection = table->get<std::optional<float>>("maximumPlatformCorrection");
+    amp.maximumPlatformCorrectionVelocityFactor = table->get<std::optional<float>>("maximumPlatformCorrectionVelocityFactor");
+    amp.physicsEffectCategories = table->get<std::optional<StringSet>>("physicsEffectCategories");
+    amp.groundMovementMinimumSustain = table->get<std::optional<float>>("groundMovementMinimumSustain");
+    amp.groundMovementMaximumSustain = table->get<std::optional<float>>("groundMovementMaximumSustain");
+    amp.groundMovementCheckDistance = table->get<std::optional<float>>("groundMovementCheckDistance");
+    amp.collisionEnabled = table->get<std::optional<bool>>("collisionEnabled");
+    amp.frictionEnabled = table->get<std::optional<bool>>("frictionEnabled");
+    amp.gravityEnabled = table->get<std::optional<bool>>("gravityEnabled");
     return amp;
   } catch (LuaConversionException const&) {
     return {};
@@ -337,7 +341,7 @@ LuaValue LuaConverter<ActorMovementModifiers>::from(LuaEngine& engine, ActorMove
   return table;
 }
 
-Maybe<ActorMovementModifiers> LuaConverter<ActorMovementModifiers>::to(LuaEngine&, LuaValue const& v) {
+std::optional<ActorMovementModifiers> LuaConverter<ActorMovementModifiers>::to(LuaEngine&, LuaValue const& v) {
   if (v == LuaNil)
     return ActorMovementModifiers();
 
@@ -347,15 +351,15 @@ Maybe<ActorMovementModifiers> LuaConverter<ActorMovementModifiers>::to(LuaEngine
 
   try {
     ActorMovementModifiers amm;
-    amm.groundMovementModifier = table->get<Maybe<float>>("groundMovementModifier").value(1.0f);
-    amm.liquidMovementModifier = table->get<Maybe<float>>("liquidMovementModifier").value(1.0f);
-    amm.speedModifier = table->get<Maybe<float>>("speedModifier").value(1.0f);
-    amm.airJumpModifier = table->get<Maybe<float>>("airJumpModifier").value(1.0f);
-    amm.liquidJumpModifier = table->get<Maybe<float>>("liquidJumpModifier").value(1.0f);
-    amm.runningSuppressed = table->get<Maybe<bool>>("runningSuppressed").value(false);
-    amm.jumpingSuppressed = table->get<Maybe<bool>>("jumpingSuppressed").value(false);
-    amm.facingSuppressed = table->get<Maybe<bool>>("facingSuppressed").value(false);
-    amm.movementSuppressed = table->get<Maybe<bool>>("movementSuppressed").value(false);
+    amm.groundMovementModifier = table->get<std::optional<float>>("groundMovementModifier").value_or(1.0f);
+    amm.liquidMovementModifier = table->get<std::optional<float>>("liquidMovementModifier").value_or(1.0f);
+    amm.speedModifier = table->get<std::optional<float>>("speedModifier").value_or(1.0f);
+    amm.airJumpModifier = table->get<std::optional<float>>("airJumpModifier").value_or(1.0f);
+    amm.liquidJumpModifier = table->get<std::optional<float>>("liquidJumpModifier").value_or(1.0f);
+    amm.runningSuppressed = table->get<std::optional<bool>>("runningSuppressed").value_or(false);
+    amm.jumpingSuppressed = table->get<std::optional<bool>>("jumpingSuppressed").value_or(false);
+    amm.facingSuppressed = table->get<std::optional<bool>>("facingSuppressed").value_or(false);
+    amm.movementSuppressed = table->get<std::optional<bool>>("movementSuppressed").value_or(false);
     return amm;
   } catch (LuaConversionException const&) {
     return {};
@@ -366,13 +370,13 @@ LuaValue LuaConverter<StatModifier>::from(LuaEngine& engine, StatModifier const&
   return engine.luaFrom(jsonFromStatModifier(v));
 }
 
-Maybe<StatModifier> LuaConverter<StatModifier>::to(LuaEngine& engine, LuaValue v) {
+std::optional<StatModifier> LuaConverter<StatModifier>::to(LuaEngine& engine, LuaValue v) {
   auto json = engine.luaMaybeTo<Json>(std::move(v));
   if (!json)
     return {};
 
   try {
-    return jsonToStatModifier(json.take());
+    return jsonToStatModifier(takeOptional(json));
   } catch (JsonException const&) {
     return {};
   }
@@ -385,16 +389,16 @@ LuaValue LuaConverter<EphemeralStatusEffect>::from(LuaEngine& engine, EphemeralS
   return table;
 }
 
-Maybe<EphemeralStatusEffect> LuaConverter<EphemeralStatusEffect>::to(LuaEngine& engine, LuaValue const& v) {
+std::optional<EphemeralStatusEffect> LuaConverter<EphemeralStatusEffect>::to(LuaEngine& engine, LuaValue const& v) {
   if (auto s = v.ptr<LuaString>()) {
     return EphemeralStatusEffect{UniqueStatusEffect(s->ptr()), {}};
   } else if (auto table = v.ptr<LuaTable>()) {
     auto effect = engine.luaMaybeTo<String>(table->get("effect"));
-    auto duration = engine.luaMaybeTo<Maybe<float>>(table->get("duration"));
+    auto duration = engine.luaMaybeTo<std::optional<float>>(table->get("duration"));
     if (!duration)
-      duration = engine.luaMaybeTo<Maybe<float>>(table->get("duratino"));
+      duration = engine.luaMaybeTo<std::optional<float>>(table->get("duratino"));
     if (effect && duration)
-      return EphemeralStatusEffect{effect.take(), duration.take()};
+      return EphemeralStatusEffect{takeOptional(effect), takeOptional(duration)};
   }
 
   return {};
@@ -412,26 +416,26 @@ LuaValue LuaConverter<DamageRequest>::from(LuaEngine& engine, DamageRequest cons
   return table;
 }
 
-Maybe<DamageRequest> LuaConverter<DamageRequest>::to(LuaEngine&, LuaValue const& v) {
+std::optional<DamageRequest> LuaConverter<DamageRequest>::to(LuaEngine&, LuaValue const& v) {
   auto table = v.ptr<LuaTable>();
   if (!table)
     return {};
 
   try {
     DamageRequest dr;
-    if (auto hitType = table->get<Maybe<String>>("hitType"))
+    if (auto hitType = table->get<std::optional<String>>("hitType"))
       dr.hitType = HitTypeNames.getLeft(*hitType);
-    if (auto damageType = table->get<Maybe<String>>("damageType"))
+    if (auto damageType = table->get<std::optional<String>>("damageType"))
       dr.damageType = DamageTypeNames.getLeft(*damageType);
     dr.damage = table->get<float>("damage");
-    if (auto knockbackMomentum = table->get<Maybe<Vec2F>>("knockbackMomentum"))
+    if (auto knockbackMomentum = table->get<std::optional<Vec2F>>("knockbackMomentum"))
       dr.knockbackMomentum = *knockbackMomentum;
-    if (auto sourceEntityId = table->get<Maybe<EntityId>>("sourceEntityId"))
+    if (auto sourceEntityId = table->get<std::optional<EntityId>>("sourceEntityId"))
       dr.sourceEntityId = *sourceEntityId;
-    if (auto damageSourceKind = table->get<Maybe<String>>("damageSourceKind"))
-      dr.damageSourceKind = damageSourceKind.take();
-    if (auto statusEffects = table->get<Maybe<List<EphemeralStatusEffect>>>("statusEffects"))
-      dr.statusEffects = statusEffects.take();
+    if (auto damageSourceKind = table->get<std::optional<String>>("damageSourceKind"))
+      dr.damageSourceKind = takeOptional(damageSourceKind);
+    if (auto statusEffects = table->get<std::optional<List<EphemeralStatusEffect>>>("statusEffects"))
+      dr.statusEffects = takeOptional(statusEffects);
     return dr;
   } catch (LuaConversionException const&) {
     return {};
@@ -453,7 +457,7 @@ LuaValue LuaConverter<DamageNotification>::from(LuaEngine& engine, DamageNotific
   return table;
 }
 
-Maybe<DamageNotification> LuaConverter<DamageNotification>::to(LuaEngine&, LuaValue const& v) {
+std::optional<DamageNotification> LuaConverter<DamageNotification>::to(LuaEngine&, LuaValue const& v) {
   auto table = v.ptr<LuaTable>();
   if (!table)
     return {};
@@ -482,12 +486,12 @@ LuaValue LuaConverter<LiquidLevel>::from(LuaEngine& engine, LiquidLevel const& v
   return table;
 }
 
-Maybe<LiquidLevel> LuaConverter<LiquidLevel>::to(LuaEngine& engine, LuaValue const& v) {
+std::optional<LiquidLevel> LuaConverter<LiquidLevel>::to(LuaEngine& engine, LuaValue const& v) {
   if (auto table = v.ptr<LuaTable>()) {
     auto liquid = engine.luaMaybeTo<LiquidId>(table->get(1));
     auto level = engine.luaMaybeTo<std::uint8_t>(table->get(2));
     if (liquid && level)
-      return LiquidLevel(liquid.take(), level.take());
+      return LiquidLevel(takeOptional(liquid), takeOptional(level));
   }
   return {};
 }
@@ -511,32 +515,32 @@ LuaValue LuaConverter<Drawable>::from(LuaEngine& engine, Drawable const& v) {
   return table;
 }
 
-Maybe<Drawable> LuaConverter<Drawable>::to(LuaEngine& engine, LuaValue const& v) {
+std::optional<Drawable> LuaConverter<Drawable>::to(LuaEngine& engine, LuaValue const& v) {
   if (auto table = v.ptr<LuaTable>()) {
-    Maybe<Drawable> result;
+    std::optional<Drawable> result;
     result.emplace();
-    Drawable& drawable = result.get();
+    Drawable& drawable = result.value();
 
-    Color color = table->get<Maybe<Color>>("color").value(Color::White);
+    Color color = table->get<std::optional<Color>>("color").value_or(Color::White);
 
-    if (auto line = table->get<Maybe<Line2F>>("line"))
-      drawable = Drawable::makeLine(line.take(), table->get<float>("width"), color);
-    else if (auto poly = table->get<Maybe<PolyF>>("poly"))
-      drawable = Drawable::makePoly(poly.take(), color);
-    else if (auto image = table->get<Maybe<String>>("image"))
-      drawable = Drawable::makeImage(*luaExecutionRoot(engine).imageMetadataDatabase(), image.take(), 1.0f, table->get<Maybe<bool>>("centered").value(true), Vec2F(), color);
+    if (auto line = table->get<std::optional<Line2F>>("line"))
+      drawable = Drawable::makeLine(takeOptional(line), table->get<float>("width"), color);
+    else if (auto poly = table->get<std::optional<PolyF>>("poly"))
+      drawable = Drawable::makePoly(takeOptional(poly), color);
+    else if (auto image = table->get<std::optional<String>>("image"))
+      drawable = Drawable::makeImage(*luaExecutionRoot(engine).imageMetadataDatabase(), takeOptional(image), 1.0f, table->get<std::optional<bool>>("centered").value_or(true), Vec2F(), color);
     else
       return {}; // throw LuaAnimationComponentException("Drawable table must have 'line', 'poly', or 'image'");
 
-    if (auto transformation = table->get<Maybe<Mat3F>>("transformation"))
+    if (auto transformation = table->get<std::optional<Mat3F>>("transformation"))
       drawable.transform(*transformation);
-    if (auto rotation = table->get<Maybe<float>>("rotation"))
+    if (auto rotation = table->get<std::optional<float>>("rotation"))
       drawable.rotate(*rotation);
     if (table->get<bool>("mirrored"))
       drawable.scale(Vec2F(-1, 1));
-    if (auto scale = table->get<Maybe<float>>("scale"))
+    if (auto scale = table->get<std::optional<float>>("scale"))
       drawable.scale(*scale);
-    if (auto position = table->get<Maybe<Vec2F>>("position"))
+    if (auto position = table->get<std::optional<Vec2F>>("position"))
       drawable.translate(*position);
 
     drawable.fullbright = table->get<bool>("fullbright");
@@ -554,7 +558,7 @@ LuaValue LuaConverter<Collection>::from(LuaEngine& engine, Collection const& c) 
   return table;
 }
 
-Maybe<Collection> LuaConverter<Collection>::to(LuaEngine& engine, LuaValue const& v) {
+std::optional<Collection> LuaConverter<Collection>::to(LuaEngine& engine, LuaValue const& v) {
   if (auto table = v.ptr<LuaTable>()) {
     auto name = engine.luaMaybeTo<String>(table->get("name"));
     auto type = engine.luaMaybeTo<String>(table->get("type"));
@@ -576,15 +580,15 @@ LuaValue LuaConverter<Collectable>::from(LuaEngine& engine, Collectable const& c
   return table;
 }
 
-Maybe<Collectable> LuaConverter<Collectable>::to(LuaEngine& engine, LuaValue const& v) {
+std::optional<Collectable> LuaConverter<Collectable>::to(LuaEngine& engine, LuaValue const& v) {
   if (auto table = v.ptr<LuaTable>()) {
     auto name = engine.luaMaybeTo<String>(table->get("name"));
     if (name) {
       return Collectable(*name,
-        engine.luaMaybeTo<int>(table->get("order")).value(0),
-        engine.luaMaybeTo<String>(table->get("title")).value(""),
-        engine.luaMaybeTo<String>(table->get("description")).value(""),
-        engine.luaMaybeTo<String>(table->get("icon")).value(""));
+        engine.luaMaybeTo<int>(table->get("order")).value_or(0),
+        engine.luaMaybeTo<String>(table->get("title")).value_or(""),
+        engine.luaMaybeTo<String>(table->get("description")).value_or(""),
+        engine.luaMaybeTo<String>(table->get("icon")).value_or(""));
     }
   }
 
@@ -746,12 +750,12 @@ LuaMethods<std::shared_ptr<AudioInstance>> LuaUserDataMethods<std::shared_ptr<Au
     LuaMethods<std::shared_ptr<AudioInstance>> methods;
 
     methods.registerMethod("position",
-    [&](std::shared_ptr<AudioInstance> const& audio) -> Maybe<Vec2F> {
+    [&](std::shared_ptr<AudioInstance> const& audio) -> std::optional<Vec2F> {
         return audio->position();
     });
     
     methods.registerMethod("setPosition",
-    [&](std::shared_ptr<AudioInstance> const& audio, Maybe<Vec2F> const& pos) {
+    [&](std::shared_ptr<AudioInstance> const& audio, std::optional<Vec2F> const& pos) {
         audio->setPosition(pos);
     });
     
@@ -771,13 +775,13 @@ LuaMethods<std::shared_ptr<AudioInstance>> LuaUserDataMethods<std::shared_ptr<Au
     });
     
     methods.registerMethod("setVolume",
-    [&](std::shared_ptr<AudioInstance> const& audio, float const& targetValue, Maybe<float> const& rampTime) {
-        audio->setVolume(targetValue, rampTime.value(0.0f));
+    [&](std::shared_ptr<AudioInstance> const& audio, float const& targetValue, std::optional<float> const& rampTime) {
+        audio->setVolume(targetValue, rampTime.value_or(0.0f));
     });
     
     methods.registerMethod("setPitchMultiplier",
-    [&](std::shared_ptr<AudioInstance> const& audio, float const& targetValue, Maybe<float> const& rampTime) {
-        audio->setPitchMultiplier(targetValue, rampTime.value(0.0f));
+    [&](std::shared_ptr<AudioInstance> const& audio, float const& targetValue, std::optional<float> const& rampTime) {
+        audio->setPitchMultiplier(targetValue, rampTime.value_or(0.0f));
     });
     
     methods.registerMethod("loops",
@@ -816,18 +820,18 @@ LuaMethods<std::shared_ptr<AudioInstance>> LuaUserDataMethods<std::shared_ptr<Au
     });
     
     methods.registerMethod("setClockStart",
-    [&](std::shared_ptr<AudioInstance> const& audio, Maybe<std::int64_t> const& time) {
+    [&](std::shared_ptr<AudioInstance> const& audio, std::optional<std::int64_t> const& time) {
         audio->setClockStart(time);
     });
     
     methods.registerMethod("setClockStop",
-    [&](std::shared_ptr<AudioInstance> const& audio, Maybe<std::int64_t> const& time, Maybe<std::int64_t> const& fadeOutTime) {
-        audio->setClockStop(time,fadeOutTime.value(0));
+    [&](std::shared_ptr<AudioInstance> const& audio, std::optional<std::int64_t> const& time, std::optional<std::int64_t> const& fadeOutTime) {
+        audio->setClockStop(time,fadeOutTime.value_or(0));
     });
     
     methods.registerMethod("stop",
-    [&](std::shared_ptr<AudioInstance> const& audio, Maybe<float> const& rampTime) {
-        audio->stop(rampTime.value(0.0f));
+    [&](std::shared_ptr<AudioInstance> const& audio, std::optional<float> const& rampTime) {
+        audio->stop(rampTime.value_or(0.0f));
     });
     
     methods.registerMethod("finished",

@@ -8,7 +8,6 @@ import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -147,7 +146,7 @@ SystemLocation SystemWorldServer::clientShipLocation(ConnectionId clientId) cons
   return m_ships.get(m_clientShips.get(clientId))->systemLocation();
 }
 
-Maybe<std::pair<WarpAction, WarpMode>> SystemWorldServer::clientWarpAction(ConnectionId clientId) const {
+std::optional<std::pair<WarpAction, WarpMode>> SystemWorldServer::clientWarpAction(ConnectionId clientId) const {
   auto ship = m_ships.get(m_clientShips.get(clientId));
   if (auto objectUuid = ship->systemLocation().maybe<Uuid>()) {
     if (auto action = objectWarpAction(*objectUuid)) {
@@ -226,12 +225,12 @@ List<std::shared_ptr<SystemClientShip>> SystemWorldServer::shipsAtLocation(Syste
 
 List<InstanceWorldId> SystemWorldServer::activeInstanceWorlds() const {
   // Find the warp actions for all ships located at objects
-  List<Maybe<WarpAction>> warpActions = m_clientShips.keys().transformed([this](ConnectionId const& clientId) -> Maybe<WarpAction> {
-      return clientWarpAction(clientId).apply([](auto const& p) { return p.first; });
+  List<std::optional<WarpAction>> warpActions = m_clientShips.keys().transformed([this](ConnectionId const& clientId) -> std::optional<WarpAction> {
+      return clientWarpAction(clientId).transform([](auto const& p) { return p.first; });
     });
   // Return a list of the ones which lead to instance worlds
-  return warpActions.filtered([](Maybe<WarpAction> const& action) {
-      if (action.isNothing())
+  return warpActions.filtered([](std::optional<WarpAction> const& action) {
+      if (!action.has_value())
         return false;
 
       if (auto warpToWorld = action->maybe<WarpToWorld>()) {
@@ -239,7 +238,7 @@ List<InstanceWorldId> SystemWorldServer::activeInstanceWorlds() const {
           return true;
       }
       return false;
-  }).transformed([](Maybe<WarpAction> const& action) { return action->get<WarpToWorld>().world.get<InstanceWorldId>(); });
+  }).transformed([](std::optional<WarpAction> const& action) { return action->get<WarpToWorld>().world.get<InstanceWorldId>(); });
 
 }
 
@@ -353,7 +352,7 @@ List<Uuid> SystemWorldServer::objectKeys() const {
 }
 
 std::shared_ptr<SystemObject> SystemWorldServer::getObject(Uuid const& uuid) const {
-  return m_objects.maybe(uuid).value({});
+  return m_objects.maybe(uuid).value_or(std::shared_ptr<SystemObject>{});
 }
 
 List<ConnectionId> SystemWorldServer::pullShipFlights() {
@@ -366,7 +365,7 @@ void SystemWorldServer::queueUpdatePackets() {
 
     HashMap<Uuid, ByteArray> shipUpdates;
     for (auto ship : m_ships.values()) {
-      std::uint64_t version = versions->ships.maybe(ship->uuid()).value(0);
+      std::uint64_t version = versions->ships.maybe(ship->uuid()).value_or(0);
       auto shipUpdate = ship->writeNetState(version, {});
       versions->ships.set(ship->uuid(), shipUpdate.second);
       if (!shipUpdate.first.empty())
@@ -375,7 +374,7 @@ void SystemWorldServer::queueUpdatePackets() {
 
     HashMap<Uuid, ByteArray> objectUpdates;
     for (auto object : m_objects.values()) {
-      std::uint64_t version = versions->objects.maybe(object->uuid()).value(0);
+      std::uint64_t version = versions->objects.maybe(object->uuid()).value_or(0);
       auto objectUpdate = object->writeNetState(version, {});
       versions->objects.set(object->uuid(), objectUpdate.second);
       if (!objectUpdate.first.empty())
@@ -388,9 +387,9 @@ void SystemWorldServer::queueUpdatePackets() {
 void SystemWorldServer::handleIncomingPacket(ConnectionId, std::shared_ptr<Packet> packet) {
   if (auto objectSpawn = as<SystemObjectSpawnPacket>(packet)) {
     RandomSource rand(this->root().random().randu64());
-    Vec2F position = objectSpawn->position.value(randomObjectSpawnPosition(rand));
+    Vec2F position = objectSpawn->position.value_or(randomObjectSpawnPosition(rand));
     auto object = std::make_shared<SystemObject>(this->root(), systemObjectConfig(objectSpawn->typeName, objectSpawn->uuid), objectSpawn->uuid, position, time(), objectSpawn->parameters);
-    addObject(object, objectSpawn->position.isValid());
+    addObject(object, objectSpawn->position.has_value());
   }
 }
 

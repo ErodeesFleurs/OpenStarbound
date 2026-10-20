@@ -33,7 +33,6 @@ import star.directives;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.set;
 import star.audio;
@@ -268,7 +267,7 @@ CraftingPane::CraftingPane(GuiContext& guiContext, std::shared_ptr<WorldClient> 
 
   if (auto upgradeButton = fetchChild<ButtonWidget>("btnUpgrade")) {
     upgradeButton->disable();
-    Maybe<JsonArray> recipeData = m_settings.optArray("upgradeMaterials");
+    std::optional<JsonArray> recipeData = m_settings.optArray("upgradeMaterials");
 
     // create a recipe out of the listed upgrade materials.
     // for ease of creating a tooltip later.

@@ -16,7 +16,6 @@ import star.logging;
 import star.listener;
 import std;
 import star.string;
-import star.maybe;
 import star.version;
 
 import star.asset_source;
@@ -91,11 +90,11 @@ public:
     String storageDirectory;
 
     // Directory to store logs - if not set, uses storage directory and keeps old logs in seperate folder
-    Maybe<String> logDirectory;
+    std::optional<String> logDirectory;
 
     // Name of the log file that should be written, if any, relative to the
     // log directory
-    Maybe<String> logFile;
+    std::optional<String> logFile;
 
     // Number of rotated log file backups
     unsigned logFileBackups;
@@ -112,7 +111,7 @@ public:
 
     // If given, will write changed configuration to the given file within the
     // storage directory.
-    Maybe<String> runtimeConfigFile;
+    std::optional<String> runtimeConfigFile;
   };
 
   // Initializes the starbound root object and does the initial load.  All of
@@ -239,7 +238,7 @@ private:
   ListenerGroup m_reloadListeners;
 
   Json m_lastRuntimeConfig;
-  Maybe<String> m_runtimeConfigFile;
+  std::optional<String> m_runtimeConfigFile;
 
   ThreadFunction<void> m_maintenanceThread;
   Mutex m_maintenanceStopMutex;

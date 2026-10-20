@@ -3,7 +3,6 @@ module;
 import std;
 import star.string;
 import star.list;
-import star.maybe;
 import star.json;
 import star.lua;
 
@@ -21,7 +20,7 @@ public:
   void writeStatistics();
 
   Json stat(String const& name, Json def = {}) const;
-  Maybe<String> statType(String const& name) const;
+  std::optional<String> statType(String const& name) const;
   bool achievementUnlocked(String const& name) const;
 
   void recordEvent(String const& name, Json const& fields);
@@ -52,7 +51,7 @@ private:
   LuaCallbacks makeStatisticsCallbacks();
 
   template <typename Result = LuaValue, typename... V>
-  Maybe<Result> runStatScript(StringList const& scripts, Json const& config, String const& functionName, V&&... args);
+  std::optional<Result> runStatScript(StringList const& scripts, Json const& config, String const& functionName, V&&... args);
 
   Root& m_root;
   std::shared_ptr<StatisticsService> m_service;

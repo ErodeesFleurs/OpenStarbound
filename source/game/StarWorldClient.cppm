@@ -23,7 +23,6 @@ import star.thread;
 import star.directives;
 import star.asset_path;
 import star.either;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.casting;
@@ -176,10 +175,10 @@ public:
   bool isTileConnectable(Vec2I const& pos, TileLayer layer, bool tilesOnly = false) const override;
   bool pointTileCollision(Vec2F const& point, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
   bool lineTileCollision(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  Maybe<std::pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
+  std::optional<std::pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
   List<Vec2I> collidingTilesAlongLine(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet, int maxSize = -1, bool includeEdges = true) const override;
   bool rectTileCollision(RectI const& region, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  TileDamageResult damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, Maybe<EntityId> sourceEntity = {}) override;
+  TileDamageResult damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, std::optional<EntityId> sourceEntity = {}) override;
   std::shared_ptr<InteractiveEntity> getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const override;
   bool canReachEntity(Vec2F const& position, float radius, EntityId targetEntity, bool preferInteractive = true) const override;
   RpcPromise<InteractAction> interact(InteractRequest const& request) override;
@@ -191,7 +190,7 @@ public:
   StringList environmentStatusEffects(Vec2F const& pos) const override;
   StringList weatherStatusEffects(Vec2F const& pos) const override;
   bool exposedToWeather(Vec2F const& pos) const override;
-  Maybe<String> activeWeather(Vec2F const& pos) const override;
+  std::optional<String> activeWeather(Vec2F const& pos) const override;
   bool isUnderground(Vec2F const& pos) const override;
   bool disableDeathDrops() const override;
   List<PhysicsForceRegion> forceRegions() const override;
@@ -261,7 +260,7 @@ public:
   RectI clientWindow() const;
   WorldClientState& clientState();
 
-  Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args);
+  std::optional<ChainableJsonMessageResponse> receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args);
 
   std::shared_ptr<WorldClient::ScriptComponent> scriptContext(String const& contextName);
 
@@ -357,7 +356,7 @@ private:
   void sparkDamagedBlocks();
 
   Vec2I environmentBiomeTrackPosition() const;
-  Maybe<String> currentWeatherDomain() const;
+  std::optional<String> currentWeatherDomain() const;
   std::shared_ptr<AmbientNoisesDescription> currentAmbientNoises() const;
   std::shared_ptr<WeatherNoisesDescription> currentWeatherNoises() const;
   std::shared_ptr<AmbientNoisesDescription> currentMusicTrack() const;
@@ -424,7 +423,7 @@ private:
   CollisionGenerator m_collisionGenerator;
 
   WorldClientState m_clientState;
-  Maybe<ConnectionId> m_clientId;
+  std::optional<ConnectionId> m_clientId;
 
   std::shared_ptr<Player> m_mainPlayer;
 
@@ -449,16 +448,16 @@ private:
   GameTimer m_parallaxFadeTimer;
   std::shared_ptr<Parallax> m_currentParallax;
   std::shared_ptr<Parallax> m_nextParallax;
-  Maybe<String> m_weatherParallaxAsset;
+  std::optional<String> m_weatherParallaxAsset;
   std::shared_ptr<Biome const> m_weatherParallaxBiome;
   std::shared_ptr<Parallax> m_weatherParallax;
-  Maybe<String> m_weatherDomain;
-  Maybe<double> m_lastParallaxWindEpoch;
+  std::optional<String> m_weatherDomain;
+  std::optional<double> m_lastParallaxWindEpoch;
   double m_parallaxWindDirectionTime = 0.0;
   double m_parallaxWindMagnitudeTime = 0.0;
   double m_parallaxSignedWindTime = 0.0;
 
-  Maybe<float> m_overrideGravity;
+  std::optional<float> m_overrideGravity;
 
   ClientWeather m_weather;
   std::shared_ptr<ParticleManager> m_particles;
@@ -472,7 +471,7 @@ private:
   GameTimer m_entityUpdateTimer;
 
   List<std::shared_ptr<Packet>> m_outgoingPackets;
-  Maybe<std::int64_t> m_pingTime;
+  std::optional<std::int64_t> m_pingTime;
   std::int64_t m_latency;
 
   Set<EntityId> m_requestedDrops;

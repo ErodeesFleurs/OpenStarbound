@@ -9,7 +9,6 @@ import star.random;
 import star.ttl_cache;
 import star.casting;
 import star.game_types;
-import star.maybe;
 import star.poly;
 import star.variant;
 import star.strong_typedef;
@@ -185,7 +184,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     });
 
     methods.registerMethod("typeName",
-    [&](std::shared_ptr<Entity> const& entity, LuaEngine&) -> Maybe<String> {
+    [&](std::shared_ptr<Entity> const& entity, LuaEngine&) -> std::optional<String> {
         if (auto monster = as<Monster>(entity))
             return monster->typeName();
         if (auto npc = as<Npc>(entity))
@@ -212,7 +211,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     });
 
     methods.registerMethod("velocity",
-    [&](std::shared_ptr<Entity> const& entity) -> Maybe<Vec2F> {
+    [&](std::shared_ptr<Entity> const& entity) -> std::optional<Vec2F> {
         if (auto mobileEntity = as<MobileEntity>(entity))
             return mobileEntity->movementController()->velocity();
 
@@ -225,7 +224,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     });
 
     methods.registerMethod("description",
-    [&](std::shared_ptr<Entity> const& entity, Maybe<String> const& species) -> Maybe<String> {
+    [&](std::shared_ptr<Entity> const& entity, std::optional<String> const& species) -> std::optional<String> {
         if (auto inspectableEntity = as<InspectableEntity>(entity)) {
             if (species)
             return inspectableEntity->inspectionDescription(*species);
@@ -235,12 +234,12 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     });
 
     methods.registerMethod("uniqueId",
-    [&](std::shared_ptr<Entity> const& entity) -> LuaNullTermWrapper<Maybe<String>> {
+    [&](std::shared_ptr<Entity> const& entity) -> LuaNullTermWrapper<std::optional<String>> {
         return entity->uniqueId();
     });
 
     methods.registerMethod("getParameter",
-    [&](std::shared_ptr<Entity> const& entity, String const& parameterName, Maybe<Json> const& defaultValue) -> Json {
+    [&](std::shared_ptr<Entity> const& entity, String const& parameterName, std::optional<Json> const& defaultValue) -> Json {
         Json val = Json();
         
         bool handled = true;
@@ -271,7 +270,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
 
     // scripted entity methods
     methods.registerMethod("callScript",
-    [&](std::shared_ptr<Entity> const& entity, String const& function, LuaVariadic<LuaValue> const& args) -> Maybe<LuaValue> {
+    [&](std::shared_ptr<Entity> const& entity, String const& function, LuaVariadic<LuaValue> const& args) -> std::optional<LuaValue> {
         auto scrEntity = as<ScriptedEntity>(entity);
         if (!scrEntity || !scrEntity->isMaster() || !entity->inWorld())
             throw StarException::format("Entity {} does not exist or is not a local master scripted entity", entity->entityId());
@@ -280,7 +279,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
 
     // nametag entity methods
     methods.registerMethod("nametag",
-    [&](std::shared_ptr<Entity> const& entity) -> Maybe<Json> {
+    [&](std::shared_ptr<Entity> const& entity) -> std::optional<Json> {
         Json result;
         if (auto nametagEntity = as<NametagEntity>(entity)) {
             result = JsonObject{
@@ -298,7 +297,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
 
     // portrait entity methods
     methods.registerMethod("portrait",
-    [&](std::shared_ptr<Entity> const& entity, String const& portraitMode) -> LuaNullTermWrapper<Maybe<List<Drawable>>> {
+    [&](std::shared_ptr<Entity> const& entity, String const& portraitMode) -> LuaNullTermWrapper<std::optional<List<Drawable>>> {
         if (auto portraitEntity = as<PortraitEntity>(entity))
             return portraitEntity->portrait(PortraitModeNames.getLeft(portraitMode));
 
@@ -308,7 +307,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
 
     // damage bar entity methods
     methods.registerMethod("health",
-    [&](std::shared_ptr<Entity> const& entity) -> Maybe<Vec2F> {
+    [&](std::shared_ptr<Entity> const& entity) -> std::optional<Vec2F> {
         if (auto dmgEntity = as<DamageBarEntity>(entity)) {
             return Vec2F(dmgEntity->health(), dmgEntity->maxHealth());
         }
@@ -317,7 +316,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
 
     // interactive entity methods
     methods.registerMethod("isInteractive",
-    [&](std::shared_ptr<Entity> const& entity) -> Maybe<bool> {
+    [&](std::shared_ptr<Entity> const& entity) -> std::optional<bool> {
         if (auto interactEntity = as<InteractiveEntity>(entity))
             return interactEntity->isInteractive();
         return {};
@@ -325,7 +324,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
 
     // chatty entity methods
     methods.registerMethod("mouthPosition",
-    [&](std::shared_ptr<Entity> const& entity) -> Maybe<Vec2F> {
+    [&](std::shared_ptr<Entity> const& entity) -> std::optional<Vec2F> {
         if (auto chatty = as<ChattyEntity>(entity))
             return chatty->mouthPosition();
         return {};
@@ -334,64 +333,64 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     // actor entity methods
 
     // status controller methods, they're networked anyway so might as well make them available to read
-    methods.registerMethod("statusProperty", [&](std::shared_ptr<Entity> entity, String name, Json const& def = Json()) -> Maybe<Json> {
+    methods.registerMethod("statusProperty", [&](std::shared_ptr<Entity> entity, String name, Json const& def = Json()) -> std::optional<Json> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->statusProperty(name, def);
         return {};
     });
-    methods.registerMethod("stat", [&](std::shared_ptr<Entity> entity, String name) -> Maybe<float> {
+    methods.registerMethod("stat", [&](std::shared_ptr<Entity> entity, String name) -> std::optional<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->stat(name);
         return {};
     });
-    methods.registerMethod("statPositive", [&](std::shared_ptr<Entity> entity, String name) -> Maybe<bool> {
+    methods.registerMethod("statPositive", [&](std::shared_ptr<Entity> entity, String name) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->statPositive(name);
         return {};
     });
-    methods.registerMethod("resourceNames", [&](std::shared_ptr<Entity> entity) -> Maybe<StringList> {
+    methods.registerMethod("resourceNames", [&](std::shared_ptr<Entity> entity) -> std::optional<StringList> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->resourceNames();
         return {};
     });
-    methods.registerMethod("resource", [&](std::shared_ptr<Entity> entity, String name) -> Maybe<float> {
+    methods.registerMethod("resource", [&](std::shared_ptr<Entity> entity, String name) -> std::optional<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->resource(name);
         return {};
     });
-    methods.registerMethod("isResource", [&](std::shared_ptr<Entity> entity, String name) -> Maybe<bool> {
+    methods.registerMethod("isResource", [&](std::shared_ptr<Entity> entity, String name) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->isResource(name);
         return {};
     });
-    methods.registerMethod("resourcePositive", [&](std::shared_ptr<Entity> entity, String name) -> Maybe<bool> {
+    methods.registerMethod("resourcePositive", [&](std::shared_ptr<Entity> entity, String name) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->resourcePositive(name);
         return {};
     });
-    methods.registerMethod("resourceLocked", [&](std::shared_ptr<Entity> entity, String name) -> Maybe<bool> {
+    methods.registerMethod("resourceLocked", [&](std::shared_ptr<Entity> entity, String name) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->resourceLocked(name);
         return {};
     });
-    methods.registerMethod("resourceMax", [&](std::shared_ptr<Entity> entity, String name) -> Maybe<float> {
+    methods.registerMethod("resourceMax", [&](std::shared_ptr<Entity> entity, String name) -> std::optional<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->resourceMax(name);
         return {};
     });
-    methods.registerMethod("resourcePercentage", [&](std::shared_ptr<Entity> entity, String name) -> Maybe<float> {
+    methods.registerMethod("resourcePercentage", [&](std::shared_ptr<Entity> entity, String name) -> std::optional<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->resourcePercentage(name);
         return {};
     });
-    methods.registerMethod("getPersistentEffects", [&](std::shared_ptr<Entity> entity, String name) -> Maybe<JsonArray> {
+    methods.registerMethod("getPersistentEffects", [&](std::shared_ptr<Entity> entity, String name) -> std::optional<JsonArray> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->getPersistentEffects(name).transformed(jsonFromPersistentStatusEffect);
         return {};
     });
-    methods.registerMethod("activeUniqueStatusEffectSummary", [&](std::shared_ptr<Entity> entity) -> Maybe<List<JsonArray>> {
+    methods.registerMethod("activeUniqueStatusEffectSummary", [&](std::shared_ptr<Entity> entity) -> std::optional<List<JsonArray>> {
         if (auto actor = as<ActorEntity>(entity))
-            return actor->statusController()->activeUniqueStatusEffectSummary().transformed([](std::pair<UniqueStatusEffect, Maybe<float>> effect) {
+            return actor->statusController()->activeUniqueStatusEffectSummary().transformed([](std::pair<UniqueStatusEffect, std::optional<float>> effect) {
             JsonArray effectJson = {effect.first};
             if (effect.second)
                 effectJson.append(*effect.second);
@@ -399,7 +398,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
             });;
         return {};
     });
-    methods.registerMethod("uniqueStatusEffectActive", [&](std::shared_ptr<Entity> entity, String name) -> Maybe<bool> {
+    methods.registerMethod("uniqueStatusEffectActive", [&](std::shared_ptr<Entity> entity, String name) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->uniqueStatusEffectActive(name);
         return {};
@@ -407,82 +406,82 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
 
     // movement controller methods, they're networked anyway so might as well make them available to read
 
-    methods.registerMethod("mass", [&](std::shared_ptr<Entity> entity) -> Maybe<float> {
+    methods.registerMethod("mass", [&](std::shared_ptr<Entity> entity) -> std::optional<float> {
         if (auto mobile = as<MobileEntity>(entity))
             return mobile->movementController()->mass();
         return {};
     });
-    methods.registerMethod("boundBox", [&](std::shared_ptr<Entity> entity) -> Maybe<RectF> {
+    methods.registerMethod("boundBox", [&](std::shared_ptr<Entity> entity) -> std::optional<RectF> {
         if (auto mobile = as<MobileEntity>(entity))
             return mobile->movementController()->collisionPoly().boundBox();
         return {};
     });
-    methods.registerMethod("collisionPoly", [&](std::shared_ptr<Entity> entity) -> Maybe<PolyF> {
+    methods.registerMethod("collisionPoly", [&](std::shared_ptr<Entity> entity) -> std::optional<PolyF> {
         if (auto mobile = as<MobileEntity>(entity))
             return mobile->movementController()->collisionPoly();
         return {};
     });
-    methods.registerMethod("collisionBody", [&](std::shared_ptr<Entity> entity) -> Maybe<PolyF> {
+    methods.registerMethod("collisionBody", [&](std::shared_ptr<Entity> entity) -> std::optional<PolyF> {
         if (auto mobile = as<MobileEntity>(entity))
             return mobile->movementController()->collisionBody();
         return {};
     });
-    methods.registerMethod("collisionBoundBox", [&](std::shared_ptr<Entity> entity) -> Maybe<RectF> {
+    methods.registerMethod("collisionBoundBox", [&](std::shared_ptr<Entity> entity) -> std::optional<RectF> {
         if (auto mobile = as<MobileEntity>(entity))
             return mobile->movementController()->collisionBody().boundBox();
         return {};
     });
-    methods.registerMethod("localBoundBox", [&](std::shared_ptr<Entity> entity) -> Maybe<RectF> {
+    methods.registerMethod("localBoundBox", [&](std::shared_ptr<Entity> entity) -> std::optional<RectF> {
         if (auto mobile = as<MobileEntity>(entity))
             return mobile->movementController()->localBoundBox();
         return {};
     });
-    methods.registerMethod("rotation", [&](std::shared_ptr<Entity> entity) -> Maybe<float> {
+    methods.registerMethod("rotation", [&](std::shared_ptr<Entity> entity) -> std::optional<float> {
         if (auto mobile = as<MobileEntity>(entity))
             return mobile->movementController()->rotation();
         return {};
     });
-    methods.registerMethod("isColliding", [&](std::shared_ptr<Entity> entity) -> Maybe<bool> {
+    methods.registerMethod("isColliding", [&](std::shared_ptr<Entity> entity) -> std::optional<bool> {
         if (auto mobile = as<MobileEntity>(entity))
             return mobile->movementController()->isColliding();
         return {};
     });
-    methods.registerMethod("isNullColliding", [&](std::shared_ptr<Entity> entity) -> Maybe<bool> {
+    methods.registerMethod("isNullColliding", [&](std::shared_ptr<Entity> entity) -> std::optional<bool> {
         if (auto mobile = as<MobileEntity>(entity))
             return mobile->movementController()->isNullColliding();
         return {};
     });
-    methods.registerMethod("isCollisionStuck", [&](std::shared_ptr<Entity> entity) -> Maybe<bool> {
+    methods.registerMethod("isCollisionStuck", [&](std::shared_ptr<Entity> entity) -> std::optional<bool> {
         if (auto mobile = as<MobileEntity>(entity))
             return mobile->movementController()->isCollisionStuck();
         return {};
     });
-    methods.registerMethod("stickingDirection", [&](std::shared_ptr<Entity> entity) -> Maybe<float> {
+    methods.registerMethod("stickingDirection", [&](std::shared_ptr<Entity> entity) -> std::optional<float> {
         if (auto mobile = as<MobileEntity>(entity))
             return mobile->movementController()->stickingDirection();
         return {};
     });
-    methods.registerMethod("liquidPercentage", [&](std::shared_ptr<Entity> entity) -> Maybe<float> {
+    methods.registerMethod("liquidPercentage", [&](std::shared_ptr<Entity> entity) -> std::optional<float> {
         if (auto mobile = as<MobileEntity>(entity))
             return mobile->movementController()->liquidPercentage();
         return {};
     });
-    methods.registerMethod("liquidId", [&](std::shared_ptr<Entity> entity) -> Maybe<std::uint8_t> {
+    methods.registerMethod("liquidId", [&](std::shared_ptr<Entity> entity) -> std::optional<std::uint8_t> {
         if (auto mobile = as<MobileEntity>(entity))
             return mobile->movementController()->liquidId();
         return {};
     });
-    methods.registerMethod("onGround", [&](std::shared_ptr<Entity> entity) -> Maybe<bool> {
+    methods.registerMethod("onGround", [&](std::shared_ptr<Entity> entity) -> std::optional<bool> {
         if (auto mobile = as<MobileEntity>(entity))
             return mobile->movementController()->onGround();
         return {};
     });
-    methods.registerMethod("zeroG", [&](std::shared_ptr<Entity> entity) -> Maybe<bool> {
+    methods.registerMethod("zeroG", [&](std::shared_ptr<Entity> entity) -> std::optional<bool> {
         if (auto mobile = as<MobileEntity>(entity))
             return mobile->movementController()->zeroG();
         return {};
     });
-    methods.registerMethod("atWorldLimit", [&](std::shared_ptr<Entity> entity) -> Maybe<bool> {
+    methods.registerMethod("atWorldLimit", [&](std::shared_ptr<Entity> entity) -> std::optional<bool> {
         if (auto mobile = as<MobileEntity>(entity))
             return mobile->movementController()->atWorldLimit();
         return {};
@@ -494,69 +493,69 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
         return LuaVariadic<LuaValue>();
     });
     // slightly inconsistent for the sake of being more clear what the function is
-    methods.registerMethod("baseMovementParameters", [&](std::shared_ptr<Entity> entity) -> Maybe<Json> {
+    methods.registerMethod("baseMovementParameters", [&](std::shared_ptr<Entity> entity) -> std::optional<Json> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->baseParameters().toJson();
         return {};
     });
     // slightly inconsistent for the sake of being more clear what the function is
-    methods.registerMethod("movementParameters", [&](std::shared_ptr<Entity> entity) -> Maybe<Json> {
+    methods.registerMethod("movementParameters", [&](std::shared_ptr<Entity> entity) -> std::optional<Json> {
         if (auto mobile = as<MobileEntity>(entity))
             return mobile->movementController()->parameters().toJson();
         return {};
     });
 
-    methods.registerMethod("walking", [&](std::shared_ptr<Entity> entity) -> Maybe<bool> {
+    methods.registerMethod("walking", [&](std::shared_ptr<Entity> entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->walking();
         return {};
     });
-    methods.registerMethod("running", [&](std::shared_ptr<Entity> entity) -> Maybe<bool> {
+    methods.registerMethod("running", [&](std::shared_ptr<Entity> entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->running();
         return {};
     });
-    methods.registerMethod("movingDirection", [&](std::shared_ptr<Entity> entity) -> Maybe<int> {
+    methods.registerMethod("movingDirection", [&](std::shared_ptr<Entity> entity) -> std::optional<int> {
         if (auto actor = as<ActorEntity>(entity))
             return numericalDirection(actor->movementController()->movingDirection());
         return {};
     });
-    methods.registerMethod("facingDirection", [&](std::shared_ptr<Entity> entity) -> Maybe<int> {
+    methods.registerMethod("facingDirection", [&](std::shared_ptr<Entity> entity) -> std::optional<int> {
         if (auto actor = as<ActorEntity>(entity))
             return numericalDirection(actor->movementController()->facingDirection());
         return {};
     });
-    methods.registerMethod("crouching", [&](std::shared_ptr<Entity> entity) -> Maybe<bool> {
+    methods.registerMethod("crouching", [&](std::shared_ptr<Entity> entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->crouching();
         return {};
     });
-    methods.registerMethod("flying", [&](std::shared_ptr<Entity> entity) -> Maybe<bool> {
+    methods.registerMethod("flying", [&](std::shared_ptr<Entity> entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->flying();
         return {};
     });
-    methods.registerMethod("falling", [&](std::shared_ptr<Entity> entity) -> Maybe<bool> {
+    methods.registerMethod("falling", [&](std::shared_ptr<Entity> entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->falling();
         return {};
     });
-    methods.registerMethod("canJump", [&](std::shared_ptr<Entity> entity) -> Maybe<bool> {
+    methods.registerMethod("canJump", [&](std::shared_ptr<Entity> entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->canJump();
         return {};
     });
-    methods.registerMethod("jumping", [&](std::shared_ptr<Entity> entity) -> Maybe<bool> {
+    methods.registerMethod("jumping", [&](std::shared_ptr<Entity> entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->jumping();
         return {};
     });
-    methods.registerMethod("groundMovement", [&](std::shared_ptr<Entity> entity) -> Maybe<bool> {
+    methods.registerMethod("groundMovement", [&](std::shared_ptr<Entity> entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->groundMovement();
         return {};
     });
-    methods.registerMethod("liquidMovement", [&](std::shared_ptr<Entity> entity) -> Maybe<bool> {
+    methods.registerMethod("liquidMovement", [&](std::shared_ptr<Entity> entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->liquidMovement();
         return {};
@@ -564,7 +563,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
 
     // tool user entity methods
     methods.registerMethod("handItem",
-    [&](std::shared_ptr<Entity> const& entity, String const& handName) -> Maybe<String> {
+    [&](std::shared_ptr<Entity> const& entity, String const& handName) -> std::optional<String> {
         ToolHand toolHand;
         if (handName == "primary") {
             toolHand = ToolHand::Primary;
@@ -604,7 +603,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     });
 
     methods.registerMethod("aimPosition",
-    [&](std::shared_ptr<Entity> const& entity) -> Maybe<Vec2F> {
+    [&](std::shared_ptr<Entity> const& entity) -> std::optional<Vec2F> {
         if (auto toolUser = as<ToolUserEntity>(entity))
             return toolUser->aimPosition();
         return {};
@@ -613,7 +612,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
 
     // humanoid entity methods
     methods.registerMethod("species",
-    [&](std::shared_ptr<Entity> const& entity) -> Maybe<String> {
+    [&](std::shared_ptr<Entity> const& entity) -> std::optional<String> {
         if (auto player = as<Player>(entity)) {
             return player->species();
         } else if (auto npc = as<Npc>(entity)) {
@@ -624,7 +623,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     });
 
     methods.registerMethod("gender",
-    [&](std::shared_ptr<Entity> const& entity) -> Maybe<String> {
+    [&](std::shared_ptr<Entity> const& entity) -> std::optional<String> {
         if (auto player = as<Player>(entity)) {
             return GenderNames.getRight(player->gender());
         } else if (auto npc = as<Npc>(entity)) {
@@ -636,7 +635,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
 
     // player methods
     methods.registerMethod("currency",
-    [&](std::shared_ptr<Entity> const& entity, String const& currencyType) -> Maybe<std::uint64_t> {
+    [&](std::shared_ptr<Entity> const& entity, String const& currencyType) -> std::optional<std::uint64_t> {
         if (auto player = as<Player>(entity)) {
             return player->currency(currencyType);
         }
@@ -644,36 +643,36 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     });
 
     methods.registerMethod("hasCountOfItem",
-    [&](std::shared_ptr<Entity> const& entity, Json descriptor, Maybe<bool> exactMatch) -> Maybe<std::uint64_t> {
+    [&](std::shared_ptr<Entity> const& entity, Json descriptor, std::optional<bool> exactMatch) -> std::optional<std::uint64_t> {
         if (auto player = as<Player>(entity)) {
-            return player->inventory()->hasCountOfItem(ItemDescriptor(descriptor), exactMatch.value(false));
+            return player->inventory()->hasCountOfItem(ItemDescriptor(descriptor), exactMatch.value_or(false));
         }
         return {};
     });
 
     // loungeable entity methods
     methods.registerMethod("loungingEntities",
-    [&](std::shared_ptr<Entity> const& entity, Maybe<std::size_t> anchorIndex) -> Maybe<List<EntityId>> {
+    [&](std::shared_ptr<Entity> const& entity, std::optional<std::size_t> anchorIndex) -> std::optional<List<EntityId>> {
         if (!entity->inWorld())
             return {};
         if (auto loungeable = as<LoungeableEntity>(entity))
-            return loungeable->entitiesLoungingIn(anchorIndex.value()).values();
+            return loungeable->entitiesLoungingIn(anchorIndex.value_or(std::size_t{})).values();
         return {};
     });
 
     methods.registerMethod("loungeableOccupied",
-    [&](std::shared_ptr<Entity> const& entity, Maybe<std::size_t> anchorIndex) -> Maybe<bool> {
+    [&](std::shared_ptr<Entity> const& entity, std::optional<std::size_t> anchorIndex) -> std::optional<bool> {
         if (!entity->inWorld())
             return {};
         auto loungeable = as<LoungeableEntity>(entity);
-        std::size_t anchor = anchorIndex.value();
+        std::size_t anchor = anchorIndex.value_or(std::size_t{});
         if (loungeable && loungeable->anchorCount() > anchor)
             return !loungeable->entitiesLoungingIn(anchor).empty();
         return {};
     });
 
     methods.registerMethod("loungeableAnchorCount",
-    [&](std::shared_ptr<Entity> const& entity) -> Maybe<std::size_t> {
+    [&](std::shared_ptr<Entity> const& entity) -> std::optional<std::size_t> {
         if (!entity->inWorld())
             return {};
         if (auto loungeable = as<LoungeableEntity>(entity))
@@ -691,7 +690,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
 
     // farmables
     methods.registerMethod("farmableStage",
-    [&](std::shared_ptr<Entity> const& entity) -> Maybe<int> {
+    [&](std::shared_ptr<Entity> const& entity) -> std::optional<int> {
         if (auto farmable = as<FarmableObject>(entity)) {
             return farmable->stage();
         }
@@ -701,7 +700,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
 
     // containers
     methods.registerMethod("containerSize",
-    [&](std::shared_ptr<Entity> const& entity) -> Maybe<int> {
+    [&](std::shared_ptr<Entity> const& entity) -> std::optional<int> {
         if (auto container = as<ContainerObject>(entity))
             return container->containerSize();
 
@@ -755,7 +754,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     });
 
     methods.registerMethod("containerConsume",
-    [&](std::shared_ptr<Entity> const& entity, Json const& items) -> Maybe<bool> {
+    [&](std::shared_ptr<Entity> const& entity, Json const& items) -> std::optional<bool> {
         if (auto container = as<ContainerObject>(entity)) {
             auto toConsume = ItemDescriptor(items);
             return container->consumeItems(toConsume).result();
@@ -765,7 +764,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     });
 
     methods.registerMethod("containerConsumeAt",
-    [&](std::shared_ptr<Entity> const& entity, std::size_t offset, int count) -> Maybe<bool> {
+    [&](std::shared_ptr<Entity> const& entity, std::size_t offset, int count) -> std::optional<bool> {
         if (auto container = as<ContainerObject>(entity)) {
             if (offset < container->containerSize()) {
                 return container->consumeItems(offset, count).result();
@@ -776,7 +775,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     });
 
     methods.registerMethod("containerAvailable",
-    [&](std::shared_ptr<Entity> const& entity, Json const& items) -> Maybe<std::size_t> {
+    [&](std::shared_ptr<Entity> const& entity, Json const& items) -> std::optional<std::size_t> {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemBag = container->itemBag();
             auto toCheck = ItemDescriptor(items);
@@ -828,7 +827,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     });
 
     methods.registerMethod("containerItemsCanFit",
-    [&](std::shared_ptr<Entity> const& entity, Json const& items) -> Maybe<std::size_t> {
+    [&](std::shared_ptr<Entity> const& entity, Json const& items) -> std::optional<std::size_t> {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = entity->root().itemDatabase();
             auto itemBag = container->itemBag();
@@ -931,7 +930,7 @@ LuaMethods<std::shared_ptr<Entity>> LuaUserDataMethods<std::shared_ptr<Entity>>:
     });
 
     methods.registerMethod("movingCollision",
-    [&](std::shared_ptr<Entity> const& entity, std::size_t index) -> Maybe<PhysicsMovingCollision> {
+    [&](std::shared_ptr<Entity> const& entity, std::size_t index) -> std::optional<PhysicsMovingCollision> {
         if (auto phys = as<PhysicsEntity>(entity)) {
             return phys->movingCollision(index);
         }

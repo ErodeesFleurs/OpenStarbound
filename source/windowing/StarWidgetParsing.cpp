@@ -23,7 +23,6 @@ import star.format;
 import star.version;
 import star.string;
 import star.text;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -761,8 +760,8 @@ WidgetConstructResult WidgetParser::tabSetHandler(String const& name, Json const
 
   Json defaultPressedOffset = m_context->root().assets()->json("/interface.config:buttonPressedOffset");
   tabSetConfig.tabButtonPressedOffset = jsonToVec2I(config.get("tabButtonPressedOffset", defaultPressedOffset));
-  tabSetConfig.tabButtonTextOffset = config.opt("tabButtonTextOffset").apply(jsonToVec2I).value();
-  tabSetConfig.tabButtonSpacing = config.opt("tabButtonSpacing").apply(jsonToVec2I).value();
+  tabSetConfig.tabButtonTextOffset = config.opt("tabButtonTextOffset").transform(jsonToVec2I).value_or(Vec2I{});
+  tabSetConfig.tabButtonSpacing = config.opt("tabButtonSpacing").transform(jsonToVec2I).value_or(Vec2I{});
 
   auto tabSet = std::make_shared<TabSetWidget>(*m_context, tabSetConfig);
   common(tabSet, config);

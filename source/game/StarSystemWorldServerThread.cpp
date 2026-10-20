@@ -5,7 +5,6 @@ import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -233,7 +232,7 @@ SystemLocation SystemWorldServerThread::clientShipLocation(ConnectionId clientId
   return m_clientShipLocations.get(clientId).first;
 }
 
-Maybe<std::pair<WarpAction, WarpMode>> SystemWorldServerThread::clientWarpAction(ConnectionId clientId) {
+std::optional<std::pair<WarpAction, WarpMode>> SystemWorldServerThread::clientWarpAction(ConnectionId clientId) {
   ReadLocker locker(m_queueMutex);
   if (m_clientShipDestinations.contains(clientId))
     return {};

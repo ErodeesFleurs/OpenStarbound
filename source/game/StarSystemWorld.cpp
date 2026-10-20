@@ -9,7 +9,6 @@ import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -122,7 +121,7 @@ SystemLocation jsonToSystemLocation(Json const& json) {
         return CelestialOrbit::fromJson(location->get(1));
       else if (type == "object")
         return Uuid(location->get(1).toString());
-    } else if (auto position = jsonToMaybe<Vec2F>(*location, jsonToVec2F)) {
+    } else if (auto position = jsonToOptional<Vec2F>(*location, jsonToVec2F)) {
       return *position;
     }
   }
@@ -137,7 +136,7 @@ Json jsonFromSystemLocation(SystemLocation const& location) {
   else if(auto uuid = location.maybe<Uuid>())
     return JsonArray{"object", uuid->hex()};
   else
-    return jsonFromMaybe<Vec2F>(location.maybe<Vec2F>(), jsonFromVec2F);
+    return jsonFromOptional<Vec2F>(location.maybe<Vec2F>(), jsonFromVec2F);
 }
 
 SystemWorldConfig SystemWorldConfig::fromJson(Json const& json) {
@@ -330,7 +329,7 @@ Json SystemWorld::systemObjectTypeConfig(Root& root, String const& name) {
   return root.assets()->json(strf("/system_objects.config:{}", name));
 }
 
-Maybe<Vec2F> SystemWorld::systemLocationPosition(SystemLocation const& location) const {
+std::optional<Vec2F> SystemWorld::systemLocationPosition(SystemLocation const& location) const {
   if (auto coordinate = location.maybe<CelestialCoordinate>()) {
     return planetPosition(*coordinate);
   } else if (auto orbit = location.maybe<CelestialOrbit>()) {
@@ -351,15 +350,16 @@ Vec2F SystemWorld::randomArrivalPosition() const {
   return Vec2F::withAngle(angle, range);
 }
 
-Maybe<WarpAction> SystemWorld::objectWarpAction(Uuid const& uuid) const {
+std::optional<WarpAction> SystemWorld::objectWarpAction(Uuid const& uuid) const {
   if (auto object = getObject(uuid)) {
     WarpAction warpAction = object->warpAction();
     if (auto warpToWorld = warpAction.ptr<WarpToWorld>()) {
       if (auto instanceWorldId = warpToWorld->world.ptr<InstanceWorldId>()) {
         instanceWorldId->uuid = object->uuid();
         if (auto parameters = m_celestialDatabase->parameters(CelestialCoordinate(m_location))) {
-          Maybe<float> systemThreatLevel = parameters->getParameter("spaceThreatLevel").optFloat();
-          instanceWorldId->level = object->threatLevel().orMaybe(systemThreatLevel);
+          std::optional<float> systemThreatLevel = parameters->getParameter("spaceThreatLevel").optFloat();
+          auto objectThreatLevel = object->threatLevel();
+          instanceWorldId->level = objectThreatLevel ? objectThreatLevel : systemThreatLevel;
         } else {
           return {};
         }
@@ -393,7 +393,7 @@ SystemObject::SystemObject(Root& root, SystemWorld* system, Json const& diskStor
   m_config = system->systemObjectConfig(name, m_uuid);
   m_parameters = diskStore.getObject("parameters", {});
 
-  m_orbit.set(jsonToMaybe<CelestialOrbit>(diskStore.get("orbit"), [](Json const& json) {
+  m_orbit.set(jsonToOptional<CelestialOrbit>(diskStore.get("orbit"), [](Json const& json) {
       return CelestialOrbit::fromJson(json);
     }));
 
@@ -435,7 +435,7 @@ WarpAction SystemObject::warpAction() const {
   return m_config.warpAction;
 }
 
-Maybe<float> SystemObject::threatLevel() const {
+std::optional<float> SystemObject::threatLevel() const {
   return m_config.threatLevel;
 }
 
@@ -457,14 +457,14 @@ void SystemObject::enterOrbit(CelestialCoordinate const& target, Vec2F const& ta
   m_approach.reset();
 }
 
-Maybe<CelestialCoordinate> SystemObject::orbitTarget() const {
+std::optional<CelestialCoordinate> SystemObject::orbitTarget() const {
   if (m_orbit.get())
     return m_orbit.get()->target;
   else
     return {};
 }
 
-Maybe<CelestialOrbit> SystemObject::orbit() const {
+std::optional<CelestialOrbit> SystemObject::orbit() const {
   return m_orbit.get();
 }
 
@@ -528,7 +528,7 @@ Json SystemObject::diskStore() const {
   JsonObject store;
   store.set("uuid", m_uuid.hex());
   store.set("name", m_config.name);
-  store.set("orbit", jsonFromMaybe<CelestialOrbit>(m_orbit.get(), [](CelestialOrbit const& o) {
+  store.set("orbit", jsonFromOptional<CelestialOrbit>(m_orbit.get(), [](CelestialOrbit const& o) {
       return o.toJson();
     }));
   store.set("spawnTime", m_spawnTime);
@@ -545,7 +545,7 @@ void SystemObject::setPosition(Vec2F const& position) {
 SystemClientShip::SystemClientShip(SystemWorld* system, Uuid uuid, float speed, SystemLocation const& location)
   : m_uuid(std::move(uuid)) {
   m_systemLocation.set(location);
-  setPosition(system->systemLocationPosition(location).value({}));
+  setPosition(system->systemLocationPosition(location).value_or(Vec2F{}));
 
   // temporary
   auto shipConfig = system->root().assets()->json("/systemworld.config:clientShip");
@@ -647,7 +647,7 @@ void SystemClientShip::serverUpdate(SystemWorld* system, float dt) {
       m_orbit->enterTime = system->time();
       destination = system->orbitPosition(*m_orbit);
     } else {
-      destination = system->systemLocationPosition(m_destination.get()).value(pos);
+      destination = system->systemLocationPosition(m_destination.get()).value_or(pos);
     }
 
     auto toTarget = destination - pos;
@@ -663,9 +663,9 @@ void SystemClientShip::serverUpdate(SystemWorld* system, float dt) {
   }
 
   if (m_orbit) {
-    setPosition(system->systemLocationPosition(*m_orbit).get());
+    setPosition(system->systemLocationPosition(*m_orbit).value());
   } else {
-    setPosition(system->systemLocationPosition(m_systemLocation.get()).get());
+    setPosition(system->systemLocationPosition(m_systemLocation.get()).value());
   }
 }
 

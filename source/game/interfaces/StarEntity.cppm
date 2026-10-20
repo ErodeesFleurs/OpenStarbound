@@ -3,7 +3,6 @@ import std;
 import star.type_identity;
 import star.string;
 import star.list;
-import star.maybe;
 import star.format;
 import star.json;
 import star.net_compatibility;
@@ -143,12 +142,12 @@ public:
   // Return the damage that would result from being hit by the given damage
   // source.  Will be called on master and slave entities.  Culling based on
   // team damage and self damage will be done outside of this query.
-  virtual Maybe<HitType> queryHit(DamageSource const& source) const;
+  virtual std::optional<HitType> queryHit(DamageSource const& source) const;
 
   // Return the polygonal area in which the entity can be hit. Not used for
   // actual hit computation, only for determining more precisely where a
   // hit intersection occurred (e.g. by projectiles)
-  virtual Maybe<PolyF> hitPoly() const;
+  virtual std::optional<PolyF> hitPoly() const;
 
   // Apply a request to damage this entity. Will only be called on Master
   // entities. DamageRequest might be adjusted based on protection and other
@@ -181,7 +180,7 @@ public:
   // to messages.  If the message is NOT handled, should return Nothing,
   // otherwise should return some Json value.
   // This will only ever be called on master entities.
-  virtual Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args);
+  virtual std::optional<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args);
 
   virtual void update(float dt, std::uint64_t currentStep);
 
@@ -213,11 +212,11 @@ public:
   // If set, then the entity will be discoverable by its unique id and will be
   // indexed in the stored world.  Unique ids must be different across all
   // entities in a single world.
-  Maybe<String> uniqueId() const;
+  std::optional<String> uniqueId() const;
 
   // EntityMode will only be set if the entity is initialized, if the entity is
   // uninitialized then isMaster and isSlave will both return false.
-  Maybe<EntityMode> entityMode() const;
+  std::optional<EntityMode> entityMode() const;
   bool isMaster() const;
   bool isSlave() const;
 
@@ -226,16 +225,16 @@ protected:
 
   void setPersistent(bool persistent);
   void setKeepAlive(bool keepAlive);
-  void setUniqueId(Maybe<String> uniqueId);
+  void setUniqueId(std::optional<String> uniqueId);
   void setTeam(EntityDamageTeam newTeam);
 
 private:
   Root& m_root;
   EntityId m_entityId;
-  Maybe<EntityMode> m_entityMode;
+  std::optional<EntityMode> m_entityMode;
   bool m_persistent;
   bool m_keepAlive;
-  Maybe<String> m_uniqueId;
+  std::optional<String> m_uniqueId;
   World* m_world;
   EntityDamageTeam m_team;
 };

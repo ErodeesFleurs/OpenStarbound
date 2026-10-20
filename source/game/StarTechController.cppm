@@ -21,7 +21,6 @@ import star.vector;
 import star.audio;
 import star.map;
 import star.set;
-import star.maybe;
 
 
 import star.animated_part_set;
@@ -106,7 +105,7 @@ public:
   void tickMaster(float dt);
   void tickSlave(float dt);
 
-  Maybe<ParentState> parentState() const;
+  std::optional<ParentState> parentState() const;
   DirectivesGroup const& parentDirectives() const;
   Vec2F parentOffset() const;
   bool toolUsageSuppressed() const;
@@ -121,13 +120,13 @@ public:
   List<std::shared_ptr<AudioInstance>> pullNewAudios();
   List<Particle> pullNewParticles();
 
-  Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
 private:
   Root& m_root;
   struct TechAnimator : public NetElement {
     TechAnimator(Root& root);
-    TechAnimator(Root& root, Maybe<String> animationConfig);
+    TechAnimator(Root& root, std::optional<String> animationConfig);
 
     void initNetVersion(NetElementVersion const* version = nullptr) override;
 
@@ -147,7 +146,7 @@ private:
     bool isVisible() const;
 
     Root& m_root;
-    Maybe<String> animationConfig;
+    std::optional<String> animationConfig;
     NetworkedAnimator animator;
     NetworkedAnimator::DynamicTarget dynamicTarget;
     NetElementBool visible;
@@ -181,7 +180,7 @@ private:
 
   LuaCallbacks makeTechCallbacks(TechModule& techModule);
 
-  Maybe<StringList> m_overriddenTech;
+  std::optional<StringList> m_overriddenTech;
   LinkedList<TechModule> m_techModules;
   TechAnimatorGroup m_techAnimators;
 
@@ -203,7 +202,7 @@ private:
 
   Vec2F m_aimPosition;
 
-  NetElementData<Maybe<ParentState>> m_parentState;
+  NetElementData<std::optional<ParentState>> m_parentState;
   NetElementData<DirectivesGroup> m_parentDirectives;
   NetElementFloat m_xParentOffset;
   NetElementFloat m_yParentOffset;

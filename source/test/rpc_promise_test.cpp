@@ -1,6 +1,5 @@
 import std;
 import star.rpc_promise;
-import star.maybe;
 import star.string;
 import star.json;
 import star.json_rpc;
@@ -315,7 +314,7 @@ TEST(RpcPromiseTest, ConcurrentObserversShareOneLazyEvaluation) {
   for (int i = 0; i != 4; ++i) {
     observers.emplace_back([observer = wrapped, &start, &observed] {
       start.arrive_and_wait();
-      if (observer.result().value() == 21)
+      if (observer.result().value_or(0) == 21)
         ++observed;
     });
   }

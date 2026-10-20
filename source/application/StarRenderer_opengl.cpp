@@ -2,7 +2,6 @@
 #include "GL/glew.h"
 import std;
 import star.memory;
-import star.maybe;
 import star.format;
 import star.json;
 import star.string;
@@ -566,7 +565,7 @@ void OpenGlRenderer::setEffectScriptableParameter(String const& effectName, Stri
   ptr->parameterValue = value;
 }
 
-Maybe<RenderEffectParameter> OpenGlRenderer::getEffectScriptableParameter(String const& effectName, String const& parameterName) {
+std::optional<RenderEffectParameter> OpenGlRenderer::getEffectScriptableParameter(String const& effectName, String const& parameterName) {
   auto find = m_effects.find(effectName);
   if (find == m_effects.end())
     return {};
@@ -579,7 +578,7 @@ Maybe<RenderEffectParameter> OpenGlRenderer::getEffectScriptableParameter(String
   
   return ptr->parameterValue;
 }
-Maybe<VariantTypeIndex> OpenGlRenderer::getEffectScriptableParameterType(String const& effectName, String const& parameterName) {
+std::optional<VariantTypeIndex> OpenGlRenderer::getEffectScriptableParameterType(String const& effectName, String const& parameterName) {
   auto find = m_effects.find(effectName);
   if (find == m_effects.end())
     return {};
@@ -676,7 +675,7 @@ bool OpenGlRenderer::switchEffectConfig(String const& name) {
   return true;
 }
 
-void OpenGlRenderer::setScissorRect(Maybe<RectI> const& scissorRect) {
+void OpenGlRenderer::setScissorRect(std::optional<RectI> const& scissorRect) {
   if (scissorRect == m_scissorRect)
     return;
 
@@ -1186,7 +1185,7 @@ bool OpenGlRenderer::logGlErrorSummary(String prefix) {
 void OpenGlRenderer::uploadTextureImage(PixelFormat pixelFormat, Vec2U size, std::uint8_t const* data) {
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-  Maybe<GLenum> internalFormat;
+  std::optional<GLenum> internalFormat;
   GLenum format;
   GLenum type = GL_UNSIGNED_BYTE;
   if (pixelFormat == PixelFormat::RGB24)
@@ -1209,7 +1208,7 @@ void OpenGlRenderer::uploadTextureImage(PixelFormat pixelFormat, Vec2U size, std
       throw RendererException("Unsupported texture format in OpenGlRenderer::uploadTextureImage");
   }
 
-  glTexImage2D(GL_TEXTURE_2D, 0, internalFormat.value(format), size[0], size[1], 0, format, type, data);
+  glTexImage2D(GL_TEXTURE_2D, 0, internalFormat.value_or(format), size[0], size[1], 0, format, type, data);
 }
 
 void OpenGlRenderer::flushImmediatePrimitives(Mat3F const& transformation) {
@@ -1337,7 +1336,7 @@ void OpenGlRenderer::setupGlUniforms(Effect& effect, Vec2U screenSize) {
     auto ptr = &param.second;
     auto mvalue = ptr->parameterValue;
     if (mvalue) {
-      RenderEffectParameter value = mvalue.value();
+      RenderEffectParameter value = mvalue.value_or(RenderEffectParameter{});
       if (auto v = value.ptr<bool>())
         glUniform1i(ptr->parameterUniform, *v);
       else if (auto v = value.ptr<int>())

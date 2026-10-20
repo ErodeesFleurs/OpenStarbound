@@ -22,7 +22,6 @@ import star.asset_path;
 import star.ref_ptr;
 import star.listener;
 import std;
-import star.maybe;
 import star.format;
 import star.version;
 import star.logging;
@@ -54,7 +53,7 @@ MicroDungeonFactory::MicroDungeonFactory(Root& root) : m_root(root) {
     m_placementshifts.push_back(-i);
 }
 
-Maybe<std::pair<List<RectI>, Set<Vec2I>>> MicroDungeonFactory::generate(RectI const& bounds,
+std::optional<std::pair<List<RectI>, Set<Vec2I>>> MicroDungeonFactory::generate(RectI const& bounds,
     String const& dungeonName,
     Vec2I const& position,
     std::uint64_t seed,

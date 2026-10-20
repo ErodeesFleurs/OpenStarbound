@@ -19,7 +19,6 @@ import star.periodic_function;
 import star.ordered_map;
 import star.audio;
 import star.map;
-import star.maybe;
 import star.id_map;
 import star.lru_cache;
 import star.time;
@@ -245,10 +244,10 @@ CharacterCreationResult SpeciesDatabase::createHumanoid(
   return result;
 }
 
-CharacterCreationResult SpeciesDatabase::generateHumanoid(String speciesChoice, std::int64_t seed, Maybe<Gender> gender, ItemDatabase const* itemCatalog) const {
+CharacterCreationResult SpeciesDatabase::generateHumanoid(String speciesChoice, std::int64_t seed, std::optional<Gender> gender, ItemDatabase const* itemCatalog) const {
   RandomSource randSource(seed);
   auto speciesDefinition = species(speciesChoice);
-  auto chosenGender = gender.value(randSource.randb() ? Gender::Male : Gender::Female);
+  auto chosenGender = gender.value_or(randSource.randb() ? Gender::Male : Gender::Female);
   return createHumanoid(
     m_root.nameGenerator()->generateName(speciesDefinition->nameGen(chosenGender), randSource),
     speciesChoice,

@@ -3,7 +3,6 @@ import std;
 import star.list;
 import star.map;
 import star.data_stream;
-import star.maybe;
 import star.format;
 import star.json;
 
@@ -65,7 +64,7 @@ public:
 
   // If 'config' is a string type, it is assumed to be a descriptor file,
   // otherwise it should contain map configuration data.
-  explicit TileDamageParameters(Assets const& assets, Json config, Maybe<float> healthOverride = {}, Maybe<unsigned> requiredHarvestLevelOverride = {});
+  explicit TileDamageParameters(Assets const& assets, Json config, std::optional<float> healthOverride = {}, std::optional<unsigned> requiredHarvestLevelOverride = {});
 
   float damageDone(TileDamage const& damage) const;
   float recoveryPerSecond() const;

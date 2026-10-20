@@ -1,6 +1,5 @@
 module;
 import std;
-import star.maybe;
 import star.format;
 import star.json;
 import star.string;
@@ -164,14 +163,14 @@ public:
   // set here.
   virtual void setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) = 0;
   virtual void setEffectScriptableParameter(String const& effectName, String const& parameterName, RenderEffectParameter const& parameter) = 0;
-  virtual Maybe<RenderEffectParameter> getEffectScriptableParameter(String const& effectName, String const& parameterName) = 0;
-  virtual Maybe<VariantTypeIndex> getEffectScriptableParameterType(String const& effectName, String const& parameterName) = 0;
+  virtual std::optional<RenderEffectParameter> getEffectScriptableParameter(String const& effectName, String const& parameterName) = 0;
+  virtual std::optional<VariantTypeIndex> getEffectScriptableParameterType(String const& effectName, String const& parameterName) = 0;
   virtual void setEffectTexture(String const& textureName, ImageView const& image) = 0;
   virtual bool switchEffectConfig(String const& name) = 0;
 
   // Any further rendering will be scissored based on this rect, specified in
   // pixels
-  virtual void setScissorRect(Maybe<RectI> const& scissorRect) = 0;
+  virtual void setScissorRect(std::optional<RectI> const& scissorRect) = 0;
 
   virtual TexturePtr createTexture(Image const& texture,
       TextureAddressing addressing = TextureAddressing::Clamp,

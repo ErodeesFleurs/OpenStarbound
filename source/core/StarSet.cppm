@@ -4,7 +4,7 @@ import std;
 
 import star.flat_hash_set;
 import star.list;
-import star.maybe;
+import star.optional;
 import star.hash;
 import star.format;
 
@@ -47,14 +47,14 @@ public:
   void removeAll(Container const& s);
 
   value_type first();
-  Maybe<value_type> maybeFirst();
+  std::optional<value_type> maybeFirst();
   value_type takeFirst();
-  Maybe<value_type> maybeTakeFirst();
+  std::optional<value_type> maybeTakeFirst();
 
   value_type last();
-  Maybe<value_type> maybeLast();
+  std::optional<value_type> maybeLast();
   value_type takeLast();
-  Maybe<value_type> maybeTakeLast();
+  std::optional<value_type> maybeTakeLast();
 
   bool hasIntersection(SetMixin const& s) const;
 };
@@ -163,10 +163,10 @@ auto SetMixin<BaseSet>::first() -> value_type {
 }
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::maybeFirst() -> Maybe<value_type> {
+auto SetMixin<BaseSet>::maybeFirst() -> std::optional<value_type> {
   if (Base::empty())
     return {};
-  return *Base::begin();
+  return std::optional<value_type>(std::in_place, *Base::begin());
 }
 
 template <typename BaseSet>
@@ -180,13 +180,13 @@ auto SetMixin<BaseSet>::takeFirst() -> value_type {
 }
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::maybeTakeFirst() -> Maybe<value_type> {
+auto SetMixin<BaseSet>::maybeTakeFirst() -> std::optional<value_type> {
   if (Base::empty())
     return {};
   auto i = Base::begin();
   value_type v = std::move(*i);
   Base::erase(i);
-  return std::move(v);
+  return std::optional<value_type>(std::in_place, std::move(v));
 }
 
 template <typename BaseSet>
@@ -197,10 +197,10 @@ auto SetMixin<BaseSet>::last() -> value_type {
 }
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::maybeLast() -> Maybe<value_type> {
+auto SetMixin<BaseSet>::maybeLast() -> std::optional<value_type> {
   if (Base::empty())
     return {};
-  return *std::prev(Base::end());
+  return std::optional<value_type>(std::in_place, *std::prev(Base::end()));
 }
 
 template <typename BaseSet>
@@ -214,13 +214,13 @@ auto SetMixin<BaseSet>::takeLast() -> value_type {
 }
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::maybeTakeLast() -> Maybe<value_type> {
+auto SetMixin<BaseSet>::maybeTakeLast() -> std::optional<value_type> {
   if (Base::empty())
     return {};
   auto i = std::prev(Base::end());
   value_type v = std::move(*i);
   Base::erase(i);
-  return std::move(v);
+  return std::optional<value_type>(std::in_place, std::move(v));
 }
 
 template <typename BaseSet>
@@ -239,7 +239,10 @@ std::ostream& operator<<(std::ostream& os, SetMixin<BaseSet> const& set) {
   for (auto i = set.begin(); i != set.end(); ++i) {
     if (i != set.begin())
       os << ", ";
-    os << *i;
+    if constexpr (requires { outputOptional(*i); })
+      os << outputOptional(*i);
+    else
+      os << *i;
   }
   os << ")";
   return os;

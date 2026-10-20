@@ -23,7 +23,6 @@ import star.logging;
 import star.version;
 import star.string;
 import star.text;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;

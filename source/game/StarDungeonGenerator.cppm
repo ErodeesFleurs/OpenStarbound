@@ -4,7 +4,6 @@ import star.type_identity;
 import star.string;
 import star.list;
 import star.map;
-import star.maybe;
 import star.format;
 import star.json;
 import star.image;
@@ -81,11 +80,11 @@ namespace Dungeon {
     Root& m_root;
   public:
     Root& root() const { return m_root; }
-    DungeonGeneratorWriter(Root& root, std::shared_ptr<DungeonGeneratorWorldFacade> facade, Maybe<int> terrainMarkingSurfaceLevel, Maybe<int> terrainSurfaceSpaceExtends);
+    DungeonGeneratorWriter(Root& root, std::shared_ptr<DungeonGeneratorWorldFacade> facade, std::optional<int> terrainMarkingSurfaceLevel, std::optional<int> terrainSurfaceSpaceExtends);
 
     Vec2I wrapPosition(Vec2I const& pos) const;
 
-    void setMarkDungeonId(Maybe<DungeonId> markDungeonId = {});
+    void setMarkDungeonId(std::optional<DungeonId> markDungeonId = {});
 
     void requestLiquid(Vec2I const& pos, LiquidStore const& liquid);
     void setLiquid(Vec2I const& pos, LiquidStore const& liquid);
@@ -145,8 +144,8 @@ namespace Dungeon {
     };
 
     std::shared_ptr<DungeonGeneratorWorldFacade> m_facade;
-    Maybe<int> m_terrainMarkingSurfaceLevel;
-    Maybe<int> m_terrainSurfaceSpaceExtends;
+    std::optional<int> m_terrainMarkingSurfaceLevel;
+    std::optional<int> m_terrainSurfaceSpaceExtends;
 
     Map<Vec2I, LiquidStore> m_pendingLiquids;
 
@@ -170,7 +169,7 @@ namespace Dungeon {
     List<Set<Vec2I>> m_localWires;
     StringMap<Set<Vec2I>> m_openLocalWires;
 
-    Maybe<DungeonId> m_markDungeonId;
+    std::optional<DungeonId> m_markDungeonId;
     RectI m_currentBounds;
     List<RectI> m_boundingBoxes;
   };
@@ -180,7 +179,7 @@ namespace Dungeon {
     virtual void const* queryType(TypeKey key) const noexcept { return queryTypeOf<Rule>(this, key); }
     virtual std::string_view dynamicTypeName() const noexcept { return Star::typeName<Rule>(); }
 
-    static Maybe<std::shared_ptr<Rule const>> parse(Root& root, Json const& rule);
+    static std::optional<std::shared_ptr<Rule const>> parse(Root& root, Json const& rule);
     static List<std::shared_ptr<Rule const>> readRules(Root& root, Json const& rules);
 
     virtual ~Rule() {}
@@ -379,7 +378,7 @@ namespace Dungeon {
 
   class FrontBrush : public Brush {
   public:
-    FrontBrush(String const& material, Maybe<String> mod, Maybe<float> hueshift, Maybe<float> modhueshift, Maybe<MaterialColorVariant> colorVariant);
+    FrontBrush(String const& material, std::optional<String> mod, std::optional<float> hueshift, std::optional<float> modhueshift, std::optional<MaterialColorVariant> colorVariant);
 
     virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
@@ -387,13 +386,13 @@ namespace Dungeon {
     String m_material;
     MaterialHue m_materialHue;
     MaterialColorVariant m_materialColorVariant;
-    Maybe<String> m_mod;
+    std::optional<String> m_mod;
     MaterialHue m_modHue;
   };
 
   class BackBrush : public Brush {
   public:
-    BackBrush(String const& material, Maybe<String> mod, Maybe<float> hueshift, Maybe<float> modhueshift, Maybe<MaterialColorVariant> colorVariant);
+    BackBrush(String const& material, std::optional<String> mod, std::optional<float> hueshift, std::optional<float> modhueshift, std::optional<MaterialColorVariant> colorVariant);
 
     virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
@@ -401,7 +400,7 @@ namespace Dungeon {
     String m_material;
     MaterialHue m_materialHue;
     MaterialColorVariant m_materialColorVariant;
-    Maybe<String> m_mod;
+    std::optional<String> m_mod;
     MaterialHue m_modHue;
   };
 
@@ -484,24 +483,24 @@ namespace Dungeon {
 
   class SurfaceBrush : public Brush {
   public:
-    SurfaceBrush(Maybe<int> variant, Maybe<String> mod);
+    SurfaceBrush(std::optional<int> variant, std::optional<String> mod);
 
     virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
     int m_variant;
-    Maybe<String> m_mod;
+    std::optional<String> m_mod;
   };
 
   class SurfaceBackgroundBrush : public Brush {
   public:
-    SurfaceBackgroundBrush(Maybe<int> variant, Maybe<String> mod);
+    SurfaceBackgroundBrush(std::optional<int> variant, std::optional<String> mod);
 
     virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
     int m_variant;
-    Maybe<String> m_mod;
+    std::optional<String> m_mod;
   };
 
   class LiquidBrush : public Brush {
@@ -537,12 +536,12 @@ namespace Dungeon {
   // that represent objects that have been removed from the game.
   class InvalidBrush : public Brush {
   public:
-    InvalidBrush(Maybe<String> nameHint);
+    InvalidBrush(std::optional<String> nameHint);
 
     virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
-    Maybe<String> m_nameHint;
+    std::optional<String> m_nameHint;
   };
 
   enum class Direction : std::uint8_t {
@@ -609,8 +608,8 @@ namespace Dungeon {
     Vec2I anchorPoint() const;
     float chance() const;
     bool markDungeonId() const;
-    Maybe<float> minimumThreatLevel() const;
-    Maybe<float> maximumThreatLevel() const;
+    std::optional<float> minimumThreatLevel() const;
+    std::optional<float> maximumThreatLevel() const;
     bool clearAnchoredObjects() const;
     int placementLevelConstraint() const;
     bool ignoresPartMaximum() const;
@@ -643,8 +642,8 @@ namespace Dungeon {
     List<std::shared_ptr<Connector const>> m_connections;
     Vec2I m_anchorPoint;
     bool m_overrideAllowAlways;
-    Maybe<float> m_minimumThreatLevel;
-    Maybe<float> m_maximumThreatLevel;
+    std::optional<float> m_minimumThreatLevel;
+    std::optional<float> m_maximumThreatLevel;
     bool m_clearAnchoredObjects;
     Vec2U m_size;
     float m_chance;
@@ -669,7 +668,7 @@ namespace Dungeon {
 
     List<std::shared_ptr<Brush const>> brushes;
     List<std::shared_ptr<Rule const>> rules;
-    Maybe<TileConnector> connector;
+    std::optional<TileConnector> connector;
   };
 }
 
@@ -684,12 +683,12 @@ public:
   String name() const;
   String displayName() const;
   bool isProtected() const;
-  Maybe<float> gravity() const;
-  Maybe<bool> breathable() const;
+  std::optional<float> gravity() const;
+  std::optional<bool> breathable() const;
   StringMap<std::shared_ptr<Dungeon::Part const>> const& parts() const;
 
   List<String> const& anchors() const;
-  Maybe<Json> const& optTileset() const;
+  std::optional<Json> const& optTileset() const;
   int maxParts() const;
   int maxRadius() const;
   int extendSurfaceFreeSpace() const;
@@ -706,14 +705,14 @@ private:
   List<std::shared_ptr<Dungeon::Rule const>> m_rules;
   StringMap<std::shared_ptr<Dungeon::Part const>> m_parts;
   List<String> m_anchors;
-  Maybe<Json> m_tileset;
+  std::optional<Json> m_tileset;
 
   int m_maxRadius;
   int m_maxParts;
   int m_extendSurfaceFreeSpace;
 
-  Maybe<float> m_gravity;
-  Maybe<bool> m_breathable;
+  std::optional<float> m_gravity;
+  std::optional<bool> m_breathable;
 };
 
 class DungeonDefinitions {
@@ -737,9 +736,9 @@ class DungeonGenerator {
   Root& m_root;
 public:
   Root& root() const { return m_root; }
-  DungeonGenerator(Root& root, String const& dungeonName, std::uint64_t seed, float threatLevel, Maybe<DungeonId> dungeonId);
+  DungeonGenerator(Root& root, String const& dungeonName, std::uint64_t seed, float threatLevel, std::optional<DungeonId> dungeonId);
 
-  Maybe<std::pair<List<RectI>, Set<Vec2I>>> generate(std::shared_ptr<DungeonGeneratorWorldFacade> facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement);
+  std::optional<std::pair<List<RectI>, Set<Vec2I>>> generate(std::shared_ptr<DungeonGeneratorWorldFacade> facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement);
 
   std::pair<List<RectI>, Set<Vec2I>> buildDungeon(std::shared_ptr<Dungeon::Part const> anchor, Vec2I pos, Dungeon::DungeonGeneratorWriter* writer, bool forcePlacement);
   std::shared_ptr<Dungeon::Part const> pickAnchor();
@@ -752,7 +751,7 @@ private:
 
   RandomSource m_rand;
   float m_threatLevel;
-  Maybe<DungeonId> m_dungeonId;
+  std::optional<DungeonId> m_dungeonId;
 };
 
 }

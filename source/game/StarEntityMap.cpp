@@ -1,4 +1,5 @@
 import std;
+import star.optional;
 import star.string;
 import star.logging;
 import star.format;
@@ -19,7 +20,6 @@ import star.ordered_map;
 import star.variant;
 import star.rpc_promise;
 import star.lua;
-import star.maybe;
 import star.color;
 import star.image_processing;
 import star.hash;
@@ -86,7 +86,7 @@ EntityId EntityMap::reserveEntityId() {
   return id;
 }
 
-Maybe<EntityId> EntityMap::maybeReserveEntityId(EntityId entityId) {
+std::optional<EntityId> EntityMap::maybeReserveEntityId(EntityId entityId) {
   if (m_spatialMap.size() >= (std::size_t)(m_endIdSpace - m_beginIdSpace))
     throw EntityMapException("No more entity id space in EntityMap::reserveEntityId");
 
@@ -135,7 +135,7 @@ void EntityMap::addEntity(std::shared_ptr<Entity> entity) {
 std::shared_ptr<Entity> EntityMap::removeEntity(EntityId entityId) {
   if (auto entity = m_spatialMap.remove(entityId)) {
     m_uniqueMap.removeRight(entityId);
-    return entity.take();
+    return takeOptional(entity);
   }
   return {};
 }
@@ -202,7 +202,7 @@ void EntityMap::updateAllEntities(EntityCallback const& callback, std::function<
 }
 
 EntityId EntityMap::uniqueEntityId(String const& uniqueId) const {
-  return m_uniqueMap.maybeRight(uniqueId).value(NullEntityId);
+  return m_uniqueMap.maybeRight(uniqueId).value_or(NullEntityId);
 }
 
 std::shared_ptr<Entity> EntityMap::entity(EntityId entityId) const {

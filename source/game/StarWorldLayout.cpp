@@ -24,7 +24,6 @@ import star.strong_typedef;
 import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
-import star.maybe;
 import star.color;
 import star.vector;
 import star.logging;
@@ -349,7 +348,7 @@ WorldLayout WorldLayout::buildAsteroidsLayout(Root& root, AsteroidsWorldParamete
   layout.addLayer(seed, asteroidParameters.asteroidTopLevel, emptyRegion);
 
   layout.m_regionBlending = asteroidParameters.blendSize;
-  layout.m_blockNoise = asteroidsConfig.opt("blockNoise").apply(std::bind(&BlockNoise::build, std::placeholders::_1, seed));
+  layout.m_blockNoise = asteroidsConfig.opt("blockNoise").transform(std::bind(&BlockNoise::build, std::placeholders::_1, seed));
 
   layout.m_playerStartSearchRegions.append(RectI(0, asteroidParameters.asteroidBottomLevel, asteroidParameters.worldSize[0], asteroidParameters.asteroidTopLevel));
 
@@ -413,8 +412,8 @@ WorldLayout::WorldLayout(Root& root, Json const& store) : WorldLayout(root) {
   });
 
   m_regionBlending = store.getFloat("regionBlending");
-  m_blockNoise = store.opt("blockNoise").apply(construct<BlockNoise>());
-  m_blendNoise = store.opt("blendNoise").apply(construct<PerlinF>());
+  m_blockNoise = store.opt("blockNoise").transform(construct<BlockNoise>());
+  m_blendNoise = store.opt("blendNoise").transform(construct<PerlinF>());
 
   m_playerStartSearchRegions = store.getArray("playerStartSearchRegions").transformed(jsonToRectI);
 }
@@ -438,17 +437,17 @@ Json WorldLayout::toJson() const {
         };
       })},
     {"regionBlending", m_regionBlending},
-    {"blockNoise", m_blockNoise.apply(std::mem_fn(&BlockNoise::toJson)).value()},
-    {"blendNoise", m_blendNoise.apply(std::mem_fn(&PerlinF::toJson)).value()},
+    {"blockNoise", m_blockNoise.transform(std::mem_fn(&BlockNoise::toJson)).value_or(Json{})},
+    {"blendNoise", m_blendNoise.transform(std::mem_fn(&PerlinF::toJson)).value_or(Json{})},
     {"playerStartSearchRegions", JsonArray::from(m_playerStartSearchRegions.transformed(jsonFromRectI))}
   };
 }
 
-Maybe<WorldLayout::BlockNoise> const& WorldLayout::blockNoise() const {
+std::optional<WorldLayout::BlockNoise> const& WorldLayout::blockNoise() const {
   return m_blockNoise;
 }
 
-Maybe<PerlinF> const& WorldLayout::blendNoise() const {
+std::optional<PerlinF> const& WorldLayout::blendNoise() const {
   return m_blendNoise;
 }
 

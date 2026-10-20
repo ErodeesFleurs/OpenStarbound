@@ -21,7 +21,6 @@ import star.listener;
 import std;
 import star.string;
 import star.map;
-import star.maybe;
 import star.format;
 import star.version;
 import star.data_stream_extra;
@@ -132,7 +131,7 @@ WorldStructure::WorldStructure(Root& root, String const& configPath) {
     blockKeys[jsonToColor(blockKeyConfig.get("value")).toRgba()] = std::move(blockKey);
   }
 
-  Maybe<Vec2I> anchorPosition;
+  std::optional<Vec2I> anchorPosition;
   if (settings.contains("blockImage")) {
     auto blocksImage = assets->image(AssetPath::relativeTo(configPath, settings.getString("blockImage")));
     const BlockKey defaultBlockKey = {false,

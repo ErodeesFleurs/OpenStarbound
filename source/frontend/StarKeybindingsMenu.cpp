@@ -20,7 +20,6 @@ import star.logging;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -128,7 +127,7 @@ bool KeybindingsMenu::sendEvent(InputEvent const& event) {
         return true;
       }
     } else if (auto keyDown = event.ptr<KeyDownEvent>()) {
-      Maybe<KeyMod> modKey = KeyModNames.maybeLeft(KeyNames.getRight(keyDown->key));
+      std::optional<KeyMod> modKey = KeyModNames.maybeLeft(KeyNames.getRight(keyDown->key));
 
       if (modKey) {
         m_currentMods |= *modKey;

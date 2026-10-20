@@ -6,7 +6,6 @@ import star.game_types;
 import star.liquid_types;
 import star.color;
 import star.bi_map;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -73,9 +72,9 @@ VisitableWorldParameters::VisitableWorldParameters(Json const& store) {
   gravity = store.getFloat("gravity", 1.0f);
   airless = store.getBool("airless", false);
   weatherPool = jsonToWeightedPool<String>(store.getArray("weatherPool", JsonArray()));
-  environmentStatusEffects = store.opt("environmentStatusEffects").apply(jsonToStringList).value();
-  overrideTech = store.opt("overrideTech").apply(jsonToStringList);
-  globalDirectives = store.opt("globalDirectives").apply(jsonToDirectivesList);
+  environmentStatusEffects = store.opt("environmentStatusEffects").transform(jsonToStringList).value_or(StringList{});
+  overrideTech = store.opt("overrideTech").transform(jsonToStringList);
+  globalDirectives = store.opt("globalDirectives").transform(jsonToDirectivesList);
   beamUpRule = BeamUpRuleNames.getLeft(store.getString("beamUpRule", "Surface"));
   disableDeathDrops = store.getBool("disableDeathDrops", false);
   terraformed = store.getBool("terraformed", false);
@@ -90,8 +89,8 @@ Json VisitableWorldParameters::store() const {
       {"airless", airless},
       {"weatherPool", jsonFromWeightedPool<String>(weatherPool)},
       {"environmentStatusEffects", jsonFromStringList(environmentStatusEffects)},
-      {"overrideTech", jsonFromMaybe(overrideTech.apply(&jsonFromStringList))},
-      {"globalDirectives", jsonFromMaybe(globalDirectives.apply(&jsonFromDirectivesList))},
+      {"overrideTech", jsonFromOptional(overrideTech.transform(&jsonFromStringList))},
+      {"globalDirectives", jsonFromOptional(globalDirectives.transform(&jsonFromDirectivesList))},
       {"beamUpRule", BeamUpRuleNames.getRight(beamUpRule)},
       {"disableDeathDrops", disableDeathDrops},
       {"terraformed", terraformed},
@@ -412,12 +411,12 @@ Json FloatingDungeonWorldParameters::store() const {
       {"dungeonSurfaceHeight", dungeonSurfaceHeight},
       {"dungeonUndergroundLevel", dungeonUndergroundLevel},
       {"primaryDungeon", primaryDungeon},
-      {"biome", jsonFromMaybe(biome)},
+      {"biome", jsonFromOptional(biome)},
       {"ambientLightLevel", jsonFromColor(ambientLightLevel)},
-      {"dayMusicTrack", jsonFromMaybe(dayMusicTrack)},
-      {"nightMusicTrack", jsonFromMaybe(nightMusicTrack)},
-      {"dayAmbientNoises", jsonFromMaybe(dayAmbientNoises)},
-      {"nightAmbientNoises", jsonFromMaybe(nightAmbientNoises)}});
+      {"dayMusicTrack", jsonFromOptional(dayMusicTrack)},
+      {"nightMusicTrack", jsonFromOptional(nightMusicTrack)},
+      {"dayAmbientNoises", jsonFromOptional(dayAmbientNoises)},
+      {"nightAmbientNoises", jsonFromOptional(nightAmbientNoises)}});
 }
 
 void FloatingDungeonWorldParameters::read(DataStream& ds) {
@@ -562,7 +561,7 @@ std::shared_ptr<TerrestrialWorldParameters> generateTerrestrialWorldParameters(R
     return region;
   };
 
-  auto readLayer = [readRegion, regionDefaults, regionTypes, seed, config](String const& layerName) -> Maybe<TerrestrialWorldParameters::TerrestrialLayer> {
+  auto readLayer = [readRegion, regionDefaults, regionTypes, seed, config](String const& layerName) -> std::optional<TerrestrialWorldParameters::TerrestrialLayer> {
     if (!config.get("layers").contains(layerName))
       return {};
 
@@ -622,7 +621,7 @@ std::shared_ptr<TerrestrialWorldParameters> generateTerrestrialWorldParameters(R
     layer.subRegionSizeRange = jsonToVec2F(layerConfig.get("subRegionSize"));
 
     WeightedPool<String> dungeonPool = jsonToWeightedPool<String>(layerConfig.get("dungeons"));
-    Vec2U dungeonCountRange = layerConfig.opt("dungeonCountRange").apply(jsonToVec2U).value();
+    Vec2U dungeonCountRange = layerConfig.opt("dungeonCountRange").transform(jsonToVec2U).value_or(Vec2U{});
     unsigned dungeonCount = staticRandomU32Range(dungeonCountRange[0], dungeonCountRange[1], seed, layerName, "DungeonCount");
     layer.dungeons.appendAll(dungeonPool.selectUniques(dungeonCount, staticRandomHash64(seed, layerName, "DungeonChoice")));
     layer.dungeonXVariance = static_cast<int>(layerConfig.getInt("dungeonXVariance", 0));
@@ -630,7 +629,7 @@ std::shared_ptr<TerrestrialWorldParameters> generateTerrestrialWorldParameters(R
     return layer;
   };
 
-  auto surfaceLayer = readLayer("surface").take();
+  auto surfaceLayer = readLayer("surface").value();
   String primaryBiome = surfaceLayer.primaryRegion.biome;
 
   auto parameters = std::make_shared<TerrestrialWorldParameters>();
@@ -641,8 +640,8 @@ std::shared_ptr<TerrestrialWorldParameters> generateTerrestrialWorldParameters(R
   parameters->gravity = staticRandomFloatRange(gravityRange[0], gravityRange[1], seed, "WorldGravity");
   parameters->airless = biomeDatabase->biomeIsAirless(primaryBiome);
   parameters->environmentStatusEffects = biomeDatabase->biomeStatusEffects(primaryBiome);
-  parameters->overrideTech = config.opt("overrideTech").apply(jsonToStringList);
-  parameters->globalDirectives = config.opt("globalDirectives").apply(jsonToDirectivesList);
+  parameters->overrideTech = config.opt("overrideTech").transform(jsonToStringList);
+  parameters->globalDirectives = config.opt("globalDirectives").transform(jsonToDirectivesList);
   parameters->beamUpRule = BeamUpRuleNames.getLeft(config.getString("beamUpRule", "Surface"));
   parameters->disableDeathDrops = config.getBool("disableDeathDrops", false);
   parameters->worldEdgeForceRegions = WorldEdgeForceRegionTypeNames.getLeft(config.getString("worldEdgeForceRegions", "Top"));
@@ -664,15 +663,15 @@ std::shared_ptr<TerrestrialWorldParameters> generateTerrestrialWorldParameters(R
   parameters->blendNoiseConfig = config.get("blendNoise");
   parameters->blendSize = config.getFloat("blendSize");
 
-  parameters->spaceLayer = readLayer("space").take();
-  parameters->atmosphereLayer = readLayer("atmosphere").take();
+  parameters->spaceLayer = readLayer("space").value();
+  parameters->atmosphereLayer = readLayer("atmosphere").value();
   parameters->surfaceLayer = surfaceLayer;
-  parameters->subsurfaceLayer = readLayer("subsurface").take();
+  parameters->subsurfaceLayer = readLayer("subsurface").value();
 
   while (auto undergroundLayer = readLayer(strf("underground{}", parameters->undergroundLayers.size() + 1)))
-    parameters->undergroundLayers.append(undergroundLayer.take());
+    parameters->undergroundLayers.append(std::move(*undergroundLayer));
 
-  parameters->coreLayer = readLayer("core").take();
+  parameters->coreLayer = readLayer("core").value();
 
   return parameters;
 }
@@ -693,8 +692,8 @@ std::shared_ptr<AsteroidsWorldParameters> generateAsteroidsWorldParameters(Root&
   parameters->worldSize = jsonToVec2U(asteroidsConfig.get("worldSize"));
   parameters->gravity = staticRandomFloatRange(gravityRange[0], gravityRange[1], seed, "WorldGravity");
   parameters->environmentStatusEffects = jsonToStringList(asteroidsConfig.getArray("environmentStatusEffects", JsonArray()));
-  parameters->overrideTech = asteroidsConfig.opt("overrideTech").apply(jsonToStringList);
-  parameters->globalDirectives = asteroidsConfig.opt("globalDirectives").apply(jsonToDirectivesList);
+  parameters->overrideTech = asteroidsConfig.opt("overrideTech").transform(jsonToStringList);
+  parameters->globalDirectives = asteroidsConfig.opt("globalDirectives").transform(jsonToDirectivesList);
   parameters->beamUpRule = BeamUpRuleNames.getLeft(asteroidsConfig.getString("beamUpRule", "Surface"));
   parameters->disableDeathDrops = asteroidsConfig.getBool("disableDeathDrops", false);
   parameters->worldEdgeForceRegions = WorldEdgeForceRegionTypeNames.getLeft(asteroidsConfig.getString("worldEdgeForceRegions", "TopAndBottom"));
@@ -722,8 +721,8 @@ std::shared_ptr<FloatingDungeonWorldParameters> generateFloatingDungeonWorldPara
   parameters->gravity = worldConfig.getFloat("gravity");
   parameters->airless = worldConfig.getBool("airless", false);
   parameters->environmentStatusEffects = jsonToStringList(worldConfig.getArray("environmentStatusEffects", JsonArray()));
-  parameters->overrideTech = worldConfig.opt("overrideTech").apply(jsonToStringList);
-  parameters->globalDirectives = worldConfig.opt("globalDirectives").apply(jsonToDirectivesList);
+  parameters->overrideTech = worldConfig.opt("overrideTech").transform(jsonToStringList);
+  parameters->globalDirectives = worldConfig.opt("globalDirectives").transform(jsonToDirectivesList);
   if (auto weatherPoolConfig = worldConfig.optArray("weatherPool"))
     parameters->weatherPool = jsonToWeightedPool<String>(*weatherPoolConfig);
   parameters->beamUpRule = BeamUpRuleNames.getLeft(worldConfig.getString("beamUpRule", "Surface"));

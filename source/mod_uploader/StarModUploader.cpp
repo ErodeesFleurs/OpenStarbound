@@ -28,7 +28,6 @@ import star.steam_dispatch;
 import star.s_plain_text_edit;
 import star.io_device;
 import star.map;
-import star.maybe;
 import star.asset_source;
 import star.directory_asset_source;
 import star.file;
@@ -194,7 +193,7 @@ void ModUploader::loadDirectory() {
   m_reloadButton->setEnabled(true);
   m_directoryLabel->setText(toQString(*m_modDirectory));
   m_editorSection->setEnabled(true);
-  m_assetSource = DirectoryAssetSource(m_logger, *m_modDirectory);
+  m_assetSource.emplace(DirectoryAssetSource(m_logger, *m_modDirectory));
 
   JsonObject metadata = m_assetSource->metadata();
   m_nameEditor->setText(toQString(metadata.value("name", "").toString()));

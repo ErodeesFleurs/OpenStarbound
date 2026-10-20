@@ -1,6 +1,5 @@
 import star.json;
 import star.native_runtime;
-import star.maybe;
 import star.set;
 import star.string;
 import star.color;
@@ -63,7 +62,7 @@ int main(int argc, char** argv) {
     StringMap<int> wordCounts;
     auto assets = root->assets();
 
-    auto countWordsInType = [&](String const& type, std::function<int(Json const&)> countFunction, Maybe<std::function<bool(String const&)>> filterFunction = {}, Maybe<String> wordCountKey = {}) {
+    auto countWordsInType = [&](String const& type, std::function<int(Json const&)> countFunction, std::optional<std::function<bool(String const&)>> filterFunction = {}, std::optional<String> wordCountKey = {}) {
       auto files = assets->scanExtension(type).values();
       if (filterFunction)
         files.filter(*filterFunction);

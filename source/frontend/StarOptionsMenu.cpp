@@ -20,7 +20,6 @@ import star.logging;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -379,7 +378,7 @@ void OptionsMenu::syncGuiToConf() {
   m_clientIPJoinableButton->setChecked(m_localChanges.get("clientIPJoinable").toBool());
   m_clientP2PJoinableButton->setChecked(m_localChanges.get("clientP2PJoinable").toBool());
   m_allowAssetsMismatchButton->setChecked(m_localChanges.get("allowAssetsMismatch").toBool());
-  m_headRotationButton->setChecked(m_localChanges.get("humanoidHeadRotation").optBool().value(true));
+  m_headRotationButton->setChecked(m_localChanges.get("humanoidHeadRotation").optBool().value_or(true));
 
   auto appController = context()->applicationController();
   if (!appController->p2pNetworkingService()) {

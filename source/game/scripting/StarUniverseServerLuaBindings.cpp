@@ -8,7 +8,6 @@ import star.rpc_promise;
 import star.id_map;
 import std;
 import star.format;
-import star.maybe;
 import star.string;
 import star.lock_file;
 import star.thread;
@@ -141,26 +140,26 @@ import star.root;
 module star.universe_server_lua_bindings;
 
 namespace Star::LuaBindings::UniverseServerCallbacks {
-  Maybe<String> uuidForClient(UniverseServer* universe, ConnectionId arg1);
+  std::optional<String> uuidForClient(UniverseServer* universe, ConnectionId arg1);
   List<ConnectionId> clientIds(UniverseServer* universe);
   std::size_t numberOfClients(UniverseServer* universe);
   bool isConnectedClient(UniverseServer* universe, ConnectionId arg1);
   String clientNick(UniverseServer* universe, ConnectionId arg1);
-  Maybe<ConnectionId> findNick(UniverseServer* universe, String const& arg1);
+  std::optional<ConnectionId> findNick(UniverseServer* universe, String const& arg1);
   String clientAccount(UniverseServer* universe, ConnectionId arg1);
   void adminBroadcast(UniverseServer* universe, String const& arg1);
   void adminWhisper(UniverseServer* universe, ConnectionId arg1, String const& arg2);
   bool isAdmin(UniverseServer* universe, ConnectionId arg1);
-  void setAdmin(UniverseServer* universe, ConnectionId arg1, Maybe<bool> arg2);
+  void setAdmin(UniverseServer* universe, ConnectionId arg1, std::optional<bool> arg2);
   bool isPvp(UniverseServer* universe, ConnectionId arg1);
-  void setPvp(UniverseServer* universe, ConnectionId arg1, Maybe<bool> arg2);
+  void setPvp(UniverseServer* universe, ConnectionId arg1, std::optional<bool> arg2);
   bool isWorldActive(UniverseServer* universe, String const& worldId);
   StringList activeWorlds(UniverseServer* universe);
   RpcPromise<Json> sendWorldMessage(UniverseServer* universe, String const& worldId, String const& message, LuaVariadic<Json> args);
   bool sendPacket(UniverseServer* universe, ConnectionId clientId, String const& packetTypeName, Json const& args);
   String clientWorld(UniverseServer* universe, ConnectionId clientId);
-  void disconnectClient(UniverseServer* universe, ConnectionId clientId, Maybe<String> const& reason);
-  void banClient(UniverseServer* universe, ConnectionId clientId, Maybe<String> const& reason, bool banIp, bool banUuid, Maybe<int> timeout);
+  void disconnectClient(UniverseServer* universe, ConnectionId clientId, std::optional<String> const& reason);
+  void banClient(UniverseServer* universe, ConnectionId clientId, std::optional<String> const& reason, bool banIp, bool banUuid, std::optional<int> timeout);
 }
 
 namespace Star {
@@ -168,12 +167,12 @@ namespace Star {
 LuaCallbacks LuaBindings::makeUniverseServerCallbacks(Root& root, UniverseServer* universe) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<Maybe<String>, ConnectionId>("uuidForClient", std::bind(UniverseServerCallbacks::uuidForClient, universe, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<std::optional<String>, ConnectionId>("uuidForClient", std::bind(UniverseServerCallbacks::uuidForClient, universe, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<List<ConnectionId>>("clientIds", std::bind(UniverseServerCallbacks::clientIds, universe));
   callbacks.registerCallbackWithSignature<std::size_t>("numberOfClients", std::bind(UniverseServerCallbacks::numberOfClients, universe));
   callbacks.registerCallbackWithSignature<bool, ConnectionId>("isConnectedClient", std::bind(UniverseServerCallbacks::isConnectedClient, universe, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<String, ConnectionId>("clientNick", std::bind(UniverseServerCallbacks::clientNick, universe, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<Maybe<ConnectionId>, String>("findNick", std::bind(UniverseServerCallbacks::findNick, universe, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<std::optional<ConnectionId>, String>("findNick", std::bind(UniverseServerCallbacks::findNick, universe, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<String, ConnectionId>("clientAccount", std::bind(UniverseServerCallbacks::clientAccount, universe, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void, String>("adminBroadcast", std::bind(UniverseServerCallbacks::adminBroadcast, universe, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void, ConnectionId, String>("adminWhisper", std::bind(UniverseServerCallbacks::adminWhisper, universe, std::placeholders::_1, std::placeholders::_2));
@@ -185,16 +184,16 @@ LuaCallbacks LuaBindings::makeUniverseServerCallbacks(Root& root, UniverseServer
   callbacks.registerCallbackWithSignature<RpcPromise<Json>, String, String, LuaVariadic<Json>>("sendWorldMessage", std::bind(UniverseServerCallbacks::sendWorldMessage, universe, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   callbacks.registerCallbackWithSignature<bool, ConnectionId, String, Json>("sendPacket", std::bind(UniverseServerCallbacks::sendPacket, universe, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   callbacks.registerCallbackWithSignature<String, ConnectionId>("clientWorld", std::bind(UniverseServerCallbacks::clientWorld, universe, std::placeholders::_1));
-  callbacks.registerCallbackWithSignature<void, ConnectionId, Maybe<String>>("disconnectClient", std::bind(UniverseServerCallbacks::disconnectClient, universe, std::placeholders::_1, std::placeholders::_2));
-  callbacks.registerCallbackWithSignature<void, ConnectionId, Maybe<String>, bool, bool, Maybe<int>>("banClient", std::bind(UniverseServerCallbacks::banClient, universe, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-  callbacks.registerCallback("warpClient", [universe](ConnectionId clientId, String action, Maybe<bool> deploy) {
-    universe->clientWarpPlayer(clientId, parseWarpAction(action), deploy.value(false));
+  callbacks.registerCallbackWithSignature<void, ConnectionId, std::optional<String>>("disconnectClient", std::bind(UniverseServerCallbacks::disconnectClient, universe, std::placeholders::_1, std::placeholders::_2));
+  callbacks.registerCallbackWithSignature<void, ConnectionId, std::optional<String>, bool, bool, std::optional<int>>("banClient", std::bind(UniverseServerCallbacks::banClient, universe, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+  callbacks.registerCallback("warpClient", [universe](ConnectionId clientId, String action, std::optional<bool> deploy) {
+    universe->clientWarpPlayer(clientId, parseWarpAction(action), deploy.value_or(false));
   });
 
-  callbacks.registerCallback("setServerAccount", [&root](String const& account, String const& password, Maybe<bool> admin) {
+  callbacks.registerCallback("setServerAccount", [&root](String const& account, String const& password, std::optional<bool> admin) {
     auto config = root.configuration();
     auto serverUsers = config->get("serverUsers").toObject();
-    serverUsers[account] = JsonObject{{"password", password}, {"admin", admin.value(false)}};
+    serverUsers[account] = JsonObject{{"password", password}, {"admin", admin.value_or(false)}};
     config->set("serverUsers", serverUsers);
   });
 
@@ -271,8 +270,8 @@ LuaCallbacks LuaBindings::makeUniverseServerCallbacks(Root& root, UniverseServer
 // Gets a list of client ids
 //
 // @return A list of numerical client IDs.
-Maybe<String> LuaBindings::UniverseServerCallbacks::uuidForClient(UniverseServer* universe, ConnectionId arg1) {
-  return universe->uuidForClient(arg1).apply([](Uuid const& str) { return str.hex(); });
+std::optional<String> LuaBindings::UniverseServerCallbacks::uuidForClient(UniverseServer* universe, ConnectionId arg1) {
+  return universe->uuidForClient(arg1).transform([](Uuid const& str) { return str.hex(); });
 }
 
 // Gets a list of client ids
@@ -309,7 +308,7 @@ String LuaBindings::UniverseServerCallbacks::clientNick(UniverseServer* universe
 //
 // @param nick the nickname of the client to search for
 // @return An integer containing the clientID of the nick in question
-Maybe<ConnectionId> LuaBindings::UniverseServerCallbacks::findNick(UniverseServer* universe, String const& arg1) {
+std::optional<ConnectionId> LuaBindings::UniverseServerCallbacks::findNick(UniverseServer* universe, String const& arg1) {
   return universe->findNick(arg1);
 }
 
@@ -350,9 +349,9 @@ bool LuaBindings::UniverseServerCallbacks::isAdmin(UniverseServer* universe, Con
 // @param clientId the client id to modify
 // @param setAdminTo set admin status to this bool, defaults to true
 // @return nil
-void LuaBindings::UniverseServerCallbacks::setAdmin(UniverseServer* universe, ConnectionId arg1, Maybe<bool> arg2) {
+void LuaBindings::UniverseServerCallbacks::setAdmin(UniverseServer* universe, ConnectionId arg1, std::optional<bool> arg2) {
   ConnectionId client = arg1;
-  bool setAdminTo = arg2.value(true);
+  bool setAdminTo = arg2.value_or(true);
   universe->setAdmin(client, setAdminTo);
 }
 
@@ -370,9 +369,9 @@ bool LuaBindings::UniverseServerCallbacks::isPvp(UniverseServer* universe, Conne
 // @param clientId the client id to check
 // @param setPvp set pvp status to this bool, defaults to true
 // @return nil
-void LuaBindings::UniverseServerCallbacks::setPvp(UniverseServer* universe, ConnectionId arg1, Maybe<bool> arg2) {
+void LuaBindings::UniverseServerCallbacks::setPvp(UniverseServer* universe, ConnectionId arg1, std::optional<bool> arg2) {
   ConnectionId client = arg1;
-  bool setPvpTo = arg2.value(true);
+  bool setPvpTo = arg2.value_or(true);
   universe->setPvp(client, setPvpTo);
 }
 
@@ -398,12 +397,12 @@ String LuaBindings::UniverseServerCallbacks::clientWorld(UniverseServer* univers
   return printWorldId(universe->clientWorld(clientId));
 }
 
-void LuaBindings::UniverseServerCallbacks::disconnectClient(UniverseServer* universe, ConnectionId clientId, Maybe<String> const& reason) {
-  return universe->disconnectClient(clientId, reason.value());
+void LuaBindings::UniverseServerCallbacks::disconnectClient(UniverseServer* universe, ConnectionId clientId, std::optional<String> const& reason) {
+  return universe->disconnectClient(clientId, reason.value_or(String{}));
 }
 
-void LuaBindings::UniverseServerCallbacks::banClient(UniverseServer* universe, ConnectionId clientId, Maybe<String> const& reason, bool banIp, bool banUuid, Maybe<int> timeout) {
-  return universe->banUser(clientId, reason.value(), std::make_pair(banIp, banUuid), timeout);
+void LuaBindings::UniverseServerCallbacks::banClient(UniverseServer* universe, ConnectionId clientId, std::optional<String> const& reason, bool banIp, bool banUuid, std::optional<int> timeout) {
+  return universe->banUser(clientId, reason.value_or(String{}), std::make_pair(banIp, banUuid), timeout);
 }
 
 }

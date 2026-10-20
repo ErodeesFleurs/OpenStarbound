@@ -2,7 +2,6 @@ module;
 import std;
 import star.type_identity;
 import star.string;
-import star.maybe;
 import star.json;
 import star.id_map;
 import star.casting;
@@ -33,7 +32,7 @@ public:
   }
 
   virtual String nametag() const = 0;
-  virtual Maybe<String> statusText() const = 0;
+  virtual std::optional<String> statusText() const = 0;
   virtual bool displayNametag() const = 0;
   virtual Vec3B nametagColor() const = 0;
   virtual Vec2F nametagOrigin() const = 0;

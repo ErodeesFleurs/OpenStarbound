@@ -3,7 +3,6 @@ module;
 import std;
 import star.memory;
 import star.rect;
-import star.maybe;
 import star.format;
 import star.set;
 import star.list;
@@ -137,7 +136,7 @@ private:
 
   void setAtlasRegionUsed(TextureAtlas* extureAtlas, RectU const& region, bool used) const;
 
-  Maybe<AtlasPlacement> addTextureToAtlas(TextureAtlas* atlas, Image const& image, bool borderPixels);
+  std::optional<AtlasPlacement> addTextureToAtlas(TextureAtlas* atlas, Image const& image, bool borderPixels);
   void sortAtlases();
 
   unsigned m_atlasCellSize;
@@ -383,7 +382,7 @@ void TextureAtlasSet<AtlasTextureHandle>::sortAtlases() {
 }
 
 template <typename AtlasTextureHandle>
-auto TextureAtlasSet<AtlasTextureHandle>::addTextureToAtlas(TextureAtlas* atlas, Image const& image, bool borderPixels) -> Maybe<AtlasPlacement> {
+auto TextureAtlasSet<AtlasTextureHandle>::addTextureToAtlas(TextureAtlas* atlas, Image const& image, bool borderPixels) -> std::optional<AtlasPlacement> {
   bool found = false;
   // Minimum cell indexes where this texture fits in this atlas.
   unsigned fitCellX = 0;

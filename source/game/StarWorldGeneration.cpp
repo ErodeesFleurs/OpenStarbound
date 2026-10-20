@@ -26,7 +26,6 @@ import star.thread;
 import star.worker_pool;
 
 import star.sector_array_2d;
-import star.maybe;
 import star.color;
 import star.image_processing;
 import star.hash;
@@ -281,7 +280,7 @@ void LiquidWorld::setFlow(Vec2I const& location, CellularLiquidFlowCell<LiquidId
 }
 
 void LiquidWorld::liquidInteraction(Vec2I const& a, LiquidId aLiquid, Vec2I const& b, LiquidId bLiquid) {
-  auto handleInteraction = [this](Vec2I const& target, Maybe<LiquidInteractionResult> interaction) {
+  auto handleInteraction = [this](Vec2I const& target, std::optional<LiquidInteractionResult> interaction) {
     if (interaction) {
       if (interaction->isLeft()) {
         m_worldServer->modifyTile(target, PlaceMaterial{TileLayer::Foreground, interaction->left(), 0}, false);
@@ -441,7 +440,7 @@ void DungeonGeneratorWorld::placeVehicle(Vec2F const& pos, String const& vehicle
   m_worldServer->signalRegion(RectI::withSize(Vec2I(pos), {1, 1}));
 
   auto vehicleDatabase = m_worldServer->root().vehicleDatabase();
-  auto vehicle = vehicleDatabase->create(vehicleName, parameters.opt().value(JsonObject{}).set("persistent", true));
+  auto vehicle = vehicleDatabase->create(vehicleName, parameters.opt().value_or(JsonObject{}).set("persistent", true));
   vehicle->setPosition(pos);
   m_worldServer->addEntity(vehicle);
 }
@@ -886,7 +885,7 @@ bool WorldGenerator::entityPersistent(WorldStorage*, std::shared_ptr<Entity> con
   return entity->isMaster() && entity->persistent();
 }
 
-RpcPromise<Vec2I> WorldGenerator::enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id) {
+RpcPromise<Vec2I> WorldGenerator::enqueuePlacement(List<BiomeItemDistribution> distributions, std::optional<DungeonId> id) {
   auto promise = RpcPromise<Vec2I>::createPair();
   m_queuedPlacements.append(QueuedPlacement {
     std::move(distributions),
@@ -1038,7 +1037,7 @@ void WorldGenerator::generateMicroDungeons(WorldStorage* worldStorage, ServerTil
     if (placement.item.is<MicroDungeonNames>()) {
       auto seed = m_worldServer->worldTemplate()->seedFor(placement.position[0], placement.position[1]);
       auto const& dungeonName = staticRandomFrom(placement.item.get<MicroDungeonNames>(), seed);
-      Maybe<DungeonId> dungeonId;
+      std::optional<DungeonId> dungeonId;
       if constexpr (Star::DebugEnabled) {
         Star::starAssertFailed((!dungeonName.empty()));
       }
@@ -1051,7 +1050,7 @@ void WorldGenerator::generateMicroDungeons(WorldStorage* worldStorage, ServerTil
         for (auto position : generateResult->second) {
           if (ServerTile* tile = m_worldServer->modifyServerTile(position)) {
             replaceBiomeBlocks(tile);
-            tile->dungeonId = dungeonId.value(tile->dungeonId);
+            tile->dungeonId = dungeonId.value_or(tile->dungeonId);
           }
         }
       }

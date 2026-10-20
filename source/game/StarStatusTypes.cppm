@@ -4,7 +4,6 @@ import std;
 import star.string;
 import star.list;
 import star.variant;
-import star.maybe;
 import star.format;
 import star.json;
 import star.strong_typedef;
@@ -75,7 +74,7 @@ typedef String UniqueStatusEffect;
 
 // Second element here is *percentage* of duration remaining, based on the
 // highest duration that the effect has had
-typedef List<std::pair<UniqueStatusEffect, Maybe<float>>> ActiveUniqueStatusEffectSummary;
+typedef List<std::pair<UniqueStatusEffect, std::optional<float>>> ActiveUniqueStatusEffectSummary;
 
 // Persistent status effects can either be a modifier effect or unique effect
 typedef MVariant<StatModifier, UniqueStatusEffect> PersistentStatusEffect;
@@ -90,7 +89,7 @@ struct EphemeralStatusEffect {
   friend DataStream& operator>>(DataStream& ds, EphemeralStatusEffect& value);
   friend DataStream& operator<<(DataStream& ds, EphemeralStatusEffect const& value);
   UniqueStatusEffect uniqueEffect;
-  Maybe<float> duration;
+  std::optional<float> duration;
 
   bool operator==(EphemeralStatusEffect const& rhs) const;
 };

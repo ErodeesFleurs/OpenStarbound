@@ -22,7 +22,6 @@ import star.format;
 import star.version;
 import star.string;
 import star.text;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;

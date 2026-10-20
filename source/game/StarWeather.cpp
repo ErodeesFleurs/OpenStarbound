@@ -22,7 +22,6 @@ import star.strong_typedef;
 import star.list;
 import star.rpc_promise;
 import star.lua;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.color;
@@ -167,10 +166,10 @@ void ServerWeather::update(double dt) {
         m_currentWeatherType = m_root->biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
 
       m_lastWeatherChangeTime = m_nextWeatherChangeTime;
-      m_nextWeatherChangeTime = m_currentTime + m_root->random().randd(m_currentWeatherType->duration[0], m_currentWeatherType->duration[1]);
+      m_nextWeatherChangeTime = m_currentTime + m_root->random().randd(m_currentWeatherType.value().duration[0], m_currentWeatherType.value().duration[1]);
 
       // TODO: For now just set the wind at maximum either left or right, nothing exciting.
-      m_currentWind = m_currentWeatherType->maximumWind * (m_root->random().randb() ? 1 : -1);
+      m_currentWind = m_currentWeatherType.value().maximumWind * (m_root->random().randb() ? 1 : -1);
     }
 
     m_currentWeatherIntensity = std::min(clamp((m_currentTime - m_lastWeatherChangeTime) / weatherWarmupTime, 0.0, 1.0),
@@ -200,7 +199,7 @@ List<std::shared_ptr<Projectile>> ServerWeather::pullNewProjectiles() {
   return take(m_newProjectiles);
 }
 
-Maybe<String> ServerWeather::activeWeather() const {
+std::optional<String> ServerWeather::activeWeather() const {
   if (m_currentWeatherIndex == NPos)
     return {};
   else
@@ -451,7 +450,7 @@ List<Particle> ClientWeather::pullNewParticles() {
   return take(m_particles);
 }
 
-Maybe<String> ClientWeather::activeWeather() const {
+std::optional<String> ClientWeather::activeWeather() const {
   if (m_currentWeatherIndex == NPos)
     return {};
   else
@@ -464,7 +463,7 @@ StringList ClientWeather::weatherTrackOptions() const {
   return {};
 }
 
-Maybe<String> ClientWeather::weatherParallax() const {
+std::optional<String> ClientWeather::weatherParallax() const {
   if (m_currentWeatherType)
     return m_currentWeatherType->parallax;
   return {};

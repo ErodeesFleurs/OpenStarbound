@@ -3,7 +3,6 @@ import star.net_compatibility;
 
 import std;
 import star.list;
-import star.maybe;
 import star.data_stream;
 import star.string;
 import star.byte_array;
@@ -60,7 +59,7 @@ private:
   std::uint64_t m_latestUpdateVersion = 0;
   T m_value = T();
   bool m_updated = false;
-  Maybe<Deque<std::pair<float, T>>> m_pendingInterpolatedValues;
+  std::optional<Deque<std::pair<float, T>>> m_pendingInterpolatedValues;
 };
 
 template <typename T>

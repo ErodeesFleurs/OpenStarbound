@@ -1,4 +1,5 @@
 import std;
+import star.optional;
 import star.format;
 import star.json;
 import star.id_map;
@@ -77,7 +78,7 @@ List<ContainerResult> ContainerInteractor::pullContainerResults() {
   List<List<std::shared_ptr<Item>>> results;
   eraseWhere(m_pendingResults, [&results](auto& promise) {
       if (auto res = promise.result())
-        results.append(res.take());
+        results.append(takeOptional(res));
       return promise.finished();
     });
   return results;

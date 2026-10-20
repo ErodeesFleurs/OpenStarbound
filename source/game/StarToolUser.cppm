@@ -1,7 +1,6 @@
 module;
 import std;
 import star.set;
-import star.maybe;
 import star.json;
 import star.net_compatibility;
 import star.id_map;
@@ -71,14 +70,14 @@ public:
   void effects(EffectEmitter& emitter) const;
   List<PersistentStatusEffect> statusEffects() const;
 
-  Maybe<float> toolRadius() const;
+  std::optional<float> toolRadius() const;
   // FIXME: There is a render method in ToolUser, why can't this be rendered
   // with the rest of everything else, there are TILE previews and OBJECT
   // previews, but of course one has to go through the render method and the
   // other has to be rendered separately.
   List<Drawable> renderObjectPreviews(Vec2F aimPosition, Direction walkingDirection, bool inToolRange, Color favoriteColor);
   // Returns the facing override direciton if there is one
-  Maybe<Direction> setupHumanoidHandItems(Humanoid& humanoid, Vec2F position, Vec2F aimPosition) const;
+  std::optional<Direction> setupHumanoidHandItems(Humanoid& humanoid, Vec2F position, Vec2F aimPosition) const;
   void setupHumanoidHandItemDrawables(Humanoid& humanoid) const;
 
   Vec2F armPosition(Humanoid const& humanoid, ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset) const;
@@ -105,7 +104,7 @@ public:
 
   void suppressItems(bool suppress);
 
-  Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
   float beamGunRadius() const;
 

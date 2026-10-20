@@ -25,7 +25,6 @@ import star.audio;
 import star.map;
 import star.set;
 import star.vector;
-import star.maybe;
 
 import star.animation;
 import star.particle;

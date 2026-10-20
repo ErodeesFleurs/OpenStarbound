@@ -21,7 +21,6 @@ import star.logging;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -371,7 +370,7 @@ void GraphicsMenu::syncGui() {
   fetchChild<LabelWidget>("resValueLabel")->setText(strf("{}x{}", res[0], res[1]));
 
   auto interfaceScaleSlider = fetchChild<SliderBarWidget>("interfaceScaleSlider");
-  auto interfaceScale = m_localChanges.get("interfaceScale").optFloat().value();
+  auto interfaceScale = m_localChanges.get("interfaceScale").optFloat().value_or(0.0f);
   auto interfaceScaleIt = std::lower_bound(m_interfaceScaleList.begin(), m_interfaceScaleList.end(), interfaceScale);
   if (interfaceScaleIt != m_interfaceScaleList.end()) {
     std::size_t scaleIndex = interfaceScaleIt - m_interfaceScaleList.begin();
@@ -408,12 +407,12 @@ void GraphicsMenu::syncGui() {
   fetchChild<ButtonWidget>("fullscreenCheckbox")->setChecked(m_localChanges.get("fullscreen").toBool());
   fetchChild<ButtonWidget>("borderlessCheckbox")->setChecked(m_localChanges.get("borderless").toBool());
   fetchChild<ButtonWidget>("textureLimitCheckbox")->setChecked(m_localChanges.get("limitTextureAtlasSize").toBool());
-  fetchChild<ButtonWidget>("multiTextureCheckbox")->setChecked(m_localChanges.get("useMultiTexturing").optBool().value(true));
+  fetchChild<ButtonWidget>("multiTextureCheckbox")->setChecked(m_localChanges.get("useMultiTexturing").optBool().value_or(true));
   fetchChild<ButtonWidget>("antiAliasingCheckbox")->setChecked(m_localChanges.get("antiAliasing").toBool());
   fetchChild<ButtonWidget>("monochromeCheckbox")->setChecked(m_localChanges.get("monochromeLighting").toBool());
-  fetchChild<ButtonWidget>("newLightingCheckbox")->setChecked(m_localChanges.get("newLighting").optBool().value(true));
+  fetchChild<ButtonWidget>("newLightingCheckbox")->setChecked(m_localChanges.get("newLighting").optBool().value_or(true));
   fetchChild<ButtonWidget>("hardwareCursorCheckbox")->setChecked(m_localChanges.get("hardwareCursor").toBool());
-  fetchChild<ButtonWidget>("hdrCheckbox")->setChecked(m_localChanges.get("hdr").optBool().value(true));
+  fetchChild<ButtonWidget>("hdrCheckbox")->setChecked(m_localChanges.get("hdr").optBool().value_or(true));
 }
 
 void GraphicsMenu::apply() {

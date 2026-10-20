@@ -21,9 +21,9 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
+import star.optional;
 import star.string;
 import star.map;
-import star.maybe;
 import star.format;
 import star.version;
 import star.casting;
@@ -154,8 +154,8 @@ namespace Dungeon {
       connector.forwardOnly = tile.contains("connectForwardOnly") && tile.get("connectForwardOnly").toBool();
 
       Json connectorValue = tile.get("value");
-      if (Maybe<Json> value = tile.maybe("connector-value"))
-        connectorValue = value.take();
+      if (std::optional<Json> value = tile.maybe("connector-value"))
+        connectorValue = takeOptional(value);
 
       if (connectorValue.isType(Json::Type::String))
         connector.value = connectorValue.toString();

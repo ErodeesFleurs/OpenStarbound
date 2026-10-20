@@ -3,7 +3,6 @@ import star.type_identity;
 import star.xx_hash;
 import star.json;
 import star.game_types;
-import star.maybe;
 import star.string;
 import star.either;
 import star.vector;
@@ -162,10 +161,10 @@ public:
   std::shared_ptr<Player> mainPlayer() const;
 
   // Returns error if connection failed
-  Maybe<String> connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account = "", String const& password = "", bool const& forceLegacy = false);
+  std::optional<String> connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account = "", String const& password = "", bool const& forceLegacy = false);
   bool isConnected() const;
   void disconnect();
-  Maybe<String> disconnectReason() const;
+  std::optional<String> disconnectReason() const;
   
   unsigned connectionVersion();
 
@@ -177,7 +176,7 @@ public:
   // commands.
   void update(float dt);
 
-  Maybe<BeamUpRule> beamUpRule() const;
+  std::optional<BeamUpRule> beamUpRule() const;
   bool canBeamUp() const;
   bool canBeamDown(bool deploy = false) const;
   bool canBeamToTeamShip() const;
@@ -203,7 +202,7 @@ public:
   std::shared_ptr<Sky const> currentSky() const;
   bool flying() const;
 
-  void sendChat(String const& text, ChatSendMode sendMode, Maybe<bool> speak = {}, Maybe<JsonObject> data = {});
+  void sendChat(String const& text, ChatSendMode sendMode, std::optional<bool> speak = {}, std::optional<JsonObject> data = {});
   List<ChatReceivedMessage> pullChatMessages();
 
   std::uint16_t players();
@@ -252,7 +251,7 @@ public:
   void passMessage(Universe::Message&& message) override;
   RpcPromise<Json> sendUniverseMessage(ConnectionId const& connectionId, String const& message, JsonArray const& args = {}) override;
   
-  Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool const& local, JsonArray const& args) override;
+  std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, bool const& local, JsonArray const& args) override;
 
 private:
   struct ServerInfo {
@@ -279,8 +278,8 @@ private:
   std::shared_ptr<Clock> m_universeClock;
   std::shared_ptr<WorldClient> m_worldClient;
   std::shared_ptr<SystemWorldClient> m_systemWorldClient;
-  Maybe<UniverseConnection> m_connection;
-  Maybe<ServerInfo> m_serverInfo;
+  std::optional<UniverseConnection> m_connection;
+  std::optional<ServerInfo> m_serverInfo;
 
   std::shared_ptr<CelestialSlaveDatabase> m_celestialDatabase;
   std::shared_ptr<ClientContext> m_clientContext;
@@ -290,9 +289,9 @@ private:
 
   WarpAction m_pendingWarp;
   GameTimer m_warpDelay;
-  Maybe<GameTimer> m_warpCinemaCancelTimer;
+  std::optional<GameTimer> m_warpCinemaCancelTimer;
 
-  Maybe<WarpAction> m_warping;
+  std::optional<WarpAction> m_warping;
   bool m_respawnWarped;
   bool m_respawning;
   GameTimer m_respawnTimer;
@@ -301,7 +300,7 @@ private:
 
   List<ChatReceivedMessage> m_pendingMessages;
 
-  Maybe<String> m_disconnectReason;
+  std::optional<String> m_disconnectReason;
 
   std::shared_ptr<LuaRoot> m_luaRoot;
   

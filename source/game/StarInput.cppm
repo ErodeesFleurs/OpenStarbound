@@ -4,7 +4,6 @@ import star.string;
 import star.list;
 import star.map;
 import star.variant;
-import star.maybe;
 import star.format;
 import star.hash;
 import star.json;
@@ -168,17 +167,17 @@ public:
 
   void setTextInputActive(bool active);
 
-  Maybe<unsigned> bindDown(String const& categoryId, String const& bindId);
+  std::optional<unsigned> bindDown(String const& categoryId, String const& bindId);
   bool            bindHeld(String const& categoryId, String const& bindId);
-  Maybe<unsigned> bindUp  (String const& categoryId, String const& bindId);
+  std::optional<unsigned> bindUp  (String const& categoryId, String const& bindId);
 
-  Maybe<unsigned> keyDown(Key key, Maybe<KeyMod> keyMod);
+  std::optional<unsigned> keyDown(Key key, std::optional<KeyMod> keyMod);
   bool            keyHeld(Key key);
-  Maybe<unsigned> keyUp  (Key key);
+  std::optional<unsigned> keyUp  (Key key);
 
-  Maybe<List<Vec2F>> mouseDown(MouseButton button);
+  std::optional<List<Vec2F>> mouseDown(MouseButton button);
   bool               mouseHeld(MouseButton button);
-  Maybe<List<Vec2F>> mouseUp  (MouseButton button);
+  std::optional<List<Vec2F>> mouseUp  (MouseButton button);
 
   Vec2F mousePosition() const;
 

@@ -1,6 +1,5 @@
 module;
 import std;
-import star.maybe;
 import star.format;
 import star.json;
 import star.net_compatibility;
@@ -109,8 +108,8 @@ struct ProjectileConfig {
   String damageKind;
   String damageType;
   Json damageTeam;
-  Maybe<String> damageRepeatGroup;
-  Maybe<float> damageRepeatTimeout;
+  std::optional<String> damageRepeatGroup;
+  std::optional<float> damageRepeatTimeout;
 
   List<EphemeralStatusEffect> statusEffects;
 

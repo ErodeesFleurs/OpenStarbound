@@ -24,7 +24,6 @@ import star.listener;
 import star.format;
 import star.version;
 import star.id_map;
-import star.maybe;
 import star.lock_file;
 import star.rpc_promise;
 import star.byte_array;

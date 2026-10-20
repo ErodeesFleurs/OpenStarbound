@@ -2,7 +2,6 @@ module;
 
 import std;
 import star.string;
-import star.maybe;
 import star.format;
 import star.bi_map;
 import star.json;
@@ -45,7 +44,7 @@ public:
   explicit RadioMessageDatabase(Root& root);
 
   RadioMessage radioMessage(String const& messageName) const;
-  RadioMessage createRadioMessage(Json const& config, Maybe<String> const& uniqueId = {}) const;
+  RadioMessage createRadioMessage(Json const& config, std::optional<String> const& uniqueId = {}) const;
 
 private:
   Root& m_root;

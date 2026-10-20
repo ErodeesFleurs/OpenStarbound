@@ -2,7 +2,6 @@ module;
 
 import std;
 import star.data_stream;
-import star.maybe;
 import star.json;
 
 namespace Star {
@@ -71,7 +70,7 @@ public:
   friend DataStream& operator<<(DataStream& ds, EpochTimer const& et);
 
 private:
-  Maybe<double> m_lastSeenEpochTime;
+  std::optional<double> m_lastSeenEpochTime;
   double m_elapsedTime;
 };
 

@@ -2,7 +2,6 @@ module;
 import std;
 import star.string;
 import star.list;
-import star.maybe;
 import star.format;
 import star.json;
 import star.rect;
@@ -121,7 +120,7 @@ namespace Dungeon {
 
   class TMXObject {
   public:
-    TMXObject(Root& root, Maybe<Json> const& groupProperties, Json const& tmx, std::shared_ptr<TMXTilesets> tilesets);
+    TMXObject(Root& root, std::optional<Json> const& groupProperties, Json const& tmx, std::shared_ptr<TMXTilesets> tilesets);
 
     Vec2I const& pos() const {
       return m_rect.min();
@@ -149,9 +148,9 @@ namespace Dungeon {
 
     static Vec2I getSize(Json const& tmx);
     static Vec2I getImagePosition(Tiled::Properties const& properties);
-    static ObjectKind getObjectKind(Json const& tmx, Maybe<Json >const& objectProperties);
-    static Maybe<TileObjectInfo> getTileObjectInfo(Json const& tmx, std::shared_ptr<TMXTilesets> tilesets, TileLayer layer);
-    static TileLayer getLayer(Maybe<Json> const& groupProperties, Maybe<Json> const& objectProperties);
+    static ObjectKind getObjectKind(Json const& tmx, std::optional<Json >const& objectProperties);
+    static std::optional<TileObjectInfo> getTileObjectInfo(Json const& tmx, std::shared_ptr<TMXTilesets> tilesets, TileLayer layer);
+    static TileLayer getLayer(std::optional<Json> const& groupProperties, std::optional<Json> const& objectProperties);
 
     static Vec2I getPos(Json const& tmx);
     static StarException tmxObjectError(Json const& tmx, String const& msg);

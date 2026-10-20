@@ -1,5 +1,5 @@
 import std;
-import star.maybe;
+import star.optional;
 import star.format;
 import star.json;
 import star.json_extra;
@@ -107,7 +107,7 @@ static bool validatePath(AssetPath const& components, bool canContainSubPath, bo
   return true;
 }
 
-Maybe<RectU> FramesSpecification::getRect(String const& frame) const {
+std::optional<RectU> FramesSpecification::getRect(String const& frame) const {
   if (auto alias = aliases.ptr(frame)) {
     return frames.get(*alias);
   } else {
@@ -148,10 +148,10 @@ Assets::Assets(Logger& logger, RandomService& random, LogMap& logMap, Settings s
     callbacks.registerCallbackWithSignature<Json, String>("json", std::bind(&Assets::json, this, std::placeholders::_1));
     callbacks.registerCallbackWithSignature<bool, String>("exists", std::bind(&Assets::assetExists, this, std::placeholders::_1));
 
-    callbacks.registerCallback("sourcePaths", [this](LuaEngine& engine, Maybe<bool> withMetaData) -> LuaTable {
+    callbacks.registerCallback("sourcePaths", [this](LuaEngine& engine, std::optional<bool> withMetaData) -> LuaTable {
       auto assetSources = this->assetSources();
       auto table = engine.createTable(assetSources.size(), 0);
-      if (withMetaData.value()) {
+      if (withMetaData.value_or(false)) {
         for (auto& assetSource : assetSources)
           table.set(assetSource, this->assetSourceMetadata(assetSource));
       }
@@ -163,13 +163,13 @@ Assets::Assets(Logger& logger, RandomService& random, LogMap& logMap, Settings s
       return table;
     });
 
-    callbacks.registerCallback("sourceMetadata", [this](String const& sourcePath) -> Maybe<JsonObject> {
+    callbacks.registerCallback("sourceMetadata", [this](String const& sourcePath) -> std::optional<JsonObject> {
       if (auto assetSource = m_assetSourcePaths.rightPtr(sourcePath))
         return (*assetSource)->metadata();
       return {};
     });
 
-    callbacks.registerCallback("origin", [this](String const& path) -> Maybe<String> {
+    callbacks.registerCallback("origin", [this](String const& path) -> std::optional<String> {
       if (auto descriptor = this->assetDescriptor(path))
         return this->assetSourcePath(descriptor->source);
       return {};
@@ -194,8 +194,8 @@ Assets::Assets(Logger& logger, RandomService& random, LogMap& logMap, Settings s
       return Json();
     });
 
-    callbacks.registerCallback("scan", [this](Maybe<String> const& a, Maybe<String> const& b) -> StringList {
-      return b ? scan(a.value(), *b) : scan(a.value());
+    callbacks.registerCallback("scan", [this](std::optional<String> const& a, std::optional<String> const& b) -> StringList {
+      return b ? scan(a.value_or(String{}), *b) : scan(a.value_or(String{}));
     });
     return callbacks;
   };
@@ -486,7 +486,7 @@ bool Assets::assetExists(String const& path) const {
   return m_files.contains(path);
 }
 
-Maybe<Assets::AssetFileDescriptor> Assets::assetDescriptor(String const& path) const {
+std::optional<Assets::AssetFileDescriptor> Assets::assetDescriptor(String const& path) const {
   MutexLocker assetsLocker(m_assetsMutex);
   return m_files.maybe(path);
 }
@@ -498,7 +498,7 @@ String Assets::assetSource(String const& path) const {
   throw AssetException(strf("No such asset '{}'", path));
 }
 
-Maybe<String> Assets::assetSourcePath(std::shared_ptr<AssetSource> const& source) const {
+std::optional<String> Assets::assetSourcePath(std::shared_ptr<AssetSource> const& source) const {
   MutexLocker assetsLocker(m_assetsMutex);
   return m_assetSourcePaths.maybeLeft(source);
 }
@@ -982,7 +982,7 @@ std::shared_ptr<FramesSpecification const> Assets::bestFramesSpecification(Strin
         return dirsplit[0] + "/";
     };
 
-    Maybe<String> foundFramesFile;
+    std::optional<String> foundFramesFile;
 
     // look for <full-path-minus-extension>.frames or default.frames up to root
     while (!searchPath.empty()) {
@@ -1002,7 +1002,7 @@ std::shared_ptr<FramesSpecification const> Assets::bestFramesSpecification(Strin
     }
 
     if (foundFramesFile) {
-      framesFile = foundFramesFile.take();
+      framesFile = takeOptional(foundFramesFile);
       m_bestFramesFiles[image] = framesFile;
 
     } else {
@@ -1082,8 +1082,8 @@ std::shared_ptr<Image const> Assets::applyImagePatches(std::shared_ptr<Image con
   return std::make_shared<Image>(std::move(result.get<LuaUserData>().get<Image>()));
 }
 
-Json Assets::checkPatchArray(String const& path, std::shared_ptr<AssetSource> const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const {
-  auto externalRef = external.value();
+Json Assets::checkPatchArray(String const& path, std::shared_ptr<AssetSource> const& source, Json const result, JsonArray const patchData, std::optional<Json> const external) const {
+  auto externalRef = external.value_or(Json{});
   auto newResult = result;
   for (auto const& patch : patchData) {
     switch(patch.type()) {

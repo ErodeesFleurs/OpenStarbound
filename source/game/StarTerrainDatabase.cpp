@@ -104,7 +104,7 @@ TerrainDatabase::TerrainDatabase(std::shared_ptr<Assets const> const& assets, Ra
 
 TerrainDatabase::Config TerrainDatabase::selectorConfig(String const& name) const {
   if (auto config = m_terrainSelectors.maybe(name))
-    return config.take();
+    return std::move(config.value());
   else
     throw TerrainException(strf("No such terrain selector '{}'", name));
 }

@@ -6,7 +6,7 @@ import star.string;
 import star.list;
 import star.io_device;
 import star.memory;
-import star.maybe;
+import star.optional;
 import star.format;
 import star.set;
 import star.btree;
@@ -196,7 +196,7 @@ bool BTreeDatabase::contains(ByteArray const& k) {
   return m_impl.contains(k);
 }
 
-Maybe<ByteArray> BTreeDatabase::find(ByteArray const& k) {
+std::optional<ByteArray> BTreeDatabase::find(ByteArray const& k) {
   ReadLocker readLocker(m_lock);
   checkKeySize(k);
   return m_impl.find(k);
@@ -442,7 +442,7 @@ void BTreeDatabase::IndexNode::shiftRight(ByteArray const& mid, IndexNode& left,
     beginPointer = left.pointers.at(left.pointers.size() - 1).pointer;
     left.pointers.eraseAt(left.pointers.size() - 1);
   } else {
-    beginPointer = left.beginPointer.take();
+    beginPointer = takeOptional(left.beginPointer);
   }
 }
 
@@ -592,7 +592,7 @@ bool BTreeDatabase::BTreeImpl::indexShift(Index const& left, Key const& mid, Ind
   }
 }
 
-auto BTreeDatabase::BTreeImpl::indexSplit(Index const& index) -> Maybe<std::pair<Key, Index>> {
+auto BTreeDatabase::BTreeImpl::indexSplit(Index const& index) -> std::optional<std::pair<Key, Index>> {
   if (index->pointerCount() <= parent->maxIndexPointers())
     return {};
 
@@ -737,7 +737,7 @@ bool BTreeDatabase::BTreeImpl::leafShift(Leaf& left, Leaf& right) {
   return false;
 }
 
-auto BTreeDatabase::BTreeImpl::leafSplit(Leaf& leaf) -> Maybe<Leaf> {
+auto BTreeDatabase::BTreeImpl::leafSplit(Leaf& leaf) -> std::optional<Leaf> {
   if (leaf->elements.size() < 2)
     return {};
 
@@ -897,11 +897,11 @@ void BTreeDatabase::BTreeImpl::leafRemove(Leaf& leaf, std::size_t i) {
   leaf->remove(i);
 }
 
-auto BTreeDatabase::BTreeImpl::nextLeaf(Leaf const&) -> Maybe<Pointer> {
+auto BTreeDatabase::BTreeImpl::nextLeaf(Leaf const&) -> std::optional<Pointer> {
   return {};
 }
 
-void BTreeDatabase::BTreeImpl::setNextLeaf(Leaf&, Maybe<Pointer>) {}
+void BTreeDatabase::BTreeImpl::setNextLeaf(Leaf&, std::optional<Pointer>) {}
 
 void BTreeDatabase::readBlock(BlockIndex blockIndex, std::size_t blockOffset, char* block, std::size_t size) const {
   checkBlockIndex(blockIndex);
@@ -1300,7 +1300,7 @@ bool BTreeSha256Database::contains(ByteArray const& key) {
   return BTreeDatabase::contains(sha256(key));
 }
 
-Maybe<ByteArray> BTreeSha256Database::find(ByteArray const& key) {
+std::optional<ByteArray> BTreeSha256Database::find(ByteArray const& key) {
   return BTreeDatabase::find(sha256(key));
 }
 
@@ -1316,7 +1316,7 @@ bool BTreeSha256Database::contains(String const& key) {
   return BTreeDatabase::contains(sha256(key));
 }
 
-Maybe<ByteArray> BTreeSha256Database::find(String const& key) {
+std::optional<ByteArray> BTreeSha256Database::find(String const& key) {
   return BTreeDatabase::find(sha256(key));
 }
 

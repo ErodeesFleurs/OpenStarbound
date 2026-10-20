@@ -6,7 +6,6 @@
 #include "discord/discord.h"
 #endif
 import std;
-import star.maybe;
 import star.thread;
 import star.input_event;
 import star.application;
@@ -42,7 +41,7 @@ StringList SteamUserGeneratedContentService::subscribedContentIds() const {
     });
 }
 
-Maybe<String> SteamUserGeneratedContentService::contentDownloadDirectory(String const& contentId) const {
+std::optional<String> SteamUserGeneratedContentService::contentDownloadDirectory(String const& contentId) const {
   PublishedFileId_t id = lexicalCast<PublishedFileId_t>(contentId);
   uint32 itemState = SteamAPI_ISteamUGC_GetItemState(SteamAPI_SteamUGC(), id);
   if (itemState & k_EItemStateInstalled) {

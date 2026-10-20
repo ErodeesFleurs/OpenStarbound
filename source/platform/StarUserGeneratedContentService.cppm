@@ -1,7 +1,6 @@
 module;
 
 import std;
-import star.maybe;
 import star.string;
 
 namespace Star {
@@ -21,7 +20,7 @@ public:
 
   // If the content has been downloaded successfully, returns the path to the
   // downloaded content directory on the filesystem, otherwise nothing.
-  virtual Maybe<String> contentDownloadDirectory(String const& contentId) const = 0;
+  virtual std::optional<String> contentDownloadDirectory(String const& contentId) const = 0;
 
   // Start downloading subscribed content in the background, returns true when
   // all content is synchronized.

@@ -23,7 +23,6 @@ import star.version;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -151,7 +150,7 @@ void ButtonWidget::renderImpl() {
     if (m_disabled)
       guiContext.setFontColor(m_fontColorDisabled.toRgba());
     else if (m_fontColorChecked && m_checked)
-      guiContext.setFontColor(m_fontColorChecked.value().toRgba());
+      guiContext.setFontColor(m_fontColorChecked.value_or(Color{}).toRgba());
     else
       guiContext.setFontColor(m_fontColor.toRgba());
     guiContext.renderInterfaceText(m_text, {textPosition, m_hTextAnchor, VerticalAnchor::VMidAnchor});

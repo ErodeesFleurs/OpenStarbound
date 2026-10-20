@@ -1,7 +1,6 @@
 module;
 
 import std;
-import star.maybe;
 import star.data_stream;
 import star.variant;
 import star.vector;
@@ -21,7 +20,7 @@ struct PlaceMaterial {
   MaterialId material;
   // If the material hue shift is not set it will get the natural hue shift for
   // the environment.
-  Maybe<MaterialHue> materialHueShift;
+  std::optional<MaterialHue> materialHueShift;
   TileCollisionOverride collisionOverride = TileCollisionOverride::None;
 };
 DataStream& operator>>(DataStream& ds, PlaceMaterial& tileMaterialPlacement);
@@ -35,7 +34,7 @@ struct PlaceMod {
 
   // If the mod hue shift is not set it will get the natural hue shift for the
   // environment.
-  Maybe<MaterialHue> modHueShift;
+  std::optional<MaterialHue> modHueShift;
 };
 DataStream& operator>>(DataStream& ds, PlaceMod& tileModPlacement);
 DataStream& operator<<(DataStream& ds, PlaceMod const& tileModPlacement);

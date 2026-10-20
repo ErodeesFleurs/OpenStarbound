@@ -12,7 +12,6 @@ import star.game_types;
 import star.material_types;
 import star.list;
 import star.strong_typedef;
-import star.maybe;
 import star.color;
 import star.image_processing;
 import star.hash;
@@ -164,7 +163,7 @@ String BiomeDatabase::biomeFriendlyName(String const& biomeName) const {
 
 StringList BiomeDatabase::biomeStatusEffects(String const& biomeName) const {
   auto const& config = m_biomes.get(biomeName);
-  return config.parameters.opt("statusEffects").apply(jsonToStringList).value();
+  return config.parameters.opt("statusEffects").transform(jsonToStringList).value_or(StringList{});
 }
 
 StringList BiomeDatabase::biomeOres(String const& biomeName, float threatLevel) const {

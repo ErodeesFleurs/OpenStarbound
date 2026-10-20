@@ -1,7 +1,6 @@
 module;
 import std;
 import star.string;
-import star.maybe;
 import star.json;
 import star.json_extra;
 import star.id_map;
@@ -58,7 +57,7 @@ public:
   void uninit();
 
   void teleportOut();
-  Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  std::optional<ChainableJsonMessageResponse> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
   void update(float dt);
 
   void render(RenderCallback* renderCallback, Vec2F const& position);

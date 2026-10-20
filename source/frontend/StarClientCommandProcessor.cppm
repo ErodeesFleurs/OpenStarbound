@@ -23,7 +23,6 @@ import star.text;
 import star.audio;
 import star.map;
 import star.set;
-import star.maybe;
 import star.rpc_promise;
 import star.game_types;
 import star.casting;

@@ -2,7 +2,6 @@ module;
 import std;
 import star.json;
 
-import star.maybe;
 import star.string;
 import star.map;
 import star.bi_map;

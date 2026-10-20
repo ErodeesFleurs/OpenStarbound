@@ -25,7 +25,6 @@ import star.strong_typedef;
 import star.worker_pool;
 
 import star.sector_array_2d;
-import star.maybe;
 import star.color;
 import star.image_processing;
 import star.hash;
@@ -223,7 +222,7 @@ std::size_t PlayerStorage::playerCount() const {
   return m_savedPlayersCache.size();
 }
 
-Maybe<Uuid> PlayerStorage::playerUuidAt(std::size_t index) {
+std::optional<Uuid> PlayerStorage::playerUuidAt(std::size_t index) {
   RecursiveMutexLocker locker(m_mutex);
   if (index < m_savedPlayersCache.size())
     return m_savedPlayersCache.keyAt(index);
@@ -231,9 +230,9 @@ Maybe<Uuid> PlayerStorage::playerUuidAt(std::size_t index) {
     return {};
 }
 
-Maybe<Uuid> PlayerStorage::playerUuidByName(String const& name, Maybe<Uuid> except) {
+std::optional<Uuid> PlayerStorage::playerUuidByName(String const& name, std::optional<Uuid> except) {
   String cleanMatch = Text::stripEscapeCodes(name).toLower();
-  Maybe<Uuid> uuid;
+  std::optional<Uuid> uuid;
 
   RecursiveMutexLocker locker(m_mutex);
 
@@ -254,7 +253,7 @@ Maybe<Uuid> PlayerStorage::playerUuidByName(String const& name, Maybe<Uuid> exce
   return uuid;
 }
 
-List<Uuid> PlayerStorage::playerUuidListByName(String const& name, Maybe<Uuid> except) {
+List<Uuid> PlayerStorage::playerUuidListByName(String const& name, std::optional<Uuid> except) {
   String cleanMatch = Text::stripEscapeCodes(name).toLower();
   List<Uuid> list = {};
 
@@ -297,7 +296,7 @@ Json PlayerStorage::savePlayer(std::shared_ptr<Player> const& player) {
   return newPlayerData;
 }
 
-Maybe<Json> PlayerStorage::maybeGetPlayerData(Uuid const& uuid) {
+std::optional<Json> PlayerStorage::maybeGetPlayerData(Uuid const& uuid) {
   RecursiveMutexLocker locker(m_mutex);
   if (auto cache = m_savedPlayersCache.ptr(uuid))
     return *cache;

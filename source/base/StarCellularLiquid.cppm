@@ -1,9 +1,9 @@
 module;
 import std;
+import star.optional;
 import star.list;
 import star.set;
 import star.hash;
-import star.maybe;
 import star.variant;
 import star.rect;
 import star.map;
@@ -21,7 +21,7 @@ struct CellularLiquidCollisionCell {};
 
 template <typename LiquidId>
 struct CellularLiquidFlowCell {
-  Maybe<LiquidId> liquid;
+  std::optional<LiquidId> liquid;
   float level;
   float pressure;
 };
@@ -83,7 +83,7 @@ public:
   unsigned liquidTickDelta(LiquidId liquid);
   void setLiquidTickDelta(LiquidId liquid, unsigned tickDelta);
 
-  void setProcessingLimit(Maybe<unsigned> processingLimit);
+  void setProcessingLimit(std::optional<unsigned> processingLimit);
 
   List<RectI> noProcessingLimitRegions() const;
   void setNoProcessingLimitRegions(List<RectI> noProcessingLimitRegions);
@@ -107,7 +107,7 @@ private:
 
   struct WorkingCell {
     Vec2I position;
-    Maybe<LiquidId> liquid;
+    std::optional<LiquidId> liquid;
     bool sourceCell;
     float level;
     float pressure;
@@ -151,11 +151,11 @@ private:
 
   BAHashMap<LiquidId, BAOrderedHashSet<Vec2I>> m_activeCells;
   BAHashMap<LiquidId, unsigned> m_liquidTickDeltas;
-  Maybe<unsigned> m_processingLimit;
+  std::optional<unsigned> m_processingLimit;
   List<RectI> m_noProcessingLimitRegions;
   std::uint64_t m_step;
 
-  BAHashMap<Vec2I, Maybe<WorkingCell>> m_workingCells;
+  BAHashMap<Vec2I, std::optional<WorkingCell>> m_workingCells;
   List<WorkingCell*> m_currentActiveCells;
   BAHashSet<Vec2I> m_nextActiveCells;
   BAHashSet<std::tuple<Vec2I, LiquidId, Vec2I, LiquidId>> m_liquidInteractions;
@@ -196,7 +196,7 @@ void LiquidCellEngine<LiquidId>::setLiquidTickDelta(LiquidId liquid, unsigned ti
 }
 
 template <typename LiquidId>
-void LiquidCellEngine<LiquidId>::setProcessingLimit(Maybe<unsigned> processingLimit) {
+void LiquidCellEngine<LiquidId>::setProcessingLimit(std::optional<unsigned> processingLimit) {
   m_processingLimit = processingLimit;
 }
 
@@ -534,7 +534,7 @@ template <typename LiquidId>
 typename LiquidCellEngine<LiquidId>::WorkingCell* LiquidCellEngine<LiquidId>::workingCell(Vec2I p) {
   p = m_cellWorld->uniqueLocation(p);
 
-  auto res = m_workingCells.insert(std::make_pair(p, Maybe<WorkingCell>()));
+  auto res = m_workingCells.insert(std::make_pair(p, std::optional<WorkingCell>()));
   if (res.second) {
     auto cellData = m_cellWorld->cell(p);
     if (auto flowCell = cellData.template ptr<CellularLiquidFlowCell<LiquidId>>())
@@ -542,7 +542,7 @@ typename LiquidCellEngine<LiquidId>::WorkingCell* LiquidCellEngine<LiquidId>::wo
     else if (auto sourceCell = cellData.template ptr<CellularLiquidSourceCell<LiquidId>>())
       res.first->second = WorkingCell{p, sourceCell->liquid, true, 1.0f, sourceCell->pressure, nullptr, nullptr, nullptr, nullptr};
   }
-  return res.first->second.ptr();
+  return optionalPtr(res.first->second);
 }
 
 template <typename LiquidId>

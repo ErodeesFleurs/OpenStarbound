@@ -1,6 +1,5 @@
 module;
 import std;
-import star.maybe;
 import star.format;
 import star.string;
 import star.vector;
@@ -70,8 +69,8 @@ public:
 
   // Reallocate the image with the given width, height, and pixel format.  The
   // contents of the image are always zeroed after a call to reset.
-  void reset(Vec2U size, Maybe<PixelFormat> pf = {});
-  void reset(unsigned width, unsigned height, Maybe<PixelFormat> pf = {});
+  void reset(Vec2U size, std::optional<PixelFormat> pf = {});
+  void reset(unsigned width, unsigned height, std::optional<PixelFormat> pf = {});
 
   // Fill the image with a given color
   void fill(Vec3B const& c);

@@ -13,7 +13,6 @@ import star.game_types;
 import star.color;
 import star.bi_map;
 import star.sky_types;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -56,7 +55,7 @@ public:
   void startFlying(bool enterHyperspace, bool startInWarp, Json settings = {});
   // Stops flying animation copying the new pertinant sky data from the given
   // sky, as though the sky as moved to a new world.
-  void stopFlyingAt(Maybe<SkyParameters> SkyParameters);
+  void stopFlyingAt(std::optional<SkyParameters> SkyParameters);
 
   void jumpTo(SkyParameters SkyParameters);
 
@@ -159,7 +158,7 @@ private:
   double m_time = 0.0;
 
   std::shared_ptr<Clock const> m_referenceClock;
-  Maybe<double> m_clockTrackingTime;
+  std::optional<double> m_clockTrackingTime;
 
   float m_altitude = 0.0f;
 
@@ -201,7 +200,7 @@ private:
 
   bool m_sentSFX = false;
 
-  Maybe<SkyParameters> m_destWorld;
+  std::optional<SkyParameters> m_destWorld;
 
   bool m_netInit;
   NetElementTopGroup m_netGroup;

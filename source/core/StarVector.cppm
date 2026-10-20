@@ -1,6 +1,7 @@
 module;
 import std;
 import star.hash;
+import star.optional;
 
 import star.array;
 import star.math_common;
@@ -853,7 +854,10 @@ template <typename T, std::size_t N>
 std::ostream& operator<<(std::ostream& os, Vector<T, N> const& v) {
   os << '(';
   for (std::size_t i = 0; i < N; ++i) {
-    os << v[i];
+    if constexpr (requires { outputOptional(v[i]); })
+      os << outputOptional(v[i]);
+    else
+      os << v[i];
     if (i != N - 1)
       os << ", ";
   }

@@ -6,7 +6,6 @@ import star.id_map;
 import std;
 import star.map;
 import star.set;
-import star.maybe;
 import star.ordered_map;
 import star.lru_cache;
 import star.thread;
@@ -90,11 +89,11 @@ private:
   RectF cellRegion(Vec2I const& cellIndex) const;
 
   // Is the cell spawnable, and if so, what are the valid spawn parameters for it?
-  Maybe<SpawnParameters> spawnParametersForCell(Vec2I const& cellIndex) const;
+  std::optional<SpawnParameters> spawnParametersForCell(Vec2I const& cellIndex) const;
 
   // Finds a position for the given bounding box inside the given spawn cell
   // which matches the given spawn parameters.
-  Maybe<Vec2F> adjustSpawnRegion(RectF const& spawnRegion, RectF const& boundBox, SpawnParameters const& spawnParameters) const;
+  std::optional<Vec2F> adjustSpawnRegion(RectF const& spawnRegion, RectF const& boundBox, SpawnParameters const& spawnParameters) const;
 
   // Spawns monsters in a newly active cell
   void spawnInCell(Vec2I const& cell);

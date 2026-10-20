@@ -11,7 +11,6 @@ import star.game_types;
 import star.material_types;
 import star.color;
 import star.bi_map;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -172,7 +171,7 @@ const GameTestRegistration fixedCoordinateGenerationIsDeterministic("WorldSnapsh
   // hand picked coordinate is most likely empty.
   auto systems = celestialDatabase->scanSystems(RectI::withSize(Vec2I(0, 0), Vec2I(32, 32)));
   ASSERT_FALSE(systems.empty());
-  Maybe<CelestialCoordinate> coordinate;
+  std::optional<CelestialCoordinate> coordinate;
   for (auto const& system : systems) {
     for (auto const& child : celestialDatabase->children(system)) {
       if (child.isPlanetaryBody() && celestialDatabase->parameters(child)) {
@@ -183,7 +182,7 @@ const GameTestRegistration fixedCoordinateGenerationIsDeterministic("WorldSnapsh
     if (coordinate)
       break;
   }
-  ASSERT_TRUE(coordinate.isValid()) << "no planetary body found in the scanned region";
+  ASSERT_TRUE(coordinate.has_value()) << "no planetary body found in the scanned region";
   // A separate template for the surface level: a template handed to a WorldServer
   // is modified by world generation.
   float surfaceLevel = std::make_shared<WorldTemplate>(fixture.root(), *coordinate, celestialDatabase)->surfaceLevel();

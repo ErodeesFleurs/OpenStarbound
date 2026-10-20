@@ -3,7 +3,6 @@ import star.net_compatibility;
 
 import std;
 import star.list;
-import star.maybe;
 import star.format;
 import star.data_stream;
 import star.interpolation;
@@ -21,6 +20,12 @@ using StepStreamException = StarError<StepStreamExceptionTag, StarException>;
 template <typename T>
 class NetElementFloating : public NetElement {
 public:
+  NetElementFloating() = default;
+  NetElementFloating(NetElementFloating const&) = default;
+  NetElementFloating& operator=(NetElementFloating const&) = default;
+  NetElementFloating(NetElementFloating&& other);
+  NetElementFloating& operator=(NetElementFloating&& other);
+
   T get() const;
   void set(T value);
 
@@ -28,7 +33,7 @@ public:
   // a float, it is transmitted as a VLQ of the value divided by the fixed
   // point base.  Any NetElementFloating that is transmitted to must also have
   // the same fixed point base set.
-  void setFixedPointBase(Maybe<T> fixedPointBase = {});
+  void setFixedPointBase(std::optional<T> fixedPointBase = {});
 
   // If interpolation is enabled on the NetStepStates parent, and an
   // interpolator is set, then on steps in between data points this will be
@@ -58,18 +63,50 @@ private:
 
   T interpolate() const;
 
-  Maybe<T> m_fixedPointBase;
+  std::optional<T> m_fixedPointBase;
   NetElementVersion const* m_netVersion = nullptr;
   std::uint64_t m_latestUpdateVersion = 0;
   T m_value = T();
 
   std::function<T(T, T, T)> m_interpolator;
   float m_extrapolation = 0.0f;
-  Maybe<Deque<std::pair<float, T>>> m_interpolationDataPoints;
+  std::optional<Deque<std::pair<float, T>>> m_interpolationDataPoints;
 };
 
 typedef NetElementFloating<float> NetElementFloat;
 typedef NetElementFloating<double> NetElementDouble;
+
+template <typename T>
+NetElementFloating<T>::NetElementFloating(NetElementFloating&& other)
+  : NetElement(std::move(other)),
+    m_fixedPointBase(std::move(other.m_fixedPointBase)),
+    m_netVersion(other.m_netVersion),
+    m_latestUpdateVersion(other.m_latestUpdateVersion),
+    m_value(std::move(other.m_value)),
+    m_interpolator(std::move(other.m_interpolator)),
+    m_extrapolation(other.m_extrapolation),
+    m_interpolationDataPoints(std::move(other.m_interpolationDataPoints)) {
+  // A moved-from field must no longer advertise fixed-point or interpolation state.
+  other.m_fixedPointBase.reset();
+  other.m_interpolationDataPoints.reset();
+}
+
+template <typename T>
+NetElementFloating<T>& NetElementFloating<T>::operator=(NetElementFloating&& other) {
+  if (this == &other)
+    return *this;
+  NetElement::operator=(std::move(other));
+  m_fixedPointBase = std::move(other.m_fixedPointBase);
+  other.m_fixedPointBase.reset();
+  m_netVersion = other.m_netVersion;
+  m_latestUpdateVersion = other.m_latestUpdateVersion;
+  m_value = std::move(other.m_value);
+  m_interpolator = std::move(other.m_interpolator);
+  m_extrapolation = other.m_extrapolation;
+  m_interpolationDataPoints = std::move(other.m_interpolationDataPoints);
+  other.m_interpolationDataPoints.reset();
+  return *this;
+}
 
 template <typename T>
 T NetElementFloating<T>::get() const {
@@ -94,7 +131,7 @@ void NetElementFloating<T>::set(T value) {
 }
 
 template <typename T>
-void NetElementFloating<T>::setFixedPointBase(Maybe<T> fixedPointBase) {
+void NetElementFloating<T>::setFixedPointBase(std::optional<T> fixedPointBase) {
   m_fixedPointBase = fixedPointBase;
 }
 
@@ -224,7 +261,7 @@ T NetElementFloating<T>::readValue(DataStream& ds) const {
 
 template <typename T>
 T NetElementFloating<T>::interpolate() const {
-  auto& dataPoints = *m_interpolationDataPoints;
+  auto& dataPoints = m_interpolationDataPoints.value();
 
   float ipos = inverseLinearInterpolateUpper(dataPoints.begin(), dataPoints.end(), 0.0f,
       [](float lhs, auto const& rhs) {

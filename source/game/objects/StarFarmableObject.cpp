@@ -18,7 +18,6 @@ import star.vector;
 import star.audio;
 import star.thread;
 import star.map;
-import star.maybe;
 import star.string;
 import star.image_processing;
 import star.hash;

@@ -29,7 +29,6 @@ import star.directives;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -141,8 +140,8 @@ public:
   // If a tooltip popup should be created at the given mouse position, return a
   // new pane to be used as the tooltip.
   virtual std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition);
-  virtual Maybe<String> cursorOverride(Vec2I const& screenPosition);
-  virtual Maybe<std::shared_ptr<Item>> shiftItemFromInventory(std::shared_ptr<Item> const& input);
+  virtual std::optional<String> cursorOverride(Vec2I const& screenPosition);
+  virtual std::optional<std::shared_ptr<Item>> shiftItemFromInventory(std::shared_ptr<Item> const& input);
 
   virtual LuaCallbacks makePaneCallbacks();
 protected:

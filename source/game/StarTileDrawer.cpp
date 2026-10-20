@@ -27,7 +27,6 @@ import star.string_view;
 import star.directives;
 import star.asset_path;
 import star.either;
-import star.maybe;
 import star.weighted_pool;
 import star.casting;
 import star.strong_typedef;
@@ -119,7 +118,7 @@ TileDrawer::TileDrawer(Root& root) : m_root(root) {
 }
 
 bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
-  TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData, float scale, Vec2I offset, Maybe<TerrainLayer> variantLayer) {
+  TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData, float scale, Vec2I offset, std::optional<TerrainLayer> variantLayer) {
   auto assets = m_root.assets();
   auto materialDatabase = m_root.materialDatabase();
   auto imageMetadata = m_root.imageMetadataDatabase();
@@ -180,7 +179,7 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
   if (materialRenderProfile) {
     occlude = materialRenderProfile->occludesBehind;
     auto materialColorVariant = materialRenderProfile->colorVariants > 0 ? colorVariant % materialRenderProfile->colorVariants : 0;
-    std::uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]) + offset[0], pos[1] + offset[1], (int)variantLayer.value(terrainLayer), "main");
+    std::uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]) + offset[0], pos[1] + offset[1], (int)variantLayer.value_or(terrainLayer), "main");
     auto& drawList = drawables[materialZLevel(materialRenderProfile->zLevel, material, materialHue, materialColorVariant)];
 
     MaterialPieceResultList pieces;
@@ -201,7 +200,7 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
 
   if (modRenderProfile) {
     auto modColorVariant = modRenderProfile->colorVariants > 0 ? colorVariant % modRenderProfile->colorVariants : 0;
-    std::uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]), pos[1], (int)variantLayer.value(terrainLayer), "mod");
+    std::uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]), pos[1], (int)variantLayer.value_or(terrainLayer), "mod");
     auto& drawList = drawables[modZLevel(modRenderProfile->zLevel, mod, modHue, modColorVariant)];
 
     MaterialPieceResultList pieces;
@@ -370,7 +369,7 @@ bool TileDrawer::determineMatchingPieces(MaterialPieceResultList& resultList, bo
   for (auto const& match : matchList) {
     if (matchSetMatches(match)) {
       if (match->occlude)
-        *occlude = match->occlude.get();
+        *occlude = match->occlude.value();
 
       subMatchResult = true;
 

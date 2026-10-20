@@ -3,7 +3,6 @@ import std;
 import star.lua;
 import star.json;
 import star.game_types;
-import star.maybe;
 import star.list;
 import star.vector;
 import star.platformer_astar_types;
@@ -39,7 +38,7 @@ public:
   // be held and not cleared.  If a script update is scheduled this tick, then
   // the controls will be cleared only if autoClearControls is set to true.
   template <typename Ret = LuaValue, typename... V>
-  Maybe<Ret> update(V&&... args);
+  std::optional<Ret> update(V&&... args);
 
 private:
   void performControls();
@@ -51,21 +50,21 @@ private:
   float m_controlRotation;
   Vec2F m_controlAcceleration;
   Vec2F m_controlForce;
-  Maybe<std::tuple<Vec2F, float>> m_controlApproachVelocity;
-  Maybe<std::tuple<float, float, float, bool>> m_controlApproachVelocityAlongAngle;
-  Maybe<ActorMovementParameters> m_controlParameters;
-  Maybe<ActorMovementModifiers> m_controlModifiers;
-  Maybe<std::tuple<Direction, bool>> m_controlMove;
-  Maybe<Direction> m_controlFace;
+  std::optional<std::tuple<Vec2F, float>> m_controlApproachVelocity;
+  std::optional<std::tuple<float, float, float, bool>> m_controlApproachVelocityAlongAngle;
+  std::optional<ActorMovementParameters> m_controlParameters;
+  std::optional<ActorMovementModifiers> m_controlModifiers;
+  std::optional<std::tuple<Direction, bool>> m_controlMove;
+  std::optional<Direction> m_controlFace;
   bool m_controlDown = false;
   bool m_controlCrouch = false;
-  Maybe<bool> m_controlJump;
+  std::optional<bool> m_controlJump;
   bool m_controlHoldJump = false;
-  Maybe<Vec2F> m_controlFly;
+  std::optional<Vec2F> m_controlFly;
 
   bool m_resetPathMove = false;
-  Maybe<std::pair<Vec2F, bool>> m_controlPathMove;
-  Maybe<std::pair<Vec2F, bool>> m_pathMoveResult;
+  std::optional<std::pair<Vec2F, bool>> m_controlPathMove;
+  std::optional<std::pair<Vec2F, bool>> m_pathMoveResult;
 };
 
 template <typename Base>
@@ -192,37 +191,37 @@ void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementCon
       });
 
     callbacks.registerCallback("controlApproachVelocity", [this](Vec2F const& arg1, float arg2) {
-        m_controlApproachVelocity.set(std::make_tuple(arg1, arg2));
+        m_controlApproachVelocity.emplace(std::make_tuple(arg1, arg2));
       });
 
     callbacks.registerCallback("controlApproachVelocityAlongAngle", [this](float angle, float targetVelocity, float maxControlForce, bool positiveOnly) {
-        m_controlApproachVelocityAlongAngle.set(std::make_tuple(angle, targetVelocity, maxControlForce, positiveOnly));
+        m_controlApproachVelocityAlongAngle.emplace(std::make_tuple(angle, targetVelocity, maxControlForce, positiveOnly));
       });
 
     callbacks.registerCallback("controlApproachXVelocity", [this](float targetXVelocity, float maxControlForce) {
-        m_controlApproachVelocityAlongAngle.set(std::make_tuple(0.0f, targetXVelocity, maxControlForce, false));
+        m_controlApproachVelocityAlongAngle.emplace(std::make_tuple(0.0f, targetXVelocity, maxControlForce, false));
       });
 
     callbacks.registerCallback("controlApproachYVelocity", [this](float targetYVelocity, float maxControlForce) {
-        m_controlApproachVelocityAlongAngle.set(
+        m_controlApproachVelocityAlongAngle.emplace(
             std::make_tuple(std::numbers::pi / 2.0f, targetYVelocity, maxControlForce, false));
       });
 
     callbacks.registerCallback("controlParameters", [this](ActorMovementParameters const& arg1) {
-        m_controlParameters = m_controlParameters.value().merge(arg1);
+        m_controlParameters = m_controlParameters.value_or(ActorMovementParameters{}).merge(arg1);
       });
 
     callbacks.registerCallback("controlModifiers", [this](ActorMovementModifiers const& arg1) {
-        m_controlModifiers = m_controlModifiers.value().combine(arg1);
+        m_controlModifiers = m_controlModifiers.value_or(ActorMovementModifiers{}).combine(arg1);
       });
 
-    callbacks.registerCallback("controlMove", [this](Maybe<float> const& arg1, Maybe<bool> const& arg2) {
-        if (auto direction = directionOf(arg1.value()))
-          m_controlMove.set(std::make_tuple(*direction, arg2.value(true)));
+    callbacks.registerCallback("controlMove", [this](std::optional<float> const& arg1, std::optional<bool> const& arg2) {
+        if (auto direction = directionOf(arg1.value_or(float{})))
+          m_controlMove.emplace(std::make_tuple(*direction, arg2.value_or(true)));
       });
 
-    callbacks.registerCallback("controlFace", [this](Maybe<float> const& arg1) {
-        if (auto direction = directionOf(arg1.value()))
+    callbacks.registerCallback("controlFace", [this](std::optional<float> const& arg1) {
+        if (auto direction = directionOf(arg1.value_or(float{})))
           m_controlFace = *direction;
       });
 
@@ -246,15 +245,15 @@ void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementCon
         m_controlFly = arg1;
       });
 
-    callbacks.registerCallback("controlPathMove", [this](Vec2F const& position, Maybe<bool> run, Maybe<PlatformerAStar::Parameters> parameters) -> Maybe<bool> {
+    callbacks.registerCallback("controlPathMove", [this](Vec2F const& position, std::optional<bool> run, std::optional<PlatformerAStar::Parameters> parameters) -> std::optional<bool> {
         if (m_pathMoveResult && m_pathMoveResult->first == position) {
-          return take(m_pathMoveResult).apply([](std::pair<Vec2F, bool> const& p) { return p.second; });
+          return std::exchange(m_pathMoveResult, std::nullopt).transform([](std::pair<Vec2F, bool> const& p) { return p.second; });
         } else {
           m_pathMoveResult.reset();
-          auto result = m_movementController->pathMove(position, run.value(false), parameters);
-          if (result.isNothing())
-            m_controlPathMove = std::pair<Vec2F, bool>(position, run.value(false));
-          return result.apply([](std::pair<Vec2F, bool> const& p) { return p.second; });
+          auto result = m_movementController->pathMove(position, run.value_or(false), parameters);
+          if (!result.has_value())
+            m_controlPathMove = std::pair<Vec2F, bool>(position, run.value_or(false));
+          return result.transform([](std::pair<Vec2F, bool> const& p) { return p.second; });
         }
       });
 
@@ -290,12 +289,12 @@ void LuaActorMovementComponent<Base>::setAutoClearControls(bool autoClearControl
 
 template <typename Base>
 template <typename Ret, typename... V>
-Maybe<Ret> LuaActorMovementComponent<Base>::update(V&&... args) {
+std::optional<Ret> LuaActorMovementComponent<Base>::update(V&&... args) {
   if (Base::updateReady()) {
     if (m_autoClearControls)
       clearControls();
   }
-  Maybe<Ret> ret = Base::template update<Ret>(std::forward<V>(args)...);
+  std::optional<Ret> ret = Base::template update<Ret>(std::forward<V>(args)...);
   performControls();
   return ret;
 }
@@ -332,7 +331,7 @@ void LuaActorMovementComponent<Base>::performControls() {
     // some action was taken that has priority over pathing, setting position or velocity
     if (m_resetPathMove)
       m_controlPathMove = {};
-    if (m_controlPathMove && m_pathMoveResult.isNothing())
+    if (m_controlPathMove && !m_pathMoveResult.has_value())
       m_pathMoveResult = m_movementController->controlPathMove(m_controlPathMove->first, m_controlPathMove->second);
   }
 }
@@ -357,7 +356,7 @@ void LuaActorMovementComponent<Base>::clearControls() {
   m_resetPathMove = false;
   // Clear path move result one clear after controlPathMove is no longer called
   // to keep the result available for the following update
-  if (m_controlPathMove.isNothing())
+  if (!m_controlPathMove.has_value())
     m_pathMoveResult = {};
   m_controlPathMove = {};
 }

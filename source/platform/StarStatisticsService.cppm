@@ -2,7 +2,6 @@ module;
 
 import std;
 import star.json;
-import star.maybe;
 import star.string;
 
 namespace Star {
@@ -12,7 +11,7 @@ public:
   virtual ~StatisticsService() = default;
 
   virtual bool initialized() const = 0;
-  virtual Maybe<String> error() const = 0;
+  virtual std::optional<String> error() const = 0;
 
   // The functions below aren't valid unless initialized() returns true and
   // error() is empty.

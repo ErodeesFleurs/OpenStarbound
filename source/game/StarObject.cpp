@@ -24,7 +24,6 @@ import star.thread;
 import star.map;
 import star.set;
 import star.vector;
-import star.maybe;
 import star.color;
 import star.string;
 import star.rect;
@@ -401,7 +400,7 @@ RectF Object::metaBoundBox() const {
   if (auto orientation = currentOrientation()) {
     // default metaboundbox extends the bounding box of the orientation's
     // spaces by one block
-    return orientation->metaBoundBox.value(RectF(Vec2F(orientation->boundBox.min()) - Vec2F(1, 1), Vec2F(orientation->boundBox.max()) + Vec2F(2, 2)));
+    return orientation->metaBoundBox.value_or(RectF(Vec2F(orientation->boundBox.min()) - Vec2F(1, 1), Vec2F(orientation->boundBox.max()) + Vec2F(2, 2)));
   } else {
     return RectF(-1, -1, 1, 1);
   }
@@ -538,7 +537,7 @@ void Object::render(RenderCallback* renderCallback) {
   }
 
   for (auto drawablePair : m_scriptedAnimator.drawables())
-    renderCallback->addDrawable(drawablePair.first, drawablePair.second.value(renderLayer()));
+    renderCallback->addDrawable(drawablePair.first, drawablePair.second.value_or(renderLayer()));
   renderCallback->addParticles(m_scriptedAnimator.pullNewParticles());
   renderCallback->addAudios(m_scriptedAnimator.pullNewAudios());
 }
@@ -608,7 +607,7 @@ void Object::destroy(RenderCallback* renderCallback) {
             world()->addEntity(ItemDrop::createRandomizedDrop(this->root(), o, position()));
         } else if (m_config->hasObjectItem) {
           ItemDescriptor objectItem(m_config->name, 1);
-          if (configValue("retainObjectParametersInItem", m_config->retainObjectParametersInItem).optBool().value()) {
+          if (configValue("retainObjectParametersInItem", m_config->retainObjectParametersInItem).optBool().value_or(false)) {
             auto parameters = m_parameters.baseMap();
             parameters.remove("owner");
             parameters["scriptStorage"] = m_scriptComponent.getScriptStorage();
@@ -672,14 +671,14 @@ bool Object::inspectable() const {
   return m_config->scannable;
 }
 
-Maybe<String> Object::inspectionLogName() const {
-  return configValue("inspectionLogName").optString().value(m_config->name);
+std::optional<String> Object::inspectionLogName() const {
+  return configValue("inspectionLogName").optString().value_or(m_config->name);
 }
 
-Maybe<String> Object::inspectionDescription(String const& species) const {
-  return configValue("inspectionDescription").optString()
-    .orMaybe(configValue(strf("{}Description", species)).optString())
-    .value(description());
+std::optional<String> Object::inspectionDescription(String const& species) const {
+  auto general = configValue("inspectionDescription").optString();
+  auto specific = configValue(strf("{}Description", species)).optString();
+  return (general ? general : specific).value_or(description());
 }
 
 String Object::category() const {
@@ -772,7 +771,7 @@ Vec2F Object::questIndicatorPosition() const {
   }
 }
 
-Maybe<ChainableJsonMessageResponse> Object::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+std::optional<ChainableJsonMessageResponse> Object::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
   return m_scriptComponent.handleMessage(message, sendingConnection == world()->connection(), args);
 }
 
@@ -850,7 +849,7 @@ Json Object::writeStoredData() const {
   }
 
   return JsonObject{
-    {"uniqueId", jsonFromMaybe(uniqueId())},
+    {"uniqueId", jsonFromOptional(uniqueId())},
     {"tilePosition", jsonFromVec2I(tilePosition())},
     {"orientationIndex", jsonFromSize(m_orientationIndex)},
     {"direction", DirectionNames.getRight(m_direction.get())},
@@ -1036,8 +1035,8 @@ LuaCallbacks Object::makeObjectCallbacks() {
       m_interactive.set(interactive);
     });
 
-  callbacks.registerCallbackWithSignature<Maybe<String>>("uniqueId", std::bind(&Object::uniqueId, this));
-  callbacks.registerCallbackWithSignature<void, Maybe<String>>("setUniqueId", std::bind(&Object::setUniqueId, this, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<std::optional<String>>("uniqueId", std::bind(&Object::uniqueId, this));
+  callbacks.registerCallbackWithSignature<void, std::optional<String>>("setUniqueId", std::bind(&Object::setUniqueId, this, std::placeholders::_1));
 
   callbacks.registerCallback("boundBox", [this]() {
       return metaBoundBox().translated(position());
@@ -1055,8 +1054,8 @@ LuaCallbacks Object::makeObjectCallbacks() {
       m_soundEffectEnabled.set(soundEffectEnabled);
     });
 
-  callbacks.registerCallback("smash", [this](Maybe<bool> smash) {
-      breakObject(smash.value(false));
+  callbacks.registerCallback("smash", [this](std::optional<bool> smash) {
+      breakObject(smash.value_or(false));
     });
 
   callbacks.registerCallback("level", [this]() {
@@ -1067,7 +1066,7 @@ LuaCallbacks Object::makeObjectCallbacks() {
       return p + position();
     });
 
-  callbacks.registerCallback("say", [this](String line, Maybe<StringMap<String>> const& tags, Json const& config) {
+  callbacks.registerCallback("say", [this](String line, std::optional<StringMap<String>> const& tags, Json const& config) {
       if (tags)
         line = line.replaceTags(*tags, false);
 
@@ -1079,7 +1078,7 @@ LuaCallbacks Object::makeObjectCallbacks() {
       return false;
     });
 
-  callbacks.registerCallback("sayPortrait", [this](String line, String portrait, Maybe<StringMap<String>> const& tags, Json const& config) {
+  callbacks.registerCallback("sayPortrait", [this](String line, String portrait, std::optional<StringMap<String>> const& tags, Json const& config) {
       if (tags)
         line = line.replaceTags(*tags, false);
 
@@ -1164,12 +1163,12 @@ LuaCallbacks Object::makeObjectCallbacks() {
         out.state.set(l);
     });
 
-  callbacks.registerCallback("setOfferedQuests", [this](Maybe<JsonArray> const& offeredQuests) {
-      m_offeredQuests.set(offeredQuests.value().transformed([this](Json const& quest) { return QuestArcDescriptor::fromJson(root(), quest); }));
+  callbacks.registerCallback("setOfferedQuests", [this](std::optional<JsonArray> const& offeredQuests) {
+      m_offeredQuests.set(offeredQuests.value_or(JsonArray{}).transformed([this](Json const& quest) { return QuestArcDescriptor::fromJson(root(), quest); }));
     });
 
-  callbacks.registerCallback("setTurnInQuests", [this](Maybe<StringList> const& turnInQuests) {
-      m_turnInQuests.set(StringSet::from(turnInQuests.value()));
+  callbacks.registerCallback("setTurnInQuests", [this](std::optional<StringList> const& turnInQuests) {
+      m_turnInQuests.set(StringSet::from(turnInQuests.value_or(StringList{})));
     });
 
   callbacks.registerCallback("setConfigParameter", [this](String key, Json value) {
@@ -1180,16 +1179,16 @@ LuaCallbacks Object::makeObjectCallbacks() {
       m_scriptedAnimationParameters.set(std::move(key), std::move(value));
     });
 
-  callbacks.registerCallback("setMaterialSpaces", [this](Maybe<JsonArray> const& newSpaces) {
+  callbacks.registerCallback("setMaterialSpaces", [this](std::optional<JsonArray> const& newSpaces) {
       List<MaterialSpace> materialSpaces;
       auto materialDatabase = this->root().materialDatabase();
-      for (auto space : newSpaces.value())
+      for (auto space : newSpaces.value_or(JsonArray{}))
         materialSpaces.append({jsonToVec2I(space.get(0)), materialDatabase->materialId(space.get(1).toString())});
       m_materialSpaces.set(materialSpaces);
     });
 
-  callbacks.registerCallback("setDamageSources", [this](Maybe<JsonArray> damageSources) {
-      m_damageSources.set(damageSources.value().transformed(construct<DamageSource>()));
+  callbacks.registerCallback("setDamageSources", [this](std::optional<JsonArray> damageSources) {
+      m_damageSources.set(damageSources.value_or(JsonArray{}).transformed(construct<DamageSource>()));
     });
 
   callbacks.registerCallback("health", [this]() {
@@ -1244,22 +1243,22 @@ List<PersistentStatusEffect> Object::statusEffects() const {
 PolyF Object::statusEffectArea() const {
   if (auto orientation = currentOrientation()) {
     if (orientation->statusEffectArea)
-      return orientation->statusEffectArea.get();
+      return orientation->statusEffectArea.value();
   }
   return volume();
 }
 
-Maybe<HitType> Object::queryHit(DamageSource const& source) const {
+std::optional<HitType> Object::queryHit(DamageSource const& source) const {
   if (!m_config->smashable || !inWorld() || m_health.get() <= 0.0f || m_unbreakable)
     return {};
 
-  if (source.intersectsWithPoly(world()->geometry(), hitPoly().get()))
+  if (source.intersectsWithPoly(world()->geometry(), hitPoly().value()))
     return HitType::Hit;
 
   return {};
 }
 
-Maybe<PolyF> Object::hitPoly() const {
+std::optional<PolyF> Object::hitPoly() const {
   auto poly = volume();
   poly.translate(position());
   return poly;
@@ -1335,11 +1334,11 @@ List<Vec2I> Object::interactiveSpaces() const {
   return spaces();
 }
 
-Maybe<LuaValue> Object::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
+std::optional<LuaValue> Object::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
   return m_scriptComponent.invoke(func, args);
 }
 
-Maybe<LuaValue> Object::evalScript(String const& code) {
+std::optional<LuaValue> Object::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 

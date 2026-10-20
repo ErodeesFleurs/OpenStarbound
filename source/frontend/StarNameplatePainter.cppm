@@ -1,6 +1,5 @@
 module;
 import std;
-import star.maybe;
 import star.json;
 
 import star.game_types;
@@ -47,7 +46,7 @@ public:
 private:
   struct Nametag {
     String name;
-    Maybe<String> statusText;
+    std::optional<String> statusText;
     Vec3B color;
     float opacity;
     EntityId entityId;

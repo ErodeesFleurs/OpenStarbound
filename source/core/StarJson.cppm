@@ -8,7 +8,6 @@ import star.data_stream;
 import star.variant;
 import star.string;
 import star.list;
-import star.maybe;
 import star.format;
 
 import star.algorithm;
@@ -120,15 +119,15 @@ public:
   // opt* methods work like this, if the json is null, it returns none.  If the
   // json is convertible, it returns the converted type, otherwise an exception
   // occurrs.
-  Maybe<Json> opt() const;
-  Maybe<double> optDouble() const;
-  Maybe<float> optFloat() const;
-  Maybe<bool> optBool() const;
-  Maybe<std::int64_t> optInt() const;
-  Maybe<std::uint64_t> optUInt() const;
-  Maybe<String> optString() const;
-  Maybe<JsonArray> optArray() const;
-  Maybe<JsonObject> optObject() const;
+  std::optional<Json> opt() const;
+  std::optional<double> optDouble() const;
+  std::optional<float> optFloat() const;
+  std::optional<bool> optBool() const;
+  std::optional<std::int64_t> optInt() const;
+  std::optional<std::uint64_t> optUInt() const;
+  std::optional<String> optString() const;
+  std::optional<JsonArray> optArray() const;
+  std::optional<JsonObject> optObject() const;
 
   // Size of array / object type json
   std::size_t size() const;
@@ -183,16 +182,16 @@ public:
   JsonObject getObject(String const& key, JsonObject def) const;
 
   // Works the same way as opt methods above.  Will never return a null value,
-  // if there is a null entry it will just return an empty Maybe.
-  Maybe<Json> opt(String const& key) const;
-  Maybe<double> optDouble(String const& key) const;
-  Maybe<float> optFloat(String const& key) const;
-  Maybe<bool> optBool(String const& key) const;
-  Maybe<std::int64_t> optInt(String const& key) const;
-  Maybe<std::uint64_t> optUInt(String const& key) const;
-  Maybe<String> optString(String const& key) const;
-  Maybe<JsonArray> optArray(String const& key) const;
-  Maybe<JsonObject> optObject(String const& key) const;
+  // if there is a null entry it will just return an empty std::optional.
+  std::optional<Json> opt(String const& key) const;
+  std::optional<double> optDouble(String const& key) const;
+  std::optional<float> optFloat(String const& key) const;
+  std::optional<bool> optBool(String const& key) const;
+  std::optional<std::int64_t> optInt(String const& key) const;
+  std::optional<std::uint64_t> optUInt(String const& key) const;
+  std::optional<String> optString(String const& key) const;
+  std::optional<JsonArray> optArray(String const& key) const;
+  std::optional<JsonObject> optObject(String const& key) const;
 
   // Combines gets recursively in friendly expressions.  For
   // example, call like this: json.query("path.to.array[3][4]")
@@ -219,16 +218,16 @@ public:
   JsonObject queryObject(String const& path, JsonObject def) const;
 
   // Returns none on on missing / null keys anywhere in the query path.  Will
-  // never return a null value, just an empty Maybe.
-  Maybe<Json> optQuery(String const& path) const;
-  Maybe<double> optQueryDouble(String const& path) const;
-  Maybe<float> optQueryFloat(String const& path) const;
-  Maybe<bool> optQueryBool(String const& path) const;
-  Maybe<std::int64_t> optQueryInt(String const& path) const;
-  Maybe<std::uint64_t> optQueryUInt(String const& path) const;
-  Maybe<String> optQueryString(String const& path) const;
-  Maybe<JsonArray> optQueryArray(String const& path) const;
-  Maybe<JsonObject> optQueryObject(String const& path) const;
+  // never return a null value, just an empty std::optional.
+  std::optional<Json> optQuery(String const& path) const;
+  std::optional<double> optQueryDouble(String const& path) const;
+  std::optional<float> optQueryFloat(String const& path) const;
+  std::optional<bool> optQueryBool(String const& path) const;
+  std::optional<std::int64_t> optQueryInt(String const& path) const;
+  std::optional<std::uint64_t> optQueryUInt(String const& path) const;
+  std::optional<String> optQueryString(String const& path) const;
+  std::optional<JsonArray> optQueryArray(String const& path) const;
+  std::optional<JsonObject> optQueryObject(String const& path) const;
 
   // Returns a *new* object with the given values set/erased.  Throws if not an
   // object.

@@ -15,7 +15,6 @@ import star.directives;
 import star.asset_path;
 import star.casting;
 import star.bi_map;
-import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
@@ -202,7 +201,7 @@ bool ArmorItem::fullbright() const {
 }
 
 bool ArmorItem::flipping() const {
-  return m_flipDirectives.isValid();
+  return m_flipDirectives.has_value();
 }
 
 bool ArmorItem::visible(bool extraCosmetic) const {
@@ -226,7 +225,7 @@ bool ArmorItem::bypassNude() const {
 }
 
 
-Maybe<String> const& ArmorItem::techModule() const {
+std::optional<String> const& ArmorItem::techModule() const {
   return m_techModule;
 }
 

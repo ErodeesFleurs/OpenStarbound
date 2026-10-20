@@ -3,7 +3,6 @@ import std;
 import star.string;
 import star.list;
 import star.data_stream;
-import star.maybe;
 import star.json;
 
 import star.color;
@@ -45,15 +44,15 @@ struct SkyParameters {
   void readVisitableParameters(std::shared_ptr<VisitableWorldParameters const> visitableParameters);
 
   std::uint64_t seed;
-  Maybe<float> dayLength;
-  Maybe<std::pair<List<std::pair<String, float>>, Vec2F>> nearbyPlanet;
+  std::optional<float> dayLength;
+  std::optional<std::pair<List<std::pair<String, float>>, Vec2F>> nearbyPlanet;
   List<std::pair<List<std::pair<String, float>>, Vec2F>> nearbyMoons;
   List<std::pair<String, String>> horizonImages;
   bool horizonClouds = true;
   SkyType skyType = SkyType::Barren;
   Either<SkyColoring, Color> skyColoring;
-  Maybe<float> spaceLevel;
-  Maybe<float> surfaceLevel;
+  std::optional<float> spaceLevel;
+  std::optional<float> surfaceLevel;
   String sunType;
   Json settings;
 };

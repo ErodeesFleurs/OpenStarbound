@@ -27,7 +27,6 @@ import star.hash;
 import star.string_view;
 import star.directives;
 import star.asset_path;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.strong_typedef;
@@ -211,7 +210,7 @@ public:
   List<std::shared_ptr<Packet>> getOutgoingPackets(ConnectionId clientId);
   bool sendPacket(ConnectionId clientId, std::shared_ptr<Packet> const& packet);
 
-  Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args);
+  std::optional<ChainableJsonMessageResponse> receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args);
 
   void startFlyingSky(bool enterHyperspace, bool startInWarp, Json settings = {});
   void stopFlyingSkyAt(SkyParameters const& destination);
@@ -259,10 +258,10 @@ public:
   bool isTileConnectable(Vec2I const& pos, TileLayer layer, bool tilesOnly = false) const override;
   bool pointTileCollision(Vec2F const& point, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
   bool lineTileCollision(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  Maybe<std::pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
+  std::optional<std::pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
   List<Vec2I> collidingTilesAlongLine(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet, int maxSize = -1, bool includeEdges = true) const override;
   bool rectTileCollision(RectI const& region, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  TileDamageResult damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, Maybe<EntityId> sourceEntity = {}) override;
+  TileDamageResult damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, std::optional<EntityId> sourceEntity = {}) override;
   std::shared_ptr<InteractiveEntity> getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const override;
   bool canReachEntity(Vec2F const& position, float radius, EntityId targetEntity, bool preferInteractive = true) const override;
   RpcPromise<InteractAction> interact(InteractRequest const& request) override;
@@ -274,7 +273,7 @@ public:
   StringList environmentStatusEffects(Vec2F const& pos) const override;
   StringList weatherStatusEffects(Vec2F const& pos) const override;
   bool exposedToWeather(Vec2F const& pos) const override;
-  Maybe<String> activeWeather(Vec2F const& pos) const override;
+  std::optional<String> activeWeather(Vec2F const& pos) const override;
   bool isUnderground(Vec2F const& pos) const override;
   bool disableDeathDrops() const override;
   List<PhysicsForceRegion> forceRegions() const override;
@@ -301,8 +300,8 @@ public:
   // used to globally, temporarily disable protection for certain operations
   void setTileProtectionEnabled(bool enabled);
 
-  void setDungeonGravity(DungeonId dungeonId, Maybe<float> gravity);
-  void setDungeonBreathable(DungeonId dungeonId, Maybe<bool> breathable);
+  void setDungeonGravity(DungeonId dungeonId, std::optional<float> gravity);
+  void setDungeonBreathable(DungeonId dungeonId, std::optional<bool> breathable);
 
   void setDungeonId(RectI const& tileRegion, DungeonId dungeonId);
 
@@ -319,7 +318,7 @@ public:
   List<EntityId> entityIds() const;
 
   // Queues a microdungeon for placement
-  RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id);
+  RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> distributions, std::optional<DungeonId> id);
 
   ServerTile const& getServerTile(Vec2I const& position, bool withSignal = false);
   // Gets mutable pointer to server tile and marks it as needing updates to all
@@ -366,7 +365,7 @@ public:
 
   ItemDescriptor collectLiquid(List<Vec2I> const& tilePositions, LiquidId liquidId);
 
-  bool placeDungeon(String const& dungeonName, Vec2I const& position, Maybe<DungeonId> dungeonId = {}, bool forcePlacement = true);
+  bool placeDungeon(String const& dungeonName, Vec2I const& position, std::optional<DungeonId> dungeonId = {}, bool forcePlacement = true);
 
   void addBiomeRegion(Vec2I const& position, String const& biomeName, String const& subBlockSelector, int width);
   void expandBiomeRegion(Vec2I const& position, int newWidth);
@@ -394,7 +393,7 @@ public:
   StringList weatherList(Vec2F const& position) const;
 
   // used to notify the universe server that the celestial planet type has changed
-  Maybe<std::pair<String, String>> pullNewPlanetType();
+  std::optional<std::pair<String, String>> pullNewPlanetType();
 
 private:
   struct ClientInfo {
@@ -408,7 +407,7 @@ private:
     ClientSubWorldId subWorldId;
     std::uint64_t skyNetVersion;
     std::uint64_t weatherNetVersion;
-    Maybe<String> weatherDomain;
+    std::optional<String> weatherDomain;
     WorldClientState clientState;
     bool pendingForward;
     bool started;
@@ -442,7 +441,7 @@ private:
   // Returns nothing if the processing defined by the given configuration entry
   // should not run this tick, if it should run this tick, returns the number
   // of ticks since the last run.
-  Maybe<unsigned> shouldRunThisStep(String const& timingConfiguration);
+  std::optional<unsigned> shouldRunThisStep(String const& timingConfiguration);
 
   TileModificationList doApplyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap, bool ignoreTileProtection = false, bool updateNeighbors = true);
 
@@ -462,7 +461,7 @@ private:
   void dirtyCollision(RectI const& region);
   void freshenCollision(RectI const& region);
 
-  Vec2F findPlayerStart(Maybe<Vec2F> firstTry = {});
+  Vec2F findPlayerStart(std::optional<Vec2F> firstTry = {});
   Vec2F findPlayerSpaceStart(float targetX);
   void readMetadata();
   void writeMetadata();
@@ -472,7 +471,7 @@ private:
 
   void setupForceRegions();
   void setupWeatherDomains(bool preserveNonSurface = false);
-  std::shared_ptr<ServerWeather> weatherForDomain(Maybe<String> const& domain) const;
+  std::shared_ptr<ServerWeather> weatherForDomain(std::optional<String> const& domain) const;
   std::shared_ptr<ServerWeather> weatherAt(Vec2F const& position) const;
   std::shared_ptr<ServerWeather> surfaceWeather() const;
 
@@ -486,7 +485,7 @@ private:
   JsonObject m_worldProperties;
   StringMap<WorldPropertyListener> m_worldPropertyListeners;
 
-  Maybe<std::pair<String, String>> m_newPlanetType;
+  std::optional<std::pair<String, String>> m_newPlanetType;
 
   std::shared_ptr<UniverseSettings> m_universeSettings;
 

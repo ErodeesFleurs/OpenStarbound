@@ -6,7 +6,6 @@ import star.list;
 import star.unicode;
 import star.format;
 import star.json;
-import star.maybe;
 import star.set;
 import star.line;
 import star.matrix3;
@@ -138,8 +137,6 @@ TEST(StringTest, RuntimeFormattingPreservesByteLengthsAndErrors) {
 
 TEST(StringTest, StandardFormattersPreserveProjectRepresentations) {
   EXPECT_EQ(std::format("{:>6.2}", String("abcd")), "    ab");
-  EXPECT_EQ(std::format("{}", Maybe<int>{42}), "Just (42)");
-  EXPECT_EQ(std::format("{}", Maybe<int>{}), "Nothing");
   EXPECT_EQ(std::format("{}", Line2I(Vec2I(1, 2), Vec2I(3, 4))), "[(1, 2), (3, 4)]");
   EXPECT_EQ(std::format("{}", Mat3F(1, 2, 3, 4, 5, 6, 7, 8, 9)), "1 2 3\n4 5 6\n7 8 9");
   EXPECT_EQ(std::format("{}", List<String>{"a", "b"}), "[\"a\", \"b\"]");
@@ -240,12 +237,12 @@ TEST(StringTest, TagViewsPreserveOwningAndBorrowedReplacementBytes) {
   auto borrowed = source.maybeLookupTagsView([&](StringView) { return StringView(replacement); });
   ASSERT_TRUE(owning);
   ASSERT_TRUE(borrowed);
-  EXPECT_EQ(owning.get(), expected);
-  EXPECT_EQ(borrowed.get(), expected);
+  EXPECT_EQ(owning.value(), expected);
+  EXPECT_EQ(borrowed.value(), expected);
   EXPECT_FALSE(String("plain").maybeLookupTagsView([](StringView) { return String("unused"); }));
   auto unmatched = String("a<x").maybeLookupTagsView([](StringView) { return String("unused"); });
   ASSERT_TRUE(unmatched);
-  EXPECT_EQ(unmatched.get(), "a<x");
+  EXPECT_EQ(unmatched.value(), "a<x");
 }
 
 TEST(StringTest, CaseInsensitive) {

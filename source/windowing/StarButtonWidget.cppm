@@ -30,7 +30,6 @@ import star.directives;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -190,7 +189,7 @@ private:
   HorizontalAnchor m_hTextAnchor;
   Color m_fontColor;
   Color m_fontColorDisabled;
-  Maybe<Color> m_fontColorChecked;
+  std::optional<Color> m_fontColorChecked;
 };
 
 // GCC 16 needs the existing key function in this complete-definition TU for RTTI.

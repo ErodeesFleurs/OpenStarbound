@@ -20,7 +20,6 @@
 #endif
 
 import std;
-import star.maybe;
 import star.format;
 import star.string;
 import star.either;
@@ -33,7 +32,7 @@ import star.list;
 
 namespace Star {
 
-Maybe<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned timeout) {
+std::optional<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned timeout) {
   if (query.empty())
     return {};
 

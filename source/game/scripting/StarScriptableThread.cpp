@@ -5,7 +5,6 @@ import star.casting;
 import star.data_stream;
 import star.strong_typedef;
 import star.game_types;
-import star.maybe;
 import star.variant;
 import star.list;
 import star.rpc_promise;
@@ -213,8 +212,8 @@ void ScriptableThread::run() {
     p.second->uninit();
 }
 
-Maybe<ChainableJsonMessageResponse> ScriptableThread::receiveMessage(String const& message, JsonArray const& args) {
-  Maybe<ChainableJsonMessageResponse> result;
+std::optional<ChainableJsonMessageResponse> ScriptableThread::receiveMessage(String const& message, JsonArray const& args) {
+  std::optional<ChainableJsonMessageResponse> result;
   for (auto& p : m_scriptContexts) {
     result = p.second->handleMessage(message, true, args);
     if (result)

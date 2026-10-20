@@ -1,7 +1,6 @@
 module;
 import std;
 import star.variant;
-import star.maybe;
 import star.json;
 
 import star.string;
@@ -31,7 +30,7 @@ struct Drawable {
   struct LinePart {
     Line2F line;
     float width;
-    Maybe<Color> endColor;
+    std::optional<Color> endColor;
   };
 
   struct PolyPart {

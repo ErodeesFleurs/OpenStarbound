@@ -144,7 +144,7 @@ void DamageManager::update(float dt) {
           }
         }
         if (allowDamage) {
-          float timeout = damageSource.damageRepeatTimeout.value(DefaultDamageTimeout);
+          float timeout = damageSource.damageRepeatTimeout.value_or(DefaultDamageTimeout);
           if (damageSource.damageRepeatGroup)
             eventList.append({*damageSource.damageRepeatGroup, timeout});
           else

@@ -16,7 +16,6 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
@@ -322,11 +321,11 @@ bool ActiveItem::holdingItem() const {
   return m_holdingItem.get();
 }
 
-Maybe<String> ActiveItem::backArmFrame() const {
+std::optional<String> ActiveItem::backArmFrame() const {
   return m_backArmFrame.get();
 }
 
-Maybe<String> ActiveItem::frontArmFrame() const {
+std::optional<String> ActiveItem::frontArmFrame() const {
   return m_frontArmFrame.get();
 }
 
@@ -346,7 +345,7 @@ float ActiveItem::armAngle() const {
   return m_armAngle.get();
 }
 
-Maybe<Direction> ActiveItem::facingDirection() const {
+std::optional<Direction> ActiveItem::facingDirection() const {
   return m_facingDirection.get();
 }
 
@@ -360,7 +359,7 @@ List<Drawable> ActiveItem::handDrawables() const {
   }
 }
 
-List<std::pair<Drawable, Maybe<EntityRenderLayer>>> ActiveItem::entityDrawables() const {
+List<std::pair<Drawable, std::optional<EntityRenderLayer>>> ActiveItem::entityDrawables() const {
   return m_scriptedAnimator.drawables();
 }
 
@@ -416,18 +415,18 @@ List<Particle> ActiveItem::pullNewParticles() {
   return result;
 }
 
-Maybe<String> ActiveItem::cursor() const {
+std::optional<String> ActiveItem::cursor() const {
   return m_cursor;
 }
 
-Maybe<ChainableJsonMessageResponse> ActiveItem::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+std::optional<ChainableJsonMessageResponse> ActiveItem::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   return m_script.handleMessage(message, localMessage, args);
 }
 
 float ActiveItem::durabilityStatus() {
   auto durability = instanceValue("durability").optFloat();
   if (durability) {
-    auto durabilityHit = instanceValue("durabilityHit").optFloat().value(*durability);
+    auto durabilityHit = instanceValue("durabilityHit").optFloat().value_or(*durability);
     return durabilityHit / *durability;
   }
   return 1.0;
@@ -461,8 +460,8 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
   callbacks.registerCallback("hand", [this]() {
       return ToolHandNames.getRight(hand());
     });
-  callbacks.registerCallback("handPosition", [this](Maybe<Vec2F> offset) {
-      return handPosition(offset.value());
+  callbacks.registerCallback("handPosition", [this](std::optional<Vec2F> offset) {
+      return handPosition(offset.value_or(Vec2F{}));
     });
 
   // Gets the required aim angle to aim a "barrel" of the item that has the given
@@ -516,11 +515,11 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
       m_holdingItem.set(holdingItem);
     });
 
-  callbacks.registerCallback("setBackArmFrame", [this](Maybe<String> armFrame) {
+  callbacks.registerCallback("setBackArmFrame", [this](std::optional<String> armFrame) {
       m_backArmFrame.set(armFrame);
     });
 
-  callbacks.registerCallback("setFrontArmFrame", [this](Maybe<String> armFrame) {
+  callbacks.registerCallback("setFrontArmFrame", [this](std::optional<String> armFrame) {
       m_frontArmFrame.set(armFrame);
     });
 
@@ -544,37 +543,37 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
       m_facingDirection.set(directionOf(direction));
     });
 
-  callbacks.registerCallback("setDamageSources", [this](Maybe<JsonArray> const& damageSources) {
-      m_damageSources.set(damageSources.value().transformed(construct<DamageSource>()));
+  callbacks.registerCallback("setDamageSources", [this](std::optional<JsonArray> const& damageSources) {
+      m_damageSources.set(damageSources.value_or(JsonArray{}).transformed(construct<DamageSource>()));
     });
 
-  callbacks.registerCallback("setItemDamageSources", [this](Maybe<JsonArray> const& damageSources) {
-      m_itemDamageSources.set(damageSources.value().transformed(construct<DamageSource>()));
+  callbacks.registerCallback("setItemDamageSources", [this](std::optional<JsonArray> const& damageSources) {
+      m_itemDamageSources.set(damageSources.value_or(JsonArray{}).transformed(construct<DamageSource>()));
     });
 
-  callbacks.registerCallback("setShieldPolys", [this](Maybe<List<PolyF>> const& shieldPolys) {
-      m_shieldPolys.set(shieldPolys.value());
+  callbacks.registerCallback("setShieldPolys", [this](std::optional<List<PolyF>> const& shieldPolys) {
+      m_shieldPolys.set(shieldPolys.value_or(List<PolyF>{}));
     });
 
-  callbacks.registerCallback("setItemShieldPolys", [this](Maybe<List<PolyF>> const& shieldPolys) {
-      m_itemShieldPolys.set(shieldPolys.value());
+  callbacks.registerCallback("setItemShieldPolys", [this](std::optional<List<PolyF>> const& shieldPolys) {
+      m_itemShieldPolys.set(shieldPolys.value_or(List<PolyF>{}));
     });
 
-  callbacks.registerCallback("setForceRegions", [this](Maybe<JsonArray> const& forceRegions) {
+  callbacks.registerCallback("setForceRegions", [this](std::optional<JsonArray> const& forceRegions) {
       if (forceRegions)
         m_forceRegions.set(forceRegions->transformed(jsonToPhysicsForceRegion));
       else
         m_forceRegions.set({});
     });
 
-  callbacks.registerCallback("setItemForceRegions", [this](Maybe<JsonArray> const& forceRegions) {
+  callbacks.registerCallback("setItemForceRegions", [this](std::optional<JsonArray> const& forceRegions) {
       if (forceRegions)
         m_itemForceRegions.set(forceRegions->transformed(jsonToPhysicsForceRegion));
       else
         m_itemForceRegions.set({});
     });
 
-  callbacks.registerCallback("setCursor", [this](Maybe<String> cursor) {
+  callbacks.registerCallback("setCursor", [this](std::optional<String> cursor) {
       m_cursor = std::move(cursor);
     });
 
@@ -606,9 +605,9 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
       }));
     } else if (secondaryIcon.type() == Json::Type::String) {
       auto image = AssetPath::relativeTo(directory(), secondaryIcon.toString());
-      setSecondaryIconDrawables(Maybe<List<Drawable>>({Drawable::makeImage(*root().imageMetadataDatabase(), image, 1.0f, true, Vec2F())}));
+      setSecondaryIconDrawables(List<Drawable>{Drawable::makeImage(*root().imageMetadataDatabase(), image, 1.0f, true, Vec2F())});
     } else {
-      setSecondaryIconDrawables(Maybe<List<Drawable>>());
+      setSecondaryIconDrawables(std::optional<List<Drawable>>());
     }
   });
 
@@ -619,13 +618,13 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
   callbacks.registerCallback("callOtherHandScript", [this](String const& func, LuaVariadic<LuaValue> const& args) {
       if (auto otherHandItem = owner()->handItem(hand() == ToolHand::Primary ? ToolHand::Alt : ToolHand::Primary)) {
         if (auto otherActiveItem = as<ActiveItem>(otherHandItem))
-          return otherActiveItem->m_script.invoke(func, args).value();
+          return otherActiveItem->m_script.invoke(func, args).value_or(LuaValue{});
       }
       return LuaValue();
     });
 
-  callbacks.registerCallback("interact", [this](String const& type, Json const& configData, Maybe<EntityId> const& sourceEntityId) {
-      owner()->interact(InteractAction(type, sourceEntityId.value(NullEntityId), configData));
+  callbacks.registerCallback("interact", [this](String const& type, Json const& configData, std::optional<EntityId> const& sourceEntityId) {
+      owner()->interact(InteractAction(type, sourceEntityId.value_or(NullEntityId), configData));
     });
 
   callbacks.registerCallback("emote", [this](String const& emoteName) {
@@ -634,7 +633,7 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
         entity->playEmote(emote);
     });
 
-  callbacks.registerCallback("setCameraFocusEntity", [this](Maybe<EntityId> const& cameraFocusEntity) {
+  callbacks.registerCallback("setCameraFocusEntity", [this](std::optional<EntityId> const& cameraFocusEntity) {
       owner()->setCameraFocusEntity(cameraFocusEntity);
     });
 
@@ -664,8 +663,8 @@ LuaCallbacks ActiveItem::makeScriptedAnimationCallbacks() {
   callbacks.registerCallback("ownerFacingDirection", [this]() {
       return numericalDirection(owner()->facingDirection());
     });
-  callbacks.registerCallback("handPosition", [this](Maybe<Vec2F> offset) {
-      return handPosition(offset.value());
+  callbacks.registerCallback("handPosition", [this](std::optional<Vec2F> offset) {
+      return handPosition(offset.value_or(Vec2F{}));
     });
   return callbacks;
 }

@@ -23,7 +23,6 @@ import star.format;
 import star.version;
 import star.casting;
 import star.strong_typedef;
-import star.maybe;
 import star.listener;
 import star.input_event;
 import star.set;
@@ -334,7 +333,7 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
 
     if (action.is<SayChatAction>()) {
       auto sayAction = action.get<SayChatAction>();
-      config = sayAction.config.optObject().value(JsonObject{});
+      config = sayAction.config.optObject().value_or(JsonObject{});
       position = sayAction.position;
 
       // TODO: Get rid of this stupid fucking bullshit, this is the ugliest
@@ -344,7 +343,7 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       // yea I agree
       m_guiContext->setTextStyle(m_textStyle, pixelRatio);
       TextPositioning tp = m_textTemplate;
-      tp.wrapWidth = tp.wrapWidth.apply([&](unsigned w) { return (unsigned)(w * pixelRatio / m_zoom); });
+      tp.wrapWidth = tp.wrapWidth.transform([&](unsigned w) { return (unsigned)(w * pixelRatio / m_zoom); });
       auto result = m_guiContext->determineTextSize(sayAction.text, tp);
       float textWidth = result.width() / pixelRatio + m_textPadding[0];
       float textHeight = result.height() / pixelRatio + m_textPadding[1];
@@ -426,7 +425,7 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
 
     } else if (action.is<PortraitChatAction>()) {
       auto portraitAction = action.get<PortraitChatAction>();
-      config = portraitAction.config.optObject().value(JsonObject{});
+      config = portraitAction.config.optObject().value_or(JsonObject{});
       position = portraitAction.position;
 
       List<BubbleImage> backgroundImages;
@@ -487,7 +486,7 @@ void ChatBubbleManager::drawBubbleText(Vec2F screenPos, BubbleText const& bubble
   auto offset = std::get<3>(bubbleText) * pixelRatio;
   TextPositioning tp = isPortrait ? m_portraitTextTemplate : m_textTemplate;
   tp.pos = screenPos + offset;
-  tp.wrapWidth = tp.wrapWidth.apply([&](unsigned w) { return (unsigned)(w * pixelRatio / m_zoom); });
+  tp.wrapWidth = tp.wrapWidth.transform([&](unsigned w) { return (unsigned)(w * pixelRatio / m_zoom); });
   m_guiContext->renderText(std::get<0>(bubbleText), tp);
 }
 

@@ -3,7 +3,6 @@ import std;
 import star.type_identity;
 import star.json;
 import star.id_map;
-import star.maybe;
 import star.casting;
 import star.data_stream;
 import star.game_types;

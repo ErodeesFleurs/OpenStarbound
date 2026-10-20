@@ -4,7 +4,6 @@ import star.type_identity;
 import star.json;
 import star.id_map;
 import star.game_types;
-import star.maybe;
 import star.bi_map;
 import star.a_star;
 import star.casting;

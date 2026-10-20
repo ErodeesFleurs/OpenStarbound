@@ -17,7 +17,6 @@ import star.ref_ptr;
 import star.logging;
 import std;
 import star.string;
-import star.maybe;
 import star.format;
 import star.version;
 
@@ -589,7 +588,7 @@ void Input::setTextInputActive(bool active) {
   m_textInputActive = active;
 }
 
-Maybe<unsigned> Input::bindDown(String const& categoryId, String const& bindId) {
+std::optional<unsigned> Input::bindDown(String const& categoryId, String const& bindId) {
   if (auto state = bindStatePtr(categoryId, bindId)) {
     if (state->presses)
       return state->presses;
@@ -604,7 +603,7 @@ bool Input::bindHeld(String const& categoryId, String const& bindId) {
     return false;
 }
 
-Maybe<unsigned> Input::bindUp(String const& categoryId, String const& bindId) {
+std::optional<unsigned> Input::bindUp(String const& categoryId, String const& bindId) {
   if (auto state = bindStatePtr(categoryId, bindId)) {
     if (state->releases)
       return state->releases;
@@ -612,7 +611,7 @@ Maybe<unsigned> Input::bindUp(String const& categoryId, String const& bindId) {
   return {};
 }
 
-Maybe<unsigned> Input::keyDown(Key key, Maybe<KeyMod> keyMod) {
+std::optional<unsigned> Input::keyDown(Key key, std::optional<KeyMod> keyMod) {
   if (auto state = m_keyStates.ptr(key)) {
     if (state->presses && (!keyMod || compareKeyMod(*keyMod, state->mods)))
       return state->presses;
@@ -625,7 +624,7 @@ bool Input::keyHeld(Key key) {
   return state && state->held;
 }
 
-Maybe<unsigned> Input::keyUp(Key key) {
+std::optional<unsigned> Input::keyUp(Key key) {
   if (auto state = m_keyStates.ptr(key)) {
     if (state->releases)
       return state->releases;
@@ -633,7 +632,7 @@ Maybe<unsigned> Input::keyUp(Key key) {
   return {};
 }
 
-Maybe<List<Vec2F>> Input::mouseDown(MouseButton button) {
+std::optional<List<Vec2F>> Input::mouseDown(MouseButton button) {
   if (auto state = m_mouseStates.ptr(button)) {
     if (state->presses)
       return state->pressPositions;
@@ -646,7 +645,7 @@ bool Input::mouseHeld(MouseButton button) {
   return state && state->held;
 }
 
-Maybe<List<Vec2F>> Input::mouseUp(MouseButton button) {
+std::optional<List<Vec2F>> Input::mouseUp(MouseButton button) {
   if (auto state = m_mouseStates.ptr(button)) {
     if (state->releases)
       return state->releasePositions;

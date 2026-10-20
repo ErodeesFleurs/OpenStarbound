@@ -22,7 +22,6 @@ import star.warping;
 import star.json_rpc;
 import std;
 import star.variant;
-import star.maybe;
 import star.version;
 
 namespace Star {
@@ -52,7 +51,7 @@ public:
   void invitePlayer(String const& playerName);
   void acceptInvitation(Uuid const& inviterUuid);
 
-  Maybe<Uuid> currentTeam() const;
+  std::optional<Uuid> currentTeam() const;
 
   void makeLeader(Uuid const& playerUuid);
   void removeFromTeam(Uuid const& playerUuid);
@@ -87,7 +86,7 @@ private:
   Root& m_root;
   std::shared_ptr<Player> m_mainPlayer;
   std::shared_ptr<ClientContext> m_clientContext;
-  Maybe<Uuid> m_teamUuid;
+  std::optional<Uuid> m_teamUuid;
 
   Uuid m_teamLeader;
 

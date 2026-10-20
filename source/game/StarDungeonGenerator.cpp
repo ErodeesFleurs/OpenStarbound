@@ -29,7 +29,6 @@ import star.lexical_cast;
 import star.listener;
 import star.string;
 import star.map;
-import star.maybe;
 import star.format;
 import star.version;
 
@@ -123,8 +122,8 @@ namespace Dungeon {
   List<std::shared_ptr<Rule const>> Rule::readRules(Root& root, Json const& rules) {
     List<std::shared_ptr<Rule const>> result;
     for (auto const& list : rules.iterateArray()) {
-      Maybe<std::shared_ptr<Rule const>> rule = Rule::parse(root, list);
-      if (rule.isValid())
+      std::optional<std::shared_ptr<Rule const>> rule = Rule::parse(root, list);
+      if (rule.has_value())
         result.push_back(*rule);
     }
     return result;
@@ -137,7 +136,7 @@ namespace Dungeon {
     return result;
   }
 
-  Maybe<std::shared_ptr<Rule const>> Rule::parse(Root& root, Json const& rule) {
+  std::optional<std::shared_ptr<Rule const>> Rule::parse(Root& root, Json const& rule) {
     String key = rule.getString(0);
     if (key == "worldGenMustContainLiquid")
       return as<Rule>(std::make_shared<const WorldGenMustContainLiquidRule>());
@@ -166,7 +165,7 @@ namespace Dungeon {
       return as<Rule>(std::make_shared<const DoNotCombineWithRule>(rule));
 
     root.logger().error("Unknown dungeon rule: {}", key);
-    return Maybe<std::shared_ptr<Rule const>>();
+    return std::optional<std::shared_ptr<Rule const>>();
   }
 
   bool Rule::checkTileCanPlace(Vec2I, DungeonGeneratorWriter*) const {
@@ -207,9 +206,9 @@ namespace Dungeon {
 
   std::shared_ptr<Brush const> parseFrontBrush(Json const& brush) {
     String material;
-    Maybe<String> mod;
-    Maybe<float> hueshift, modhueshift;
-    Maybe<MaterialColorVariant> colorVariant;
+    std::optional<String> mod;
+    std::optional<float> hueshift, modhueshift;
+    std::optional<MaterialColorVariant> colorVariant;
 
     if (brush.isType(Json::Type::Object)) {
       material = brush.getString("material");
@@ -227,9 +226,9 @@ namespace Dungeon {
 
   std::shared_ptr<Brush const> parseBackBrush(Json const& brush) {
     String material;
-    Maybe<String> mod;
-    Maybe<float> hueshift, modhueshift;
-    Maybe<MaterialColorVariant> colorVariant;
+    std::optional<String> mod;
+    std::optional<float> hueshift, modhueshift;
+    std::optional<MaterialColorVariant> colorVariant;
 
     if (brush.isType(Json::Type::Object)) {
       material = brush.getString("material");
@@ -350,12 +349,12 @@ namespace Dungeon {
     writer->setBackgroundMod(position, NoModId, 0);
   }
 
-  FrontBrush::FrontBrush(String const& material, Maybe<String> mod, Maybe<float> hueshift, Maybe<float> modhueshift, Maybe<MaterialColorVariant> colorVariant) {
+  FrontBrush::FrontBrush(String const& material, std::optional<String> mod, std::optional<float> hueshift, std::optional<float> modhueshift, std::optional<MaterialColorVariant> colorVariant) {
     m_material = material;
     m_mod = mod;
-    m_materialHue = hueshift.apply(materialHueFromDegrees).value(0);
-    m_modHue = modhueshift.apply(materialHueFromDegrees).value(0);
-    m_materialColorVariant = colorVariant.value(DefaultMaterialColorVariant);
+    m_materialHue = hueshift.transform(materialHueFromDegrees).value_or(0);
+    m_modHue = modhueshift.transform(materialHueFromDegrees).value_or(0);
+    m_materialColorVariant = colorVariant.value_or(DefaultMaterialColorVariant);
   }
 
   void FrontBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
@@ -377,12 +376,12 @@ namespace Dungeon {
     }
   }
 
-  BackBrush::BackBrush(String const& material, Maybe<String> mod, Maybe<float> hueshift, Maybe<float> modhueshift, Maybe<MaterialColorVariant> colorVariant) {
+  BackBrush::BackBrush(String const& material, std::optional<String> mod, std::optional<float> hueshift, std::optional<float> modhueshift, std::optional<MaterialColorVariant> colorVariant) {
     m_material = material;
     m_mod = mod;
-    m_materialHue = hueshift.apply(materialHueFromDegrees).value(0);
-    m_modHue = modhueshift.apply(materialHueFromDegrees).value(0);
-    m_materialColorVariant = colorVariant.value(DefaultMaterialColorVariant);
+    m_materialHue = hueshift.transform(materialHueFromDegrees).value_or(0);
+    m_modHue = modhueshift.transform(materialHueFromDegrees).value_or(0);
+    m_materialColorVariant = colorVariant.value_or(DefaultMaterialColorVariant);
   }
 
   void BackBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
@@ -486,8 +485,8 @@ namespace Dungeon {
     writer->setDungeonId(position, m_dungeonId);
   }
 
-  SurfaceBrush::SurfaceBrush(Maybe<int> variant, Maybe<String> mod) {
-    m_variant = variant.value(0);
+  SurfaceBrush::SurfaceBrush(std::optional<int> variant, std::optional<String> mod) {
+    m_variant = variant.value_or(0);
     m_mod = mod;
   }
 
@@ -497,7 +496,7 @@ namespace Dungeon {
       writer->setBackgroundMaterial(position, biomeMaterialForJson(m_variant), 0, DefaultMaterialColorVariant);
     }
     if (phase == Phase::ModsPhase) {
-      if (m_mod.isValid()) {
+      if (m_mod.has_value()) {
         auto materialDatabase = writer->root().materialDatabase();
         writer->setForegroundMod(position, materialDatabase->modId(*m_mod), 0);
       } else {
@@ -508,8 +507,8 @@ namespace Dungeon {
     }
   }
 
-  SurfaceBackgroundBrush::SurfaceBackgroundBrush(Maybe<int> variant, Maybe<String> mod) {
-    m_variant = variant.value(0);
+  SurfaceBackgroundBrush::SurfaceBackgroundBrush(std::optional<int> variant, std::optional<String> mod) {
+    m_variant = variant.value_or(0);
     m_mod = mod;
   }
 
@@ -518,7 +517,7 @@ namespace Dungeon {
       writer->setBackgroundMaterial(position, biomeMaterialForJson(m_variant), 0, DefaultMaterialColorVariant);
     }
     if (phase == Phase::ModsPhase) {
-      if (m_mod.isValid()) {
+      if (m_mod.has_value()) {
         auto materialDatabase = writer->root().materialDatabase();
         writer->setBackgroundMod(position, materialDatabase->modId(*m_mod), 0);
       } else {
@@ -552,7 +551,7 @@ namespace Dungeon {
       writer->setPlayerStart(Vec2F(position));
   }
 
-  InvalidBrush::InvalidBrush(Maybe<String> nameHint) : m_nameHint(nameHint) {}
+  InvalidBrush::InvalidBrush(std::optional<String> nameHint) : m_nameHint(nameHint) {}
 
   void InvalidBrush::paint(Vec2I, Phase, DungeonGeneratorWriter* writer) const {
     if (m_nameHint)
@@ -616,10 +615,10 @@ namespace Dungeon {
     return false;
   }
 
-  std::shared_ptr<Part const> parsePart(Root& root, DungeonDefinition* dungeon, Json const& definition, Maybe<std::shared_ptr<ImageTileset const>> tileset) {
+  std::shared_ptr<Part const> parsePart(Root& root, DungeonDefinition* dungeon, Json const& definition, std::optional<std::shared_ptr<ImageTileset const>> tileset) {
     String kind = definition.get("def").getString(0);
     if (kind == "image") {
-      if (tileset.isNothing())
+      if (!tileset.has_value())
         throw DungeonException("Dungeon parts designed in images require the 'tiles' key in the .dungeon file");
       return std::make_shared<const Part>(root, dungeon, definition, std::make_shared<ImagePartReader>(root, *tileset));
     } else if (kind == "tmx")
@@ -673,11 +672,11 @@ namespace Dungeon {
     return m_markDungeonId;
   }
 
-  Maybe<float> Part::minimumThreatLevel() const {
+  std::optional<float> Part::minimumThreatLevel() const {
     return m_minimumThreatLevel;
   }
 
-  Maybe<float> Part::maximumThreatLevel() const {
+  std::optional<float> Part::maximumThreatLevel() const {
     return m_maximumThreatLevel;
   }
 
@@ -882,7 +881,7 @@ namespace Dungeon {
   void Part::scanConnectors() {
     try {
       m_reader->forEachTile([this](Vec2I position, Tile const& tile) -> bool {
-        if (tile.connector.isValid()) {
+        if (tile.connector.has_value()) {
           auto d = tile.connector->direction;
           if (d == Direction::Unknown)
             d = pickByNeighbours(position);
@@ -1012,7 +1011,7 @@ namespace Dungeon {
     return m_offset;
   }
 
-  DungeonGeneratorWriter::DungeonGeneratorWriter(Root& root, std::shared_ptr<DungeonGeneratorWorldFacade> facade, Maybe<int> terrainMarkingSurfaceLevel, Maybe<int> terrainSurfaceSpaceExtends)
+  DungeonGeneratorWriter::DungeonGeneratorWriter(Root& root, std::shared_ptr<DungeonGeneratorWorldFacade> facade, std::optional<int> terrainMarkingSurfaceLevel, std::optional<int> terrainSurfaceSpaceExtends)
     : m_root(root), m_facade(facade), m_terrainMarkingSurfaceLevel(terrainMarkingSurfaceLevel), m_terrainSurfaceSpaceExtends(terrainSurfaceSpaceExtends) {
     m_currentBounds.setMin(Vec2I{std::numeric_limits<std::int32_t>::max(), std::numeric_limits<std::int32_t>::max()});
     m_currentBounds.setMax(Vec2I{std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::min()});
@@ -1022,7 +1021,7 @@ namespace Dungeon {
     return m_facade->getWorldGeometry().xwrap(pos);
   }
 
-  void DungeonGeneratorWriter::setMarkDungeonId(Maybe<DungeonId> dungeonId) {
+  void DungeonGeneratorWriter::setMarkDungeonId(std::optional<DungeonId> dungeonId) {
     m_markDungeonId = dungeonId;
   }
 
@@ -1255,8 +1254,8 @@ namespace Dungeon {
           upper.setYMin(std::max(upper.yMin(), *m_terrainMarkingSurfaceLevel));
           spaceBlendingVertexes.append(Vec2F(upper.xMin(), upper.yMin()));
           spaceBlendingVertexes.append(Vec2F(upper.xMax(), upper.yMin()));
-          spaceBlendingVertexes.append(Vec2F(upper.xMin(), upper.yMax() + m_terrainSurfaceSpaceExtends.value(0)));
-          spaceBlendingVertexes.append(Vec2F(upper.xMax(), upper.yMax() + m_terrainSurfaceSpaceExtends.value(0)));
+          spaceBlendingVertexes.append(Vec2F(upper.xMin(), upper.yMax() + m_terrainSurfaceSpaceExtends.value_or(0)));
+          spaceBlendingVertexes.append(Vec2F(upper.xMax(), upper.yMax() + m_terrainSurfaceSpaceExtends.value_or(0)));
         }
       }
     }
@@ -1409,7 +1408,7 @@ DungeonDefinition::DungeonDefinition(Root& root, JsonObject const& definition, S
 
   m_anchors = jsonToStringList(m_metadata.get("anchor"));
 
-  auto tileset = definition.maybe("tiles").apply([&root](Json const& tileset) {
+  auto tileset = definition.maybe("tiles").transform([&root](Json const& tileset) {
       return std::make_shared<const Dungeon::ImageTileset>(root, tileset);
     });
 
@@ -1447,11 +1446,11 @@ bool DungeonDefinition::isProtected() const {
   return m_isProtected;
 }
 
-Maybe<float> DungeonDefinition::gravity() const {
+std::optional<float> DungeonDefinition::gravity() const {
   return m_gravity;
 }
 
-Maybe<bool> DungeonDefinition::breathable() const {
+std::optional<bool> DungeonDefinition::breathable() const {
   return m_breathable;
 }
 
@@ -1463,7 +1462,7 @@ List<String> const& DungeonDefinition::anchors() const {
   return m_anchors;
 }
 
-Maybe<Json> const& DungeonDefinition::optTileset() const {
+std::optional<Json> const& DungeonDefinition::optTileset() const {
   return m_tileset;
 }
 
@@ -1479,15 +1478,15 @@ int DungeonDefinition::extendSurfaceFreeSpace() const {
   return m_extendSurfaceFreeSpace;
 }
 
-DungeonGenerator::DungeonGenerator(Root& root, String const& dungeonName, std::uint64_t seed, float threatLevel, Maybe<DungeonId> dungeonId)
+DungeonGenerator::DungeonGenerator(Root& root, String const& dungeonName, std::uint64_t seed, float threatLevel, std::optional<DungeonId> dungeonId)
   : m_root(root), m_rand(seed), m_threatLevel(threatLevel), m_dungeonId(dungeonId) {
   m_def = this->root().dungeonDefinitions()->get(dungeonName);
 }
 
-Maybe<std::pair<List<RectI>, Set<Vec2I>>> DungeonGenerator::generate(std::shared_ptr<DungeonGeneratorWorldFacade> facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement) {
+std::optional<std::pair<List<RectI>, Set<Vec2I>>> DungeonGenerator::generate(std::shared_ptr<DungeonGeneratorWorldFacade> facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement) {
   String name = m_def->name();
   try {
-    Dungeon::DungeonGeneratorWriter writer(this->root(), facade, markSurfaceAndTerrain ? position[1] : Maybe<int>(), m_def->extendSurfaceFreeSpace());
+    Dungeon::DungeonGeneratorWriter writer(this->root(), facade, markSurfaceAndTerrain ? position[1] : std::optional<int>(), m_def->extendSurfaceFreeSpace());
 
     this->root().logger().debug(forcePlacement ? "Forcing generation of dungeon {}" : "Generating dungeon {}", name);
 

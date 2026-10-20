@@ -1,7 +1,6 @@
 module;
 import std;
 import star.string;
-import star.maybe;
 import star.json;
 import star.thread;
 import star.vector;
@@ -28,8 +27,8 @@ LuaCallbacks LuaBindings::makeSongbookCallbacks(Songbook* songbook) {
   callbacks.registerCallbackWithSignature<void, String, Vec2F>("keepAlive", std::bind(std::mem_fn(&Songbook::keepAlive), songbook, std::placeholders::_1, std::placeholders::_2));
   callbacks.registerCallbackWithSignature<void>("stop", std::bind(std::mem_fn(&Songbook::stop), songbook));
   callbacks.registerCallbackWithSignature<bool>("active", std::bind(std::mem_fn(&Songbook::active), songbook));
-  callbacks.registerCallbackWithSignature<Maybe<String>>("band", std::bind(std::mem_fn(&Songbook::timeSource), songbook));
-  callbacks.registerCallbackWithSignature<Maybe<String>>("instrument", std::bind(std::mem_fn(&Songbook::instrument), songbook));
+  callbacks.registerCallbackWithSignature<std::optional<String>>("band", std::bind(std::mem_fn(&Songbook::timeSource), songbook));
+  callbacks.registerCallbackWithSignature<std::optional<String>>("instrument", std::bind(std::mem_fn(&Songbook::instrument), songbook));
   callbacks.registerCallbackWithSignature<bool>("instrumentPlaying", std::bind(std::mem_fn(&Songbook::instrumentPlaying), songbook));
   callbacks.registerCallbackWithSignature<Json>("song", std::bind(std::mem_fn(&Songbook::song), songbook));
 

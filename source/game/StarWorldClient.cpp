@@ -12,7 +12,6 @@ import star.ttl_cache;
 import star.casting;
 import star.game_types;
 import star.material_types;
-import star.maybe;
 import star.poly;
 import star.variant;
 import star.list;
@@ -47,6 +46,7 @@ import star.map;
 import star.net_compatibility;
 import std;
 import star.worker_pool;
+import star.optional;
 
 import star.sector_array_2d;
 import star.btree;
@@ -427,7 +427,7 @@ void WorldClient::removeEntity(EntityId entityId, bool andDie) {
     if (auto& worldTemplate = m_worldTemplate) {
       if (const auto& parameters = worldTemplate->worldParameters())
         if (auto& globalDirectives = m_worldTemplate->worldParameters()->globalDirectives)
-          directives = &globalDirectives.get();
+          directives = &globalDirectives.value();
     }
     if (directives) {
       int directiveIndex = unsigned(entity->entityId()) % directives->size();
@@ -566,7 +566,7 @@ bool WorldClient::lineTileCollision(Vec2F const& begin, Vec2F const& end, Collis
   return WorldImpl::lineTileCollision(m_geometry, m_tileArray, begin, end, collisionSet);
 }
 
-Maybe<std::pair<Vec2F, Vec2I>> WorldClient::lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet) const {
+std::optional<std::pair<Vec2F, Vec2I>> WorldClient::lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet) const {
   if (!inWorld())
     return {};
 
@@ -684,7 +684,7 @@ float WorldClient::gravity(Vec2F const& pos) const {
     return *m_overrideGravity;
 
   auto dungeonId = m_tileArray->tile(Vec2I::round(pos)).dungeonId;
-  return m_dungeonIdGravity.maybe(dungeonId).value(currentTemplate()->gravity());
+  return m_dungeonIdGravity.maybe(dungeonId).value_or(currentTemplate()->gravity());
 }
 
 float WorldClient::windLevel(Vec2F const& pos) const {
@@ -796,7 +796,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles, Tile
   if (auto& worldTemplate = m_worldTemplate) {
     if (const auto& parameters = worldTemplate->worldParameters())
       if (auto& globalDirectives = parameters->globalDirectives)
-        directives = &globalDirectives.get();
+        directives = &globalDirectives.value();
   }
   m_entityMap->forAllEntities([&](std::shared_ptr<Entity> const& entity) {
       if (m_startupHiddenEntities.contains(entity->entityId()))
@@ -974,7 +974,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles, Tile
     }
   }
 
-  auto weatherParallaxAsset = currentWeatherDomain() == m_weatherDomain ? m_weather.weatherParallax() : Maybe<String>();
+  auto weatherParallaxAsset = currentWeatherDomain() == m_weatherDomain ? m_weather.weatherParallax() : std::optional<String>();
   if (weatherParallaxAsset != m_weatherParallaxAsset || environmentBiome != m_weatherParallaxBiome) {
     m_weatherParallaxAsset = weatherParallaxAsset;
     m_weatherParallaxBiome = environmentBiome;
@@ -985,7 +985,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles, Tile
         m_weatherParallax = environmentBiome->parallax->createOverlay(*weatherParallaxAsset);
       } else {
         float hueShift = environmentBiome ? environmentBiome->hueShift : 0.0f;
-        Maybe<TreeVariant> treeVariant;
+        std::optional<TreeVariant> treeVariant;
         if (environmentBiome)
           treeVariant = environmentBiome->surfacePlaceables.firstTreeType();
 
@@ -1375,7 +1375,7 @@ void WorldClient::handleIncomingPackets(List<std::shared_ptr<Packet>> const& pac
 
       } else {
         ConnectionId fromConnection = entityMessagePacket->fromConnection;
-        if (fromConnection == *m_clientId) // Kae: The server should not be able to forge entity messages that appear as if they're from us
+        if (fromConnection == m_clientId.value()) // Kae: The server should not be able to forge entity messages that appear as if they're from us
           fromConnection = ServerConnectionId;
 
         if (auto response = entity->receiveMessage(entityMessagePacket->fromConnection, entityMessagePacket->message, entityMessagePacket->args)) {
@@ -1418,14 +1418,14 @@ void WorldClient::handleIncomingPackets(List<std::shared_ptr<Packet>> const& pac
         m_dungeonIdGravity.remove(setDungeonGravity->dungeonId);
 
     } else if (auto setDungeonBreathable = as<SetDungeonBreathablePacket>(packet)) {
-      if (setDungeonBreathable->breathable.isValid())
+      if (setDungeonBreathable->breathable.has_value())
         m_dungeonIdBreathable[setDungeonBreathable->dungeonId] = *setDungeonBreathable->breathable;
       else
         m_dungeonIdBreathable.remove(setDungeonBreathable->dungeonId);
 
     } else if (auto entityInteract = as<EntityInteractPacket>(packet)) {
       auto interactResult = interact(entityInteract->interactRequest).result();
-      m_outgoingPackets.append(std::make_shared<EntityInteractResultPacket>(interactResult.value(), entityInteract->requestId, entityInteract->interactRequest.sourceId));
+      m_outgoingPackets.append(std::make_shared<EntityInteractResultPacket>(interactResult.value_or(InteractAction{}), entityInteract->requestId, entityInteract->interactRequest.sourceId));
 
     } else if (auto interactResult = as<EntityInteractResultPacket>(packet)) {
       if (auto response = m_entityInteractionResponses.maybeTake(interactResult->requestId)) {
@@ -1456,7 +1456,7 @@ void WorldClient::handleIncomingPackets(List<std::shared_ptr<Packet>> const& pac
       if (pongPacket->time)
         m_latency = Time::monotonicMilliseconds() - pongPacket->time;
       else if (m_pingTime) 
-        m_latency = Time::monotonicMilliseconds() - m_pingTime.take();
+        m_latency = Time::monotonicMilliseconds() - takeOptional(m_pingTime);
 
     } else {
       this->root().logger().error("Improper packet type {} received by client", (int)packet->type());
@@ -1468,13 +1468,13 @@ List<std::shared_ptr<Packet>> WorldClient::getOutgoingPackets() {
   return std::move(m_outgoingPackets);
 }
 
-Maybe<ChainableJsonMessageResponse> WorldClient::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
+std::optional<ChainableJsonMessageResponse> WorldClient::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
   m_expiryTimer.reset();
   if (!inWorld()) {
     // script contexts aren't active to handle this message
     return {};
   }
-  Maybe<ChainableJsonMessageResponse> result;
+  std::optional<ChainableJsonMessageResponse> result;
   for (auto& p : m_scriptContexts) {
     result = p.second->handleMessage(message, fromConnection == ServerConnectionId, args);
     if (result)
@@ -1589,7 +1589,7 @@ void WorldClient::update(float dt) {
     // client region.
     RectI weatherParticleRegion = particleRegion;
 
-    Maybe<String> weatherDomain = m_weatherDomain;
+    std::optional<String> weatherDomain = m_weatherDomain;
     if (clientWindow.isEmpty()) {
       weatherParticleRegion = {};
     } else if (auto layer = m_worldTemplate->weatherLayerAt(Vec2I::floor(m_clientState.windowCenter()))) {
@@ -1706,7 +1706,7 @@ void WorldClient::update(float dt) {
 
   queueUpdatePackets(m_entityUpdateTimer.wrapTick(dt));
 
-  if ((!m_clientState.netCompatibilityRules().isLegacy() && m_currentStep % 3 == 0) || m_pingTime.isNothing()) {
+  if ((!m_clientState.netCompatibilityRules().isLegacy() && m_currentStep % 3 == 0) || !m_pingTime.has_value()) {
     m_pingTime = Time::monotonicMilliseconds();
     m_outgoingPackets.append(std::make_shared<PingPacket>(*m_pingTime));
   }
@@ -1715,7 +1715,7 @@ void WorldClient::update(float dt) {
 
   // Remove active sectors that are outside of the current monitoring region
   Set<ClientTileSectorArray::Sector> neededSectors;
-  auto monitoredRegions = m_clientState.monitoringRegions([this](EntityId entityId) -> Maybe<RectI> {
+  auto monitoredRegions = m_clientState.monitoringRegions([this](EntityId entityId) -> std::optional<RectI> {
       if (auto entity = this->entity(entityId))
         return RectI::integral(entity->metaBoundBox().translated(entity->position()));
       return {};
@@ -1738,7 +1738,7 @@ void WorldClient::update(float dt) {
 }
 
 ConnectionId WorldClient::connection() const {
-  return *m_clientId;
+  return m_clientId.value();
 }
 
 WorldGeometry WorldClient::geometry() const {
@@ -1807,7 +1807,7 @@ void WorldClient::addEntity(std::shared_ptr<Entity> const& entity, EntityId enti
   }
 }
 
-TileDamageResult WorldClient::damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, Maybe<EntityId> sourceEntity) {
+TileDamageResult WorldClient::damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, std::optional<EntityId> sourceEntity) {
   if (!inWorld())
     return TileDamageResult::None;
 
@@ -1824,7 +1824,7 @@ TileDamageResult WorldClient::damageTiles(List<Vec2I> const& pos, TileLayer laye
   if (toDing.size()) {
     auto dingDamage = tileDamage;
     dingDamage.type = TileDamageType::Protected;
-    m_outgoingPackets.append(std::make_shared<DamageTileGroupPacket>(std::move(toDing), layer, sourcePosition, dingDamage, Maybe<EntityId>()));
+    m_outgoingPackets.append(std::make_shared<DamageTileGroupPacket>(std::move(toDing), layer, sourcePosition, dingDamage, std::optional<EntityId>()));
     res = TileDamageResult::Protected;
   }
 
@@ -1933,7 +1933,7 @@ void WorldClient::queueUpdatePackets(bool sendEntityUpdates) {
 
   if (sendEntityUpdates) {
     auto entityUpdateSet = std::make_shared<EntityUpdateSetPacket>();
-    entityUpdateSet->forConnection = *m_clientId;
+    entityUpdateSet->forConnection = m_clientId.value();
     auto netRules = m_clientState.netCompatibilityRules();
     m_entityMap->forAllEntities([&](std::shared_ptr<Entity> const& entity) {
         if (auto version = m_masterEntitiesNetVersion.ptr(entity->entityId())) {
@@ -2024,7 +2024,7 @@ void WorldClient::handleDamageNotifications() {
       if (auto& worldTemplate = m_worldTemplate) {
         if (const auto& parameters = worldTemplate->worldParameters())
           if (auto& globalDirectives = parameters->globalDirectives)
-            directives = &globalDirectives.get();
+            directives = &globalDirectives.value();
       }
       if (directives) {
         int directiveIndex = unsigned(damageNotification.targetEntityId) % directives->size();
@@ -2156,7 +2156,7 @@ void WorldClient::lightingCalc() {
   List<std::pair<Vec2F, Vec3F>> particleLights = std::move(m_pendingParticleLights);
   auto& root = this->root();
   auto configuration = root.configuration();
-  bool newLighting = configuration->get("newLighting").optBool().value(true);
+  bool newLighting = configuration->get("newLighting").optBool().value_or(true);
   bool monochrome = configuration->get("monochromeLighting").toBool();
   m_lightingCalculator.setParameters(root.assets()->json("/lighting.config:lighting").set("pointAdditive", newLighting));
   m_lightingCalculator.setMonochrome(monochrome);
@@ -2255,7 +2255,7 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   m_damageManager = std::make_shared<DamageManager>(this, startPacket.clientId);
   m_playerStart = startPacket.playerRespawn;
   m_respawnInWorld = startPacket.respawnInWorld;
-  m_worldProperties = startPacket.worldProperties.optObject().value();
+  m_worldProperties = startPacket.worldProperties.optObject().value_or(JsonObject{});
   m_dungeonIdGravity = startPacket.dungeonIdGravity;
   m_dungeonIdBreathable = startPacket.dungeonIdBreathable;
   m_protectedDungeonIds = startPacket.protectedDungeonIds;
@@ -2429,7 +2429,7 @@ Vec2I WorldClient::environmentBiomeTrackPosition() const {
   return {m_geometry.xwrap(pos[0]), pos[1]};
 }
 
-Maybe<String> WorldClient::currentWeatherDomain() const {
+std::optional<String> WorldClient::currentWeatherDomain() const {
   if (!m_worldTemplate)
     return {};
 
@@ -2668,7 +2668,7 @@ bool WorldClient::exposedToWeather(Vec2F const& pos) const {
   return false;
 }
 
-Maybe<String> WorldClient::activeWeather(Vec2F const&) const {
+std::optional<String> WorldClient::activeWeather(Vec2F const&) const {
   if (!inWorld())
     return {};
   return m_weather.activeWeather();
@@ -2856,7 +2856,7 @@ RpcPromise<Json> WorldClient::sendEntityMessage(Variant<EntityId, String> const&
   if (entityId.is<EntityId>() && !entity && m_clientId == connectionForEntity(entityId.get<EntityId>())) {
     return RpcPromise<Json>::createFailed("Unknown entity");
   } else if (entity && entity->isMaster()) {
-    if (auto resp = entity->receiveMessage(*m_clientId, message, args)) {
+    if (auto resp = entity->receiveMessage(m_clientId.value(), message, args)) {
       if (resp->is<Json>())
         return RpcPromise<Json>::createFulfilled(resp->get<Json>());
       else

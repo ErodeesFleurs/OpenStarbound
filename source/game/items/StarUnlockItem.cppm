@@ -19,7 +19,6 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-import star.maybe;
 import star.a_star;
 import star.string;
 import star.set;
@@ -129,9 +128,9 @@ protected:
   void fireTriggered() override;
 
 private:
-  Maybe<String> m_sectorUnlock;
-  Maybe<String> m_tierRecipesUnlock;
-  Maybe<unsigned> m_shipUpgrade;
+  std::optional<String> m_sectorUnlock;
+  std::optional<String> m_tierRecipesUnlock;
+  std::optional<unsigned> m_shipUpgrade;
   String m_unlockMessage;
   List<Drawable> m_drawables;
 };
@@ -144,7 +143,7 @@ UnlockItem::UnlockItem(Root& root, Json const& config, String const& directory, 
   : Item(root, config, directory, itemParameters), SwingableItem(config) {
   m_tierRecipesUnlock = instanceValue("tierRecipesUnlock").optString();
   m_shipUpgrade = instanceValue("shipUpgrade").optUInt();
-  m_unlockMessage = instanceValue("unlockMessage").optString().value();
+  m_unlockMessage = instanceValue("unlockMessage").optString().value_or(String{});
   auto image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_drawables = {Drawable::makeImage(*root.imageMetadataDatabase(), image, 1.0f / TilePixels, true, Vec2F())};
 }

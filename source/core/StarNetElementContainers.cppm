@@ -3,7 +3,6 @@ import std;
 import star.list;
 import star.variant;
 import star.data_stream;
-import star.maybe;
 import star.format;
 import star.map;
 import star.data_stream_extra;
@@ -73,7 +72,7 @@ public:
   const_iterator erase(const_iterator i);
 
   mapped_type take(key_type const& k);
-  Maybe<mapped_type> maybeTake(key_type const& k);
+  std::optional<mapped_type> maybeTake(key_type const& k);
 
   void clear();
 
@@ -356,13 +355,13 @@ auto NetElementMapWrapper<BaseMap>::take(key_type const& k) -> mapped_type {
 }
 
 template <typename BaseMap>
-auto NetElementMapWrapper<BaseMap>::maybeTake(key_type const& k) -> Maybe<mapped_type> {
+auto NetElementMapWrapper<BaseMap>::maybeTake(key_type const& k) -> std::optional<mapped_type> {
   auto i = BaseMap::find(k);
   if (i == BaseMap::end())
     return {};
   auto m = std::move(i->second);
   erase(i);
-  return Maybe<mapped_type>(std::move(m));
+  return std::optional<mapped_type>(std::in_place, std::move(m));
 }
 
 template <typename BaseMap>

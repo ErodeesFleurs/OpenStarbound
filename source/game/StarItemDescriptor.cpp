@@ -19,7 +19,6 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
-import star.maybe;
 import star.format;
 import star.version;
 
@@ -41,6 +40,23 @@ ItemDescriptor::ItemDescriptor(String name, std::uint64_t count, Json parameters
     m_parameters = JsonObject();
   if (!m_parameters.isType(Json::Type::Object))
     throw StarException("Item parameters not map in ItemDescriptor constructor");
+}
+
+ItemDescriptor::ItemDescriptor(ItemDescriptor&& rhs) noexcept(std::is_nothrow_move_constructible_v<String> && std::is_nothrow_move_constructible_v<Json>)
+  : m_name(std::move(rhs.m_name)), m_count(rhs.m_count), m_parameters(std::move(rhs.m_parameters)),
+    m_parametersHash(rhs.m_parametersHash) {
+  rhs.m_parametersHash.reset();
+}
+
+ItemDescriptor& ItemDescriptor::operator=(ItemDescriptor&& rhs) noexcept(std::is_nothrow_move_assignable_v<String> && std::is_nothrow_move_assignable_v<Json>) {
+  if (this != &rhs) {
+    m_name = std::move(rhs.m_name);
+    m_count = rhs.m_count;
+    m_parameters = std::move(rhs.m_parameters);
+    m_parametersHash = rhs.m_parametersHash;
+    rhs.m_parametersHash.reset();
+  }
+  return *this;
 }
 
 ItemDescriptor::ItemDescriptor(Json const& spec) {
@@ -147,7 +163,7 @@ Json ItemDescriptor::toJson() const {
   }
 }
 
-ItemDescriptor::ItemDescriptor(String name, std::uint64_t count, Json parameters, Maybe<std::size_t> parametersHash)
+ItemDescriptor::ItemDescriptor(String name, std::uint64_t count, Json parameters, std::optional<std::size_t> parametersHash)
   : m_name(std::move(name)), m_count(count), m_parameters(std::move(parameters)), m_parametersHash(parametersHash) {}
 
 std::size_t ItemDescriptor::parametersHash() const {

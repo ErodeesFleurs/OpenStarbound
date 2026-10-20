@@ -13,7 +13,6 @@ import star.game_types;
 import star.color;
 import star.bi_map;
 import star.sky_types;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;

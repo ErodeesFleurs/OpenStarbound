@@ -4,7 +4,6 @@ import star.type_identity;
 import star.json;
 import star.id_map;
 import star.game_types;
-import star.maybe;
 import star.variant;
 import star.casting;
 import star.vector;
@@ -144,8 +143,8 @@ public:
   
   Json configValue(String const& name, Json const& def = Json()) const;
   
-  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  Maybe<LuaValue> evalScript(String const& code) override;
+  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  std::optional<LuaValue> evalScript(String const& code) override;
   
   ClientEntityMode clientEntityMode() const override;
 
@@ -194,12 +193,12 @@ private:
 
   bool m_drawRarityBeam;
   bool m_overForeground;
-  Maybe<List<Drawable>> m_drawables;
+  std::optional<List<Drawable>> m_drawables;
   
   ClientEntityMode m_clientEntityMode;
   
   mutable LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptComponent;
-  Maybe<Mode> m_overrideMode;
+  std::optional<Mode> m_overrideMode;
 };
 
 }

@@ -16,7 +16,6 @@ import star.worker_pool;
 import star.sector_array_2d;
 import star.random;
 import star.perlin;
-import star.maybe;
 import star.weighted_pool;
 import star.color;
 import star.image_processing;
@@ -120,7 +119,7 @@ struct ServerTile : public WorldTile {
 
   // If set, a plant or object is rooted to the tile and tile damage
   // should be redirected to this position
-  Maybe<Vec2I> rootSource;
+  std::optional<Vec2I> rootSource;
 
   // Do not serialize - calculated at runtime
   CollisionKind objectCollision;
@@ -170,18 +169,18 @@ DataStream& operator<<(DataStream& ds, NetTile const& tile);
 // For storing predicted tile state.
 struct PredictedTile {
   std::int64_t time;
-  Maybe<MaterialId> background;
-  Maybe<MaterialHue> backgroundHueShift;
-  Maybe<MaterialColorVariant> backgroundColorVariant;
-  Maybe<ModId> backgroundMod;
-  Maybe<MaterialHue> backgroundModHueShift;
-  Maybe<MaterialId> foreground;
-  Maybe<MaterialHue> foregroundHueShift;
-  Maybe<MaterialColorVariant> foregroundColorVariant;
-  Maybe<ModId> foregroundMod;
-  Maybe<MaterialHue> foregroundModHueShift;
-  Maybe<LiquidLevel> liquid;
-  Maybe<CollisionKind> collision;
+  std::optional<MaterialId> background;
+  std::optional<MaterialHue> backgroundHueShift;
+  std::optional<MaterialColorVariant> backgroundColorVariant;
+  std::optional<ModId> backgroundMod;
+  std::optional<MaterialHue> backgroundModHueShift;
+  std::optional<MaterialId> foreground;
+  std::optional<MaterialHue> foregroundHueShift;
+  std::optional<MaterialColorVariant> foregroundColorVariant;
+  std::optional<ModId> foregroundMod;
+  std::optional<MaterialHue> foregroundModHueShift;
+  std::optional<LiquidLevel> liquid;
+  std::optional<CollisionKind> collision;
 
   operator bool() const;
   template <typename Tile>

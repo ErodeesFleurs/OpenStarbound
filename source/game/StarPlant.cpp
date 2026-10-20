@@ -15,7 +15,6 @@ import star.variant;
 import star.casting;
 import star.strong_typedef;
 import star.rpc_promise;
-import star.maybe;
 import star.image;
 import star.audio;
 import star.map;

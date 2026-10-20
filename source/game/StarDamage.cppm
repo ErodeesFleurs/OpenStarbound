@@ -3,7 +3,6 @@ import std;
 import star.string;
 import star.list;
 import star.variant;
-import star.maybe;
 import star.json;
 
 import star.vector;
@@ -35,8 +34,8 @@ struct DamageSource {
       bool trackSourceEntity,
       EntityId sourceEntityId,
       EntityDamageTeam team,
-      Maybe<String> damageRepeatGroup,
-      Maybe<float> damageRepeatTimeout,
+      std::optional<String> damageRepeatGroup,
+      std::optional<float> damageRepeatTimeout,
       String damageSourceKind,
       List<EphemeralStatusEffect> statusEffects,
       Knockback knockback,
@@ -66,9 +65,9 @@ struct DamageSource {
   // prevent damages being applied every tick.  This is optional, and if it is
   // omitted then the repeat group will instead be based on the causing entity
   // id.
-  Maybe<String> damageRepeatGroup;
+  std::optional<String> damageRepeatGroup;
   // Can override the default repeat damage timeout with a custom timeout.
-  Maybe<float> damageRepeatTimeout;
+  std::optional<float> damageRepeatTimeout;
 
   String damageSourceKind;
   List<EphemeralStatusEffect> statusEffects;

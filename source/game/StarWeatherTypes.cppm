@@ -3,7 +3,6 @@ import std;
 import star.string;
 import star.json;
 
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.color;
@@ -59,7 +58,7 @@ struct WeatherType {
   StringList weatherNoises;
 
   // Resolved from local assets and intentionally excluded from legacy binary serialization.
-  Maybe<String> parallax;
+  std::optional<String> parallax;
 };
 
 typedef WeightedPool<String> WeatherPool;

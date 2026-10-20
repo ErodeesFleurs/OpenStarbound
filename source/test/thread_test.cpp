@@ -2,7 +2,6 @@ import std;
 import star.unique_function;
 import star.thread;
 import star.string;
-import star.maybe;
 import star.listener;
 
 #include "gtest/gtest.h"
@@ -25,7 +24,7 @@ TEST(Thread, InvokeReturn) {
     });
 
   EXPECT_EQ(functionRet.finish(), String("TestValue"));
-  EXPECT_THROW(functionRet.finish(), InvalidMaybeAccessException);
+  EXPECT_THROW(functionRet.finish(), std::bad_optional_access);
 }
 
 TEST(Thread, MoveOnlyCallableAndMemberInvocation) {

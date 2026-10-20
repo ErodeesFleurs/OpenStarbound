@@ -3,7 +3,6 @@ import star.format;
 import star.string;
 import star.io_device;
 import star.file;
-import star.maybe;
 import star.logging;
 import star.json;
 import star.game_types;
@@ -33,7 +32,7 @@ void TileDatabase::defineTile(std::shared_ptr<::Star::Tile> const& tile) {
 }
 
 std::shared_ptr<::Star::Tile> TileDatabase::getTile(String const& tileName) const {
-  return m_tiles.maybe(tileName).value({});
+  return m_tiles.maybe(tileName).value_or(nullptr);
 }
 
 String TileDatabase::name() const {
@@ -65,7 +64,7 @@ void Tileset::defineTile(std::shared_ptr<::Star::Tile> const& tile) {
   m_tiles.append(tile);
 }
 
-Maybe<std::pair<String, String>> parseAssetSource(String const& source) {
+std::optional<std::pair<String, String>> parseAssetSource(String const& source) {
   if (!File::isDirectory(source))
     return {};
 

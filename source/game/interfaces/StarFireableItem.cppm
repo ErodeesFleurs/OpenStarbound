@@ -20,7 +20,6 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
@@ -151,7 +150,7 @@ protected:
   bool m_walkWhileFiring;
   bool m_stopWhileFiring;
 
-  mutable Maybe<LuaWorldComponent<LuaBaseComponent>> m_scriptComponent;
+  mutable std::optional<LuaWorldComponent<LuaBaseComponent>> m_scriptComponent;
 
   Json m_fireableParams;
 

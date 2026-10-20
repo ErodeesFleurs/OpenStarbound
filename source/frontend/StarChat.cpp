@@ -25,7 +25,6 @@ import star.version;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -269,13 +268,13 @@ Chat::Chat(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, Json 
   m_say = fetchChild<LabelWidget>("say");
   if (!m_scripted) {
     if (auto logPadding = config.optQuery("padding")) {
-      m_chatLogPadding = jsonToVec2I(logPadding.get());
+      m_chatLogPadding = jsonToVec2I(logPadding.value());
       m_chatLog->setSize(m_chatLog->size() + m_chatLogPadding * 2);
       m_chatLog->setPosition(m_chatLog->position() - m_chatLogPadding);
     } else
       m_chatLogPadding = Vec2I();
 
-    m_chatHistory.appendAll(m_client->playerStorage()->getMetadata("chatHistory").opt().apply(jsonToStringList).value());
+    m_chatHistory.appendAll(m_client->playerStorage()->getMetadata("chatHistory").opt().transform(jsonToStringList).value_or(StringList{}));
   } else {
     m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(context()->root(), m_client->mainPlayer().get()));
     m_script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_client->mainPlayer()->statusController()));
@@ -303,10 +302,10 @@ void Chat::update(float dt) {
   auto team = m_client->teamClient()->currentTeam();
   for (auto button : fetchChild<ButtonGroup>("filterGroup")->buttons()) {
     auto mode = ChatSendModeNames.getLeft(button->data().getString("sendMode", "Broadcast"));
-    if (!team.isValid() && m_sendMode == ChatSendMode::Party && mode == ChatSendMode::Broadcast)
+    if (!team.has_value() && m_sendMode == ChatSendMode::Party && mode == ChatSendMode::Broadcast)
       button->check();
     if (mode == ChatSendMode::Party)
-      button->setEnabled(team.isValid());
+      button->setEnabled(team.has_value());
   }
 }
 
@@ -331,7 +330,7 @@ void Chat::startCommand() {
 
 bool Chat::hasFocus() const {
   if (m_scripted)
-    return m_script.invoke<bool>("hasFocus").value();
+    return m_script.invoke<bool>("hasFocus").value_or(false);
   return m_textBox->hasFocus();
 }
 
@@ -347,13 +346,13 @@ void Chat::stopChat() {
 
 String Chat::currentChat() const {
   if (m_scripted)
-    return m_script.invoke<String>("currentChat").value();
+    return m_script.invoke<String>("currentChat").value_or(String{});
   return m_textBox->getText();
 }
 
 bool Chat::setCurrentChat(String const& chat, bool moveCursor) {
   if (m_scripted)
-    return m_script.invoke<bool>("setCurrentChat").value();
+    return m_script.invoke<bool>("setCurrentChat").value_or(false);
   return m_textBox->setText(chat, true, moveCursor);
 }
 
@@ -368,7 +367,7 @@ void Chat::clearCurrentChat() {
 
 ChatSendMode Chat::sendMode() const {
   if (m_scripted)
-    return ChatSendModeNames.getLeft(m_script.invoke<String>("sendMode").value());
+    return ChatSendModeNames.getLeft(m_script.invoke<String>("sendMode").value_or(String{}));
   return m_sendMode;
 }
 
@@ -408,7 +407,7 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
   GuiContext& guiContext = *context();
 
   for (auto const& message : messages) {
-    Maybe<unsigned> wrapWidth;
+    std::optional<unsigned> wrapWidth;
     if (message.portrait.empty())
       wrapWidth = m_chatLog->size()[0] - m_chatLogPadding[0] * 2;
 
@@ -545,7 +544,7 @@ void Chat::hide() {
 
 float Chat::visible() const {
   if (m_scripted)
-    return m_script.invoke<float>("visible").value(1.0f);
+    return m_script.invoke<float>("visible").value_or(1.0f);
 
   double difference = (Time::monotonicMilliseconds() - m_timeChatLastActive) / 1000.0;
   if (difference < m_chatVisTime)

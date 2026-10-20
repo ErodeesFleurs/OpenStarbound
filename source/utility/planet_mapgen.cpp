@@ -8,7 +8,6 @@ import star.game_types;
 import star.material_types;
 import star.color;
 import star.bi_map;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -102,7 +101,7 @@ int main(int argc, char** argv) {
 
     std::shared_ptr<::Star::CelestialMasterDatabase> celestialDatabase = std::make_shared<CelestialMasterDatabase>(*root);
 
-    Maybe<CelestialCoordinate> coordinate;
+    std::optional<CelestialCoordinate> coordinate;
     if (!options.parameters["coordinate"].empty())
       coordinate = CelestialCoordinate(options.parameters["coordinate"].first());
     else if (!options.parameters["coordseed"].empty())

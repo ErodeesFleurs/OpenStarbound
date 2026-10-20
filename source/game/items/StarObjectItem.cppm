@@ -18,7 +18,6 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
@@ -189,10 +188,10 @@ String ObjectItem::objectName() const {
 }
 
 Json ObjectItem::objectParameters() const {
-  Json objectParameters = parameters().opt().value(JsonObject{});
+  Json objectParameters = parameters().opt().value_or(JsonObject{});
   if (!initialized())
     return objectParameters;
-  return objectParameters.set("owner", jsonFromMaybe(owner()->uniqueId()));
+  return objectParameters.set("owner", jsonFromOptional(owner()->uniqueId()));
 }
 
 bool ObjectItem::placeInWorld(FireMode, bool shifting) {

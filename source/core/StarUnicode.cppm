@@ -2,7 +2,6 @@ module;
 import star.memory;
 import std;
 import star.format;
-import star.maybe;
 
 namespace Star {
 
@@ -29,14 +28,14 @@ std::size_t utf8DecodeChar(Utf8Type const* utf8, Utf32Type* utf32, std::size_t l
 // Encode single utf32 char into up to 6 utf8 characters.
 std::size_t utf8EncodeChar(Utf8Type* utf8, Utf32Type utf32, std::size_t len = 6);
 
-Utf32Type hexStringToUtf32(std::string const& codepoint, Maybe<Utf32Type> previousCodepoint = {});
+Utf32Type hexStringToUtf32(std::string const& codepoint, std::optional<Utf32Type> previousCodepoint = {});
 std::string hexStringFromUtf32(Utf32Type character);
 
 bool isUtf16LeadSurrogate(Utf32Type codepoint);
 bool isUtf16TrailSurrogate(Utf32Type codepoint);
 
 Utf32Type utf32FromUtf16SurrogatePair(Utf32Type lead, Utf32Type trail);
-std::pair<Utf32Type, Maybe<Utf32Type>> utf32ToUtf16SurrogatePair(Utf32Type codepoint);
+std::pair<Utf32Type, std::optional<Utf32Type>> utf32ToUtf16SurrogatePair(Utf32Type codepoint);
 
 // Bidirectional iterator that can make utf8 appear as utf32
 template <class BaseIterator, class U32Type = Utf32Type>

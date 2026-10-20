@@ -11,7 +11,6 @@ import star.ttl_cache;
 import star.casting;
 import star.game_types;
 import star.material_types;
-import star.maybe;
 import star.rpc_promise;
 import star.vector;
 import star.rect;
@@ -220,17 +219,17 @@ namespace LuaBindings {
   void addWorldCollisionCallbacks(LuaCallbacks& callbacks, World* world);
 
   namespace WorldCallbacks {
-    bool placeObject(World* world, String const& arg1, Vec2I const& arg2, Maybe<int> const& arg3, Json const& arg4);
-    Maybe<EntityId> spawnItem(World* world, Json const& itemType, Vec2F const& worldPosition, Maybe<std::size_t> const& inputCount, Json const& inputParameters, Maybe<Vec2F> const& initialVelocity, Maybe<float> const& intangibleTime);
-    List<EntityId> spawnTreasure(World* world, Vec2F const& position, String const& pool, float level, Maybe<std::uint64_t> seed);
-    Maybe<EntityId> spawnMonster(World* world, String const& arg1, Vec2F const& arg2, Maybe<JsonObject> const& arg3);
-    Maybe<EntityId> spawnNpc(World* world, Vec2F const& arg1, String const& arg2, String const& arg3, float arg4, Maybe<std::uint64_t> arg5, Json const& arg6);
-    Maybe<EntityId> spawnStagehand(World* world, Vec2F const& spawnPosition, String const& typeName, Json const& overrides);
-    Maybe<EntityId> spawnProjectile(World* world, String const& arg1, Vec2F const& arg2, Maybe<EntityId> const& arg3, Maybe<Vec2F> const& arg4, bool arg5, Json const& arg6);
-    Maybe<EntityId> spawnVehicle(World* world, String const& vehicleName, Vec2F const& pos, Json const& extraConfig);
+    bool placeObject(World* world, String const& arg1, Vec2I const& arg2, std::optional<int> const& arg3, Json const& arg4);
+    std::optional<EntityId> spawnItem(World* world, Json const& itemType, Vec2F const& worldPosition, std::optional<std::size_t> const& inputCount, Json const& inputParameters, std::optional<Vec2F> const& initialVelocity, std::optional<float> const& intangibleTime);
+    List<EntityId> spawnTreasure(World* world, Vec2F const& position, String const& pool, float level, std::optional<std::uint64_t> seed);
+    std::optional<EntityId> spawnMonster(World* world, String const& arg1, Vec2F const& arg2, std::optional<JsonObject> const& arg3);
+    std::optional<EntityId> spawnNpc(World* world, Vec2F const& arg1, String const& arg2, String const& arg3, float arg4, std::optional<std::uint64_t> arg5, Json const& arg6);
+    std::optional<EntityId> spawnStagehand(World* world, Vec2F const& spawnPosition, String const& typeName, Json const& overrides);
+    std::optional<EntityId> spawnProjectile(World* world, String const& arg1, Vec2F const& arg2, std::optional<EntityId> const& arg3, std::optional<Vec2F> const& arg4, bool arg5, Json const& arg6);
+    std::optional<EntityId> spawnVehicle(World* world, String const& vehicleName, Vec2F const& pos, Json const& extraConfig);
     Json getProperty(World* world, String const& arg1, Json const& arg2);
     void setProperty(World* world, String const& arg1, Json const& arg2);
-    Maybe<PlatformerAStar::Path> findPlatformerPath(World* world, Vec2F const& start, Vec2F const& end, ActorMovementParameters actorMovementParameters, PlatformerAStar::Parameters searchParameters);
+    std::optional<PlatformerAStar::Path> findPlatformerPath(World* world, Vec2F const& start, Vec2F const& end, ActorMovementParameters actorMovementParameters, PlatformerAStar::Parameters searchParameters);
     PlatformerAStar::PathFinder platformerPathStart(World* world, Vec2F const& start, Vec2F const& end, ActorMovementParameters actorMovementParameters, PlatformerAStar::Parameters searchParameters);
   }
 
@@ -247,19 +246,19 @@ namespace LuaBindings {
     bool regionActive(WorldServer* world, RectF const& arg1);
     void setTileProtection(WorldServer* world, DungeonId arg1, bool arg2);
     bool isPlayerModified(WorldServer* world, RectI const& region);
-    Maybe<LiquidLevel> forceDestroyLiquid(WorldServer* world, Vec2F const& position);
+    std::optional<LiquidLevel> forceDestroyLiquid(WorldServer* world, Vec2F const& position);
     EntityId loadUniqueEntity(WorldServer* world, String const& uniqueId);
-    void setUniqueId(WorldServer* world, EntityId entityId, Maybe<String> const& uniqueId);
-    Json takeItemDrop(World* world, EntityId entityId, Maybe<EntityId> const& takenBy);
-    void setPlayerStart(World* world, Vec2F const& playerStart, Maybe<bool> respawnInWorld);
+    void setUniqueId(WorldServer* world, EntityId entityId, std::optional<String> const& uniqueId);
+    Json takeItemDrop(World* world, EntityId entityId, std::optional<EntityId> const& takenBy);
+    void setPlayerStart(World* world, Vec2F const& playerStart, std::optional<bool> respawnInWorld);
     List<EntityId> players(World* world);
     LuaString fidelity(World* world, LuaEngine& engine);
-    Maybe<LuaValue> callScriptContext(World* world, String const& contextName, String const& function, LuaVariadic<LuaValue> const& args);
+    std::optional<LuaValue> callScriptContext(World* world, String const& contextName, String const& function, LuaVariadic<LuaValue> const& args);
     bool sendPacket(WorldServer* world, ConnectionId clientId, String const& packetType, Json const& packetData);
   }
 
   namespace WorldGeometryCallbacks {
-    float magnitude(World* world, Vec2F pos1, Maybe<Vec2F> pos2);
+    float magnitude(World* world, Vec2F pos1, std::optional<Vec2F> pos2);
     Vec2F distance(World* world, Vec2F const& arg1, Vec2F const& arg2);
     bool polyContains(World* world, PolyF const& poly, Vec2F const& pos);
     LuaValue xwrap(World* world, LuaEngine& engine, LuaValue const& positionOrX);
@@ -267,16 +266,16 @@ namespace LuaBindings {
   }
 
   namespace WorldCollisionCallbacks {
-    bool rectCollision(World* world, RectF const& arg1, Maybe<CollisionSet> const& arg2);
-    bool pointTileCollision(World* world, Vec2F const& arg1, Maybe<CollisionSet> const& arg2);
-    bool lineTileCollision(World* world, Vec2F const& arg1, Vec2F const& arg2, Maybe<CollisionSet> const& arg3);
-    Maybe<std::pair<Vec2F, Vec2I>> lineTileCollisionPoint(World* world, Vec2F const& start, Vec2F const& end, Maybe<CollisionSet> const& maybeCollisionSet);
-    bool rectTileCollision(World* world, RectF const& arg1, Maybe<CollisionSet> const& arg2);
-    bool pointCollision(World* world, Vec2F const& point, Maybe<CollisionSet> const& collisionSet);
-    LuaTupleReturn<Maybe<Vec2F>, Maybe<Vec2F>> lineCollision(World* world, Vec2F const& start, Vec2F const& end, Maybe<CollisionSet> const& maybeCollisionSet);
-    bool polyCollision(World* world, PolyF const& arg1, Maybe<Vec2F> const& arg2, Maybe<CollisionSet> const& arg3);
-    List<Vec2I> collisionBlocksAlongLine(World* world, Vec2F const& arg1, Vec2F const& arg2, Maybe<CollisionSet> const& arg3, Maybe<int> const& arg4);
-    Maybe<Vec2F> resolvePolyCollision(World* world, PolyF poly, Vec2F const& position, float maximumCorrection, Maybe<CollisionSet> const& collisionSet);
+    bool rectCollision(World* world, RectF const& arg1, std::optional<CollisionSet> const& arg2);
+    bool pointTileCollision(World* world, Vec2F const& arg1, std::optional<CollisionSet> const& arg2);
+    bool lineTileCollision(World* world, Vec2F const& arg1, Vec2F const& arg2, std::optional<CollisionSet> const& arg3);
+    std::optional<std::pair<Vec2F, Vec2I>> lineTileCollisionPoint(World* world, Vec2F const& start, Vec2F const& end, std::optional<CollisionSet> const& maybeCollisionSet);
+    bool rectTileCollision(World* world, RectF const& arg1, std::optional<CollisionSet> const& arg2);
+    bool pointCollision(World* world, Vec2F const& point, std::optional<CollisionSet> const& collisionSet);
+    LuaTupleReturn<std::optional<Vec2F>, std::optional<Vec2F>> lineCollision(World* world, Vec2F const& start, Vec2F const& end, std::optional<CollisionSet> const& maybeCollisionSet);
+    bool polyCollision(World* world, PolyF const& arg1, std::optional<Vec2F> const& arg2, std::optional<CollisionSet> const& arg3);
+    List<Vec2I> collisionBlocksAlongLine(World* world, Vec2F const& arg1, Vec2F const& arg2, std::optional<CollisionSet> const& arg3, std::optional<int> const& arg4);
+    std::optional<Vec2F> resolvePolyCollision(World* world, PolyF poly, Vec2F const& position, float maximumCorrection, std::optional<CollisionSet> const& collisionSet);
   }
 
   namespace WorldDebugCallbacks {
@@ -287,52 +286,52 @@ namespace LuaBindings {
   }
 
   namespace WorldEntityCallbacks {
-    LuaTable entityQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options);
-    LuaTable monsterQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options);
-    LuaTable npcQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options);
-    LuaTable objectQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options);
-    LuaTable itemDropQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options);
-    LuaTable playerQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options);
-    LuaTable loungeableQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options);
-    LuaTable entityLineQuery(World* world, LuaEngine& engine, Vec2F const& pos1, Vec2F const& pos2, Maybe<LuaTable> options);
-    LuaTable objectLineQuery(World* world, LuaEngine& engine, Vec2F const& pos1, Vec2F const& pos2, Maybe<LuaTable> options);
-    LuaTable npcLineQuery(World* world, LuaEngine& engine, Vec2F const& pos1, Vec2F const& pos2, Maybe<LuaTable> options);
+    LuaTable entityQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
+    LuaTable monsterQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
+    LuaTable npcQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
+    LuaTable objectQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
+    LuaTable itemDropQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
+    LuaTable playerQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
+    LuaTable loungeableQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
+    LuaTable entityLineQuery(World* world, LuaEngine& engine, Vec2F const& pos1, Vec2F const& pos2, std::optional<LuaTable> options);
+    LuaTable objectLineQuery(World* world, LuaEngine& engine, Vec2F const& pos1, Vec2F const& pos2, std::optional<LuaTable> options);
+    LuaTable npcLineQuery(World* world, LuaEngine& engine, Vec2F const& pos1, Vec2F const& pos2, std::optional<LuaTable> options);
     bool entityExists(World* world, EntityId entityId);
     bool entityCanDamage(World* world, EntityId sourceId, EntityId targetId);
     Json entityDamageTeam(World* world, EntityId entityId);
     bool entityAggressive(World* world, EntityId entityId);
-    Maybe<LuaString> entityType(World* world, LuaEngine& engine, EntityId entityId);
-    Maybe<Vec2F> entityPosition(World* world, EntityId entityId);
-    Maybe<Vec2F> entityVelocity(World* world, EntityId entityId);
-    Maybe<RectF> entityMetaBoundBox(World* world, EntityId entityId);
-    Maybe<std::uint64_t> entityCurrency(World* world, EntityId entityId, String const& currencyType);
-    Maybe<std::uint64_t> entityHasCountOfItem(World* world, EntityId entityId, Json descriptor, Maybe<bool> exactMatch);
-    Maybe<Vec2F> entityHealth(World* world, EntityId entityId);
-    Maybe<String> entitySpecies(World* world, EntityId entityId);
-    Maybe<String> entityGender(World* world, EntityId entityId);
-    Maybe<String> entityName(World* world, EntityId entityId);
-    Maybe<Json> entityNametag(World* world, EntityId entityId);
-    Maybe<String> entityDescription(World* world, EntityId entityId, Maybe<String> const& species);
-    LuaNullTermWrapper<Maybe<List<Drawable>>> entityPortrait(World* world, EntityId entityId, String const& portraitMode);
-    Maybe<String> entityHandItem(World* world, EntityId entityId, String const& handName);
+    std::optional<LuaString> entityType(World* world, LuaEngine& engine, EntityId entityId);
+    std::optional<Vec2F> entityPosition(World* world, EntityId entityId);
+    std::optional<Vec2F> entityVelocity(World* world, EntityId entityId);
+    std::optional<RectF> entityMetaBoundBox(World* world, EntityId entityId);
+    std::optional<std::uint64_t> entityCurrency(World* world, EntityId entityId, String const& currencyType);
+    std::optional<std::uint64_t> entityHasCountOfItem(World* world, EntityId entityId, Json descriptor, std::optional<bool> exactMatch);
+    std::optional<Vec2F> entityHealth(World* world, EntityId entityId);
+    std::optional<String> entitySpecies(World* world, EntityId entityId);
+    std::optional<String> entityGender(World* world, EntityId entityId);
+    std::optional<String> entityName(World* world, EntityId entityId);
+    std::optional<Json> entityNametag(World* world, EntityId entityId);
+    std::optional<String> entityDescription(World* world, EntityId entityId, std::optional<String> const& species);
+    LuaNullTermWrapper<std::optional<List<Drawable>>> entityPortrait(World* world, EntityId entityId, String const& portraitMode);
+    std::optional<String> entityHandItem(World* world, EntityId entityId, String const& handName);
     Json entityHandItemDescriptor(World* world, EntityId entityId, String const& handName);
-    LuaNullTermWrapper<Maybe<String>> entityUniqueId(World* world, EntityId entityId);
-    Json getObjectParameter(World* world, EntityId entityId, String const& parameterName, Maybe<Json> const& defaultValue);
-    Json getNpcScriptParameter(World* world, EntityId entityId, String const& parameterName, Maybe<Json> const& defaultValue);
+    LuaNullTermWrapper<std::optional<String>> entityUniqueId(World* world, EntityId entityId);
+    Json getObjectParameter(World* world, EntityId entityId, String const& parameterName, std::optional<Json> const& defaultValue);
+    Json getNpcScriptParameter(World* world, EntityId entityId, String const& parameterName, std::optional<Json> const& defaultValue);
     List<Vec2I> objectSpaces(World* world, EntityId entityId);
-    Maybe<int> farmableStage(World* world, EntityId entityId);
-    Maybe<int> containerSize(World* world, EntityId entityId);
+    std::optional<int> farmableStage(World* world, EntityId entityId);
+    std::optional<int> containerSize(World* world, EntityId entityId);
     bool containerClose(World* world, EntityId entityId);
     bool containerOpen(World* world, EntityId entityId);
     Json containerItems(World* world, EntityId entityId);
     Json containerItemAt(World* world, EntityId entityId, std::size_t offset);
-    Maybe<bool> containerConsume(World* world, EntityId entityId, Json const& items);
-    Maybe<bool> containerConsumeAt(World* world, EntityId entityId, std::size_t offset, int count);
-    Maybe<std::size_t> containerAvailable(World* world, EntityId entityId, Json const& items);
+    std::optional<bool> containerConsume(World* world, EntityId entityId, Json const& items);
+    std::optional<bool> containerConsumeAt(World* world, EntityId entityId, std::size_t offset, int count);
+    std::optional<std::size_t> containerAvailable(World* world, EntityId entityId, Json const& items);
     Json containerTakeAll(World* world, EntityId entityId);
     Json containerTakeAt(World* world, EntityId entityId, std::size_t offset);
     Json containerTakeNumItemsAt(World* world, EntityId entityId, std::size_t offset, int const& count);
-    Maybe<std::size_t> containerItemsCanFit(World* world, EntityId entityId, Json const& items);
+    std::optional<std::size_t> containerItemsCanFit(World* world, EntityId entityId, Json const& items);
     Json containerItemsFitWhere(World* world, EntityId entityId, Json const& items);
     Json containerAddItems(World* world, EntityId entityId, Json const& items);
     Json containerStackItems(World* world, EntityId entityId, Json const& items);
@@ -340,17 +339,17 @@ namespace LuaBindings {
     Json containerSwapItems(World* world, EntityId entityId, Json const& items, std::size_t offset);
     Json containerSwapItemsNoCombine(World* world, EntityId entityId, Json const& items, std::size_t offset);
     Json containerItemApply(World* world, EntityId entityId, Json const& items, std::size_t offset);
-    Maybe<LuaValue> callScriptedEntity(World* world, EntityId entityId, String const& function, LuaVariadic<LuaValue> const& args);
+    std::optional<LuaValue> callScriptedEntity(World* world, EntityId entityId, String const& function, LuaVariadic<LuaValue> const& args);
     RpcPromise<Vec2F> findUniqueEntity(World* world, String const& uniqueId);
     RpcPromise<Json> sendEntityMessage(World* world, LuaEngine& engine, LuaValue entityId, String const& message, LuaVariadic<Json> args);
-    Maybe<List<EntityId>> loungingEntities(World* world, EntityId entityId, Maybe<std::size_t> anchorIndex);
-    Maybe<bool> loungeableOccupied(World* world, EntityId entityId, Maybe<std::size_t> anchorIndex);
-    Maybe<std::size_t> loungeableAnchorCount(World* world, EntityId entityId);
-    bool isMonster(World* world, EntityId entityId, Maybe<bool> const& aggressive);
-    Maybe<String> monsterType(World* world, EntityId entityId);
-    Maybe<String> npcType(World* world, EntityId entityId);
-    Maybe<String> stagehandType(World* world, EntityId entityId);
-    bool isNpc(World* world, EntityId entityId, Maybe<int> const& damageTeam);
+    std::optional<List<EntityId>> loungingEntities(World* world, EntityId entityId, std::optional<std::size_t> anchorIndex);
+    std::optional<bool> loungeableOccupied(World* world, EntityId entityId, std::optional<std::size_t> anchorIndex);
+    std::optional<std::size_t> loungeableAnchorCount(World* world, EntityId entityId);
+    bool isMonster(World* world, EntityId entityId, std::optional<bool> const& aggressive);
+    std::optional<String> monsterType(World* world, EntityId entityId);
+    std::optional<String> npcType(World* world, EntityId entityId);
+    std::optional<String> stagehandType(World* world, EntityId entityId);
+    bool isNpc(World* world, EntityId entityId, std::optional<int> const& damageTeam);
   }
 
   namespace WorldEnvironmentCallbacks {
@@ -364,22 +363,22 @@ namespace LuaBindings {
     float modHueShift(World* world, Vec2F const& position, String const& layerName);
     MaterialColorVariant materialColor(World* world, Vec2F const& position, String const& layerName);
     void setMaterialColor(World* world, Vec2F const& position, String const& layerName, MaterialColorVariant color);
-    bool damageTiles(World* world, List<Vec2I> const& arg1, String const& arg2, Vec2F const& arg3, String const& arg4, float arg5, Maybe<unsigned> const& arg6, Maybe<EntityId> sourceEntity);
-    bool damageTileArea(World* world, Vec2F center, float radius, String layer, Vec2F sourcePosition, String damageType, float damage, Maybe<unsigned> const& harvestLevel, Maybe<EntityId> sourceEntity);
-    bool placeMaterial(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, Maybe<int> const& arg4, bool arg5);
-    bool replaceMaterials(World* world, List<Vec2I> const& tilePositions, String const& layer, String const& materialName, Maybe<int> const& hueShift, bool enableDrops);
-    bool replaceMaterialArea(World* world, Vec2F center, float radius, String const& layer, String const& materialName, Maybe<int> const& hueShift, bool enableDrops);
-    bool placeMod(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, Maybe<int> const& arg4, bool arg5);
+    bool damageTiles(World* world, List<Vec2I> const& arg1, String const& arg2, Vec2F const& arg3, String const& arg4, float arg5, std::optional<unsigned> const& arg6, std::optional<EntityId> sourceEntity);
+    bool damageTileArea(World* world, Vec2F center, float radius, String layer, Vec2F sourcePosition, String damageType, float damage, std::optional<unsigned> const& harvestLevel, std::optional<EntityId> sourceEntity);
+    bool placeMaterial(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, std::optional<int> const& arg4, bool arg5);
+    bool replaceMaterials(World* world, List<Vec2I> const& tilePositions, String const& layer, String const& materialName, std::optional<int> const& hueShift, bool enableDrops);
+    bool replaceMaterialArea(World* world, Vec2F center, float radius, String const& layer, String const& materialName, std::optional<int> const& hueShift, bool enableDrops);
+    bool placeMod(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, std::optional<int> const& arg4, bool arg5);
     List<std::pair<Vec2I, LiquidLevel>> liquidAlongLine(World* world, Vec2F const& start, Vec2F const& end);
-    bool tileIsOccupied(World* world, Vec2I const& arg1, Maybe<bool> const& arg2, Maybe<bool> const& arg3);
+    bool tileIsOccupied(World* world, Vec2I const& arg1, std::optional<bool> const& arg2, std::optional<bool> const& arg3);
     double time(World* world);
     std::uint64_t day(World* world);
     double timeOfDay(World* world);
     float dayLength(World* world);
-    Maybe<LiquidLevel> liquidAt(World* world, Variant<RectF, Vec2I> boundBoxOrPoint);
+    std::optional<LiquidLevel> liquidAt(World* world, Variant<RectF, Vec2I> boundBoxOrPoint);
     float gravity(World* world, Vec2F const& arg1);
     bool spawnLiquid(World* world, Vec2F const& arg1, LiquidId arg2, float arg3);
-    Maybe<LiquidLevel> destroyLiquid(World* world, Vec2F const& position);
+    std::optional<LiquidLevel> destroyLiquid(World* world, Vec2F const& position);
     bool isTileProtected(World* world, Vec2F const& position);
   }
 }
@@ -402,9 +401,9 @@ namespace LuaBindings {
 
   template <typename EntityT>
   LuaTable entityQueryImpl(World* world, LuaEngine& engine, LuaTable const& options, Selector<EntityT> selector) {
-    Maybe<EntityId> withoutEntityId = options.get<Maybe<EntityId>>("withoutEntityId");
-    Maybe<Set<EntityType>> includedTypes;
-    if (auto types = options.get<Maybe<LuaTable>>("includedTypes")) {
+    std::optional<EntityId> withoutEntityId = options.get<std::optional<EntityId>>("withoutEntityId");
+    std::optional<Set<EntityType>> includedTypes;
+    if (auto types = options.get<std::optional<LuaTable>>("includedTypes")) {
       includedTypes = Set<EntityType>();
       types->iterate([&includedTypes](LuaValue const&, LuaString const& type) {
         if (type == "mobile") {
@@ -425,21 +424,21 @@ namespace LuaBindings {
       });
     }
 
-    Maybe<String> callScript = options.get<Maybe<String>>("callScript");
-    List<LuaValue> callScriptArgs = options.get<Maybe<List<LuaValue>>>("callScriptArgs").value();
-    LuaValue callScriptResult = options.get<Maybe<LuaValue>>("callScriptResult").value(LuaBoolean(true));
+    std::optional<String> callScript = options.get<std::optional<String>>("callScript");
+    List<LuaValue> callScriptArgs = options.get<std::optional<List<LuaValue>>>("callScriptArgs").value_or(List<LuaValue>{});
+    LuaValue callScriptResult = options.get<std::optional<LuaValue>>("callScriptResult").value_or(LuaBoolean(true));
 
-    Maybe<Line2F> lineQuery = options.get<Maybe<Line2F>>("line");
-    Maybe<PolyF> polyQuery = options.get<Maybe<PolyF>>("poly");
-    Maybe<RectF> rectQuery = options.get<Maybe<RectF>>("rect");
-    Maybe<std::pair<Vec2F, float>> radiusQuery;
-    if (auto radius = options.get<Maybe<float>>("radius"))
+    std::optional<Line2F> lineQuery = options.get<std::optional<Line2F>>("line");
+    std::optional<PolyF> polyQuery = options.get<std::optional<PolyF>>("poly");
+    std::optional<RectF> rectQuery = options.get<std::optional<RectF>>("rect");
+    std::optional<std::pair<Vec2F, float>> radiusQuery;
+    if (auto radius = options.get<std::optional<float>>("radius"))
       radiusQuery = std::make_pair(options.get<Vec2F>("center"), *radius);
     
     bool globalQuery = !lineQuery && !polyQuery && !rectQuery && !radiusQuery;
 
-    EntityBoundMode boundMode = EntityBoundModeNames.getLeft(options.get<Maybe<String>>("boundMode").value("CollisionArea"));
-    Maybe<LuaString> order = options.get<Maybe<LuaString>>("order");
+    EntityBoundMode boundMode = EntityBoundModeNames.getLeft(options.get<std::optional<String>>("boundMode").value_or("CollisionArea"));
+    std::optional<LuaString> order = options.get<std::optional<LuaString>>("order");
 
     auto geometry = world->geometry();
 
@@ -559,7 +558,7 @@ namespace LuaBindings {
       LuaEngine& engine,
       Vec2F const& pos1,
       LuaValue const& pos2,
-      Maybe<LuaTable> options,
+      std::optional<LuaTable> options,
       Selector<EntityT> selector = {}) {
     if (!options)
       options = engine.createTable();
@@ -581,7 +580,7 @@ namespace LuaBindings {
       LuaEngine& engine,
       Vec2F const& point1,
       Vec2F const& point2,
-      Maybe<LuaTable> options,
+      std::optional<LuaTable> options,
       Selector<EntityT> selector = {}) {
     Line2F line(point1, point2);
 
@@ -610,17 +609,17 @@ namespace LuaBindings {
     addWorldEntityCallbacks(callbacks, world);
     addWorldCollisionCallbacks(callbacks, world);
 
-    callbacks.registerCallbackWithSignature<bool, String, Vec2I, Maybe<int>, Json>("placeObject", std::bind(WorldCallbacks::placeObject, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-    callbacks.registerCallbackWithSignature<Maybe<EntityId>, Json, Vec2F, Maybe<std::size_t>, Json, Maybe<Vec2F>, Maybe<float>>("spawnItem", std::bind(WorldCallbacks::spawnItem, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
-    callbacks.registerCallbackWithSignature<List<EntityId>, Vec2F, String, float, Maybe<std::uint64_t>>("spawnTreasure", std::bind(WorldCallbacks::spawnTreasure, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-    callbacks.registerCallbackWithSignature<Maybe<EntityId>, String, Vec2F, Maybe<JsonObject>>("spawnMonster", std::bind(WorldCallbacks::spawnMonster, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    callbacks.registerCallbackWithSignature<Maybe<EntityId>, Vec2F, String, String, float, Maybe<std::uint64_t>, Json>("spawnNpc", std::bind(WorldCallbacks::spawnNpc, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
-    callbacks.registerCallbackWithSignature<Maybe<EntityId>, Vec2F, String, Json>("spawnStagehand", std::bind(WorldCallbacks::spawnStagehand, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    callbacks.registerCallbackWithSignature<Maybe<EntityId>, String, Vec2F, Maybe<EntityId>, Maybe<Vec2F>, bool, Json>("spawnProjectile", std::bind(WorldCallbacks::spawnProjectile, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
-    callbacks.registerCallbackWithSignature<Maybe<EntityId>, String, Vec2F, Json>("spawnVehicle", std::bind(WorldCallbacks::spawnVehicle, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    callbacks.registerCallbackWithSignature<bool, String, Vec2I, std::optional<int>, Json>("placeObject", std::bind(WorldCallbacks::placeObject, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    callbacks.registerCallbackWithSignature<std::optional<EntityId>, Json, Vec2F, std::optional<std::size_t>, Json, std::optional<Vec2F>, std::optional<float>>("spawnItem", std::bind(WorldCallbacks::spawnItem, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
+    callbacks.registerCallbackWithSignature<List<EntityId>, Vec2F, String, float, std::optional<std::uint64_t>>("spawnTreasure", std::bind(WorldCallbacks::spawnTreasure, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    callbacks.registerCallbackWithSignature<std::optional<EntityId>, String, Vec2F, std::optional<JsonObject>>("spawnMonster", std::bind(WorldCallbacks::spawnMonster, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    callbacks.registerCallbackWithSignature<std::optional<EntityId>, Vec2F, String, String, float, std::optional<std::uint64_t>, Json>("spawnNpc", std::bind(WorldCallbacks::spawnNpc, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
+    callbacks.registerCallbackWithSignature<std::optional<EntityId>, Vec2F, String, Json>("spawnStagehand", std::bind(WorldCallbacks::spawnStagehand, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    callbacks.registerCallbackWithSignature<std::optional<EntityId>, String, Vec2F, std::optional<EntityId>, std::optional<Vec2F>, bool, Json>("spawnProjectile", std::bind(WorldCallbacks::spawnProjectile, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
+    callbacks.registerCallbackWithSignature<std::optional<EntityId>, String, Vec2F, Json>("spawnVehicle", std::bind(WorldCallbacks::spawnVehicle, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     callbacks.registerCallbackWithSignature<Json, String, Json>("getProperty", std::bind(WorldCallbacks::getProperty, world, std::placeholders::_1, std::placeholders::_2));
     callbacks.registerCallbackWithSignature<void, String, Json>("setProperty", std::bind(WorldCallbacks::setProperty, world, std::placeholders::_1, std::placeholders::_2));
-    callbacks.registerCallbackWithSignature<Maybe<PlatformerAStar::Path>, Vec2F, Vec2F, ActorMovementParameters, PlatformerAStar::Parameters>("findPlatformerPath", std::bind(WorldCallbacks::findPlatformerPath, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    callbacks.registerCallbackWithSignature<std::optional<PlatformerAStar::Path>, Vec2F, Vec2F, ActorMovementParameters, PlatformerAStar::Parameters>("findPlatformerPath", std::bind(WorldCallbacks::findPlatformerPath, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
     callbacks.registerCallbackWithSignature<PlatformerAStar::PathFinder, Vec2F, Vec2F, ActorMovementParameters, PlatformerAStar::Parameters>("platformerPathStart", std::bind(WorldCallbacks::platformerPathStart, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 
     callbacks.registerCallback("type", [world](LuaEngine& engine) -> LuaString {
@@ -662,7 +661,7 @@ namespace LuaBindings {
         return false;
       });
 
-    callbacks.registerCallback("biomeBlocksAt", [world](Vec2I position) -> Maybe<List<MaterialId>> {
+    callbacks.registerCallback("biomeBlocksAt", [world](Vec2I position) -> std::optional<List<MaterialId>> {
         std::shared_ptr<WorldTemplate const> worldTemplate;
         if (auto worldClient = as<WorldClient>(world))
           worldTemplate = worldClient->currentTemplate();
@@ -720,7 +719,7 @@ namespace LuaBindings {
 
     if (auto clientWorld = as<WorldClient>(world)) {
       callbacks.registerCallback("inWorld", [clientWorld]() { return clientWorld->inWorld(); });
-      callbacks.registerCallback("mainPlayer", [clientWorld]() -> Maybe<int> {
+      callbacks.registerCallback("mainPlayer", [clientWorld]() -> std::optional<int> {
         if (clientWorld->isHeadless()) {
           return {};
         } else {
@@ -744,7 +743,7 @@ namespace LuaBindings {
 
         return playerIds;
       });
-      callbacks.registerCallback("callScriptContext", [clientWorld](String const& contextName, String const& function, LuaVariadic<LuaValue> const& args) -> Maybe<LuaValue> {
+      callbacks.registerCallback("callScriptContext", [clientWorld](String const& contextName, String const& function, LuaVariadic<LuaValue> const& args) -> std::optional<LuaValue> {
         auto context = clientWorld->scriptContext(contextName);
         if (!context)
           throw StarException::format("Context {} does not exist", contextName);
@@ -777,14 +776,14 @@ namespace LuaBindings {
       callbacks.registerCallbackWithSignature<bool, RectF>("regionActive", std::bind(ServerWorldCallbacks::regionActive, serverWorld, std::placeholders::_1));
       callbacks.registerCallbackWithSignature<void, DungeonId, bool>("setTileProtection", std::bind(ServerWorldCallbacks::setTileProtection, serverWorld, std::placeholders::_1, std::placeholders::_2));
       callbacks.registerCallbackWithSignature<bool, RectI>("isPlayerModified", std::bind(ServerWorldCallbacks::isPlayerModified, serverWorld, std::placeholders::_1));
-      callbacks.registerCallbackWithSignature<Maybe<LiquidLevel>, Vec2F>("forceDestroyLiquid", std::bind(ServerWorldCallbacks::forceDestroyLiquid, serverWorld, std::placeholders::_1));
+      callbacks.registerCallbackWithSignature<std::optional<LiquidLevel>, Vec2F>("forceDestroyLiquid", std::bind(ServerWorldCallbacks::forceDestroyLiquid, serverWorld, std::placeholders::_1));
       callbacks.registerCallbackWithSignature<EntityId, String>("loadUniqueEntity", std::bind(ServerWorldCallbacks::loadUniqueEntity, serverWorld, std::placeholders::_1));
       callbacks.registerCallbackWithSignature<void, EntityId, String>("setUniqueId", std::bind(ServerWorldCallbacks::setUniqueId, serverWorld, std::placeholders::_1, std::placeholders::_2));
-      callbacks.registerCallbackWithSignature<Json, EntityId, Maybe<EntityId>>("takeItemDrop", std::bind(ServerWorldCallbacks::takeItemDrop, world, std::placeholders::_1, std::placeholders::_2));
-      callbacks.registerCallbackWithSignature<void, Vec2F, Maybe<bool>>("setPlayerStart", std::bind(ServerWorldCallbacks::setPlayerStart, world, std::placeholders::_1, std::placeholders::_2));
+      callbacks.registerCallbackWithSignature<Json, EntityId, std::optional<EntityId>>("takeItemDrop", std::bind(ServerWorldCallbacks::takeItemDrop, world, std::placeholders::_1, std::placeholders::_2));
+      callbacks.registerCallbackWithSignature<void, Vec2F, std::optional<bool>>("setPlayerStart", std::bind(ServerWorldCallbacks::setPlayerStart, world, std::placeholders::_1, std::placeholders::_2));
       callbacks.registerCallbackWithSignature<List<EntityId>>("players", std::bind(ServerWorldCallbacks::players, world));
       callbacks.registerCallbackWithSignature<LuaString, LuaEngine&>("fidelity", std::bind(ServerWorldCallbacks::fidelity, world, std::placeholders::_1));
-      callbacks.registerCallbackWithSignature<Maybe<LuaValue>, String, String, LuaVariadic<LuaValue>>("callScriptContext", std::bind(ServerWorldCallbacks::callScriptContext, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+      callbacks.registerCallbackWithSignature<std::optional<LuaValue>, String, String, LuaVariadic<LuaValue>>("callScriptContext", std::bind(ServerWorldCallbacks::callScriptContext, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
       callbacks.registerCallbackWithSignature<bool, ConnectionId, String, Json>("sendPacket", std::bind(ServerWorldCallbacks::sendPacket, serverWorld, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
       callbacks.registerCallbackWithSignature<double>("skyTime", [serverWorld]() {
@@ -806,10 +805,10 @@ namespace LuaBindings {
       callbacks.registerCallback("setUniverseFlag", [serverWorld](String flagName) { return serverWorld->universeSettings()->setFlag(flagName); });
       callbacks.registerCallback("universeFlags", [serverWorld]() { return serverWorld->universeSettings()->flags(); });
       callbacks.registerCallback("universeFlagSet", [serverWorld](String const& flagName) { return serverWorld->universeSettings()->flags().contains(flagName); });
-      callbacks.registerCallback("placeDungeon", [serverWorld](String dungeonName, Vec2I position, Maybe<DungeonId> dungeonId) -> bool {
+      callbacks.registerCallback("placeDungeon", [serverWorld](String dungeonName, Vec2I position, std::optional<DungeonId> dungeonId) -> bool {
           return serverWorld->placeDungeon(dungeonName, position, dungeonId);
         });
-      callbacks.registerCallback("tryPlaceDungeon", [serverWorld](String dungeonName, Vec2I position, Maybe<DungeonId> dungeonId) -> bool {
+      callbacks.registerCallback("tryPlaceDungeon", [serverWorld](String dungeonName, Vec2I position, std::optional<DungeonId> dungeonId) -> bool {
           return serverWorld->placeDungeon(dungeonName, position, dungeonId, false);
         });
 
@@ -835,11 +834,11 @@ namespace LuaBindings {
           serverWorld->setPlanetType(planetType, primaryBiomeName);
         });
 
-      callbacks.registerCallback("setDungeonGravity", [serverWorld](DungeonId dungeonId, Maybe<float> gravity) {
+      callbacks.registerCallback("setDungeonGravity", [serverWorld](DungeonId dungeonId, std::optional<float> gravity) {
           serverWorld->setDungeonGravity(dungeonId, gravity);
         });
 
-      callbacks.registerCallback("setDungeonBreathable", [serverWorld](DungeonId dungeonId, Maybe<bool> breathable) {
+      callbacks.registerCallback("setDungeonBreathable", [serverWorld](DungeonId dungeonId, std::optional<bool> breathable) {
           serverWorld->setDungeonBreathable(dungeonId, breathable);
         });
 
@@ -847,7 +846,7 @@ namespace LuaBindings {
           serverWorld->setDungeonId(tileRegion, dungeonId);
         });
 
-      callbacks.registerCallback("enqueuePlacement", [serverWorld](List<Json> distributionConfigs, Maybe<DungeonId> id) {
+      callbacks.registerCallback("enqueuePlacement", [serverWorld](List<Json> distributionConfigs, std::optional<DungeonId> id) {
           auto distributions = distributionConfigs.transformed([serverWorld](Json const& config) {
             return BiomeItemDistribution(serverWorld->root(), config, serverWorld->root().random().randu64());
           });
@@ -873,25 +872,25 @@ namespace LuaBindings {
   }
 
   void addWorldEntityCallbacks(LuaCallbacks& callbacks, World* world) {
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("entityQuery", std::bind(WorldEntityCallbacks::entityQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("monsterQuery", std::bind(WorldEntityCallbacks::monsterQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("npcQuery", std::bind(WorldEntityCallbacks::npcQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("objectQuery", std::bind(WorldEntityCallbacks::objectQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("itemDropQuery", std::bind(WorldEntityCallbacks::itemDropQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("playerQuery", std::bind(WorldEntityCallbacks::playerQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("loungeableQuery", std::bind(WorldEntityCallbacks::loungeableQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, Maybe<LuaTable>>("entityLineQuery", std::bind(WorldEntityCallbacks::entityLineQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, Maybe<LuaTable>>("objectLineQuery", std::bind(WorldEntityCallbacks::objectLineQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, Maybe<LuaTable>>("npcLineQuery", std::bind(WorldEntityCallbacks::npcLineQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("entityQuery", std::bind(WorldEntityCallbacks::entityQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("monsterQuery", std::bind(WorldEntityCallbacks::monsterQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("npcQuery", std::bind(WorldEntityCallbacks::npcQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("objectQuery", std::bind(WorldEntityCallbacks::objectQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("itemDropQuery", std::bind(WorldEntityCallbacks::itemDropQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("playerQuery", std::bind(WorldEntityCallbacks::playerQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, std::optional<LuaTable>>("loungeableQuery", std::bind(WorldEntityCallbacks::loungeableQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, std::optional<LuaTable>>("entityLineQuery", std::bind(WorldEntityCallbacks::entityLineQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, std::optional<LuaTable>>("objectLineQuery", std::bind(WorldEntityCallbacks::objectLineQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, std::optional<LuaTable>>("npcLineQuery", std::bind(WorldEntityCallbacks::npcLineQuery, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
     callbacks.registerCallback("objectAt",
-        [world](Vec2I const& tilePosition) -> Maybe<int> {
+        [world](Vec2I const& tilePosition) -> std::optional<int> {
           if (auto object = world->findEntityAtTile(tilePosition, [](std::shared_ptr<TileEntity> const& entity) { return is<Object>(entity); }))
             return object->entityId();
           else
             return {};
         });
 
-    callbacks.registerCallbackWithSignature<Maybe<std::shared_ptr<Entity>>, EntityId>("entity", [world](EntityId entityId) -> Maybe<std::shared_ptr<Entity>> {
+    callbacks.registerCallbackWithSignature<std::optional<std::shared_ptr<Entity>>, EntityId>("entity", [world](EntityId entityId) -> std::optional<std::shared_ptr<Entity>> {
       if (auto entity = world->entity(entityId)) {
         return entity;
       } else {
@@ -899,7 +898,7 @@ namespace LuaBindings {
       }
     });
     
-    callbacks.registerCallback("entities", [world](LuaEngine& engine, Maybe<LuaTable> options) {
+    callbacks.registerCallback("entities", [world](LuaEngine& engine, std::optional<LuaTable> options) {
       if (!options) {
         options = engine.createTable();
       }
@@ -910,38 +909,38 @@ namespace LuaBindings {
     callbacks.registerCallbackWithSignature<bool, int, int>("entityCanDamage", std::bind(WorldEntityCallbacks::entityCanDamage, world, std::placeholders::_1, std::placeholders::_2));
     callbacks.registerCallbackWithSignature<Json, EntityId>("entityDamageTeam", std::bind(WorldEntityCallbacks::entityDamageTeam, world, std::placeholders::_1));
     callbacks.registerCallbackWithSignature<Json, EntityId>("entityAggressive", std::bind(WorldEntityCallbacks::entityAggressive, world, std::placeholders::_1));
-    callbacks.registerCallbackWithSignature<Maybe<LuaString>, LuaEngine&, int>("entityType", std::bind(WorldEntityCallbacks::entityType, world, std::placeholders::_1, std::placeholders::_2));
-    callbacks.registerCallbackWithSignature<Maybe<Vec2F>, int>("entityPosition", std::bind(WorldEntityCallbacks::entityPosition, world, std::placeholders::_1));
-    callbacks.registerCallbackWithSignature<Maybe<Vec2F>, int>("entityVelocity", std::bind(WorldEntityCallbacks::entityVelocity, world, std::placeholders::_1));
-    callbacks.registerCallbackWithSignature<Maybe<RectF>, int>("entityMetaBoundBox", std::bind(WorldEntityCallbacks::entityMetaBoundBox, world, std::placeholders::_1));
-    callbacks.registerCallbackWithSignature<Maybe<std::uint64_t>, EntityId, String>("entityCurrency", std::bind(WorldEntityCallbacks::entityCurrency, world, std::placeholders::_1, std::placeholders::_2));
-    callbacks.registerCallbackWithSignature<Maybe<std::uint64_t>, EntityId, Json, Maybe<bool>>("entityHasCountOfItem", std::bind(WorldEntityCallbacks::entityHasCountOfItem, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    callbacks.registerCallbackWithSignature<Maybe<Vec2F>, EntityId>("entityHealth", std::bind(WorldEntityCallbacks::entityHealth, world, std::placeholders::_1));
-    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entitySpecies", std::bind(WorldEntityCallbacks::entitySpecies, world, std::placeholders::_1));
-    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entityGender", std::bind(WorldEntityCallbacks::entityGender, world, std::placeholders::_1));
-    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entityName", std::bind(WorldEntityCallbacks::entityName, world, std::placeholders::_1));
-    callbacks.registerCallbackWithSignature<Maybe<Json>, EntityId>("entityNametag", std::bind(WorldEntityCallbacks::entityNametag, world, std::placeholders::_1));
-    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId, Maybe<String>>("entityDescription", std::bind(WorldEntityCallbacks::entityDescription, world, std::placeholders::_1, std::placeholders::_2));
-    callbacks.registerCallbackWithSignature<LuaNullTermWrapper<Maybe<List<Drawable>>>, EntityId, String>("entityPortrait", std::bind(WorldEntityCallbacks::entityPortrait, world, std::placeholders::_1, std::placeholders::_2));
-    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId, String>("entityHandItem", std::bind(WorldEntityCallbacks::entityHandItem, world, std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallbackWithSignature<std::optional<LuaString>, LuaEngine&, int>("entityType", std::bind(WorldEntityCallbacks::entityType, world, std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallbackWithSignature<std::optional<Vec2F>, int>("entityPosition", std::bind(WorldEntityCallbacks::entityPosition, world, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<std::optional<Vec2F>, int>("entityVelocity", std::bind(WorldEntityCallbacks::entityVelocity, world, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<std::optional<RectF>, int>("entityMetaBoundBox", std::bind(WorldEntityCallbacks::entityMetaBoundBox, world, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<std::optional<std::uint64_t>, EntityId, String>("entityCurrency", std::bind(WorldEntityCallbacks::entityCurrency, world, std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallbackWithSignature<std::optional<std::uint64_t>, EntityId, Json, std::optional<bool>>("entityHasCountOfItem", std::bind(WorldEntityCallbacks::entityHasCountOfItem, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    callbacks.registerCallbackWithSignature<std::optional<Vec2F>, EntityId>("entityHealth", std::bind(WorldEntityCallbacks::entityHealth, world, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>("entitySpecies", std::bind(WorldEntityCallbacks::entitySpecies, world, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>("entityGender", std::bind(WorldEntityCallbacks::entityGender, world, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>("entityName", std::bind(WorldEntityCallbacks::entityName, world, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<std::optional<Json>, EntityId>("entityNametag", std::bind(WorldEntityCallbacks::entityNametag, world, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<std::optional<String>, EntityId, std::optional<String>>("entityDescription", std::bind(WorldEntityCallbacks::entityDescription, world, std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallbackWithSignature<LuaNullTermWrapper<std::optional<List<Drawable>>>, EntityId, String>("entityPortrait", std::bind(WorldEntityCallbacks::entityPortrait, world, std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallbackWithSignature<std::optional<String>, EntityId, String>("entityHandItem", std::bind(WorldEntityCallbacks::entityHandItem, world, std::placeholders::_1, std::placeholders::_2));
     callbacks.registerCallbackWithSignature<Json, EntityId, String>("entityHandItemDescriptor", std::bind(WorldEntityCallbacks::entityHandItemDescriptor, world, std::placeholders::_1, std::placeholders::_2));
-    callbacks.registerCallbackWithSignature<LuaNullTermWrapper<Maybe<String>>, EntityId>("entityUniqueId", std::bind(WorldEntityCallbacks::entityUniqueId, world, std::placeholders::_1));
-    callbacks.registerCallbackWithSignature<Json, EntityId, String, Maybe<Json>>("getObjectParameter", std::bind(WorldEntityCallbacks::getObjectParameter, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    callbacks.registerCallbackWithSignature<Json, EntityId, String, Maybe<Json>>("getNpcScriptParameter", std::bind(WorldEntityCallbacks::getNpcScriptParameter, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    callbacks.registerCallbackWithSignature<LuaNullTermWrapper<std::optional<String>>, EntityId>("entityUniqueId", std::bind(WorldEntityCallbacks::entityUniqueId, world, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<Json, EntityId, String, std::optional<Json>>("getObjectParameter", std::bind(WorldEntityCallbacks::getObjectParameter, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    callbacks.registerCallbackWithSignature<Json, EntityId, String, std::optional<Json>>("getNpcScriptParameter", std::bind(WorldEntityCallbacks::getNpcScriptParameter, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     callbacks.registerCallbackWithSignature<List<Vec2I>, EntityId>("objectSpaces", std::bind(WorldEntityCallbacks::objectSpaces, world, std::placeholders::_1));
-    callbacks.registerCallbackWithSignature<Maybe<int>, EntityId>("farmableStage", std::bind(WorldEntityCallbacks::farmableStage, world, std::placeholders::_1));
-    callbacks.registerCallbackWithSignature<Maybe<int>, EntityId>("containerSize", std::bind(WorldEntityCallbacks::containerSize, world, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<std::optional<int>, EntityId>("farmableStage", std::bind(WorldEntityCallbacks::farmableStage, world, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<std::optional<int>, EntityId>("containerSize", std::bind(WorldEntityCallbacks::containerSize, world, std::placeholders::_1));
     callbacks.registerCallbackWithSignature<bool, EntityId>("containerClose", std::bind(WorldEntityCallbacks::containerClose, world, std::placeholders::_1));
     callbacks.registerCallbackWithSignature<bool, EntityId>("containerOpen", std::bind(WorldEntityCallbacks::containerOpen, world, std::placeholders::_1));
     callbacks.registerCallbackWithSignature<Json, EntityId>("containerItems", std::bind(WorldEntityCallbacks::containerItems, world, std::placeholders::_1));
     callbacks.registerCallbackWithSignature<Json, EntityId, std::size_t>("containerItemAt", std::bind(WorldEntityCallbacks::containerItemAt, world, std::placeholders::_1, std::placeholders::_2));
-    callbacks.registerCallbackWithSignature<Maybe<bool>, EntityId, Json>("containerConsume", std::bind(WorldEntityCallbacks::containerConsume, world, std::placeholders::_1, std::placeholders::_2));
-    callbacks.registerCallbackWithSignature<Maybe<bool>, EntityId, std::size_t, int>("containerConsumeAt", std::bind(WorldEntityCallbacks::containerConsumeAt, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    callbacks.registerCallbackWithSignature<Maybe<std::size_t>, EntityId, Json>("containerAvailable", std::bind(WorldEntityCallbacks::containerAvailable, world, std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallbackWithSignature<std::optional<bool>, EntityId, Json>("containerConsume", std::bind(WorldEntityCallbacks::containerConsume, world, std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallbackWithSignature<std::optional<bool>, EntityId, std::size_t, int>("containerConsumeAt", std::bind(WorldEntityCallbacks::containerConsumeAt, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    callbacks.registerCallbackWithSignature<std::optional<std::size_t>, EntityId, Json>("containerAvailable", std::bind(WorldEntityCallbacks::containerAvailable, world, std::placeholders::_1, std::placeholders::_2));
     callbacks.registerCallbackWithSignature<Json, EntityId>("containerTakeAll", std::bind(WorldEntityCallbacks::containerTakeAll, world, std::placeholders::_1));
     callbacks.registerCallbackWithSignature<Json, EntityId, std::size_t>("containerTakeAt", std::bind(WorldEntityCallbacks::containerTakeAt, world, std::placeholders::_1, std::placeholders::_2));
     callbacks.registerCallbackWithSignature<Json, EntityId, std::size_t, int>("containerTakeNumItemsAt", std::bind(WorldEntityCallbacks::containerTakeNumItemsAt, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    callbacks.registerCallbackWithSignature<Maybe<std::size_t>, EntityId, Json>("containerItemsCanFit", std::bind(WorldEntityCallbacks::containerItemsCanFit, world, std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallbackWithSignature<std::optional<std::size_t>, EntityId, Json>("containerItemsCanFit", std::bind(WorldEntityCallbacks::containerItemsCanFit, world, std::placeholders::_1, std::placeholders::_2));
     callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerItemsFitWhere", std::bind(WorldEntityCallbacks::containerItemsFitWhere, world, std::placeholders::_1, std::placeholders::_2));
     callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerAddItems", std::bind(WorldEntityCallbacks::containerAddItems, world, std::placeholders::_1, std::placeholders::_2));
     callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerStackItems", std::bind(WorldEntityCallbacks::containerStackItems, world, std::placeholders::_1, std::placeholders::_2));
@@ -949,33 +948,33 @@ namespace LuaBindings {
     callbacks.registerCallbackWithSignature<Json, EntityId, Json, std::size_t>("containerSwapItems", std::bind(WorldEntityCallbacks::containerSwapItems, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     callbacks.registerCallbackWithSignature<Json, EntityId, Json, std::size_t>("containerSwapItemsNoCombine", std::bind(WorldEntityCallbacks::containerSwapItemsNoCombine, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     callbacks.registerCallbackWithSignature<Json, EntityId, Json, std::size_t>("containerItemApply", std::bind(WorldEntityCallbacks::containerItemApply, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    callbacks.registerCallbackWithSignature<Maybe<LuaValue>, EntityId, String, LuaVariadic<LuaValue>>("callScriptedEntity", std::bind(WorldEntityCallbacks::callScriptedEntity, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    callbacks.registerCallbackWithSignature<std::optional<LuaValue>, EntityId, String, LuaVariadic<LuaValue>>("callScriptedEntity", std::bind(WorldEntityCallbacks::callScriptedEntity, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     callbacks.registerCallbackWithSignature<RpcPromise<Vec2F>, String>("findUniqueEntity", std::bind(WorldEntityCallbacks::findUniqueEntity, world, std::placeholders::_1));
     callbacks.registerCallbackWithSignature<RpcPromise<Json>, LuaEngine&, LuaValue, String, LuaVariadic<Json>>("sendEntityMessage", std::bind(WorldEntityCallbacks::sendEntityMessage, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-    callbacks.registerCallbackWithSignature<Maybe<List<EntityId>>, EntityId, Maybe<std::size_t>>("loungingEntities", std::bind(WorldEntityCallbacks::loungingEntities, world, std::placeholders::_1, std::placeholders::_2));
-    callbacks.registerCallbackWithSignature<Maybe<bool>, EntityId, Maybe<std::size_t>>("loungeableOccupied", std::bind(WorldEntityCallbacks::loungeableOccupied, world, std::placeholders::_1, std::placeholders::_2));
-    callbacks.registerCallbackWithSignature<Maybe<std::size_t>, EntityId>("loungeableAnchorCount", std::bind(WorldEntityCallbacks::loungeableAnchorCount, world, std::placeholders::_1));
-    callbacks.registerCallbackWithSignature<bool, EntityId, Maybe<bool>>("isMonster", std::bind(WorldEntityCallbacks::isMonster, world, std::placeholders::_1, std::placeholders::_2));
-    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("monsterType", std::bind(WorldEntityCallbacks::monsterType, world, std::placeholders::_1));
-    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("npcType", std::bind(WorldEntityCallbacks::npcType, world, std::placeholders::_1));
-    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("stagehandType", std::bind(WorldEntityCallbacks::stagehandType, world, std::placeholders::_1));
-    callbacks.registerCallbackWithSignature<bool, EntityId, Maybe<int>>("isNpc", std::bind(WorldEntityCallbacks::isNpc, world, std::placeholders::_1, std::placeholders::_2));
-    callbacks.registerCallback("isEntityInteractive", [world](EntityId entityId) -> Maybe<bool> {
+    callbacks.registerCallbackWithSignature<std::optional<List<EntityId>>, EntityId, std::optional<std::size_t>>("loungingEntities", std::bind(WorldEntityCallbacks::loungingEntities, world, std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallbackWithSignature<std::optional<bool>, EntityId, std::optional<std::size_t>>("loungeableOccupied", std::bind(WorldEntityCallbacks::loungeableOccupied, world, std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallbackWithSignature<std::optional<std::size_t>, EntityId>("loungeableAnchorCount", std::bind(WorldEntityCallbacks::loungeableAnchorCount, world, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<bool, EntityId, std::optional<bool>>("isMonster", std::bind(WorldEntityCallbacks::isMonster, world, std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>("monsterType", std::bind(WorldEntityCallbacks::monsterType, world, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>("npcType", std::bind(WorldEntityCallbacks::npcType, world, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<std::optional<String>, EntityId>("stagehandType", std::bind(WorldEntityCallbacks::stagehandType, world, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<bool, EntityId, std::optional<int>>("isNpc", std::bind(WorldEntityCallbacks::isNpc, world, std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallback("isEntityInteractive", [world](EntityId entityId) -> std::optional<bool> {
         if (auto entity = world->get<InteractiveEntity>(entityId))
           return entity->isInteractive();
         return {};
       });
-    callbacks.registerCallback("entityAimPosition", [world](EntityId entityId) -> Maybe<Vec2F> {
+    callbacks.registerCallback("entityAimPosition", [world](EntityId entityId) -> std::optional<Vec2F> {
         if (auto entity = world->get<ToolUserEntity>(entityId))
           return entity->aimPosition();
         return {};
       });
-    callbacks.registerCallback("entityMouthPosition", [world](EntityId entityId) -> Maybe<Vec2F> {
+    callbacks.registerCallback("entityMouthPosition", [world](EntityId entityId) -> std::optional<Vec2F> {
         if (auto entity = world->get<ChattyEntity>(entityId))
           return entity->mouthPosition();
         return {};
       });
-    callbacks.registerCallback("entityTypeName", [world](EntityId entityId) -> Maybe<String> {
+    callbacks.registerCallback("entityTypeName", [world](EntityId entityId) -> std::optional<String> {
         auto entity = world->entity(entityId);
         if (auto monster = as<Monster>(entity))
           return monster->typeName();
@@ -1032,12 +1031,12 @@ namespace LuaBindings {
         return world->activeWeather(position);
       });
 
-    callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, Vec2F, String, float, Maybe<unsigned>, Maybe<EntityId>>("damageTiles", std::bind(WorldEnvironmentCallbacks::damageTiles, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6, std::placeholders::_7));
-    callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, Vec2F, String, float, Maybe<unsigned>, Maybe<EntityId>>("damageTileArea", std::bind(WorldEnvironmentCallbacks::damageTileArea, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6, std::placeholders::_7, std::placeholders::_8));
-    callbacks.registerCallbackWithSignature<bool, Vec2I, String, String, Maybe<int>, bool>("placeMaterial", std::bind(WorldEnvironmentCallbacks::placeMaterial, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-    callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, String, Maybe<int>, bool>("replaceMaterials", std::bind(WorldEnvironmentCallbacks::replaceMaterials, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
-    callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, String, Maybe<int>, bool>("replaceMaterialArea", std::bind(WorldEnvironmentCallbacks::replaceMaterialArea, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
-    callbacks.registerCallbackWithSignature<bool, Vec2I, String, String, Maybe<int>, bool>("placeMod", std::bind(WorldEnvironmentCallbacks::placeMod, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+    callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, Vec2F, String, float, std::optional<unsigned>, std::optional<EntityId>>("damageTiles", std::bind(WorldEnvironmentCallbacks::damageTiles, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6, std::placeholders::_7));
+    callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, Vec2F, String, float, std::optional<unsigned>, std::optional<EntityId>>("damageTileArea", std::bind(WorldEnvironmentCallbacks::damageTileArea, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6, std::placeholders::_7, std::placeholders::_8));
+    callbacks.registerCallbackWithSignature<bool, Vec2I, String, String, std::optional<int>, bool>("placeMaterial", std::bind(WorldEnvironmentCallbacks::placeMaterial, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+    callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, String, std::optional<int>, bool>("replaceMaterials", std::bind(WorldEnvironmentCallbacks::replaceMaterials, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+    callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, String, std::optional<int>, bool>("replaceMaterialArea", std::bind(WorldEnvironmentCallbacks::replaceMaterialArea, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
+    callbacks.registerCallbackWithSignature<bool, Vec2I, String, String, std::optional<int>, bool>("placeMod", std::bind(WorldEnvironmentCallbacks::placeMod, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 
     callbacks.registerCallback("radialTileQuery", [world](Vec2F center, float radius, String layerName) -> List<Vec2I> {
       auto layer = TileLayerNames.getLeft(layerName);
@@ -1047,16 +1046,16 @@ namespace LuaBindings {
     });
     
     callbacks.registerCallbackWithSignature<List<std::pair<Vec2I, LiquidLevel>>, Vec2F, Vec2F>("liquidAlongLine", std::bind(WorldEnvironmentCallbacks::liquidAlongLine, world, std::placeholders::_1, std::placeholders::_2));
-    callbacks.registerCallbackWithSignature<bool, Vec2I, Maybe<bool>, Maybe<bool>>("tileIsOccupied", std::bind(WorldEnvironmentCallbacks::tileIsOccupied, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    callbacks.registerCallbackWithSignature<bool, Vec2I, std::optional<bool>, std::optional<bool>>("tileIsOccupied", std::bind(WorldEnvironmentCallbacks::tileIsOccupied, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     callbacks.registerCallbackWithSignature<float>("threatLevel", std::bind(&World::threatLevel, world));
     callbacks.registerCallbackWithSignature<double>("time", std::bind(WorldEnvironmentCallbacks::time, world));
     callbacks.registerCallbackWithSignature<std::uint64_t>("day", std::bind(WorldEnvironmentCallbacks::day, world));
     callbacks.registerCallbackWithSignature<double>("timeOfDay", std::bind(WorldEnvironmentCallbacks::timeOfDay, world));
     callbacks.registerCallbackWithSignature<float>("dayLength", std::bind(WorldEnvironmentCallbacks::dayLength, world));
-    callbacks.registerCallbackWithSignature<Maybe<LiquidLevel>, Variant<RectF, Vec2I>>("liquidAt", std::bind(WorldEnvironmentCallbacks::liquidAt, world, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<std::optional<LiquidLevel>, Variant<RectF, Vec2I>>("liquidAt", std::bind(WorldEnvironmentCallbacks::liquidAt, world, std::placeholders::_1));
     callbacks.registerCallbackWithSignature<float, Vec2F>("gravity", std::bind(WorldEnvironmentCallbacks::gravity, world, std::placeholders::_1));
     callbacks.registerCallbackWithSignature<bool, Vec2F, LiquidId, float>("spawnLiquid", std::bind(WorldEnvironmentCallbacks::spawnLiquid, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    callbacks.registerCallbackWithSignature<Maybe<LiquidLevel>, Vec2F>("destroyLiquid", std::bind(WorldEnvironmentCallbacks::destroyLiquid, world, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<std::optional<LiquidLevel>, Vec2F>("destroyLiquid", std::bind(WorldEnvironmentCallbacks::destroyLiquid, world, std::placeholders::_1));
     callbacks.registerCallbackWithSignature<bool, Vec2F>("isTileProtected", std::bind(WorldEnvironmentCallbacks::isTileProtected, world, std::placeholders::_1));
   }
   
@@ -1065,7 +1064,7 @@ namespace LuaBindings {
     callbacks.registerCallback("size", [world]() -> Vec2U {
         return world->geometry().size();
       });
-    callbacks.registerCallbackWithSignature<float, Vec2F, Maybe<Vec2F>>("magnitude", std::bind(&WorldGeometryCallbacks::magnitude, world, std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallbackWithSignature<float, Vec2F, std::optional<Vec2F>>("magnitude", std::bind(&WorldGeometryCallbacks::magnitude, world, std::placeholders::_1, std::placeholders::_2));
     callbacks.registerCallbackWithSignature<Vec2F, Vec2F, Vec2F>("distance", std::bind(WorldGeometryCallbacks::distance, world, std::placeholders::_1, std::placeholders::_2));
     callbacks.registerCallbackWithSignature<bool, PolyF, Vec2F>("polyContains", std::bind(WorldGeometryCallbacks::polyContains, world, std::placeholders::_1, std::placeholders::_2));
     callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, LuaValue>("xwrap", std::bind(WorldGeometryCallbacks::xwrap, world, std::placeholders::_1, std::placeholders::_2));
@@ -1073,19 +1072,19 @@ namespace LuaBindings {
   }
   
   void addWorldCollisionCallbacks(LuaCallbacks& callbacks, World* world) {
-    callbacks.registerCallbackWithSignature<bool, RectF, Maybe<CollisionSet>>("rectCollision", std::bind(WorldCollisionCallbacks::rectCollision, world, std::placeholders::_1, std::placeholders::_2));
-    callbacks.registerCallbackWithSignature<bool, Vec2F, Maybe<CollisionSet>>("pointTileCollision", std::bind(WorldCollisionCallbacks::pointTileCollision, world, std::placeholders::_1, std::placeholders::_2));
-    callbacks.registerCallbackWithSignature<bool, Vec2F, Vec2F, Maybe<CollisionSet>>("lineTileCollision", std::bind(WorldCollisionCallbacks::lineTileCollision, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    callbacks.registerCallbackWithSignature<Maybe<std::pair<Vec2F, Vec2I>>, Vec2F, Vec2F, Maybe<CollisionSet>>("lineTileCollisionPoint", std::bind(WorldCollisionCallbacks::lineTileCollisionPoint, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    callbacks.registerCallbackWithSignature<bool, RectF, Maybe<CollisionSet>>("rectTileCollision", std::bind(WorldCollisionCallbacks::rectTileCollision, world, std::placeholders::_1, std::placeholders::_2));
-    callbacks.registerCallbackWithSignature<bool, Vec2F, Maybe<CollisionSet>>("pointCollision", std::bind(WorldCollisionCallbacks::pointCollision, world, std::placeholders::_1, std::placeholders::_2));
-    callbacks.registerCallbackWithSignature<LuaTupleReturn<Maybe<Vec2F>, Maybe<Vec2F>>, Vec2F, Vec2F, Maybe<CollisionSet>>("lineCollision", std::bind(WorldCollisionCallbacks::lineCollision, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    callbacks.registerCallbackWithSignature<bool, PolyF, Maybe<Vec2F>, Maybe<CollisionSet>>("polyCollision", std::bind(WorldCollisionCallbacks::polyCollision, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    callbacks.registerCallbackWithSignature<List<Vec2I>, Vec2F, Vec2F, Maybe<CollisionSet>, Maybe<int>>("collisionBlocksAlongLine", std::bind(WorldCollisionCallbacks::collisionBlocksAlongLine, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-    callbacks.registerCallbackWithSignature<Maybe<Vec2F>, PolyF, Vec2F, float, Maybe<CollisionSet>>("resolvePolyCollision", std::bind(WorldCollisionCallbacks::resolvePolyCollision, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    callbacks.registerCallbackWithSignature<bool, RectF, std::optional<CollisionSet>>("rectCollision", std::bind(WorldCollisionCallbacks::rectCollision, world, std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallbackWithSignature<bool, Vec2F, std::optional<CollisionSet>>("pointTileCollision", std::bind(WorldCollisionCallbacks::pointTileCollision, world, std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallbackWithSignature<bool, Vec2F, Vec2F, std::optional<CollisionSet>>("lineTileCollision", std::bind(WorldCollisionCallbacks::lineTileCollision, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    callbacks.registerCallbackWithSignature<std::optional<std::pair<Vec2F, Vec2I>>, Vec2F, Vec2F, std::optional<CollisionSet>>("lineTileCollisionPoint", std::bind(WorldCollisionCallbacks::lineTileCollisionPoint, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    callbacks.registerCallbackWithSignature<bool, RectF, std::optional<CollisionSet>>("rectTileCollision", std::bind(WorldCollisionCallbacks::rectTileCollision, world, std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallbackWithSignature<bool, Vec2F, std::optional<CollisionSet>>("pointCollision", std::bind(WorldCollisionCallbacks::pointCollision, world, std::placeholders::_1, std::placeholders::_2));
+    callbacks.registerCallbackWithSignature<LuaTupleReturn<std::optional<Vec2F>, std::optional<Vec2F>>, Vec2F, Vec2F, std::optional<CollisionSet>>("lineCollision", std::bind(WorldCollisionCallbacks::lineCollision, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    callbacks.registerCallbackWithSignature<bool, PolyF, std::optional<Vec2F>, std::optional<CollisionSet>>("polyCollision", std::bind(WorldCollisionCallbacks::polyCollision, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    callbacks.registerCallbackWithSignature<List<Vec2I>, Vec2F, Vec2F, std::optional<CollisionSet>, std::optional<int>>("collisionBlocksAlongLine", std::bind(WorldCollisionCallbacks::collisionBlocksAlongLine, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    callbacks.registerCallbackWithSignature<std::optional<Vec2F>, PolyF, Vec2F, float, std::optional<CollisionSet>>("resolvePolyCollision", std::bind(WorldCollisionCallbacks::resolvePolyCollision, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
   }
 
-  float WorldGeometryCallbacks::magnitude(World* world, Vec2F pos1, Maybe<Vec2F> pos2) {
+  float WorldGeometryCallbacks::magnitude(World* world, Vec2F pos1, std::optional<Vec2F> pos2) {
     if (pos2)
       return world->geometry().diff(pos1, *pos2).magnitude();
     else
@@ -1129,7 +1128,7 @@ namespace LuaBindings {
     }
   }
 
-  bool WorldCollisionCallbacks::rectCollision(World* world, RectF const& arg1, Maybe<CollisionSet> const& arg2) {
+  bool WorldCollisionCallbacks::rectCollision(World* world, RectF const& arg1, std::optional<CollisionSet> const& arg2) {
     PolyF body = PolyF(arg1);
 
     if (arg2)
@@ -1138,7 +1137,7 @@ namespace LuaBindings {
       return world->polyCollision(body);
   }
 
-  bool WorldCollisionCallbacks::pointTileCollision(World* world, Vec2F const& arg1, Maybe<CollisionSet> const& arg2) {
+  bool WorldCollisionCallbacks::pointTileCollision(World* world, Vec2F const& arg1, std::optional<CollisionSet> const& arg2) {
     if (arg2)
       return world->pointTileCollision(arg1, *arg2);
     else
@@ -1146,7 +1145,7 @@ namespace LuaBindings {
   }
 
   bool WorldCollisionCallbacks::lineTileCollision(
-      World* world, Vec2F const& arg1, Vec2F const& arg2, Maybe<CollisionSet> const& arg3) {
+      World* world, Vec2F const& arg1, Vec2F const& arg2, std::optional<CollisionSet> const& arg3) {
     Vec2F const begin = arg1;
     Vec2F const end = arg2;
 
@@ -1156,14 +1155,14 @@ namespace LuaBindings {
       return world->lineTileCollision(begin, end);
   }
 
-  Maybe<std::pair<Vec2F, Vec2I>> WorldCollisionCallbacks::lineTileCollisionPoint(World* world, Vec2F const& begin, Vec2F const& end, Maybe<CollisionSet> const& collisionSet) {
+  std::optional<std::pair<Vec2F, Vec2I>> WorldCollisionCallbacks::lineTileCollisionPoint(World* world, Vec2F const& begin, Vec2F const& end, std::optional<CollisionSet> const& collisionSet) {
     if (collisionSet)
       return world->lineTileCollisionPoint(begin, end, *collisionSet);
     else
       return world->lineTileCollisionPoint(begin, end);
   }
 
-  bool WorldCollisionCallbacks::rectTileCollision(World* world, RectF const& arg1, Maybe<CollisionSet> const& arg2) {
+  bool WorldCollisionCallbacks::rectTileCollision(World* world, RectF const& arg1, std::optional<CollisionSet> const& arg2) {
     RectI const region = RectI::integral(arg1);
 
     if (arg2)
@@ -1172,14 +1171,14 @@ namespace LuaBindings {
       return world->rectTileCollision(region);
   }
 
-  bool WorldCollisionCallbacks::pointCollision(World* world, Vec2F const& point, Maybe<CollisionSet> const& collisionSet) {
-    return world->pointCollision(point, collisionSet.value(DefaultCollisionSet));
+  bool WorldCollisionCallbacks::pointCollision(World* world, Vec2F const& point, std::optional<CollisionSet> const& collisionSet) {
+    return world->pointCollision(point, collisionSet.value_or(DefaultCollisionSet));
   }
 
-  LuaTupleReturn<Maybe<Vec2F>, Maybe<Vec2F>> WorldCollisionCallbacks::lineCollision(World* world, Vec2F const& start, Vec2F const& end, Maybe<CollisionSet> const& collisionSet) {
-    Maybe<Vec2F> point;
-    Maybe<Vec2F> normal;
-    auto collision = world->lineCollision(Line2F(start, end), collisionSet.value(DefaultCollisionSet));
+  LuaTupleReturn<std::optional<Vec2F>, std::optional<Vec2F>> WorldCollisionCallbacks::lineCollision(World* world, Vec2F const& start, Vec2F const& end, std::optional<CollisionSet> const& collisionSet) {
+    std::optional<Vec2F> point;
+    std::optional<Vec2F> normal;
+    auto collision = world->lineCollision(Line2F(start, end), collisionSet.value_or(DefaultCollisionSet));
     if (collision) {
       point = collision->first;
       normal = collision->second;
@@ -1188,7 +1187,7 @@ namespace LuaBindings {
   }
 
   bool WorldCollisionCallbacks::polyCollision(
-      World* world, PolyF const& arg1, Maybe<Vec2F> const& arg2, Maybe<CollisionSet> const& arg3) {
+      World* world, PolyF const& arg1, std::optional<Vec2F> const& arg2, std::optional<CollisionSet> const& arg3) {
     PolyF body = arg1;
 
     Vec2F center;
@@ -1204,17 +1203,17 @@ namespace LuaBindings {
   }
 
   List<Vec2I> WorldCollisionCallbacks::collisionBlocksAlongLine(
-      World* world, Vec2F const& arg1, Vec2F const& arg2, Maybe<CollisionSet> const& arg3, Maybe<int> const& arg4) {
+      World* world, Vec2F const& arg1, Vec2F const& arg2, std::optional<CollisionSet> const& arg3, std::optional<int> const& arg4) {
     Vec2F const begin = arg1;
     Vec2F const end = arg2;
 
-    CollisionSet collisionSet = arg3.value(DefaultCollisionSet);
+    CollisionSet collisionSet = arg3.value_or(DefaultCollisionSet);
     int const maxSize = arg4 ? *arg4 : -1;
     return world->collidingTilesAlongLine(begin, end, collisionSet, maxSize);
   }
 
-  Maybe<Vec2F> WorldCollisionCallbacks::resolvePolyCollision(
-      World* world, PolyF poly, Vec2F const& position, float maximumCorrection, Maybe<CollisionSet> const& maybeCollisionSet) {
+  std::optional<Vec2F> WorldCollisionCallbacks::resolvePolyCollision(
+      World* world, PolyF poly, Vec2F const& position, float maximumCorrection, std::optional<CollisionSet> const& maybeCollisionSet) {
     struct CollisionPoly {
       PolyF poly;
       Vec2F center;
@@ -1223,14 +1222,14 @@ namespace LuaBindings {
 
     poly.translate(position);
     List<CollisionPoly> collisions;
-    CollisionSet collisionSet = maybeCollisionSet.value(DefaultCollisionSet);
+    CollisionSet collisionSet = maybeCollisionSet.value_or(DefaultCollisionSet);
     world->forEachCollisionBlock(RectI::integral(poly.boundBox().padded(maximumCorrection + 1.0f)),
         [&](auto const& block) {
           if (collisionSet.contains(block.kind))
             collisions.append({block.poly, Vec2F(block.space), 0.0f});
         });
 
-    auto resolveCollision = [&](Maybe<Vec2F> direction, float maximumDistance, int loops) -> Maybe<Vec2F> {
+    auto resolveCollision = [&](std::optional<Vec2F> direction, float maximumDistance, int loops) -> std::optional<Vec2F> {
       PolyF body = poly;
       Vec2F correction;
       for (int i = 0; i < loops; ++i) {
@@ -1296,10 +1295,10 @@ namespace LuaBindings {
   }
 
   bool WorldEnvironmentCallbacks::tileIsOccupied(
-      World* world, Vec2I const& arg1, Maybe<bool> const& arg2, Maybe<bool> const& arg3) {
+      World* world, Vec2I const& arg1, std::optional<bool> const& arg2, std::optional<bool> const& arg3) {
     Vec2I const tile = arg1;
-    bool const tileLayerBool = arg2.value(true);
-    bool const includeEphemeral = arg3.value(false);
+    bool const tileLayerBool = arg2.value_or(true);
+    bool const includeEphemeral = arg3.value_or(false);
 
     TileLayer const tileLayer = tileLayerBool ? TileLayer::Foreground : TileLayer::Background;
 
@@ -1309,7 +1308,7 @@ namespace LuaBindings {
   bool WorldCallbacks::placeObject(World* world,
       String const& objectType,
       Vec2I const& worldPosition,
-      Maybe<int> const& objectDirection,
+      std::optional<int> const& objectDirection,
       Json const& objectParameters) {
     auto objectDatabase = world->root().objectDatabase();
 
@@ -1334,19 +1333,19 @@ namespace LuaBindings {
     return false;
   }
 
-  Maybe<EntityId> WorldCallbacks::spawnItem(World* world,
+  std::optional<EntityId> WorldCallbacks::spawnItem(World* world,
       Json const& itemType,
       Vec2F const& worldPosition,
-      Maybe<std::size_t> const& inputCount,
+      std::optional<std::size_t> const& inputCount,
       Json const& inputParameters,
-      Maybe<Vec2F> const& initialVelocity,
-      Maybe<float> const& intangibleTime) {
+      std::optional<Vec2F> const& initialVelocity,
+      std::optional<float> const& intangibleTime) {
     Vec2F const position = worldPosition;
 
     try {
       ItemDescriptor descriptor;
       if (itemType.isType(Json::Type::String)) {
-        std::size_t count = inputCount.value(1);
+        std::size_t count = inputCount.value_or(1);
 
         Json parameters = inputParameters ? inputParameters : JsonObject();
 
@@ -1361,7 +1360,7 @@ namespace LuaBindings {
         if (intangibleTime)
           itemDrop->setIntangibleTime(*intangibleTime);
         world->addEntity(itemDrop);
-        return itemDrop->inWorld() ? itemDrop->entityId() : Maybe<EntityId>();
+        return itemDrop->inWorld() ? itemDrop->entityId() : std::optional<EntityId>();
       }
 
       world->root().logger().warn("Could not spawn item, item empty in WorldCallbacks::spawnItem");
@@ -1373,11 +1372,11 @@ namespace LuaBindings {
   }
 
   List<EntityId> WorldCallbacks::spawnTreasure(
-      World* world, Vec2F const& position, String const& pool, float level, Maybe<std::uint64_t> seed) {
+      World* world, Vec2F const& position, String const& pool, float level, std::optional<std::uint64_t> seed) {
     List<EntityId> entities;
     auto treasureDatabase = world->root().treasureDatabase();
     try {
-      for (auto const& treasureItem : treasureDatabase->createTreasure(pool, level, seed.value(world->root().random().randu64()))) {
+      for (auto const& treasureItem : treasureDatabase->createTreasure(pool, level, seed.value_or(world->root().random().randu64()))) {
         std::shared_ptr<ItemDrop> entity = ItemDrop::createRandomizedDrop(world->root(), treasureItem, position);
         entities.append(entity->entityId());
         world->addEntity(entity);
@@ -1389,8 +1388,8 @@ namespace LuaBindings {
     return entities;
   }
 
-  Maybe<EntityId> WorldCallbacks::spawnMonster(
-      World* world, String const& arg1, Vec2F const& arg2, Maybe<JsonObject> const& arg3) {
+  std::optional<EntityId> WorldCallbacks::spawnMonster(
+      World* world, String const& arg1, Vec2F const& arg2, std::optional<JsonObject> const& arg3) {
     Vec2F const spawnPosition = arg2;
     auto monsterDatabase = world->root().monsterDatabase();
 
@@ -1407,7 +1406,7 @@ namespace LuaBindings {
 
       monster->setPosition(spawnPosition);
       world->addEntity(monster);
-      return monster->inWorld() ? monster->entityId() : Maybe<EntityId>();
+      return monster->inWorld() ? monster->entityId() : std::optional<EntityId>();
     } catch (StarException const& exception) {
       world->root().logger().warn(
           "Could not spawn Monster of type '{}', exception caught: {}", arg1, outputException(exception, false));
@@ -1415,12 +1414,12 @@ namespace LuaBindings {
     }
   }
 
-  Maybe<EntityId> WorldCallbacks::spawnNpc(World* world,
+  std::optional<EntityId> WorldCallbacks::spawnNpc(World* world,
       Vec2F const& arg1,
       String const& arg2,
       String const& arg3,
       float arg4,
-      Maybe<std::uint64_t> arg5,
+      std::optional<std::uint64_t> arg5,
       Json const& arg6) {
     Vec2F const spawnPosition = arg1;
 
@@ -1440,7 +1439,7 @@ namespace LuaBindings {
       auto npc = npcDatabase->createNpc(npcDatabase->generateNpcVariant(arg2, typeName, level, seed, overrides));
       npc->setPosition(spawnPosition);
       world->addEntity(npc);
-      return npc->inWorld() ? npc->entityId() : Maybe<EntityId>();
+      return npc->inWorld() ? npc->entityId() : std::optional<EntityId>();
     } catch (StarException const& exception) {
       world->root().logger().warn("Could not spawn NPC of species '{}' and type '{}', exception caught: {}",
           arg2,
@@ -1450,14 +1449,14 @@ namespace LuaBindings {
     }
   }
 
-  Maybe<EntityId> WorldCallbacks::spawnStagehand(
+  std::optional<EntityId> WorldCallbacks::spawnStagehand(
       World* world, Vec2F const& spawnPosition, String const& typeName, Json const& overrides) {
     auto stagehandDatabase = world->root().stagehandDatabase();
     try {
       auto stagehand = stagehandDatabase->createStagehand(typeName, overrides);
       stagehand->setPosition(spawnPosition);
       world->addEntity(stagehand);
-      return stagehand->inWorld() ? stagehand->entityId() : Maybe<EntityId>();
+      return stagehand->inWorld() ? stagehand->entityId() : std::optional<EntityId>();
     } catch (StarException const& exception) {
       world->root().logger().warn(
           "Could not spawn Stagehand of type '{}', exception caught: {}", typeName, outputException(exception, false));
@@ -1465,11 +1464,11 @@ namespace LuaBindings {
     }
   }
 
-  Maybe<EntityId> WorldCallbacks::spawnProjectile(World* world,
+  std::optional<EntityId> WorldCallbacks::spawnProjectile(World* world,
       String const& projectileType,
       Vec2F const& spawnPosition,
-      Maybe<EntityId> const& sourceEntityId,
-      Maybe<Vec2F> const& projectileDirection,
+      std::optional<EntityId> const& sourceEntityId,
+      std::optional<Vec2F> const& projectileDirection,
       bool trackSourceEntity,
       Json const& projectileParameters) {
 
@@ -1477,10 +1476,10 @@ namespace LuaBindings {
       auto projectileDatabase = world->root().projectileDatabase();
       auto projectile = projectileDatabase->createProjectile(projectileType, projectileParameters ? projectileParameters : JsonObject());
       projectile->setInitialPosition(spawnPosition);
-      projectile->setInitialDirection(projectileDirection.value());
-      projectile->setSourceEntity(sourceEntityId.value(NullEntityId), trackSourceEntity);
+      projectile->setInitialDirection(projectileDirection.value_or(Vec2F{}));
+      projectile->setSourceEntity(sourceEntityId.value_or(NullEntityId), trackSourceEntity);
       world->addEntity(projectile);
-      return projectile->inWorld() ? projectile->entityId() : Maybe<EntityId>();
+      return projectile->inWorld() ? projectile->entityId() : std::optional<EntityId>();
     } catch (StarException const& exception) {
       world->root().logger().warn(
           "Could not spawn Projectile of type '{}', exception caught: {}", projectileType, outputException(exception, false));
@@ -1488,7 +1487,7 @@ namespace LuaBindings {
     }
   }
 
-  Maybe<EntityId> WorldCallbacks::spawnVehicle(
+  std::optional<EntityId> WorldCallbacks::spawnVehicle(
       World* world, String const& vehicleName, Vec2F const& pos, Json const& extraConfig) {
     auto vehicleDatabase = world->root().vehicleDatabase();
     auto vehicle = vehicleDatabase->create(vehicleName, extraConfig);
@@ -1523,7 +1522,7 @@ namespace LuaBindings {
     world->setProperty(arg1, arg2);
   }
 
-  Maybe<LiquidLevel> WorldEnvironmentCallbacks::liquidAt(World* world, Variant<RectF, Vec2I> boundBoxOrPoint) {
+  std::optional<LiquidLevel> WorldEnvironmentCallbacks::liquidAt(World* world, Variant<RectF, Vec2I> boundBoxOrPoint) {
     LiquidLevel liquidLevel = boundBoxOrPoint.call([world](auto const& bbop) { return world->liquidLevel(bbop); });
     if (liquidLevel.liquid != EmptyLiquidId)
       return liquidLevel;
@@ -1538,7 +1537,7 @@ namespace LuaBindings {
     return world->modifyTile(Vec2I::floor(position), PlaceLiquid{liquid, quantity}, true);
   }
 
-  Maybe<LiquidLevel> WorldEnvironmentCallbacks::destroyLiquid(World* world, Vec2F const& position) {
+  std::optional<LiquidLevel> WorldEnvironmentCallbacks::destroyLiquid(World* world, Vec2F const& position) {
     auto liquidLevel = world->liquidLevel(Vec2I::floor(position));
     if (liquidLevel.liquid != EmptyLiquidId) {
       if (world->modifyTile(Vec2I::floor(position), PlaceLiquid{EmptyLiquidId, 0}, true))
@@ -1551,7 +1550,7 @@ namespace LuaBindings {
     return world->isTileProtected(Vec2I::floor(position));
   }
 
-  Maybe<PlatformerAStar::Path> WorldCallbacks::findPlatformerPath(World* world,
+  std::optional<PlatformerAStar::Path> WorldCallbacks::findPlatformerPath(World* world,
       Vec2F const& start,
       Vec2F const& end,
       ActorMovementParameters actorMovementParameters,
@@ -1612,7 +1611,7 @@ namespace LuaBindings {
     return world->isPlayerModified(region);
   }
 
-  Maybe<LiquidLevel> ServerWorldCallbacks::forceDestroyLiquid(WorldServer* world, Vec2F const& position) {
+  std::optional<LiquidLevel> ServerWorldCallbacks::forceDestroyLiquid(WorldServer* world, Vec2F const& position) {
     auto liquidLevel = world->liquidLevel(Vec2I::floor(position));
     if (liquidLevel.liquid != EmptyLiquidId) {
       if (world->forceModifyTile(Vec2I::floor(position), PlaceLiquid{EmptyLiquidId, 0}, true))
@@ -1625,7 +1624,7 @@ namespace LuaBindings {
     return world->loadUniqueEntity(uniqueId);
   }
 
-  void ServerWorldCallbacks::setUniqueId(WorldServer* world, EntityId entityId, Maybe<String> const& uniqueId) {
+  void ServerWorldCallbacks::setUniqueId(WorldServer* world, EntityId entityId, std::optional<String> const& uniqueId) {
     auto entity = world->entity(entityId);
     if (auto npc = as<Npc>(entity.get()))
       npc->setUniqueId(uniqueId);
@@ -1641,7 +1640,7 @@ namespace LuaBindings {
       throw StarException::format("No such entity with id {}", entityId);
   }
 
-  Json ServerWorldCallbacks::takeItemDrop(World* world, EntityId entityId, Maybe<EntityId> const& takenBy) {
+  Json ServerWorldCallbacks::takeItemDrop(World* world, EntityId entityId, std::optional<EntityId> const& takenBy) {
     auto itemDrop = world->get<ItemDrop>(entityId);
     if (itemDrop && itemDrop->canTake() && itemDrop->isMaster()) {
       std::shared_ptr<Item> item;
@@ -1657,8 +1656,8 @@ namespace LuaBindings {
     return Json();
   }
 
-  void ServerWorldCallbacks::setPlayerStart(World* world, Vec2F const& playerStart, Maybe<bool> respawnInWorld) {
-    as<WorldServer>(world)->setPlayerStart(playerStart, respawnInWorld.isValid() && respawnInWorld.value());
+  void ServerWorldCallbacks::setPlayerStart(World* world, Vec2F const& playerStart, std::optional<bool> respawnInWorld) {
+    as<WorldServer>(world)->setPlayerStart(playerStart, respawnInWorld.has_value() && respawnInWorld.value());
   }
 
   List<EntityId> ServerWorldCallbacks::players(World* world) {
@@ -1669,7 +1668,7 @@ namespace LuaBindings {
     return engine.createString(WorldServerFidelityNames.getRight(as<WorldServer>(world)->fidelity()));
   }
 
-  Maybe<LuaValue> ServerWorldCallbacks::callScriptContext(World* world, String const& contextName, String const& function, LuaVariadic<LuaValue> const& args) {
+  std::optional<LuaValue> ServerWorldCallbacks::callScriptContext(World* world, String const& contextName, String const& function, LuaVariadic<LuaValue> const& args) {
     auto context = as<WorldServer>(world)->scriptContext(contextName);
     if (!context)
       throw StarException::format("Context {} does not exist", contextName);
@@ -1705,22 +1704,22 @@ namespace LuaBindings {
     root.spatialLogger().logText("world", text, position, color);
   }
 
-  LuaTable WorldEntityCallbacks::entityQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options) {
+  LuaTable WorldEntityCallbacks::entityQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
     return LuaBindings::entityQuery<Entity>(world, engine, pos1, pos2, std::move(options));
   }
 
-  LuaTable WorldEntityCallbacks::monsterQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options) {
+  LuaTable WorldEntityCallbacks::monsterQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
     return LuaBindings::entityQuery<Monster>(world, engine, pos1, pos2, std::move(options));
   }
 
-  LuaTable WorldEntityCallbacks::npcQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options) {
+  LuaTable WorldEntityCallbacks::npcQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
     return LuaBindings::entityQuery<Npc>(world, engine, pos1, pos2, std::move(options));
   }
 
-  LuaTable WorldEntityCallbacks::objectQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options) {
+  LuaTable WorldEntityCallbacks::objectQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
     String objectName;
     if (options)
-      objectName = options->get<Maybe<String>>("name").value();
+      objectName = options->get<std::optional<String>>("name").value_or(String{});
 
     return LuaBindings::entityQuery<Object>(world,
         engine,
@@ -1732,18 +1731,18 @@ namespace LuaBindings {
         });
   }
 
-  LuaTable WorldEntityCallbacks::itemDropQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options) {
+  LuaTable WorldEntityCallbacks::itemDropQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
     return LuaBindings::entityQuery<ItemDrop>(world, engine, pos1, pos2, std::move(options));
   }
 
-  LuaTable WorldEntityCallbacks::playerQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options) {
+  LuaTable WorldEntityCallbacks::playerQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
     return LuaBindings::entityQuery<Player>(world, engine, pos1, pos2, std::move(options));
   }
 
-  LuaTable WorldEntityCallbacks::loungeableQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, Maybe<LuaTable> options) {
+  LuaTable WorldEntityCallbacks::loungeableQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) {
     String orientationName;
     if (options)
-      orientationName = options->get<Maybe<String>>("orientation").value();
+      orientationName = options->get<std::optional<String>>("orientation").value_or(String{});
 
     LoungeOrientation orientation = LoungeOrientation::None;
     if (orientationName == "sit")
@@ -1771,15 +1770,15 @@ namespace LuaBindings {
     return LuaBindings::entityQuery<LoungeableObject>(world, engine, pos1, pos2, std::move(options), filter);
   }
 
-  LuaTable WorldEntityCallbacks::entityLineQuery(World* world, LuaEngine& engine, Vec2F const& point1, Vec2F const& point2, Maybe<LuaTable> options) {
+  LuaTable WorldEntityCallbacks::entityLineQuery(World* world, LuaEngine& engine, Vec2F const& point1, Vec2F const& point2, std::optional<LuaTable> options) {
     return LuaBindings::entityLineQuery<Entity>(world, engine, point1, point2, std::move(options));
   }
 
-  LuaTable WorldEntityCallbacks::objectLineQuery(World* world, LuaEngine& engine, Vec2F const& point1, Vec2F const& point2, Maybe<LuaTable> options) {
+  LuaTable WorldEntityCallbacks::objectLineQuery(World* world, LuaEngine& engine, Vec2F const& point1, Vec2F const& point2, std::optional<LuaTable> options) {
     return LuaBindings::entityLineQuery<Object>(world, engine, point1, point2, std::move(options));
   }
 
-  LuaTable WorldEntityCallbacks::npcLineQuery(World* world, LuaEngine& engine, Vec2F const& point1, Vec2F const& point2, Maybe<LuaTable> options) {
+  LuaTable WorldEntityCallbacks::npcLineQuery(World* world, LuaEngine& engine, Vec2F const& point1, Vec2F const& point2, std::optional<LuaTable> options) {
     return LuaBindings::entityLineQuery<Npc>(world, engine, point1, point2, std::move(options));
   }
 
@@ -1812,13 +1811,13 @@ namespace LuaBindings {
     return false;
   }
 
-  Maybe<LuaString> WorldEntityCallbacks::entityType(World* world, LuaEngine& engine, EntityId entityId) {
+  std::optional<LuaString> WorldEntityCallbacks::entityType(World* world, LuaEngine& engine, EntityId entityId) {
     if (auto entity = world->entity(entityId))
       return engine.createString(EntityTypeNames.getRight(entity->entityType()));
     return {};
   }
 
-  Maybe<Vec2F> WorldEntityCallbacks::entityPosition(World* world, EntityId entityId) {
+  std::optional<Vec2F> WorldEntityCallbacks::entityPosition(World* world, EntityId entityId) {
     if (auto entity = world->entity(entityId)) {
       return entity->position();
     } else {
@@ -1826,7 +1825,7 @@ namespace LuaBindings {
     }
   }
 
-  Maybe<RectF> WorldEntityCallbacks::entityMetaBoundBox(World* world, EntityId entityId) {
+  std::optional<RectF> WorldEntityCallbacks::entityMetaBoundBox(World* world, EntityId entityId) {
     if (auto entity = world->entity(entityId)) {
       return entity->metaBoundBox();
     } else {
@@ -1834,7 +1833,7 @@ namespace LuaBindings {
     }
   }
 
-  Maybe<Vec2F> WorldEntityCallbacks::entityVelocity(World* world, EntityId entityId) {
+  std::optional<Vec2F> WorldEntityCallbacks::entityVelocity(World* world, EntityId entityId) {
     auto entity = world->entity(entityId);
 
     if (auto mobileEntity = as<MobileEntity>(entity))
@@ -1843,7 +1842,7 @@ namespace LuaBindings {
     return {};
   }
 
-  Maybe<std::uint64_t> WorldEntityCallbacks::entityCurrency(World* world, EntityId entityId, String const& currencyType) {
+  std::optional<std::uint64_t> WorldEntityCallbacks::entityCurrency(World* world, EntityId entityId, String const& currencyType) {
     if (auto player = world->get<Player>(entityId)) {
       return player->currency(currencyType);
     } else {
@@ -1851,15 +1850,15 @@ namespace LuaBindings {
     }
   }
 
-  Maybe<std::uint64_t> WorldEntityCallbacks::entityHasCountOfItem(World* world, EntityId entityId, Json descriptor, Maybe<bool> exactMatch) {
+  std::optional<std::uint64_t> WorldEntityCallbacks::entityHasCountOfItem(World* world, EntityId entityId, Json descriptor, std::optional<bool> exactMatch) {
     if (auto player = world->get<Player>(entityId)) {
-      return player->inventory()->hasCountOfItem(ItemDescriptor(descriptor), exactMatch.value(false));
+      return player->inventory()->hasCountOfItem(ItemDescriptor(descriptor), exactMatch.value_or(false));
     } else {
       return {};
     }
   }
 
-  Maybe<Vec2F> WorldEntityCallbacks::entityHealth(World* world, EntityId entityId) {
+  std::optional<Vec2F> WorldEntityCallbacks::entityHealth(World* world, EntityId entityId) {
     if (auto entity = world->get<DamageBarEntity>(entityId)) {
       return Vec2F(entity->health(), entity->maxHealth());
     } else {
@@ -1867,7 +1866,7 @@ namespace LuaBindings {
     }
   }
 
-  Maybe<String> WorldEntityCallbacks::entitySpecies(World* world, EntityId entityId) {
+  std::optional<String> WorldEntityCallbacks::entitySpecies(World* world, EntityId entityId) {
     if (auto player = world->get<Player>(entityId)) {
       return player->species();
     } else if (auto npc = world->get<Npc>(entityId)) {
@@ -1877,7 +1876,7 @@ namespace LuaBindings {
     }
   }
 
-  Maybe<String> WorldEntityCallbacks::entityGender(World* world, EntityId entityId) {
+  std::optional<String> WorldEntityCallbacks::entityGender(World* world, EntityId entityId) {
     if (auto player = world->get<Player>(entityId)) {
       return GenderNames.getRight(player->gender());
     } else if (auto npc = world->get<Npc>(entityId)) {
@@ -1887,14 +1886,14 @@ namespace LuaBindings {
     }
   }
 
-  Maybe<String> WorldEntityCallbacks::entityName(World* world, EntityId entityId) {
+  std::optional<String> WorldEntityCallbacks::entityName(World* world, EntityId entityId) {
     if (auto entity = world->entity(entityId))
       return entity->name();
 
     return {};
   }
 
-  Maybe<Json> WorldEntityCallbacks::entityNametag(World* world, EntityId entityId) {
+  std::optional<Json> WorldEntityCallbacks::entityNametag(World* world, EntityId entityId) {
     auto entity = world->entity(entityId);
 
     Json result;
@@ -1912,7 +1911,7 @@ namespace LuaBindings {
     return result;
   }
 
-  Maybe<String> WorldEntityCallbacks::entityDescription(World* world, EntityId entityId, Maybe<String> const& species) {
+  std::optional<String> WorldEntityCallbacks::entityDescription(World* world, EntityId entityId, std::optional<String> const& species) {
     if (auto entity = world->entity(entityId)) {
       if (auto inspectableEntity = as<InspectableEntity>(entity)) {
         if (species)
@@ -1925,14 +1924,14 @@ namespace LuaBindings {
     return {};
   }
 
-  LuaNullTermWrapper<Maybe<List<Drawable>>> WorldEntityCallbacks::entityPortrait(World* world, EntityId entityId, String const& portraitMode) {
+  LuaNullTermWrapper<std::optional<List<Drawable>>> WorldEntityCallbacks::entityPortrait(World* world, EntityId entityId, String const& portraitMode) {
     if (auto portraitEntity = as<PortraitEntity>(world->entity(entityId)))
       return portraitEntity->portrait(PortraitModeNames.getLeft(portraitMode));
 
     return {};
   }
 
-  Maybe<String> WorldEntityCallbacks::entityHandItem(World* world, EntityId entityId, String const& handName) {
+  std::optional<String> WorldEntityCallbacks::entityHandItem(World* world, EntityId entityId, String const& handName) {
     ToolHand toolHand;
     if (handName == "primary") {
       toolHand = ToolHand::Primary;
@@ -1970,13 +1969,13 @@ namespace LuaBindings {
     return Json();
   }
 
-  LuaNullTermWrapper<Maybe<String>> WorldEntityCallbacks::entityUniqueId(World* world, EntityId entityId) {
+  LuaNullTermWrapper<std::optional<String>> WorldEntityCallbacks::entityUniqueId(World* world, EntityId entityId) {
     if (auto entity = world->entity(entityId))
       return entity->uniqueId();
     return {};
   }
 
-  Json WorldEntityCallbacks::getObjectParameter(World* world, EntityId entityId, String const& parameterName, Maybe<Json> const& defaultValue) {
+  Json WorldEntityCallbacks::getObjectParameter(World* world, EntityId entityId, String const& parameterName, std::optional<Json> const& defaultValue) {
     Json val = Json();
 
     if (auto objectEntity = as<Object>(world->entity(entityId))) {
@@ -1988,7 +1987,7 @@ namespace LuaBindings {
     return val;
   }
 
-  Json WorldEntityCallbacks::getNpcScriptParameter(World* world, EntityId entityId, String const& parameterName, Maybe<Json> const& defaultValue) {
+  Json WorldEntityCallbacks::getNpcScriptParameter(World* world, EntityId entityId, String const& parameterName, std::optional<Json> const& defaultValue) {
     Json val = Json();
 
     if (auto npcEntity = as<Npc>(world->entity(entityId))) {
@@ -2006,7 +2005,7 @@ namespace LuaBindings {
     return {};
   }
 
-  Maybe<int> WorldEntityCallbacks::farmableStage(World* world, EntityId entityId) {
+  std::optional<int> WorldEntityCallbacks::farmableStage(World* world, EntityId entityId) {
     if (auto farmable = world->get<FarmableObject>(entityId)) {
       return farmable->stage();
     }
@@ -2014,7 +2013,7 @@ namespace LuaBindings {
     return {};
   }
 
-  Maybe<int> WorldEntityCallbacks::containerSize(World* world, EntityId entityId) {
+  std::optional<int> WorldEntityCallbacks::containerSize(World* world, EntityId entityId) {
     if (auto container = world->get<ContainerObject>(entityId))
       return container->containerSize();
 
@@ -2063,7 +2062,7 @@ namespace LuaBindings {
     return Json();
   }
 
-  Maybe<bool> WorldEntityCallbacks::containerConsume(World* world, EntityId entityId, Json const& items) {
+  std::optional<bool> WorldEntityCallbacks::containerConsume(World* world, EntityId entityId, Json const& items) {
     if (auto container = world->get<ContainerObject>(entityId)) {
       auto toConsume = ItemDescriptor(items);
       return container->consumeItems(toConsume).result();
@@ -2072,7 +2071,7 @@ namespace LuaBindings {
     return {};
   }
 
-  Maybe<bool> WorldEntityCallbacks::containerConsumeAt(World* world, EntityId entityId, std::size_t offset, int count) {
+  std::optional<bool> WorldEntityCallbacks::containerConsumeAt(World* world, EntityId entityId, std::size_t offset, int count) {
     if (auto container = world->get<ContainerObject>(entityId)) {
       if (offset < container->containerSize()) {
         return container->consumeItems(offset, count).result();
@@ -2082,7 +2081,7 @@ namespace LuaBindings {
     return {};
   }
 
-  Maybe<std::size_t> WorldEntityCallbacks::containerAvailable(World* world, EntityId entityId, Json const& items) {
+  std::optional<std::size_t> WorldEntityCallbacks::containerAvailable(World* world, EntityId entityId, Json const& items) {
     if (auto container = world->get<ContainerObject>(entityId)) {
       auto itemBag = container->itemBag();
       auto toCheck = ItemDescriptor(items);
@@ -2130,7 +2129,7 @@ namespace LuaBindings {
     return Json();
   }
 
-  Maybe<std::size_t> WorldEntityCallbacks::containerItemsCanFit(World* world, EntityId entityId, Json const& items) {
+  std::optional<std::size_t> WorldEntityCallbacks::containerItemsCanFit(World* world, EntityId entityId, Json const& items) {
     if (auto container = world->get<ContainerObject>(entityId)) {
       auto itemDb = world->root().itemDatabase();
       auto itemBag = container->itemBag();
@@ -2230,7 +2229,7 @@ namespace LuaBindings {
     return items;
   }
 
-  Maybe<LuaValue> WorldEntityCallbacks::callScriptedEntity(World* world, EntityId entityId, String const& function, LuaVariadic<LuaValue> const& args) {
+  std::optional<LuaValue> WorldEntityCallbacks::callScriptedEntity(World* world, EntityId entityId, String const& function, LuaVariadic<LuaValue> const& args) {
     auto entity = as<ScriptedEntity>(world->entity(entityId));
     if (!entity || !entity->isMaster())
       throw StarException::format("Entity {} does not exist or is not a local master scripted entity", entityId);
@@ -2248,55 +2247,55 @@ namespace LuaBindings {
       return world->sendEntityMessage(engine.luaTo<EntityId>(entityId), message, JsonArray::from(std::move(args)));
   }
 
-  Maybe<List<EntityId>> WorldEntityCallbacks::loungingEntities(World* world, EntityId entityId, Maybe<std::size_t> anchorIndex) {
+  std::optional<List<EntityId>> WorldEntityCallbacks::loungingEntities(World* world, EntityId entityId, std::optional<std::size_t> anchorIndex) {
     if (auto entity = world->get<LoungeableEntity>(entityId))
-      return entity->entitiesLoungingIn(anchorIndex.value()).values();
+      return entity->entitiesLoungingIn(anchorIndex.value_or(std::size_t{})).values();
     return {};
   }
 
-  Maybe<bool> WorldEntityCallbacks::loungeableOccupied(World* world, EntityId entityId, Maybe<std::size_t> anchorIndex) {
+  std::optional<bool> WorldEntityCallbacks::loungeableOccupied(World* world, EntityId entityId, std::optional<std::size_t> anchorIndex) {
     auto entity = world->get<LoungeableEntity>(entityId);
-    std::size_t anchor = anchorIndex.value();
+    std::size_t anchor = anchorIndex.value_or(std::size_t{});
     if (entity && entity->anchorCount() > anchor)
       return !entity->entitiesLoungingIn(anchor).empty();
     return {};
   }
 
-  Maybe<std::size_t> WorldEntityCallbacks::loungeableAnchorCount(World* world, EntityId entityId) {
+  std::optional<std::size_t> WorldEntityCallbacks::loungeableAnchorCount(World* world, EntityId entityId) {
     if (auto entity = world->get<LoungeableEntity>(entityId))
       return entity->anchorCount();
     return {};
   }
 
-  bool WorldEntityCallbacks::isMonster(World* world, EntityId entityId, Maybe<bool> const& aggressive) {
+  bool WorldEntityCallbacks::isMonster(World* world, EntityId entityId, std::optional<bool> const& aggressive) {
     if (auto entity = world->get<Monster>(entityId))
       return !aggressive || *aggressive == entity->aggressive();
 
     return false;
   }
 
-  Maybe<String> WorldEntityCallbacks::monsterType(World* world, EntityId entityId) {
+  std::optional<String> WorldEntityCallbacks::monsterType(World* world, EntityId entityId) {
     if (auto monster = world->get<Monster>(entityId))
       return monster->typeName();
 
     return {};
   }
 
-  Maybe<String> WorldEntityCallbacks::npcType(World* world, EntityId entityId) {
+  std::optional<String> WorldEntityCallbacks::npcType(World* world, EntityId entityId) {
     if (auto npc = world->get<Npc>(entityId))
       return npc->npcType();
 
     return {};
   }
 
-  Maybe<String> WorldEntityCallbacks::stagehandType(World* world, EntityId entityId) {
+  std::optional<String> WorldEntityCallbacks::stagehandType(World* world, EntityId entityId) {
     if (auto stagehand = world->get<Stagehand>(entityId))
       return stagehand->typeName();
 
     return {};
   }
 
-  bool WorldEntityCallbacks::isNpc(World* world, EntityId entityId, Maybe<int> const& damageTeam) {
+  bool WorldEntityCallbacks::isNpc(World* world, EntityId entityId, std::optional<int> const& damageTeam) {
     if (auto entity = world->get<Npc>(entityId)) {
       return !damageTeam || *damageTeam == entity->getTeam().team;
     }
@@ -2418,8 +2417,8 @@ namespace LuaBindings {
       Vec2F const& arg3,
       String const& arg4,
       float arg5,
-      Maybe<unsigned> const& arg6,
-      Maybe<EntityId> sourceEntity) {
+      std::optional<unsigned> const& arg6,
+      std::optional<EntityId> sourceEntity) {
     List<Vec2I> tilePositions = arg1;
 
     TileLayer layer;
@@ -2448,13 +2447,13 @@ namespace LuaBindings {
       Vec2F sourcePosition,
       String damageType,
       float damage,
-      Maybe<unsigned> const& harvestLevel,
-      Maybe<EntityId> sourceEntity) {
+      std::optional<unsigned> const& harvestLevel,
+      std::optional<EntityId> sourceEntity) {
     auto tiles = tileAreaBrush(radius, center, false);
     return damageTiles(world, tiles, layer, sourcePosition, damageType, damage, harvestLevel, sourceEntity);
   }
 
-  bool WorldEnvironmentCallbacks::placeMaterial(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, Maybe<int> const& arg4, bool arg5) {
+  bool WorldEnvironmentCallbacks::placeMaterial(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, std::optional<int> const& arg4, bool arg5) {
     auto tilePosition = arg1;
 
     PlaceMaterial placeMaterial;
@@ -2499,7 +2498,7 @@ namespace LuaBindings {
       List<Vec2I> const& tilePositions,
       String const& layer,
       String const& materialName,
-      Maybe<int> const& hueShift,
+      std::optional<int> const& hueShift,
       bool enableDrops) {
     PlaceMaterial placeMaterial;
 
@@ -2559,13 +2558,13 @@ namespace LuaBindings {
       float radius,
       String const& layer,
       String const& materialName,
-      Maybe<int> const& hueShift,
+      std::optional<int> const& hueShift,
       bool enableDrops) {
     auto tiles = tileAreaBrush(radius, center, false);
     return replaceMaterials(world, tiles, layer, materialName, hueShift, enableDrops);
   }
 
-  bool WorldEnvironmentCallbacks::placeMod(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, Maybe<int> const& arg4, bool arg5) {
+  bool WorldEnvironmentCallbacks::placeMod(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, std::optional<int> const& arg4, bool arg5) {
     auto tilePosition = arg1;
 
     PlaceMod placeMod;

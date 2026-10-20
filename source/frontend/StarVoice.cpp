@@ -7,7 +7,6 @@ import star.bi_map;
 import star.format;
 import star.vector;
 import star.game_types;
-import star.maybe;
 import star.thread;
 import star.data_stream_devices;
 import star.time;
@@ -493,7 +492,7 @@ void Voice::update(float, PositionalAttenuationFunction positionalAttenuationFun
 }
 
 
-void Voice::setDeviceName(Maybe<String> deviceName) {
+void Voice::setDeviceName(std::optional<String> deviceName) {
   if (m_deviceName == deviceName)
     return;
 

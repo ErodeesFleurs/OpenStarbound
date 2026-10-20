@@ -4,7 +4,7 @@ import std;
 import star.unique_function;
 import star.format;
 import star.string;
-import star.maybe;
+import star.optional;
 import star.type_identity;
 
 //#define STAR_MUTEX_LOG
@@ -137,7 +137,7 @@ public:
 
   // Finishes the thread, moving and returning the final value of the function.
   // If the function threw an exception, finish() will rethrow that exception.
-  // May only be called once, otherwise will throw InvalidMaybeAccessException.
+  // May only be called once, otherwise will throw std::bad_optional_access.
   Return finish();
 
   bool isFinished() const;
@@ -149,7 +149,7 @@ public:
 
 private:
   ThreadFunction<void> m_function;
-  std::shared_ptr<Maybe<Return>> m_return;
+  std::shared_ptr<std::optional<Return>> m_return;
 };
 
 // *Non* recursive mutex lock, for use with ConditionVariable
@@ -185,7 +185,7 @@ public:
   // acquiring the condition, atomically returns and re-locks the mutex.  Must
   // lock the mutex before calling.  If millis is given, waits for a maximum of
   // the given milliseconds only.
-  void wait(Mutex& mutex, Maybe<unsigned> millis = {});
+  void wait(Mutex& mutex, std::optional<unsigned> millis = {});
 
   // Wake one waiting thread.  The calling thread for is allowed to either hold
   // or not hold the mutex that the threads waiting on the condition are using,
@@ -385,7 +385,7 @@ ThreadFunction<Return>::ThreadFunction(ThreadFunction&&) = default;
 
 template <typename Return>
 ThreadFunction<Return>::ThreadFunction(UniqueFunction<Return()> function, String const& name) {
-  m_return = std::make_shared<Maybe<Return>>();
+  m_return = std::make_shared<std::optional<Return>>();
   m_function = ThreadFunction<void>([function = std::move(function), retValue = m_return]() mutable {
       *retValue = function();
     }, name);
@@ -402,7 +402,7 @@ ThreadFunction<Return>& ThreadFunction<Return>::operator=(ThreadFunction&&) = de
 template <typename Return>
 Return ThreadFunction<Return>::finish() {
   m_function.finish();
-  return m_return->take();
+  return takeOptional(*m_return);
 }
 
 template <typename Return>

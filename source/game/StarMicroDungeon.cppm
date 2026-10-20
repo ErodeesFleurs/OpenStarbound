@@ -3,7 +3,6 @@ module;
 import star.rect;
 import std;
 import star.list;
-import star.maybe;
 import star.string;
 import star.set;
 
@@ -22,7 +21,7 @@ class MicroDungeonFactory {
 public:
   MicroDungeonFactory(Root& root);
 
-  Maybe<std::pair<List<RectI>, Set<Vec2I>>> generate(RectI const& bounds,
+  std::optional<std::pair<List<RectI>, Set<Vec2I>>> generate(RectI const& bounds,
       String const& dungeonName,
       Vec2I const& position,
       std::uint64_t seed,

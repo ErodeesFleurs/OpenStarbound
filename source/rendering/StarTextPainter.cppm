@@ -18,7 +18,6 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-import star.maybe;
 import star.version;
 import star.string;
 import star.vector;
@@ -54,8 +53,8 @@ struct TextPositioning {
   TextPositioning(Vec2F pos,
       HorizontalAnchor hAnchor = HorizontalAnchor::LeftAnchor,
       VerticalAnchor vAnchor = VerticalAnchor::BottomAnchor,
-      Maybe<unsigned> wrapWidth = {},
-      Maybe<unsigned> charLimit = {});
+      std::optional<unsigned> wrapWidth = {},
+      std::optional<unsigned> charLimit = {});
 
   TextPositioning(Json const& v);
   Json toJson() const;
@@ -65,8 +64,8 @@ struct TextPositioning {
   Vec2F pos;
   HorizontalAnchor hAnchor;
   VerticalAnchor vAnchor;
-  Maybe<unsigned> wrapWidth;
-  Maybe<unsigned> charLimit;
+  std::optional<unsigned> wrapWidth;
+  std::optional<unsigned> charLimit;
 };
 
 // Renders text while caching individual glyphs for fast rendering but with *no
@@ -91,8 +90,8 @@ public:
   typedef std::function<bool(StringView, unsigned)> WrapTextCallback;
   bool processWrapText(StringView s, unsigned* wrapWidth, WrapTextCallback textFunc);
 
-  List<StringView> wrapTextViews(StringView s, Maybe<unsigned> wrapWidth);
-  StringList wrapText(StringView s, Maybe<unsigned> wrapWidth);
+  List<StringView> wrapTextViews(StringView s, std::optional<unsigned> wrapWidth);
+  StringList wrapText(StringView s, std::optional<unsigned> wrapWidth);
 
   unsigned fontSize() const;
   void setFontSize(unsigned size);
@@ -116,7 +115,7 @@ private:
 
   void renderPrimitives();
   void renderGlyph(String::Char c, Vec2F const& screenPos, List<RenderPrimitive>& out, unsigned fontSize, float scale, Vec4B color, Directives const* processingDirectives = nullptr);
-  std::shared_ptr<Font> loadFont(String const& fontPath, Maybe<String> fontName = {});
+  std::shared_ptr<Font> loadFont(String const& fontPath, std::optional<String> fontName = {});
 
   Root& m_root;
   std::shared_ptr<Renderer> m_renderer;

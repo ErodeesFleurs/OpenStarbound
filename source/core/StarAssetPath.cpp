@@ -2,8 +2,8 @@ import std;
 import star.memory;
 import star.format;
 import star.string;
-import star.maybe;
 import star.hash;
+import star.optional;
 import star.json;
 import star.list;
 import star.image_processing;
@@ -18,7 +18,7 @@ namespace Star {
 
 // The filename is everything after the last slash (excluding directives) and
 // up to the first directive marker.
-static Maybe<std::pair<std::size_t, std::size_t>> findFilenameRange(std::string const& pathUtf8) {
+static std::optional<std::pair<std::size_t, std::size_t>> findFilenameRange(std::string const& pathUtf8) {
   std::size_t firstDirectiveOrSubPath = pathUtf8.find_first_of(":?");
   std::size_t filenameStart = 0;
   while (true) {
@@ -154,13 +154,31 @@ AssetPath::AssetPath(String const& path) {
   *this = AssetPath::split(path);
 }
 
-AssetPath::AssetPath(String&& basePath, Maybe<String>&& subPath, DirectivesGroup&& directives) {
+AssetPath::AssetPath(AssetPath&& path)
+  : basePath(std::move(path.basePath)),
+    subPath(std::move(path.subPath)),
+    directives((path.subPath.reset(), std::move(path.directives))) {}
+
+AssetPath& AssetPath::operator=(AssetPath&& path) {
+  if (this != &path) {
+    basePath = std::move(path.basePath);
+    if (path.subPath)
+      subPath.emplace(takeOptional(path.subPath));
+    else
+      subPath.reset();
+    directives = std::move(path.directives);
+  }
+  return *this;
+}
+
+AssetPath::AssetPath(String&& basePath, std::optional<String>&& subPath, DirectivesGroup&& directives) {
   this->basePath = std::move(basePath);
-  this->subPath = std::move(subPath);
+  if (subPath)
+    this->subPath.emplace(takeOptional(subPath));
   this->directives = std::move(directives);
 }
 
-AssetPath::AssetPath(String const& basePath, Maybe<String> const& subPath, DirectivesGroup const& directives) {
+AssetPath::AssetPath(String const& basePath, std::optional<String> const& subPath, DirectivesGroup const& directives) {
   this->basePath = basePath;
   this->subPath = subPath;
   this->directives = directives;

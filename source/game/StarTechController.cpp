@@ -28,7 +28,6 @@ import star.ordered_map;
 import star.audio;
 import star.map;
 import star.set;
-import star.maybe;
 import star.observer_stream;
 import star.either;
 import star.a_star;
@@ -353,7 +352,7 @@ void TechController::tickSlave(float dt) {
   updateAnimators(dt);
 }
 
-Maybe<TechController::ParentState> TechController::parentState() const {
+std::optional<TechController::ParentState> TechController::parentState() const {
   return m_parentState.get();
 }
 
@@ -440,7 +439,7 @@ List<Particle> TechController::pullNewParticles() {
   return newParticles;
 }
 
-Maybe<ChainableJsonMessageResponse> TechController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+std::optional<ChainableJsonMessageResponse> TechController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   for (auto& module : m_techModules) {
     if (auto res = module.scriptComponent.handleMessage(message, localMessage, args))
       return res;
@@ -448,9 +447,9 @@ Maybe<ChainableJsonMessageResponse> TechController::receiveMessage(String const&
   return {};
 }
 
-TechController::TechAnimator::TechAnimator(Root& root) : TechAnimator(root, Maybe<String>{}) {}
+TechController::TechAnimator::TechAnimator(Root& root) : TechAnimator(root, std::optional<String>{}) {}
 
-TechController::TechAnimator::TechAnimator(Root& root, Maybe<String> ac) : m_root(root), animator(root) {
+TechController::TechAnimator::TechAnimator(Root& root, std::optional<String> ac) : m_root(root), animator(root) {
   animationConfig = std::move(ac);
   animator = animationConfig ? NetworkedAnimator(m_root, *animationConfig) : NetworkedAnimator(m_root);
   netGroup.addNetElement(&animator);
@@ -605,15 +604,15 @@ LuaCallbacks TechController::makeTechCallbacks(TechModule& techModule) {
       techModule.visible = visible;
     });
 
-  callbacks.registerCallback("setParentState", [this](Maybe<String> const& state) {
+  callbacks.registerCallback("setParentState", [this](std::optional<String> const& state) {
       if (state)
         m_parentState.set(ParentStateNames.getLeft(*state));
       else
         m_parentState.set({});
     });
 
-  callbacks.registerCallback("setParentDirectives", [this, &techModule](Maybe<String> const& directives) {
-      techModule.parentDirectives = directives.value();
+  callbacks.registerCallback("setParentDirectives", [this, &techModule](std::optional<String> const& directives) {
+      techModule.parentDirectives = directives.value_or(String{});
 
       DirectivesGroup newParentDirectives;
       for (auto& module : m_techModules)
@@ -632,7 +631,7 @@ LuaCallbacks TechController::makeTechCallbacks(TechModule& techModule) {
 
   callbacks.registerCallback("parentLounging", [this]() {
       if (auto loungingEntity = as<LoungingEntity>(m_parentEntity))
-        return loungingEntity->loungingIn().isValid();
+        return loungingEntity->loungingIn().has_value();
       return false;
     });
 

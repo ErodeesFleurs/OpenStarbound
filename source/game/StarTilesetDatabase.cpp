@@ -16,7 +16,6 @@ import star.logging;
 import star.listener;
 import std;
 import star.string;
-import star.maybe;
 import star.format;
 import star.version;
 import star.image;
@@ -65,26 +64,26 @@ namespace Tiled {
     return m_properties.contains(name);
   }
 
-  Maybe<std::shared_ptr<Dungeon::Brush const>> getClearBrush(bool value, Tiled::Properties&) {
+  std::optional<std::shared_ptr<Dungeon::Brush const>> getClearBrush(bool value, Tiled::Properties&) {
     if (value)
-      return Maybe<std::shared_ptr<Dungeon::Brush const>>(as<Brush>(std::make_shared<const ClearBrush>()));
+      return std::optional<std::shared_ptr<Dungeon::Brush const>>(as<Brush>(std::make_shared<const ClearBrush>()));
     return {};
   }
 
   std::shared_ptr<Dungeon::Brush const> getFrontBrush(String const& materialName, Tiled::Properties& properties) {
-    Maybe<float> hueshift = properties.opt<float>("hueshift");
-    Maybe<MaterialColorVariant> colorVariant = properties.opt<std::size_t>("colorVariant");
-    Maybe<String> mod = properties.opt<String>("mod");
-    Maybe<float> modhueshift = properties.opt<float>("modhueshift");
+    std::optional<float> hueshift = properties.opt<float>("hueshift");
+    std::optional<MaterialColorVariant> colorVariant = properties.opt<std::size_t>("colorVariant");
+    std::optional<String> mod = properties.opt<String>("mod");
+    std::optional<float> modhueshift = properties.opt<float>("modhueshift");
 
     return std::make_shared<const FrontBrush>(materialName, mod, hueshift, modhueshift, colorVariant);
   }
 
   std::shared_ptr<Dungeon::Brush const> getBackBrush(String const& materialName, Tiled::Properties& properties) {
-    Maybe<float> hueshift = properties.opt<float>("hueshift");
-    Maybe<MaterialColorVariant> colorVariant = properties.opt<std::size_t>("colorVariant");
-    Maybe<String> mod = properties.opt<String>("mod");
-    Maybe<float> modhueshift = properties.opt<float>("modhueshift");
+    std::optional<float> hueshift = properties.opt<float>("hueshift");
+    std::optional<MaterialColorVariant> colorVariant = properties.opt<std::size_t>("colorVariant");
+    std::optional<String> mod = properties.opt<String>("mod");
+    std::optional<float> modhueshift = properties.opt<float>("modhueshift");
 
     return std::make_shared<const BackBrush>(materialName, mod, hueshift, modhueshift, colorVariant);
   }
@@ -119,7 +118,7 @@ namespace Tiled {
       parameters = properties.get<Json>("parameters");
     }
 
-    parameters = parameters.opt().value(JsonObject{});
+    parameters = parameters.opt().value_or(JsonObject{});
 
     return std::make_shared<const ObjectBrush>(objectName, direction, parameters);
   }
@@ -133,7 +132,7 @@ namespace Tiled {
   }
 
   std::shared_ptr<Dungeon::Brush const> getWireBrush(String const& group, Tiled::Properties& properties) {
-    bool local = properties.opt<bool>("local").value(true);
+    bool local = properties.opt<bool>("local").value_or(true);
 
     return std::make_shared<const WireBrush>(group, local);
   }
@@ -155,7 +154,7 @@ namespace Tiled {
     }
     if (properties.contains("typeName"))
       brush["typeName"] = properties.get<String>("typeName");
-    brush["parameters"] = properties.opt<Json>("parameters").value(JsonObject{});
+    brush["parameters"] = properties.opt<Json>("parameters").value_or(JsonObject{});
     return std::make_shared<const NpcBrush>(root, brush);
   }
 
@@ -166,14 +165,14 @@ namespace Tiled {
     if (properties.contains("seed")) {
       brush["seed"] = getSeed(properties);
     }
-    brush["parameters"] = properties.opt<Json>("parameters").value(JsonObject{});
+    brush["parameters"] = properties.opt<Json>("parameters").value_or(JsonObject{});
     return std::make_shared<const NpcBrush>(root, brush);
   }
 
   std::shared_ptr<Dungeon::Brush const> getStagehandBrush(String const& typeName, Tiled::Properties& properties) {
     JsonObject brush;
     brush["type"] = typeName;
-    brush["parameters"] = properties.opt<Json>("parameters").value(JsonObject{});
+    brush["parameters"] = properties.opt<Json>("parameters").value_or(JsonObject{});
     if (properties.contains("broadcastArea"))
       brush["parameters"] = brush["parameters"].set("broadcastArea", properties.get<Json>("broadcastArea"));
     if (typeName == "radiomessage" && properties.contains("radioMessage"))
@@ -182,7 +181,7 @@ namespace Tiled {
   }
 
   std::shared_ptr<Dungeon::Brush const> getDungeonIdBrush(String const& dungeonId, Tiled::Properties&) {
-    return std::make_shared<const DungeonIdBrush>(maybeLexicalCast<DungeonId>(dungeonId).value(NoDungeonId));
+    return std::make_shared<const DungeonIdBrush>(maybeLexicalCast<DungeonId>(dungeonId).value_or(NoDungeonId));
   }
 
   std::shared_ptr<Dungeon::Brush const> getBiomeItemsBrush(String const&, Tiled::Properties&) {
@@ -194,16 +193,16 @@ namespace Tiled {
   }
 
   std::shared_ptr<Dungeon::Brush const> getItemBrush(String const& itemName, Tiled::Properties& properties) {
-    std::size_t count = properties.opt<std::size_t>("count").value(1);
-    Json parameters = properties.opt<Json>("parameters").value(JsonObject{});
+    std::size_t count = properties.opt<std::size_t>("count").value_or(1);
+    Json parameters = properties.opt<Json>("parameters").value_or(JsonObject{});
     ItemDescriptor item(itemName, count, parameters);
     return std::make_shared<const ItemBrush>(item);
   }
 
   std::shared_ptr<Dungeon::Brush const> getSurfaceBrush(String const& variantStr, Tiled::Properties& properties) {
     TileLayer layer = LayerNames.getLeft(properties.get<String>("layer"));
-    Maybe<int> variant = maybeLexicalCast<int>(variantStr);
-    Maybe<String> mod = properties.opt<String>("mod");
+    std::optional<int> variant = maybeLexicalCast<int>(variantStr);
+    std::optional<String> mod = properties.opt<String>("mod");
 
     if (layer == TileLayer::Background)
       return std::make_shared<const SurfaceBackgroundBrush>(variant, mod);
@@ -211,12 +210,12 @@ namespace Tiled {
   }
 
   std::shared_ptr<Dungeon::Brush const> getLiquidBrush(String const& liquidName, Tiled::Properties& properties) {
-    float quantity = properties.opt<float>("quantity").value(1.0f);
-    bool source = properties.opt<bool>("source").value(false);
+    float quantity = properties.opt<float>("quantity").value_or(1.0f);
+    bool source = properties.opt<bool>("source").value_or(false);
     return std::make_shared<const LiquidBrush>(liquidName, quantity, source);
   }
 
-  Maybe<std::shared_ptr<Dungeon::Brush const>> getInvalidBrush(bool invalidValue, Tiled::Properties& properties) {
+  std::optional<std::shared_ptr<Dungeon::Brush const>> getInvalidBrush(bool invalidValue, Tiled::Properties& properties) {
     if (!invalidValue)
       return {};
 
@@ -253,14 +252,15 @@ namespace Tiled {
         typename Getter = std::function<GetterReturn(PropertyType, Tiled::Properties&)>>
     void optRead(List<T>& list, String const& propertyName, Getter getter, Tiled::Properties& properties) {
       auto appendFn = std::bind(&List<T>::append, &list, std::placeholders::_1);
-      read<PropertyType, Getter>(propertyName, getter, properties).exec(appendFn);
+      if (auto value = read<PropertyType, Getter>(propertyName, getter, properties))
+        appendFn(value.value());
     }
 
   private:
     template <typename PropertyType, typename Getter>
-    Maybe<T> read(String const& propertyName, Getter getter, Tiled::Properties& properties) {
-      Maybe<PropertyType> propertyValue = properties.opt<PropertyType>(propertyName);
-      if (propertyValue.isValid())
+    std::optional<T> read(String const& propertyName, Getter getter, Tiled::Properties& properties) {
+      std::optional<PropertyType> propertyValue = properties.opt<PropertyType>(propertyName);
+      if (propertyValue.has_value())
         return getter(*propertyValue, properties);
       return {};
     }
@@ -286,7 +286,7 @@ namespace Tiled {
     properties = properties.inherit(computedProperties);
 
     PropertyReader<std::shared_ptr<Dungeon::Brush const>> br;
-    br.optRead<bool, Maybe<std::shared_ptr<Dungeon::Brush const>>>(brushes, "clear", getClearBrush, properties);
+    br.optRead<bool, std::optional<std::shared_ptr<Dungeon::Brush const>>>(brushes, "clear", getClearBrush, properties);
     br.optRead<String>(brushes, "material", getMaterialBrush, properties);
     br.optRead<String>(brushes, "front", getFrontBrush, properties);
     br.optRead<String>(brushes, "back", getBackBrush, properties);
@@ -303,7 +303,7 @@ namespace Tiled {
     br.optRead<String>(brushes, "item", getItemBrush, properties);
     br.optRead<String>(brushes, "surface", getSurfaceBrush, properties);
     br.optRead<String>(brushes, "liquid", getLiquidBrush, properties);
-    br.optRead<bool, Maybe<std::shared_ptr<Dungeon::Brush const>>>(brushes, "invalid", getInvalidBrush, properties);
+    br.optRead<bool, std::optional<std::shared_ptr<Dungeon::Brush const>>>(brushes, "invalid", getInvalidBrush, properties);
 
     PropertyReader<std::shared_ptr<Dungeon::Rule const>> rr;
     rr.optRead<String>(rules, "worldGenMustContainAir", getAirRule, properties);
@@ -318,7 +318,7 @@ namespace Tiled {
       newConnector.value = *connectorName;
 
       auto connectForwardOnly = properties.opt<bool>("connectForwardOnly");
-      newConnector.forwardOnly = connectForwardOnly.value(false);
+      newConnector.forwardOnly = connectForwardOnly.value_or(false);
 
       if (auto connectDirection = properties.opt<String>("connectDirection"))
         newConnector.direction = DungeonDirectionNames.getLeft(*connectDirection);
@@ -328,8 +328,8 @@ namespace Tiled {
   }
 
   Tileset::Tileset(Root& root, Json const& json) {
-    Properties tilesetProperties(json.opt("properties").value(JsonObject{}));
-    Json tileProperties = json.opt("tileproperties").value(JsonObject{});
+    Properties tilesetProperties(json.opt("properties").value_or(JsonObject{}));
+    Json tileProperties = json.opt("tileproperties").value_or(JsonObject{});
 
     m_tilesBack.resize(json.getInt("tilecount"));
     m_tilesFront.resize(json.getInt("tilecount"));

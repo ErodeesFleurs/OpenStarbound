@@ -2,8 +2,8 @@ module;
 import std;
 import star.string;
 import star.map;
-import star.maybe;
 import star.format;
+import star.optional;
 import star.json;
 import star.lexical_cast;
 import star.json_path;
@@ -27,7 +27,7 @@ Json jsonPatch(Json const& base, JsonArray const& patch);
 
 namespace JsonPatching {
   // Applies the given single operation
-  Json applyOperation(Json const& base, Json const& op, Maybe<Json> const& external = {});
+  Json applyOperation(Json const& base, Json const& op, std::optional<Json> const& external = {});
 
   // Tests for "value" at "path"
   // Returns base or throws JsonPatchException
@@ -96,7 +96,7 @@ namespace JsonPatching {
       {"merge", &applyMergeOperation},
   };
 
-  Json applyOperation(Json const& base, Json const& op, Maybe<Json> const&) {
+  Json applyOperation(Json const& base, Json const& op, std::optional<Json> const&) {
     try {
       auto operation = op.getString("op");
       return JsonPatching::functionMap.get(operation)(base, op);
@@ -134,7 +134,7 @@ namespace JsonPatching {
         if ((value && (testValue == *value)) ^ inverseTest)
           return base;
         else
-          throw JsonPatchTestFail(strf("Test operation failure, expected {} found {}.", value, testValue), false);
+          throw JsonPatchTestFail(strf("Test operation failure, expected {} found {}.", outputOptional(value), testValue), false);
       }
     } catch (JsonPath::TraversalException& e) {
       if (inverseTest)

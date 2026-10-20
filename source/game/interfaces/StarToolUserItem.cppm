@@ -19,7 +19,6 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
@@ -114,7 +113,7 @@ public:
 
 private:
   ToolUserEntity* m_owner;
-  Maybe<ToolHand> m_hand;
+  std::optional<ToolHand> m_hand;
 };
 
 }

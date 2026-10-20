@@ -3,7 +3,6 @@ import std;
 import star.json;
 import star.string;
 import star.list;
-import star.maybe;
 import star.variant;
 import star.thread;
 import star.vector;
@@ -42,7 +41,7 @@ public:
   Logger& logger() const override { return m_root->logger(); }
   ~ClientApplication() override;
   void setPostProcessLayerPasses(String const& layer, unsigned const& passes);
-  void setPostProcessGroupEnabled(String const& group, bool const& enabled, Maybe<bool> const& save);
+  void setPostProcessGroupEnabled(String const& group, bool const& enabled, std::optional<bool> const& save);
   bool postProcessGroupEnabled(String const& group);
   Json postProcessGroups();
   virtual unsigned framesSkipped() const override;
@@ -170,8 +169,8 @@ private:
   List<KeyDownEvent> m_heldKeyEvents;
   List<KeyDownEvent> m_edgeKeyEvents;
 
-  Maybe<PendingMultiPlayerConnection> m_pendingMultiPlayerConnection;
-  Maybe<HostAddressWithPort> m_currentRemoteJoin;
+  std::optional<PendingMultiPlayerConnection> m_pendingMultiPlayerConnection;
+  std::optional<HostAddressWithPort> m_currentRemoteJoin;
   std::int64_t m_timeSinceJoin = 0;
 
   ByteArray m_immediateFont;

@@ -3,7 +3,6 @@ import star.set;
 import star.string;
 import star.color;
 import star.list;
-import star.maybe;
 import star.image_processing;
 import star.hash;
 import star.data_stream;
@@ -296,7 +295,7 @@ const GameTestRegistration constInventoryObservesExternallyConsumedItemsWithoutM
   EXPECT_FALSE(view.swapSlotItem());
   EXPECT_FALSE(view.primaryHeldItem());
   EXPECT_FALSE(view.secondaryHeldItem());
-  EXPECT_EQ(view.primaryHeldSlot(), Maybe<InventorySlot>(InventorySlot(bagSlot)));
+  EXPECT_EQ(view.primaryHeldSlot(), std::optional<InventorySlot>(InventorySlot(bagSlot)));
   EXPECT_TRUE(view.allItems().empty());
   EXPECT_TRUE(view.itemSummary().empty());
   EXPECT_TRUE(view.availableItems().empty());

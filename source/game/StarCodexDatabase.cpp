@@ -15,6 +15,7 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
+import star.optional;
 import star.string;
 import star.format;
 import star.version;
@@ -56,7 +57,7 @@ StringMap<std::shared_ptr<Codex const>> CodexDatabase::codexes() const {
 
 std::shared_ptr<Codex const> CodexDatabase::codex(String const& codexId) const {
   if (auto codex = m_codexes.maybe(codexId))
-    return codex.take();
+    return takeOptional(codex);
   return {};
 }
 

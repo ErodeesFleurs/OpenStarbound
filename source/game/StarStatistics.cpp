@@ -17,7 +17,6 @@ import star.listener;
 import std;
 import star.string;
 import star.lua;
-import star.maybe;
 import star.format;
 import star.version;
 import star.file;
@@ -70,7 +69,7 @@ Json Statistics::stat(String const& name, Json def) const {
   return def;
 }
 
-Maybe<String> Statistics::statType(String const& name) const {
+std::optional<String> Statistics::statType(String const& name) const {
   if (m_stats.contains(name))
     return m_stats.get(name).type;
   return {};
@@ -178,7 +177,7 @@ bool Statistics::checkAchievement(String const& achievementName) {
   if (achievementUnlocked(achievement->name))
     return true;
 
-  Maybe<bool> result = runStatScript<bool>(achievement->scripts, achievement->config, "check", achievementName);
+  std::optional<bool> result = runStatScript<bool>(achievement->scripts, achievement->config, "check", achievementName);
   return result && *result;
 }
 
@@ -237,7 +236,7 @@ LuaCallbacks Statistics::makeStatisticsCallbacks() {
 
   callbacks.registerCallbackWithSignature<Json, String, Json>("stat", std::bind(&Statistics::stat, this, std::placeholders::_1, std::placeholders::_2));
 
-  callbacks.registerCallbackWithSignature<Maybe<String>, String>("statType", std::bind(&Statistics::statType, this, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<std::optional<String>, String>("statType", std::bind(&Statistics::statType, this, std::placeholders::_1));
 
   callbacks.registerCallbackWithSignature<bool, String>("achievementUnlocked", std::bind(&Statistics::achievementUnlocked, this, std::placeholders::_1));
 
@@ -249,7 +248,7 @@ LuaCallbacks Statistics::makeStatisticsCallbacks() {
 }
 
 template <typename Result, typename... V>
-Maybe<Result> Statistics::runStatScript(StringList const& scripts, Json const& config, String const& functionName, V&&... args) {
+std::optional<Result> Statistics::runStatScript(StringList const& scripts, Json const& config, String const& functionName, V&&... args) {
   LuaBaseComponent script(m_root);
   script.setLuaRoot(m_luaRoot);
   script.setScripts(scripts);
@@ -258,7 +257,7 @@ Maybe<Result> Statistics::runStatScript(StringList const& scripts, Json const& c
     }));
   script.addCallbacks("statistics", makeStatisticsCallbacks());
   script.init();
-  Maybe<Result> result = script.invoke<Result>(functionName, args...);
+  std::optional<Result> result = script.invoke<Result>(functionName, args...);
   script.uninit();
   return result;
 }

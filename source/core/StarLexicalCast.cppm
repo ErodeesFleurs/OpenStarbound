@@ -3,7 +3,6 @@ import std;
 import star.format;
 import star.string;
 import star.string_view;
-import star.maybe;
 #include "fast_float.h"
 
 namespace Star {
@@ -35,7 +34,7 @@ bool tryLexicalCast(Type& result, StringView s) {
 }
 
 template <typename Type>
-Maybe<Type> maybeLexicalCast(const char* first, const char* last) {
+std::optional<Type> maybeLexicalCast(const char* first, const char* last) {
   Type result{};
   if (tryLexicalCast(result, first, last))
     return result;
@@ -44,7 +43,7 @@ Maybe<Type> maybeLexicalCast(const char* first, const char* last) {
 }
 
 template <typename Type>
-Maybe<Type> maybeLexicalCast(StringView s) {
+std::optional<Type> maybeLexicalCast(StringView s) {
   return maybeLexicalCast<Type>(s.utf8Ptr(), s.utf8Ptr() + s.utf8Size());
 }
 

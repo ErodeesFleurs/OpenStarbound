@@ -18,7 +18,6 @@ import star.thread;
 import star.map;
 import star.set;
 import star.vector;
-import star.maybe;
 import star.color;
 import star.string;
 import star.image_processing;

@@ -4,7 +4,6 @@ import star.string;
 import star.list;
 import star.variant;
 import star.json;
-import star.maybe;
 import star.lua;
 import star.lua_converters;
 import star.lexical_cast;
@@ -185,13 +184,32 @@ TEST(LuaTest, Converters) {
   EXPECT_TRUE(roundTripEqual(luaContext, PolyF()));
   EXPECT_TRUE(roundTripEqual(luaContext, List<int>{1, 2, 3, 4}));
   EXPECT_TRUE(roundTripEqual(luaContext, List<PolyF>{PolyF(), PolyF()}));
-  EXPECT_TRUE(roundTripEqual(luaContext, Maybe<int>(1)));
-  EXPECT_TRUE(roundTripEqual(luaContext, Maybe<int>()));
+  EXPECT_TRUE(roundTripEqual(luaContext, std::optional<int>(1)));
+  EXPECT_TRUE(roundTripEqual(luaContext, std::optional<int>()));
 
   auto listCompare = List<int>{1, 2, 3, 4};
   EXPECT_TRUE(luaContext.invokePath<List<int>>("roundTrip", JsonArray{1, 2, 3, 4}) == listCompare);
   auto mapCompare = StringMap<String>{{"one", "two"}, {"three", "four"}};
   EXPECT_TRUE(luaContext.invokePath<StringMap<String>>("roundTrip", JsonObject{{"one", "two"}, {"three", "four"}}) == mapCompare);
+}
+
+TEST(LuaTest, OptionalConversionDistinguishesNilFromFailure) {
+  auto engine = LuaEngine::create();
+  auto context = engine->createContext();
+  auto nil = engine->luaMaybeTo<std::optional<int>>(context.eval<LuaValue>("nil"));
+  ASSERT_TRUE(nil);
+  EXPECT_FALSE(*nil);
+  auto number = engine->luaMaybeTo<std::optional<int>>(context.eval<LuaValue>("17"));
+  ASSERT_TRUE(number);
+  ASSERT_TRUE(*number);
+  EXPECT_EQ(**number, 17);
+  auto boolean = engine->luaMaybeTo<std::optional<bool>>(context.eval<LuaValue>("false"));
+  ASSERT_TRUE(boolean);
+  ASSERT_TRUE(*boolean);
+  EXPECT_FALSE(**boolean);
+  auto invalid = engine->luaMaybeTo<std::optional<int>>(context.eval<LuaValue>("{}"));
+  EXPECT_FALSE(invalid);
+  EXPECT_THROW(context.eval<std::optional<int>>("{}"), LuaConversionException);
 }
 
 struct TestUserData1 {
@@ -246,11 +264,11 @@ TEST(LuaTest, UserDataTest) {
 
   luaContext.invokePath("doit", TestUserData1());
   auto userdata4 = luaContext.get("global");
-  EXPECT_TRUE(luaEngine->luaMaybeTo<TestUserData1>(userdata4).isValid());
+  EXPECT_TRUE(luaEngine->luaMaybeTo<TestUserData1>(userdata4).has_value());
 
   luaContext.invokePath("doit", "notuserdata");
   auto notuserdata = luaContext.get("global");
-  EXPECT_FALSE(luaEngine->luaMaybeTo<TestUserData1>(notuserdata).isValid());
+  EXPECT_FALSE(luaEngine->luaMaybeTo<TestUserData1>(notuserdata).has_value());
 }
 
 namespace Star {
@@ -758,7 +776,7 @@ TEST(LuaTest, Errors) {
   EXPECT_THROW(context.eval("while true do"), LuaIncompleteStatementException);
   context.setPath("val", 1.0);
   EXPECT_THROW(context.getPath<Vec2D>("val"), LuaConversionException);
-  EXPECT_EQ(luaEngine->luaMaybeTo<RectF>(context.get("val")), Maybe<RectF>());
+  EXPECT_EQ(luaEngine->luaMaybeTo<RectF>(context.get("val")), std::optional<RectF>());
 
   context.set("throwException", luaEngine->createFunction([]() {
       throw StarException("lua caught the exception!");
@@ -874,10 +892,10 @@ TEST(LuaTest, VariantTest) {
   EXPECT_EQ(context.eval<IntOrString>("'foo'"), IntOrString(String("foo")));
   EXPECT_EQ(context.eval<IntOrString>("'1'"), IntOrString(1));
 
-  typedef MVariant<Maybe<int>, String> MIntOrString;
+  typedef MVariant<std::optional<int>, String> MIntOrString;
 
   EXPECT_EQ(context.eval<MIntOrString>("'foo'"), MIntOrString(String("foo")));
-  EXPECT_EQ(context.eval<MIntOrString>("'1'"), MIntOrString(Maybe<int>(1)));
+  EXPECT_EQ(context.eval<MIntOrString>("'1'"), MIntOrString(std::optional<int>(1)));
   EXPECT_EQ(context.eval<MIntOrString>("nil"), MIntOrString());
 }
 
@@ -913,7 +931,7 @@ TEST(LuaTest, ProfilingTest) {
   StringSet names;
   List<LuaProfileEntry> profile = luaEngine->getProfile();
   for (auto const& p : profile[0].calls)
-    names.add(p.second->name.value());
+    names.add(p.second->name.value_or(String()));
 
   EXPECT_TRUE(names.contains("function1"));
   EXPECT_TRUE(names.contains("function2"));

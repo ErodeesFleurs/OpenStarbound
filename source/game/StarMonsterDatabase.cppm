@@ -5,7 +5,6 @@ import star.format;
 import star.json;
 import star.id_map;
 import star.game_types;
-import star.maybe;
 import star.variant;
 import star.casting;
 import star.strong_typedef;
@@ -81,8 +80,8 @@ struct MonsterVariant {
   std::uint64_t seed;
   Json uniqueParameters;
 
-  Maybe<String> shortDescription;
-  Maybe<String> description;
+  std::optional<String> shortDescription;
+  std::optional<String> description;
 
   Json animatorConfig;
   StringMap<String> animatorPartTags;
@@ -135,14 +134,14 @@ struct MonsterVariant {
 
   PolyF selfDamagePoly;
 
-  Maybe<String> portraitIcon;
+  std::optional<String> portraitIcon;
 
   float damageReceivedAggressiveDuration;
   float onDamagedOthersAggressiveDuration;
   float onFireAggressiveDuration;
 
   Vec3B nametagColor;
-  Maybe<ColorReplaceMap> colorSwap;
+  std::optional<ColorReplaceMap> colorSwap;
 };
 
 class MonsterDatabase {
@@ -164,7 +163,7 @@ public:
 
   // If level is 0, then the monster will start with the threat level of
   // whatever world they're spawned in.
-  std::shared_ptr<Monster> createMonster(MonsterVariant monsterVariant, Maybe<float> level = {}, Json uniqueParameters = {}) const;
+  std::shared_ptr<Monster> createMonster(MonsterVariant monsterVariant, std::optional<float> level = {}, Json uniqueParameters = {}) const;
   std::shared_ptr<Monster> diskLoadMonster(Json const& diskStore) const;
   std::shared_ptr<Monster> netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
@@ -180,8 +179,8 @@ public:
 private:
   struct MonsterType {
     String typeName;
-    Maybe<String> shortDescription;
-    Maybe<String> description;
+    std::optional<String> shortDescription;
+    std::optional<String> description;
 
     StringList categories;
     StringList partTypes;

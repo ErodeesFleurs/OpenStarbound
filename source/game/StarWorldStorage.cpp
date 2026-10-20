@@ -35,7 +35,6 @@ import std;
 import star.worker_pool;
 
 import star.sector_array_2d;
-import star.maybe;
 import star.color;
 import star.image_processing;
 import star.hash;
@@ -202,7 +201,7 @@ std::shared_ptr<EntityMap> const& WorldStorage::entityMap() const {
   return m_entityMap;
 }
 
-Maybe<WorldStorage::Sector> WorldStorage::sectorForPosition(Vec2I const& position) const {
+std::optional<WorldStorage::Sector> WorldStorage::sectorForPosition(Vec2I const& position) const {
   auto s = m_tileArray->sectorFor(position);
   if (m_tileArray->sectorValid(s))
     return s;
@@ -213,7 +212,7 @@ List<WorldStorage::Sector> WorldStorage::sectorsForRegion(RectI const& region) c
   return m_tileArray->validSectorsFor(region);
 }
 
-Maybe<RectI> WorldStorage::regionForSector(Sector sector) const {
+std::optional<RectI> WorldStorage::regionForSector(Sector sector) const {
   if (m_tileArray->sectorValid(sector))
     return m_tileArray->sectorRegion(sector);
   return {};
@@ -223,7 +222,7 @@ SectorLoadLevel WorldStorage::sectorLoadLevel(Sector sector) const {
   return m_sectorMetadata.value(sector).loadLevel;
 }
 
-Maybe<SectorGenerationLevel> WorldStorage::sectorGenerationLevel(Sector sector) const {
+std::optional<SectorGenerationLevel> WorldStorage::sectorGenerationLevel(Sector sector) const {
   if (auto p = m_sectorMetadata.ptr(sector))
     return p->generationLevel;
   return {};
@@ -292,11 +291,11 @@ void WorldStorage::triggerTerraformSector(Sector sector) {
   }
 }
 
-RpcPromise<Vec2I> WorldStorage::enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id) {
+RpcPromise<Vec2I> WorldStorage::enqueuePlacement(List<BiomeItemDistribution> distributions, std::optional<DungeonId> id) {
   return m_generatorFacade->enqueuePlacement(std::move(distributions), id);
 }
 
-Maybe<float> WorldStorage::sectorTimeToLive(Sector sector) const {
+std::optional<float> WorldStorage::sectorTimeToLive(Sector sector) const {
   if (auto p = m_sectorMetadata.ptr(sector))
     return p->timeToLive;
   return {};
@@ -310,7 +309,7 @@ bool WorldStorage::setSectorTimeToLive(Sector sector, float newTimeToLive) {
   return false;
 }
 
-Maybe<Vec2F> WorldStorage::findUniqueEntity(String const& uniqueId) {
+std::optional<Vec2F> WorldStorage::findUniqueEntity(String const& uniqueId) {
   if (auto entity = m_entityMap->entity(m_entityMap->uniqueEntityId(uniqueId)))
     return entity->position();
 
@@ -338,7 +337,7 @@ EntityId WorldStorage::loadUniqueEntity(String const& uniqueId) {
   return {};
 }
 
-void WorldStorage::generateQueue(Maybe<std::size_t> sectorGenerationLevelLimit, std::function<bool(Sector, Sector)> sectorOrdering) {
+void WorldStorage::generateQueue(std::optional<std::size_t> sectorGenerationLevelLimit, std::function<bool(Sector, Sector)> sectorOrdering) {
   try {
     if (sectorOrdering) {
       m_generationQueue.sort([&sectorOrdering](auto const& a, auto const& b) {
@@ -350,7 +349,7 @@ void WorldStorage::generateQueue(Maybe<std::size_t> sectorGenerationLevelLimit, 
       if (sectorGenerationLevelLimit && *sectorGenerationLevelLimit == 0)
         break;
 
-      auto p = generateSectorToLevel(m_generationQueue.firstKey(), SectorGenerationLevel::Complete, sectorGenerationLevelLimit.value(NPos));
+      auto p = generateSectorToLevel(m_generationQueue.firstKey(), SectorGenerationLevel::Complete, sectorGenerationLevelLimit.value_or(NPos));
       if (p.first)
         m_generationQueue.removeFirst();
       if (sectorGenerationLevelLimit)
@@ -960,7 +959,7 @@ void WorldStorage::updateSectorUniques(Sector const& sector, UniqueIndexStore co
   // If there was an old unique sector store here, then we need to remove all
   // the unique index entries for uniques that used to be in this sector but
   // now aren't, in case they are now gone.
-  if (auto oldSectorUniques = m_db.find(sectorUniqueKey(sector)).apply(readSectorUniqueStore)) {
+  if (auto oldSectorUniques = m_db.find(sectorUniqueKey(sector)).transform(readSectorUniqueStore)) {
     for (auto const& uniqueId : *oldSectorUniques) {
       if (!sectorUniques.contains(uniqueId))
         removeUniqueIndexEntry(uniqueId, sector);
@@ -977,7 +976,7 @@ void WorldStorage::updateSectorUniques(Sector const& sector, UniqueIndexStore co
 }
 
 void WorldStorage::mergeSectorUniques(Sector const& sector, UniqueIndexStore const& sectorUniques) {
-  auto sectorUniqueStore = m_db.find(sectorUniqueKey(sector)).apply(readSectorUniqueStore).value();
+  auto sectorUniqueStore = m_db.find(sectorUniqueKey(sector)).transform(readSectorUniqueStore).value_or(SectorUniqueStore{});
   for (auto const& p : sectorUniques) {
     setUniqueIndexEntry(p.first, p.second);
     sectorUniqueStore.add(p.first);
@@ -989,14 +988,14 @@ void WorldStorage::mergeSectorUniques(Sector const& sector, UniqueIndexStore con
     m_db.insert(sectorUniqueKey(sector), writeSectorUniqueStore(sectorUniqueStore));
 }
 
-auto WorldStorage::getUniqueIndexEntry(String const& uniqueId) -> Maybe<SectorAndPosition> {
-  if (auto uniqueIndex = m_db.find(uniqueIndexKey(uniqueId)).apply(readUniqueIndexStore))
+auto WorldStorage::getUniqueIndexEntry(String const& uniqueId) -> std::optional<SectorAndPosition> {
+  if (auto uniqueIndex = m_db.find(uniqueIndexKey(uniqueId)).transform(readUniqueIndexStore))
     return uniqueIndex->maybe(uniqueId);
   return {};
 }
 
 void WorldStorage::setUniqueIndexEntry(String const& uniqueId, SectorAndPosition const& sectorAndPosition) {
-  UniqueIndexStore uniqueIndex = m_db.find(uniqueIndexKey(uniqueId)).apply(readUniqueIndexStore).value();
+  UniqueIndexStore uniqueIndex = m_db.find(uniqueIndexKey(uniqueId)).transform(readUniqueIndexStore).value_or(UniqueIndexStore{});
   auto p = uniqueIndex.insert(uniqueId, sectorAndPosition);
   if (!p.second) {
     // Don't need to update the index if the entry was already there and the
@@ -1009,7 +1008,7 @@ void WorldStorage::setUniqueIndexEntry(String const& uniqueId, SectorAndPosition
 }
 
 void WorldStorage::removeUniqueIndexEntry(String const& uniqueId, Sector const& sector) {
-  if (auto uniqueIndex = m_db.find(uniqueIndexKey(uniqueId)).apply(readUniqueIndexStore)) {
+  if (auto uniqueIndex = m_db.find(uniqueIndexKey(uniqueId)).transform(readUniqueIndexStore)) {
     if (auto sectorAndPosition = uniqueIndex->maybe(uniqueId)) {
       if (sectorAndPosition->first == sector) {
         uniqueIndex->remove(uniqueId);

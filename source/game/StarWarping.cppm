@@ -2,7 +2,6 @@ module;
 import std;
 import star.string;
 import star.variant;
-import star.maybe;
 import star.stream_formatter;
 import star.hash;
 import star.json;
@@ -39,11 +38,11 @@ struct InstanceWorldId {
           InstanceWorldId, CustomWorldIdWrapper<String>, ClientCustomWorldId> const& worldId);
 
   String instance;
-  Maybe<Uuid> uuid;
-  Maybe<float> level;
+  std::optional<Uuid> uuid;
+  std::optional<float> level;
 
   InstanceWorldId();
-  InstanceWorldId(String instance, Maybe<Uuid> uuid = {}, Maybe<float> level = {});
+  InstanceWorldId(String instance, std::optional<Uuid> uuid = {}, std::optional<float> level = {});
 
   bool operator==(InstanceWorldId const& rhs) const;
   bool operator<(InstanceWorldId const& rhs) const;

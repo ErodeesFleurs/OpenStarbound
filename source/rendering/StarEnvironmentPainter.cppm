@@ -3,7 +3,6 @@ import std;
 import star.json;
 import star.xx_hash;
 import star.id_map;
-import star.maybe;
 import star.color;
 import star.list;
 import star.image_processing;

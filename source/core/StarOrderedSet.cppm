@@ -6,7 +6,7 @@ import std;
 import star.flat_hash_map;
 import star.set;
 import star.list;
-import star.maybe;
+import star.optional;
 import star.hash;
 import star.format;
 
@@ -104,7 +104,7 @@ public:
   const_reverse_iterator rbegin() const;
   const_reverse_iterator rend() const;
 
-  Maybe<std::size_t> indexOf(value_type const& v) const;
+  std::optional<std::size_t> indexOf(value_type const& v) const;
 
   value_type const& at(std::size_t i) const;
   value_type& at(std::size_t i);
@@ -375,7 +375,7 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::rend() const -> const_re
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-Maybe<std::size_t> OrderedSetWrapper<Map, Value, Allocator, Args...>::indexOf(value_type const& v) const {
+std::optional<std::size_t> OrderedSetWrapper<Map, Value, Allocator, Args...>::indexOf(value_type const& v) const {
   auto i = m_map.find(v);
   if (i == m_map.end())
     return {};
@@ -423,7 +423,10 @@ std::ostream& operator<<(std::ostream& os, OrderedSetWrapper<Map, Value, Allocat
   for (auto i = set.begin(); i != set.end(); ++i) {
     if (i != set.begin())
       os << ", ";
-    os << *i;
+    if constexpr (requires { outputOptional(*i); })
+      os << outputOptional(*i);
+    else
+      os << *i;
   }
   os << ")";
   return os;

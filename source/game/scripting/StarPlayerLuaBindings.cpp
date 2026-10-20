@@ -32,7 +32,6 @@ import star.version;
 import star.id_map;
 import star.variant;
 import star.rpc_promise;
-import star.maybe;
 import star.a_star;
 import star.ordered_set;
 import star.audio;
@@ -204,7 +203,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
     return LuaBindings::makeNetworkedAnimatorCallbacks(player->effectsAnimator().get());
   });
 
-  callbacks.registerCallback("teamMembers", [player]() -> Maybe<JsonArray> {
+  callbacks.registerCallback("teamMembers", [player]() -> std::optional<JsonArray> {
     if (auto client = player->universeClient()) {
       return client->teamClient()->members().transformed([](TeamClient::Member const& member) -> Json {
         return JsonObject{
@@ -220,8 +219,8 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
 
   callbacks.registerCallback(   "humanoidIdentity", [player]()         { return player->humanoid()->identity().toJson();  });
   callbacks.registerCallback("setHumanoidIdentity", [player](Json const& id) { player->setIdentity(HumanoidIdentity(id)); });
-  callbacks.registerCallback("setHumanoidParameter", [player](String key, Maybe<Json> value) { player->setHumanoidParameter(key, value); });
-  callbacks.registerCallback("getHumanoidParameter", [player](String key) -> Maybe<Json> { return player->getHumanoidParameter(key); });
+  callbacks.registerCallback("setHumanoidParameter", [player](String key, std::optional<Json> value) { player->setHumanoidParameter(key, value); });
+  callbacks.registerCallback("getHumanoidParameter", [player](String key) -> std::optional<Json> { return player->getHumanoidParameter(key); });
   callbacks.registerCallback("setHumanoidParameters", [player](JsonObject parameters) { player->setHumanoidParameters(parameters); });
   callbacks.registerCallback("getHumanoidParameters", [player]() -> JsonObject { return player->getHumanoidParameters(); });
   callbacks.registerCallback("refreshHumanoidParameters", [player]() { player->refreshHumanoidParameters(); });
@@ -269,7 +268,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
     return luaTupleReturn(identity.facialMaskGroup, identity.facialMaskType, identity.facialMaskDirectives);
   });
 
-  callbacks.registerCallback("setFacialHair", [player](Maybe<String> const& group, Maybe<String> const& type, Maybe<String> const& directives) {
+  callbacks.registerCallback("setFacialHair", [player](std::optional<String> const& group, std::optional<String> const& type, std::optional<String> const& directives) {
     if (group && type && directives)
       player->setFacialHair(*group, *type, *directives);
     else {
@@ -279,7 +278,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
     }
   });
 
-  callbacks.registerCallback("setFacialMask", [player](Maybe<String> const& group, Maybe<String> const& type, Maybe<String> const& directives) {
+  callbacks.registerCallback("setFacialMask", [player](std::optional<String> const& group, std::optional<String> const& type, std::optional<String> const& directives) {
     if (group && type && directives)
       player->setFacialMask(*group, *type, *directives);
     else {
@@ -289,7 +288,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
     }
   });
 
-  callbacks.registerCallback("setHair", [player](Maybe<String> const& group, Maybe<String> const& type, Maybe<String> const& directives) {
+  callbacks.registerCallback("setHair", [player](std::optional<String> const& group, std::optional<String> const& type, std::optional<String> const& directives) {
     if (group && type && directives)
       player->setHair(*group, *type, *directives);
     else {
@@ -306,13 +305,13 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
   callbacks.registerCallback("setName", [player](String const& name) { player->setName(name); });
 
   callbacks.registerCallback(   "nametag", [player]()                             { return player->nametag();    });
-  callbacks.registerCallback("setNametag", [player](Maybe<String> const& nametag) { player->setNametag(nametag); });
+  callbacks.registerCallback("setNametag", [player](std::optional<String> const& nametag) { player->setNametag(nametag); });
 
   callbacks.registerCallback(   "species", [player]()                      { return player->species();    });
   callbacks.registerCallback("setSpecies", [player](String const& species) { player->setSpecies(species); });
 
   callbacks.registerCallback(   "imagePath", [player]()                        { return player->identity().imagePath;    });
-  callbacks.registerCallback("setImagePath", [player](Maybe<String> const& imagePath) { player->setImagePath(imagePath); });
+  callbacks.registerCallback("setImagePath", [player](std::optional<String> const& imagePath) { player->setImagePath(imagePath); });
 
   callbacks.registerCallback(   "gender", [player]()                     { return GenderNames.getRight(player->gender());  });
   callbacks.registerCallback("setGender", [player](String const& gender) { player->setGender(GenderNames.getLeft(gender)); });
@@ -333,7 +332,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
   callbacks.registerCallback(   "interactRadius", [player]()         { return player->interactRadius();       });
   callbacks.registerCallback("setInteractRadius", [player](float radius) { player->setInteractRadius(radius); });
   
-  callbacks.registerCallback("setRenderLayer", [player](Maybe<String> const& layer) { 
+  callbacks.registerCallback("setRenderLayer", [player](std::optional<String> const& layer) {
     if (layer)
       player->setRenderLayer(parseRenderLayer(*layer)); 
     else
@@ -348,7 +347,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
     player->inventory()->setCustomBarGroup((group - 1) % (unsigned)player->inventory()->customBarGroups());
   });
 
-  callbacks.registerCallback("selectedActionBarSlot", [player](LuaEngine& engine) -> Maybe<LuaValue> {
+  callbacks.registerCallback("selectedActionBarSlot", [player](LuaEngine& engine) -> std::optional<LuaValue> {
     if (auto barLocation = player->inventory()->selectedActionBarLocation()) {
       if (auto index = barLocation.ptr<CustomBarIndex>())
         return engine.luaFrom<CustomBarIndex>(*index + 1);
@@ -384,7 +383,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
       throw StarException(strf("Unknown tool hand {}", handName));
   });
 
-  callbacks.registerCallback("setActionBarSlotLink", [player](int slot, String const& handName, Maybe<InventorySlot> inventorySlot) {
+  callbacks.registerCallback("setActionBarSlotLink", [player](int slot, String const& handName, std::optional<InventorySlot> inventorySlot) {
     auto inventory = player->inventory();
     CustomBarIndex wrapped = (slot - 1) % (unsigned)inventory->customBarIndexes();
     if (inventorySlot && !inventory->slotValid(*inventorySlot))
@@ -398,7 +397,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
       throw StarException(strf("Unknown tool hand {}", handName));
   });
 
-  callbacks.registerCallback("itemBagSize", [player](String const& bagName) -> Maybe<unsigned> {
+  callbacks.registerCallback("itemBagSize", [player](String const& bagName) -> std::optional<unsigned> {
     if (auto bag = player->inventory()->bagContents(bagName))
       return (unsigned)bag->size();
     else
@@ -414,7 +413,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
       return inventory->itemAllowedInBag(itemDatabase->item(ItemDescriptor(item)), bagName);
   });
 
-  callbacks.registerCallback("item", [player](InventorySlot const& slot) -> Maybe<Json> {
+  callbacks.registerCallback("item", [player](InventorySlot const& slot) -> std::optional<Json> {
     if (!player->inventory()->slotValid(slot)) return {};
     if (auto item = player->inventory()->itemsAt(slot))
       return itemSafeDescriptor(item).toJson();
@@ -428,13 +427,13 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
     player->inventory()->setItem(slot, itemDatabase->item(ItemDescriptor(item)));
   });
 
-  callbacks.registerCallback("setDamageTeam", [player](String const& typeName, Maybe<std::uint16_t> teamNumber) {
-    player->setTeam(EntityDamageTeam(TeamTypeNames.getLeft(typeName), teamNumber.value(0)));
+  callbacks.registerCallback("setDamageTeam", [player](String const& typeName, std::optional<std::uint16_t> teamNumber) {
+    player->setTeam(EntityDamageTeam(TeamTypeNames.getLeft(typeName), teamNumber.value_or(0)));
   });
 
   callbacks.registerCallback("say", [player](String const& message) { player->addChatMessage(message); });
 
-  callbacks.registerCallback("emote", [player](String const& emote, Maybe<float> cooldown) {
+  callbacks.registerCallback("emote", [player](String const& emote, std::optional<float> cooldown) {
     player->addEmote(HumanoidEmoteNames.getLeft(emote), cooldown);
   });
 
@@ -443,7 +442,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
     return luaTupleReturn(HumanoidEmoteNames.getRight(currentEmote.first), currentEmote.second);
   });
 
-  callbacks.registerCallback("dance", [player](Maybe<String> const& dance) {
+  callbacks.registerCallback("dance", [player](std::optional<String> const& dance) {
     player->setDance(dance);
   });
 
@@ -457,8 +456,8 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
   callbacks.registerCallback("uniqueId", [player]() { return player->uniqueId(); });
   callbacks.registerCallback("isAdmin",  [player]() { return player->isAdmin();  });
 
-  callbacks.registerCallback("interact", [player](String const& type, Json const& configData, Maybe<EntityId> const& sourceEntityId) {
-      player->interact(InteractAction(type, sourceEntityId.value(NullEntityId), configData));
+  callbacks.registerCallback("interact", [player](String const& type, Json const& configData, std::optional<EntityId> const& sourceEntityId) {
+      player->interact(InteractAction(type, sourceEntityId.value_or(NullEntityId), configData));
     });
 
   callbacks.registerCallback("shipUpgrades", [player]() { return player->shipUpgrades().toJson(); });
@@ -472,10 +471,10 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
 
   callbacks.registerCallback("blueprintKnown", [player](Json const& item) { return player->blueprintKnown(ItemDescriptor(item)); });
 
-  callbacks.registerCallback("availableRecipes", [&root, player](Maybe<StringSet> const& filter) {
+  callbacks.registerCallback("availableRecipes", [&root, player](std::optional<StringSet> const& filter) {
     auto itemDatabase = root.itemDatabase();
     auto inventory = player->inventory();
-    auto recipes = itemDatabase->recipesFromBagContents(inventory->availableItems(), inventory->availableCurrencies(), filter.value());
+    auto recipes = itemDatabase->recipesFromBagContents(inventory->availableItems(), inventory->availableCurrencies(), filter.value_or(StringSet{}));
     JsonArray result;
     result.reserve(recipes.size());
     for (auto& recipe : recipes)
@@ -550,7 +549,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
       return Json();
     });
 
-  callbacks.registerCallback("armorVisible", [player](String const& slotName) -> Maybe<bool> {
+  callbacks.registerCallback("armorVisible", [player](String const& slotName) -> std::optional<bool> {
     if (auto slotPtr = EquipmentSlotNames.leftPtr(slotName))
       return player->inventory()->equipmentVisibility(*slotPtr);
     return {};
@@ -564,16 +563,16 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
     return false;
   });
 
-  callbacks.registerCallback("hasItem", [player](Json const& item, Maybe<bool> exactMatch) {
-      return player->hasItem(ItemDescriptor(item), exactMatch.value(false));
+  callbacks.registerCallback("hasItem", [player](Json const& item, std::optional<bool> exactMatch) {
+      return player->hasItem(ItemDescriptor(item), exactMatch.value_or(false));
     });
 
-  callbacks.registerCallback("hasCountOfItem", [player](Json const& item, Maybe<bool> exactMatch) {
-      return player->hasCountOfItem(ItemDescriptor(item), exactMatch.value(false));
+  callbacks.registerCallback("hasCountOfItem", [player](Json const& item, std::optional<bool> exactMatch) {
+      return player->hasCountOfItem(ItemDescriptor(item), exactMatch.value_or(false));
     });
 
-  callbacks.registerCallback("consumeItem", [player](Json const& item, Maybe<bool> consumePartial, Maybe<bool> exactMatch) {
-      return player->takeItem(ItemDescriptor(item), consumePartial.value(false), exactMatch.value(false)).toJson();
+  callbacks.registerCallback("consumeItem", [player](Json const& item, std::optional<bool> consumePartial, std::optional<bool> exactMatch) {
+      return player->takeItem(ItemDescriptor(item), consumePartial.value_or(false), exactMatch.value_or(false)).toJson();
     });
 
   callbacks.registerCallback("inventoryTags", [player]() {
@@ -636,13 +635,13 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
       return {};
     });
 
-  callbacks.registerCallback("primaryHandItem", [player]() -> Maybe<Json> {
+  callbacks.registerCallback("primaryHandItem", [player]() -> std::optional<Json> {
       if (!player->primaryHandItem())
         return {};
       return player->primaryHandItem()->descriptor().toJson();
     });
 
-  callbacks.registerCallback("altHandItem", [player]() -> Maybe<Json> {
+  callbacks.registerCallback("altHandItem", [player]() -> std::optional<Json> {
       if (!player->altHandItem())
         return {};
       return player->altHandItem()->descriptor().toJson();
@@ -660,7 +659,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
       return player->altHandItem()->itemTags();
     });
 
-  callbacks.registerCallback("swapSlotItem", [player]() -> Maybe<Json> {
+  callbacks.registerCallback("swapSlotItem", [player]() -> std::optional<Json> {
       if (!player->inventory()->swapSlotItem())
         return {};
       return player->inventory()->swapSlotItem()->descriptor().toJson();
@@ -674,7 +673,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
   callbacks.registerCallback("canStartQuest",
       [&root, player](Json const& quest) { return player->questManager()->canStart(QuestArcDescriptor::fromJson(root, quest)); });
 
-  callbacks.registerCallback("startQuest", [&root, player](Json const& quest, Maybe<String> const& serverUuid, Maybe<String> const& worldId) {
+  callbacks.registerCallback("startQuest", [&root, player](Json const& quest, std::optional<String> const& serverUuid, std::optional<String> const& worldId) {
       auto questArc = QuestArcDescriptor::fromJson(root, quest);
       auto followUp = std::make_shared<Quest>(root, questArc, 0, player);
       if (serverUuid)
@@ -699,24 +698,24 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
     return player->questManager()->getQuest(questId)->diskStore();
   });
 
-  callbacks.registerCallback("questPortrait", [player](String const& questId, String const& portraitName) -> Maybe<List<Drawable>> {
+  callbacks.registerCallback("questPortrait", [player](String const& questId, String const& portraitName) -> std::optional<List<Drawable>> {
     if (!player->questManager()->hasQuest(questId))
       return {};
     return player->questManager()->getQuest(questId)->portrait(portraitName);
   });
 
 
-  callbacks.registerCallback("questState", [player](String const& questId) -> Maybe<String> {
+  callbacks.registerCallback("questState", [player](String const& questId) -> std::optional<String> {
     if (!player->questManager()->hasQuest(questId))
       return {};
     return QuestStateNames.getRight(player->questManager()->getQuest(questId)->state());
   });
 
-  callbacks.registerCallback("questObjectives", [player](String const& questId) -> Maybe<JsonArray> {
+  callbacks.registerCallback("questObjectives", [player](String const& questId) -> std::optional<JsonArray> {
     return player->questManager()->getQuest(questId)->objectiveList();
   });
 
-  callbacks.registerCallback("callQuest", [player](String const& questId, String const& func, LuaVariadic<LuaValue> const& args) -> Maybe<LuaValue> {
+  callbacks.registerCallback("callQuest", [player](String const& questId, String const& func, LuaVariadic<LuaValue> const& args) -> std::optional<LuaValue> {
     if (!player->questManager()->hasQuest(questId))
       return {};
     return player->questManager()->getQuest(questId)->callScript(func, args);
@@ -765,7 +764,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
     return {};
   });
 
-  callbacks.registerCallback("currentQuestWorld", [player]() -> Maybe<String> {
+  callbacks.registerCallback("currentQuestWorld", [player]() -> std::optional<String> {
       auto maybeQuest = player->questManager()->currentQuest();
       if (maybeQuest) {
         if (auto worldId = (*maybeQuest)->worldId())
@@ -779,7 +778,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
       auto maybeCurrentQuest = player->questManager()->currentQuest();
       for (auto q : player->questManager()->listActiveQuests()) {
         if (auto worldId = q->worldId()) {
-          bool isCurrentQuest = maybeCurrentQuest && maybeCurrentQuest.get()->questId() == q->questId();
+          bool isCurrentQuest = maybeCurrentQuest && maybeCurrentQuest.value()->questId() == q->questId();
           res.append(std::pair<String, bool>(printWorldId(*worldId), isCurrentQuest));
         }
       }
@@ -789,7 +788,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
   callbacks.registerCallback("currentQuestLocation", [player]() -> Json {
       auto maybeQuest = player->questManager()->currentQuest();
       if (maybeQuest) {
-        if (auto questLocation = maybeQuest.get()->location())
+        if (auto questLocation = maybeQuest.value()->location())
           return JsonObject{{"system", jsonFromVec3I(questLocation->first)}, {"location", jsonFromSystemLocation(questLocation->second)}};
       }
       return {};
@@ -800,7 +799,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
       auto maybeCurrentQuest = player->questManager()->currentQuest();
       for (auto q : player->questManager()->listActiveQuests()) {
         if (auto questLocation = q->location()) {
-          bool isCurrentQuest = maybeCurrentQuest && maybeCurrentQuest.get()->questId() == q->questId();
+          bool isCurrentQuest = maybeCurrentQuest && maybeCurrentQuest.value()->questId() == q->questId();
           auto locationJson = JsonObject{{"system", jsonFromVec3I(questLocation->first)}, {"location", jsonFromSystemLocation(questLocation->second)}};
           res.append(std::pair<Json, bool>(locationJson, isCurrentQuest));
         }
@@ -824,8 +823,8 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
       return player->aiState().completedMissions.contains(mission);
     });
 
-  callbacks.registerCallback("radioMessage", [player](Json const& messageConfig, Maybe<float> const& delay) {
-      player->queueRadioMessage(messageConfig, delay.value(0));
+  callbacks.registerCallback("radioMessage", [player](Json const& messageConfig, std::optional<float> const& delay) {
+      player->queueRadioMessage(messageConfig, delay.value_or(0));
     });
 
   callbacks.registerCallback("worldId", [player]() { return printWorldId(player->clientContext()->playerWorldId()); });
@@ -834,11 +833,11 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
 
   callbacks.registerCallback("ownShipWorldId", [player]() { return printWorldId(ClientShipWorldId(player->uuid())); });
 
-  callbacks.registerCallback("lounge", [player](EntityId entityId, Maybe<std::size_t> anchorIndex) {
-      return player->lounge(entityId, anchorIndex.value(0));
+  callbacks.registerCallback("lounge", [player](EntityId entityId, std::optional<std::size_t> anchorIndex) {
+      return player->lounge(entityId, anchorIndex.value_or(0));
     });
   callbacks.registerCallback("isLounging", [player]() { return (bool)player->loungingIn(); });
-  callbacks.registerCallback("loungingIn", [player]() -> Maybe<EntityId> {
+  callbacks.registerCallback("loungingIn", [player]() -> std::optional<EntityId> {
       if (auto anchorState = player->loungingIn())
         return anchorState->entityId;
       return {};
@@ -852,8 +851,8 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
       return player->log()->setIntroComplete(complete);
     });
 
-  callbacks.registerCallback("warp", [player](String action, Maybe<String> animation, Maybe<bool> deploy) {
-      player->setPendingWarp(action, animation, deploy.value(false));
+  callbacks.registerCallback("warp", [player](String action, std::optional<String> animation, std::optional<bool> deploy) {
+      player->setPendingWarp(action, animation, deploy.value_or(false));
     });
 
   callbacks.registerCallback("canDeploy", [player]() {
@@ -870,8 +869,8 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
       return pair.first;
     });
 
-  callbacks.registerCallback("playCinematic", [player](Json const& cinematic, Maybe<bool> unique) {
-      player->setPendingCinematic(cinematic, unique.value(false));
+  callbacks.registerCallback("playCinematic", [player](Json const& cinematic, std::optional<bool> unique) {
+      player->setPendingCinematic(cinematic, unique.value_or(false));
     });
 
   callbacks.registerCallback("recordEvent", [player](String const& eventName, Json const& fields) {
@@ -880,7 +879,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
 
   callbacks.registerCallback("worldHasOrbitBookmark", [player](Json const& coords) -> bool {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
-      return player->universeMap()->worldBookmark(coordinate).isValid();
+      return player->universeMap()->worldBookmark(coordinate).has_value();
     });
 
   callbacks.registerCallback("orbitBookmarks", [player]() -> List<std::pair<Vec3I, Json>> {
@@ -931,7 +930,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
       for (auto p : player->universeMap()->mappedObjects(coordinate)) {
         JsonObject object = {
           {"typeName", p.second.typeName},
-          {"orbit", jsonFromMaybe<CelestialOrbit>(p.second.orbit, [](CelestialOrbit const& o) { return o.toJson(); })},
+          {"orbit", jsonFromOptional<CelestialOrbit>(p.second.orbit, [](CelestialOrbit const& o) { return o.toJson(); })},
           {"parameters", p.second.parameters}
         };
         json.set(p.first.hex(), object);
@@ -943,8 +942,8 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
       return player->log()->collectables(collection);
     });
 
-  callbacks.registerCallback("getProperty", [player](String const& name, Maybe<Json> const& defaultValue) -> Json {
-      return player->getGenericProperty(name, defaultValue.value(Json()));
+  callbacks.registerCallback("getProperty", [player](String const& name, std::optional<Json> const& defaultValue) -> Json {
+      return player->getGenericProperty(name, defaultValue.value_or(Json()));
     });
 
   callbacks.registerCallback("setProperty", [player](String const& name, Json const& value) {
@@ -976,15 +975,15 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
     return player->codexes()->markCodexUnread(codexId);
   });
 
-  callbacks.registerCallback("learnCodex", [player](String const& codexId, Maybe<bool> markRead) {
-    player->codexes()->learnCodex(codexId, markRead.value(false));
+  callbacks.registerCallback("learnCodex", [player](String const& codexId, std::optional<bool> markRead) {
+    player->codexes()->learnCodex(codexId, markRead.value_or(false));
   });
 
   callbacks.registerCallback("getCodexes", [player]() -> Json {
     return player->codexes()->toJson();
   });
 
-  callbacks.registerCallback("getNewCodex", [player]() -> Maybe<String> {
+  callbacks.registerCallback("getNewCodex", [player]() -> std::optional<String> {
     auto codexPtr = player->codexes()->firstNewCodex();
     if (codexPtr)
       return codexPtr->title();
@@ -996,7 +995,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
     player->setAnimationParameter(name, value);
   });
 
-  callbacks.registerCallback("setCameraFocusEntity", [player](Maybe<EntityId> const& entityId) {
+  callbacks.registerCallback("setCameraFocusEntity", [player](std::optional<EntityId> const& entityId) {
     player->setCameraFocusEntity(entityId);
   });
 

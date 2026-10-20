@@ -29,7 +29,6 @@ import std;
 import star.worker_pool;
 
 import star.sector_array_2d;
-import star.maybe;
 import star.image_processing;
 import star.hash;
 import star.string_view;
@@ -111,7 +110,7 @@ namespace WorldImpl {
   bool lineTileCollision(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet);
 
   template <typename TileSectorArray>
-  Maybe<std::pair<Vec2F, Vec2I>> lineTileCollisionPoint(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet);
+  std::optional<std::pair<Vec2F, Vec2I>> lineTileCollisionPoint(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet);
 
   template <typename TileSectorArray>
   List<Vec2I> collidingTilesAlongLine(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
@@ -197,9 +196,9 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  Maybe<std::pair<Vec2F, Vec2I>> lineTileCollisionPoint(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
+  std::optional<std::pair<Vec2F, Vec2I>> lineTileCollisionPoint(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
       Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet) {
-    Maybe<Vec2I> collidingBlock;
+    std::optional<Vec2I> collidingBlock;
     auto clear = forBlocksAlongLine<float>(begin, worldGeometry.diff(end, begin), [=, &collidingBlock](int x, int y) -> bool {
         if (tileSectorArray->tile({x, y}).isColliding(collisionSet)) {
           collidingBlock = Vec2I(x, y);
@@ -526,7 +525,7 @@ namespace WorldImpl {
     auto liquidsDatabase = root.liquidsDatabase();
 
     auto tile = tileSectorArray->tile(ipos);
-    bool environmentBreathable = breathableMap.maybe(tile.dungeonId).value(worldTemplate->breathable(ipos[0], ipos[1]));
+    bool environmentBreathable = breathableMap.maybe(tile.dungeonId).value_or(worldTemplate->breathable(ipos[0], ipos[1]));
     bool liquidBreathable = remainder >= tile.liquid.level;
     bool foregroundBreathable = tile.getCollision() != CollisionKind::Block || !world->pointCollision(pos);
 

@@ -29,7 +29,6 @@ import std;
 import star.worker_pool;
 
 import star.sector_array_2d;
-import star.maybe;
 import star.color;
 import star.image_processing;
 import star.hash;
@@ -137,7 +136,7 @@ void WireProcessor::populateWorking(WireEntity* wireEntity) {
 
 void WireProcessor::loadNetwork(Vec2I tilePosition) {
   HashSet<WorldStorage::Sector> networkSectors;
-  Maybe<float> highestTtl;
+  std::optional<float> highestTtl;
 
   // Recursively load a given WireEntity at the given position.  Returns true
   // if that wire entity was found.

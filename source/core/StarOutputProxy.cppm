@@ -2,6 +2,7 @@ module;
 import std;
 import star.stream_formatter;
 import star.type_identity;
+import star.optional;
 
 namespace Star {
 
@@ -31,7 +32,10 @@ namespace OutputAnyDetail {
   template <typename T>
   std::ostream& operator<<(std::ostream& os, Wrapper<T> const& wrapper) {
     using namespace Operator;
-    return os << wrapper.wrapped;
+    if constexpr (requires { outputOptional(wrapper.wrapped); })
+      return os << outputOptional(wrapper.wrapped);
+    else
+      return os << wrapper.wrapped;
   }
 }
 

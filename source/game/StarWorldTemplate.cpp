@@ -2,7 +2,6 @@ import star.json;
 import star.json_extra;
 import star.ordered_map;
 import star.lru_cache;
-import star.maybe;
 import star.color;
 import star.list;
 import star.rect;
@@ -33,6 +32,7 @@ import star.ref_ptr;
 import star.listener;
 import std;
 import star.string;
+import star.optional;
 import star.format;
 import star.version;
 import star.math_common;
@@ -140,14 +140,14 @@ WorldTemplate::WorldTemplate(Root& root, std::shared_ptr<VisitableWorldParameter
 }
 
 WorldTemplate::WorldTemplate(Root& root, Json const& store) : WorldTemplate(root) {
-  m_celestialParameters = jsonToMaybe<CelestialParameters>(store.get("celestialParameters", {}));
+  m_celestialParameters = jsonToOptional<CelestialParameters>(store.get("celestialParameters", {}));
   m_worldParameters = diskLoadVisitableWorldParameters(store.get("worldParameters", {}));
   m_skyParameters = SkyParameters(store.get("skyParameters"));
 
   m_seed = store.getUInt("seed");
   m_geometry = WorldGeometry(jsonToVec2U(store.get("size")));
   if (auto regionData = store.opt("regionData"))
-    m_layout = std::make_shared<WorldLayout>(root, regionData.take());
+    m_layout = std::make_shared<WorldLayout>(root, takeOptional(regionData));
 
   m_customTerrainRegions = store.getArray("customTerrainRegions", JsonArray()).transformed([](Json const& config) {
       CustomTerrainRegion ctr = {jsonToPolyF(config.get("region")), {}, config.getBool("solid")};
@@ -161,7 +161,7 @@ WorldTemplate::WorldTemplate(Root& root, Json const& store) : WorldTemplate(root
 
 Json WorldTemplate::store() const {
   return JsonObject{
-    {"celestialParameters", jsonFromMaybe(m_celestialParameters, std::mem_fn(&CelestialParameters::diskStore))},
+    {"celestialParameters", jsonFromOptional(m_celestialParameters, std::mem_fn(&CelestialParameters::diskStore))},
     {"worldParameters", diskStoreVisitableWorldParameters(m_worldParameters)},
     {"skyParameters", m_skyParameters.toJson()},
     {"seed", m_seed},
@@ -173,7 +173,7 @@ Json WorldTemplate::store() const {
   };
 }
 
-Maybe<CelestialParameters> const& WorldTemplate::celestialParameters() const {
+std::optional<CelestialParameters> const& WorldTemplate::celestialParameters() const {
   return m_celestialParameters;
 }
 
@@ -238,7 +238,7 @@ bool WorldTemplate::inSurfaceLayer(Vec2I const& position) const {
   return false;
 }
 
-Maybe<Vec2I> WorldTemplate::findSensiblePlayerStart() const {
+std::optional<Vec2I> WorldTemplate::findSensiblePlayerStart() const {
   if (!m_layout)
     return {};
 
@@ -557,31 +557,31 @@ bool WorldTemplate::breathable(int, int) const {
   return true;
 }
 
-void WorldTemplate::addPotentialBiomeItems(int x, int y, PotentialBiomeItems& items, List<BiomeItemDistribution> const& distributions, BiomePlacementArea area, Maybe<BiomePlacementMode> mode) const {
+void WorldTemplate::addPotentialBiomeItems(int x, int y, PotentialBiomeItems& items, List<BiomeItemDistribution> const& distributions, BiomePlacementArea area, std::optional<BiomePlacementMode> mode) const {
   for (auto const& itemDistribution : distributions) {
-    auto placeMode = mode.value(itemDistribution.mode());
+    auto placeMode = mode.value_or(itemDistribution.mode());
 
     if (area == BiomePlacementArea::Surface) {
       if (placeMode == itemDistribution.mode() && placeMode == BiomePlacementMode::Floor) {
         if (auto itemToPlace = itemDistribution.itemToPlace(x, y))
-          items.surfaceBiomeItems.append(itemToPlace.take());
+          items.surfaceBiomeItems.append(takeOptional(itemToPlace));
       }
       if (placeMode == itemDistribution.mode() && placeMode == BiomePlacementMode::Ocean) {
         if (auto itemToPlace = itemDistribution.itemToPlace(x, y))
-          items.oceanItems.append(itemToPlace.take());
+          items.oceanItems.append(takeOptional(itemToPlace));
       }
     } else if (area == BiomePlacementArea::Underground) {
       if (placeMode == itemDistribution.mode() && placeMode == BiomePlacementMode::Floor) {
         if (auto itemToPlace = itemDistribution.itemToPlace(x, y))
-          items.caveSurfaceBiomeItems.append(itemToPlace.take());
+          items.caveSurfaceBiomeItems.append(takeOptional(itemToPlace));
       }
       if (placeMode == itemDistribution.mode() && placeMode == BiomePlacementMode::Ceiling) {
         if (auto itemToPlace = itemDistribution.itemToPlace(x, y))
-          items.caveCeilingBiomeItems.append(itemToPlace.take());
+          items.caveCeilingBiomeItems.append(takeOptional(itemToPlace));
       }
       if (placeMode == itemDistribution.mode() && placeMode == BiomePlacementMode::Background) {
         if (auto itemToPlace = itemDistribution.itemToPlace(x, y))
-          items.caveBackgroundBiomeItems.append(itemToPlace.take());
+          items.caveBackgroundBiomeItems.append(takeOptional(itemToPlace));
       }
     }
   }
@@ -724,7 +724,7 @@ void WorldTemplate::setupWeatherDomains() {
           ? definitions[i + 1].layer->layerMinHeight
           : (int)m_geometry.height();
 
-      Maybe<String> domain;
+      std::optional<String> domain;
       if (definition.name == "surface") {
         domain = String("surface");
       } else if (biomeDatabase->biomeHasWeather(definition.layer->primaryRegion.biome)) {
@@ -740,7 +740,7 @@ void WorldTemplate::setupWeatherDomains() {
     }
   } else {
     m_weatherDomains.append({"surface", m_worldParameters->weatherPool, (int)undergroundLevel()});
-    m_weatherLayers.append({"surface", Maybe<String>(String("surface")), 0, (int)m_geometry.height()});
+    m_weatherLayers.append({"surface", std::optional<String>(String("surface")), 0, (int)m_geometry.height()});
   }
 }
 

@@ -20,7 +20,6 @@ import star.bi_map;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.set;
 import star.audio;
@@ -246,8 +245,8 @@ InventoryPane::InventoryPane(GuiContext& guiContext, MainInterface* parent, std:
         } else {
           for (std::shared_ptr<Pane>& pane : m_parent->paneManager()->getAllPanes()) {
             auto remainder = pane->shiftItemFromInventory(inventory->itemsAt(inventorySlot));
-            if (remainder.isValid()) {
-              inventory->setItem(inventorySlot, remainder.value());
+            if (remainder.has_value()) {
+              inventory->setItem(inventorySlot, remainder.value_or(std::shared_ptr<Item>{}));
               break;
             }
           }
@@ -679,8 +678,8 @@ void InventoryPane::update(float dt) {
 
     if (containsChild("companionHealthBar")) {
       auto healthBar = fetchChild<ProgressWidget>("companionHealthBar");
-      Maybe<float> health = pet->resource("health");
-      Maybe<float> healthMax = pet->resourceMax("health");
+      std::optional<float> health = pet->resource("health");
+      std::optional<float> healthMax = pet->resourceMax("health");
       if (health && healthMax) {
         healthBar->setCurrentProgressLevel(*health);
         healthBar->setMaxProgressLevel(*healthMax);

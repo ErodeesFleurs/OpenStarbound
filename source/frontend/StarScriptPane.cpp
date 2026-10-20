@@ -24,7 +24,6 @@ import star.version;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -239,7 +238,7 @@ void ScriptPane::tick(float dt) {
 
 std::shared_ptr<Pane> ScriptPane::createTooltip(Vec2I const& screenPosition) {
   auto result = m_script.invoke<Json>("createTooltip", screenPosition);
-  if (result && !result.value().isNull()) {
+  if (result && !result.value_or(Json{}).isNull()) {
     if (result->type() == Json::Type::String) {
       return SimpleTooltipBuilder::buildTooltip(*context(), result->toString());
     } else {

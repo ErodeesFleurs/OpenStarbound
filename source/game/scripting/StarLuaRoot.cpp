@@ -19,7 +19,6 @@ import star.time;
 import star.string;
 import star.file;
 import star.lua;
-import star.maybe;
 import star.format;
 import star.version;
 import star.casting;
@@ -103,8 +102,8 @@ void LuaRoot::shutdown() {
 
     std::function<Json (LuaProfileEntry const&)> jsonFromProfileEntry = [&](LuaProfileEntry const& entry) -> Json {
         JsonObject profile;
-        profile.set("function", entry.name.value("<function>"));
-        profile.set("scope", entry.nameScope.value("?"));
+        profile.set("function", entry.name.value_or("<function>"));
+        profile.set("scope", entry.nameScope.value_or("?"));
         profile.set("source", strf("{}:{}", entry.source, entry.sourceLine));
         profile.set("self", entry.selfTime);
         profile.set("total", entry.totalTime);
@@ -164,7 +163,7 @@ LuaContext LuaRoot::createContext(StringList const& scriptPaths) {
   return newContext;
 }
 
-void LuaRoot::collectGarbage(Maybe<unsigned> steps) {
+void LuaRoot::collectGarbage(std::optional<unsigned> steps) {
   if (m_luaEngine)
     m_luaEngine->collectGarbage(steps);
 }

@@ -1,6 +1,5 @@
 import star.json;
 import star.json_extra;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.color;

@@ -8,7 +8,6 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-import star.maybe;
 import star.string;
 import star.bi_map;
 import star.listener;

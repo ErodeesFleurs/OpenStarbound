@@ -1,6 +1,5 @@
 module;
 import std;
-import star.maybe;
 import star.json;
 
 import star.color;
@@ -75,10 +74,10 @@ struct PreviewTile {
 struct OverheadBar {
   OverheadBar();
   OverheadBar(Json const& json);
-  OverheadBar(Maybe<String> icon, float percentage, Color color, bool detailOnly);
+  OverheadBar(std::optional<String> icon, float percentage, Color color, bool detailOnly);
 
   Vec2F entityPosition;
-  Maybe<String> icon;
+  std::optional<String> icon;
   float percentage;
   Color color;
   bool detailOnly;

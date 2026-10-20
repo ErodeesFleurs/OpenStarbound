@@ -4,6 +4,7 @@ import star.format;
 import star.stream_formatter;
 import star.list;
 import star.array;
+import star.optional;
 
 namespace Star {
 
@@ -447,7 +448,10 @@ void MultiArray<Element, Rank>::subPrint(OStream& os, IndexArray index, std::siz
   if (dim == Rank - 1) {
     for (std::size_t i = 0; i < m_shape[dim]; ++i) {
       index[dim] = i;
-      os << m_data[storageIndex(index)] << ' ';
+      if constexpr (requires { outputOptional(m_data[storageIndex(index)]); })
+        os << outputOptional(m_data[storageIndex(index)]) << ' ';
+      else
+        os << m_data[storageIndex(index)] << ' ';
     }
     os << std::endl;
   } else {

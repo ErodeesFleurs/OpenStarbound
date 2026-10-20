@@ -15,7 +15,7 @@
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_opengl3.h"
 import std;
-import star.maybe;
+import star.optional;
 import star.format;
 import star.json;
 import star.string;
@@ -153,7 +153,7 @@ static bool copyFileToClipboard(String const& path) {
 }
 #endif
 
-Maybe<Key> keyFromSdlKeyCode(SDL_Keycode sym) {
+std::optional<Key> keyFromSdlKeyCode(SDL_Keycode sym) {
   static HashMap<int, Key> KeyCodeMap{
     {SDLK_BACKSPACE, Key::Backspace},
     {SDLK_TAB, Key::Tab},
@@ -300,7 +300,7 @@ Maybe<Key> keyFromSdlKeyCode(SDL_Keycode sym) {
   return KeyCodeMap.maybe(sym);
 }
 
-Maybe<Key> keyFromSdlScancode(SDL_Scancode scancode) {
+std::optional<Key> keyFromSdlScancode(SDL_Scancode scancode) {
   static HashMap<int, Key> ScanCodeMap{
   {SDL_SCANCODE_A, Key::A},
   {SDL_SCANCODE_B, Key::B},
@@ -898,8 +898,8 @@ private:
       return SDL_HasClipboardText();
     }
 
-    Maybe<String> getClipboard() override {
-      Maybe<String> string;
+    std::optional<String> getClipboard() override {
+      std::optional<String> string;
       if (SDL_HasClipboardText()) {
         if (auto text = SDL_GetClipboardText()) {
           if (*text != '\0')
@@ -1086,7 +1086,7 @@ private:
       }
     }
 
-    void setTextArea(Maybe<std::pair<RectI, int>> area) override {
+    void setTextArea(std::optional<std::pair<RectI, int>> area) override {
       if (parent->m_textInputArea == area)
         return;
       parent->m_textInputArea = area;
@@ -1176,7 +1176,7 @@ private:
     while (SDL_PollEvent(&event)) {
       SDL_ConvertEventToRenderCoordinates(SDL_GetRenderer(m_sdlWindow), &event);
       ImGui_ImplSDL3_ProcessEvent(&event);
-      Maybe<InputEvent> starEvent;
+      std::optional<InputEvent> starEvent;
       if (event.type == SDL_EVENT_WINDOW_MAXIMIZED || event.type == SDL_EVENT_WINDOW_RESTORED) {
         auto windowFlags = SDL_GetWindowFlags(m_sdlWindow);
 
@@ -1206,39 +1206,39 @@ private:
           if (!key)
             key = keyFromSdlScancode(event.key.scancode);
           if (key)
-            starEvent.set(KeyDownEvent{*key, keyModsFromSdlKeyMods(event.key.mod)});
+            starEvent.emplace(KeyDownEvent{*key, keyModsFromSdlKeyMods(event.key.mod)});
         }
       } else if (event.type == SDL_EVENT_KEY_UP) {
         auto key = keyFromSdlKeyCode(event.key.key);
         if (!key)
           key = keyFromSdlScancode(event.key.scancode);
         if (key)
-          starEvent.set(KeyUpEvent{*key});
+          starEvent.emplace(KeyUpEvent{*key});
       } else if (event.type == SDL_EVENT_TEXT_INPUT && !io.WantTextInput) {
-        starEvent.set(TextInputEvent{String(event.text.text)});
+        starEvent.emplace(TextInputEvent{String(event.text.text)});
       } else if (event.type == SDL_EVENT_MOUSE_MOTION) {
-        starEvent.set(MouseMoveEvent{
+        starEvent.emplace(MouseMoveEvent{
           {event.motion.xrel, -event.motion.yrel},
           {event.motion.x, (int)m_windowSize[1] - event.motion.y}});
       } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && !io.WantCaptureMouse) {
-        starEvent.set(MouseButtonDownEvent{mouseButtonFromSdlMouseButton(event.button.button),
+        starEvent.emplace(MouseButtonDownEvent{mouseButtonFromSdlMouseButton(event.button.button),
           {event.button.x, (int)m_windowSize[1] - event.button.y}});
       } else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP && !io.WantCaptureMouse) {
-        starEvent.set(MouseButtonUpEvent{mouseButtonFromSdlMouseButton(event.button.button),
+        starEvent.emplace(MouseButtonUpEvent{mouseButtonFromSdlMouseButton(event.button.button),
           {event.button.x, (int)m_windowSize[1] - event.button.y}});
       } else if (event.type == SDL_EVENT_MOUSE_WHEEL && !io.WantCaptureMouse) {
-        starEvent.set(MouseWheelEvent{event.wheel.y < 0 ? MouseWheel::Down : MouseWheel::Up,
+        starEvent.emplace(MouseWheelEvent{event.wheel.y < 0 ? MouseWheel::Down : MouseWheel::Up,
           {event.wheel.mouse_x, (int)m_windowSize[1] - event.wheel.mouse_y}});
       } else if (event.type == SDL_EVENT_GAMEPAD_AXIS_MOTION) {
-        starEvent.set(ControllerAxisEvent{
+        starEvent.emplace(ControllerAxisEvent{
           (ControllerId)event.gaxis.which,
           controllerAxisFromSdlControllerAxis(event.gaxis.axis),
           (float)event.gaxis.value / 32768.0f
         });
       } else if (event.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
-        starEvent.set(ControllerButtonDownEvent{ (ControllerId)event.gbutton.which, controllerButtonFromSdlControllerButton(event.gbutton.button) });
+        starEvent.emplace(ControllerButtonDownEvent{ (ControllerId)event.gbutton.which, controllerButtonFromSdlControllerButton(event.gbutton.button) });
       } else if (event.type == SDL_EVENT_GAMEPAD_BUTTON_UP) {
-        starEvent.set(ControllerButtonUpEvent{ (ControllerId)event.gbutton.which, controllerButtonFromSdlControllerButton(event.gbutton.button) });
+        starEvent.emplace(ControllerButtonUpEvent{ (ControllerId)event.gbutton.which, controllerButtonFromSdlControllerButton(event.gbutton.button) });
       } else if (event.type == SDL_EVENT_GAMEPAD_ADDED) {
         auto insertion = m_SdlControllers.insert_or_assign(event.gdevice.which, std::unique_ptr<SDL_Gamepad, decltype(&SDL_CloseGamepad)>(SDL_OpenGamepad(event.gdevice.which), SDL_CloseGamepad));
         if (SDL_Gamepad* controller = insertion.first->second.get())
@@ -1256,7 +1256,7 @@ private:
       }
 
       if (starEvent)
-        inputEvents.append(starEvent.take());
+        inputEvents.append(takeOptional(starEvent));
     }
 
     return inputEvents;
@@ -1419,7 +1419,7 @@ private:
   AudioCallback m_audioInputCallback;
   std::vector<std::uint8_t> m_audioInputData;
   std::vector<std::uint8_t> m_audioOutputData;
-  Maybe<std::pair<RectI, int>> m_textInputArea;
+  std::optional<std::pair<RectI, int>> m_textInputArea;
 
   StableHashMap<int, std::unique_ptr<SDL_Gamepad, decltype(&SDL_CloseGamepad)>> m_SdlControllers;
 

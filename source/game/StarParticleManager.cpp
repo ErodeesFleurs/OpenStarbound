@@ -20,7 +20,6 @@ import star.worker_pool;
 import star.sector_array_2d;
 import star.random;
 import star.perlin;
-import star.maybe;
 import star.weighted_pool;
 import star.variant;
 import star.version;

@@ -1,7 +1,6 @@
 module;
 import std;
 import star.type_identity;
-import star.maybe;
 import star.json;
 import star.id_map;
 import star.casting;
@@ -35,7 +34,7 @@ struct EntityAnchor {
   Vec2F position;
   // If set, the entity should place the bottom center of its collision poly on
   // the given position at exit
-  Maybe<Vec2F> exitBottomPosition;
+  std::optional<Vec2F> exitBottomPosition;
   Direction direction;
   float angle;
 };

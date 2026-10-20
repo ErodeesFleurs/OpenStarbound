@@ -5,6 +5,7 @@ import star.thread;
 import star.color;
 import star.string;
 import star.data_stream;
+import star.rect;
 import star.list;
 import star.image_processing;
 import star.hash;
@@ -19,7 +20,6 @@ import star.casting;
 import star.strong_typedef;
 import star.rpc_promise;
 import star.lua;
-import star.maybe;
 import star.bi_map;
 import star.io_device;
 import star.ref_ptr;
@@ -145,7 +145,7 @@ std::shared_ptr<ProjectileConfig> ProjectileDatabase::readConfig(String const& p
 
   projectileConfig->description = config.getString("description", "");
 
-  projectileConfig->boundBox = config.opt("boundBox").apply(jsonToRectF).value({-5, -5, 5, 5});
+  projectileConfig->boundBox = config.opt("boundBox").transform(jsonToRectF).value_or(RectF{-5, -5, 5, 5});
 
   auto physicsType = config.getString("physics", "default");
   JsonObject movementSettings = config.getObject("movementSettings", JsonObject());

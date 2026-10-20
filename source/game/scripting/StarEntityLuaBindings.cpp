@@ -13,7 +13,6 @@ import star.bi_map;
 import star.variant;
 import star.list;
 import star.rpc_promise;
-import star.maybe;
 import star.a_star;
 import star.ordered_set;
 import star.audio;

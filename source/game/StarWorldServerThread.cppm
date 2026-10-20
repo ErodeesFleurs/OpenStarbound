@@ -3,7 +3,6 @@ import std;
 import star.string;
 import star.list;
 import star.set;
-import star.maybe;
 import star.json;
 
 import star.game_types;
@@ -24,7 +23,7 @@ namespace Star {
 class WorldServer;
 struct Packet;
 enum class WorldServerFidelity;
-typedef HashMap<ByteArray, Maybe<ByteArray>> WorldChunks;
+typedef HashMap<ByteArray, std::optional<ByteArray>> WorldChunks;
 
 // Runs a WorldServer in a separate thread and guards exceptions that occur in
 // it.  All methods are designed to not throw exceptions, but will instead log
@@ -77,10 +76,10 @@ public:
   void pushIncomingPackets(ConnectionId clientId, List<std::shared_ptr<Packet>> packets);
   List<std::shared_ptr<Packet>> pullOutgoingPackets(ConnectionId clientId);
 
-  Maybe<Vec2F> playerRevivePosition(ConnectionId clientId) const;
+  std::optional<Vec2F> playerRevivePosition(ConnectionId clientId) const;
 
   // Worlds use this to notify the universe server that their celestial type should change
-  Maybe<std::pair<String, String>> pullNewPlanetType();
+  std::optional<std::pair<String, String>> pullNewPlanetType();
 
   // Executes the given action on the world in a thread safe context.  This
   // does *not* catch exceptions thrown by the action or set the server error

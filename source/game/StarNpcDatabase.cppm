@@ -11,7 +11,6 @@ import star.thread;
 import star.list;
 import star.map;
 import star.set;
-import star.maybe;
 import star.vector;
 import star.data_stream;
 import star.game_types;
@@ -67,7 +66,7 @@ struct NpcVariant {
   unsigned initialScriptDelta;
   Json scriptConfig;
 
-  Maybe<String> description;
+  std::optional<String> description;
 
   HumanoidIdentity humanoidIdentity;
   Json humanoidConfig;

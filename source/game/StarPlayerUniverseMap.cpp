@@ -11,7 +11,6 @@ import star.game_types;
 import star.variant;
 import star.color;
 import star.bi_map;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -98,7 +97,7 @@ Json PlayerUniverseMap::toJson() const {
 }
 
 List<std::pair<Vec3I, OrbitBookmark>> PlayerUniverseMap::orbitBookmarks() const {
-  if (m_serverUuid.isNothing())
+  if (!m_serverUuid.has_value())
     return {};
 
   List<std::pair<Vec3I, OrbitBookmark>> bookmarks;
@@ -114,14 +113,14 @@ bool PlayerUniverseMap::addOrbitBookmark(CelestialCoordinate const& system, Orbi
   if (system.isNull())
     throw StarException("Cannot add orbit bookmark to null system");
 
-  return m_universeMaps[*m_serverUuid].systems[system.location()].bookmarks.add(std::move(bookmark));
+  return m_universeMaps[m_serverUuid.value()].systems[system.location()].bookmarks.add(std::move(bookmark));
 }
 
 bool PlayerUniverseMap::removeOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark) {
   if (system.isNull())
     throw StarException("Cannot remove orbit bookmark from null system");
 
-  return m_universeMaps[*m_serverUuid].systems[system.location()].bookmarks.remove(bookmark);
+  return m_universeMaps[m_serverUuid.value()].systems[system.location()].bookmarks.remove(bookmark);
 }
 
 List<TeleportBookmark> PlayerUniverseMap::teleportBookmarks() const {
@@ -129,11 +128,11 @@ List<TeleportBookmark> PlayerUniverseMap::teleportBookmarks() const {
 }
 
 bool PlayerUniverseMap::addTeleportBookmark(TeleportBookmark bookmark) {
-  return m_universeMaps[*m_serverUuid].teleportBookmarks.add(std::move(bookmark));
+  return m_universeMaps[m_serverUuid.value()].teleportBookmarks.add(std::move(bookmark));
 }
 
 bool PlayerUniverseMap::removeTeleportBookmark(TeleportBookmark const& bookmark) {
-  return m_universeMaps[*m_serverUuid].teleportBookmarks.remove(bookmark);
+  return m_universeMaps[m_serverUuid.value()].teleportBookmarks.remove(bookmark);
 }
 
 void PlayerUniverseMap::invalidateWarpAction(WarpAction const& warpAction) {
@@ -141,7 +140,7 @@ void PlayerUniverseMap::invalidateWarpAction(WarpAction const& warpAction) {
     removeTeleportBookmark({ {warpToWorld->world, warpToWorld->target}, "", "", ""});
 }
 
-Maybe<OrbitBookmark> PlayerUniverseMap::worldBookmark(CelestialCoordinate const& world) const {
+std::optional<OrbitBookmark> PlayerUniverseMap::worldBookmark(CelestialCoordinate const& world) const {
   if (auto systemMap = universeMap().systems.ptr(world.location())) {
     for (auto& bookmark : systemMap->bookmarks) {
       if (bookmark.target == world)
@@ -172,7 +171,7 @@ bool PlayerUniverseMap::isMapped(CelestialCoordinate const& coordinate) {
   if (coordinate.isNull())
     return false;
 
-  auto& universeMap = m_universeMaps[*m_serverUuid];
+  auto& universeMap = m_universeMaps[m_serverUuid.value()];
   if (auto systemMap = universeMap.systems.ptr(coordinate.location()))
     return coordinate.isSystem() || systemMap->mappedPlanets.contains(coordinate.planet());
   else
@@ -180,7 +179,7 @@ bool PlayerUniverseMap::isMapped(CelestialCoordinate const& coordinate) {
 }
 
 HashMap<Uuid, PlayerUniverseMap::MappedObject> PlayerUniverseMap::mappedObjects(CelestialCoordinate const& system) {
-  auto& universeMap = m_universeMaps[*m_serverUuid];
+  auto& universeMap = m_universeMaps[m_serverUuid.value()];
   if (auto systemMap = universeMap.systems.ptr(system.location()))
     return systemMap->mappedObjects;
   else
@@ -191,30 +190,30 @@ void PlayerUniverseMap::addMappedCoordinate(CelestialCoordinate const& coordinat
   if (coordinate.isNull())
     return;
 
-  auto& universeMap = m_universeMaps[*m_serverUuid];
+  auto& universeMap = m_universeMaps[m_serverUuid.value()];
   auto& systemMap = universeMap.systems[coordinate.location()];
   if (!coordinate.isSystem())
     systemMap.mappedPlanets.add(coordinate.planet());
 }
 
-void PlayerUniverseMap::addMappedObject(CelestialCoordinate const& system, Uuid const& uuid, String const& typeName, Maybe<CelestialOrbit> const& orbit, JsonObject parameters) {
+void PlayerUniverseMap::addMappedObject(CelestialCoordinate const& system, Uuid const& uuid, String const& typeName, std::optional<CelestialOrbit> const& orbit, JsonObject parameters) {
   MappedObject object {
     typeName,
     orbit,
     parameters
   };
-  auto& universeMap = m_universeMaps[*m_serverUuid];
+  auto& universeMap = m_universeMaps[m_serverUuid.value()];
   universeMap.systems[system.location()].mappedObjects.set(uuid, object);
 }
 
 void PlayerUniverseMap::removeMappedObject(CelestialCoordinate const& system, Uuid const& uuid) {
-  auto& universeMap = m_universeMaps[*m_serverUuid];
+  auto& universeMap = m_universeMaps[m_serverUuid.value()];
   if (auto systemMap = universeMap.systems.ptr(system.location()))
     systemMap->mappedObjects.remove(uuid);
 }
 
 void PlayerUniverseMap::filterMappedObjects(CelestialCoordinate const& system, List<Uuid> const& allowed) {
-  auto& universeMap = m_universeMaps[*m_serverUuid];
+  auto& universeMap = m_universeMaps[m_serverUuid.value()];
   if (auto systemMap = universeMap.systems.ptr(system.location())) {
     auto& objects = systemMap->mappedObjects;
     for (auto& uuid : objects.keys()) {
@@ -224,7 +223,7 @@ void PlayerUniverseMap::filterMappedObjects(CelestialCoordinate const& system, L
   }
 }
 
-void PlayerUniverseMap::setServerUuid(Maybe<Uuid> serverUuid) {
+void PlayerUniverseMap::setServerUuid(std::optional<Uuid> serverUuid) {
   m_serverUuid = std::move(serverUuid);
   if (m_serverUuid && !m_universeMaps.contains(*m_serverUuid))
     m_universeMaps.set(*m_serverUuid, UniverseMap());
@@ -239,7 +238,7 @@ PlayerUniverseMap::SystemMap PlayerUniverseMap::SystemMap::fromJson(Json const& 
   for (auto o : json.getObject("mappedObjects")) {
     MappedObject object;
     object.typeName = o.second.getString("typeName");
-    object.orbit = jsonToMaybe<CelestialOrbit>(o.second.get("orbit"), [](Json const& o ) {
+    object.orbit = jsonToOptional<CelestialOrbit>(o.second.get("orbit"), [](Json const& o ) {
         return CelestialOrbit::fromJson(o);
       });
     object.parameters = o.second.getObject("parameters", {});
@@ -265,7 +264,7 @@ Json PlayerUniverseMap::SystemMap::toJson() const {
     JsonObject object;
     objects.set(o.first.hex(), JsonObject{
       {"typeName", o.second.typeName},
-      {"orbit", jsonFromMaybe<CelestialOrbit>(
+      {"orbit", jsonFromOptional<CelestialOrbit>(
         o.second.orbit, [](CelestialOrbit const& orbit){ return orbit.toJson(); })},
       {"parameters", o.second.parameters}
     });
@@ -311,7 +310,7 @@ Json PlayerUniverseMap::UniverseMap::toJson() const {
 }
 
 PlayerUniverseMap::UniverseMap const& PlayerUniverseMap::universeMap() const {
-  if (m_serverUuid.isNothing())
+  if (!m_serverUuid.has_value())
     throw StarException("Cannot get universe map of null server uuid");
 
   return m_universeMaps.get(*m_serverUuid);

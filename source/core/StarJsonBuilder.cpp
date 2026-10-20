@@ -82,7 +82,7 @@ std::size_t JsonBuilderStream::stackSize() {
 
 Json JsonBuilderStream::takeTop() {
   if (m_stack.size())
-    return m_stack.takeLast().take();
+    return std::move(m_stack.takeLast().value());
   else
     return Json();
 }
@@ -92,7 +92,7 @@ void JsonBuilderStream::push(Json v) {
 }
 
 Json JsonBuilderStream::pop() {
-  return m_stack.takeLast().take();
+  return std::move(m_stack.takeLast().value());
 }
 
 void JsonBuilderStream::set(Json v) {

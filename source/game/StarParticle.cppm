@@ -1,7 +1,6 @@
 module;
 import std;
 import star.string;
-import star.maybe;
 import star.json;
 
 import star.color;
@@ -57,6 +56,10 @@ struct Particle {
   // If particle is type Textured, then the image name is considered relative
   // to the given asset path
   explicit Particle(Root& root, Json const& config, String const& assetsPath = "/");
+  Particle(Particle const&) = default;
+  Particle& operator=(Particle const&) = default;
+  Particle(Particle&& other);
+  Particle& operator=(Particle&& other);
 
   Json toJson() const;
 
@@ -128,7 +131,7 @@ struct Particle {
 
   bool trail = false;
 
-  Maybe<Animation> animation;
+  std::optional<Animation> animation;
 };
 
 DataStream& operator<<(DataStream& ds, Particle const& particle);

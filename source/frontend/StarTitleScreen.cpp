@@ -12,7 +12,6 @@ import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -234,7 +233,7 @@ TitleScreen::TitleScreen(GuiContext& context, std::shared_ptr<PlayerStorage> pla
   m_celestialDatabase = std::make_shared<CelestialMasterDatabase>(context.root());
   auto randomWorld = m_celestialDatabase->findRandomWorld(10, 50, [this](CelestialCoordinate const& coordinate) {
       return is<TerrestrialWorldParameters>(m_celestialDatabase->parameters(coordinate)->visitableParameters());
-    }).take();
+    }).value();
 
   if (auto name = m_celestialDatabase->name(randomWorld))
     context.root().logger().info("Title world is {} @ CelestialWorld:{}", Text::stripEscapeCodes(*name), randomWorld);

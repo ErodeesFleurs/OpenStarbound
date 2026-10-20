@@ -30,12 +30,12 @@ import star.asset_path;
 import star.audio;
 import star.map;
 import star.set;
-import star.maybe;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
+import star.optional;
 import star.lua;
 import star.version;
 
@@ -289,11 +289,11 @@ void StatusController::resetAllResources() {
   m_statCollection.resetAllResources();
 }
 
-Maybe<float> StatusController::resourceMax(String const& resourceName) const {
+std::optional<float> StatusController::resourceMax(String const& resourceName) const {
   return m_statCollection.resourceMax(resourceName);
 }
 
-Maybe<float> StatusController::resourcePercentage(String const& resourceName) const {
+std::optional<float> StatusController::resourcePercentage(String const& resourceName) const {
   return m_statCollection.resourcePercentage(resourceName);
 }
 
@@ -306,7 +306,7 @@ float StatusController::modifyResourcePercentage(String const& resourceName, flo
 }
 
 List<PersistentStatusEffect> StatusController::getPersistentEffects(String const& statEffectCategory) const {
-  auto category = m_persistentEffects.maybe(statEffectCategory).value();
+  auto category = m_persistentEffects.maybe(statEffectCategory).value_or(PersistentEffectCategory{});
   List<PersistentStatusEffect> persistentEffects =
       category.statModifiers.transformed(construct<PersistentStatusEffect>());
   persistentEffects.appendAll(
@@ -362,12 +362,12 @@ void StatusController::clearAllPersistentEffects() {
     clearPersistentEffects(effectCategory);
 }
 
-void StatusController::addEphemeralEffect(EphemeralStatusEffect const& effect, Maybe<EntityId> sourceEntityId) {
+void StatusController::addEphemeralEffect(EphemeralStatusEffect const& effect, std::optional<EntityId> sourceEntityId) {
   addEphemeralEffects({effect}, sourceEntityId);
 }
 
 void StatusController::addEphemeralEffects(
-    List<EphemeralStatusEffect> const& effectList, Maybe<EntityId> sourceEntityId) {
+    List<EphemeralStatusEffect> const& effectList, std::optional<EntityId> sourceEntityId) {
   for (auto const& effect : effectList) {
     if (auto existingEffect = m_uniqueEffects.ptr(effect.uniqueEffect)) {
       auto metadata = m_uniqueEffectMetadata.getNetElement(existingEffect->metadataId);
@@ -376,7 +376,7 @@ void StatusController::addEphemeralEffects(
       // the
       // duration to the max
       if (metadata->duration) {
-        auto newDuration = effect.duration.value(defaultUniqueEffectDuration(effect.uniqueEffect));
+        auto newDuration = effect.duration.value_or(defaultUniqueEffectDuration(effect.uniqueEffect));
         if (newDuration > *metadata->duration) {
           // Only overwrite the sourceEntityId if the duration is *extended*
           metadata->sourceEntityId.set(sourceEntityId);
@@ -386,7 +386,7 @@ void StatusController::addEphemeralEffects(
       }
     } else {
       addUniqueEffect(
-          effect.uniqueEffect, effect.duration.value(defaultUniqueEffectDuration(effect.uniqueEffect)), sourceEntityId);
+          effect.uniqueEffect, effect.duration.value_or(defaultUniqueEffectDuration(effect.uniqueEffect)), sourceEntityId);
     }
   }
 }
@@ -448,7 +448,7 @@ List<DamageNotification> StatusController::applyDamageRequest(DamageRequest cons
   if (auto damageNotifications = m_primaryScript.invoke<List<DamageNotification>>("applyDamageRequest", damageRequest)) {
     for (auto const& dn : *damageNotifications)
       m_recentDamageTaken.add(dn);
-    return damageNotifications.take();
+    return takeOptional(damageNotifications);
   }
   return {};
 }
@@ -669,16 +669,19 @@ List<Particle> StatusController::pullNewParticles() {
   return newParticles;
 }
 
-Maybe<ChainableJsonMessageResponse> StatusController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
-  Maybe<ChainableJsonMessageResponse> result = m_primaryScript.handleMessage(message, localMessage, args);
-  for (auto& p : m_uniqueEffects)
-    result = result.orMaybe(p.second.script.handleMessage(message, localMessage, args));
+std::optional<ChainableJsonMessageResponse> StatusController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+  std::optional<ChainableJsonMessageResponse> result = m_primaryScript.handleMessage(message, localMessage, args);
+  for (auto& p : m_uniqueEffects) {
+    auto response = p.second.script.handleMessage(message, localMessage, args);
+    if (!result)
+      result = std::move(response);
+  }
   return result;
 }
 
-StatusController::EffectAnimator::EffectAnimator(Root& root) : EffectAnimator(root, Maybe<String>{}) {}
+StatusController::EffectAnimator::EffectAnimator(Root& root) : EffectAnimator(root, std::optional<String>{}) {}
 
-StatusController::EffectAnimator::EffectAnimator(Root& root, Maybe<String> config) : m_root(root), animator(root) {
+StatusController::EffectAnimator::EffectAnimator(Root& root, std::optional<String> config) : m_root(root), animator(root) {
   animationConfig = std::move(config);
   animator = animationConfig ? NetworkedAnimator(m_root, *animationConfig) : NetworkedAnimator(m_root);
 }
@@ -732,16 +735,16 @@ StatusController::UniqueEffectMetadata::UniqueEffectMetadata() {
   durationNetState.setInterpolator(lerp<float, float>);
 }
 
-StatusController::UniqueEffectMetadata::UniqueEffectMetadata(UniqueStatusEffect effect, Maybe<float> duration, Maybe<EntityId> sourceEntityId)
+StatusController::UniqueEffectMetadata::UniqueEffectMetadata(UniqueStatusEffect effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId)
   : UniqueEffectMetadata() {
   this->effect = std::move(effect);
   this->duration = std::move(duration);
-  this->maxDuration.set(this->duration.value());
+  this->maxDuration.set(this->duration.value_or(0.0f));
   this->sourceEntityId.set(sourceEntityId);
 }
 
 void StatusController::UniqueEffectMetadata::netElementsNeedLoad(bool) {
-  duration = durationNetState.get() >= 0.0f ? Maybe<float>(durationNetState.get()) : Maybe<float>();
+  duration = durationNetState.get() >= 0.0f ? std::optional<float>(durationNetState.get()) : std::optional<float>();
 }
 
 void StatusController::UniqueEffectMetadata::netElementsNeedStore() {
@@ -794,7 +797,7 @@ float StatusController::defaultUniqueEffectDuration(UniqueStatusEffect const& ef
 }
 
 bool StatusController::addUniqueEffect(
-    UniqueStatusEffect const& effect, Maybe<float> duration, Maybe<EntityId> sourceEntityId) {
+    UniqueStatusEffect const& effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId) {
   auto statusEffectDatabase = m_root.statusEffectDatabase();
   if (statusEffectDatabase->isUniqueEffect(effect)) {
     auto effectConfig = statusEffectDatabase->uniqueEffectConfig(effect);
@@ -915,7 +918,7 @@ LuaCallbacks StatusController::makeUniqueEffectCallbacks(UniqueEffectInstance& u
       if (metadata->duration)
         metadata->duration = 0.0f;
     });
-  callbacks.registerCallback("sourceEntity", [this, &uniqueEffect]() -> Maybe<EntityId> {
+  callbacks.registerCallback("sourceEntity", [this, &uniqueEffect]() -> std::optional<EntityId> {
       auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
       auto sourceEntityId = metadata->sourceEntityId.get();
       if (!sourceEntityId)
@@ -924,8 +927,8 @@ LuaCallbacks StatusController::makeUniqueEffectCallbacks(UniqueEffectInstance& u
         return {};
       return sourceEntityId;
     });
-  callbacks.registerCallback("setParentDirectives", [&uniqueEffect](Maybe<String> const& directives) {
-      uniqueEffect.parentDirectives = directives.value();
+  callbacks.registerCallback("setParentDirectives", [&uniqueEffect](std::optional<String> const& directives) {
+      uniqueEffect.parentDirectives = directives.value_or(String{});
     });
   callbacks.registerCallback("getParameter", [&uniqueEffect](String const& name, Json const& def) -> Json {
       return uniqueEffect.effectConfig.effectConfig.query(name, def);

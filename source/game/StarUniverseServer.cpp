@@ -10,7 +10,6 @@ import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -30,6 +29,7 @@ import star.byte_array;
 import star.data_stream_devices;
 
 import std;
+import star.optional;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
@@ -226,7 +226,7 @@ UniverseServer::UniverseServer(Root& root, String const& storageDir, bool const&
   m_chatProcessor = std::make_shared<ChatProcessor>(m_root.random());
   m_chatProcessor->setCommandHandler(std::bind(&CommandProcessor::userCommand, m_commandProcessor.get(), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-  std::size_t networkWorkerThreads = universeConfig.optUInt("networkWorkerThreads").value(0);
+  std::size_t networkWorkerThreads = universeConfig.optUInt("networkWorkerThreads").value_or(0);
   m_connectionServer = std::make_shared<UniverseConnectionServer>(
     m_root.logger(),
     std::bind(&UniverseServer::packetsReceived, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
@@ -234,7 +234,7 @@ UniverseServer::UniverseServer(Root& root, String const& storageDir, bool const&
 
   m_pause = std::make_shared<std::atomic<bool>>(false);
 
-  m_secureWarps = m_root.configuration()->getPath("security.secureWarps").optBool().value(true);
+  m_secureWarps = m_root.configuration()->getPath("security.secureWarps").optBool().value_or(true);
 }
 
 Root& UniverseServer::root() const {
@@ -388,7 +388,7 @@ String UniverseServer::clientNick(ConnectionId clientId) const {
   return m_chatProcessor->connectionNick(clientId);
 }
 
-Maybe<ConnectionId> UniverseServer::findNick(String const& nick) const {
+std::optional<ConnectionId> UniverseServer::findNick(String const& nick) const {
   return m_chatProcessor->findNick(nick);
 }
 
@@ -402,14 +402,14 @@ String UniverseServer::clientAccount(ConnectionId clientId) const {
 }
 
 
-Maybe<Uuid> UniverseServer::uuidForClient(ConnectionId clientId) const {
+std::optional<Uuid> UniverseServer::uuidForClient(ConnectionId clientId) const {
   ReadLocker clientsLocker(m_clientsLock);
   if (auto clientContext = m_clients.value(clientId))
     return clientContext->playerUuid();
   return {};
 }
 
-Maybe<ConnectionId> UniverseServer::clientForUuid(Uuid const& uuid) const {
+std::optional<ConnectionId> UniverseServer::clientForUuid(Uuid const& uuid) const {
   ReadLocker clientsLocker(m_clientsLock);
   return getClientForUuid(uuid);
 }
@@ -581,7 +581,7 @@ void UniverseServer::disconnectClient(ConnectionId clientId, String const& reaso
   m_pendingDisconnections.add(clientId, reason);
 }
 
-void UniverseServer::banUser(ConnectionId clientId, String const& reason, std::pair<bool, bool> banType, Maybe<int> timeout) {
+void UniverseServer::banUser(ConnectionId clientId, String const& reason, std::pair<bool, bool> banType, std::optional<int> timeout) {
   RecursiveMutexLocker locker(m_mainLock);
 
   if (timeout)
@@ -644,7 +644,7 @@ bool UniverseServer::unbanIp(String const& addressString) {
     config->set("bannedIPs", bannedIPs);
 
     eraseWhere(m_tempBans, [&](TimeoutBan const& b) {
-      if (b.ip && b.ip.value() == address) {
+      if (b.ip && b.ip.value_or(HostAddress{}) == address) {
         entryFound = true;
         return true;
       }
@@ -855,9 +855,9 @@ bool UniverseServer::WorldServerPromise::poll() {
   } else if (auto rpcp = currentPromise.ptr<RpcPromise<WorldChunks>>()) {
     if (rpcp->finished()) {
       if (rpcp->succeeded()) {
-        currentPromise = (*producer)(*rpcp->result());
+        currentPromise = producer.value()(*rpcp->result());
       } else {
-        throw UniverseServerException(strf("UniverseServer: World server promise failed! {}", rpcp->error()));
+        throw UniverseServerException(strf("UniverseServer: World server promise failed! {}", outputOptional(rpcp->error())));
       }
     }
     return false;
@@ -891,7 +891,7 @@ void UniverseServer::processUniverseFlags() {
     if (p.first.is<InstanceWorldId>() && instanceWorldStoredOrActive(p.first.get<InstanceWorldId>())) {
       // world is stored or active; perform flag actions once it loads
       if (auto maybeTargetWorld = triggerWorldCreation(p.first)) {
-        if (auto targetWorld = maybeTargetWorld.value()) {
+        if (auto targetWorld = maybeTargetWorld.value_or(std::shared_ptr<WorldServerThread>{})) {
           if (p.second.is<PlaceDungeonFlagAction>()) {
             auto placeDungeonAction = p.second.get<PlaceDungeonFlagAction>();
             locker.unlock();
@@ -1175,7 +1175,7 @@ void UniverseServer::warpPlayers() {
 
     if (auto maybeToWorld = triggerWorldCreation(warpToWorld.world)) {
       m_root.logger().info("UniverseServer: Warping player {} to {}", clientId, printWarpAction(warpToWorld));
-      if (auto toWorld = maybeToWorld.value()) {
+      if (auto toWorld = maybeToWorld.value_or(std::shared_ptr<WorldServerThread>{})) {
         locker.unlock();
         if (toWorld->spawnTargetValid(warpToWorld.target)) {
           if (auto currentWorld = clientContext->playerWorld()) {
@@ -1243,7 +1243,7 @@ void UniverseServer::warpPlayers() {
       auto& worldId = pendingSubWorlds.get(swid);
       if (auto maybeToWorld = triggerWorldCreation(worldId)) {
         m_root.logger().info("UniverseServer: Sending player {} subworld {} to {}", clientId, swid, printWorldId(worldId));
-        if (auto toWorld = maybeToWorld.value()) {
+        if (auto toWorld = maybeToWorld.value_or(std::shared_ptr<WorldServerThread>{})) {
           locker.unlock();
 
           bool clientAdded = toWorld && toWorld->addClient(mainToSubWorldConnectionId(clientId), SpawnTarget(), !clientContext->remoteAddress(), clientContext->canBecomeAdmin(), clientContext->netRules(), swid);
@@ -1280,7 +1280,7 @@ void UniverseServer::flyShips() {
   for (auto clientId : m_queuedFlights.keys()) {
     if (!m_pendingFlights.contains(clientId) && !m_pendingArrivals.contains(clientId)) {
       auto& flight = m_queuedFlights.get(clientId);
-      if (flight.second.isNothing())
+      if (!flight.second.has_value())
         flight.second = m_universeClock->time() + queuedFlightWaitTime;
       else if (m_universeClock->time() > *flight.second)
         m_pendingFlights.set(clientId, flight.first);
@@ -1320,7 +1320,7 @@ void UniverseServer::flyShips() {
     if (!clientShip)
       return true;// ship is broken
 
-    CelestialCoordinate destination = location.maybe<CelestialCoordinate>().value(CelestialCoordinate(system));
+    CelestialCoordinate destination = location.maybe<CelestialCoordinate>().value_or(CelestialCoordinate(system));
     bool interstellar = clientSystem ? clientContext->shipCoordinate().location() != system : true;
     if (!interstellar) {
       // don't fly to null locations in the same system
@@ -1375,7 +1375,7 @@ void UniverseServer::arriveShips() {
     auto& coordinate = p.second;
 
     if (!coordinate)
-      coordinate = nextStarterWorld().value();
+      coordinate = nextStarterWorld().value_or(CelestialCoordinate{});
 
     if (!coordinate)
       return false;
@@ -1464,7 +1464,7 @@ void UniverseServer::processChat() {
         locker.unlock();
         if (sendMode == ChatSendMode::Broadcast)
           m_chatProcessor->broadcast(p.first, message, std::move(data));
-        else if (sendMode == ChatSendMode::Party && team.isValid())
+        else if (sendMode == ChatSendMode::Party && team.has_value())
           m_chatProcessor->message(p.first, MessageContext::Mode::Party, team->hex(), message, std::move(data));
         else
           m_chatProcessor->message(p.first, MessageContext::Mode::Local, printWorldId(clientContext->playerWorldId()), message, std::move(data));
@@ -1482,7 +1482,7 @@ void UniverseServer::clearBrokenWorlds() {
   if (Time::monotonicMilliseconds() >= m_clearBrokenWorldsDeadline) {
     // Clear out all broken worlds
     eraseWhere(m_worlds, [this](auto const& p) {
-      if (!p.second.isValid()) {
+      if (!p.second.has_value()) {
         m_root.logger().info("UniverseServer: Clearing broken world {}", p.first);
         return true;
       } else {
@@ -1773,7 +1773,7 @@ void UniverseServer::loadSettings() {
   m_universeClock->start();
 }
 
-Maybe<CelestialCoordinate> UniverseServer::nextStarterWorld() {
+std::optional<CelestialCoordinate> UniverseServer::nextStarterWorld() {
   RecursiveMutexLocker locker(m_mainLock);
 
   auto assets = m_root.assets();
@@ -1850,7 +1850,7 @@ Maybe<CelestialCoordinate> UniverseServer::nextStarterWorld() {
       else
         m_root.logger().error("UniverseServer: Could not find randomized starter world!");
 
-      return randomWorld.value();
+      return randomWorld.value_or(CelestialCoordinate{});
     });
   }
 
@@ -1905,11 +1905,11 @@ String UniverseServer::tempWorldFile(InstanceWorldId const& worldId) const {
   if (worldId.uuid)
     identifier = strf("{}-{}", identifier, worldId.uuid->hex());
   if (worldId.level)
-    identifier = strf("{}-{}", identifier, worldId.level.value());
+    identifier = strf("{}-{}", identifier, worldId.level.value_or(0.0f));
   return File::relativeTo(m_storageDirectory, strf("{}.tempworld", identifier));
 }
 
-Maybe<String> UniverseServer::isBannedUser(Maybe<HostAddress> hostAddress, Uuid playerUuid) const {
+std::optional<String> UniverseServer::isBannedUser(std::optional<HostAddress> hostAddress, Uuid playerUuid) const {
   RecursiveMutexLocker locker(m_mainLock);
   auto config = m_root.configuration();
 
@@ -1953,11 +1953,11 @@ void UniverseServer::doTempBan(ConnectionId clientId, String const& reason, std:
       return;
 
     auto banExpiry = Time::monotonicMilliseconds() + timeout * 1000;// current time is in millis, conversion factor
-    Maybe<HostAddress> ip;
+    std::optional<HostAddress> ip;
     if (banType.first)
       ip = clientContext->remoteAddress();
 
-    Maybe<Uuid> uuid;
+    std::optional<Uuid> uuid;
 
     if (banType.second)
       uuid = clientContext->playerUuid();
@@ -2134,7 +2134,7 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
         if (!m_worlds.contains(worldId)) {
           auto worldTemplate = std::make_shared<WorldTemplate>(m_root, clientCustomWorldCreate->templateData);
           if (auto promise = clientCustomWorldPromise(worldId,worldTemplate)) {
-            m_worlds.add(worldId, promise.take());
+            m_worlds.add(worldId, takeOptional(promise));
           }
         }
         
@@ -2154,11 +2154,11 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
             ownWorld = customWorldId->uuid == clientContext->playerUuid();
           }
           if (
-            configuration->get("disallowClientSubWorlds").optBool().value(false)
+            configuration->get("disallowClientSubWorlds").optBool().value_or(false)
             || !(ownWorld
-              || configuration->get("allowClientSubWorldsAllWorlds").optBool().value(true)
+              || configuration->get("allowClientSubWorldsAllWorlds").optBool().value_or(true)
               || clientContext->isAdmin()
-              || (cwtRequest->worldId == clientContext->playerWorldId() && configuration->get("allowClientSubWorldsCurrentWorld").optBool().value(true)))
+              || (cwtRequest->worldId == clientContext->playerWorldId() && configuration->get("allowClientSubWorldsCurrentWorld").optBool().value_or(true)))
           ) {
             // not valid, immediately reject it
             m_root.logger().info("UniverseServer: Rejecting client {} subworld {} request for world {}", clientId, cwtRequest->subWorldId, cwtRequest->worldId);
@@ -2226,7 +2226,7 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
   }
 }
 
-void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostAddress> remoteAddress) {
+void UniverseServer::acceptConnection(UniverseConnection connection, std::optional<HostAddress> remoteAddress) {
   auto& root = m_root;
   auto assets = root.assets();
   auto configuration = root.configuration();
@@ -2267,7 +2267,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   protocolResponse->allowed = true;
   if (!legacyClient) {
     auto compressionName = connectionSettings.getString("compression", "None");
-    auto compressionMode = NetCompressionModeNames.maybeLeft(compressionName).value(NetCompressionMode::None);
+    auto compressionMode = NetCompressionModeNames.maybeLeft(compressionName).value_or(NetCompressionMode::None);
     useCompressionStream = compressionMode == NetCompressionMode::Zstd;
     protocolResponse->info = JsonObject{
       {"compression", NetCompressionModeNames.getRight(compressionMode)},
@@ -2489,7 +2489,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
       clientWarpPlayer(clientId, WarpAlias::OwnShip, false);
     }
   } else {
-    Maybe<String> defaultReviveWarp = assets->json("/universe_server.config").optString("defaultReviveWarp");
+    std::optional<String> defaultReviveWarp = assets->json("/universe_server.config").optString("defaultReviveWarp");
     if (defaultReviveWarp) {
       m_root.logger().info("UniverseServer: Spawning player at default warp");
       clientWarpPlayer(clientId, parseWarpAction(*defaultReviveWarp), false);
@@ -2711,7 +2711,7 @@ void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason
   }
 }
 
-Maybe<ConnectionId> UniverseServer::getClientForUuid(Uuid const& uuid) const {
+std::optional<ConnectionId> UniverseServer::getClientForUuid(Uuid const& uuid) const {
   for (auto const& p : m_clients) {
     if (p.second->playerUuid() == uuid)
       return p.second->clientId();
@@ -2742,7 +2742,7 @@ std::shared_ptr<WorldServerThread> UniverseServer::getWorld(WorldId const& world
 std::shared_ptr<WorldServerThread> UniverseServer::createWorld(WorldId const& worldId) {
   if (!m_worlds.contains(worldId)) {
     if (auto promise = makeWorldPromise(worldId))
-      m_worlds.add(worldId, promise.take());
+      m_worlds.add(worldId, takeOptional(promise));
     else
       return {};
   }
@@ -2761,10 +2761,10 @@ std::shared_ptr<WorldServerThread> UniverseServer::createWorld(WorldId const& wo
   }
 }
 
-Maybe<std::shared_ptr<WorldServerThread>> UniverseServer::triggerWorldCreation(WorldId const& worldId) {
+std::optional<std::shared_ptr<WorldServerThread>> UniverseServer::triggerWorldCreation(WorldId const& worldId) {
   if (!m_worlds.contains(worldId)) {
     if (auto promise = makeWorldPromise(worldId)) {
-      m_worlds.add(worldId, promise.take());
+      m_worlds.add(worldId, takeOptional(promise));
       return {};
     } else {
       return std::shared_ptr<WorldServerThread>();
@@ -2791,7 +2791,7 @@ Maybe<std::shared_ptr<WorldServerThread>> UniverseServer::triggerWorldCreation(W
   }
 }
 
-Maybe<UniverseServer::WorldServerPromise> UniverseServer::makeWorldPromise(WorldId const& worldId) {
+std::optional<UniverseServer::WorldServerPromise> UniverseServer::makeWorldPromise(WorldId const& worldId) {
   if (auto celestialWorld = worldId.ptr<CelestialWorldId>())
     return celestialWorldPromise(*celestialWorld);
   else if (auto shipWorld = worldId.ptr<ClientShipWorldId>())
@@ -2806,7 +2806,7 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::makeWorldPromise(World
     return {};
 }
 
-Maybe<UniverseServer::WorldServerPromise> UniverseServer::shipWorldPromise(
+std::optional<UniverseServer::WorldServerPromise> UniverseServer::shipWorldPromise(
   ClientShipWorldId const& clientShipWorldId) {
   auto clientId = clientForUuid(clientShipWorldId);
   if (!clientId)
@@ -2896,7 +2896,7 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::shipWorldPromise(
   }));
 }
 
-Maybe<UniverseServer::WorldServerPromise> UniverseServer::celestialWorldPromise(CelestialWorldId const& celestialWorldId) {
+std::optional<UniverseServer::WorldServerPromise> UniverseServer::celestialWorldPromise(CelestialWorldId const& celestialWorldId) {
   if (!celestialWorldId)
     return {};
 
@@ -2941,7 +2941,7 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::celestialWorldPromise(
   }));
 }
 
-Maybe<UniverseServer::WorldServerPromise> UniverseServer::instanceWorldPromise(InstanceWorldId const& instanceWorldId) {
+std::optional<UniverseServer::WorldServerPromise> UniverseServer::instanceWorldPromise(InstanceWorldId const& instanceWorldId) {
   auto storageDirectory = m_storageDirectory;
   auto universeClock = m_universeClock;
   return WorldServerPromise(m_workerPool.addProducer<std::shared_ptr<WorldServerThread>>([this, storageDirectory, instanceWorldId, universeClock]() {
@@ -2987,7 +2987,7 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::instanceWorldPromise(I
       if (instanceWorldId.uuid)
         identifier = strf("{}-{}", identifier, instanceWorldId.uuid->hex());
       if (instanceWorldId.level)
-        identifier = strf("{}-{}", identifier, instanceWorldId.level.value());
+        identifier = strf("{}-{}", identifier, instanceWorldId.level.value_or(0.0f));
       String storageFile = File::relativeTo(storageDirectory, strf("unique-{}.world", identifier));
       if (File::isFile(storageFile)) {
         try {
@@ -3008,7 +3008,7 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::instanceWorldPromise(I
       }
     } else {
       String storageFile = tempWorldFile(instanceWorldId);
-      std::uint64_t deleteTime = worldConfig.optInt("tempWorldDeleteTime").value(0);
+      std::uint64_t deleteTime = worldConfig.optInt("tempWorldDeleteTime").value_or(0);
       if (File::isFile(storageFile)) {
         if (m_tempWorldIndex.contains(instanceWorldId)) {
           auto file = File::open(storageFile, IOMode::ReadWrite);
@@ -3066,7 +3066,7 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::instanceWorldPromise(I
   }));
 }
 
-Maybe<UniverseServer::WorldServerPromise> UniverseServer::customWorldPromise(CustomWorldId const& customWorldId, Maybe<std::shared_ptr<WorldTemplate>> worldTemplate) {
+std::optional<UniverseServer::WorldServerPromise> UniverseServer::customWorldPromise(CustomWorldId const& customWorldId, std::optional<std::shared_ptr<WorldTemplate>> worldTemplate) {
   auto storageDirectory = m_storageDirectory;
   auto universeClock = m_universeClock;
   return WorldServerPromise(m_workerPool.addProducer<std::shared_ptr<WorldServerThread>>([this, customWorldId, worldTemplate, storageDirectory, universeClock]() {
@@ -3102,9 +3102,9 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::customWorldPromise(Cus
   }));
 }
 
-Maybe<UniverseServer::WorldServerPromise> UniverseServer::clientCustomWorldPromise(ClientCustomWorldId const& clientCustomWorldId, Maybe<std::shared_ptr<WorldTemplate>> worldTemplate) {
+std::optional<UniverseServer::WorldServerPromise> UniverseServer::clientCustomWorldPromise(ClientCustomWorldId const& clientCustomWorldId, std::optional<std::shared_ptr<WorldTemplate>> worldTemplate) {
   auto configuration = m_root.configuration();
-  if (configuration->get("disallowClientCustomWorlds").optBool().value(false))
+  if (configuration->get("disallowClientCustomWorlds").optBool().value_or(false))
     return {};
   
   auto clientId = clientForUuid(clientCustomWorldId.uuid);
@@ -3180,8 +3180,8 @@ void UniverseServer::notifyWorldCreated(WorldId const& worldId) {
   auto configuration = m_root.configuration();
   ReadLocker clientsLocker(m_clientsLock);
   
-  bool notifyAll = configuration->get("notifyClientsOnWorldCreate").optBool().value(false);
-  if (notifyAll || configuration->get("notifyAdminsOnWorldCreate").optBool().value(false)) {
+  bool notifyAll = configuration->get("notifyClientsOnWorldCreate").optBool().value_or(false);
+  if (notifyAll || configuration->get("notifyAdminsOnWorldCreate").optBool().value_or(false)) {
     for (auto const& p : m_clients) {
       if (p.second->netRules().version() >= 16) {
         if (notifyAll || p.second->isAdmin()) {
@@ -3201,7 +3201,7 @@ void UniverseServer::notifyWorldCreated(WorldId const& worldId) {
     }
   } else {
     // notify only the world owner
-    Maybe<Uuid> uuid = {};
+    std::optional<Uuid> uuid = {};
     if (auto shipWorldId = worldId.ptr<ClientShipWorldId>()) {
       uuid = *shipWorldId;
     } else if (auto customWorldId = worldId.ptr<ClientCustomWorldId>()) {
@@ -3223,7 +3223,7 @@ void UniverseServer::createCustomWorld(CustomWorldId const& customWorld, std::sh
   RecursiveMutexLocker locker(m_mainLock);
   if (!m_worlds.contains(customWorld)) {
     if (auto promise = customWorldPromise(customWorld,worldTemplate)) {
-      m_worlds.add(customWorld, promise.take());
+      m_worlds.add(customWorld, takeOptional(promise));
     }
   }
 }
@@ -3268,7 +3268,7 @@ std::shared_ptr<SystemWorldServerThread> UniverseServer::createSystemWorld(Vec3I
 
 bool UniverseServer::instanceWorldStoredOrActive(InstanceWorldId const& worldId) const {
   String storageFile = File::relativeTo(m_storageDirectory, strf("unique-{}.world", worldId.instance));
-  return m_worlds.value(worldId).isValid() || m_tempWorldIndex.contains(worldId) || File::isFile(storageFile);
+  return m_worlds.value(worldId).has_value() || m_tempWorldIndex.contains(worldId) || File::isFile(storageFile);
 }
 
 void UniverseServer::worldDiedWithError(WorldId world) {
@@ -3346,8 +3346,8 @@ RpcPromise<Json> UniverseServer::sendUniverseMessage(ConnectionId const& connect
   }
 }
 
-Maybe<ChainableJsonMessageResponse> UniverseServer::receiveMessage(String const& message, bool const& local, JsonArray const& args) {
-  Maybe<ChainableJsonMessageResponse> result;
+std::optional<ChainableJsonMessageResponse> UniverseServer::receiveMessage(String const& message, bool const& local, JsonArray const& args) {
+  std::optional<ChainableJsonMessageResponse> result;
   for (auto& p : m_scriptContexts) {
     result = p.second->handleMessage(message, local, args);
     if (result)

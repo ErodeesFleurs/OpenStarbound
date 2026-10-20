@@ -27,7 +27,6 @@ import std;
 import star.worker_pool;
 
 import star.sector_array_2d;
-import star.maybe;
 import star.color;
 import star.image_processing;
 import star.hash;
@@ -129,7 +128,7 @@ CelestialCoordinate ClientContext::shipCoordinate() const {
   return m_shipCoordinate.get();
 }
 
-Maybe<std::pair<WarpAction, WarpMode>> ClientContext::orbitWarpAction() const {
+std::optional<std::pair<WarpAction, WarpMode>> ClientContext::orbitWarpAction() const {
   return m_orbitWarpActionNetState.get();
 }
 

@@ -1,7 +1,6 @@
 module;
 import std;
 import star.string;
-import star.maybe;
 import star.stream_formatter;
 import star.hash;
 
@@ -61,12 +60,16 @@ struct AssetPath {
   static String relativeTo(String const& sourcePath, String const& givenPath);
 
   AssetPath() = default;
+  AssetPath(AssetPath const&) = default;
+  AssetPath& operator=(AssetPath const&) = default;
+  AssetPath(AssetPath&& path);
+  AssetPath& operator=(AssetPath&& path);
   AssetPath(const char* path);
   AssetPath(String const& path);
-  AssetPath(String&& basePath, Maybe<String>&& subPath, DirectivesGroup&& directives);
-  AssetPath(const String& basePath, const Maybe<String>& subPath, const DirectivesGroup& directives);
+  AssetPath(String&& basePath, std::optional<String>&& subPath, DirectivesGroup&& directives);
+  AssetPath(const String& basePath, const std::optional<String>& subPath, const DirectivesGroup& directives);
   String basePath;
-  Maybe<String> subPath;
+  std::optional<String> subPath;
   DirectivesGroup directives;
 
   bool operator==(AssetPath const& rhs) const;

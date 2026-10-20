@@ -3,7 +3,6 @@ import std;
 import star.string;
 import star.list;
 import star.variant;
-import star.maybe;
 import star.json;
 
 import star.thread;
@@ -36,7 +35,7 @@ public:
   Uuid uuid() const;
   StringSet flags() const;
   void setFlag(String const& flag);
-  Maybe<List<UniverseFlagAction>> pullPendingFlagActions();
+  std::optional<List<UniverseFlagAction>> pullPendingFlagActions();
   List<UniverseFlagAction> currentFlagActions() const;
   List<UniverseFlagAction> currentFlagActionsForInstanceWorld(String const& instanceName) const;
   void resetFlags();

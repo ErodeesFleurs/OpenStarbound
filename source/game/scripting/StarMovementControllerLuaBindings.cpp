@@ -3,7 +3,6 @@ import std;
 import star.json;
 import star.id_map;
 import star.lua;
-import star.maybe;
 import star.poly;
 import star.variant;
 import star.casting;
@@ -80,7 +79,7 @@ LuaCallbacks LuaBindings::makeMovementControllerCallbacks(MovementController* mo
       "isNullColliding", std::bind(&MovementController::isNullColliding, movementController));
   callbacks.registerCallbackWithSignature<bool>(
       "isCollisionStuck", std::bind(&MovementController::isCollisionStuck, movementController));
-  callbacks.registerCallbackWithSignature<Maybe<float>>(
+  callbacks.registerCallbackWithSignature<std::optional<float>>(
       "stickingDirection", std::bind(&MovementController::stickingDirection, movementController));
   callbacks.registerCallbackWithSignature<float>(
       "liquidPercentage", std::bind(&MovementController::liquidPercentage, movementController));

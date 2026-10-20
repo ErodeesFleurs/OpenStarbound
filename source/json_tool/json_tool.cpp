@@ -1,7 +1,6 @@
 #include <stdio.h>
 
 import std;
-import star.maybe;
 import star.string;
 import star.list;
 import star.format;
@@ -113,8 +112,8 @@ FormattedJson Star::addOrSet(bool add,
       return object.insertAfter(key, value, insertLocation.get<AfterKey>().key);
     return object.set(key, value);
   };
-  JsonPath::ArrayOp<FormattedJson> arrayOp = [&value, add](FormattedJson const& array, Maybe<std::size_t> i) {
-    if (i.isValid()) {
+  JsonPath::ArrayOp<FormattedJson> arrayOp = [&value, add](FormattedJson const& array, std::optional<std::size_t> i) {
+    if (i.has_value()) {
       if (add)
         return array.insert(*i, value);
       return array.set(*i, value);
@@ -258,7 +257,7 @@ std::pair<std::shared_ptr<::Star::JsonPath::Path>, bool> parseGetPath(String pat
   return std::make_pair(parsePath(path), children);
 }
 
-Maybe<ParsedArgs> parseArgs(int argc, char** argv) {
+std::optional<ParsedArgs> parseArgs(int argc, char** argv) {
   // Skip the program name
   Deque<String> args = Deque<String>(argv + 1, argv + argc);
 
@@ -438,7 +437,7 @@ int main(int argc, char** argv) {
   [[maybe_unused]] Star::NativeRuntime nativeRuntime;
   try {
     Logger logger;
-    Maybe<ParsedArgs> parsedArgs = parseArgs(argc, argv);
+    std::optional<ParsedArgs> parsedArgs = parseArgs(argc, argv);
 
     if (!parsedArgs) {
       cerrf("Usage: {} [--get <json-path>] (-j <json> | <json-file>*)\n", argv[0]);

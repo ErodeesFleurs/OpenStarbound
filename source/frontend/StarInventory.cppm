@@ -19,7 +19,6 @@ import star.bi_map;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.set;
 import star.audio;
@@ -127,7 +126,7 @@ private:
   StringList m_putDownSounds;
   StringList m_someUpSounds;
   StringList m_someDownSounds;
-  Maybe<ItemDescriptor> m_currentSwapSlotItem;
+  std::optional<ItemDescriptor> m_currentSwapSlotItem;
 
   List<std::shared_ptr<ImageWidget>> m_disabledTechOverlays;
 };

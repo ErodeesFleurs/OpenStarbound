@@ -3,7 +3,6 @@ import std;
 import star.unique_function;
 import star.string;
 import star.list;
-import star.maybe;
 import star.format;
 import star.thread;
 
@@ -83,7 +82,7 @@ private:
   struct Impl {
     Mutex mutex;
     ConditionVariable condition;
-    Maybe<ResultType> result;
+    std::optional<ResultType> result;
     std::exception_ptr exception;
     std::atomic<bool> done{false};
   };
@@ -209,7 +208,7 @@ ResultType& WorkerPoolPromise<ResultType>::get() {
   if (m_impl->exception)
     std::rethrow_exception(m_impl->exception);
 
-  return *m_impl->result;
+  return m_impl->result.value();
 }
 
 template <typename ResultType>
@@ -232,7 +231,7 @@ WorkerPoolPromise<ResultType> WorkerPool::addProducer(UniqueFunction<ResultType(
         std::rethrow_exception(cancelled);
       auto result = producer();
       MutexLocker promiseLocker(workerPoolPromiseImpl->mutex);
-      workerPoolPromiseImpl->result = std::move(result);
+      workerPoolPromiseImpl->result.emplace(std::move(result));
       workerPoolPromiseImpl->done.store(true, std::memory_order_release);
       workerPoolPromiseImpl->done.notify_all();
       workerPoolPromiseImpl->condition.broadcast();

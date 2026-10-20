@@ -29,7 +29,6 @@ import star.list;
 import star.map;
 import star.set;
 import star.vector;
-import star.maybe;
 import star.color;
 import star.poly;
 import star.rect;
@@ -272,9 +271,9 @@ Json Npc::diskStore() const {
     {"effectEmitter", m_effectEmitter->toJson()},
     {"disableWornArmor", m_disableWornArmor.get()},
     {"scriptStorage", m_scriptComponent.getScriptStorage()},
-    {"uniqueId", jsonFromMaybe(uniqueId())},
+    {"uniqueId", jsonFromOptional(uniqueId())},
     {"team", getTeam().toJson()},
-    {"deathParticleBurst", jsonFromMaybe(m_deathParticleBurst.get())},
+    {"deathParticleBurst", jsonFromOptional(m_deathParticleBurst.get())},
     {"dropPools", m_dropPools.get().transformed(construct<Json>())},
     {"aggressive", m_aggressive.get()}
   };
@@ -427,7 +426,7 @@ void Npc::readNetState(ByteArray data, float interpolationTime, NetCompatibility
 }
 
 String Npc::description() const {
-  return m_npcVariant.description.value("Some funny looking person");
+  return m_npcVariant.description.value_or("Some funny looking person");
 }
 
 String Npc::species() const {
@@ -446,7 +445,7 @@ Json Npc::scriptConfigParameter(String const& parameterName, Json const& default
   return m_npcVariant.scriptConfig.query(parameterName, defaultValue);
 }
 
-Maybe<HitType> Npc::queryHit(DamageSource const& source) const {
+std::optional<HitType> Npc::queryHit(DamageSource const& source) const {
   if (!inWorld() || !m_statusController->resourcePositive("health") || m_statusController->statPositive("invulnerable"))
     return {};
 
@@ -459,7 +458,7 @@ Maybe<HitType> Npc::queryHit(DamageSource const& source) const {
   return {};
 }
 
-Maybe<PolyF> Npc::hitPoly() const {
+std::optional<PolyF> Npc::hitPoly() const {
   return m_movementController->collisionBody();
 }
 
@@ -696,7 +695,7 @@ String Npc::name() const {
   return m_npcVariant.humanoidIdentity.name;
 }
 
-Maybe<String> Npc::statusText() const {
+std::optional<String> Npc::statusText() const {
   return m_statusText.get();
 }
 
@@ -720,11 +719,11 @@ bool Npc::aggressive() const {
   return m_aggressive.get();
 }
 
-Maybe<LuaValue> Npc::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
+std::optional<LuaValue> Npc::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
   return m_scriptComponent.invoke(func, args);
 }
 
-Maybe<LuaValue> Npc::evalScript(String const& code) {
+std::optional<LuaValue> Npc::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
@@ -802,8 +801,8 @@ LuaCallbacks Npc::makeNpcCallbacks() {
 
   callbacks.registerCallback("humanoidIdentity", [this]() { return humanoid()->identity().toJson(); });
   callbacks.registerCallback("setHumanoidIdentity", [this](Json const& id) { setIdentity(HumanoidIdentity(id)); });
-  callbacks.registerCallback("setHumanoidParameter", [this](String key, Maybe<Json> value) { setHumanoidParameter(key, value); });
-  callbacks.registerCallback("getHumanoidParameter", [this](String key) -> Maybe<Json> { return getHumanoidParameter(key); });
+  callbacks.registerCallback("setHumanoidParameter", [this](String key, std::optional<Json> value) { setHumanoidParameter(key, value); });
+  callbacks.registerCallback("getHumanoidParameter", [this](String key) -> std::optional<Json> { return getHumanoidParameter(key); });
   callbacks.registerCallback("setHumanoidParameters", [this](JsonObject parameters) { setHumanoidParameters(parameters); });
   callbacks.registerCallback("getHumanoidParameters", [this]() -> JsonObject { return getHumanoidParameters(); });
   callbacks.registerCallback("refreshHumanoidParameters", [this]() { refreshHumanoidParameters(); });
@@ -844,7 +843,7 @@ LuaCallbacks Npc::makeNpcCallbacks() {
     return luaTupleReturn(humanoidIdentity.facialMaskGroup, humanoidIdentity.facialMaskType, humanoidIdentity.facialMaskDirectives);
   });
 
-  callbacks.registerCallback("setFacialHair", [this](Maybe<String> const& group, Maybe<String> const& type, Maybe<String> const& directives) {
+  callbacks.registerCallback("setFacialHair", [this](std::optional<String> const& group, std::optional<String> const& type, std::optional<String> const& directives) {
     if (group && type && directives)
       setFacialHair(*group, *type, *directives);
     else {
@@ -854,7 +853,7 @@ LuaCallbacks Npc::makeNpcCallbacks() {
     }
   });
 
-  callbacks.registerCallback("setFacialMask", [this](Maybe<String> const& group, Maybe<String> const& type, Maybe<String> const& directives) {
+  callbacks.registerCallback("setFacialMask", [this](std::optional<String> const& group, std::optional<String> const& type, std::optional<String> const& directives) {
     if (group && type && directives)
       setFacialMask(*group, *type, *directives);
     else {
@@ -864,7 +863,7 @@ LuaCallbacks Npc::makeNpcCallbacks() {
     }
   });
 
-  callbacks.registerCallback("setHair", [this](Maybe<String> const& group, Maybe<String> const& type, Maybe<String> const& directives) {
+  callbacks.registerCallback("setHair", [this](std::optional<String> const& group, std::optional<String> const& type, std::optional<String> const& directives) {
     if (group && type && directives)
       setHair(*group, *type, *directives);
     else {
@@ -883,7 +882,7 @@ LuaCallbacks Npc::makeNpcCallbacks() {
   callbacks.registerCallback("setSpecies", [this](String const& species) { setSpecies(species); });
 
   callbacks.registerCallback(   "imagePath", [this]()                        { return identity().imagePath;    });
-  callbacks.registerCallback("setImagePath", [this](Maybe<String> const& imagePath) { setImagePath(imagePath); });
+  callbacks.registerCallback("setImagePath", [this](std::optional<String> const& imagePath) { setImagePath(imagePath); });
 
   callbacks.registerCallback("setGender", [this](String const& gender) { setGender(GenderNames.getLeft(gender)); });
 
@@ -912,7 +911,7 @@ LuaCallbacks Npc::makeNpcCallbacks() {
 
   callbacks.registerCallback("maxEnergy", [this]() { return m_statusController->resourceMax("energy"); });
 
-  callbacks.registerCallback("say", [this](String line, Maybe<StringMap<String>> const& tags, Json const& config) {
+  callbacks.registerCallback("say", [this](String line, std::optional<StringMap<String>> const& tags, Json const& config) {
       if (tags)
         line = line.replaceTags(*tags, false);
 
@@ -924,7 +923,7 @@ LuaCallbacks Npc::makeNpcCallbacks() {
       return false;
     });
 
-  callbacks.registerCallback("sayPortrait", [this](String line, String portrait, Maybe<StringMap<String>> const& tags, Json const& config) {
+  callbacks.registerCallback("sayPortrait", [this](String line, String portrait, std::optional<StringMap<String>> const& tags, Json const& config) {
       if (tags)
         line = line.replaceTags(*tags, false);
 
@@ -938,12 +937,12 @@ LuaCallbacks Npc::makeNpcCallbacks() {
 
   callbacks.registerCallback("emote", [this](String const& arg1) { addEmote(HumanoidEmoteNames.getLeft(arg1)); });
 
-  callbacks.registerCallback("dance", [this](Maybe<String> const& danceName) { setDance(danceName); });
+  callbacks.registerCallback("dance", [this](std::optional<String> const& danceName) { setDance(danceName); });
 
   callbacks.registerCallback("setInteractive", [this](bool interactive) { m_isInteractive.set(interactive); });
 
-  callbacks.registerCallback("setLounging", [this](EntityId loungeableEntityId, Maybe<std::size_t> maybeAnchorIndex) {
-      std::size_t anchorIndex = maybeAnchorIndex.value(0);
+  callbacks.registerCallback("setLounging", [this](EntityId loungeableEntityId, std::optional<std::size_t> maybeAnchorIndex) {
+      std::size_t anchorIndex = maybeAnchorIndex.value_or(0);
       auto loungeableEntity = world()->get<LoungeableEntity>(loungeableEntityId);
       if (!loungeableEntity || anchorIndex >= loungeableEntity->anchorCount()
           || !loungeableEntity->entitiesLoungingIn(anchorIndex).empty()
@@ -958,20 +957,20 @@ LuaCallbacks Npc::makeNpcCallbacks() {
 
   callbacks.registerCallback("isLounging", [this]() { return is<LoungeAnchor>(m_movementController->entityAnchor()); });
 
-  callbacks.registerCallback("loungingIn", [this]() -> Maybe<EntityId> {
+  callbacks.registerCallback("loungingIn", [this]() -> std::optional<EntityId> {
       auto loungingState = loungingIn();
       if (loungingState)
-        return loungingState.value().entityId;
+        return loungingState.value_or(EntityAnchorState{}).entityId;
       else
         return {};
     });
 
-  callbacks.registerCallback("setOfferedQuests", [this](Maybe<JsonArray> const& offeredQuests) {
-      m_offeredQuests.set(offeredQuests.value().transformed([this](Json const& quest) { return QuestArcDescriptor::fromJson(root(), quest); }));
+  callbacks.registerCallback("setOfferedQuests", [this](std::optional<JsonArray> const& offeredQuests) {
+      m_offeredQuests.set(offeredQuests.value_or(JsonArray{}).transformed([this](Json const& quest) { return QuestArcDescriptor::fromJson(root(), quest); }));
     });
 
-  callbacks.registerCallback("setTurnInQuests", [this](Maybe<StringList> const& turnInQuests) {
-      m_turnInQuests.set(StringSet::from(turnInQuests.value()));
+  callbacks.registerCallback("setTurnInQuests", [this](std::optional<StringList> const& turnInQuests) {
+      m_turnInQuests.set(StringSet::from(turnInQuests.value_or(StringList{})));
     });
 
   callbacks.registerCallback("setItemSlot", [this](String const& slot, Json const& itemDescriptor) -> Json {
@@ -1008,11 +1007,11 @@ LuaCallbacks Npc::makeNpcCallbacks() {
       m_yAimPosition.set(aimPosition[1]);
     });
 
-  callbacks.registerCallback("setDeathParticleBurst", [this](Maybe<String> const& deathParticleBurst) {
+  callbacks.registerCallback("setDeathParticleBurst", [this](std::optional<String> const& deathParticleBurst) {
       m_deathParticleBurst.set(deathParticleBurst);
     });
 
-  callbacks.registerCallback("setStatusText", [this](Maybe<String> const& status) { m_statusText.set(status); });
+  callbacks.registerCallback("setStatusText", [this](std::optional<String> const& status) { m_statusText.set(status); });
   callbacks.registerCallback("setDisplayNametag", [this](bool display) { m_displayNametag.set(display); });
 
   callbacks.registerCallback("setPersistent", [this](bool persistent) { setPersistent(persistent); });
@@ -1023,7 +1022,7 @@ LuaCallbacks Npc::makeNpcCallbacks() {
 
   callbacks.registerCallback("setAggressive", [this](bool aggressive) { m_aggressive.set(aggressive); });
 
-  callbacks.registerCallback("setUniqueId", [this](Maybe<String> uniqueId) { setUniqueId(uniqueId); });
+  callbacks.registerCallback("setUniqueId", [this](std::optional<String> uniqueId) { setUniqueId(uniqueId); });
 
   callbacks.registerCallback("setAnimationParameter", [this](String name, Json value) {
     m_scriptedAnimationParameters.set(std::move(name), std::move(value));
@@ -1165,11 +1164,11 @@ void Npc::addEmote(HumanoidEmote const& emote) {
   m_emoteCooldownTimer.reset();
 }
 
-void Npc::setDance(Maybe<String> const& danceName) {
+void Npc::setDance(std::optional<String> const& danceName) {
   assert(!isSlave());
   m_dance = danceName;
 
-  if (danceName.isValid()) {
+  if (danceName.has_value()) {
     auto danceDatabase = this->root().danceDatabase();
     std::shared_ptr<Dance> dance = danceDatabase->getDance(*danceName);
     m_danceCooldownTimer = GameTimer(dance->duration);
@@ -1182,7 +1181,7 @@ bool Npc::isInteractive() const {
 
 InteractAction Npc::interact(InteractRequest const& request) {
   auto result = m_scriptComponent.invoke<Json>("interact",
-      JsonObject{{"sourceId", request.sourceId}, {"sourcePosition", jsonFromVec2F(request.sourcePosition)}}).value();
+      JsonObject{{"sourceId", request.sourceId}, {"sourcePosition", jsonFromVec2F(request.sourcePosition)}}).value_or(Json{});
 
   if (result.isNull())
     return {};
@@ -1197,7 +1196,7 @@ RectF Npc::interactiveBoundBox() const {
   return m_movementController->collisionPoly().boundBox();
 }
 
-Maybe<EntityAnchorState> Npc::loungingIn() const {
+std::optional<EntityAnchorState> Npc::loungingIn() const {
   if (is<LoungeAnchor>(m_movementController->entityAnchor()))
     return m_movementController->anchorState();
   return {};
@@ -1236,7 +1235,7 @@ bool Npc::canUseTool() const {
   bool canUse = !shouldDestroy() && !m_statusController->toolUsageSuppressed();
   if (canUse) {
     if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor()))
-      if (loungeAnchor->suppressTools.value(loungeAnchor->controllable))
+      if (loungeAnchor->suppressTools.value_or(loungeAnchor->controllable))
         return false;
   }
   return canUse;
@@ -1254,8 +1253,8 @@ List<LightSource> Npc::lightSources() const {
   return lights;
 }
 
-Maybe<ChainableJsonMessageResponse> Npc::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
-  Maybe<ChainableJsonMessageResponse> result = m_scriptComponent.handleMessage(message, world()->connection() == sendingConnection, args);
+std::optional<ChainableJsonMessageResponse> Npc::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+  std::optional<ChainableJsonMessageResponse> result = m_scriptComponent.handleMessage(message, world()->connection() == sendingConnection, args);
   if (!result)
     result = m_statusController->receiveMessage(message, world()->connection() == sendingConnection, args);
   return result;
@@ -1392,7 +1391,7 @@ Songbook* Npc::songbook() {
   return m_songbook.get();
 }
 
-void Npc::setCameraFocusEntity(Maybe<EntityId> const&) {
+void Npc::setCameraFocusEntity(std::optional<EntityId> const&) {
   // players only
 }
 
@@ -1447,16 +1446,16 @@ void Npc::setIdentity(HumanoidIdentity identity) {
   updateIdentity();
 }
 
-void Npc::setHumanoidParameter(String key, Maybe<Json> value) {
-  if (value.isValid())
-    m_npcVariant.humanoidParameters.set(key, value.value());
+void Npc::setHumanoidParameter(String key, std::optional<Json> value) {
+  if (value.has_value())
+    m_npcVariant.humanoidParameters.set(key, value.value_or(Json{}));
   else
     m_npcVariant.humanoidParameters.erase(key);
 
   m_netHumanoid.netElements().last()->setHumanoidParameters(m_npcVariant.humanoidParameters);
 }
 
-Maybe<Json> Npc::getHumanoidParameter(String key) {
+std::optional<Json> Npc::getHumanoidParameter(String key) {
   return m_npcVariant.humanoidParameters.maybe(key);
 }
 
@@ -1540,7 +1539,7 @@ void Npc::setPersonality(Personality const& personality) {
   updateIdentity();
 }
 
-void Npc::setImagePath(Maybe<String> const& imagePath) {
+void Npc::setImagePath(std::optional<String> const& imagePath) {
   m_npcVariant.humanoidIdentity.imagePath = imagePath;
   updateIdentity();
 }

@@ -1,6 +1,5 @@
 module;
 import std;
-import star.maybe;
 import star.json;
 import star.string;
 import star.json_extra;
@@ -24,7 +23,7 @@ LuaCallbacks LuaBindings::makeRenderingCallbacks(ClientApplication* app) {
   
   // if the last argument is defined and true, this change will also be saved to starbound.config and read on next game start, use for things such as an interface that does this
   callbacks.registerCallbackWithSignature<unsigned>("framesSkipped", std::bind(std::mem_fn(&ClientApplication::framesSkipped), app));
-  callbacks.registerCallbackWithSignature<void, String, bool, Maybe<bool>>("setPostProcessGroupEnabled", std::bind(std::mem_fn(&ClientApplication::setPostProcessGroupEnabled), app, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  callbacks.registerCallbackWithSignature<void, String, bool, std::optional<bool>>("setPostProcessGroupEnabled", std::bind(std::mem_fn(&ClientApplication::setPostProcessGroupEnabled), app, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   callbacks.registerCallbackWithSignature<bool, String>("postProcessGroupEnabled", std::bind(std::mem_fn(&ClientApplication::postProcessGroupEnabled), app, std::placeholders::_1));
   
   
@@ -38,7 +37,7 @@ LuaCallbacks LuaBindings::makeRenderingCallbacks(ClientApplication* app) {
     auto renderer = app->renderer();
     auto mtype = renderer->getEffectScriptableParameterType(effectName, effectParameter);
     if (mtype) {
-      auto type = mtype.value();
+      auto type = mtype.value_or(VariantTypeIndex{});
       if (type == 1 && value.is<float>()) {
         renderer->setEffectScriptableParameter(effectName, effectParameter, (int)value.get<float>());
       } else {

@@ -3,7 +3,6 @@ import std;
 import star.string;
 import star.map;
 import star.variant;
-import star.maybe;
 import star.format;
 import star.json;
 
@@ -83,8 +82,8 @@ struct MaterialRenderMatch {
   // Positions here are in TilePixels
   List<std::pair<std::shared_ptr<MaterialRenderPiece const>, Vec2F>> resultingPieces;
   MaterialRenderMatchList subMatches;
-  Maybe<TileLayer> requiredLayer;
-  Maybe<bool> occlude;
+  std::optional<TileLayer> requiredLayer;
+  std::optional<bool> occlude;
   bool haltOnMatch;
   bool haltOnSubMatch;
 };

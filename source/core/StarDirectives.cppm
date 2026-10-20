@@ -96,6 +96,12 @@ public:
   DirectivesGroup();
   DirectivesGroup(String const& directives);
   DirectivesGroup(String&& directives);
+  DirectivesGroup(DirectivesGroup const& directives) = default;
+  DirectivesGroup(DirectivesGroup&& directives) = default;
+  DirectivesGroup& operator=(DirectivesGroup const& directives) = default;
+  DirectivesGroup& operator=(DirectivesGroup&& directives) = default;
+  // Keep destruction in the native companion for imported optional owners.
+  ~DirectivesGroup();
 
   bool empty() const;
   operator bool() const;

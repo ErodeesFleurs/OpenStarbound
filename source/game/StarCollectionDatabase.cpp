@@ -167,8 +167,8 @@ Collectable CollectionDatabase::parseMonsterCollectable(String const& name, Json
   auto seed = 0; // use a static seed to utilize caching
   auto variant = m_root.monsterDatabase()->monsterVariant(config.getString("monsterType"), seed);
 
-  collectable.title = variant.shortDescription.value("");
-  collectable.description = variant.description.value("");
+  collectable.title = variant.shortDescription.value_or("");
+  collectable.description = variant.description.value_or("");
 
   return collectable;
 }

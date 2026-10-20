@@ -33,6 +33,16 @@ private:
   std::size_t m_hash;
 };
 
+// Match the project's optional identity: empty hashes to zero, otherwise the
+// payload uses Star::hash (which may differ from std::hash).
+template <typename T>
+struct hash<std::optional<T>> {
+  std::size_t operator()(std::optional<T> const& value) const {
+    return value ? hasher(*value) : 0;
+  }
+  hash<T> hasher;
+};
+
 template <typename first_t, typename second_t>
 class hash<std::pair<first_t, second_t>> {
 private:
@@ -99,6 +109,8 @@ std::size_t hashOf(T1 const& t1, T2 const& t2, TL const&... rest) {
 export module star.hash;
 
 export namespace Star {
+  template <typename T>
+  struct hash<std::optional<T>>;
   template <typename first_t, typename second_t>
   struct hash<std::pair<first_t, second_t>>;
   template <typename... TTypes>

@@ -2,7 +2,6 @@ module;
 import std;
 import star.list;
 import star.unicode;
-import star.maybe;
 import star.format;
 import star.json;
 
@@ -39,7 +38,7 @@ private:
   void pushSentry();
   bool isSentry();
 
-  List<Maybe<Json>> m_stack;
+  List<std::optional<Json>> m_stack;
 };
 
 template <typename Jsonlike>

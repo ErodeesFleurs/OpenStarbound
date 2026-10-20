@@ -18,7 +18,6 @@ import star.bi_map;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -117,7 +116,7 @@ private:
 
   GuiReader m_reader;
 
-  Maybe<LuaWorldComponent<LuaUpdatableComponent<LuaBaseComponent>>> m_script;
+  std::optional<LuaWorldComponent<LuaUpdatableComponent<LuaBaseComponent>>> m_script;
 };
 
 }

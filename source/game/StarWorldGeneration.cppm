@@ -16,7 +16,6 @@ import star.thread;
 import star.worker_pool;
 
 import star.sector_array_2d;
-import star.maybe;
 import star.color;
 import star.image_processing;
 import star.hash;
@@ -198,14 +197,14 @@ public:
   void destructEntity(WorldStorage* worldStorage, std::shared_ptr<Entity> const& entity) override;
   bool entityKeepAlive(WorldStorage* worldStorage, std::shared_ptr<Entity> const& entity) const override;
   bool entityPersistent(WorldStorage* worldStorage, std::shared_ptr<Entity> const& entity) const override;
-  RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id) override;
+  RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> distributions, std::optional<DungeonId> id) override;
 
   void replaceBiomeBlocks(ServerTile* tile);
 
 private:
   struct QueuedPlacement {
     List<BiomeItemDistribution> distributions;
-    Maybe<DungeonId> dungeonId;
+    std::optional<DungeonId> dungeonId;
     RpcPromiseKeeper<Vec2I> promise;
     bool fulfilled;
   };

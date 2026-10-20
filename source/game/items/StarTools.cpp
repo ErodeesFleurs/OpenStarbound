@@ -21,7 +21,6 @@ import star.audio;
 import star.thread;
 import star.map;
 import star.set;
-import star.maybe;
 import star.color;
 import star.string;
 import star.image_processing;
@@ -637,10 +636,10 @@ List<Drawable> PaintingBeamTool::drawables() const {
         auto index      = color.substr(0, directives_start);
         auto directives = color.substr(directives_start);
 
-        image.subPath = image.subPath.value("0") + index;
+        image.subPath = image.subPath.value_or("0") + index;
         image.directives += directives;
       } else {
-        image.subPath = image.subPath.value("0") + color;
+        image.subPath = image.subPath.value_or("0") + color;
       }
     }
   }

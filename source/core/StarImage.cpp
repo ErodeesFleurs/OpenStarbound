@@ -1,6 +1,5 @@
 #include <png.h>
 import std;
-import star.maybe;
 import star.format;
 import star.io_device;
 import star.vector;
@@ -262,11 +261,11 @@ Image& Image::operator=(Image&& image) {
   return *this;
 }
 
-void Image::reset(Vec2U size, Maybe<PixelFormat> pf) {
+void Image::reset(Vec2U size, std::optional<PixelFormat> pf) {
   reset(size[0], size[1], pf);
 }
 
-void Image::reset(unsigned width, unsigned height, Maybe<PixelFormat> pf) {
+void Image::reset(unsigned width, unsigned height, std::optional<PixelFormat> pf) {
   if (!pf)
     pf = m_pixelFormat;
 

@@ -1,5 +1,5 @@
-import star.maybe;
 import std;
+import star.optional;
 import star.memory;
 import star.json;
 import star.json_extra;
@@ -48,11 +48,11 @@ TextPositioning::TextPositioning() {
 }
 
 TextPositioning::TextPositioning(Vec2F pos, HorizontalAnchor hAnchor, VerticalAnchor vAnchor,
-    Maybe<unsigned> wrapWidth, Maybe<unsigned> charLimit)
+    std::optional<unsigned> wrapWidth, std::optional<unsigned> charLimit)
   : pos(pos), hAnchor(hAnchor), vAnchor(vAnchor), wrapWidth(wrapWidth), charLimit(charLimit) {}
 
 TextPositioning::TextPositioning(Json const& v) {
-  pos = v.opt("position").apply(jsonToVec2F).value();
+  pos = v.opt("position").transform(jsonToVec2F).value_or(Vec2F{});
   hAnchor = HorizontalAnchorNames.getLeft(v.getString("horizontalAnchor", "left"));
   vAnchor = VerticalAnchorNames.getLeft(v.getString("verticalAnchor", "top"));
   wrapWidth = v.optUInt("wrapWidth");
@@ -64,7 +64,7 @@ Json TextPositioning::toJson() const {
     {"position", jsonFromVec2F(pos)},
     {"horizontalAnchor", HorizontalAnchorNames.getRight(hAnchor)},
     {"verticalAnchor", VerticalAnchorNames.getRight(vAnchor)},
-    {"wrapWidth", jsonFromMaybe(wrapWidth)}
+    {"wrapWidth", jsonFromOptional(wrapWidth)}
   };
 }
 
@@ -266,7 +266,7 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
   return finished || textFunc(slice(lineStartIterator, end), lines);
 }
 
-List<StringView> TextPainter::wrapTextViews(StringView s, Maybe<unsigned> wrapWidth) {
+List<StringView> TextPainter::wrapTextViews(StringView s, std::optional<unsigned> wrapWidth) {
   List<StringView> views = {};
   auto last = views.end();
   unsigned curLine = 0;
@@ -280,12 +280,12 @@ List<StringView> TextPainter::wrapTextViews(StringView s, Maybe<unsigned> wrapWi
     return true;
   };
 
-  processWrapText(s, wrapWidth.ptr(), textCallback);
+  processWrapText(s, optionalPtr(wrapWidth), textCallback);
 
   return views;
 }
 
-StringList TextPainter::wrapText(StringView s, Maybe<unsigned> wrapWidth) {
+StringList TextPainter::wrapText(StringView s, std::optional<unsigned> wrapWidth) {
   StringList result;
 
   String current;
@@ -299,7 +299,7 @@ StringList TextPainter::wrapText(StringView s, Maybe<unsigned> wrapWidth) {
     return true;
   };
 
-  processWrapText(s, wrapWidth.ptr(), textCallback);
+  processWrapText(s, optionalPtr(wrapWidth), textCallback);
 
   if (!current.empty())
     result.append(std::move(current));
@@ -563,7 +563,7 @@ void TextPainter::renderGlyph(String::Char c, Vec2F const& screenPos, List<Rende
     glyphTexture.texture, Vec2F::round(screenPos + glyphTexture.offset * scale), scale, color, 0.0f);
 }
 
-std::shared_ptr<Font> TextPainter::loadFont(String const& fontPath, Maybe<String> fontName) {
+std::shared_ptr<Font> TextPainter::loadFont(String const& fontPath, std::optional<String> fontName) {
   if (!fontName) {
     auto name = AssetPath::filename(fontPath);
     fontName.emplace(name.substr(0, name.findLast(".")));

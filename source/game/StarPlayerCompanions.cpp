@@ -19,7 +19,6 @@ import star.game_types;
 import star.strong_typedef;
 import star.bi_map;
 import star.rpc_promise;
-import star.maybe;
 import star.a_star;
 import star.ordered_set;
 import star.audio;
@@ -107,11 +106,11 @@ Uuid Companion::podUuid() const {
   return Uuid(m_json.getString("podUuid"));
 }
 
-Maybe<String> Companion::name() const {
+std::optional<String> Companion::name() const {
   return m_json.optString("name");
 }
 
-Maybe<String> Companion::description() const {
+std::optional<String> Companion::description() const {
   return m_json.optString("description");
 }
 
@@ -119,21 +118,21 @@ List<Drawable> Companion::portrait() const {
   return m_portrait;
 }
 
-Maybe<float> Companion::resource(String const& resourceName) const {
+std::optional<float> Companion::resource(String const& resourceName) const {
   if (auto status = m_json.opt("status"))
     if (auto resources = status->opt("resources"))
       return resources->optFloat(resourceName);
   return {};
 }
 
-Maybe<float> Companion::resourceMax(String const& resourceName) const {
+std::optional<float> Companion::resourceMax(String const& resourceName) const {
   if (auto status = m_json.opt("status"))
     if (auto resources = status->opt("resourceMax"))
       return resources->optFloat(resourceName);
   return {};
 }
 
-Maybe<float> Companion::stat(String const& statName) const {
+std::optional<float> Companion::stat(String const& statName) const {
   if (auto status = m_json.opt("status"))
     if (auto stats = status->opt("stats"))
       return stats->optFloat(statName);
@@ -197,7 +196,7 @@ void PlayerCompanions::dismissCompanion(String const& category, Uuid const& podU
   m_scriptComponent.invoke("dismissCompanion", category, podUuid.hex());
 }
 
-Maybe<ChainableJsonMessageResponse> PlayerCompanions::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+std::optional<ChainableJsonMessageResponse> PlayerCompanions::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   return m_scriptComponent.handleMessage(message, localMessage, args);
 }
 

@@ -5,7 +5,6 @@ import star.thread;
 import star.memory;
 import star.string;
 import star.map;
-import star.maybe;
 import star.format;
 import star.list;
 import star.logging;
@@ -228,10 +227,10 @@ struct LuaConverter<LuaHttpResponse> {
     return table;
   }
 
-  static Maybe<LuaHttpResponse> to(LuaEngine& /*engine*/, LuaValue const& v) {
+  static std::optional<LuaHttpResponse> to(LuaEngine& /*engine*/, LuaValue const& v) {
     if (auto table = v.ptr<LuaTable>()) {
       LuaHttpResponse response;
-      response.statusCode = table->get<Maybe<int>>("status").value(0);
+      response.statusCode = table->get<std::optional<int>>("status").value_or(0);
       if (table->contains("body"))
         response.body = table->get<String>("body");
       return response;
@@ -279,7 +278,7 @@ LuaCallbacks LuaBindings::makeHttpCallbacks(std::shared_ptr<LuaHttpSession> cons
   std::weak_ptr<LuaHttpSession> weakSession = session;
   callbacks.registerCallback("available", [enabled]() { return enabled; });
 
-  auto requestForMethod = [weakSession, enabled](LuaEngine& engine, String const& method, String const& url, Maybe<LuaTable> const& options) -> LuaHttpRequest {
+  auto requestForMethod = [weakSession, enabled](LuaEngine& engine, String const& method, String const& url, std::optional<LuaTable> const& options) -> LuaHttpRequest {
     if (!enabled)
       return {weakSession, RpcPromise<LuaHttpResponse>::createFailed("luaHttp disabled by configuration")};
     auto owner = weakSession.lock();
@@ -323,22 +322,22 @@ LuaCallbacks LuaBindings::makeHttpCallbacks(std::shared_ptr<LuaHttpSession> cons
     }
   };
 
-  callbacks.registerCallback("createRequest", [requestForMethod](LuaEngine& engine, String const& method, String const& url, Maybe<LuaTable> const& options) {
+  callbacks.registerCallback("createRequest", [requestForMethod](LuaEngine& engine, String const& method, String const& url, std::optional<LuaTable> const& options) {
     return requestForMethod(engine, method, url, options);
   });
-  callbacks.registerCallback("get", [requestForMethod](LuaEngine& engine, String const& url, Maybe<LuaTable> const& options) {
+  callbacks.registerCallback("get", [requestForMethod](LuaEngine& engine, String const& url, std::optional<LuaTable> const& options) {
     return requestForMethod(engine, "GET", url, options);
   });
-  callbacks.registerCallback("post", [requestForMethod](LuaEngine& engine, String const& url, Maybe<LuaTable> const& options) {
+  callbacks.registerCallback("post", [requestForMethod](LuaEngine& engine, String const& url, std::optional<LuaTable> const& options) {
     return requestForMethod(engine, "POST", url, options);
   });
-  callbacks.registerCallback("put", [requestForMethod](LuaEngine& engine, String const& url, Maybe<LuaTable> const& options) {
+  callbacks.registerCallback("put", [requestForMethod](LuaEngine& engine, String const& url, std::optional<LuaTable> const& options) {
     return requestForMethod(engine, "PUT", url, options);
   });
-  callbacks.registerCallback("delete", [requestForMethod](LuaEngine& engine, String const& url, Maybe<LuaTable> const& options) {
+  callbacks.registerCallback("delete", [requestForMethod](LuaEngine& engine, String const& url, std::optional<LuaTable> const& options) {
     return requestForMethod(engine, "DELETE", url, options);
   });
-  callbacks.registerCallback("patch", [requestForMethod](LuaEngine& engine, String const& url, Maybe<LuaTable> const& options) {
+  callbacks.registerCallback("patch", [requestForMethod](LuaEngine& engine, String const& url, std::optional<LuaTable> const& options) {
     return requestForMethod(engine, "PATCH", url, options);
   });
   callbacks.registerCallback("isTrusted", [weakSession](String const& domain) {

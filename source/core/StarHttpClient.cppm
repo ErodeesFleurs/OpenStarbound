@@ -2,7 +2,6 @@ module;
 import std;
 import star.string;
 import star.map;
-import star.maybe;
 import star.thread;
 import star.worker_pool;
 

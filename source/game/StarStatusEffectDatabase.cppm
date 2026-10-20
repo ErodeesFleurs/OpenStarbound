@@ -3,7 +3,6 @@ module;
 import std;
 import star.string;
 import star.map;
-import star.maybe;
 import star.format;
 import star.json;
 import star.strong_typedef;
@@ -23,16 +22,16 @@ using StatusEffectDatabaseException = StarError<StatusEffectDatabaseExceptionTag
 // Named, unique, unstackable scripted effects.
 struct UniqueStatusEffectConfig {
   String name;
-  Maybe<String> blockingStat;
+  std::optional<String> blockingStat;
   Json effectConfig;
   float defaultDuration;
   StringList scripts;
   unsigned scriptDelta;
-  Maybe<String> animationConfig;
+  std::optional<String> animationConfig;
 
   String label;
   String description;
-  Maybe<String> icon;
+  std::optional<String> icon;
 
   JsonObject toJson();
 };

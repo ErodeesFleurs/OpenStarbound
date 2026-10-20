@@ -21,7 +21,6 @@ import star.text;
 import star.casting;
 import star.strong_typedef;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.input_event;
 import star.set;

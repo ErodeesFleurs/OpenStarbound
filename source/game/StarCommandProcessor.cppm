@@ -3,7 +3,6 @@ module;
 import std;
 import star.thread;
 import star.lua;
-import star.maybe;
 import star.json;
 import star.game_types;
 import star.string;
@@ -27,7 +26,7 @@ public:
   ServerCommandResult adminCommand(String const& command, String const& argumentString);
   ServerCommandResult userCommand(ConnectionId clientId, String const& command, String const& argumentString);
 private:
-  static Maybe<ConnectionId> playerCidFromCommand(String const& player, UniverseServer* universe);
+  static std::optional<ConnectionId> playerCidFromCommand(String const& player, UniverseServer* universe);
 
   String help(ConnectionId connectionId, String const& argumentString);
   String admin(ConnectionId connectionId, String const& argumentString);
@@ -78,8 +77,8 @@ private:
   mutable Mutex m_mutex;
 
   ServerCommandResult handleCommand(ConnectionId connectionId, String const& command, String const& argumentString);
-  Maybe<String> adminCheck(ConnectionId connectionId, String const& commandDescription) const;
-  Maybe<String> localCheck(ConnectionId connectionId, String const& commandDescription) const;
+  std::optional<String> adminCheck(ConnectionId connectionId, String const& commandDescription) const;
+  std::optional<String> localCheck(ConnectionId connectionId, String const& commandDescription) const;
   LuaCallbacks makeCommandCallbacks();
 
   Root& m_root;

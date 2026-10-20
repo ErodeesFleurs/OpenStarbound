@@ -8,7 +8,7 @@ import std;
 import star.static_vector;
 import star.small_vector;
 import star.pythonic;
-import star.maybe;
+import star.optional;
 import star.format;
 
 import star.algorithm;
@@ -48,13 +48,13 @@ public:
   reference last();
   const_reference last() const;
 
-  Maybe<value_type> maybeFirst();
-  Maybe<value_type> maybeLast();
+  std::optional<value_type> maybeFirst();
+  std::optional<value_type> maybeLast();
 
   void removeLast();
   value_type takeLast();
 
-  Maybe<value_type> maybeTakeLast();
+  std::optional<value_type> maybeTakeLast();
 
   // Limit the size of the list by removing elements from the back until the
   // size is the maximumSize or less.
@@ -484,17 +484,17 @@ auto ListMixin<BaseList>::last() const -> const_reference {
 }
 
 template <typename BaseList>
-auto ListMixin<BaseList>::maybeFirst() -> Maybe<value_type> {
+auto ListMixin<BaseList>::maybeFirst() -> std::optional<value_type> {
   if (Base::empty())
     return {};
-  return *Base::begin();
+  return std::optional<value_type>(std::in_place, *Base::begin());
 }
 
 template <typename BaseList>
-auto ListMixin<BaseList>::maybeLast() -> Maybe<value_type> {
+auto ListMixin<BaseList>::maybeLast() -> std::optional<value_type> {
   if (Base::empty())
     return {};
-  return *std::prev(Base::end());
+  return std::optional<value_type>(std::in_place, *std::prev(Base::end()));
 }
 
 template <typename BaseList>
@@ -512,12 +512,12 @@ auto ListMixin<BaseList>::takeLast() -> value_type {
 }
 
 template <typename BaseList>
-auto ListMixin<BaseList>::maybeTakeLast() -> Maybe<value_type> {
+auto ListMixin<BaseList>::maybeTakeLast() -> std::optional<value_type> {
   if (Base::empty())
     return {};
   value_type e = std::move(last());
   Base::pop_back();
-  return e;
+  return std::optional<value_type>(std::in_place, std::move(e));
 }
 
 template <typename BaseList>
@@ -1118,7 +1118,10 @@ std::ostream& operator<<(std::ostream& os, ListMixin<BaseList> const& list) {
   for (auto i = list.begin(); i != list.end(); ++i) {
     if (i != list.begin())
       os << ", ";
-    os << *i;
+    if constexpr (requires { outputOptional(*i); })
+      os << outputOptional(*i);
+    else
+      os << *i;
   }
   os << ")";
   return os;

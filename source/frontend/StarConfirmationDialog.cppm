@@ -17,7 +17,6 @@ import star.bi_map;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -57,7 +56,7 @@ public:
   void displayConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> resultPromise);
   void displayConfirmation(Json const& dialogConfig, WidgetCallbackFunc okCallback, WidgetCallbackFunc cancelCallback);
   
-  Maybe<EntityId> sourceEntityId();
+  std::optional<EntityId> sourceEntityId();
 
   void dismissed() override;
 
@@ -68,9 +67,9 @@ private:
   WidgetCallbackFunc m_cancelCallback;
   bool m_confirmed;
 
-  Maybe<EntityId> m_sourceEntityId;
+  std::optional<EntityId> m_sourceEntityId;
 
-  Maybe<RpcPromiseKeeper<Json>> m_resultPromise;
+  std::optional<RpcPromiseKeeper<Json>> m_resultPromise;
 };
 
 }

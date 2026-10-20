@@ -22,7 +22,7 @@ target_sources (star_modules PUBLIC FILE_SET CXX_MODULES
           scripting/StarUtilityLuaBindings.cppm
           StarFormat.cppm StarStreamFormatter.cppm
           StarHash.cppm StarFlatHashTable.cppm StarFlatHashMap.cppm StarFlatHashSet.cppm
-          StarMaybe.cppm StarVariant.cppm StarList.cppm StarMap.cppm StarSet.cppm
+          StarOptional.cppm StarVariant.cppm StarList.cppm StarMap.cppm StarSet.cppm
           StarOrderedMap.cppm StarOrderedSet.cppm
           StarString.cppm StarStringView.cppm StarThread.cppm StarBiMap.cppm
           StarUniqueFunction.cppm

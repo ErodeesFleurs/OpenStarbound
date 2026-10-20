@@ -34,7 +34,6 @@ import star.string_view;
 import star.directives;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.set;
 import star.audio;
@@ -273,7 +272,7 @@ bool ClientCommandProcessor::adminCommandAllowed() const {
 }
 
 String ClientCommandProcessor::previewQuestPane(StringList const& arguments, std::function<std::shared_ptr<Pane>(std::shared_ptr<Quest>)> createPane) {
-  Maybe<String> templateId = {};
+  std::optional<String> templateId = {};
   templateId = arguments[0];
   if (auto quest = createPreviewQuest(m_context.root(), *templateId, arguments.at(1), arguments.at(2), m_universeClient->mainPlayer().get())) {
     auto pane = createPane(quest);
@@ -284,9 +283,9 @@ String ClientCommandProcessor::previewQuestPane(StringList const& arguments, std
 }
 
 StringList ClientCommandProcessor::handleCommand(String const& commandLine, bool userInput) {
-  Maybe<Input::ClipboardUnlock> unlock;
+  std::optional<Input::ClipboardUnlock> unlock;
   if (userInput) // allow clipboard usage during this code
-    unlock = m_context.input().unlockClipboard();
+    unlock.emplace(m_context.input().unlockClipboard());
   try {
     if (!commandLine.beginsWith("/"))
       throw StarException("ClientCommandProcessor expected command, does not start with '/'");
@@ -691,10 +690,10 @@ String ClientCommandProcessor::render(String const& path) {
   auto player = m_universeClient->mainPlayer();
   if (player && path.utf8Size() < 100) {
     auto args = m_parser.tokenizeToStringList(path);
-    auto first = args.maybeFirst().value().toLower();
+    auto first = args.maybeFirst().value_or(String{}).toLower();
     auto humanoid = player->humanoid();
     auto& identity = humanoid->identity();
-    auto species = identity.imagePath.value(identity.species);
+    auto species = identity.imagePath.value_or(identity.species);
     outputSheet = true;
     outputName = first;
     if (first.equals("hat")) {

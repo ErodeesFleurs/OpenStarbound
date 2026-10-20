@@ -13,7 +13,6 @@ import star.bi_map;
 import star.either;
 import star.variant;
 import star.game_types;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -101,7 +100,7 @@ const GameTestRegistration weatherDomainDefaultTerrestrialOwnership("WeatherDoma
   ASSERT_NE(subsurface, nullptr);
   ASSERT_NE(space, nullptr);
   ASSERT_NE(core, nullptr);
-  EXPECT_EQ(surface->domain, Maybe<String>(String("surface")));
+  EXPECT_EQ(surface->domain, std::optional<String>(String("surface")));
   EXPECT_EQ(atmosphere->domain, surface->domain);
   EXPECT_EQ(subsurface->domain, surface->domain);
   EXPECT_FALSE(space->domain);
@@ -126,7 +125,7 @@ const GameTestRegistration weatherDomainExplicitLayerWeatherCreatesIndependentDo
 
   auto atmosphere = layerAt(world, parameters->atmosphereLayer.layerMinHeight);
   ASSERT_NE(atmosphere, nullptr);
-  EXPECT_EQ(atmosphere->domain, Maybe<String>(String("atmosphere")));
+  EXPECT_EQ(atmosphere->domain, std::optional<String>(String("atmosphere")));
 
   auto atmosphereDomain = world.weatherDomain("atmosphere");
   ASSERT_NE(atmosphereDomain, nullptr);

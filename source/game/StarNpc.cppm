@@ -8,7 +8,6 @@ import star.data_stream;
 import star.poly;
 import star.strong_typedef;
 import star.game_types;
-import star.maybe;
 import star.variant;
 import star.list;
 import star.rpc_promise;
@@ -164,8 +163,8 @@ public:
 
   Json scriptConfigParameter(String const& parameterName, Json const& defaultValue = Json()) const;
 
-  Maybe<HitType> queryHit(DamageSource const& source) const override;
-  Maybe<PolyF> hitPoly() const override;
+  std::optional<HitType> queryHit(DamageSource const& source) const override;
+  std::optional<PolyF> hitPoly() const override;
 
   void damagedOther(DamageNotification const& damage) override;
 
@@ -189,7 +188,7 @@ public:
 
   List<Drawable> portrait(PortraitMode mode) const override;
   String name() const override;
-  Maybe<String> statusText() const override;
+  std::optional<String> statusText() const override;
   bool displayNametag() const override;
   Vec3B nametagColor() const override;
   Vec2F nametagOrigin() const override;
@@ -197,8 +196,8 @@ public:
 
   bool aggressive() const;
 
-  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  Maybe<LuaValue> evalScript(String const& code) override;
+  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  std::optional<LuaValue> evalScript(String const& code) override;
 
   Vec2F mouthPosition() const override;
   Vec2F mouthPosition(bool ignoreAdjustments) const override;
@@ -208,7 +207,7 @@ public:
   InteractAction interact(InteractRequest const& request) override;
   RectF interactiveBoundBox() const override;
 
-  Maybe<EntityAnchorState> loungingIn() const override;
+  std::optional<EntityAnchorState> loungingIn() const override;
 
   List<QuestArcDescriptor> offeredQuests() const override;
   StringSet turnInQuests() const override;
@@ -216,7 +215,7 @@ public:
 
   List<LightSource> lightSources() const override;
 
-  Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  std::optional<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
   Vec2F armPosition(ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset = {}) const override;
   Vec2F handOffset(ToolHand hand, Direction facingDirection) const override;
@@ -251,7 +250,7 @@ public:
   ActorMovementController* movementController() override;
   StatusController* statusController() override;
   Songbook* songbook();
-  void setCameraFocusEntity(Maybe<EntityId> const& cameraFocusEntity) override;
+  void setCameraFocusEntity(std::optional<EntityId> const& cameraFocusEntity) override;
 
   void playEmote(HumanoidEmote emote) override;
 
@@ -265,8 +264,8 @@ public:
   void updateIdentity();
   void setIdentity(HumanoidIdentity identity);
 
-  void setHumanoidParameter(String key, Maybe<Json> value);
-  Maybe<Json> getHumanoidParameter(String key);
+  void setHumanoidParameter(String key, std::optional<Json> value);
+  std::optional<Json> getHumanoidParameter(String key);
   void setHumanoidParameters(JsonObject parameters);
   JsonObject getHumanoidParameters();
 
@@ -292,7 +291,7 @@ public:
   void setSpecies(String const& species);
   void setGender(Gender const& gender);
   void setPersonality(Personality const& personality);
-  void setImagePath(Maybe<String> const& imagePath);
+  void setImagePath(std::optional<String> const& imagePath);
 
   void setFavoriteColor(Color color);
   void setName(String const& name);
@@ -315,7 +314,7 @@ private:
 
   void addChatMessage(String const& message, Json const& config, String const& portrait = "");
   void addEmote(HumanoidEmote const& emote);
-  void setDance(Maybe<String> const& danceName);
+  void setDance(std::optional<String> const& danceName);
 
   bool setItemSlot(String const& slot, ItemDescriptor itemDescriptor);
 
@@ -334,20 +333,20 @@ private:
   NetElementTopGroup m_netGroup;
   NetElementData<StringList> m_dropPools;
 
-  NetElementData<Maybe<String>> m_uniqueIdNetState;
+  NetElementData<std::optional<String>> m_uniqueIdNetState;
   NetElementData<EntityDamageTeam> m_teamNetState;
 
   ClientEntityMode m_clientEntityMode;
 
   NetElementEnum<Humanoid::State> m_humanoidStateNetState;
   NetElementEnum<HumanoidEmote> m_humanoidEmoteStateNetState;
-  NetElementData<Maybe<String>> m_humanoidDanceNetState;
+  NetElementData<std::optional<String>> m_humanoidDanceNetState;
 
   NetElementData<HumanoidIdentity> m_identityNetState;
   NetElementEvent m_refreshedHumanoidParameters;
   bool m_identityUpdated;
 
-  NetElementData<Maybe<String>> m_deathParticleBurst;
+  NetElementData<std::optional<String>> m_deathParticleBurst;
 
   std::shared_ptr<ActorMovementController> m_movementController;
   std::shared_ptr<StatusController> m_statusController;
@@ -365,12 +364,12 @@ private:
   NetElementData<Json> m_chatConfig;
   bool m_chatMessageUpdated;
 
-  NetElementData<Maybe<String>> m_statusText;
+  NetElementData<std::optional<String>> m_statusText;
   NetElementBool m_displayNametag;
 
   HumanoidEmote m_emoteState;
   GameTimer m_emoteCooldownTimer;
-  Maybe<String> m_dance;
+  std::optional<String> m_dance;
   GameTimer m_danceCooldownTimer;
   GameTimer m_blinkCooldownTimer;
   Vec2F m_blinkInterval;

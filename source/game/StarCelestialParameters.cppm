@@ -9,7 +9,6 @@ import star.game_types;
 import star.color;
 import star.bi_map;
 import star.sky_types;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -54,7 +53,7 @@ public:
   // either floating or integral ranges.
   Json randomizeParameterRange(String const& name, std::int32_t mix = 0) const;
   // Same function, but if you want to specify the range from an external source
-  Json randomizeParameterRange(JsonArray const& range, std::int32_t mix = 0, Maybe<String> const& name = {}) const;
+  Json randomizeParameterRange(JsonArray const& range, std::int32_t mix = 0, std::optional<String> const& name = {}) const;
 
   // Not all worlds are visitable, if the world is not visitable its
   // visitableParameters will be empty.

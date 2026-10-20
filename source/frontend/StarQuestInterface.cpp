@@ -28,7 +28,6 @@ import star.strong_typedef;
 import star.input_event;
 import star.font;
 import star.text;
-import star.maybe;
 import star.listener;
 import star.audio;
 import star.map;
@@ -268,15 +267,15 @@ void QuestLogInterface::pollDialog(PaneManager* paneManager) {
     return;
 
   if (auto failableQuest = m_manager->getFirstFailableQuest()) {
-    auto qfi = std::make_shared<QuestFailedInterface>(*context(), failableQuest.value(), m_player);
+    auto qfi = std::make_shared<QuestFailedInterface>(*context(), failableQuest.value_or(std::shared_ptr<Quest>{}), m_player);
     (*failableQuest)->setDialogShown();
     paneManager->displayPane(PaneLayer::ModalWindow, qfi);
   } else if (auto completableQuest = m_manager->getFirstCompletableQuest()) {
-    auto qci = std::make_shared<QuestCompleteInterface>(*context(), completableQuest.value(), m_player, m_cinematic);
+    auto qci = std::make_shared<QuestCompleteInterface>(*context(), completableQuest.value_or(std::shared_ptr<Quest>{}), m_player, m_cinematic);
     (*completableQuest)->setDialogShown();
     paneManager->displayPane(PaneLayer::ModalWindow, qci);
   } else if (auto newQuest = m_manager->getFirstNewQuest()) {
-    auto nqd = std::make_shared<NewQuestInterface>(*context(), m_manager, newQuest.value(), m_player);
+    auto nqd = std::make_shared<NewQuestInterface>(*context(), m_manager, newQuest.value_or(std::shared_ptr<Quest>{}), m_player);
     paneManager->displayPane(PaneLayer::ModalWindow, nqd);
   }
 }
@@ -314,8 +313,8 @@ void QuestLogInterface::tick(float dt) {
     auto imagePortrait = quest->portrait(portraitName);
     if (imagePortrait) {
       auto portraitTitleLabel = fetchChild<LabelWidget>("lblPortraitTitle");
-      String portraitTitle = quest->portraitTitle(portraitName).value("");
-      Maybe<unsigned> charLimit = portraitTitleLabel->getTextCharLimit();
+      String portraitTitle = quest->portraitTitle(portraitName).value_or("");
+      std::optional<unsigned> charLimit = portraitTitleLabel->getTextCharLimit();
       portraitTitleLabel->setText(portraitTitle);
 
       Drawable::scaleAll(*imagePortrait, Vec2F(-1, 1));
@@ -467,7 +466,7 @@ void QuestLogInterface::showQuests(List<std::shared_ptr<Quest>> quests) {
     }
     entry->fetchChild<ImageWidget>("imgCurrent")->setVisibility(currentWorld);
 
-    entry->fetchChild<ImageWidget>("imgPortrait")->setDrawables(quest->portrait("QuestStarted").value({}));
+    entry->fetchChild<ImageWidget>("imgPortrait")->setDrawables(quest->portrait("QuestStarted").value_or(List<Drawable>{}));
     entry->show();
     if (quest->questId() == selectedQuest)
       setSelected(entry);
@@ -493,14 +492,14 @@ void QuestPane::commonSetup(Json config, String bodyText, String const& portrait
     bodyLabel->setText(bodyText);
 
   if (auto portraitImage = fetchChild<ImageWidget>("portraitImage")) {
-    Maybe<List<Drawable>> portrait = m_quest->portrait(portraitName);
-    portraitImage->setDrawables(portrait.value({}));
+    std::optional<List<Drawable>> portrait = m_quest->portrait(portraitName);
+    portraitImage->setDrawables(portrait.value_or(List<Drawable>{}));
   }
 
   if (auto portraitTitleLabel = fetchChild<LabelWidget>("portraitTitle")) {
-    Maybe<String> portraitTitle = m_quest->portraitTitle(portraitName);
-    String text = m_quest->portraitTitle(portraitName).value("");
-    Maybe<unsigned> charLimit = portraitTitleLabel->getTextCharLimit();
+    std::optional<String> portraitTitle = m_quest->portraitTitle(portraitName);
+    String text = m_quest->portraitTitle(portraitName).value_or("");
+    std::optional<unsigned> charLimit = portraitTitleLabel->getTextCharLimit();
     portraitTitleLabel->setText(text);
   }
 
@@ -545,14 +544,14 @@ NewQuestInterface::NewQuestInterface(GuiContext& guiContext, std::shared_ptr<Que
   : QuestPane(guiContext, quest, std::move(player)), m_manager(manager), m_decision(QuestDecision::Cancelled) {
   auto assets = context()->root().assets();
 
-  List<Drawable> objectivePortrait = m_quest->portrait("Objective").value({});
+  List<Drawable> objectivePortrait = m_quest->portrait("Objective").value_or(List<Drawable>{});
   bool shortDialog = objectivePortrait.size() == 0;
 
   String configFile;
   if (shortDialog)
-    configFile = m_quest->getTemplate()->newQuestGuiConfig.value(assets->json("/quests/quests.config:defaultGuiConfigs.newQuest").toString());
+    configFile = m_quest->getTemplate()->newQuestGuiConfig.value_or(assets->json("/quests/quests.config:defaultGuiConfigs.newQuest").toString());
   else
-    configFile = m_quest->getTemplate()->newQuestGuiConfig.value(assets->json("/quests/quests.config:defaultGuiConfigs.newQuestPortrait").toString());
+    configFile = m_quest->getTemplate()->newQuestGuiConfig.value_or(assets->json("/quests/quests.config:defaultGuiConfigs.newQuestPortrait").toString());
 
   Json config = assets->json(configFile);
 
@@ -568,7 +567,7 @@ NewQuestInterface::NewQuestInterface(GuiContext& guiContext, std::shared_ptr<Que
       Drawable::scaleAll(objectivePortrait, Vec2F(-1, 1));
       objectivePortraitImage->setDrawables(objectivePortrait);
 
-      String objectivePortraitTitle = m_quest->portraitTitle("Objective").value("");
+      String objectivePortraitTitle = m_quest->portraitTitle("Objective").value_or("");
       auto portraitLabel = fetchChild<LabelWidget>("objectivePortraitTitle");
       portraitLabel->setText(objectivePortraitTitle);
       portraitLabel->setVisibility(objectivePortrait.size() > 0);
@@ -613,7 +612,7 @@ void NewQuestInterface::dismissed() {
 QuestCompleteInterface::QuestCompleteInterface(GuiContext& guiContext, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic)
   : QuestPane(guiContext, quest, player) {
   auto assets = context()->root().assets();
-  String configFile = m_quest->getTemplate()->questCompleteGuiConfig.value(assets->json("/quests/quests.config:defaultGuiConfigs.questComplete").toString());
+  String configFile = m_quest->getTemplate()->questCompleteGuiConfig.value_or(assets->json("/quests/quests.config:defaultGuiConfigs.questComplete").toString());
   Json config = assets->json(configFile);
 
   m_player = player;
@@ -638,7 +637,7 @@ void QuestCompleteInterface::close() {
 
 QuestFailedInterface::QuestFailedInterface(GuiContext& guiContext, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player) : QuestPane(guiContext, quest, std::move(player)) {
   auto assets = context()->root().assets();
-  String configFile = m_quest->getTemplate()->questFailedGuiConfig.value(assets->json("/quests/quests.config:defaultGuiConfigs.questFailed").toString());
+  String configFile = m_quest->getTemplate()->questFailedGuiConfig.value_or(assets->json("/quests/quests.config:defaultGuiConfigs.questFailed").toString());
   Json config = assets->json(configFile);
   commonSetup(config, m_quest->failureText(), "QuestFailed");
   disableScissoring();

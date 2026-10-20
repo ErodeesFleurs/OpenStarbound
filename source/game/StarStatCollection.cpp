@@ -2,7 +2,6 @@ import std;
 import star.string;
 import star.list;
 import star.variant;
-import star.maybe;
 import star.json;
 import star.either;
 import star.strong_typedef;
@@ -134,11 +133,11 @@ void StatCollection::resetAllResources() {
     resetResource(resourceName);
 }
 
-Maybe<float> StatCollection::resourceMax(String const& resourceName) const {
+std::optional<float> StatCollection::resourceMax(String const& resourceName) const {
   return m_stats.resourceMaxValue(resourceName);
 }
 
-Maybe<float> StatCollection::resourcePercentage(String const& resourceName) const {
+std::optional<float> StatCollection::resourcePercentage(String const& resourceName) const {
   return m_stats.resourcePercentage(resourceName);
 }
 

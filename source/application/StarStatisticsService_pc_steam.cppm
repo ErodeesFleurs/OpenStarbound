@@ -8,7 +8,6 @@ module;
 #include "discord/discord.h"
 #endif
 import std;
-import star.maybe;
 import star.thread;
 import star.json;
 import star.string;
@@ -32,7 +31,7 @@ public:
   SteamStatisticsService(std::shared_ptr<PcPlatformServicesState> state);
 
   bool initialized() const override;
-  Maybe<String> error() const override;
+  std::optional<String> error() const override;
 
   bool setStat(String const& name, String const& type, Json const& value) override;
   Json getStat(String const& name, String const& type, Json def = {}) const override;
@@ -58,7 +57,7 @@ private:
 
   std::uint64_t m_appId;
   bool m_initialized = false;
-  Maybe<String> m_error;
+  std::optional<String> m_error;
 };
 
 }

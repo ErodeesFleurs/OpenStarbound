@@ -3,7 +3,6 @@ import std;
 import star.string;
 import star.json;
 
-import star.maybe;
 import star.color;
 import star.list;
 import star.image_processing;
@@ -42,15 +41,15 @@ struct ParallaxLayer {
   float alpha;
   Vec2F parallaxValue;
   Vec2B repeat;
-  Maybe<float> tileLimitTop;
-  Maybe<float> tileLimitBottom;
+  std::optional<float> tileLimitTop;
+  std::optional<float> tileLimitBottom;
   float verticalOrigin;
   float zLevel;
   Vec2F parallaxOffset;
   String timeOfDayCorrelation;
   Vec2F speed;
   bool followsWind;
-  Maybe<float> windSpeedMultiplier;
+  std::optional<float> windSpeedMultiplier;
   bool unlit;
   bool lightMapped;
   float fadePercent;
@@ -67,7 +66,7 @@ public:
       std::uint64_t seed,
       float verticalOrigin,
       float hueShift,
-      Maybe<TreeVariant> parallaxTreeVariant = {});
+      std::optional<TreeVariant> parallaxTreeVariant = {});
   Parallax(Root& root, Json const& store);
 
   Json store() const;
@@ -83,7 +82,7 @@ private:
   Root& m_root;
   std::uint64_t m_seed;
   float m_verticalOrigin;
-  Maybe<TreeVariant> m_parallaxTreeVariant;
+  std::optional<TreeVariant> m_parallaxTreeVariant;
   float m_hueShift;
 
   String m_imageDirectory;

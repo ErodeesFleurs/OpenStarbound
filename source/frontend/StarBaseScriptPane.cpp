@@ -24,7 +24,6 @@ import star.version;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.set;
 import star.audio;
@@ -170,7 +169,7 @@ bool BaseScriptPane::interactive() const { return m_interactive; }
 
 std::shared_ptr<Pane> BaseScriptPane::createTooltip(Vec2I const& screenPosition) {
   auto result = m_script.invoke<Json>("createTooltip", screenPosition);
-  if (result && !result.value().isNull()) {
+  if (result && !result.value_or(Json{}).isNull()) {
     if (result->type() == Json::Type::String) {
       return SimpleTooltipBuilder::buildTooltip(*context(), result->toString());
     } else {
@@ -192,15 +191,15 @@ std::shared_ptr<Pane> BaseScriptPane::createTooltip(Vec2I const& screenPosition)
   }
 }
 
-Maybe<String> BaseScriptPane::cursorOverride(Vec2I const& screenPosition) {
-  auto result = m_script.invoke<Maybe<String>>("cursorOverride", screenPosition);
+std::optional<String> BaseScriptPane::cursorOverride(Vec2I const& screenPosition) {
+  auto result = m_script.invoke<std::optional<String>>("cursorOverride", screenPosition);
   if (result)
     return *result;
   else
     return {};
 }
 
-Maybe<std::shared_ptr<Item>> BaseScriptPane::shiftItemFromInventory(std::shared_ptr<Item> const& input) {
+std::optional<std::shared_ptr<Item>> BaseScriptPane::shiftItemFromInventory(std::shared_ptr<Item> const& input) {
   auto result = m_script.invoke<Json>("shiftItemFromInventory", input->descriptor().toJson());
   if (!result || result->isNull())
     return {};
@@ -213,7 +212,7 @@ Maybe<std::shared_ptr<Item>> BaseScriptPane::shiftItemFromInventory(std::shared_
     return {};
   }
 
-  return itemDatabase->item(ItemDescriptor(result.value()));
+  return itemDatabase->item(ItemDescriptor(result.value_or(Json{})));
 }
 
 std::shared_ptr<GuiReader> BaseScriptPane::reader() {

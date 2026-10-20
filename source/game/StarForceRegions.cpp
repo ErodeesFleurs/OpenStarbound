@@ -108,7 +108,7 @@ DataStream& operator<<(DataStream& ds, DirectionalForceRegion const& dfr) {
 
 RadialForceRegion RadialForceRegion::fromJson(Json const& json) {
   RadialForceRegion rfr;
-  rfr.center = json.opt("center").apply(jsonToVec2F).value();
+  rfr.center = json.opt("center").transform(jsonToVec2F).value_or(Vec2F{});
   rfr.outerRadius = json.getFloat("outerRadius");
   rfr.innerRadius = json.getFloat("innerRadius");
   rfr.targetRadialVelocity = json.getFloat("targetRadialVelocity");

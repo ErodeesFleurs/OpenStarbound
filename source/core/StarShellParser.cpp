@@ -2,7 +2,6 @@
 import std;
 import star.list;
 import star.unicode;
-import star.maybe;
 import star.string;
 import star.byte_array;
 import star.encode;
@@ -100,7 +99,7 @@ bool ShellParser::inQuotedString() const {
   return m_quotedType != '\0';
 }
 
-auto ShellParser::current() const -> Maybe<Char> {
+auto ShellParser::current() const -> std::optional<Char> {
   if (m_current == m_end) {
     return {};
   }
@@ -108,7 +107,7 @@ auto ShellParser::current() const -> Maybe<Char> {
   return *m_current;
 }
 
-auto ShellParser::next() -> Maybe<Char> {
+auto ShellParser::next() -> std::optional<Char> {
   if (m_current != m_end) {
     ++m_current;
   }
@@ -116,7 +115,7 @@ auto ShellParser::next() -> Maybe<Char> {
   return current();
 }
 
-auto ShellParser::previous() -> Maybe<Char> {
+auto ShellParser::previous() -> std::optional<Char> {
   if (m_current != m_begin) {
     --m_current;
   }
@@ -179,7 +178,7 @@ auto ShellParser::parseBackslash() -> Char {
   }
 }
 
-auto ShellParser::parseUnicodeEscapeSequence(Maybe<Char> previousCodepoint) -> Char {
+auto ShellParser::parseUnicodeEscapeSequence(std::optional<Char> previousCodepoint) -> Char {
   String codepoint;
 
   auto letter = current();

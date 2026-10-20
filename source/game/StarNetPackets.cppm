@@ -16,7 +16,6 @@ import star.ordered_map;
 import star.either;
 import star.variant;
 import star.color;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.image_processing;
@@ -244,7 +243,7 @@ struct Packet {
 // Stages a packet for wire decoding; identity fields are initially unfilled.
 std::shared_ptr<Packet> createPacket(PacketType type);
 // Constructs a raw outgoing packet, generating identity fields before JSON load.
-std::shared_ptr<Packet> createPacket(RandomService& random, PacketType type, Maybe<Json> const& args);
+std::shared_ptr<Packet> createPacket(RandomService& random, PacketType type, std::optional<Json> const& args);
 
 template <PacketType PacketT>
 struct PacketBase : public Packet {
@@ -761,7 +760,7 @@ struct SetDungeonGravityPacket : PacketBase<PacketType::SetDungeonGravity> {
   std::string_view dynamicTypeName() const noexcept override { return Star::typeName<SetDungeonGravityPacket>(); }
 
   SetDungeonGravityPacket();
-  SetDungeonGravityPacket(DungeonId dungeonId, Maybe<float> gravity);
+  SetDungeonGravityPacket(DungeonId dungeonId, std::optional<float> gravity);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -770,7 +769,7 @@ struct SetDungeonGravityPacket : PacketBase<PacketType::SetDungeonGravity> {
   Json writeJson() const override;
 
   DungeonId dungeonId;
-  Maybe<float> gravity;
+  std::optional<float> gravity;
 };
 
 struct SetDungeonBreathablePacket : PacketBase<PacketType::SetDungeonBreathable> {
@@ -778,7 +777,7 @@ struct SetDungeonBreathablePacket : PacketBase<PacketType::SetDungeonBreathable>
   std::string_view dynamicTypeName() const noexcept override { return Star::typeName<SetDungeonBreathablePacket>(); }
 
   SetDungeonBreathablePacket();
-  SetDungeonBreathablePacket(DungeonId dungeonId, Maybe<bool> breathable);
+  SetDungeonBreathablePacket(DungeonId dungeonId, std::optional<bool> breathable);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -787,7 +786,7 @@ struct SetDungeonBreathablePacket : PacketBase<PacketType::SetDungeonBreathable>
   Json writeJson() const override;
 
   DungeonId dungeonId;
-  Maybe<bool> breathable;
+  std::optional<bool> breathable;
 };
 
 struct SetPlayerStartPacket : PacketBase<PacketType::SetPlayerStart> {
@@ -812,13 +811,13 @@ struct FindUniqueEntityResponsePacket : PacketBase<PacketType::FindUniqueEntityR
   std::string_view dynamicTypeName() const noexcept override { return Star::typeName<FindUniqueEntityResponsePacket>(); }
 
   FindUniqueEntityResponsePacket();
-  FindUniqueEntityResponsePacket(String uniqueEntityId, Maybe<Vec2F> entityPosition);
+  FindUniqueEntityResponsePacket(String uniqueEntityId, std::optional<Vec2F> entityPosition);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
   String uniqueEntityId;
-  Maybe<Vec2F> entityPosition;
+  std::optional<Vec2F> entityPosition;
 };
 
 struct PongPacket : PacketBase<PacketType::Pong> {
@@ -868,7 +867,7 @@ struct DamageTileGroupPacket : PacketBase<PacketType::DamageTileGroup> {
   std::string_view dynamicTypeName() const noexcept override { return Star::typeName<DamageTileGroupPacket>(); }
 
   DamageTileGroupPacket();
-  DamageTileGroupPacket(List<Vec2I> tilePositions, TileLayer layer, Vec2F sourcePosition, TileDamage tileDamage, Maybe<EntityId> sourceEntity);
+  DamageTileGroupPacket(List<Vec2I> tilePositions, TileLayer layer, Vec2F sourcePosition, TileDamage tileDamage, std::optional<EntityId> sourceEntity);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -877,7 +876,7 @@ struct DamageTileGroupPacket : PacketBase<PacketType::DamageTileGroup> {
   TileLayer layer;
   Vec2F sourcePosition;
   TileDamage tileDamage;
-  Maybe<EntityId> sourceEntity;
+  std::optional<EntityId> sourceEntity;
 };
 
 struct CollectLiquidPacket : PacketBase<PacketType::CollectLiquid> {
@@ -1267,14 +1266,14 @@ struct SystemObjectSpawnPacket : PacketBase<PacketType::SystemObjectSpawn> {
   std::string_view dynamicTypeName() const noexcept override { return Star::typeName<SystemObjectSpawnPacket>(); }
 
   SystemObjectSpawnPacket();
-  SystemObjectSpawnPacket(String typeName, Uuid uuid, Maybe<Vec2F> position, JsonObject parameters);
+  SystemObjectSpawnPacket(String typeName, Uuid uuid, std::optional<Vec2F> position, JsonObject parameters);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
   String typeName;
   Uuid uuid;
-  Maybe<Vec2F> position;
+  std::optional<Vec2F> position;
   JsonObject parameters;
 };
 

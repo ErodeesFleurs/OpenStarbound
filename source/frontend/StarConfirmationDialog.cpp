@@ -20,7 +20,6 @@ import star.version;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -99,7 +98,7 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
   m_confirmed = false;
 
   String paneLayoutPath =
-      config.optString("paneLayout").value("/interface/windowconfig/confirmation.config:paneLayout");
+      config.optString("paneLayout").value_or("/interface/windowconfig/confirmation.config:paneLayout");
   reader.construct(assets->json(paneLayoutPath), this);
 
   std::shared_ptr<ImageWidget> titleIcon = {};
@@ -116,7 +115,7 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
 
   m_sourceEntityId = config.optInt("sourceEntityId");
 
-  for (auto image : config.optObject("images").value({})) {
+  for (auto image : config.optObject("images").value_or(JsonObject{})) {
     auto widget = fetchChild<ImageWidget>(image.first);
     if (image.second.isType(Json::Type::String))
       widget->setImage(image.second.toString());
@@ -124,7 +123,7 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
       widget->setDrawables(image.second.toArray().transformed([this](Json const& drawable) { return Drawable(*context()->root().imageMetadataDatabase(), drawable); }));
   }
 
-  for (auto label : config.optObject("labels").value({})) {
+  for (auto label : config.optObject("labels").value_or(JsonObject{})) {
     auto widget = fetchChild<LabelWidget>(label.first);
     widget->setText(label.second.toString());
   }
@@ -136,7 +135,7 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
     context()->playAudio(sound);
 }
 
-Maybe<EntityId> ConfirmationDialog::sourceEntityId() {
+std::optional<EntityId> ConfirmationDialog::sourceEntityId() {
   return m_sourceEntityId;
 }
 

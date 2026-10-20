@@ -21,7 +21,6 @@ import star.lru_cache;
 import star.bi_map;
 import star.random;
 import star.perlin;
-import star.maybe;
 import star.weighted_pool;
 import star.variant;
 import star.id_map;
@@ -217,7 +216,7 @@ void TeamClient::acceptInvitation(Uuid const& inviterUuid) {
   invokeRemote("team.acceptInvitation", request, [this](Json) { forceUpdate(); });
 }
 
-Maybe<Uuid> TeamClient::currentTeam() const {
+std::optional<Uuid> TeamClient::currentTeam() const {
   return m_teamUuid;
 }
 
@@ -298,9 +297,9 @@ void TeamClient::pullFullUpdate() {
   invokeRemote("team.fetchTeamStatus", request, [this](Json response) {
       m_fullUpdateRunning = false;
 
-      m_teamManagerVersion = response.optInt("version").value(0);
+      m_teamManagerVersion = response.optInt("version").value_or(0);
       
-      m_teamUuid = response.optString("teamUuid").apply(construct<Uuid>());
+      m_teamUuid = response.optString("teamUuid").transform(construct<Uuid>());
 
       if (m_teamUuid) {
         m_teamLeader = Uuid(response.getString("leader"));

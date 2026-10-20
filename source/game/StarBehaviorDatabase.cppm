@@ -4,7 +4,6 @@ import std;
 import star.string;
 import star.list;
 import star.variant;
-import star.maybe;
 import star.bi_map;
 import star.json;
 import star.game_types;
@@ -41,7 +40,7 @@ extern EnumMap<NodeParameterType> const NodeParameterTypeNames;
 
 typedef Variant<String, Json> NodeParameterValue;
 typedef std::pair<NodeParameterType, NodeParameterValue> NodeParameter;
-typedef std::pair<NodeParameterType, std::pair<Maybe<String>, bool>> NodeOutput;
+typedef std::pair<NodeParameterType, std::pair<std::optional<String>, bool>> NodeOutput;
 
 NodeParameterValue nodeParameterValueFromJson(Json const& json);
 
@@ -70,7 +69,7 @@ extern EnumMap<CompositeType> const CompositeTypeNames;
 
 // replaces global tags in nodeParameters in place
 NodeParameterValue replaceBehaviorTag(NodeParameterValue const& parameter, StringMap<NodeParameterValue> const& treeParameters);
-Maybe<String> replaceOutputBehaviorTag(Maybe<String> const& output, StringMap<NodeParameterValue> const& treeParameters);
+std::optional<String> replaceOutputBehaviorTag(std::optional<String> const& output, StringMap<NodeParameterValue> const& treeParameters);
 void applyTreeParameters(StringMap<NodeParameter>& nodeParameters, StringMap<NodeParameterValue> const& treeParameters);
 
 struct ActionNode {

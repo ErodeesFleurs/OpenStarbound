@@ -11,7 +11,6 @@ import star.bi_map;
 import star.format;
 import star.vector;
 import star.game_types;
-import star.maybe;
 import star.thread;
 import star.data_stream_devices;
 
@@ -134,7 +133,7 @@ public:
   typedef std::function<float(unsigned, Vec2F, float)> PositionalAttenuationFunction;
   void update(float dt, PositionalAttenuationFunction positionalAttenuationFunction = {});
 
-  void setDeviceName(Maybe<String> device);
+  void setDeviceName(std::optional<String> device);
   StringList availableDevices();
 
   int send(DataStreamBuffer& out, std::size_t budget = 0);
@@ -188,7 +187,7 @@ private:
 
   int m_deviceChannels = 1;
   bool m_deviceOpen = false;
-  Maybe<String> m_deviceName;
+  std::optional<String> m_deviceName;
   VoiceInputMode m_inputMode;
   VoiceChannelMode m_channelMode;
   unsigned m_bitrate = 0;

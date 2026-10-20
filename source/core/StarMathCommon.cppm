@@ -2,7 +2,6 @@ module;
 
 import std;
 import star.format;
-import star.maybe;
 
 namespace Star {
 

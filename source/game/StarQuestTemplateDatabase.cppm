@@ -2,7 +2,6 @@ module;
 import std;
 import star.string;
 import star.list;
-import star.maybe;
 import star.json;
 
 import star.data_stream;
@@ -36,7 +35,7 @@ public:
   Vec2U moneyRange;
   List<List<ItemDescriptor>> rewards;
   List<String> rewardParameters;
-  Maybe<String> completionCinema;
+  std::optional<String> completionCinema;
   bool canBeAbandoned;
   // Whether the quest is cleared from the quest log when it is
   // completed/failed.
@@ -55,16 +54,16 @@ public:
   String questReceiverIndicator;
 
   List<String> prerequisiteQuests;
-  Maybe<unsigned> requiredShipLevel;
+  std::optional<unsigned> requiredShipLevel;
   List<ItemDescriptor> requiredItems;
 
   unsigned updateDelta;
-  Maybe<String> script;
+  std::optional<String> script;
   JsonObject scriptConfig;
 
-  Maybe<String> newQuestGuiConfig;
-  Maybe<String> questCompleteGuiConfig;
-  Maybe<String> questFailedGuiConfig;
+  std::optional<String> newQuestGuiConfig;
+  std::optional<String> questCompleteGuiConfig;
+  std::optional<String> questFailedGuiConfig;
 };
 
 // Quest Template Database

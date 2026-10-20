@@ -31,7 +31,6 @@ import star.image;
 import star.color;
 import star.vector;
 import star.game_types;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.strong_typedef;
@@ -149,8 +148,8 @@ int main(int argc, char** argv) {
       worldSeed = lexicalCast<std::uint64_t>(options.parameters.get("seed").first());
     auto worldTemplate = std::make_shared<WorldTemplate>(*root, worldParameters, SkyParameters(), worldSeed);
 
-    auto fidelity = options.parameters.maybe("fidelity").apply([](StringList p) { return p.maybeFirst(); }).value({});
-    root->configuration()->set("serverFidelity", fidelity.value("high"));
+    auto fidelity = options.parameters.maybe("fidelity").and_then([](StringList const& p) { return p.maybeFirst(); });
+    root->configuration()->set("serverFidelity", fidelity.value_or("high"));
 
     if (options.switches.contains("unsafe"))
       root->configuration()->set("safeScripts", false);

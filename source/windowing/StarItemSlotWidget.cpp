@@ -18,7 +18,6 @@ import star.input_event;
 import star.font;
 import star.bi_map;
 import star.text;
-import star.maybe;
 import star.listener;
 import star.game_types;
 import star.set;
@@ -263,7 +262,7 @@ void ItemSlotWidget::renderImpl() {
     if (m_drawBackingImageWhenFull && m_backingImage != "")
       context()->drawInterfaceQuad(m_backingImage, Vec2F(screenPosition()));
 
-    List<Drawable> iconDrawables = m_showSecondaryIcon ? m_item->secondaryDrawables().value(m_item->iconDrawables()) : m_item->iconDrawables();
+    List<Drawable> iconDrawables = m_showSecondaryIcon ? m_item->secondaryDrawables().value_or(m_item->iconDrawables()) : m_item->iconDrawables();
 
     if (m_showRarity) {
       String border = rarityBorder(m_item->instanceValue("rarityBorder", RarityNames.getRight(m_item->rarity())).toString());

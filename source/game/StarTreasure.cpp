@@ -34,7 +34,6 @@ import star.periodic_function;
 import star.lua;
 import star.audio;
 import star.map;
-import star.maybe;
 
 import star.drawable;
 import star.item;

@@ -18,7 +18,6 @@ import star.image;
 import star.bi_map;
 import star.ref_ptr;
 import star.renderer;
-import star.maybe;
 import star.listener;
 import star.asset_texture_group;
 

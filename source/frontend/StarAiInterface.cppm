@@ -22,7 +22,6 @@ import star.directives;
 import star.string;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.set;
 import star.audio;
@@ -187,12 +186,12 @@ private:
 
   StringList m_availableMissions;
   StringList m_completedMissions;
-  Maybe<String> m_selectedMission;
+  std::optional<String> m_selectedMission;
 
   List<std::shared_ptr<Companion>> m_crew;
   std::shared_ptr<Companion> m_selectedRecruit;
 
-  Maybe<AiSpeech> m_currentSpeech;
+  std::optional<AiSpeech> m_currentSpeech;
   float m_textLength;
   float m_textMaxLength;
 

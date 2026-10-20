@@ -7,7 +7,6 @@ import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.list;
@@ -53,7 +52,7 @@ public:
   // planet coordinates while orbiting a planet
   std::shared_ptr<SystemClientShip> clientShip(ConnectionId clientId) const;
   SystemLocation clientShipLocation(ConnectionId clientId) const;
-  Maybe<std::pair<WarpAction, WarpMode>> clientWarpAction(ConnectionId clientId) const;
+  std::optional<std::pair<WarpAction, WarpMode>> clientWarpAction(ConnectionId clientId) const;
   SkyParameters clientSkyParameters(ConnectionId clientId) const;
 
   List<ConnectionId> clients() const;

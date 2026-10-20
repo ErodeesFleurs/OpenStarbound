@@ -9,7 +9,6 @@ import star.random;
 import star.ttl_cache;
 import star.casting;
 import star.game_types;
-import star.maybe;
 import star.variant;
 import star.strong_typedef;
 import star.rpc_promise;
@@ -257,7 +256,7 @@ void ItemDrop::init(World* world, EntityId entityId, EntityMode mode) {
 
   m_movementController.init(world);
   if (isMaster()) {
-    auto scripts = configValue("scripts").optArray().apply(jsonToStringList);
+    auto scripts = configValue("scripts").optArray().transform(jsonToStringList);
     if (scripts && !(*scripts).empty()) {
       m_scriptComponent.setScripts(*scripts);
       m_scriptComponent.setUpdateDelta(configValue("scriptDelta",1).toUInt());
@@ -280,7 +279,7 @@ void ItemDrop::uninit() {
   Entity::uninit();
   m_movementController.uninit();
   if (isMaster()) {
-    auto scripts = configValue("scripts").optArray().apply(jsonToStringList);
+    auto scripts = configValue("scripts").optArray().transform(jsonToStringList);
     if (scripts && !(*scripts).empty()) {
       m_scriptComponent.uninit();
       m_scriptComponent.removeCallbacks("itemDrop");
@@ -653,17 +652,17 @@ void ItemDrop::updateTaken(bool master) {
   m_movementController.applyParameters(parameters);
 }
 
-Maybe<LuaValue> ItemDrop::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
+std::optional<LuaValue> ItemDrop::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
   return m_scriptComponent.invoke(func, args);
 }
 
-Maybe<LuaValue> ItemDrop::evalScript(String const& code) {
+std::optional<LuaValue> ItemDrop::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
 LuaCallbacks ItemDrop::makeItemDropCallbacks() {
   LuaCallbacks callbacks;
-  callbacks.registerCallback("takingEntity", [this]() -> Maybe<EntityId> {
+  callbacks.registerCallback("takingEntity", [this]() -> std::optional<EntityId> {
       if (m_owningEntity.get() == NullEntityId)
         return {};
       else
@@ -673,13 +672,13 @@ LuaCallbacks ItemDrop::makeItemDropCallbacks() {
   callbacks.registerCallback("eternal", [this]() -> bool { return m_eternal; });
   callbacks.registerCallback("setIntangibleTime", [this](float const& intangibleTime) { setIntangibleTime(intangibleTime); });
   callbacks.registerCallback("intangibleTime", [this]() -> float { return m_intangibleTimer.timer; });
-  callbacks.registerCallback("setOverrideMode", [this](Maybe<String> const& mode) {
+  callbacks.registerCallback("setOverrideMode", [this](std::optional<String> const& mode) {
     if (mode)
       m_overrideMode = ModeNames.getLeft(*mode);
     else
       m_overrideMode = {};
   });
-  callbacks.registerCallback("overrideMode", [this]() -> Maybe<String> {
+  callbacks.registerCallback("overrideMode", [this]() -> std::optional<String> {
     if (m_overrideMode)
       return ModeNames.getRight(*m_overrideMode);
     else

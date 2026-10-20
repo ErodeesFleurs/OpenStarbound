@@ -1,6 +1,6 @@
 import std;
 import star.variant;
-import star.maybe;
+import star.optional;
 
 #include "gtest/gtest.h"
 
@@ -49,28 +49,6 @@ TEST(VariantTest, All) {
   EXPECT_TRUE(mv.empty());
 }
 
-TEST(MaybeTest, All) {
-  struct MaybeTester {
-    std::shared_ptr<int> intptr;
-  };
-
-  Maybe<MaybeTester> a, b;
-
-  EXPECT_FALSE(a.isValid());
-
-  std::shared_ptr<int> intptr = std::make_shared<int>(42);
-  a = MaybeTester{intptr};
-  b = MaybeTester{intptr};
-  EXPECT_TRUE(a.isValid());
-  a = b;
-  a = a;
-  b = std::move(a);
-  a = std::move(b);
-  EXPECT_EQ(intptr.use_count(), 2);
-  a = {};
-  EXPECT_FALSE(a.isValid());
-  EXPECT_EQ(intptr.use_count(), 1);
-}
 
 namespace {
 struct VariantThrowingMove {
@@ -99,6 +77,50 @@ struct VariantThrowingCopy {
   VariantThrowingCopy& operator=(VariantThrowingCopy const&) = default;
   VariantThrowingCopy& operator=(VariantThrowingCopy&&) noexcept = default;
 };
+}
+
+TEST(OptionalOperations, TakePreservesSourceOnFailureAndTransfersOwnership) {
+  auto owner = std::make_shared<int>(42);
+  std::weak_ptr<int> weak = owner;
+  std::optional<VariantThrowingMove> source(std::in_place, owner, true);
+  owner.reset();
+  EXPECT_THROW(takeOptional(source), std::runtime_error);
+  ASSERT_TRUE(source);
+  EXPECT_EQ(*source->value, 42);
+  source->fail = false;
+  auto extracted = takeOptional(source);
+  EXPECT_FALSE(source);
+  EXPECT_EQ(*extracted.value, 42);
+  EXPECT_THROW(takeOptional(source), std::bad_optional_access);
+  EXPECT_FALSE(weak.expired());
+  extracted.value.reset();
+  EXPECT_TRUE(weak.expired());
+}
+
+TEST(OptionalOperations, PutResetsOnlyAfterSuccessfulAssignment) {
+  struct Value {
+    int payload;
+    bool reject;
+    Value& operator=(Value&& other) {
+      if (other.reject)
+        throw std::runtime_error("assignment");
+      payload = other.payload;
+      other.payload = -1;
+      return *this;
+    }
+  };
+  std::optional<Value> source(std::in_place, 7, true);
+  Value target{3, false};
+  EXPECT_THROW(putOptional(source, target), std::runtime_error);
+  ASSERT_TRUE(source);
+  EXPECT_EQ(source->payload, 7);
+  EXPECT_EQ(target.payload, 3);
+  source->reject = false;
+  EXPECT_TRUE(putOptional(source, target));
+  EXPECT_FALSE(source);
+  EXPECT_EQ(target.payload, 7);
+  EXPECT_FALSE(putOptional(source, target));
+  EXPECT_EQ(target.payload, 7);
 }
 
 TEST(VariantTest, AlternativeOrdering) {

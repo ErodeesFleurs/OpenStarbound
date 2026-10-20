@@ -2,7 +2,6 @@ module;
 import std;
 import star.type_identity;
 import star.string;
-import star.maybe;
 import star.json;
 import star.id_map;
 import star.casting;
@@ -36,21 +35,21 @@ public:
 
   // If this entity can be entered into the player log, will return the log
   // identifier.
-  virtual Maybe<String> inspectionLogName() const;
+  virtual std::optional<String> inspectionLogName() const;
 
   // Long description to display when inspected, if any
-  virtual Maybe<String> inspectionDescription(String const& species) const;
+  virtual std::optional<String> inspectionDescription(String const& species) const;
 };
 
 inline bool InspectableEntity::inspectable() const {
   return true;
 }
 
-inline Maybe<String> InspectableEntity::inspectionLogName() const {
+inline std::optional<String> InspectableEntity::inspectionLogName() const {
   return {};
 }
 
-inline Maybe<String> InspectableEntity::inspectionDescription(String const&) const {
+inline std::optional<String> InspectableEntity::inspectionDescription(String const&) const {
   return {};
 }
 

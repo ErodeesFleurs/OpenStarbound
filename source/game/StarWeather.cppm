@@ -5,7 +5,6 @@ import star.json;
 import star.net_compatibility;
 import star.byte_array;
 
-import star.maybe;
 import star.random;
 import star.weighted_pool;
 import star.color;
@@ -77,7 +76,7 @@ public:
 
   List<std::shared_ptr<Projectile>> pullNewProjectiles();
   
-  Maybe<String> activeWeather() const;
+  std::optional<String> activeWeather() const;
 
 private:
   void setNetStates();
@@ -93,14 +92,14 @@ private:
   List<RectI> m_clientVisibleRegions;
 
   std::size_t m_currentWeatherIndex;
-  Maybe<WeatherType> m_currentWeatherType;
+  std::optional<WeatherType> m_currentWeatherType;
   float m_currentWeatherIntensity;
   float m_currentWind;
 
   bool m_forceWeather;
 
   std::shared_ptr<Clock const> m_referenceClock;
-  Maybe<double> m_clockTrackingTime;
+  std::optional<double> m_clockTrackingTime;
 
   double m_currentTime;
   double m_lastWeatherChangeTime;
@@ -137,9 +136,9 @@ public:
 
   List<Particle> pullNewParticles();
   StringList weatherTrackOptions() const;
-  Maybe<String> weatherParallax() const;
+  std::optional<String> weatherParallax() const;
   
-  Maybe<String> activeWeather() const;
+  std::optional<String> activeWeather() const;
 
 private:
   void getNetStates();
@@ -153,7 +152,7 @@ private:
   WeatherEffectsActiveQuery m_weatherEffectsActiveQuery;
 
   std::size_t m_currentWeatherIndex;
-  Maybe<WeatherType> m_currentWeatherType;
+  std::optional<WeatherType> m_currentWeatherType;
   float m_currentWeatherIntensity;
   float m_currentWind;
 

@@ -1,6 +1,5 @@
 import star.json;
 import star.native_runtime;
-import star.maybe;
 import star.file;
 import star.logging;
 import star.string;
@@ -61,7 +60,7 @@ typedef std::function<void(String, Vec2I)> MatchReporter;
 
 String const MapFilenameSuffix = ".json";
 
-Maybe<String> matchTile(SearchParameters const& search, Tiled::Tile const& tile) {
+std::optional<String> matchTile(SearchParameters const& search, Tiled::Tile const& tile) {
   Tiled::Properties const& properties = tile.properties;
   if (search.criteria.is<TileName>()) {
     if (auto tileName = properties.opt<String>("//name"))
@@ -73,7 +72,7 @@ Maybe<String> matchTile(SearchParameters const& search, Tiled::Tile const& tile)
     std::tie(propertyName, matchValue) = search.criteria.get<TileProperty>();
     if (auto propertyValue = properties.opt<String>(propertyName))
       if (propertyValue->regexMatch(matchValue))
-        return properties.opt<String>("//name").value("?");
+        return properties.opt<String>("//name").value_or("?");
   }
   return {};
 }

@@ -16,7 +16,6 @@ import star.listener;
 import std;
 import star.string;
 import star.lua;
-import star.maybe;
 import star.format;
 import star.version;
 import star.rpc_promise;
@@ -179,18 +178,18 @@ void LuaBaseComponent::uninit() {
 }
 
 bool LuaBaseComponent::initialized() const {
-  return m_context.isValid();
+  return m_context.has_value();
 }
 
-Maybe<String> const& LuaBaseComponent::error() const {
+std::optional<String> const& LuaBaseComponent::error() const {
   return m_error;
 }
 
-Maybe<LuaContext> const& LuaBaseComponent::context() const {
+std::optional<LuaContext> const& LuaBaseComponent::context() const {
   return m_context;
 }
 
-Maybe<LuaContext>& LuaBaseComponent::context() {
+std::optional<LuaContext>& LuaBaseComponent::context() {
   return m_context;
 }
 

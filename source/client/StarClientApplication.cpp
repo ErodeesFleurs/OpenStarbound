@@ -6,6 +6,7 @@
 #include "imgui.h"
 #include "imgui_freetype.h"
 import std;
+import star.optional;
 import star.world_lua_bindings;
 import star.memory;
 import star.xx_hash;
@@ -42,7 +43,6 @@ import star.string_view;
 import star.directives;
 import star.text;
 import star.asset_path;
-import star.maybe;
 import star.listener;
 import star.set;
 import star.audio;
@@ -451,7 +451,7 @@ void ClientApplication::applicationInit(std::shared_ptr<ApplicationController> a
   bool fullscreen = configuration->get("fullscreen").toBool();
   bool borderless = configuration->get("borderless").toBool();
   bool maximized = configuration->get("maximized").toBool();
-  m_controllerInput = configuration->get("controllerInput").optBool().value();
+  m_controllerInput = configuration->get("controllerInput").optBool().value_or(false);
   
   #ifdef STAR_SYSTEM_WINDOWS
     appController->setBorderlessWorkaround(configuration->get("borderlessWorkaround", true).toBool());
@@ -477,7 +477,7 @@ void ClientApplication::applicationInit(std::shared_ptr<ApplicationController> a
 
   appController->setTargetUpdateRate(updateRate);
   appController->setVSyncEnabled(vsync);
-  appController->setCursorHardware(configuration->get("hardwareCursor").optBool().value(true));
+  appController->setCursorHardware(configuration->get("hardwareCursor").optBool().value_or(true));
 
   // Must be called before anything that can invoke an asset load.
   loadMods();
@@ -529,10 +529,10 @@ void ClientApplication::renderInit(std::shared_ptr<Renderer> renderer) {
   m_reloadSubscription = m_root->registerReloadListener(
       m_reloadListener = std::make_shared<CallbackListener>([this]() { renderReload(); }));
 
-  if (m_root->configuration()->get("limitTextureAtlasSize").optBool().value(false))
+  if (m_root->configuration()->get("limitTextureAtlasSize").optBool().value_or(false))
     renderer->setSizeLimitEnabled(true);
 
-  renderer->setMultiTexturingEnabled(m_root->configuration()->get("useMultiTexturing").optBool().value(true));
+  renderer->setMultiTexturingEnabled(m_root->configuration()->get("useMultiTexturing").optBool().value_or(true));
 
   m_guiContext->renderInit(renderer);
 
@@ -550,7 +550,7 @@ void ClientApplication::renderInit(std::shared_ptr<Renderer> renderer) {
   #ifdef STAR_SYSTEM_LINUX
   if (appController()->steamIsFlatpak()) {
     auto config = m_root->configuration();
-    if (!config->get("steamFlatpakWarningShown").optBool().value()) {
+    if (!config->get("steamFlatpakWarningShown").optBool().value_or(false)) {
       config->set("steamFlatpakWarningShown", true);
       m_errorScreen->setMessage(m_root->assets()->json("/interface.config:steamFlatpakWarning").toString());
       changeState(MainAppState::SteamFlatpakWarning);
@@ -593,7 +593,7 @@ void ClientApplication::processInput(InputEvent const& event) {
       return keyEvent.key == keyUp->key;
     });
 
-    Maybe<KeyMod> modKey = KeyModNames.maybeLeft(KeyNames.getRight(keyUp->key));
+    std::optional<KeyMod> modKey = KeyModNames.maybeLeft(KeyNames.getRight(keyUp->key));
     if (modKey)
       m_heldKeyEvents.transform([&](auto& keyEvent) {
         return KeyDownEvent{keyEvent.key, keyEvent.mods & ~*modKey};
@@ -689,11 +689,11 @@ void ClientApplication::render() {
   auto assets = m_root->assets();
   auto& renderer = Application::renderer();
 
-  renderer->setMultiSampling(config->get("antiAliasing").optBool().value(false) ? 4 : 0);
-  renderer->setMainHDR(config->get("hdr").optBool().value(true));
+  renderer->setMultiSampling(config->get("antiAliasing").optBool().value_or(false) ? 4 : 0);
+  renderer->setMainHDR(config->get("hdr").optBool().value_or(true));
   renderer->switchEffectConfig("interface");
 
-  if (auto interfaceScale = config->get("interfaceScale").optFloat().value(); interfaceScale != 0)
+  if (auto interfaceScale = config->get("interfaceScale").optFloat().value_or(0.0f); interfaceScale != 0)
     m_guiContext->setInterfaceScale(interfaceScale);
   else if (m_guiContext->windowWidth() >= m_crossoverRes[0] && m_guiContext->windowHeight() >= m_crossoverRes[1])
     m_guiContext->setInterfaceScale(m_maxInterfaceScale);
@@ -804,7 +804,7 @@ void ClientApplication::renderReload() {
     auto def = pair.second.getBool("enabledDefault",true);
     if (!groupConfig)
       config->setPath(strf("{}.{}", postProcessGroupsRoot, name),JsonObject());
-    m_postProcessGroups.add(name,PostProcessGroup{ groupConfig ? groupConfig.value().getBool("enabled", def) : def });
+    m_postProcessGroups.add(name,PostProcessGroup{ groupConfig ? groupConfig.value_or(Json{}).getBool("enabled", def) : def });
   }
   
   // define post process layers and optionally assign them to groups
@@ -818,14 +818,14 @@ void ClientApplication::renderReload() {
     PostProcessGroup* group = nullptr;
     auto gname = layer.optString("group");
     if (gname) {
-      group = &m_postProcessGroups.get(gname.value());
+      group = &m_postProcessGroups.get(gname.value_or(String{}));
     }
     // I'd think a string map for all of these would be better, but the order does matter here, and does make sense to depend on mod priority, so...
     // guess a string map of indices works
     // I tried pointers but for whatever reason the behaviour was highly inconsistent and only worked after reload...
     auto label = layer.optString("name");
     if (label) {
-      m_labelledPostProcessLayers.add(label.value(),m_postProcessLayers.count());
+      m_labelledPostProcessLayers.add(label.value_or(String{}),m_postProcessLayers.count());
     }
     m_postProcessLayers.append(PostProcessLayer{ std::move(effects), (unsigned)layer.getUInt("passes", 1), group });
   }
@@ -836,9 +836,9 @@ void ClientApplication::renderReload() {
 void ClientApplication::setPostProcessLayerPasses(String const& layer, unsigned const& passes) {
   m_postProcessLayers.at(m_labelledPostProcessLayers.get(layer)).passes = passes;
 }
-void ClientApplication::setPostProcessGroupEnabled(String const& group, bool const& enabled, Maybe<bool> const& save) {
+void ClientApplication::setPostProcessGroupEnabled(String const& group, bool const& enabled, std::optional<bool> const& save) {
   m_postProcessGroups.get(group).enabled = enabled;
-  if (save && save.value())
+  if (save && save.value_or(false))
     m_root->configuration()->setPath(strf("{}.{}.enabled", postProcessGroupsRoot, group),enabled);
 }
 bool ClientApplication::postProcessGroupEnabled(String const& group) {
@@ -936,7 +936,7 @@ void ClientApplication::changeState(MainAppState newState) {
 
     Json alwaysAllow = m_root->configuration()->getPath("safe.alwaysAllowClipboard");
     m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(*m_input, *m_root, m_root->logger(), app, alwaysAllow && alwaysAllow.toBool()));
-    const bool luaHttpEnabled = m_root->configuration()->getPath("safe.luaHttp.enabled").optBool().value(false);
+    const bool luaHttpEnabled = m_root->configuration()->getPath("safe.luaHttp.enabled").optBool().value_or(false);
 
     m_universeClient->setLuaCallbacks("http", LuaBindings::makeHttpCallbacks(m_httpSession, luaHttpEnabled));
 
@@ -974,7 +974,7 @@ void ClientApplication::changeState(MainAppState newState) {
         m_titleScreen->setMultiPlayerAddress(toString(address->address()));
         m_titleScreen->setMultiPlayerPort(toString(address->port()));
         m_titleScreen->setMultiPlayerAccount(configuration->getPath("title.multiPlayerAccount").toString());
-        m_titleScreen->setMultiPlayerForceLegacy(configuration->getPath("title.multiPlayerForceLegacy").optBool().value(false));
+        m_titleScreen->setMultiPlayerForceLegacy(configuration->getPath("title.multiPlayerForceLegacy").optBool().value_or(false));
         m_titleScreen->goToMultiPlayerSelectCharacter(false);
       } else {
         m_titleScreen->goToMultiPlayerSelectCharacter(true);
@@ -983,7 +983,7 @@ void ClientApplication::changeState(MainAppState newState) {
       m_titleScreen->setMultiPlayerAddress(configuration->getPath("title.multiPlayerAddress").toString());
       m_titleScreen->setMultiPlayerPort(configuration->getPath("title.multiPlayerPort").toString());
       m_titleScreen->setMultiPlayerAccount(configuration->getPath("title.multiPlayerAccount").toString());
-      m_titleScreen->setMultiPlayerForceLegacy(configuration->getPath("title.multiPlayerForceLegacy").optBool().value(false));
+      m_titleScreen->setMultiPlayerForceLegacy(configuration->getPath("title.multiPlayerForceLegacy").optBool().value_or(false));
     }
   }
 
@@ -1020,7 +1020,7 @@ void ClientApplication::changeState(MainAppState newState) {
     if (m_state == MainAppState::MultiPlayer) {
       std::unique_ptr<PacketSocket> packetSocket;
 
-      auto multiPlayerConnection = m_pendingMultiPlayerConnection.take();
+      auto multiPlayerConnection = takeOptional(m_pendingMultiPlayerConnection);
 
       if (auto address = multiPlayerConnection.server.ptr<HostAddressWithPort>()) {
         try {
@@ -1196,7 +1196,7 @@ void ClientApplication::updateMods(float dt) {
 
         auto assets = m_root->assets();
 
-        if (configuration->get("modsWarningShown").optBool().value()) {
+        if (configuration->get("modsWarningShown").optBool().value_or(false)) {
           changeState(MainAppState::Splash);
         } else {
           configuration->set("modsWarningShown", true);
@@ -1321,7 +1321,7 @@ void ClientApplication::updateRunning(float dt) {
     auto p2pNetworkingService = app->p2pNetworkingService();
     bool clientIPJoinable = m_root->configuration()->get("clientIPJoinable").toBool();
     bool clientP2PJoinable = m_root->configuration()->get("clientP2PJoinable").toBool();
-    Maybe<std::pair<std::uint16_t, std::uint16_t>> party = std::make_pair(m_universeClient->players(), m_universeClient->maxPlayers());
+    std::optional<std::pair<std::uint16_t, std::uint16_t>> party = std::make_pair(m_universeClient->players(), m_universeClient->maxPlayers());
 
     if (m_state == MainAppState::MultiPlayer) {
       if (p2pNetworkingService) {
