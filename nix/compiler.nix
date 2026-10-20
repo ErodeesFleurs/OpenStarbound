@@ -6,6 +6,7 @@
   bintools,
   wrapCCWith,
   sanitizers ? false,
+  sanitizerRuntime ? null,
 }:
 let
   version = "23.1.2.9";
@@ -59,6 +60,16 @@ let
       platforms = builtins.attrNames hosts;
     };
   };
+  sanitizerInclude =
+    if sanitizerRuntime != null then
+      "${sanitizerRuntime}/include"
+    else
+      "${toolchain}/${host.triple}/usr/lib/asan/include";
+  sanitizerLibraryDir =
+    if sanitizerRuntime != null then
+      "${sanitizerRuntime}/lib"
+    else
+      "${toolchain}/${host.triple}/usr/lib/asan";
 in
 (wrapCCWith {
   cc = toolchain;
@@ -74,17 +85,20 @@ in
     # Driver configuration keeps these includes C++-only, as in xclang's own
     # target configs, without unused C++ command-line arguments in C probes.
     cat > "$out/nix-support/libcxx-headers.cfg" <<'EOF'
-    ${lib.optionalString sanitizers "-stdlib++-isystem ${toolchain}/${host.triple}/usr/lib/asan/include"}
+    ${lib.optionalString sanitizers "-stdlib++-isystem ${sanitizerInclude}"}
     -stdlib++-isystem ${toolchain}/libc++/include/${host.triple}/c++/v1
     -stdlib++-isystem ${toolchain}/libc++/include/c++/v1
     EOF
     echo "--config=$out/nix-support/libcxx-headers.cfg" >> "$out/nix-support/libcxx-cxxflags"
     echo '-stdlib=libc++ ${
       if sanitizers then
-        "-nostdlib++ ${toolchain}/${host.triple}/usr/lib/asan/libc++.a"
+        "-nostdlib++ ${sanitizerLibraryDir}/libc++.a"
       else
         "-static-libstdc++"
     }' >> "$out/nix-support/libcxx-ldflags"
+    ${lib.optionalString (sanitizers && sanitizerRuntime != null) ''
+      echo '-L${sanitizerLibraryDir}' >> "$out/nix-support/cc-ldflags"
+    ''}
     echo '-L${toolchain}/${host.triple}/usr/lib' >> "$out/nix-support/cc-ldflags"
     cat > "$out/nix-support/cc-wrapper-hook" <<'EOF'
     if [[ "$dontLink" != 1 ]]; then
@@ -135,5 +149,6 @@ in
       bundledRuntime = toolchain;
       xclangVersion = version;
       inherit sanitizers;
+      inherit sanitizerRuntime;
     };
   })

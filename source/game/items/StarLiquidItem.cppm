@@ -1,4 +1,6 @@
 module;
+import std;
+import star.type_identity;
 import star.json;
 import star.id_map;
 import star.casting;
@@ -91,6 +93,13 @@ export namespace Star {
 
 class LiquidItem : public Item, public FireableItem, public PreviewTileTool, public BeamItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<LiquidItem, Item, FireableItem, PreviewTileTool, BeamItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<LiquidItem>();
+  }
+
   LiquidItem(Root& root, Json const& config, String const& directory, Json const& settings);
   virtual ~LiquidItem() {}
 

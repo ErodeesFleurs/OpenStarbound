@@ -16,7 +16,7 @@ target_include_directories (star_core PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_COR
 add_library (star_modules STATIC)
 target_sources (star_modules PUBLIC FILE_SET CXX_MODULES
     FILES StarVlqEncoding.cppm StarCurve25519.cppm
-          StarBTree.cppm StarCasting.cppm StarStrongTypedef.cppm
+          StarBTree.cppm StarCasting.cppm StarStrongTypedef.cppm StarTypeIdentity.cppm
           StarDataStreamDevices.cppm StarDataStreamExtra.cppm
           StarJsonExtra.cppm StarLuaConverters.cppm StarNetImpl.cppm
           scripting/StarUtilityLuaBindings.cppm

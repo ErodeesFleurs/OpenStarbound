@@ -2,6 +2,7 @@ module;
 
 import std;
 import star.format;
+import star.type_identity;
 
 namespace Star {
 
@@ -103,7 +104,7 @@ private:
     std::allocator<T> multiAllocator;
   };
 
-  typedef std::unordered_map<std::type_index, std::shared_ptr<void>> BlockAllocatorFamily;
+  typedef std::unordered_map<TypeKey, std::shared_ptr<void>> BlockAllocatorFamily;
 
   static Data* getAllocatorData(BlockAllocatorFamily& family);
 
@@ -275,7 +276,8 @@ auto BlockAllocator<T, BlockSize>::Block::chunkPointer(ChunkIndex chunkIndex) ->
 
 template <typename T, std::size_t BlockSize>
 typename BlockAllocator<T, BlockSize>::Data* BlockAllocator<T, BlockSize>::getAllocatorData(BlockAllocatorFamily& family) {
-  auto& dataptr = family[typeid(Data)];
+  // Keep each complete Data specialization distinct within the shared family.
+  auto& dataptr = family[typeKey<Data>()];
   if (!dataptr)
     dataptr = std::make_shared<Data>();
   return (Data*)dataptr.get();

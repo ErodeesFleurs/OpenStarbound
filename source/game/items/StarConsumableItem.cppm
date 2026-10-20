@@ -1,4 +1,6 @@
 module;
+import std;
+import star.type_identity;
 import star.json;
 import star.json_extra;
 import star.math_common;
@@ -94,6 +96,13 @@ export namespace Star {
 
 class ConsumableItem : public Item, public SwingableItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ConsumableItem, Item, SwingableItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ConsumableItem>();
+  }
+
   ConsumableItem(Root& root, Json const& config, String const& directory, Json const& data);
 
   std::shared_ptr<Item> clone() const override;

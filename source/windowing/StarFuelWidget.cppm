@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.casting;
@@ -49,6 +50,13 @@ namespace Star {
 
 class FuelWidget : public Widget {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<FuelWidget, Widget>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<FuelWidget>();
+  }
+
   FuelWidget(GuiContext& context);
   virtual ~FuelWidget() {}
 

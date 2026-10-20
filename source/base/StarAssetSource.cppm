@@ -6,6 +6,7 @@ import star.string;
 import star.format;
 import star.json;
 import star.io_device;
+import star.type_identity;
 
 namespace Star {
 
@@ -20,6 +21,14 @@ using AssetSourceException = StarError<AssetSourceExceptionTag, StarException>;
 class AssetSource {
 public:
   virtual ~AssetSource() = default;
+
+  virtual void const* queryType(TypeKey key) const noexcept {
+    return queryTypeOf<AssetSource>(this, key);
+  }
+
+  virtual std::string_view dynamicTypeName() const noexcept {
+    return Star::typeName<AssetSource>();
+  }
 
   // An asset source can have arbitrary metadata attached.
   virtual JsonObject metadata() const = 0;

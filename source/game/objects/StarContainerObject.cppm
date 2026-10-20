@@ -1,6 +1,7 @@
 module;
 import star.game_timers;
 import std;
+import star.type_identity;
 import star.memory;
 import star.json;
 import star.id_map;
@@ -73,6 +74,13 @@ class Root;
 
 class ContainerObject : public Object, public virtual ContainerEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ContainerObject, Object, ContainerEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ContainerObject>();
+  }
+
   ContainerObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters);
 
   void init(World* world, EntityId entityId, EntityMode mode) override;

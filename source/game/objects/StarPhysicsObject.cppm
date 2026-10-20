@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.json_extra;
 import star.id_map;
@@ -75,6 +76,13 @@ class Root;
 
 class PhysicsObject : public Object, public virtual PhysicsEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<PhysicsObject, Object, PhysicsEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<PhysicsObject>();
+  }
+
   PhysicsObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters = Json());
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;

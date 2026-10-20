@@ -894,7 +894,8 @@ namespace Dungeon {
 
         return false;
       });
-    } catch (std::exception& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       throw DungeonException(strf("Exception {} in connector {}", outputException(e, true), m_name));
     }
   }
@@ -927,7 +928,8 @@ namespace Dungeon {
         }
         return false;
       });
-    } catch (std::exception& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       throw DungeonException(strf("Exception {} in part {}", outputException(e, true), m_name));
     }
 
@@ -1385,7 +1387,8 @@ std::shared_ptr<DungeonDefinition> DungeonDefinitions::readDefinition(String con
   try {
     auto assets = this->root().assets();
     return std::make_shared<DungeonDefinition>(this->root(), assets->json(path).toObject(), AssetPath::directory(path));
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     throw DungeonException::format("Error loading dungeon '{}': {}", path, outputException(e, false));
   }
 }
@@ -1502,7 +1505,8 @@ Maybe<std::pair<List<RectI>, Set<Vec2I>>> DungeonGenerator::generate(std::shared
       this->root().logger().debug("Failed to place dungeon {} at {}", name, position);
       return {};
     }
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     throw DungeonException(strf("Error generating dungeon named '{}'", name), e);
   }
 }

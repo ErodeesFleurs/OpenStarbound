@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.data_stream_extra;
 import star.id_map;
@@ -108,6 +109,15 @@ class Monster
     public virtual InteractiveEntity,
     public virtual ActorEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<Monster, DamageBarEntity, AggressiveEntity, ScriptedEntity,
+        PhysicsEntity, NametagEntity, ChattyEntity, InteractiveEntity,
+        ActorEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<Monster>();
+  }
+
   struct SkillInfo {
     String label;
     String image;

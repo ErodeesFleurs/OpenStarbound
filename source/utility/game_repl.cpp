@@ -81,7 +81,8 @@ int main(int argc, char** argv) {
       continuation = false;
     } catch (LuaIncompleteStatementException const&) {
       continuation = true;
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       coutf("Error: {}\n", outputException(e, false));
       continuation = false;
     }

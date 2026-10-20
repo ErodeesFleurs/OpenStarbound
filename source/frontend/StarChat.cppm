@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -56,6 +57,13 @@ class CanvasWidget;
 
 class Chat : public BaseScriptPane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<Chat, BaseScriptPane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<Chat>();
+  }
+
   Chat(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, Json const&);
 
   void startChat();

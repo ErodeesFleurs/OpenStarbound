@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -64,6 +65,13 @@ class BindingsMenu;
 
 class OptionsMenu : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<OptionsMenu, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<OptionsMenu>();
+  }
+
   OptionsMenu(GuiContext& guiContext, PaneManager* manager, std::shared_ptr<UniverseClient> client);
 
   virtual void show() override;

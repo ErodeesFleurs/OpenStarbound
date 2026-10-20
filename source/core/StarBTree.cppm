@@ -2,6 +2,7 @@ module;
 import std;
 import star.list;
 import star.maybe;
+import star.format;
 
 namespace Star {
 
@@ -124,7 +125,7 @@ public:
 
   // Recover all key value pairs possible, catching exceptions during scan and
   // reading as much data as possible.  Visitor is called as visitor(key, data),
-  // ErrorHandler is called as error(char const*, std::exception const&)
+  // ErrorHandler is called as error(char const*, ExceptionDiagnostic const&)
   template <typename Visitor, typename ErrorHandler>
   void recoverAll(Visitor&& visitor, ErrorHandler&& error);
 
@@ -305,7 +306,8 @@ void BTreeMixin<Base>::recoverAll(Visitor&& visitor, ErrorHandler&& error) {
       recoverAll(Base::loadLeaf(Base::rootPointer()), std::forward<Visitor>(visitor), std::forward<ErrorHandler>(error));
     else
       recoverAll(Base::loadIndex(Base::rootPointer()), std::forward<Visitor>(visitor), std::forward<ErrorHandler>(error));
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     error("Error loading root index or leaf node", e);
   }
 }
@@ -562,18 +564,21 @@ void BTreeMixin<Base>::recoverAll(Index const& index, Visitor&& visitor, ErrorHa
       if (Base::indexLevel(index) == 0) {
         try {
           recoverAll(Base::loadLeaf(Base::indexPointer(index, i)), std::forward<Visitor>(visitor), std::forward<ErrorHandler>(error));
-        } catch (std::exception const& e) {
+        } catch (std::exception const&) {
+          ExceptionDiagnostic const e(std::current_exception());
           error("Error loading leaf node", e);
         }
       } else {
         try {
           recoverAll(Base::loadIndex(Base::indexPointer(index, i)), std::forward<Visitor>(visitor), std::forward<ErrorHandler>(error));
-        } catch (std::exception const& e) {
+        } catch (std::exception const&) {
+          ExceptionDiagnostic const e(std::current_exception());
           error("Error loading index node", e);
         }
       }
     }
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     error("Error reading index node", e);
   }
 }
@@ -586,7 +591,8 @@ void BTreeMixin<Base>::recoverAll(Leaf const& leaf, Visitor&& visitor, ErrorHand
       Key currentKey = Base::leafKey(leaf, i);
       visitor(Base::leafKey(leaf, i), Base::leafData(leaf, i));
     }
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     error("Error reading leaf node", e);
   }
 }

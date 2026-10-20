@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.string;
 import star.map;
 import star.json;
@@ -49,6 +50,9 @@ class RandomService;
 
 class CelestialDatabase {
 public:
+  virtual void const* queryType(TypeKey key) const noexcept { return queryTypeOf<CelestialDatabase>(this, key); }
+  virtual std::string_view dynamicTypeName() const noexcept { return Star::typeName<CelestialDatabase>(); }
+
   virtual ~CelestialDatabase();
 
   // The x/y region of usable worlds.
@@ -104,6 +108,9 @@ protected:
 
 class CelestialMasterDatabase : public CelestialDatabase {
 public:
+  void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<CelestialMasterDatabase, CelestialDatabase>(this, key); }
+  std::string_view dynamicTypeName() const noexcept override { return Star::typeName<CelestialMasterDatabase>(); }
+
   explicit CelestialMasterDatabase(Root& root, Maybe<String> databaseFile = {});
 
   CelestialBaseInformation baseInformation() const;
@@ -224,6 +231,9 @@ protected:
 
 class CelestialSlaveDatabase : public CelestialDatabase {
 public:
+  void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<CelestialSlaveDatabase, CelestialDatabase>(this, key); }
+  std::string_view dynamicTypeName() const noexcept override { return Star::typeName<CelestialSlaveDatabase>(); }
+
   CelestialSlaveDatabase(std::shared_ptr<Assets const> const& assets, RandomService& random, CelestialBaseInformation baseInformation);
 
   // Signal that the given region should be requested from the master database.

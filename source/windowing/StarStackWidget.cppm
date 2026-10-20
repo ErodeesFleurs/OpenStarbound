@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.casting;
@@ -50,6 +51,13 @@ namespace Star {
 
 class StackWidget : public Widget {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<StackWidget, Widget>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<StackWidget>();
+  }
+
   explicit StackWidget(GuiContext& context) : Widget(context) {}
 
   void showPage(std::size_t page);

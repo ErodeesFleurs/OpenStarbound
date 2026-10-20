@@ -41,6 +41,24 @@ std::string strf(S const& fmt, T&&... args);
 template <typename Char, typename... T>
 std::string strfChecked(std::basic_format_string<Char, T...> fmt, T const&... args);
 
+class StarException;
+
+// An owning diagnostic captured before an exception's static type is erased.
+// exception_ptr is classified by the exception-handling machinery, not RTTI.
+// A bare std::exception reference cannot identify an arbitrary dynamic object.
+class ExceptionDiagnostic {
+public:
+  ExceptionDiagnostic(StarException const& exception);
+  ExceptionDiagnostic(std::exception_ptr exception);
+
+  friend void printException(std::ostream& os, ExceptionDiagnostic const& e, bool fullStacktrace);
+  friend OutputProxy outputException(ExceptionDiagnostic const& e, bool fullStacktrace);
+
+private:
+  friend class StarException;
+  std::function<void(std::ostream&, bool)> m_printException;
+};
+
 class StarException : public std::exception {
 public:
   template <typename... Args>
@@ -53,20 +71,16 @@ public:
   virtual ~StarException() noexcept;
 
   explicit StarException(std::string message, bool genStackTrace = true) noexcept;
-  explicit StarException(std::exception const& cause) noexcept;
-  StarException(std::string message, std::exception const& cause) noexcept;
+  explicit StarException(ExceptionDiagnostic cause) noexcept;
+  StarException(std::string message, ExceptionDiagnostic cause) noexcept;
 
   virtual char const* what() const noexcept override;
 
-  // If the given exception is really StarException, then this will call
-  // StarException::printException, otherwise just prints std::exception::what.
-  friend void printException(std::ostream& os, std::exception const& e, bool fullStacktrace);
-  friend std::string printException(std::exception const& e, bool fullStacktrace);
-  friend OutputProxy outputException(std::exception const& e, bool fullStacktrace);
+  friend class ExceptionDiagnostic;
 
 protected:
   StarException(char const* type, std::string message, bool genStackTrace = true) noexcept;
-  StarException(char const* type, std::string message, std::exception const& cause) noexcept;
+  StarException(char const* type, std::string message, ExceptionDiagnostic cause) noexcept;
 
 private:
   // Takes the ostream to print to, whether to print the full stacktrace.  Must
@@ -79,16 +93,16 @@ private:
   mutable std::string m_whatBuffer;
 };
 
-void printException(std::ostream& os, std::exception const& e, bool fullStacktrace);
-std::string printException(std::exception const& e, bool fullStacktrace);
-OutputProxy outputException(std::exception const& e, bool fullStacktrace);
+void printException(std::ostream& os, ExceptionDiagnostic const& e, bool fullStacktrace);
+std::string printException(ExceptionDiagnostic const& e, bool fullStacktrace);
+OutputProxy outputException(ExceptionDiagnostic const& e, bool fullStacktrace);
 
 void printStack(char const* message);
 
 // Log error and stack-trace and possibly show a dialog box if available, then
 // abort.
 void fatalError(char const* message, bool showStackTrace);
-void fatalException(std::exception const& e, bool showStackTrace);
+void fatalException(ExceptionDiagnostic const& e, bool showStackTrace);
 
 // The file and line of an assertion are a language construct now
 // (std::source_location) instead of __FILE__/__LINE__ stringification.
@@ -144,14 +158,14 @@ public:
   StarError() : Base(Tag::name(), std::string(), true) {}
   explicit StarError(std::string message, bool genStackTrace = true)
     : Base(Tag::name(), std::move(message), genStackTrace) {}
-  explicit StarError(std::exception const& cause) : Base(Tag::name(), std::string(), cause) {}
-  StarError(std::string message, std::exception const& cause) : Base(Tag::name(), std::move(message), cause) {}
+  explicit StarError(ExceptionDiagnostic cause) : Base(Tag::name(), std::string(), std::move(cause)) {}
+  StarError(std::string message, ExceptionDiagnostic cause) : Base(Tag::name(), std::move(message), std::move(cause)) {}
 
 protected:
   StarError(char const* type, std::string message, bool genStackTrace = true)
     : Base(type, std::move(message), genStackTrace) {}
-  StarError(char const* type, std::string message, std::exception const& cause)
-    : Base(type, std::move(message), cause) {}
+  StarError(char const* type, std::string message, ExceptionDiagnostic cause)
+    : Base(type, std::move(message), std::move(cause)) {}
 };
 
 struct OutOfRangeExceptionTag {
@@ -288,6 +302,7 @@ using ::Star::DebugEnabled;
 using ::Star::IsFormatStringType;
 using ::Star::HasUtf8Ptr;
 using ::Star::RuntimeFormatString;
+using ::Star::ExceptionDiagnostic;
 using ::Star::StarException;
 using ::Star::StarError;
 using ::Star::OutOfRangeExceptionTag;

@@ -416,7 +416,8 @@ ObjectDatabase::ObjectDatabase(Root& root)
         m_root.logger().error("Object {} defined twice, second time from {}", name, file);
       else
         m_paths[name] = file;
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       m_root.logger().error("Error loading object file {}: {}", file, outputException(e, true));
     }
   }
@@ -482,7 +483,8 @@ std::shared_ptr<Object> ObjectDatabase::diskLoadObject(Json const& diskStore) co
     object = createObject(newStore.getString("name"), newStore.get("parameters"));
     object->readStoredData(newStore);
     object->setNetStates();
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     object.reset();
     auto error = strf("{}", outputException(e, false));
     bool success = m_rebuilder->rebuild(newStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
@@ -490,7 +492,8 @@ std::shared_ptr<Object> ObjectDatabase::diskLoadObject(Json const& diskStore) co
         object = createObject(store.getString("name"), store.get("parameters"));
         object->readStoredData(store);
         object->setNetStates();
-      } catch (std::exception const& e) {
+      } catch (std::exception const&) {
+        ExceptionDiagnostic const e(std::current_exception());
         object.reset();
         return strf("{}", outputException(e, false));
       }
@@ -683,7 +686,8 @@ std::shared_ptr<ObjectConfig> ObjectDatabase::readConfig(String const& path) con
     objectConfig->biomePlaced = config.getBool("biomePlaced", false);
 
     return objectConfig;
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     throw ObjectException::format("Error loading object '{}': {}", path, outputException(e, false));
   }
 }

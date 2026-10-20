@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.id_map;
 import star.game_types;
@@ -25,6 +26,13 @@ class ActorMovementController;
 // theres potentially more things shared that could be moved here
 class ActorEntity : public virtual MobileEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ActorEntity, MobileEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ActorEntity>();
+  }
+
   virtual ActorMovementController* movementController() override = 0;
   virtual StatusController* statusController() = 0;
 };

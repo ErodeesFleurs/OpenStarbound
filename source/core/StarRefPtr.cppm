@@ -2,6 +2,8 @@ module;
 import std;
 import star.format;
 import star.hash;
+import star.casting;
+import star.type_identity;
 
 namespace Star {
 
@@ -100,6 +102,13 @@ class RefCounter {
 public:
   friend void refPtrIncRef(RefCounter* p);
   friend void refPtrDecRef(RefCounter* p);
+
+  virtual void const* queryType(TypeKey key) const noexcept {
+    return queryTypeOf<RefCounter>(this, key);
+  }
+  virtual std::string_view dynamicTypeName() const noexcept {
+    return typeName<RefCounter>();
+  }
 
 protected:
   RefCounter();
@@ -257,22 +266,22 @@ bool operator<(RefPtr<T> const& a, RefPtr<U> const& b) {
 
 template <typename Type1, typename Type2>
 bool is(RefPtr<Type2> const& p) {
-  return (bool)dynamic_cast<Type1*>(p.get());
+  return Star::is<Type1>(p.get());
 }
 
 template <typename Type1, typename Type2>
 bool is(RefPtr<Type2 const> const& p) {
-  return (bool)dynamic_cast<Type1 const*>(p.get());
+  return Star::is<Type1>(p.get());
 }
 
 template <typename Type1, typename Type2>
 RefPtr<Type1> as(RefPtr<Type2> const& p) {
-  return RefPtr<Type1>(dynamic_cast<Type1*>(p.get()));
+  return RefPtr<Type1>(Star::as<Type1>(p.get()));
 }
 
 template <typename Type1, typename Type2>
 RefPtr<Type1 const> as(RefPtr<Type2 const> const& p) {
-  return RefPtr<Type1>(dynamic_cast<Type1 const*>(p.get()));
+  return RefPtr<Type1 const>(Star::as<Type1>(p.get()));
 }
 
 template <typename T, typename... Args>

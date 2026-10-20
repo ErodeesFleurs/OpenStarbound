@@ -790,7 +790,8 @@ void UniverseServer::run() {
       handleUniverseMessages();
       shutdownInactiveWorlds();
       doTriggeredStorage();
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       m_root.logger().error("UniverseServer: exception caught: {}", outputException(e, true));
     }
 
@@ -828,7 +829,8 @@ void UniverseServer::run() {
       world->close();
     m_retiringWorlds.clear();
     m_celestialDatabase->close();
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_root.logger().error("UniverseServer: exception caught cleaning up: {}", outputException(e, true));
   }
 }
@@ -1075,7 +1077,8 @@ void UniverseServer::reapConnections() {
       if (!function.isRunning()) {
         try {
           function.finish();
-        } catch (std::exception const& e) {
+        } catch (std::exception const&) {
+          ExceptionDiagnostic const e(std::current_exception());
           m_root.logger().error("UniverseServer: Exception caught accepting new connection: {}", outputException(e, true));
         }
       }
@@ -1757,7 +1760,8 @@ void UniverseServer::loadSettings() {
       m_universeSettings = std::make_shared<UniverseSettings>(m_root, settings);
       m_universeClock = std::make_shared<Clock>();
       m_universeClock->setTime(settings.getDouble("time"));
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       m_root.logger().error("UniverseServer: Could not load universe settings file, loading defaults {}", outputException(e, false));
       File::rename(storageFile, strf("{}.{}.fail", storageFile, Time::millisecondsSinceEpoch()));
       loadDefaultSettings();
@@ -1865,7 +1869,8 @@ void UniverseServer::loadTempWorldIndex() {
         std::pair<std::uint64_t, std::uint64_t> deleteTime = {p.second.get(0).toUInt(), p.second.get(1).toUInt()};
         m_tempWorldIndex.insert(worldId.get<InstanceWorldId>(), deleteTime);
       }
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       m_root.logger().error("UniverseServer: Could not load temp world index file", outputException(e, false));
       File::rename(storageFile, strf("{}.{}.fail", storageFile, Time::millisecondsSinceEpoch()));
     }
@@ -2417,7 +2422,8 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
     try {
       auto contextStore = versioningDatabase->loadVersionedJson(VersionedJson::readFile(clientContextFile), "ClientContext");
       clientContext->loadServerData(contextStore);
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       m_root.logger().error("UniverseServer: Could not load client context file for <User: {}>, ignoring! {}",
                     clientConnect->playerName, outputException(e, false));
       File::rename(clientContextFile, strf("{}.{}.fail", clientContextFile, Time::millisecondsSinceEpoch()));
@@ -2722,7 +2728,8 @@ std::shared_ptr<WorldServerThread> UniverseServer::getWorld(WorldId const& world
         return {};
 
       return maybeWorldPromise->get();
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       maybeWorldPromise.reset();
       m_root.logger().error("UniverseServer: error during world create: {}", outputException(e, true));
       worldDiedWithError(worldId);
@@ -2745,7 +2752,8 @@ std::shared_ptr<WorldServerThread> UniverseServer::createWorld(WorldId const& wo
     return {};
   try {
     return maybeWorldPromise->get();
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     maybeWorldPromise.reset();
     m_root.logger().error("UniverseServer: error during world create: {}", outputException(e, true));
     worldDiedWithError(worldId);
@@ -2773,7 +2781,8 @@ Maybe<std::shared_ptr<WorldServerThread>> UniverseServer::triggerWorldCreation(W
         return {};
 
       return maybeWorldPromise->get();
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       maybeWorldPromise.reset();
       m_root.logger().error("UniverseServer: error during world create: {}", outputException(e, true));
       worldDiedWithError(worldId);
@@ -2816,7 +2825,8 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::shipWorldPromise(
       try {
         m_root.logger().info("UniverseServer: Loading client ship world {}", clientShipWorldId);
         shipWorld = std::make_shared<WorldServer>(m_root, shipChunks);
-      } catch (std::exception const& e) {
+      } catch (std::exception const&) {
+        ExceptionDiagnostic const e(std::current_exception());
         m_root.logger().error("UniverseServer: Could not load client ship {}, resetting ship to default state! {}",
                       clientShipWorldId, outputException(e, false));
       }
@@ -2901,7 +2911,8 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::celestialWorldPromise(
       try {
         m_root.logger().info("UniverseServer: Loading celestial world {}", celestialWorldId);
         worldServer = std::make_shared<WorldServer>(m_root, File::open(storageFile, IOMode::ReadWrite));
-      } catch (std::exception const& e) {
+      } catch (std::exception const&) {
+        ExceptionDiagnostic const e(std::current_exception());
         m_root.logger().error("UniverseServer: Could not load celestial world {}, removing! Cause: {}",
                       celestialWorldId, outputException(e, false));
         File::rename(storageFile, strf("{}.{}.fail", storageFile, Time::millisecondsSinceEpoch()));
@@ -2983,7 +2994,8 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::instanceWorldPromise(I
           m_root.logger().info("UniverseServer: Loading persistent unique instance world {}", instanceWorldId.instance);
           worldServer = std::make_shared<WorldServer>(m_root, File::open(storageFile, IOMode::ReadWrite));
           worldExisted = true;
-        } catch (std::exception const& e) {
+        } catch (std::exception const&) {
+          ExceptionDiagnostic const e(std::current_exception());
           m_root.logger().error("UniverseServer: Could not load persistent unique instance world {}, removing! Cause: {}",
                         instanceWorldId.instance, outputException(e, false));
           File::rename(storageFile, strf("{}.{}.fail", storageFile, Time::millisecondsSinceEpoch()));
@@ -3005,7 +3017,8 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::instanceWorldPromise(I
             try {
               worldServer = std::make_shared<WorldServer>(m_root, file);
               worldExisted = true;
-            } catch (std::exception const& e) {
+            } catch (std::exception const&) {
+              ExceptionDiagnostic const e(std::current_exception());
               m_root.logger().error("UniverseServer: Could not load temporary instance world '{}', re-creating cause: {}",
                             instanceWorldId, outputException(e, false));
             }
@@ -3230,7 +3243,8 @@ std::shared_ptr<SystemWorldServerThread> UniverseServer::createSystemWorld(Vec3I
 
         systemWorld = std::make_shared<SystemWorldServer>(m_root, store, m_universeClock, m_celestialDatabase);
         loadedFromStorage = true;
-      } catch (std::exception const& e) {
+      } catch (std::exception const&) {
+        ExceptionDiagnostic const e(std::current_exception());
         m_root.logger().error("UniverseServer: Failed to load system {} from disk storage, re-creating. Cause: {}", location, outputException(e, false));
         File::rename(storageFile, strf("{}.{}.fail", storageFile, Time::millisecondsSinceEpoch()));
         loadedFromStorage = false;

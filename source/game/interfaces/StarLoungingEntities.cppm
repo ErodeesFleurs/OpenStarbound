@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.set;
 import star.maybe;
 import star.json;
@@ -45,6 +46,13 @@ enum class LoungeControl { Left, Right, Down, Up, Jump, PrimaryFire, AltFire, Sp
 extern EnumMap<LoungeControl> const LoungeControlNames;
 
 struct LoungeAnchor : EntityAnchor {
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<LoungeAnchor, EntityAnchor>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<LoungeAnchor>();
+  }
+
   LoungeOrientation orientation;
   EntityRenderLayer loungeRenderLayer;
   bool controllable;
@@ -64,6 +72,13 @@ struct LoungeAnchor : EntityAnchor {
 // may be called on both the master and slave.
 class LoungeableEntity : public AnchorableEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<LoungeableEntity, AnchorableEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<LoungeableEntity>();
+  }
+
   virtual std::size_t anchorCount() const override = 0;
   std::shared_ptr<EntityAnchor const> anchor(std::size_t anchorPositionIndex) const override;
   virtual std::shared_ptr<LoungeAnchor const> loungeAnchor(std::size_t anchorPositionIndex) const = 0;
@@ -85,6 +100,13 @@ public:
 // in the same spot.
 class LoungingEntity : public virtual Entity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<LoungingEntity, Entity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<LoungingEntity>();
+  }
+
   virtual Maybe<EntityAnchorState> loungingIn() const = 0;
   // Returns true if the entity is in a lounge achor, but other entities are
   // also reporting being in that lounge anchor.

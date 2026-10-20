@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.id_map;
 import star.maybe;
@@ -28,6 +29,13 @@ class ActorMovementController;
 // A base for 'mobile' entities, which all have a MovementController.
 class MobileEntity : public virtual Entity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<MobileEntity, Entity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<MobileEntity>();
+  }
+
   virtual MovementController* movementController() = 0;
 };
 }

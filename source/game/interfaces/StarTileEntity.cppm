@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.string;
 import star.json;
 import star.id_map;
@@ -52,6 +53,13 @@ DataStream& operator>>(DataStream& ds, MaterialSpace& materialSpace);
 // tile grid, and occupy tile spaces, possibly affecting collision.
 class TileEntity : public virtual InteractiveEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<TileEntity, InteractiveEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<TileEntity>();
+  }
+
   TileEntity();
 
   // position() here is simply the tilePosition (but Vec2F)

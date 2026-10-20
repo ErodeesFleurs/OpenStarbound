@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -53,6 +54,13 @@ namespace Star {
 
 class ListWidget : public Widget {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ListWidget, Widget>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ListWidget>();
+  }
+
   ListWidget(GuiContext& context, Json const& schema);
   ListWidget(GuiContext& context);
 

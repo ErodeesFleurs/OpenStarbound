@@ -386,7 +386,8 @@ BushVariant PlantDatabase::buildBushVariant(String const& bushName, float baseHu
 std::shared_ptr<Plant> PlantDatabase::createPlant(TreeVariant const& treeVariant, std::uint64_t seed) const {
   try {
     return std::make_shared<Plant>(m_root, treeVariant, seed);
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     throw PlantDatabaseException(strf("Error constructing plant from tree variant stem: {} foliage: {}", treeVariant.stemName, treeVariant.foliageName), e);
   }
 }
@@ -394,7 +395,8 @@ std::shared_ptr<Plant> PlantDatabase::createPlant(TreeVariant const& treeVariant
 std::shared_ptr<Plant> PlantDatabase::createPlant(GrassVariant const& grassVariant, std::uint64_t seed) const {
   try {
     return std::make_shared<Plant>(m_root, grassVariant, seed);
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     throw PlantDatabaseException(strf("Error constructing plant from grass variant name: {}", grassVariant.name), e);
   }
 }
@@ -402,7 +404,8 @@ std::shared_ptr<Plant> PlantDatabase::createPlant(GrassVariant const& grassVaria
 std::shared_ptr<Plant> PlantDatabase::createPlant(BushVariant const& bushVariant, std::uint64_t seed) const {
   try {
     return std::make_shared<Plant>(m_root, bushVariant, seed);
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     throw PlantDatabaseException(
         strf("Error constructing plant from bush variant name: {} mod: {}", bushVariant.bushName, bushVariant.modName),
         e);

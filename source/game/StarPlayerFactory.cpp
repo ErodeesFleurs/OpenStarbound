@@ -159,12 +159,14 @@ std::shared_ptr<Player> PlayerFactory::diskLoadPlayer(Json const& diskStore) con
   std::shared_ptr<Player> player;
   try {
     player = std::make_shared<Player>(m_root, m_config, diskStore);
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     auto exception = std::current_exception();
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
       try {
         player = std::make_shared<Player>(m_root, m_config, store);
-      } catch (std::exception const& e) {
+      } catch (std::exception const&) {
+        ExceptionDiagnostic const e(std::current_exception());
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
       }

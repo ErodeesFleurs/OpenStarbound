@@ -1118,7 +1118,8 @@ Json Assets::readJson(String const& path) const {
   ByteArray streamData = read(path);
   try {
     return applyJsonPatches(inputUtf8Json(streamData.begin(), streamData.end(), JsonParseType::Top), path, m_files.get(path).patchSources);
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     throw JsonParsingException(strf("Cannot parse json file: {}", path), e);
   }
 }
@@ -1159,7 +1160,8 @@ Json Assets::applyJsonPatches(Json const& input, String const& path, List<std::p
         } else if (patchJson.isType(Json::Type::Object)) {
           result = jsonMergeNulling(result, patchJson.toObject());
         }
-      } catch (std::exception const& e) {
+      } catch (std::exception const&) {
+        ExceptionDiagnostic const e(std::current_exception());
         throw JsonParsingException(strf("Cannot parse json patch file: {} in source {}", patchBasePath, patchSource->metadata().value("name", "")), e);
       }
     }
@@ -1172,7 +1174,8 @@ bool Assets::doLoad(AssetId const& id) const {
     // loadAsset automatically manages the queue and freshens the asset
     // data.
     return (bool)loadAsset(id);
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_logger.error("Exception caught loading asset: {}, {}", id.path, outputException(e, true));
   } catch (...) {
     m_logger.error("Unknown exception caught loading asset: {}", id.path);
@@ -1192,7 +1195,8 @@ bool Assets::doPost(AssetId const& id) const {
     assetData = m_assetsCache.get(id);
     if (id.type == AssetType::Audio)
       assetData = postProcessAudio(assetData);
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_logger.error("Exception caught post-processing asset: {}, {}", id.path, outputException(e, true));
   } catch (...) {
     m_logger.error("Unknown exception caught post-processing asset: {}", id.path);

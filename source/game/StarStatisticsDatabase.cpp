@@ -44,7 +44,8 @@ StatisticsDatabase::StatisticsDatabase(Root& root)
         logger.error("Event {} defined twice, second time from {}", name, file);
       else
         m_eventPaths[name] = file;
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       logger.error("Error loading event file {}: {}", file, outputException(e, true));
     }
   }
@@ -61,7 +62,8 @@ StatisticsDatabase::StatisticsDatabase(Root& root)
       for (Json const& stat : achievement.getArray("triggers", {})) {
         m_statAchievements[stat.toString()].append(name);
       }
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       logger.error("Error loading achievement file {}: {}", file, outputException(e, true));
     }
   }

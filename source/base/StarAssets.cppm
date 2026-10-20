@@ -20,6 +20,7 @@ import star.string_view;
 import star.directives;
 import star.asset_path;
 import star.ref_ptr;
+import star.type_identity;
 
 import star.asset_source;
 import star.font;
@@ -120,6 +121,14 @@ public:
   struct AssetData {
     virtual ~AssetData() = default;
 
+    virtual void const* queryType(TypeKey key) const noexcept {
+      return queryTypeOf<AssetData>(this, key);
+    }
+
+    virtual std::string_view dynamicTypeName() const noexcept {
+      return Star::typeName<AssetData>();
+    }
+
     // Should return true if this asset is shared and still in use, so freeing
     // it from cache will not really free the resource, so it should persist in
     // the cache.
@@ -131,6 +140,14 @@ public:
   };
 
   struct JsonData : AssetData {
+    void const* queryType(TypeKey key) const noexcept override {
+      return queryTypeOf<JsonData, AssetData>(this, key);
+    }
+
+    std::string_view dynamicTypeName() const noexcept override {
+      return Star::typeName<JsonData>();
+    }
+
     bool shouldPersist() const override;
 
     Json json;
@@ -138,6 +155,14 @@ public:
 
   // Image data for an image, sub-frame, or post-processed image.
   struct ImageData : AssetData {
+    void const* queryType(TypeKey key) const noexcept override {
+      return queryTypeOf<ImageData, AssetData>(this, key);
+    }
+
+    std::string_view dynamicTypeName() const noexcept override {
+      return Star::typeName<ImageData>();
+    }
+
     bool shouldPersist() const override;
 
     std::shared_ptr<Image const> image;
@@ -153,18 +178,42 @@ public:
   };
 
   struct AudioData : AssetData {
+    void const* queryType(TypeKey key) const noexcept override {
+      return queryTypeOf<AudioData, AssetData>(this, key);
+    }
+
+    std::string_view dynamicTypeName() const noexcept override {
+      return Star::typeName<AudioData>();
+    }
+
     bool shouldPersist() const override;
 
     std::shared_ptr<Audio const> audio;
   };
 
   struct FontData : AssetData {
+    void const* queryType(TypeKey key) const noexcept override {
+      return queryTypeOf<FontData, AssetData>(this, key);
+    }
+
+    std::string_view dynamicTypeName() const noexcept override {
+      return Star::typeName<FontData>();
+    }
+
     bool shouldPersist() const override;
 
     std::shared_ptr<Font const> font;
   };
 
   struct BytesData : AssetData {
+    void const* queryType(TypeKey key) const noexcept override {
+      return queryTypeOf<BytesData, AssetData>(this, key);
+    }
+
+    std::string_view dynamicTypeName() const noexcept override {
+      return Star::typeName<BytesData>();
+    }
+
     bool shouldPersist() const override;
 
     std::shared_ptr<ByteArray const> bytes;

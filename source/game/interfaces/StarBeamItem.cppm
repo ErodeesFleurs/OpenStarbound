@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.set;
 import star.json;
 import star.id_map;
@@ -85,6 +86,13 @@ class World;
 
 class BeamItem : public virtual NonRotatedDrawablesItem, public virtual ToolUserItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<BeamItem, NonRotatedDrawablesItem, ToolUserItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<BeamItem>();
+  }
+
   enum class EndType { Invalid = -1, Object, Tile, TileGroup, Wire };
 
   BeamItem(Root& root, Json config);

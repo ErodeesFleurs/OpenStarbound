@@ -241,7 +241,8 @@ void TcpServer::setAcceptCallback(AcceptCallback callback, unsigned timeout) {
             if (!m_listenSocket->isActive())
               break;
           }
-        } catch (std::exception const& e) {
+        } catch (std::exception const&) {
+          ExceptionDiagnostic const e(std::current_exception());
           m_logger.error("TcpServer will close, listener thread caught exception:  {}", outputException(e, true));
           m_listenSocket->close();
         }

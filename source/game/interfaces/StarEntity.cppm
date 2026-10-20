@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.string;
 import star.list;
 import star.maybe;
@@ -70,6 +71,13 @@ extern EnumMap<EntityType> const EntityTypeNames;
 
 class Entity {
 public:
+  virtual void const* queryType(TypeKey key) const noexcept {
+    return queryTypeOf<Entity>(this, key);
+  }
+  virtual std::string_view dynamicTypeName() const noexcept {
+    return Star::typeName<Entity>();
+  }
+
   virtual ~Entity();
 
   Root& root() const;

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -56,6 +57,13 @@ class ShadersMenu;
 
 class GraphicsMenu : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<GraphicsMenu, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<GraphicsMenu>();
+  }
+
   GraphicsMenu(GuiContext& guiContext, PaneManager* manager,std::shared_ptr<UniverseClient> client);
 
   void show() override;

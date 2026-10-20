@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.string;
 
 
@@ -7,6 +8,13 @@ namespace Star {
 
 class EffectSourceItem {
 public:
+  virtual void const* queryType(TypeKey key) const noexcept {
+    return queryTypeOf<EffectSourceItem>(this, key);
+  }
+  virtual std::string_view dynamicTypeName() const noexcept {
+    return Star::typeName<EffectSourceItem>();
+  }
+
   virtual ~EffectSourceItem() {}
   virtual StringSet effectSources() const = 0;
 };

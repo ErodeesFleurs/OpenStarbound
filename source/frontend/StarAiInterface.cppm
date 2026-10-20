@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.format;
 import star.json;
 
@@ -84,6 +85,13 @@ using AiInterfaceException = StarError<AiInterfaceExceptionTag, StarException>;
 
 class AiInterface : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<AiInterface, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<AiInterface>();
+  }
+
   AiInterface(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, std::shared_ptr<Cinematic> cinematic, MainInterfacePaneManager* paneManager);
 
   void update(float dt) override;

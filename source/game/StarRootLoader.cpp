@@ -244,7 +244,8 @@ Root::Settings RootLoader::rootSettingsForOptions(Options const& options) const 
 
     return rootSettings;
 
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     throw StarException("Could not perform initial Root load", e);
   }
 }

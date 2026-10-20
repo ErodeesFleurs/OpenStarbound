@@ -34,7 +34,8 @@ DanceDatabase::DanceDatabase(std::shared_ptr<Assets const> assets, Logger& logge
     try {
       std::shared_ptr<Dance> dance = readDance(*assets, file);
       m_dances[dance->name] = dance;
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       m_logger.error("Error loading dance file {}: {}", file, outputException(e, true));
     }
   }

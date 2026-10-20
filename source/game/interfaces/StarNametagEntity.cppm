@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.string;
 import star.maybe;
 import star.json;
@@ -24,6 +25,13 @@ namespace Star {
 
 class NametagEntity : public virtual Entity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<NametagEntity, Entity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<NametagEntity>();
+  }
+
   virtual String nametag() const = 0;
   virtual Maybe<String> statusText() const = 0;
   virtual bool displayNametag() const = 0;

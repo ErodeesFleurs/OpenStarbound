@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.net_compatibility;
 import star.version;
 import star.list;
@@ -17,6 +18,13 @@ namespace Star {
 // must externally add elements of the correct type in the correct order.
 class NetElementGroup : public NetElement {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<NetElementGroup, NetElement>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<NetElementGroup>();
+  }
+
   NetElementGroup() = default;
 
   NetElementGroup(NetElementGroup const&) = delete;

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.strong_typedef;
 import star.data_stream;
@@ -61,6 +62,13 @@ namespace Star {
 
 class EditBookmarkDialog : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<EditBookmarkDialog, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<EditBookmarkDialog>();
+  }
+
   EditBookmarkDialog(GuiContext& guiContext, std::shared_ptr<PlayerUniverseMap> playerUniverseMap);
 
   virtual void show() override;

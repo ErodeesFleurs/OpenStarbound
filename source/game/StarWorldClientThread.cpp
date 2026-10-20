@@ -249,7 +249,8 @@ void WorldClientThread::run() {
       if (spareMilliseconds > 0)
         Thread::sleepPrecise(spareMilliseconds);
     }
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_worldClient->root().logger().error("WorldClientThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
   }
@@ -262,7 +263,8 @@ void WorldClientThread::update() {
   queueLocker.unlock();
   try {
     m_worldClient->handleIncomingPackets(std::move(incomingPackets));
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_worldClient->root().logger().error("WorldClientThread exception caught handling incoming packets: {}", outputException(e, true));
     queueLocker.lock();
     m_outgoingPacketQueue.append({std::make_shared<ClientSubWorldRequest>(m_subWorldId, WorldId())});

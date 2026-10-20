@@ -16,6 +16,7 @@ import star.variant;
 import star.bi_map;
 import star.ref_ptr;
 import star.renderer;
+import star.type_identity;
 import star.logging;
 
 
@@ -100,12 +101,26 @@ private:
   };
 
   struct GlTexture : public Texture {
+    void const* queryType(TypeKey key) const noexcept override {
+      return queryTypeOf<GlTexture, Texture>(this, key);
+    }
+    std::string_view dynamicTypeName() const noexcept override {
+      return Star::typeName<GlTexture>();
+    }
+
     virtual GLuint glTextureId() const = 0;
     virtual Vec2U glTextureSize() const = 0;
     virtual Vec2U glTextureCoordinateOffset() const = 0;
   };
 
   struct GlGroupedTexture : public GlTexture {
+    void const* queryType(TypeKey key) const noexcept override {
+      return queryTypeOf<GlGroupedTexture, GlTexture>(this, key);
+    }
+    std::string_view dynamicTypeName() const noexcept override {
+      return Star::typeName<GlGroupedTexture>();
+    }
+
     ~GlGroupedTexture();
 
     Vec2U size() const override;
@@ -125,6 +140,13 @@ private:
   };
 
   struct GlLoneTexture : public GlTexture {
+    void const* queryType(TypeKey key) const noexcept override {
+      return queryTypeOf<GlLoneTexture, GlTexture>(this, key);
+    }
+    std::string_view dynamicTypeName() const noexcept override {
+      return Star::typeName<GlLoneTexture>();
+    }
+
     ~GlLoneTexture();
 
     Vec2U size() const override;
@@ -160,6 +182,13 @@ private:
   };
 
   struct GlRenderBuffer : public RenderBuffer {
+    void const* queryType(TypeKey key) const noexcept override {
+      return queryTypeOf<GlRenderBuffer, RenderBuffer>(this, key);
+    }
+    std::string_view dynamicTypeName() const noexcept override {
+      return Star::typeName<GlRenderBuffer>();
+    }
+
     struct GlVertexBufferTexture {
       GLuint texture;
       Vec2U size;

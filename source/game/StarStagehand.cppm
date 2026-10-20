@@ -24,6 +24,7 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import std;
+import star.type_identity;
 import star.string;
 import star.maybe;
 import star.version;
@@ -53,6 +54,13 @@ class BehaviorState;
 
 class Stagehand : public virtual ScriptedEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<Stagehand, ScriptedEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<Stagehand>();
+  }
+
   Stagehand(Root& rootContext, Json const& config);
   Stagehand(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules rules = {});
 

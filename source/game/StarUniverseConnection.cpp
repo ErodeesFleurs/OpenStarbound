@@ -270,7 +270,8 @@ UniverseConnectionServer::UniverseConnectionServer(Logger& logger, PacketReceive
 
                 try {
                   m_packetReceiver(this, p.first, std::move(toReceive));
-                } catch (std::exception const& e) {
+                } catch (std::exception const&) {
+                  ExceptionDiagnostic const e(std::current_exception());
                   m_logger.error("Exception caught handling incoming server packets, disconnecting client '{}' {}", p.first, outputException(e, true));
 
                   connectionLocker.lock();
@@ -278,7 +279,8 @@ UniverseConnectionServer::UniverseConnectionServer(Logger& logger, PacketReceive
                     p.second->packetSocket->close();
                 }
               }
-            } catch (std::exception const& e) {
+            } catch (std::exception const&) {
+              ExceptionDiagnostic const e(std::current_exception());
               m_logger.error("Exception caught receiving incoming server packets, disconnecting client '{}' {}", p.first, outputException(e, true));
               
               connectionLocker.lock();

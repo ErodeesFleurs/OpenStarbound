@@ -521,7 +521,8 @@ public:
     try {
       EmergencyLog::info("Application: startup...");
       m_application->startup(cmdLineArgs);
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       throw ApplicationException("Application threw exception during startup", e);
     }
 
@@ -825,7 +826,8 @@ public:
         if (spareMilliseconds > 0)
           Thread::sleepPrecise(spareMilliseconds);
       }
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       m_application->logger().error("Application: exception thrown!");
       fatalException(e, true);
     }
@@ -836,7 +838,8 @@ public:
     try {
       m_application->logger().info("Application: shutdown...");
       m_application->shutdown();
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       m_application->logger().error("Application: threw exception during shutdown: {}", outputException(e, true));
     }
 
@@ -1462,7 +1465,8 @@ int runMainApplication(std::unique_ptr<Application> application, StringList cmdL
       platform.run();
     }
     return 0;
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     fatalException(e, true);
   } catch (...) {
     fatalError("Unknown Exception", true);

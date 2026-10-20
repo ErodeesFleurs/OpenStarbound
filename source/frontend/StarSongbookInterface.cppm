@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.casting;
@@ -43,6 +44,13 @@ class Player;
 
 class SongbookInterface : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<SongbookInterface, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<SongbookInterface>();
+  }
+
   SongbookInterface(GuiContext& guiContext, std::shared_ptr<Player> player);
   ~SongbookInterface() override;
 

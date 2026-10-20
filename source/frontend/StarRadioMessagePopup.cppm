@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.game_types;
@@ -57,6 +58,13 @@ class AudioInstance;
 
 class RadioMessagePopup : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<RadioMessagePopup, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<RadioMessagePopup>();
+  }
+
   RadioMessagePopup(GuiContext& guiContext);
 
   void update(float dt) override;

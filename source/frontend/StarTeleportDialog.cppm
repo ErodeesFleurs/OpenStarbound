@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.casting;
 import star.input_event;
@@ -68,6 +69,13 @@ class PaneManager;
 
 class TeleportDialog : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<TeleportDialog, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<TeleportDialog>();
+  }
+
   TeleportDialog(GuiContext& guiContext, std::shared_ptr<UniverseClient> client,
       PaneManager* paneManager,
       Json config,

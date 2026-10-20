@@ -89,7 +89,8 @@ void JsonRpc::receive(ByteArray const& inbuffer) {
             {"id", request.get("id")},
             {"result", m_handlers[handlerName](request.get("arguments"))}
           });
-      } catch (std::exception& e) {
+      } catch (std::exception const&) {
+        ExceptionDiagnostic const e(std::current_exception());
         m_logger.error("Exception while handling variant rpc request handler call. {}", outputException(e, false));
         JsonObject response;
         response["command"] = "fail";
@@ -104,7 +105,8 @@ void JsonRpc::receive(ByteArray const& inbuffer) {
       try {
         auto responseHandler = m_pendingResponse.take(request.getUInt("id"));
         responseHandler.fulfill(request.get("result"));
-      } catch (std::exception& e) {
+      } catch (std::exception const&) {
+        ExceptionDiagnostic const e(std::current_exception());
         m_logger.error("Exception while handling variant rpc response handler call. {}", outputException(e, true));
       }
 
@@ -112,7 +114,8 @@ void JsonRpc::receive(ByteArray const& inbuffer) {
       try {
         auto responseHandler = m_pendingResponse.take(request.getUInt("id"));
         responseHandler.fulfill({});
-      } catch (std::exception& e) {
+      } catch (std::exception const&) {
+        ExceptionDiagnostic const e(std::current_exception());
         m_logger.error("Exception while handling variant rpc failure handler call. {}", outputException(e, true));
       }
     }

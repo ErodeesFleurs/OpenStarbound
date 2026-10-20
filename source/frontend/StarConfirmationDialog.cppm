@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.casting;
@@ -42,6 +43,13 @@ namespace Star {
 
 class ConfirmationDialog : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ConfirmationDialog, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ConfirmationDialog>();
+  }
+
   ConfirmationDialog(GuiContext& guiContext);
 
   virtual ~ConfirmationDialog() {}

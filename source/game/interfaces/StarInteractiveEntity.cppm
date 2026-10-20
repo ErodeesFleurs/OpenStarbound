@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.string;
 import star.list;
 import star.json;
@@ -30,6 +31,13 @@ namespace Star {
 
 class InteractiveEntity : public virtual Entity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<InteractiveEntity, Entity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<InteractiveEntity>();
+  }
+
   // Interaction always takes place on the *server*, whether the interactive
   // entity is master or slave there.
   virtual InteractAction interact(InteractRequest const& request) = 0;

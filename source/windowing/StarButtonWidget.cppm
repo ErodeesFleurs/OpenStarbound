@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -54,6 +55,13 @@ namespace Star {
 
 class ButtonWidget : public Widget {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ButtonWidget, Widget>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ButtonWidget>();
+  }
+
   ButtonWidget(GuiContext& context);
   ButtonWidget(GuiContext& context, WidgetCallbackFunc callback,
       String const& baseImage,

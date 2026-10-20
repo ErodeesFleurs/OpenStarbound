@@ -1,4 +1,6 @@
 module;
+import std;
+import star.type_identity;
 import star.json;
 import star.json_extra;
 import star.math_common;
@@ -85,6 +87,13 @@ class InstrumentItem : public Item,
                        public ActivatableItem,
                        public PointableItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<InstrumentItem, Item, StatusEffectItem, EffectSourceItem, ToolUserItem, ActivatableItem, PointableItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<InstrumentItem>();
+  }
+
   InstrumentItem(Root& root, Json const& config, String const& directory, Json const& data);
 
   std::shared_ptr<Item> clone() const override;

@@ -49,4 +49,7 @@ target_sources(star_std PUBLIC FILE_SET CXX_MODULES
 # std is a standard-library module, not a project-defined reserved name.
 target_compile_options(star_std PRIVATE -Wno-reserved-module-identifier)
 target_link_libraries(star_std PRIVATE star_build_config)
+# Clang requires standard-library BMIs and their importers to agree on these
+# language features, including importers that do not link star_build_config.
+target_compile_options(star_std PUBLIC "$<$<COMPILE_LANGUAGE:CXX>:-fno-rtti;-fexceptions>")
 set_target_properties(star_std PROPERTIES CXX_SCAN_FOR_MODULES ON)

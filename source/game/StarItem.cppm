@@ -1,6 +1,7 @@
 module;
 import star.memory;
 import std;
+import star.type_identity;
 import star.maybe;
 import star.format;
 import star.json;
@@ -41,6 +42,13 @@ using ItemException = StarError<ItemExceptionTag, StarException>;
 
 class Item {
 public:
+  virtual void const* queryType(TypeKey key) const noexcept {
+    return queryTypeOf<Item>(this, key);
+  }
+  virtual std::string_view dynamicTypeName() const noexcept {
+    return Star::typeName<Item>();
+  }
+
   // Config here is the configuration loaded directly from assets, directory is
   // the asset path this config was found in, that other assets should be
   // loaded relative to.
@@ -193,6 +201,13 @@ private:
 
 class GenericItem : public Item {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<GenericItem, Item>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<GenericItem>();
+  }
+
   GenericItem(Root& root, Json const& config, String const& directory, Json const& parameters);
   virtual std::shared_ptr<Item> clone() const;
 };

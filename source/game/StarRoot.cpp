@@ -527,7 +527,8 @@ std::shared_ptr<Configuration> Root::configuration() {
             }
 
             currentConfig = config;
-          } catch (std::exception const& e) {
+          } catch (std::exception const&) {
+            ExceptionDiagnostic const e(std::current_exception());
             m_logger.warn("Root: Failed to load user configuration file {}, resetting user config: {}", *m_runtimeConfigFile, outputException(e, false));
             currentConfig = m_settings.defaultConfiguration;
             File::rename(*m_runtimeConfigFile, *m_runtimeConfigFile + ".old");

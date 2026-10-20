@@ -85,7 +85,8 @@ ProjectileDatabase::ProjectileDatabase(Root& root) : m_root(root) {
         m_root.logger().error("Duplicate projectile asset typeName {}. configfile {}", projectileConfig->typeName, file);
       else
         m_configs[projectileConfig->typeName] = projectileConfig;
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       m_root.logger().error("Could not read projectile '{}', error: {}", file, outputException(e, false));
     }
   }

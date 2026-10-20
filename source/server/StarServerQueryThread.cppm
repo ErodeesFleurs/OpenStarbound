@@ -447,7 +447,8 @@ void ServerQueryThread::run() {
       if (len != 0)
         processPacket(udpAddress, std::span(reinterpret_cast<std::uint8_t const*>(udpData), len));
     } catch (SocketClosedException const&) {
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       m_universe->root().logger().error("ServerQueryThread exception caught: {}", outputException(e, true));
     }
   }

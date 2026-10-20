@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.memory;
 import star.string;
 import star.json;
@@ -42,6 +43,13 @@ class ItemBag;
 // All container methods may be called on both master and slave entities.
 class ContainerEntity : public virtual TileEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ContainerEntity, TileEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ContainerEntity>();
+  }
+
   std::size_t containerSize() const;
   List<std::shared_ptr<Item>> containerItems() const;
 

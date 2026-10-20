@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.casting;
@@ -50,6 +51,13 @@ namespace Star {
 
 class LabelWidget : public Widget {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<LabelWidget, Widget>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<LabelWidget>();
+  }
+
   LabelWidget(GuiContext& context);
   LabelWidget(GuiContext& context, String text,
       Color const& color = Color::White,

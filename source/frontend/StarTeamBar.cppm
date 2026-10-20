@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -60,6 +61,13 @@ class TeamBar;
 
 class TeamInvite : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<TeamInvite, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<TeamInvite>();
+  }
+
   TeamInvite(GuiContext& guiContext, TeamBar* owner);
 
   virtual void show() override;
@@ -73,6 +81,13 @@ private:
 
 class TeamInvitation : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<TeamInvitation, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<TeamInvitation>();
+  }
+
   TeamInvitation(GuiContext& guiContext, TeamBar* owner);
 
   void open(Uuid const& inviterUuid, String const& inviterName);
@@ -87,6 +102,13 @@ private:
 
 class TeamMemberMenu : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<TeamMemberMenu, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<TeamMemberMenu>();
+  }
+
   TeamMemberMenu(GuiContext& guiContext, TeamBar* owner);
 
   void open(Uuid memberUuid, Vec2I position);
@@ -108,6 +130,13 @@ private:
 
 class TeamBar : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<TeamBar, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<TeamBar>();
+  }
+
   TeamBar(GuiContext& guiContext, MainInterface* mainInterface, std::shared_ptr<UniverseClient> client);
 
   bool sendEvent(InputEvent const& event) override;

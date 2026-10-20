@@ -1,4 +1,5 @@
 module;
+import star.type_identity;
 import star.game_timers;
 import star.json;
 import star.xx_hash;
@@ -144,6 +145,9 @@ extern EnumMap<WorldServerFidelity> const WorldServerFidelityNames;
 
 class WorldServer : public World {
 public:
+  void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<WorldServer, World>(this, key); }
+  std::string_view dynamicTypeName() const noexcept override { return Star::typeName<WorldServer>(); }
+
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> ScriptComponent;
   typedef std::function<void(Json const&)> WorldPropertyListener;
 

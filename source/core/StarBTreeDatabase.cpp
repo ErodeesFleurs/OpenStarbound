@@ -221,7 +221,7 @@ void BTreeDatabase::forAll(std::function<void(ByteArray, ByteArray)> v) {
   m_impl.forAll(std::move(v));
 }
 
-void BTreeDatabase::recoverAll(std::function<void(ByteArray, ByteArray)> v, std::function<void(String const&, std::exception const&)> e) {
+void BTreeDatabase::recoverAll(std::function<void(ByteArray, ByteArray)> v, std::function<void(String const&, ExceptionDiagnostic const&)> e) {
   ReadLocker readLocker(m_lock);
   m_impl.recoverAll(std::move(v), std::move(e));
 }

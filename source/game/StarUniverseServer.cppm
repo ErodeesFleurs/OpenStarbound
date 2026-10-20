@@ -1,4 +1,5 @@
 module;
+import star.type_identity;
 import star.xx_hash;
 import star.json;
 import star.id_map;
@@ -148,6 +149,9 @@ using UniverseServerException = StarError<UniverseServerExceptionTag, StarExcept
 // and routes packets between them.
 class UniverseServer : public Universe, public Thread {
 public:
+  void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<UniverseServer, Universe, Thread>(this, key); }
+  std::string_view dynamicTypeName() const noexcept override { return Star::typeName<UniverseServer>(); }
+
   UniverseServer(Root& root, String const& storageDir, bool const& isLocal = false);
   ~UniverseServer() override;
 

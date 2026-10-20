@@ -46,7 +46,8 @@ RadioMessageDatabase::RadioMessageDatabase(Root& root) : m_root(root) {
 
         m_radioMessages[pair.first] = createRadioMessage(pair.second, pair.first);
       }
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       throw RadioMessageDatabaseException(strf("Error loading radiomessages file {}", file), e);
     }
   }

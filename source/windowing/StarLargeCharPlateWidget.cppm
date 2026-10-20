@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -56,6 +57,13 @@ class Player;
 
 class LargeCharPlateWidget : public ButtonWidget {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<LargeCharPlateWidget, ButtonWidget>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<LargeCharPlateWidget>();
+  }
+
   LargeCharPlateWidget(GuiContext& context, WidgetCallbackFunc mainCallback, std::shared_ptr<Player> player = std::shared_ptr<Player>());
 
   void mouseOut() override;

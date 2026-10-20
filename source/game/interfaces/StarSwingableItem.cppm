@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.string;
 import star.json;
 import star.id_map;
@@ -77,6 +78,13 @@ namespace Star {
 
 class SwingableItem : public FireableItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<SwingableItem, FireableItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<SwingableItem>();
+  }
+
   SwingableItem();
   SwingableItem(Json const& params);
   virtual ~SwingableItem() {}

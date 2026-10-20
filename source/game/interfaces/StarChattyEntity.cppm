@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.list;
 import star.json;
 import star.id_map;
@@ -25,6 +26,13 @@ namespace Star {
 
 class ChattyEntity : public virtual Entity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ChattyEntity, Entity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ChattyEntity>();
+  }
+
   virtual Vec2F mouthPosition() const = 0;
   virtual Vec2F mouthPosition(bool) const = 0;
   virtual List<ChatAction> pullPendingChatActions() = 0;

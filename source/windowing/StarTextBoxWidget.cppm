@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -53,6 +54,13 @@ enum class SpecialRepeatKeyCodes : String::Char { None, Delete, Backspace, Left,
 
 class TextBoxWidget : public Widget {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<TextBoxWidget, Widget>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<TextBoxWidget>();
+  }
+
   TextBoxWidget(GuiContext& context, String const& startingText, String const& hint, WidgetCallbackFunc callback);
 
   virtual void update(float dt) override;

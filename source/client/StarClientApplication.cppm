@@ -17,6 +17,7 @@ import star.key_bindings;
 import star.root;
 import star.listener;
 import star.logging;
+import star.format;
 
 namespace Star {
 
@@ -97,7 +98,7 @@ private:
 
   void changeState(MainAppState newState);
   void setError(String const& error);
-  void setError(String const& error, std::exception const& e);
+  void setError(String const& error, ExceptionDiagnostic const& e);
 
   void loadMods();
   void updateSteamFlatpakWarning(float dt);

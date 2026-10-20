@@ -19,6 +19,7 @@ import star.listener;
 import std;
 import star.string;
 import star.version;
+import star.format;
 
 import star.status_types;
 import star.asset_source;
@@ -66,7 +67,8 @@ UniqueStatusEffectConfig StatusEffectDatabase::parseUniqueEffect(Json const& con
     effect.description = config.getString("description", "");
     effect.icon = config.optString("icon").apply(std::bind(&AssetPath::relativeTo, path, std::placeholders::_1));
     return effect;
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     throw StatusEffectDatabaseException("Error reading StatusEffect config", e);
   }
 }

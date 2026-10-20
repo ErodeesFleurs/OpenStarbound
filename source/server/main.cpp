@@ -234,7 +234,8 @@ int main(int argc, char** argv) {
     }
 
     root->logger().info("Server shutdown gracefully");
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     fatalException(e, true);
   }
 

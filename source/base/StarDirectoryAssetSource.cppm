@@ -8,6 +8,7 @@ import star.json;
 import star.io_device;
 import star.asset_source;
 import star.string;
+import star.type_identity;
 
 namespace Star {
 
@@ -15,6 +16,14 @@ class Logger;
 
 class DirectoryAssetSource : public AssetSource {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<DirectoryAssetSource, AssetSource>(this, key);
+  }
+
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<DirectoryAssetSource>();
+  }
+
   // Any file that forms an asset path that matches any of the patterns in
   // 'ignorePatterns' is ignored.
   DirectoryAssetSource(Logger& logger, String const& baseDirectory, StringList const& ignorePatterns = {});

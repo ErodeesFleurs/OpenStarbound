@@ -44,7 +44,8 @@ PatternedNameGenerator::PatternedNameGenerator(Root& root) : m_root(root) {
 
       m_markovSources.insert(sourceConfig.getString("name"), makeMarkovSource(sourceConfig.getUInt("prefixSize", 1),
           sourceConfig.getUInt("endSize", 1), jsonToStringList(sourceConfig.get("sourceNames"))));
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       throw NameGeneratorException(strf("Error reading name source config {}", file), e);
     }
   }

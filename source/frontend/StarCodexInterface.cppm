@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 // Keep Uuid's textual definition ahead of the global codex interface on GCC.
@@ -53,6 +54,13 @@ class Codex;
 
 class CodexInterface : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<CodexInterface, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<CodexInterface>();
+  }
+
   CodexInterface(GuiContext& guiContext, std::shared_ptr<Player> player);
 
   virtual void show() override;

@@ -1,4 +1,5 @@
 module;
+import star.type_identity;
 import star.xx_hash;
 import star.json;
 import star.id_map;
@@ -136,6 +137,9 @@ using WorldClientException = StarError<WorldClientExceptionTag, StarException>;
 
 class WorldClient : public World {
 public:
+  void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<WorldClient, World>(this, key); }
+  std::string_view dynamicTypeName() const noexcept override { return Star::typeName<WorldClient>(); }
+
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> ScriptComponent;
   
   WorldClient(Root& root, std::shared_ptr<Player> mainPlayer, std::shared_ptr<LuaRoot> luaRoot, UniverseClient* universe);

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.casting;
@@ -45,6 +46,13 @@ class Player;
 
 class CharSelectionPane : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<CharSelectionPane, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<CharSelectionPane>();
+  }
+
   typedef std::function<void()> CreateCharCallback;
   typedef std::function<void(std::shared_ptr<Player> const&)> SelectCharacterCallback;
   typedef std::function<void(Uuid)> DeleteCharacterCallback;

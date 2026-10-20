@@ -313,12 +313,14 @@ std::shared_ptr<Monster> MonsterDatabase::diskLoadMonster(Json const& diskStore)
   std::shared_ptr<Monster> monster;
   try {
     monster = std::make_shared<Monster>(m_root, diskStore);
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     auto exception = std::current_exception();
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
       try {
         monster = std::make_shared<Monster>(m_root, store);
-      } catch (std::exception const& e) {
+      } catch (std::exception const&) {
+        ExceptionDiagnostic const e(std::current_exception());
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
       }

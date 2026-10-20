@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.string;
 import star.list;
 import star.map;
@@ -176,6 +177,9 @@ namespace Dungeon {
 
   class Rule {
   public:
+    virtual void const* queryType(TypeKey key) const noexcept { return queryTypeOf<Rule>(this, key); }
+    virtual std::string_view dynamicTypeName() const noexcept { return Star::typeName<Rule>(); }
+
     static Maybe<std::shared_ptr<Rule const>> parse(Root& root, Json const& rule);
     static List<std::shared_ptr<Rule const>> readRules(Root& root, Json const& rules);
 
@@ -200,6 +204,9 @@ namespace Dungeon {
 
   class WorldGenMustContainAirRule : public Rule {
   public:
+    void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<WorldGenMustContainAirRule, Rule>(this, key); }
+    std::string_view dynamicTypeName() const noexcept override { return Star::typeName<WorldGenMustContainAirRule>(); }
+
     WorldGenMustContainAirRule(TileLayer layer) : layer(layer) {}
 
     virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
@@ -213,6 +220,9 @@ namespace Dungeon {
 
   class WorldGenMustContainSolidRule : public Rule {
   public:
+    void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<WorldGenMustContainSolidRule, Rule>(this, key); }
+    std::string_view dynamicTypeName() const noexcept override { return Star::typeName<WorldGenMustContainSolidRule>(); }
+
     WorldGenMustContainSolidRule(TileLayer layer) : layer(layer) {}
 
     virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
@@ -226,6 +236,9 @@ namespace Dungeon {
 
   class WorldGenMustContainLiquidRule : public Rule {
   public:
+    void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<WorldGenMustContainLiquidRule, Rule>(this, key); }
+    std::string_view dynamicTypeName() const noexcept override { return Star::typeName<WorldGenMustContainLiquidRule>(); }
+
     WorldGenMustContainLiquidRule() {}
 
     virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
@@ -237,6 +250,9 @@ namespace Dungeon {
 
   class WorldGenMustNotContainLiquidRule : public Rule {
   public:
+    void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<WorldGenMustNotContainLiquidRule, Rule>(this, key); }
+    std::string_view dynamicTypeName() const noexcept override { return Star::typeName<WorldGenMustNotContainLiquidRule>(); }
+
     WorldGenMustNotContainLiquidRule() {}
 
     virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
@@ -244,6 +260,9 @@ namespace Dungeon {
 
   class AllowOverdrawingRule : public Rule {
   public:
+    void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<AllowOverdrawingRule, Rule>(this, key); }
+    std::string_view dynamicTypeName() const noexcept override { return Star::typeName<AllowOverdrawingRule>(); }
+
     AllowOverdrawingRule() {}
 
     virtual bool overdrawable() const override {
@@ -253,6 +272,9 @@ namespace Dungeon {
 
   class IgnorePartMaximumRule : public Rule {
   public:
+    void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<IgnorePartMaximumRule, Rule>(this, key); }
+    std::string_view dynamicTypeName() const noexcept override { return Star::typeName<IgnorePartMaximumRule>(); }
+
     IgnorePartMaximumRule() {}
 
     virtual bool ignorePartMaximum() const override {
@@ -262,6 +284,9 @@ namespace Dungeon {
 
   class MaxSpawnCountRule : public Rule {
   public:
+    void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<MaxSpawnCountRule, Rule>(this, key); }
+    std::string_view dynamicTypeName() const noexcept override { return Star::typeName<MaxSpawnCountRule>(); }
+
     MaxSpawnCountRule(Json const& rule) {
       m_maxCount = rule.toArray()[1].toArray()[0].toInt();
     }
@@ -276,6 +301,9 @@ namespace Dungeon {
 
   class DoNotConnectToPartRule : public Rule {
   public:
+    void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<DoNotConnectToPartRule, Rule>(this, key); }
+    std::string_view dynamicTypeName() const noexcept override { return Star::typeName<DoNotConnectToPartRule>(); }
+
     DoNotConnectToPartRule(Json const& rule);
 
     virtual bool doesNotConnectToPart(String const& name) const override {
@@ -288,6 +316,9 @@ namespace Dungeon {
 
   class DoNotCombineWithRule : public Rule {
   public:
+    void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<DoNotCombineWithRule, Rule>(this, key); }
+    std::string_view dynamicTypeName() const noexcept override { return Star::typeName<DoNotCombineWithRule>(); }
+
     DoNotCombineWithRule(Json const& rule);
 
     virtual bool checkPartCombinationsAllowed(StringMap<int> const& placementCounter) const override {

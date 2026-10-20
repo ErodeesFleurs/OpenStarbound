@@ -198,7 +198,8 @@ void WorldServerThread::close() {
     for (auto clientId : m_worldServer->clientIds())
       removeClient(clientId);
     m_worldServer->close();
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_errorOccurred = true;
     m_worldServer->root().logger().error("WorldServerThread final save failed: {}", outputException(e, true));
   }
@@ -220,7 +221,8 @@ bool WorldServerThread::spawnTargetValid(SpawnTarget const& spawnTarget) {
   try {
     RecursiveMutexLocker locker(m_mutex);
     return m_worldServer->spawnTargetValid(spawnTarget);
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
     return false;
@@ -236,7 +238,8 @@ bool WorldServerThread::addClient(ConnectionId clientId, SpawnTarget const& spaw
     }
 
     return false;
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
     return false;
@@ -260,7 +263,8 @@ List<std::shared_ptr<Packet>> WorldServerThread::removeClient(ConnectionId clien
     if (m_worldServer->hasClient(clientId))
       outgoingPackets.appendAll(m_worldServer->removeClient(clientId));
 
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
   }
@@ -313,7 +317,8 @@ Maybe<Vec2F> WorldServerThread::playerRevivePosition(ConnectionId clientId) cons
     if (auto player = m_worldServer->clientPlayer(clientId))
       return player->position() + player->feetOffset();
     return {};
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
     return {};
@@ -324,7 +329,8 @@ Maybe<std::pair<String, String>> WorldServerThread::pullNewPlanetType() {
   try {
     RecursiveMutexLocker locker(m_mutex);
     return m_worldServer->pullNewPlanetType();
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
     return {};
@@ -350,7 +356,8 @@ void WorldServerThread::unloadAll(bool force) {
   try {
     RecursiveMutexLocker locker(m_mutex);
     m_worldServer->unloadAll(force);
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
   }
@@ -360,7 +367,8 @@ WorldChunks WorldServerThread::readChunks() {
   try {
     RecursiveMutexLocker locker(m_mutex);
     return m_worldServer->readChunks();
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
     return {};
@@ -419,7 +427,8 @@ void WorldServerThread::run() {
       if (spareMilliseconds > 0)
         Thread::sleepPrecise(spareMilliseconds);
     }
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_worldServer->root().logger().error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
   }
@@ -434,7 +443,8 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
     queueLocker.unlock();
     try {
       m_worldServer->handleIncomingPackets(clientId, std::move(incomingPackets));
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       m_worldServer->root().logger().error("WorldServerThread exception caught handling incoming packets for client {}: {}",
           clientId, outputException(e, true));
       RecursiveMutexLocker queueLocker(m_queueMutex);

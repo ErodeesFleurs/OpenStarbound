@@ -1,4 +1,6 @@
 module;
+import std;
+import star.type_identity;
 import star.json;
 import star.json_extra;
 import star.id_map;
@@ -116,6 +118,13 @@ class ActiveItem :
   public virtual ToolUserItem,
   public virtual NetElementGroup {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ActiveItem, Item, DurabilityItem, ToolUserItem, NetElementGroup>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ActiveItem>();
+  }
+
   ActiveItem(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
   ActiveItem(ActiveItem const& rhs);
 

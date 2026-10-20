@@ -1118,7 +1118,7 @@ void ClientApplication::setError(String const& error) {
   changeState(MainAppState::Title);
 }
 
-void ClientApplication::setError(String const& error, std::exception const& e) {
+void ClientApplication::setError(String const& error, ExceptionDiagnostic const& e) {
   m_root->logger().error("{}\n{}", error, outputException(e, true));
   m_errorScreen->setMessage(strf("{}\n{}", error, outputException(e, false)));
   m_titleScreen->resetState();
@@ -1584,7 +1584,8 @@ void ClientApplication::updateRunning(float dt) {
     if (m_mainInterface->currentState() == MainInterface::ReturnToTitle)
       changeState(MainAppState::Title);
 
-  } catch (std::exception& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     setError("Exception caught in client main-loop", e);
   }
 }

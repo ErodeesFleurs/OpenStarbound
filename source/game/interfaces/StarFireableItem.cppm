@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.string;
 import star.set;
 import star.json;
@@ -77,6 +78,13 @@ namespace Star {
 
 class FireableItem : public virtual ToolUserItem, public virtual StatusEffectItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<FireableItem, ToolUserItem, StatusEffectItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<FireableItem>();
+  }
+
   FireableItem();
   FireableItem(Json const& params);
   virtual ~FireableItem() {}

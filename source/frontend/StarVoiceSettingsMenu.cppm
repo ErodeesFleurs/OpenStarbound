@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.casting;
@@ -47,6 +48,13 @@ namespace Star {
 
 class VoiceSettingsMenu : public BaseScriptPane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<VoiceSettingsMenu, BaseScriptPane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<VoiceSettingsMenu>();
+  }
+
   VoiceSettingsMenu(GuiContext& guiContext, Json const& config);
 
   virtual void show() override;

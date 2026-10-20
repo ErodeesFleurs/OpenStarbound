@@ -7,11 +7,18 @@ import star.data_stream;
 
 import star.either;
 import star.byte_array;
+import star.type_identity;
 namespace Star {
 
 // Implements DataStream using function objects as implementations of read/write.
 class DataStreamFunctions : public DataStream {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<DataStreamFunctions, DataStream>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return typeName<DataStreamFunctions>();
+  }
   // Either reader or writer can be unset, if unset then the readData/writeData
   // implementations will throw DataStreamException as unimplemented.
   DataStreamFunctions(std::function<std::size_t(char*, std::size_t)> reader, std::function<std::size_t(char const*, std::size_t)> writer);
@@ -26,6 +33,12 @@ private:
 
 class DataStreamIODevice : public DataStream {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<DataStreamIODevice, DataStream>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return typeName<DataStreamIODevice>();
+  }
   DataStreamIODevice(std::shared_ptr<IODevice> device);
 
   std::shared_ptr<IODevice> const& device() const;
@@ -43,6 +56,12 @@ private:
 
 class DataStreamBuffer : public DataStream {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<DataStreamBuffer, DataStream>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return typeName<DataStreamBuffer>();
+  }
   // Convenience methods to serialize to / from ByteArray directly without
   // having to construct a temporary DataStreamBuffer to do it
 
@@ -129,6 +148,12 @@ private:
 
 class DataStreamExternalBuffer : public DataStream {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<DataStreamExternalBuffer, DataStream>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return typeName<DataStreamExternalBuffer>();
+  }
   DataStreamExternalBuffer();
   DataStreamExternalBuffer(ByteArray const& byteArray);
   DataStreamExternalBuffer(DataStreamBuffer const& buffer);

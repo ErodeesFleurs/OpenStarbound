@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -54,6 +55,13 @@ class UniverseClient;
 
 class StatusPane : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<StatusPane, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<StatusPane>();
+  }
+
   StatusPane(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<UniverseClient> client);
 
   virtual std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition) override;

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.format;
 import star.json;
 import star.vector;
@@ -60,6 +61,13 @@ using CharCreationException = StarError<CharCreationExceptionTag, StarException>
 
 class CharCreationPane : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<CharCreationPane, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<CharCreationPane>();
+  }
+
   // The callback here is either called with null (when the user hits the
   // cancel button) or the newly created player (when the user hits the save
   // button).

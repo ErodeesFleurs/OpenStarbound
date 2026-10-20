@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.net_compatibility;
 import star.version;
 import star.data_stream;
@@ -20,6 +21,13 @@ private:
 // Primary interface for the composable network synchronizable element system.
 class NetElement {
 public:
+  virtual void const* queryType(TypeKey key) const noexcept {
+    return queryTypeOf<NetElement>(this, key);
+  }
+  virtual std::string_view dynamicTypeName() const noexcept {
+    return Star::typeName<NetElement>();
+  }
+
   virtual ~NetElement() = default;
 
   // A network of NetElements will have a shared monotonically increasing

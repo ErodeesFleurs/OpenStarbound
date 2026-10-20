@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.id_map;
 import star.game_types;
@@ -61,6 +62,13 @@ class Item;
 
 class ItemDrop : public virtual MobileEntity, public virtual ScriptedEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ItemDrop, MobileEntity, ScriptedEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ItemDrop>();
+  }
+
   // Creates a drop at the given position and adds a hard-coded amount of
   // randomness to the drop position / velocity.
   static std::shared_ptr<ItemDrop> createRandomizedDrop(Root& rootContext, std::shared_ptr<Item> const& item, Vec2F const& position, bool eternal = false);

@@ -965,16 +965,17 @@ void LuaEngine::setContextRequire(int handleIndex, LuaContext::RequireFunction r
       return 0;
     } catch (LuaInstructionLimitReached const&) {
       lua_pushlightuserdata(state, &s_luaInstructionLimitExceptionKey);
-      return lua_error(state);
     } catch (LuaRecursionLimitReached const&) {
       lua_pushlightuserdata(state, &s_luaRecursionLimitExceptionKey);
-      return lua_error(state);
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       luaL_where(state, 1);
       lua_pushstring(state, printException(e, true).c_str());
       lua_concat(state, 2);
-      return lua_error(state);
     }
+    // Leave the catch scope before Lua's longjmp, releasing the exception and
+    // its owning diagnostic instead of jumping over C++ cleanup.
+    return lua_error(state);
   };
 
   lua_pushcclosure(m_state, invokeRequire, 2);
@@ -1177,16 +1178,16 @@ LuaFunction LuaEngine::createWrappedFunction(LuaDetail::LuaWrappedFunction funct
       }
     } catch (LuaInstructionLimitReached const&) {
       lua_pushlightuserdata(state, &s_luaInstructionLimitExceptionKey);
-      return lua_error(state);
     } catch (LuaRecursionLimitReached const&) {
       lua_pushlightuserdata(state, &s_luaRecursionLimitExceptionKey);
-      return lua_error(state);
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       luaL_where(state, 1);
       lua_pushstring(state, printException(e, true).c_str());
       lua_concat(state, 2);
-      return lua_error(state);
     }
+    // No active C++ handler or diagnostic may be skipped by Lua's longjmp.
+    return lua_error(state);
   };
 
   lua_pushcclosure(m_state, invokeFunction, 1);

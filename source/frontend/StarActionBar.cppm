@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.bi_map;
@@ -59,6 +60,13 @@ class ImageWidget;
 
 class ActionBar : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ActionBar, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ActionBar>();
+  }
+
   ActionBar(GuiContext& guiContext, MainInterfacePaneManager* paneManager, std::shared_ptr<Player> player);
 
   std::shared_ptr<Pane> createTooltip(Vec2I const& screenPosition) override;

@@ -9,6 +9,7 @@ import star.set;
 import star.list;
 import star.image;
 import star.casting;
+import star.type_identity;
 
 import star.vector;
 import star.math_common;
@@ -26,6 +27,13 @@ template <typename AtlasTextureHandle>
 class TextureAtlasSet {
 public:
   struct Texture {
+    virtual void const* queryType(TypeKey key) const noexcept {
+      return queryTypeOf<Texture>(this, key);
+    }
+    virtual std::string_view dynamicTypeName() const noexcept {
+      return Star::typeName<Texture>();
+    }
+
     virtual Vec2U imageSize() const = 0;
 
     virtual AtlasTextureHandle const& atlasTexture() const = 0;
@@ -102,6 +110,13 @@ private:
 
   struct TextureEntry : Texture {
     virtual ~TextureEntry() = default;
+
+    void const* queryType(TypeKey key) const noexcept override {
+      return queryTypeOf<TextureEntry, Texture>(this, key);
+    }
+    std::string_view dynamicTypeName() const noexcept override {
+      return Star::typeName<TextureEntry>();
+    }
 
     Vec2U imageSize() const override;
 

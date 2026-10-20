@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.string;
 import star.json;
 import star.id_map;
@@ -55,6 +56,13 @@ class RenderCallback;
 
 class PlantDrop : public virtual MobileEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<PlantDrop, MobileEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<PlantDrop>();
+  }
+
   PlantDrop(Root& rootContext, List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
       bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig,
       bool master, float random);

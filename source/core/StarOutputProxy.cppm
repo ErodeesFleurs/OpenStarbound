@@ -1,13 +1,14 @@
 module;
 import std;
 import star.stream_formatter;
+import star.type_identity;
 
 namespace Star {
 
 namespace OutputAnyDetail {
   template<typename T, typename CharT, typename Traits>
   std::basic_string<CharT, Traits> string(T const& t) {
-    return std::format("<type {} at address: {}>", typeid(T).name(), (void*)&t);
+    return std::format("<type {} at address: {}>", typeName<T>(), (void*)&t);
   }
 
   template<typename T, typename CharT, typename Traits>
@@ -35,7 +36,7 @@ namespace OutputAnyDetail {
 }
 
 // Wraps a type so that is printable no matter what..  If no operator<< is
-// defined for a type, then will print <type [typeid] at address: [address]>
+// defined for a type, then will print <type [type name] at address: [address]>
 template <typename T>
 OutputAnyDetail::Wrapper<T> outputAny(T const& t) {
   return OutputAnyDetail::Wrapper<T>{t};

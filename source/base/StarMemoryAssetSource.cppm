@@ -13,6 +13,7 @@ import star.data_stream_devices;
 import star.data_stream_extra;
 import star.image;
 import star.math_common;
+import star.type_identity;
 
 export module star.memory_asset_source;
 
@@ -20,6 +21,14 @@ export namespace Star {
 
 class MemoryAssetSource : public AssetSource {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<MemoryAssetSource, AssetSource>(this, key);
+  }
+
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<MemoryAssetSource>();
+  }
+
   MemoryAssetSource(String const& name, JsonObject metadata = JsonObject());
 
   String name() const;

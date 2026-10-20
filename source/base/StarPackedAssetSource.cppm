@@ -17,6 +17,7 @@ import star.ordered_set;
 import star.data_stream_devices;
 import star.data_stream_extra;
 import star.math_common;
+import star.type_identity;
 
 export module star.packed_asset_source;
 
@@ -26,6 +27,14 @@ export namespace Star {
 
 class PackedAssetSource : public AssetSource {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<PackedAssetSource, AssetSource>(this, key);
+  }
+
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<PackedAssetSource>();
+  }
+
   typedef std::function<void(std::size_t, std::size_t, String, String)> BuildProgressCallback;
 
   // Build a packed asset file from the given DirectoryAssetSource.

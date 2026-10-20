@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -55,6 +56,13 @@ class Player;
 
 class PortraitWidget : public Widget {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<PortraitWidget, Widget>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<PortraitWidget>();
+  }
+
   PortraitWidget(GuiContext& context, std::shared_ptr<PortraitEntity> entity, PortraitMode mode = PortraitMode::Full);
   PortraitWidget(GuiContext& context);
   virtual ~PortraitWidget() {}

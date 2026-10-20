@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.net_compatibility;
 import star.byte_array;
@@ -133,6 +134,15 @@ class Player :
   public virtual EmoteEntity {
 
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<Player, ToolUserEntity, LoungingEntity, ChattyEntity,
+        InspectableEntity, DamageBarEntity, PortraitEntity, NametagEntity,
+        PhysicsEntity, EmoteEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<Player>();
+  }
+
   enum class State {
     Idle,
     Walk,

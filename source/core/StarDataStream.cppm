@@ -8,6 +8,7 @@ import star.net_compatibility;
 import star.byte_array;
 import star.bytes;
 import star.math_common;
+import star.type_identity;
 namespace Star {
 
 struct DataStreamExceptionTag {
@@ -21,6 +22,12 @@ class DataStream {
 public:
   DataStream();
   virtual ~DataStream() = default;
+  virtual void const* queryType(TypeKey key) const noexcept {
+    return queryTypeOf<DataStream>(this, key);
+  }
+  virtual std::string_view dynamicTypeName() const noexcept {
+    return typeName<DataStream>();
+  }
 
   // DataStream defaults to big-endian order for all primitive types
   ByteOrder byteOrder() const;

@@ -1,4 +1,5 @@
 module;
+import star.type_identity;
 import star.xx_hash;
 import star.json;
 import star.game_types;
@@ -147,6 +148,9 @@ class LuaRoot;
 
 class UniverseClient : public Universe {
 public:
+  void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<UniverseClient, Universe>(this, key); }
+  std::string_view dynamicTypeName() const noexcept override { return Star::typeName<UniverseClient>(); }
+
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
   
   UniverseClient(Root& root, std::shared_ptr<PlayerStorage> playerStorage, std::shared_ptr<Statistics> statistics, String const& customWorldStorageDir);

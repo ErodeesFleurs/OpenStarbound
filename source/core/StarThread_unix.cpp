@@ -43,7 +43,8 @@ struct ThreadImpl {
       pthread_setname_np(tname);
 #endif
       ptr->function();
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       if (ptr->name.empty())
         EmergencyLog::error("Exception caught in Thread: {}", outputException(e, true));
       else

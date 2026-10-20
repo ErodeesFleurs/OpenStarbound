@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.list;
 
 
@@ -11,6 +12,13 @@ namespace Star {
 
 class PreviewTileTool {
 public:
+  virtual void const* queryType(TypeKey key) const noexcept {
+    return queryTypeOf<PreviewTileTool>(this, key);
+  }
+  virtual std::string_view dynamicTypeName() const noexcept {
+    return Star::typeName<PreviewTileTool>();
+  }
+
   virtual ~PreviewTileTool() {}
   virtual List<PreviewTile> previewTiles(bool shifting) const = 0;
 };

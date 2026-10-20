@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.string;
 import star.data_stream;
@@ -18,6 +19,13 @@ namespace Star {
 
 class NonRotatedDrawablesItem {
 public:
+  virtual void const* queryType(TypeKey key) const noexcept {
+    return queryTypeOf<NonRotatedDrawablesItem>(this, key);
+  }
+  virtual std::string_view dynamicTypeName() const noexcept {
+    return Star::typeName<NonRotatedDrawablesItem>();
+  }
+
   virtual ~NonRotatedDrawablesItem() {}
   virtual List<Drawable> nonRotatedDrawables() const = 0;
 };

@@ -490,7 +490,8 @@ int main(int argc, char** argv) {
     cerrf("{}\n", e.what());
     return 1;
 
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     cerrf("Exception caught: {}\n", outputException(e, true));
     return 1;
   }

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.audio;
 import star.thread;
@@ -31,6 +32,13 @@ namespace Star {
 
   class RenderableItem {
   public:
+    virtual void const* queryType(TypeKey key) const noexcept {
+      return queryTypeOf<RenderableItem>(this, key);
+    }
+    virtual std::string_view dynamicTypeName() const noexcept {
+      return Star::typeName<RenderableItem>();
+    }
+
     virtual ~RenderableItem() {}
 
     virtual void render(RenderCallback* renderCallback, EntityRenderLayer renderLayer) = 0;

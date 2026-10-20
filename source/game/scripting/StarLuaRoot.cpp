@@ -22,6 +22,7 @@ import star.lua;
 import star.maybe;
 import star.format;
 import star.version;
+import star.casting;
 
 import star.lua_root;
 import star.asset_source;
@@ -33,7 +34,7 @@ import star.root;
 namespace Star {
 
 Root& luaExecutionRoot(LuaEngine& engine) {
-  if (auto scope = dynamic_cast<LuaExecutionScope*>(engine.executionHost()))
+  if (auto scope = as<LuaExecutionScope>(engine.executionHost()))
     return scope->root();
   throw LuaException("Game Lua conversion requires an explicit game execution scope");
 }

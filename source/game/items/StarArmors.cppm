@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.id_map;
 import star.game_types;
@@ -82,6 +83,13 @@ extern EnumMap<ArmorType> const ArmorTypeNames;
 
 class ArmorItem : public Item, public EffectSourceItem, public SwingableItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ArmorItem, Item, EffectSourceItem, SwingableItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ArmorItem>();
+  }
+
   ArmorItem(Root& root, Json const& config, String const& directory, Json const& data);
   virtual ~ArmorItem() {}
 
@@ -133,6 +141,13 @@ private:
 
 class HeadArmor : public ArmorItem, public PreviewableItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<HeadArmor, ArmorItem, PreviewableItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<HeadArmor>();
+  }
+
   HeadArmor(Root& root, Json const& config, String const& directory, Json const& data);
   virtual ~HeadArmor() {}
 
@@ -153,6 +168,13 @@ private:
 
 class ChestArmor : public ArmorItem, public PreviewableItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ChestArmor, ArmorItem, PreviewableItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ChestArmor>();
+  }
+
   ChestArmor(Root& root, Json const& config, String const& directory, Json const& data);
   virtual ~ChestArmor() {}
 
@@ -182,6 +204,13 @@ private:
 
 class LegsArmor : public ArmorItem, public PreviewableItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<LegsArmor, ArmorItem, PreviewableItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<LegsArmor>();
+  }
+
   LegsArmor(Root& root, Json const& config, String const& directory, Json const& data);
   virtual ~LegsArmor() {}
 
@@ -201,6 +230,13 @@ private:
 
 class BackArmor : public ArmorItem, public PreviewableItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<BackArmor, ArmorItem, PreviewableItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<BackArmor>();
+  }
+
   BackArmor(Root& root, Json const& config, String const& directory, Json const& data);
   virtual ~BackArmor() {}
 

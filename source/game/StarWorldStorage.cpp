@@ -241,7 +241,8 @@ void WorldStorage::loadSector(Sector sector) {
   try {
     loadSectorToLevel(sector, SectorLoadLevel::Loaded);
     setSectorTimeToLive(sector, randomizedSectorTTL());
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_db.rollback();
     m_db.close();
     throw WorldStorageException(strf("Failed to load sector {}", sector), e);
@@ -252,7 +253,8 @@ void WorldStorage::activateSector(Sector sector) {
   try {
     generateSectorToLevel(sector, SectorGenerationLevel::Complete);
     setSectorTimeToLive(sector, randomizedSectorTTL());
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_db.rollback();
     m_db.close();
     throw WorldStorageException(strf("Failed to load sector {}", sector), e);
@@ -282,7 +284,8 @@ void WorldStorage::triggerTerraformSector(Sector sector) {
     } else {
       throw WorldStorageException(strf("Couldn't flag sector {} for terraforming; metadata unavailable", sector));
     }
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_db.rollback();
     m_db.close();
     throw WorldStorageException(strf("Failed to terraform sector {}", sector), e);
@@ -353,7 +356,8 @@ void WorldStorage::generateQueue(Maybe<std::size_t> sectorGenerationLevelLimit, 
       if (sectorGenerationLevelLimit)
         *sectorGenerationLevelLimit -= p.second;
     }
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_db.rollback();
     m_db.close();
     throw WorldStorageException("WorldStorage generation failed while generating from queue", e);
@@ -441,7 +445,8 @@ void WorldStorage::tick(float dt, String const* worldId) {
       this->root().logMap().set(strf("server_{}_storage", *worldId),
         strf("{} active, {}/{} unloaded ({} held)", m_sectorMetadata.size(), unloaded, skipped + unloaded, skipped));
     }
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_db.rollback();
     m_db.close();
     throw WorldStorageException("WorldStorage exception during tick", e);
@@ -471,7 +476,8 @@ void WorldStorage::unloadAll(bool force) {
     for (auto& sector : sectors)
       unloadSectorToLevel(sector, SectorLoadLevel::None, force);
 
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_db.rollback();
     m_db.close();
     throw WorldStorageException("WorldStorage exception during unload", e);
@@ -483,7 +489,8 @@ void WorldStorage::sync() {
     for (auto const& pair : m_sectorMetadata)
       syncSector(pair.first);
     m_db.commit();
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_db.rollback();
     m_db.close();
     throw WorldStorageException("WorldStorage exception during sync", e);
@@ -502,7 +509,8 @@ WorldChunks WorldStorage::readChunks() {
 
     return WorldChunks(chunks);
 
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_db.rollback();
     m_db.close();
     throw WorldStorageException("WorldStorage exception during readChunks", e);
@@ -794,7 +802,8 @@ void WorldStorage::loadSectorToLevel(Sector const& sector, SectorLoadLevel targe
         for (auto const& entityStore : sectorStore) {
           try {
             addedEntities.append(entityFactory->loadVersionedEntity(entityStore));
-          } catch (std::exception const& e) {
+          } catch (std::exception const&) {
+            ExceptionDiagnostic const e(std::current_exception());
             this->root().logger().warn("Failed to deserialize entity '{}'. {}", entityStore.toJson(), outputException(e, true));
           }
         }

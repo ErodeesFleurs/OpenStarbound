@@ -51,7 +51,8 @@ TenantDatabase::TenantDatabase(Root& root)
         logger.error("Tenant {} defined twice, second time from {}", name, file);
       else
         m_paths[name] = file;
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       logger.error("Error loading tenant file {}: {}", file, outputException(e, true));
     }
   }
@@ -123,7 +124,8 @@ std::shared_ptr<Tenant> TenantDatabase::readTenant(Assets const& assets, String 
     });
 
     return std::make_shared<Tenant>(Tenant{name, priority, colonyTagCriteria, tenants, rent, config});
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     throw TenantException::format("Error loading tenant '{}': {}", path, outputException(e, false));
   }
 }

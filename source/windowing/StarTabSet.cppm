@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -68,6 +69,13 @@ struct TabSetConfig {
 
 class TabSetWidget : public Widget {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<TabSetWidget, Widget>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<TabSetWidget>();
+  }
+
   TabSetWidget(GuiContext& context, TabSetConfig const& tabSetconfig);
 
   virtual void setSize(Vec2I const& size) override;

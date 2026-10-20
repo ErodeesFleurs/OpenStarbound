@@ -317,7 +317,8 @@ VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versi
         result.version = updateScript.toVersion;
       }
     }
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     throw VersioningDatabaseException(strf("Could not bring versionedJson with identifier '{}' and version {} forward to current version of {}",
             versionedJson.identifier, result.version, targetVersion), e);
   }

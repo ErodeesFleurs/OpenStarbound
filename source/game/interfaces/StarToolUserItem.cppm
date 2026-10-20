@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.set;
 import star.format;
 import star.json;
@@ -79,6 +80,13 @@ using ToolUserItemException = StarError<ToolUserItemExceptionTag, StarException>
 // Tool.  Three words when one will do, rename.
 class ToolUserItem {
 public:
+  virtual void const* queryType(TypeKey key) const noexcept {
+    return queryTypeOf<ToolUserItem>(this, key);
+  }
+  virtual std::string_view dynamicTypeName() const noexcept {
+    return Star::typeName<ToolUserItem>();
+  }
+
   ToolUserItem();
   virtual ~ToolUserItem() = default;
 

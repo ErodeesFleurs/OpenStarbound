@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -51,6 +52,13 @@ class UniverseClient;
 
 class ScriptPane : public BaseScriptPane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ScriptPane, BaseScriptPane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ScriptPane>();
+  }
+
   ScriptPane(GuiContext& guiContext, std::shared_ptr<UniverseClient> client, Json config, EntityId sourceEntityId = NullEntityId);
 
   void displayed() override;

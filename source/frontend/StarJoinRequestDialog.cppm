@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.casting;
@@ -44,6 +45,13 @@ enum class P2PJoinRequestReply;
 
 class JoinRequestDialog : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<JoinRequestDialog, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<JoinRequestDialog>();
+  }
+
   JoinRequestDialog(GuiContext& guiContext);
 
   virtual ~JoinRequestDialog() {}

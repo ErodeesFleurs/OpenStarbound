@@ -247,7 +247,8 @@ TEST(BTreeDatabaseTest, Threading) {
               if (random.randi32() % 23 == 0)
                 db.commit();
             }
-          } catch (std::exception const& e) {
+          } catch (std::exception const&) {
+            ExceptionDiagnostic const e(std::current_exception());
             SCOPED_TRACE(outputException(e, true));
             FAIL();
           }
@@ -261,7 +262,8 @@ TEST(BTreeDatabaseTest, Threading) {
               if (random.randi32() % 23 == 0)
                 db.commit();
             }
-          } catch (std::exception const& e) {
+          } catch (std::exception const&) {
+            ExceptionDiagnostic const e(std::current_exception());
             SCOPED_TRACE(outputException(e, true));
             FAIL();
           }
@@ -287,7 +289,8 @@ TEST(BTreeDatabaseTest, Threading) {
                 else
                   EXPECT_TRUE(deleteKeySet.contains(k));
               }
-            } catch (std::exception const& e) {
+            } catch (std::exception const&) {
+              ExceptionDiagnostic const e(std::current_exception());
               SCOPED_TRACE(outputException(e, true));
               FAIL();
             }

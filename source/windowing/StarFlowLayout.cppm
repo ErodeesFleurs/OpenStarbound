@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -53,6 +54,13 @@ namespace Star {
 // currently
 class FlowLayout : public Layout {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<FlowLayout, Layout>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<FlowLayout>();
+  }
+
   FlowLayout(GuiContext& context);
   virtual void update(float dt) override;
   void setSpacing(Vec2I const& spacing);

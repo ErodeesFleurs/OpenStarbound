@@ -19,7 +19,8 @@ int main(int argc, char** argv) {
     auto versionedJson = VersionedJson::fromJson(Json::parse(File::readFileString(argv[1])));
     VersionedJson::writeFile(versionedJson, argv[2]);
     return 0;
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     coutf("Error! Caught exception {}\n", outputException(e, true));
     return 1;
   }

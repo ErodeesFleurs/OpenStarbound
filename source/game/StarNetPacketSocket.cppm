@@ -10,6 +10,7 @@ import star.thread;
 import star.socket;
 import star.tcp;
 import std;
+import star.type_identity;
 
 import star.p2p_networking_service;
 import star.byte_array;
@@ -66,6 +67,9 @@ private:
 // readData may translate directly into increased latency.
 class PacketSocket {
 public:
+  virtual void const* queryType(TypeKey key) const noexcept { return queryTypeOf<PacketSocket>(this, key); }
+  virtual std::string_view dynamicTypeName() const noexcept { return Star::typeName<PacketSocket>(); }
+
   virtual ~PacketSocket() = default;
 
   virtual bool isOpen() const = 0;
@@ -106,6 +110,9 @@ private:
 
 class CompressedPacketSocket : public PacketSocket {
 public:
+  void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<CompressedPacketSocket, PacketSocket>(this, key); }
+  std::string_view dynamicTypeName() const noexcept override { return Star::typeName<CompressedPacketSocket>(); }
+
   virtual ~CompressedPacketSocket() = default;
 
   virtual void setCompressionStreamEnabled(bool enabled);
@@ -120,6 +127,9 @@ protected:
 // PacketSocket for local communication.
 class LocalPacketSocket : public PacketSocket {
 public:
+  void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<LocalPacketSocket, PacketSocket>(this, key); }
+  std::string_view dynamicTypeName() const noexcept override { return Star::typeName<LocalPacketSocket>(); }
+
   static std::pair<std::unique_ptr<LocalPacketSocket>, std::unique_ptr<LocalPacketSocket>> openPair();
   ~LocalPacketSocket() override;
 
@@ -155,6 +165,9 @@ private:
 // Wraps a TCP socket into a PacketSocket.
 class TcpPacketSocket : public CompressedPacketSocket {
 public:
+  void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<TcpPacketSocket, CompressedPacketSocket>(this, key); }
+  std::string_view dynamicTypeName() const noexcept override { return Star::typeName<TcpPacketSocket>(); }
+
   static std::unique_ptr<TcpPacketSocket> open(Logger& logger, std::shared_ptr<TcpSocket> socket);
 
   bool isOpen() const override;
@@ -187,6 +200,9 @@ private:
 // Wraps a P2PSocket into a PacketSocket
 class P2PPacketSocket : public CompressedPacketSocket {
 public:
+  void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<P2PPacketSocket, CompressedPacketSocket>(this, key); }
+  std::string_view dynamicTypeName() const noexcept override { return Star::typeName<P2PPacketSocket>(); }
+
   static std::unique_ptr<P2PPacketSocket> open(Logger& logger, std::unique_ptr<P2PSocket> socket);
 
   bool isOpen() const override;

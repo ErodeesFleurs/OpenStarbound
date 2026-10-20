@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -52,6 +53,13 @@ namespace Star {
 
 class VerticalLayout : public Layout {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<VerticalLayout, Layout>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<VerticalLayout>();
+  }
+
   VerticalLayout(GuiContext& context);
   VerticalLayout(GuiContext& context, VerticalAnchor verticalAnchor, int verticalSpacing = 0);
 

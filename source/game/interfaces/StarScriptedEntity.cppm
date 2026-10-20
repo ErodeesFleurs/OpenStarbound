@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.string;
 import star.maybe;
 import star.json;
@@ -25,6 +26,13 @@ namespace Star {
 // All ScriptedEntity methods should only be called on master entities
 class ScriptedEntity : public virtual Entity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ScriptedEntity, Entity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ScriptedEntity>();
+  }
+
   // Call a script function directly with the given arguments, should return
   // nothing only on failure.
   virtual Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) = 0;

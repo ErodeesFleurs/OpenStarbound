@@ -29,6 +29,12 @@ endfunction()
 target_compile_definitions(star_build_config INTERFACE
   "$<$<CONFIG:Release,RelWithDebInfo>:NDEBUG>")
 
+# This is an ABI requirement, not an overridable optimization default.
+# Standard-library BMIs and all project providers/importers use the same RTTI
+# and exception features, including the maintained Lua/ImGui adapter.
+target_compile_options(star_build_config INTERFACE
+  "$<$<COMPILE_LANGUAGE:CXX>:-fno-rtti;-fexceptions>")
+
 target_compile_options(star_build_config INTERFACE
   "$<$<COMPILE_LANGUAGE:C,CXX>:-Wall;-Wextra;-Wuninitialized;-Wno-parentheses-equality;-Wno-deprecated-declarations;-Wno-nan-infinity-disabled>")
 if(NOT STAR_SYSTEM_WINDOWS)
@@ -76,3 +82,72 @@ if(STAR_SYSTEM_MACOS)
   target_link_options(star_build_config INTERFACE
     "$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,MODULE_LIBRARY>:-flat_namespace;-undefined;suppress>")
 endif()
+
+function(star_check_no_rtti_flags origin)
+  if("${ARGN}" MATCHES "(^|[ \t\r\n;:>])(-frtti(-data)?|-fno-exceptions)([ \t\r\n;<>]|$)")
+    message(FATAL_ERROR "${origin} may not enable RTTI or disable exceptions in the project build.")
+  endif()
+endfunction()
+
+# Run after every component has declared its targets. A new project target must
+# join the same policy, and target/source options must not silently reverse it.
+function(star_check_no_rtti_directory directory)
+  get_directory_property(directory_options DIRECTORY "${directory}" COMPILE_OPTIONS)
+  star_check_no_rtti_flags("${directory} compile options" "${directory_options}")
+  get_directory_property(directory_variables DIRECTORY "${directory}" VARIABLES)
+  foreach(variable IN LISTS directory_variables)
+    if(variable MATCHES "^CMAKE_CXX_FLAGS($|_[A-Z0-9_]+$)")
+      get_directory_property(flags DIRECTORY "${directory}" DEFINITION "${variable}")
+      star_check_no_rtti_flags("${directory}: ${variable}" "${flags}")
+    endif()
+  endforeach()
+
+  get_property(targets DIRECTORY "${directory}" PROPERTY BUILDSYSTEM_TARGETS)
+  foreach(target IN LISTS targets)
+    get_target_property(target_type "${target}" TYPE)
+    if(target_type STREQUAL "UTILITY")
+      continue()
+    endif()
+    if(NOT target_type STREQUAL "INTERFACE_LIBRARY")
+      get_target_property(target_links "${target}" LINK_LIBRARIES)
+      if(NOT "star_build_config" IN_LIST target_links)
+        message(FATAL_ERROR "${target} must link star_build_config to enforce the project no-RTTI ABI.")
+      endif()
+    endif()
+    foreach(property COMPILE_OPTIONS COMPILE_FLAGS INTERFACE_COMPILE_OPTIONS)
+      get_target_property(flags "${target}" "${property}")
+      star_check_no_rtti_flags("${target}: ${property}" "${flags}")
+    endforeach()
+    get_property(sources TARGET "${target}" PROPERTY SOURCES)
+    get_property(module_sets TARGET "${target}" PROPERTY CXX_MODULE_SETS)
+    foreach(module_set IN LISTS module_sets)
+      if(module_set STREQUAL "CXX_MODULES")
+        get_property(module_sources TARGET "${target}" PROPERTY CXX_MODULE_SET)
+      else()
+        get_property(module_sources TARGET "${target}" PROPERTY "CXX_MODULE_SET_${module_set}")
+      endif()
+      list(APPEND sources ${module_sources})
+    endforeach()
+    foreach(source IN LISTS sources)
+      if(source MATCHES "^\\$<")
+        continue()
+      endif()
+      foreach(property COMPILE_OPTIONS COMPILE_FLAGS)
+        get_source_file_property(flags "${source}" TARGET_DIRECTORY "${target}" "${property}")
+        star_check_no_rtti_flags("${target}: ${source}: ${property}" "${flags}")
+      endforeach()
+    endforeach()
+  endforeach()
+
+  # Imported libraries retain their own compilation policy, but may not export
+  # flags that reverse the ABI of our source files.
+  get_property(imported_targets DIRECTORY "${directory}" PROPERTY IMPORTED_TARGETS)
+  foreach(target IN LISTS imported_targets)
+    get_target_property(flags "${target}" INTERFACE_COMPILE_OPTIONS)
+    star_check_no_rtti_flags("${target}: INTERFACE_COMPILE_OPTIONS" "${flags}")
+  endforeach()
+  get_property(subdirectories DIRECTORY "${directory}" PROPERTY SUBDIRECTORIES)
+  foreach(subdirectory IN LISTS subdirectories)
+    star_check_no_rtti_directory("${subdirectory}")
+  endforeach()
+endfunction()

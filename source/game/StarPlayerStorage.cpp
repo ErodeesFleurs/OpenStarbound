@@ -163,7 +163,8 @@ PlayerStorage::PlayerStorage(Root& root, String const& storageDir) : m_root(root
           } else {
             m_root.logger().warn("Duplicate player? Skipping player file {} because it has the same UUID as {}.player ({})", file.first, m_playerFileNames.getRight(uuid), uuid.hex());
           }
-        } catch (std::exception const& e) {
+        } catch (std::exception const&) {
+          ExceptionDiagnostic const e(std::current_exception());
           m_root.logger().error("Error loading player file, ignoring! {} : {}", filename, outputException(e, false));
         }
       }
@@ -207,7 +208,8 @@ PlayerStorage::PlayerStorage(Root& root, String const& storageDir) : m_root(root
           m_savedPlayersCache.toBack(entry);
       }
     }
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_root.logger().warn("Error loading player storage metadata file, resetting: {}", outputException(e, false));
   }
 }
@@ -319,7 +321,8 @@ std::shared_ptr<Player> PlayerStorage::loadPlayer(Uuid const& uuid) {
     if (player->uuid() != uuid)
       throw PlayerException(strf("Uuid mismatch in loaded player with filename uuid '{}'", uuid.hex()));
     return player;
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_root.logger().error("Error loading player file, ignoring! {}", outputException(e, false));
     RecursiveMutexLocker locker(m_mutex);
     m_savedPlayersCache.remove(uuid);

@@ -1,4 +1,6 @@
 module;
+import std;
+import star.type_identity;
 import star.json;
 import star.json_extra;
 import star.id_map;
@@ -108,6 +110,13 @@ export namespace Star {
 
 class BlueprintItem : public Item, public SwingableItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<BlueprintItem, Item, SwingableItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<BlueprintItem>();
+  }
+
   BlueprintItem(Root& root, Json const& config, String const& directory, Json const& data);
   virtual std::shared_ptr<Item> clone() const override;
 

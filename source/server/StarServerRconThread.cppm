@@ -336,7 +336,8 @@ void ServerRconClient::processRequest() {
             sendCmdResponse(requestId, res.get<String>());
           else
             m_commandPromises[requestId] = res.get<RpcPromise<String>>();
-        } catch (std::exception const& e) {
+        } catch (std::exception const&) {
+          ExceptionDiagnostic const e(std::current_exception());
           sendCmdResponse(requestId, strf("RCON: Error executing: {}: {}", command, outputException(e, true)));
         }
       } else {
@@ -364,7 +365,8 @@ void ServerRconClient::run() {
     while (!m_stop)
       processRequest();
   } catch (NoMoreRequests const&) {
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_universe->root().logger().error("ServerRconClient exception caught: {}", outputException(e, false));
   }
 }

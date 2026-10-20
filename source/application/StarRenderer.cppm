@@ -11,6 +11,7 @@ import star.image;
 import star.poly;
 import star.bi_map;
 import star.ref_ptr;
+import star.type_identity;
 
 import star.vector;
 import star.matrix3;
@@ -100,6 +101,13 @@ class Texture : public RefCounter {
 public:
   virtual ~Texture() = default;
 
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<Texture, RefCounter>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<Texture>();
+  }
+
   virtual Vec2U size() const = 0;
   virtual TextureFiltering filtering() const = 0;
   virtual TextureAddressing addressing() const = 0;
@@ -121,6 +129,13 @@ public:
 class RenderBuffer {
 public:
   virtual ~RenderBuffer() = default;
+
+  virtual void const* queryType(TypeKey key) const noexcept {
+    return queryTypeOf<RenderBuffer>(this, key);
+  }
+  virtual std::string_view dynamicTypeName() const noexcept {
+    return Star::typeName<RenderBuffer>();
+  }
 
   // Transforms the given primitives into a form suitable for the underlying
   // graphics system and stores it for fast replaying.

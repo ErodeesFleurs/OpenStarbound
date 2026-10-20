@@ -195,7 +195,8 @@ void Statistics::readStatistics() {
       m_achievements = jsonToStringSet(storage.get("achievements", JsonArray{}));
 
     }
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_root.logger().warn("Error loading local player statistics file, resetting: {}", outputException(e, false));
   }
 }

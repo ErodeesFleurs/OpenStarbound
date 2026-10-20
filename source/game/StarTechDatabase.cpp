@@ -73,7 +73,8 @@ TechConfig TechDatabase::parseTech(Json const& config, String const& path) const
     tech.icon = AssetPath::relativeTo(path, config.getString("icon"));
 
     return tech;
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     throw TechDatabaseException(strf("Error reading tech config {}", path), e);
   }
 }

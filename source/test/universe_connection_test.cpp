@@ -218,7 +218,8 @@ public:
       EXPECT_EQ(PacketCount, written);
       m_connection.close();
       EXPECT_TRUE(m_connection.pull().empty());
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       ADD_FAILURE() << "Exception: " << outputException(e, true);
     } catch (...) {
       ADD_FAILURE();
@@ -254,7 +255,8 @@ public:
 
       m_connection.close();
       EXPECT_TRUE(m_connection.pull().empty());
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       ADD_FAILURE() << "Exception: " << outputException(e, true);
     } catch (...) {
       ADD_FAILURE();

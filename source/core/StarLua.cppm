@@ -4,6 +4,7 @@ import star.stream_formatter;
 import star.json;
 
 import std;
+import star.type_identity;
 
 import star.lexical_cast;
 import star.string;
@@ -32,6 +33,12 @@ class Image;
 class LuaExecutionHost {
 public:
   virtual ~LuaExecutionHost() = default;
+  virtual void const* queryType(TypeKey key) const noexcept {
+    return queryTypeOf<LuaExecutionHost>(this, key);
+  }
+  virtual std::string_view dynamicTypeName() const noexcept {
+    return typeName<LuaExecutionHost>();
+  }
 };
 typedef RefPtr<LuaEngine> LuaEnginePtr;
 
@@ -500,6 +507,12 @@ struct LuaProfileEntry {
 // LuaContexts are not thread safe, use one LuaEngine per thread.
 class LuaEngine : public RefCounter {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<LuaEngine, RefCounter>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return typeName<LuaEngine>();
+  }
   // If 'safe' is true, then creates a lua engine with all builtin lua
   // functions that can affect the real world disabled.
   static LuaEnginePtr create(bool safe = true);
@@ -767,7 +780,7 @@ private:
   int m_scriptDefaultEnvRegistryId;
   int m_wrappedFunctionMetatableRegistryId;
   int m_requireFunctionMetatableRegistryId;
-  HashMap<std::type_index, int> m_registeredUserDataTypes;
+  HashMap<TypeKey, int> m_registeredUserDataTypes;
 
   lua_State* m_handleThread;
   int m_handleStackSize;
@@ -1955,14 +1968,14 @@ template <typename T>
 T LuaEngine::luaTo(LuaValue&& v) {
   if (auto res = luaMaybeTo<T>(std::move(v)))
     return res.take();
-  throw LuaConversionException::format("Error converting LuaValue to type '{}'", typeid(T).name());
+  throw LuaConversionException::format("Error converting LuaValue to type '{}'", typeName<T>());
 }
 
 template <typename T>
 T LuaEngine::luaTo(LuaValue const& v) {
   if (auto res = luaMaybeTo<T>(v))
     return res.take();
-  throw LuaConversionException::format("Error converting LuaValue to type '{}'", typeid(T).name());
+  throw LuaConversionException::format("Error converting LuaValue to type '{}'", typeName<T>());
 }
 
 template <typename Container>
@@ -2057,7 +2070,7 @@ Maybe<LuaDetail::LuaFunctionReturn> LuaEngine::resumeThread(int handleIndex, Arg
 
 template <typename T>
 void LuaEngine::registerUserDataType() {
-  if (m_registeredUserDataTypes.contains(typeid(T)))
+  if (m_registeredUserDataTypes.contains(typeKey<T>()))
     return;
 
   lua_checkstack(m_state, 2);
@@ -2085,14 +2098,14 @@ void LuaEngine::registerUserDataType() {
     LuaDetail::rawSetField(m_state, -2, p.first.utf8Ptr());
   }
 
-  m_registeredUserDataTypes.add(typeid(T), luaL_ref(m_state, LUA_REGISTRYINDEX));
+  m_registeredUserDataTypes.add(typeKey<T>(), luaL_ref(m_state, LUA_REGISTRYINDEX));
 }
 
 template <typename T>
 LuaUserData LuaEngine::createUserData(T t) {
   registerUserDataType<T>();
 
-  int typeMetatable = m_registeredUserDataTypes.get(typeid(T));
+  int typeMetatable = m_registeredUserDataTypes.get(typeKey<T>());
 
   lua_checkstack(m_state, 2);
 
@@ -2154,7 +2167,7 @@ void LuaEngine::setGlobal(char const* key, T value) {
 
 template <typename T>
 bool LuaEngine::userDataIsType(int handleIndex) {
-  int typeRef = m_registeredUserDataTypes.value(typeid(T), LUA_NOREF);
+  int typeRef = m_registeredUserDataTypes.value(typeKey<T>(), LUA_NOREF);
   if (typeRef == LUA_NOREF)
     return false;
 
@@ -2175,9 +2188,9 @@ bool LuaEngine::userDataIsType(int handleIndex) {
 
 template <typename T>
 T* LuaEngine::getUserData(int handleIndex) {
-  int typeRef = m_registeredUserDataTypes.value(typeid(T), LUA_NOREF);
+  int typeRef = m_registeredUserDataTypes.value(typeKey<T>(), LUA_NOREF);
   if (typeRef == LUA_NOREF)
-    throw LuaException::format("Cannot convert userdata type of {}, not registered", typeid(T).name());
+    throw LuaException::format("Cannot convert userdata type of {}, not registered", typeName<T>());
 
   lua_checkstack(m_state, 3);
 
@@ -2191,7 +2204,7 @@ T* LuaEngine::getUserData(int handleIndex) {
   lua_rawgeti(m_state, LUA_REGISTRYINDEX, typeRef);
   if (!lua_rawequal(m_state, -1, -2)) {
     lua_pop(m_state, 3);
-    throw LuaException::format("Improper conversion from userdata to type {}", typeid(T).name());
+    throw LuaException::format("Improper conversion from userdata to type {}", typeName<T>());
   }
 
   lua_pop(m_state, 3);

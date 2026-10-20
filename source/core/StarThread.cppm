@@ -5,6 +5,7 @@ import star.unique_function;
 import star.format;
 import star.string;
 import star.maybe;
+import star.type_identity;
 
 //#define STAR_MUTEX_LOG
 
@@ -21,6 +22,12 @@ class ThreadFunction;
 
 class Thread {
 public:
+  virtual void const* queryType(TypeKey key) const noexcept {
+    return queryTypeOf<Thread>(this, key);
+  }
+  virtual std::string_view dynamicTypeName() const noexcept {
+    return typeName<Thread>();
+  }
   // Implementations of this method should sleep for at least the given amount
   // of time, but may sleep for longer due to scheduling.
   static void sleep(unsigned millis);

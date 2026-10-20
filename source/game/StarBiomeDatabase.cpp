@@ -249,7 +249,8 @@ std::shared_ptr<Biome> BiomeDatabase::createBiome(String const& biomeName, std::
       biome->spawnProfile = constructSpawnProfile(*m_root.assets(), config.parameters.getObject("spawnProfile"), seed);
 
     return biome;
-  } catch (std::exception const& cause) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const cause(std::current_exception());
     throw BiomeException(strf("Failed to parse biome: '{}'", biomeName), cause);
   }
 }

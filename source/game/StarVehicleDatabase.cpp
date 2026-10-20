@@ -143,14 +143,16 @@ std::shared_ptr<Vehicle> VehicleDatabase::diskLoad(Json const& diskStore) const 
     vehicle = create(diskStore.getString("name"), diskStore.get("dynamicConfig"));
     vehicle->diskLoad(diskStore.get("state"));
     return vehicle;
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     vehicle.reset();
     auto exception = std::current_exception();
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
       try {
         vehicle = create(store.getString("name"), store.get("dynamicConfig"));
         vehicle->diskLoad(store.get("state"));
-      } catch (std::exception const& e) {
+      } catch (std::exception const&) {
+        ExceptionDiagnostic const e(std::current_exception());
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
       }

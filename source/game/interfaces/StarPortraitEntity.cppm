@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.id_map;
 import star.string;
@@ -32,6 +33,13 @@ namespace Star {
 
 class PortraitEntity : public virtual Entity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<PortraitEntity, Entity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<PortraitEntity>();
+  }
+
   virtual List<Drawable> portrait(PortraitMode mode) const = 0;
 };
 

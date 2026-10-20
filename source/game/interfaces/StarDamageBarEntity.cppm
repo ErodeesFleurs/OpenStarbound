@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.id_map;
 import star.string;
@@ -41,6 +42,13 @@ extern EnumMap<DamageBarType> const DamageBarTypeNames;
 
 class DamageBarEntity : public virtual PortraitEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<DamageBarEntity, PortraitEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<DamageBarEntity>();
+  }
+
   virtual float health() const = 0;
   virtual float maxHealth() const = 0;
   virtual DamageBarType damageBar() const = 0;

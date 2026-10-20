@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.format;
 import star.stream_formatter;
 import star.json;
@@ -38,6 +39,15 @@ class Widget {
 public:
   Widget(GuiContext& context);
   virtual ~Widget();
+
+  // Project UI capability lookup; successful queries return the adjusted
+  // subobject address, independently of the Widget entry point.
+  virtual void const* queryType(TypeKey key) const noexcept {
+    return queryTypeOf<Widget>(this, key);
+  }
+  virtual std::string_view dynamicTypeName() const noexcept {
+    return Star::typeName<Widget>();
+  }
 
   Widget(Widget const& copy) = delete;
   Widget& operator=(Widget const&) = delete;

@@ -105,7 +105,8 @@ Maybe<std::pair<List<RectI>, Set<Vec2I>>> MicroDungeonFactory::generate(RectI co
         }
       }
     }
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     throw DungeonException(strf("Error generating microdungeon named '{}'", dungeonGenerator.definition()->name()), e);
   }
 

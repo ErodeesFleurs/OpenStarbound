@@ -9,6 +9,7 @@ import star.variant;
 import star.rpc_promise;
 import star.a_star;
 import std;
+import star.type_identity;
 import star.audio;
 import star.thread;
 import star.list;
@@ -81,6 +82,13 @@ class ToolUserEntity;
 
 class MiningTool : public Item, public SwingableItem, public DurabilityItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<MiningTool, Item, SwingableItem, DurabilityItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<MiningTool>();
+  }
+
   MiningTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   std::shared_ptr<Item> clone() const override;
@@ -119,6 +127,13 @@ private:
 
 class HarvestingTool : public Item, public SwingableItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<HarvestingTool, Item, SwingableItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<HarvestingTool>();
+  }
+
   HarvestingTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   std::shared_ptr<Item> clone() const override;
@@ -149,6 +164,13 @@ private:
 
 class WireTool : public Item, public FireableItem, public PointableItem, public BeamItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<WireTool, Item, FireableItem, PointableItem, BeamItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<WireTool>();
+  }
+
   WireTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   std::shared_ptr<Item> clone() const override;
@@ -180,6 +202,13 @@ private:
 
 class BeamMiningTool : public Item, public FireableItem, public PreviewTileTool, public PointableItem, public BeamItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<BeamMiningTool, Item, FireableItem, PreviewTileTool, PointableItem, BeamItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<BeamMiningTool>();
+  }
+
   BeamMiningTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   std::shared_ptr<Item> clone() const override;
@@ -221,6 +250,13 @@ class PaintingBeamTool
     public PointableItem,
     public BeamItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<PaintingBeamTool, Item, FireableItem, PreviewTileTool, PointableItem, BeamItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<PaintingBeamTool>();
+  }
+
   PaintingBeamTool(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   std::shared_ptr<Item> clone() const override;

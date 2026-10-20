@@ -204,7 +204,8 @@ void ScriptableThread::run() {
       if (spareMilliseconds > 0)
         Thread::sleepPrecise(spareMilliseconds);
     }
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_luaRoot->root().logger().error("ScriptableThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
   }

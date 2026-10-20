@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.json_extra;
 import star.id_map;
@@ -71,6 +72,13 @@ class Root;
 
 class LoungeableObject : public Object, public virtual LoungeableEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<LoungeableObject, Object, LoungeableEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<LoungeableObject>();
+  }
+
   LoungeableObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters = Json());
 
   void render(RenderCallback* renderCallback) override;

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.json_extra;
 import star.id_map;
@@ -72,6 +73,13 @@ export namespace Star {
 
 class TeleporterObject : public Object, public WarpTargetEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<TeleporterObject, Object, WarpTargetEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<TeleporterObject>();
+  }
+
   TeleporterObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters = JsonObject());
 
   Vec2F footPosition() const override;

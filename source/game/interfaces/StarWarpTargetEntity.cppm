@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.id_map;
 import star.strong_typedef;
@@ -38,6 +39,13 @@ namespace Star {
 
 class WarpTargetEntity : public virtual TileEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<WarpTargetEntity, TileEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<WarpTargetEntity>();
+  }
+
   // Foot position for things teleporting onto this entity, relative to root
   // position.
   virtual Vec2F footPosition() const = 0;

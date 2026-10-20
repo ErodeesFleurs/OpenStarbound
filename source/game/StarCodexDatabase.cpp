@@ -43,7 +43,8 @@ CodexDatabase::CodexDatabase(std::shared_ptr<Assets const> assets) {
         throw CodexDatabaseException::format("Duplicate codex named '{}', config file '{}'", codex->id(), file);
 
       m_codexes[codex->id()] = codex;
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       throw CodexDatabaseException(strf("Error reading codex config {}", file), e);
     }
   }

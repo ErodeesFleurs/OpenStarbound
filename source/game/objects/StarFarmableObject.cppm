@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.game_types;
 import star.id_map;
@@ -68,6 +69,13 @@ class Root;
 
 class FarmableObject : public Object {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<FarmableObject, Object>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<FarmableObject>();
+  }
+
   FarmableObject(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters);
 
   void update(float dt, std::uint64_t currentStep) override;

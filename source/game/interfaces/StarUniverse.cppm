@@ -1,6 +1,7 @@
 module;
 import star.json;
 import std;
+import star.type_identity;
 import star.string;
 import star.variant;
 import star.maybe;
@@ -17,6 +18,9 @@ class CelestialDatabase;
 // Shared base class for UniverseClient and UniverseServer
 class Universe {
 public:
+  virtual void const* queryType(TypeKey key) const noexcept { return queryTypeOf<Universe>(this, key); }
+  virtual std::string_view dynamicTypeName() const noexcept { return Star::typeName<Universe>(); }
+
   struct Message {
     String message;
     JsonArray args;

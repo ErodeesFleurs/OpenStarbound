@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.string;
 import star.lua;
 import star.maybe;
@@ -57,6 +58,9 @@ typedef std::function<void(World*)> WorldAction;
 
 class World {
 public:
+  virtual void const* queryType(TypeKey key) const noexcept { return queryTypeOf<World>(this, key); }
+  virtual std::string_view dynamicTypeName() const noexcept { return Star::typeName<World>(); }
+
   explicit World(Root& root) : m_root(root) {}
   Root& root() const { return m_root; }
   virtual ~World() {}

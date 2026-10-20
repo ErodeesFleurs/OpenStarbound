@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.id_map;
 import star.casting;
@@ -21,6 +22,13 @@ namespace Star {
 
 class AggressiveEntity : public virtual Entity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<AggressiveEntity, Entity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<AggressiveEntity>();
+  }
+
   virtual bool aggressive() const = 0;
 };
 

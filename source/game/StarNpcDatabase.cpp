@@ -475,13 +475,15 @@ std::shared_ptr<Npc> NpcDatabase::diskLoadNpc(Json const& diskStore) const {
   try {
     NpcVariant npcVariant = readNpcVariantFromJson(diskStore.get("npcVariant"));
     npc = std::make_shared<Npc>(m_root, npcVariant, diskStore);
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     auto exception = std::current_exception();
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
       try {
         NpcVariant npcVariant = readNpcVariantFromJson(store.get("npcVariant"));
         npc = std::make_shared<Npc>(m_root, npcVariant, store);
-      } catch (std::exception const& e) {
+      } catch (std::exception const&) {
+        ExceptionDiagnostic const e(std::current_exception());
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
       }

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.string;
 import star.json;
 import star.id_map;
@@ -39,6 +40,13 @@ namespace Star {
 
 class WireEntity : public virtual TileEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<WireEntity, TileEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<WireEntity>();
+  }
+
   virtual ~WireEntity() {}
 
   virtual std::size_t nodeCount(WireDirection direction) const = 0;

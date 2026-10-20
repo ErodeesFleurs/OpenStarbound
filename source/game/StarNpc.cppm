@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.id_map;
 import star.casting;
@@ -116,6 +117,15 @@ class Npc
     public virtual PhysicsEntity,
     public virtual EmoteEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<Npc, DamageBarEntity, PortraitEntity, NametagEntity,
+        ScriptedEntity, ChattyEntity, InteractiveEntity, LoungingEntity,
+        ToolUserEntity, PhysicsEntity, EmoteEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<Npc>();
+  }
+
   Npc(Root& rootContext, ByteArray const& netStore, NetCompatibilityRules rules = {});
   Npc(Root& rootContext, NpcVariant const& npcVariant);
   Npc(Root& rootContext, NpcVariant const& npcVariant, Json const& initialState);

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.game_types;
 import star.string;
@@ -19,6 +20,13 @@ namespace Star {
 
 class PointableItem {
 public:
+  virtual void const* queryType(TypeKey key) const noexcept {
+    return queryTypeOf<PointableItem>(this, key);
+  }
+  virtual std::string_view dynamicTypeName() const noexcept {
+    return Star::typeName<PointableItem>();
+  }
+
   virtual ~PointableItem() {}
 
   virtual float getAngleDir(float aimAngle, Direction facingDirection);

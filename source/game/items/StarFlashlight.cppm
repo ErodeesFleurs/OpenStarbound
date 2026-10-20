@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.json_extra;
 import star.id_map;
@@ -77,6 +78,13 @@ export namespace Star {
 
 class Flashlight : public Item, public PointableItem, public ToolUserItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<Flashlight, Item, PointableItem, ToolUserItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<Flashlight>();
+  }
+
   Flashlight(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   std::shared_ptr<Item> clone() const override;

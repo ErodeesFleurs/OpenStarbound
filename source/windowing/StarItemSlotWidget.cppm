@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -57,6 +58,13 @@ inline constexpr float ItemIndicateNewTime = 1.5f;
 
 class ItemSlotWidget : public Widget {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ItemSlotWidget, Widget>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ItemSlotWidget>();
+  }
+
   ItemSlotWidget(GuiContext& context, std::shared_ptr<Item> const& item, String const& backingImage);
 
   virtual void update(float dt) override;

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.casting;
 import star.input_event;
@@ -67,6 +68,13 @@ enum class HttpTrustReply {
 
 class HttpTrustDialog final : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<HttpTrustDialog, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<HttpTrustDialog>();
+  }
+
   HttpTrustDialog(GuiContext& guiContext);
 
   ~HttpTrustDialog() override;

@@ -62,8 +62,8 @@ int main(int argc, char** argv) {
         ++overwritten;
       ++count;
     };
-    auto errorHandler = [&](String const& error, std::exception const& e) {
-      coutf("{}: {}\n", error, e.what());
+    auto errorHandler = [&](String const& error, ExceptionDiagnostic const& e) {
+      coutf("{}: {}\n", error, outputException(e, false));
     };
     db.recoverAll(visitor, errorHandler);
 
@@ -76,7 +76,8 @@ int main(int argc, char** argv) {
     coutf("Repacked BTree to {} in {:.6f}s\n({} inserts, {} overwritten)\n", outputFilename, Time::monotonicTime() - startTime, count, overwritten);
     return 0;
 
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     cerrf("Exception caught: {}\n", outputException(e, true));
     return 1;
   }

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 import star.set;
 import star.string;
@@ -26,6 +27,13 @@ namespace Star {
 
 class AugmentItem : public Item {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<AugmentItem, Item>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<AugmentItem>();
+  }
+
   AugmentItem(Root& root, Json const& config, String const& directory, Json const& parameters = JsonObject());
   AugmentItem(AugmentItem const& rhs);
 

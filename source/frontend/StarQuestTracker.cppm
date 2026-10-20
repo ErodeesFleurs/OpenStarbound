@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.casting;
@@ -47,6 +48,13 @@ class Quest;
 
 class QuestTrackerPane : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<QuestTrackerPane, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<QuestTrackerPane>();
+  }
+
   QuestTrackerPane(GuiContext& guiContext);
 
   bool sendEvent(InputEvent const& event) override;

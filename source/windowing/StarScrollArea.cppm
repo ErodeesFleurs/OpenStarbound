@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -54,6 +55,13 @@ namespace Star {
 
 class ScrollThumb : public Widget {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ScrollThumb, Widget>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ScrollThumb>();
+  }
+
   ScrollThumb(GuiContext& context, GuiDirection direction);
   virtual ~ScrollThumb() {}
 
@@ -92,6 +100,13 @@ private:
 
 class ScrollBar : public Widget {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ScrollBar, Widget>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ScrollBar>();
+  }
+
   ScrollBar(GuiContext& context, GuiDirection direction, WidgetCallbackFunc forwardFunc, WidgetCallbackFunc backwardFunc);
 
   void setButtonImages(Json const& images);
@@ -121,6 +136,13 @@ private:
 
 class ScrollArea : public Widget {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ScrollArea, Widget>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ScrollArea>();
+  }
+
   ScrollArea(GuiContext& context);
 
   void setButtonImages(Json const& images);

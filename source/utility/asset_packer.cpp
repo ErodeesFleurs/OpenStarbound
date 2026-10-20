@@ -90,7 +90,8 @@ int main(int argc, char** argv) {
     coutf("Output packed assets to {} in {}s\n", outputFilename, Time::monotonicTime() - startTime);
     return 0;
 
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     cerrf("Exception caught: {}\n", outputException(e, true));
     return 1;
   }

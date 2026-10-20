@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.string;
 import star.json;
 import star.id_map;
@@ -37,6 +38,13 @@ class StatusController;
 // FIXME: This interface is a complete mess.
 class ToolUserEntity : public virtual ActorEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ToolUserEntity, ActorEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ToolUserEntity>();
+  }
+
   virtual Input* input() const { return nullptr; }
 
   // Translates the given arm position into it's final entity space position

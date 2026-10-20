@@ -1950,7 +1950,8 @@ void WorldServer::init(bool firstTime) {
       m_playerStart = findPlayerStart(firstTime ? Maybe<Vec2F>() : m_playerStart);
 
     generateRegion(RectI::integral(RectF(m_playerStart, m_playerStart)).padded(m_serverConfig.getInt("playerStartInitialGenRadius")));
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_worldStorage->unloadAll(true);
     throw WorldServerException("Exception encountered initializing world", e);
   }

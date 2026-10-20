@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.string;
 import star.format;
 import star.json;
@@ -57,6 +58,13 @@ using PlantException = StarError<PlantExceptionTag, StarException>;
 
 class Plant : public virtual TileEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<Plant, TileEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<Plant>();
+  }
+
   // TODO: For right now the space scan threshold is hard-coded, but should be
   // configurable in the future
   static float const PlantScanThreshold;

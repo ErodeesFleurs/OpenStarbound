@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.game_timers;
 import star.string;
 import star.json;
@@ -71,6 +72,14 @@ class AudioInstance;
 
 class Projectile : public virtual MobileEntity, public virtual ScriptedEntity, public virtual PhysicsEntity, public virtual StatusEffectEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<Projectile, MobileEntity, ScriptedEntity, PhysicsEntity,
+        StatusEffectEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<Projectile>();
+  }
+
   Projectile(Root& rootContext, std::shared_ptr<ProjectileConfig> const& config, Json const& parameters);
   Projectile(Root& rootContext, std::shared_ptr<ProjectileConfig> const& config, DataStreamBuffer& netState, NetCompatibilityRules rules = {});
 

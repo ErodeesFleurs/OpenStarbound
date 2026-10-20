@@ -1,4 +1,6 @@
 module;
+import std;
+import star.type_identity;
 import star.xx_hash;
 import star.json;
 import star.json_extra;
@@ -172,6 +174,13 @@ export namespace Star {
 
 class MaterialItem : public Item, public FireableItem, public PreviewTileTool, public RenderableItem, public PreviewableItem, public BeamItem {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<MaterialItem, Item, FireableItem, PreviewTileTool, RenderableItem, PreviewableItem, BeamItem>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<MaterialItem>();
+  }
+
   MaterialItem(Root& root, Json const& config, String const& directory, Json const& settings);
   virtual ~MaterialItem() {}
 

@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -56,6 +57,13 @@ namespace Star {
 // implement it in.
 class SliderBarWidget : public Widget {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<SliderBarWidget, Widget>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<SliderBarWidget>();
+  }
+
   SliderBarWidget(GuiContext& context, String const& grid, bool showSpinner = true);
 
   void setJogImages(String const& baseImage, String const& hoverImage = "", String const& pressedImage = "", String const& disabledImage = "");

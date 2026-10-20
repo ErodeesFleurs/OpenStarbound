@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.string;
 import star.maybe;
 import star.json;
@@ -23,6 +24,13 @@ namespace Star {
 
 class InspectableEntity : public virtual Entity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<InspectableEntity, Entity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<InspectableEntity>();
+  }
+
   // Default implementation returns true
   virtual bool inspectable() const;
 

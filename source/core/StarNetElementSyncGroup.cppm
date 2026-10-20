@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.net_compatibility;
 import star.data_stream;
 
@@ -12,6 +13,13 @@ namespace Star {
 // synchronize with working data.
 class NetElementSyncGroup : public NetElementGroup {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<NetElementSyncGroup, NetElementGroup>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<NetElementSyncGroup>();
+  }
+
   void enableNetInterpolation(float extrapolationHint = 0.0f) override;
   void disableNetInterpolation() override;
   void tickNetInterpolation(float dt) override;
@@ -40,6 +48,13 @@ private:
 // optional callback functions.
 class NetElementCallbackGroup : public NetElementSyncGroup {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<NetElementCallbackGroup, NetElementSyncGroup>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<NetElementCallbackGroup>();
+  }
+
   void setNeedsLoadCallback(std::function<void(bool)> needsLoadCallback);
   void setNeedsStoreCallback(std::function<void()> needsStoreCallback);
 

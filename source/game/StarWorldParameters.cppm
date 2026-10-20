@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.string;
 import star.json;
 import star.byte_array;
@@ -55,6 +56,9 @@ enum class WorldEdgeForceRegionType : std::uint8_t {
 extern EnumMap<WorldEdgeForceRegionType> const WorldEdgeForceRegionTypeNames;
 
 struct VisitableWorldParameters {
+  virtual void const* queryType(TypeKey key) const noexcept { return queryTypeOf<VisitableWorldParameters>(this, key); }
+  virtual std::string_view dynamicTypeName() const noexcept { return Star::typeName<VisitableWorldParameters>(); }
+
   VisitableWorldParameters() = default;
   VisitableWorldParameters(VisitableWorldParameters const& visitableWorldParameters) = default;
   explicit VisitableWorldParameters(Json const& store);
@@ -84,6 +88,9 @@ struct VisitableWorldParameters {
 };
 
 struct TerrestrialWorldParameters : VisitableWorldParameters {
+  void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<TerrestrialWorldParameters, VisitableWorldParameters>(this, key); }
+  std::string_view dynamicTypeName() const noexcept override { return Star::typeName<TerrestrialWorldParameters>(); }
+
   struct TerrestrialRegion {
     String biome;
 
@@ -155,6 +162,9 @@ struct TerrestrialWorldParameters : VisitableWorldParameters {
 };
 
 struct AsteroidsWorldParameters : VisitableWorldParameters {
+  void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<AsteroidsWorldParameters, VisitableWorldParameters>(this, key); }
+  std::string_view dynamicTypeName() const noexcept override { return Star::typeName<AsteroidsWorldParameters>(); }
+
   AsteroidsWorldParameters();
   explicit AsteroidsWorldParameters(Json const& store);
 
@@ -173,6 +183,9 @@ struct AsteroidsWorldParameters : VisitableWorldParameters {
 };
 
 struct FloatingDungeonWorldParameters : VisitableWorldParameters {
+  void const* queryType(TypeKey key) const noexcept override { return queryTypeOf<FloatingDungeonWorldParameters, VisitableWorldParameters>(this, key); }
+  std::string_view dynamicTypeName() const noexcept override { return Star::typeName<FloatingDungeonWorldParameters>(); }
+
   FloatingDungeonWorldParameters() = default;
   explicit FloatingDungeonWorldParameters(Json const& store);
 

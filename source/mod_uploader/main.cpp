@@ -33,7 +33,8 @@ int main(int argc, char** argv) {
 
   try {
     return app.exec();
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     QMessageBox::critical(nullptr, "Error", toQString(strf("Exception caught: {}\n", outputException(e, true))));
     coutf("Exception caught: {}\n", outputException(e, true));
     return 1;

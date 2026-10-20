@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.casting;
@@ -41,6 +42,13 @@ namespace Star {
 
 class PopupInterface : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<PopupInterface, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<PopupInterface>();
+  }
+
   PopupInterface(GuiContext& guiContext);
 
   virtual ~PopupInterface() {}

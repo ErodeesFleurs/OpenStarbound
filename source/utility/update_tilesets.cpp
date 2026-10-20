@@ -332,7 +332,8 @@ int main(int argc, char** argv) {
     updater.exportTilesets();
 
     return 0;
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     cerrf("exception caught: {}\n", outputException(e, true));
     return 1;
   }

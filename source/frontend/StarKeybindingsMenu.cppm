@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.casting;
@@ -44,6 +45,13 @@ class ListWidget;
 
 class KeybindingsMenu : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<KeybindingsMenu, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<KeybindingsMenu>();
+  }
+
   KeybindingsMenu(GuiContext& guiContext);
 
   // We need to handle our own Esc dismissal

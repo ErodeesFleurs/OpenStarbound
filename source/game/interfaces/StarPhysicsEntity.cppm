@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.maybe;
 import star.json;
 import star.id_map;
@@ -71,6 +72,13 @@ DataStream& operator<<(DataStream& ds, MovingCollisionId const& mci);
 
 class PhysicsEntity : public virtual Entity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<PhysicsEntity, Entity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<PhysicsEntity>();
+  }
+
   virtual List<PhysicsForceRegion> forceRegions() const;
 
   virtual std::size_t movingCollisionCount() const;

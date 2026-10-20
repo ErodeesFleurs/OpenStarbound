@@ -782,6 +782,68 @@ TEST(LuaTest, Errors) {
   EXPECT_TRUE(String(toString(error)).contains("lua caught the exception"));
 }
 
+TEST(LuaTest, ExceptionDiagnosticsLeaveBothCBoundariesClean) {
+  auto engine = LuaEngine::create();
+  auto context = engine->createContext();
+  std::weak_ptr<int> wrappedLifetime;
+  std::weak_ptr<int> requireLifetime;
+  struct OwnedException : IOException {
+    OwnedException(std::string message, std::shared_ptr<int> lifetime)
+      : IOException(std::move(message),
+            std::make_exception_ptr(std::runtime_error("Lua third party cause"))),
+        lifetime(std::move(lifetime)) {}
+    std::shared_ptr<int> lifetime;
+  };
+  context.set("failWrapped", engine->createFunction([&]() {
+    auto lifetime = std::make_shared<int>(1);
+    wrappedLifetime = lifetime;
+    throw OwnedException("wrapped callback failure", std::move(lifetime));
+  }));
+  context.set("failThirdParty", engine->createFunction([]() {
+    throw std::runtime_error("direct Lua third party failure");
+  }));
+  context.setRequireFunction([&](LuaContext&, LuaString const&) {
+    auto lifetime = std::make_shared<int>(2);
+    requireLifetime = lifetime;
+    throw OwnedException("require callback failure", std::move(lifetime));
+  });
+  context.load(R"SCRIPT(
+    function captureWrapped() return pcall(failWrapped) end
+    function captureThirdParty() return pcall(failThirdParty) end
+    function captureRequire() return pcall(require, "broken") end
+    function healthy(value) return value * 3 end
+  )SCRIPT");
+
+  bool status;
+  LuaValue error;
+  luaTie(status, error) = context.invokePath<LuaTupleReturn<bool, LuaValue>>("captureWrapped");
+  EXPECT_FALSE(status);
+  EXPECT_TRUE(String(toString(error)).contains("(IOException) wrapped callback failure"));
+  EXPECT_TRUE(String(toString(error)).contains("Caused by: std::exception: Lua third party cause"));
+  EXPECT_TRUE(wrappedLifetime.expired());
+  EXPECT_FALSE(std::current_exception());
+  EXPECT_EQ(context.invokePath<int>("healthy", 7), 21);
+
+  luaTie(status, error) = context.invokePath<LuaTupleReturn<bool, LuaValue>>("captureThirdParty");
+  EXPECT_FALSE(status);
+  EXPECT_TRUE(String(toString(error)).contains("std::exception: direct Lua third party failure"));
+  EXPECT_FALSE(std::current_exception());
+  EXPECT_EQ(context.invokePath<int>("healthy", 8), 24);
+
+  luaTie(status, error) = context.invokePath<LuaTupleReturn<bool, LuaValue>>("captureRequire");
+  EXPECT_FALSE(status);
+  EXPECT_TRUE(String(toString(error)).contains("(IOException) require callback failure"));
+  EXPECT_TRUE(String(toString(error)).contains("Caused by: std::exception: Lua third party cause"));
+  EXPECT_TRUE(requireLifetime.expired());
+  EXPECT_FALSE(std::current_exception());
+  EXPECT_EQ(context.invokePath<int>("healthy", 9), 27);
+
+  // Lua errors not caught by pcall still propagate as the project's exception.
+  EXPECT_THROW(context.load("failWrapped()"), LuaException);
+  EXPECT_TRUE(wrappedLifetime.expired());
+  EXPECT_EQ(context.invokePath<int>("healthy", 10), 30);
+}
+
 TEST(LuaTest, GarbageCollection) {
   auto engine = LuaEngine::create();
   auto context = engine->createContext();

@@ -325,7 +325,8 @@ StringList ClientCommandProcessor::handleCommand(String const& commandLine, bool
   } catch (ShellParsingException const& e) {
     m_context.root().logger().error("Shell parsing exception: {}", outputException(e, false));
     return {"Shell parsing exception"};
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     m_context.root().logger().error("Exception caught handling client command {}: {}", commandLine, outputException(e, true));
     return {strf("Exception caught handling client command {}", commandLine)};
   }

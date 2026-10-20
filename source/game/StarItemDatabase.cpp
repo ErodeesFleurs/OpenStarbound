@@ -626,7 +626,8 @@ std::shared_ptr<Item> ItemDatabase::tryCreateItem(ItemDescriptor const& descript
       newDescriptor = ItemDescriptor(descriptor.parameters().get("genericItemStorage"));
     result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
     result->setCount(descriptor.count());
-  } catch (std::exception const& e) {
+  } catch (std::exception const&) {
+    ExceptionDiagnostic const e(std::current_exception());
     if (!ignoreInvalid) {
       bool success = m_rebuilder->rebuild(descriptor.toJson(), strf("{}", outputException(e, false)), [&](Json const& store) -> String {
         try {
@@ -634,7 +635,8 @@ std::shared_ptr<Item> ItemDatabase::tryCreateItem(ItemDescriptor const& descript
           result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
           result->setCount(newDescriptor.count());
         }
-        catch (std::exception const& e) {
+        catch (std::exception const&) {
+          ExceptionDiagnostic const e(std::current_exception());
           return strf("{}", outputException(e, false));
         }
         return {};
@@ -696,7 +698,8 @@ void ItemDatabase::addItemSet(ItemType type, String const& extension) {
       data.filename = AssetPath::filename(file);
 
       data.agingScripts = data.agingScripts.transformed(std::bind(&AssetPath::relativeTo, data.directory, std::placeholders::_1));
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       throw ItemException(strf("Could not load item asset {}", file), e);
     }
 
@@ -799,7 +802,8 @@ void ItemDatabase::scanRecipes() {
   for (auto& file : files) {
     try {
       m_recipes.add(parseRecipe(assets->json(file)));
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       m_root.logger().error("Could not load recipe {}: {}", file, outputException(e, false));
     }
   }
@@ -848,7 +852,8 @@ void ItemDatabase::addBlueprints() {
       blueprintData.directory = itemData(baseDesc.name()).directory;
 
       m_items[blueprintData.name] = blueprintData;
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       m_root.logger().error("Could not create blueprint item from recipe: {}", outputException(e, false));
     }
   }
@@ -883,7 +888,8 @@ void ItemDatabase::addCodexes() {
       codexItemData.customConfig = customConfig;
 
       m_items[codexItemName] = codexItemData;
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       m_root.logger().error("Could not create item for codex {}: {}", codexPair.second->id(), outputException(e, false));
     }
   }

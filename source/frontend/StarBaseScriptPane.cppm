@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -51,6 +52,13 @@ class CanvasWidget;
 
 class BaseScriptPane : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<BaseScriptPane, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<BaseScriptPane>();
+  }
+
   BaseScriptPane(GuiContext& guiContext, Json config, bool construct = true);
 
   virtual void show() override;

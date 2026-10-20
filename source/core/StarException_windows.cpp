@@ -7,7 +7,6 @@ import star.format;
 import star.maybe;
 import star.output_proxy;
 import star.logging;
-import star.casting;
 import star.string_windows;
 import star.version;
 import star.native_runtime;
@@ -171,11 +170,11 @@ StarException::~StarException() noexcept {}
 
 StarException::StarException(std::string message, bool genStackTrace) noexcept : StarException("StarException", std::move(message), genStackTrace) {}
 
-StarException::StarException(std::exception const& cause) noexcept
-    : StarException("StarException", std::string(), cause) {}
+StarException::StarException(ExceptionDiagnostic cause) noexcept
+    : StarException("StarException", std::string(), std::move(cause)) {}
 
-StarException::StarException(std::string message, std::exception const& cause) noexcept
-    : StarException("StarException", std::move(message), cause) {}
+StarException::StarException(std::string message, ExceptionDiagnostic cause) noexcept
+    : StarException("StarException", std::move(message), std::move(cause)) {}
 
 const char* StarException::what() const throw() {
   if (m_whatBuffer.empty()) {
@@ -202,7 +201,7 @@ StarException::StarException(char const* type, std::string message, bool genStac
   m_printException = std::bind(printException, std::placeholders::_1, std::placeholders::_2, type, std::move(message), genStackTrace ? captureStack() : Maybe<StackCapture>());
 }
 
-StarException::StarException(char const* type, std::string message, std::exception const& cause) noexcept
+StarException::StarException(char const* type, std::string message, ExceptionDiagnostic cause) noexcept
     : StarException(type, std::move(message), true) {
   auto printException = [](std::ostream& os,
       bool fullStacktrace,
@@ -213,37 +212,40 @@ StarException::StarException(char const* type, std::string message, std::excepti
     cause(os, fullStacktrace);
   };
 
-  std::function<void(std::ostream&, bool)> printCause;
-  if (auto starException = as<StarException>(&cause)) {
-    printCause = std::bind(starException->m_printException, std::placeholders::_1, std::placeholders::_2);
-  } else {
-    printCause = std::bind([](std::ostream& os, bool, std::string causeWhat) {
-      os << "std::exception: " << causeWhat;
-    }, std::placeholders::_1, std::placeholders::_2, std::string(cause.what()));
-  }
-
-  m_printException = std::bind(printException, std::placeholders::_1, std::placeholders::_2, m_printException, std::move(printCause));
+  m_printException = std::bind(printException, std::placeholders::_1, std::placeholders::_2, m_printException, std::move(cause.m_printException));
 }
 
-std::string printException(std::exception const& e, bool fullStacktrace) {
+ExceptionDiagnostic::ExceptionDiagnostic(StarException const& exception)
+  : m_printException(exception.m_printException) {}
+
+ExceptionDiagnostic::ExceptionDiagnostic(std::exception_ptr exception) {
+  if (!exception)
+    throw std::invalid_argument("ExceptionDiagnostic requires an exception");
+  try {
+    std::rethrow_exception(exception);
+  } catch (StarException const& e) {
+    m_printException = e.m_printException;
+  } catch (std::exception const& e) {
+    m_printException = [what = std::string(e.what())](std::ostream& os, bool) {
+      os << "std::exception: " << what;
+    };
+  } catch (...) {
+    m_printException = [](std::ostream& os, bool) { os << "Unknown exception"; };
+  }
+}
+
+std::string printException(ExceptionDiagnostic const& e, bool fullStacktrace) {
   std::ostringstream os;
   printException(os, e, fullStacktrace);
   return os.str();
 }
 
-void printException(std::ostream& os, std::exception const& e, bool fullStacktrace) {
-  if (auto starException = as<StarException>(&e))
-    starException->m_printException(os, fullStacktrace);
-  else
-    os << "std::exception: " << e.what();
+void printException(std::ostream& os, ExceptionDiagnostic const& e, bool fullStacktrace) {
+  e.m_printException(os, fullStacktrace);
 }
 
-OutputProxy outputException(std::exception const& e, bool fullStacktrace) {
-  if (auto starException = as<StarException>(&e))
-    return OutputProxy(std::bind(starException->m_printException, std::placeholders::_1, fullStacktrace));
-  else
-    return OutputProxy(
-        std::bind([](std::ostream& os, std::string what) { os << "std::exception: " << what; }, std::placeholders::_1, std::string(e.what())));
+OutputProxy outputException(ExceptionDiagnostic const& e, bool fullStacktrace) {
+  return OutputProxy(std::bind(e.m_printException, std::placeholders::_1, fullStacktrace));
 }
 
 void printStack(char const* message) {
@@ -263,7 +265,7 @@ void fatalError(char const* message, bool showStackTrace) {
   std::abort();
 }
 
-void fatalException(std::exception const& e, bool showStackTrace) {
+void fatalException(ExceptionDiagnostic const& e, bool showStackTrace) {
   std::ostringstream ss;
   ss << "v" << OpenStarVersionString << " (" << StarSourceIdentifierString << ")\n"
      << "Fatal Exception: " << outputException(e, showStackTrace) << std::endl;

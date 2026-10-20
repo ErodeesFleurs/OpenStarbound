@@ -156,7 +156,8 @@ SpawnTypeDatabase::SpawnTypeDatabase(std::shared_ptr<Assets const> const& assets
 
         m_spawnTypes[spawnType.typeName] = spawnType;
       }
-    } catch (std::exception const& e) {
+    } catch (std::exception const&) {
+      ExceptionDiagnostic const e(std::current_exception());
       throw SpawnTypeDatabaseException(strf("Error reading spawnType config file {}", file), e);
     }
   }

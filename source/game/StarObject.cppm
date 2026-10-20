@@ -2,6 +2,7 @@ module;
 import star.game_timers;
 import star.json_extra;
 import std;
+import star.type_identity;
 import star.json;
 import star.id_map;
 import star.random;
@@ -91,6 +92,13 @@ class Object
     public virtual InspectableEntity,
     public virtual WireEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<Object, TileEntity, StatusEffectEntity, ScriptedEntity,
+        ChattyEntity, InspectableEntity, WireEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<Object>();
+  }
 
   Object(Root& rootContext, std::shared_ptr<ObjectConfig const> config, Json const& parameters = JsonObject());
 

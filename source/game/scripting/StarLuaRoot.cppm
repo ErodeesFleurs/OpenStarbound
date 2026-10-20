@@ -6,6 +6,7 @@ import star.thread;
 import star.lua;
 import star.listener;
 import star.byte_array;
+import star.type_identity;
 
 namespace Star {
 
@@ -13,6 +14,12 @@ class Root;
 
 class LuaExecutionScope final : public LuaExecutionHost {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<LuaExecutionScope, LuaExecutionHost>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return typeName<LuaExecutionScope>();
+  }
   explicit LuaExecutionScope(Root& root) : m_root(root) {}
   Root& root() const { return m_root; }
 private:

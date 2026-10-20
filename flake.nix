@@ -35,9 +35,24 @@
         pkgs:
         let
           dependencies = import ./nix/dependencies.nix { inherit pkgs; };
-          sanitizedDependencies = import ./nix/dependencies.nix {
+          sanitizedBaseDependencies = import ./nix/dependencies.nix {
             inherit pkgs;
             sanitizers = true;
+          };
+          sanitizerRuntime = pkgs.callPackage ./nix/asan-runtime.nix {
+            stdenv = dependencies.stdenv;
+            bundledRuntime = dependencies.cc.bundledRuntime;
+          };
+          sanitizedCompiler = pkgs.callPackage ./nix/compiler.nix {
+            sanitizers = true;
+            inherit sanitizerRuntime;
+          };
+          # Only ASan's global-retention metadata changes. The runtime build
+          # verifies its config-site against the bundled ASan container ABI, so
+          # existing instrumented dependency archives remain compatible.
+          sanitizedDependencies = sanitizedBaseDependencies // {
+            cc = sanitizedCompiler;
+            stdenv = pkgs.overrideCC sanitizedBaseDependencies.stdenv sanitizedCompiler;
           };
           openstarbound = pkgs.callPackage ./nix/openstarbound.nix {
             inherit dependencies;

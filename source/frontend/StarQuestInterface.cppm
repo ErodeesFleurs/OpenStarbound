@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.vector;
@@ -50,6 +51,13 @@ class Quest;
 
 class QuestLogInterface : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<QuestLogInterface, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<QuestLogInterface>();
+  }
+
   QuestLogInterface(GuiContext& guiContext, std::shared_ptr<QuestManager> manager, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic, std::shared_ptr<UniverseClient> client);
   virtual ~QuestLogInterface() {}
 
@@ -82,6 +90,14 @@ private:
 };
 
 class QuestPane : public Pane {
+public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<QuestPane, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<QuestPane>();
+  }
+
 protected:
   QuestPane(GuiContext& guiContext, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player);
 
@@ -97,6 +113,13 @@ protected:
 
 class NewQuestInterface : public QuestPane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<NewQuestInterface, QuestPane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<NewQuestInterface>();
+  }
+
   enum class QuestDecision {
     Declined,
     Accepted,
@@ -118,6 +141,13 @@ private:
 
 class QuestCompleteInterface : public QuestPane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<QuestCompleteInterface, QuestPane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<QuestCompleteInterface>();
+  }
+
   QuestCompleteInterface(GuiContext& guiContext, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player, std::shared_ptr<Cinematic> cinematic);
 
 protected:
@@ -130,6 +160,13 @@ private:
 
 class QuestFailedInterface : public QuestPane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<QuestFailedInterface, QuestPane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<QuestFailedInterface>();
+  }
+
   QuestFailedInterface(GuiContext& guiContext, std::shared_ptr<Quest> const& quest, std::shared_ptr<Player> player);
 };
 

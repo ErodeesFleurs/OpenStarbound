@@ -170,7 +170,7 @@ WidgetParser::WidgetParser(GuiContext& context) : m_context(&context) {
 }
 
 void WidgetParser::construct(Json const& config, Widget* widget) {
-  m_pane = dynamic_cast<Pane*>(widget);
+  m_pane = as<Pane>(widget);
   constructImpl(config, widget);
 }
 

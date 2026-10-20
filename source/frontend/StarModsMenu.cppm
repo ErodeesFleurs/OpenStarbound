@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.casting;
@@ -45,6 +46,13 @@ class ListWidget;
 
 class ModsMenu : public Pane {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<ModsMenu, Pane>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ModsMenu>();
+  }
+
   ModsMenu(GuiContext& guiContext);
 
   void update(float dt) override;

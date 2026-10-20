@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.maybe;
 import star.json;
 import star.id_map;
@@ -23,6 +24,13 @@ namespace Star {
 
 struct EntityAnchor {
   virtual ~EntityAnchor() = default;
+  virtual void const* queryType(TypeKey key) const noexcept {
+    return queryTypeOf<EntityAnchor>(this, key);
+  }
+  virtual std::string_view dynamicTypeName() const noexcept {
+    return Star::typeName<EntityAnchor>();
+  }
+
 
   Vec2F position;
   // If set, the entity should place the bottom center of its collision poly on
@@ -46,6 +54,13 @@ DataStream& operator<<(DataStream& ds, EntityAnchorState const& anchorState);
 
 class AnchorableEntity : public virtual Entity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<AnchorableEntity, Entity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<AnchorableEntity>();
+  }
+
   virtual std::size_t anchorCount() const = 0;
   virtual std::shared_ptr<EntityAnchor const> anchor(std::size_t anchorPositionIndex) const = 0;
 };

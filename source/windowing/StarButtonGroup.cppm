@@ -1,5 +1,6 @@
 module;
 import std;
+import star.type_identity;
 import star.json;
 
 import star.casting;
@@ -95,6 +96,16 @@ private:
 
 class ButtonGroupWidget : public ButtonGroup, public Widget {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    // ButtonGroup is a non-polymorphic sibling, not a query-protocol base.
+    if (key == typeKey<ButtonGroup>())
+      return static_cast<ButtonGroup const*>(this);
+    return queryTypeOf<ButtonGroupWidget, Widget>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<ButtonGroupWidget>();
+  }
+
   explicit ButtonGroupWidget(GuiContext& context) : Widget(context) {}
 };
 }

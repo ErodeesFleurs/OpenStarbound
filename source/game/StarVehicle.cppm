@@ -1,6 +1,7 @@
 module;
 import star.game_timers;
 import std;
+import star.type_identity;
 import star.format;
 import star.json;
 import star.net_compatibility;
@@ -87,6 +88,14 @@ class Vehicle :
   public virtual PhysicsEntity, 
   public virtual ScriptedEntity {
 public:
+  void const* queryType(TypeKey key) const noexcept override {
+    return queryTypeOf<Vehicle, MobileEntity, LoungeableEntity, InteractiveEntity,
+        PhysicsEntity, ScriptedEntity>(this, key);
+  }
+  std::string_view dynamicTypeName() const noexcept override {
+    return Star::typeName<Vehicle>();
+  }
+
   Vehicle(Root& rootContext, Json baseConfig, String path, Json dynamicConfig);
 
   String name() const override;
