@@ -291,28 +291,24 @@ typedef std::variant<
     InputEvent;
 
 inline KeyMod operator|(KeyMod a, KeyMod b) {
-  return (KeyMod)((std::uint16_t)a | (std::uint16_t)b);
+  return static_cast<KeyMod>(std::to_underlying(a) | std::to_underlying(b));
 }
 
 inline KeyMod operator&(KeyMod a, KeyMod b) {
-  return (KeyMod)((std::uint16_t)a & (std::uint16_t)b);
+  return static_cast<KeyMod>(std::to_underlying(a) & std::to_underlying(b));
 }
 
 inline KeyMod operator~(KeyMod a) {
-  return (KeyMod) ~(std::uint16_t)a;
+  return static_cast<KeyMod>(~std::to_underlying(a));
 }
 
 inline KeyMod& operator|=(KeyMod& a, KeyMod b) {
-  std::uint16_t a_cast = (std::uint16_t)a;
-  a_cast |= (std::uint16_t)b;
-  a = (KeyMod)a_cast;
+  a = a | b;
   return a;
 }
 
 inline KeyMod& operator&=(KeyMod& a, KeyMod b) {
-  std::uint16_t a_cast = (std::uint16_t)a;
-  a_cast &= (std::uint16_t)b;
-  a = (KeyMod)a_cast;
+  a = a & b;
   return a;
 }
 

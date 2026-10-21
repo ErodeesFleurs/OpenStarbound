@@ -293,7 +293,7 @@ namespace WorldImpl {
       auto tileRect = RectF::withSize(Vec2F(worldGeometry.xwrap(*tileIt)), Vec2F::filled(1.0f));
       Line2F line{worldGeometry.xwrap(begin), worldGeometry.xwrap(end)};
       auto lineSet = worldGeometry.splitLine(line);
-      if (any(lineSet, [&](Line2F const& line) { return tileRect.edgeIntersection(line).glances; }))
+      if (std::ranges::any_of(lineSet, [&](Line2F const& line) { return tileRect.edgeIntersection(line).glances; }))
         tileIt = res.erase(tileIt);
       else
         ++tileIt;

@@ -616,23 +616,31 @@ void ListMixin<BaseList>::transform(Function&& function) {
 template <typename BaseList>
 template <typename Function>
 bool ListMixin<BaseList>::any(Function&& function) const {
-  return Star::any(*this, std::forward<Function>(function));
+  return std::any_of(Base::begin(), Base::end(), [&function](auto&& value) {
+    return static_cast<bool>(std::as_const(function)(std::forward<decltype(value)>(value)));
+  });
 }
 
 template <typename BaseList>
 bool ListMixin<BaseList>::any() const {
-  return Star::any(*this);
+  return std::any_of(Base::begin(), Base::end(), [](auto&& value) {
+    return static_cast<bool>(value);
+  });
 }
 
 template <typename BaseList>
 template <typename Function>
 bool ListMixin<BaseList>::all(Function&& function) const {
-  return Star::all(*this, std::forward<Function>(function));
+  return std::all_of(Base::begin(), Base::end(), [&function](auto&& value) {
+    return static_cast<bool>(std::as_const(function)(std::forward<decltype(value)>(value)));
+  });
 }
 
 template <typename BaseList>
 bool ListMixin<BaseList>::all() const {
-  return Star::all(*this);
+  return std::all_of(Base::begin(), Base::end(), [](auto&& value) {
+    return static_cast<bool>(value);
+  });
 }
 
 template <typename BaseList>

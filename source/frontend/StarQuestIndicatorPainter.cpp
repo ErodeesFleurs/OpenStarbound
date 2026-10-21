@@ -196,9 +196,9 @@ void QuestIndicatorPainter::update(float dt, std::shared_ptr<WorldClient> const&
     }
   }
 
-  m_indicators = Map<EntityId, Indicator>::from(m_indicators.pairs().filtered([&foundIndicators](std::pair<EntityId, Indicator> indicator) {
-      return foundIndicators.contains(indicator.first);
-    }));
+  std::erase_if(static_cast<Map<EntityId, Indicator>::Base&>(m_indicators), [&foundIndicators](auto const& indicator) {
+    return !foundIndicators.contains(indicator.first);
+  });
 }
 
 Drawable QuestIndicatorPainter::Indicator::render(float pixelRatio) const {
@@ -208,7 +208,7 @@ Drawable QuestIndicatorPainter::Indicator::render(float pixelRatio) const {
 void QuestIndicatorPainter::render() {
   auto& context = *m_guiContext;
 
-  for (auto const& indicator : m_indicators.values()) {
+  for (auto const& indicator : m_indicators | std::views::values) {
     Drawable drawable = indicator.render(m_camera.pixelRatio());
     drawable.fullbright = true;
     context.drawDrawable(drawable, Vec2F(indicator.screenPos), 1, Vec4B(255, 255, 255, 255));

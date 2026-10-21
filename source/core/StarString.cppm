@@ -425,15 +425,7 @@ String String::lookupTags(Lookup&& lookup) const {
     if (position > len)
       throw OutOfRangeException(strf("out of range in substrInto: {}", position));
 
-    auto it = ref.begin();
-    std::advance(it, position);
-
-    for (std::size_t i = 0; i < n; ++i) {
-      if (it == ref.end())
-        break;
-      result.push_back(*it);
-      ++it;
-    }
+    result.append(ref, position, n);
   };
 
   std::string finalString;
@@ -540,7 +532,7 @@ StringList StringList::filtered(Filter&& filter) const {
 
 template <typename Comparator>
 StringList StringList::sorted(Comparator&& comparator) const {
-  StringList l;
+  StringList l(*this);
   l.sort(std::forward<Comparator>(comparator));
   return l;
 }

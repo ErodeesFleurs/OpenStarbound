@@ -15,6 +15,13 @@ import star.vector;
 
 using namespace Star;
 
+TEST(StringTest, SortedComparatorPreservesInputAndDuplicates) {
+  StringList input{"b", "a", "b"};
+  auto descending = input.sorted([](String const& a, String const& b) { return a > b; });
+  EXPECT_EQ(descending, (StringList{"b", "b", "a"}));
+  EXPECT_EQ(input, (StringList{"b", "a", "b"}));
+}
+
 TEST(StringTest, substr) {
   EXPECT_EQ(String("barbazbaffoo").substr(4, 4), String("azba"));
   EXPECT_EQ(String("\0asdf", 5).substr(1, 2), String("as"));

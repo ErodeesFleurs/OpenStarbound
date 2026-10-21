@@ -462,10 +462,8 @@ void CharCreationPane::changed() {
     String name;
     std::shared_ptr<SpeciesDefinition> def;
     std::tie(name, def) = nameDefPair;
-    // NOTE: Probably not hot enough to matter, but this contains and indexOf makes this loop
-    // O(n^2).  This is less than ideal.
-    if (m_speciesList.contains(name)) {
-      if (auto bw = fetchChild<ButtonWidget>(strf("species.{}", m_speciesList.indexOf(name))))
+    if (auto speciesIt = std::ranges::find(m_speciesList, name); speciesIt != m_speciesList.end()) {
+      if (auto bw = fetchChild<ButtonWidget>(strf("species.{}", static_cast<std::size_t>(speciesIt - m_speciesList.begin()))))
         bw->setOverlayImage(def->options().genderOptions[genderIdx].characterImage);
     }
   }

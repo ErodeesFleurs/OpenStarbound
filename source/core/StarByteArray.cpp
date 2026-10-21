@@ -170,16 +170,11 @@ void ByteArray::trimRight(std::size_t s) {
 }
 
 std::size_t ByteArray::diffChar(const ByteArray& b) const {
-  std::size_t s = std::min(m_size, b.size());
-  char* ac = m_data;
-  char* bc = b.m_data;
-  std::size_t i;
-  for (i = 0; i < s; ++i) {
-    if (ac[i] != bc[i])
-      break;
-  }
-
-  return i;
+  auto size = std::min(m_size, b.size());
+  if (size == 0)
+    return 0;
+  auto mismatch = std::mismatch(m_data, m_data + size, b.m_data);
+  return static_cast<std::size_t>(mismatch.first - m_data);
 }
 
 int ByteArray::compare(const ByteArray& b) const {

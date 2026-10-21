@@ -403,10 +403,7 @@ String String::rextract(String const& chars) {
 }
 
 bool String::hasChar(Char c) const {
-  for (Char ch : *this)
-    if (ch == c)
-      return true;
-  return false;
+  return std::find(begin(), end(), c) != end();
 }
 
 bool String::hasCharOrWhitespace(Char c) const {

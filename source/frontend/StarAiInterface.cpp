@@ -325,9 +325,9 @@ void AiInterface::update(float dt) {
   }
 
   // If the enabled missions list changes, update the mission list
-  auto aiState = m_client->mainPlayer()->aiState();
-  if (aiState.availableMissions.values() != m_availableMissions
-      || aiState.completedMissions.values() != m_completedMissions) {
+  auto const& aiState = m_client->mainPlayer()->aiState();
+  if (!std::ranges::equal(aiState.availableMissions, m_availableMissions)
+      || !std::ranges::equal(aiState.completedMissions, m_completedMissions)) {
     m_availableMissions = aiState.availableMissions.values();
     m_completedMissions = aiState.completedMissions.values();
     populateMissions();

@@ -210,10 +210,7 @@ void StringView::forEachSplitView(StringView pattern, SplitCallback callback) co
 }
 
 bool StringView::hasChar(Char c) const {
-  for (Char ch : *this)
-    if (ch == c)
-      return true;
-  return false;
+  return std::find(begin(), end(), c) != end();
 }
 
 bool StringView::hasCharOrWhitespace(Char c) const {

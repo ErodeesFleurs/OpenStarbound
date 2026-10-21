@@ -43,28 +43,6 @@ struct Empty {
   }
 };
 
-// Compose arbitrary functions
-template <typename FirstFunction, typename SecondFunction>
-struct FunctionComposer {
-  FirstFunction f1;
-  SecondFunction f2;
-
-  template <typename... T>
-  decltype(auto) operator()(T&&... args) {
-    return f1(f2(std::forward<T>(args)...));
-  }
-};
-
-template <typename FirstFunction, typename SecondFunction>
-decltype(auto) compose(FirstFunction&& firstFunction, SecondFunction&& secondFunction) {
-  return FunctionComposer<FirstFunction, SecondFunction>{std::move(std::forward<FirstFunction>(firstFunction)), std::move(std::forward<SecondFunction>(secondFunction))};
-}
-
-template <typename FirstFunction, typename SecondFunction, typename ThirdFunction, typename... RestFunctions>
-decltype(auto) compose(FirstFunction firstFunction, SecondFunction secondFunction, ThirdFunction thirdFunction, RestFunctions... restFunctions) {
-  return compose(std::forward<FirstFunction>(firstFunction), compose(std::forward<SecondFunction>(secondFunction), compose(std::forward<ThirdFunction>(thirdFunction), std::forward<RestFunctions>(restFunctions)...)));
-}
-
 // Return intersection of sorted containers.
 template <typename Container>
 Container intersect(Container const& a, Container const& b) {
@@ -239,21 +217,6 @@ OutContainer transform(InContainer&& container, Function&& function) {
   OutContainer res;
   transformInto(res, std::forward<InContainer>(container), std::forward<Function>(function));
   return res;
-}
-
-template <typename OutputContainer, typename Function, typename Container1, typename Container2>
-OutputContainer zipWith(Function&& function, Container1 const& cont1, Container2 const& cont2) {
-  auto it1 = cont1.begin();
-  auto it2 = cont2.begin();
-
-  OutputContainer out;
-  while (it1 != cont1.end() && it2 != cont2.end()) {
-    out.insert(out.end(), function(*it1, *it2));
-    ++it1;
-    ++it2;
-  }
-
-  return out;
 }
 
 // Moves the given value and into an rvalue.  Works whether or not the type has
@@ -491,8 +454,6 @@ export namespace Star {
   using ::Star::SwallowReturn;
   using ::Star::swallow;
   using ::Star::Empty;
-  using ::Star::FunctionComposer;
-  using ::Star::compose;
   using ::Star::intersect;
   using ::Star::mapMerge;
   using ::Star::mapsEqual;
@@ -507,7 +468,6 @@ export namespace Star {
   using ::Star::copy;
   using ::Star::transformInto;
   using ::Star::transform;
-  using ::Star::zipWith;
   using ::Star::take;
   using ::Star::FunctionOutputIterator;
   using ::Star::makeFunctionOutputIterator;

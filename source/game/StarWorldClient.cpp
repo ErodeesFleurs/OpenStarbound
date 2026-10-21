@@ -1810,10 +1810,12 @@ TileDamageResult WorldClient::damageTiles(List<Vec2I> const& pos, TileLayer laye
   if (!inWorld())
     return TileDamageResult::None;
 
-  // Filter out any tiles that are not currently occupied or are protected
+  // Collect occupied tiles before separating protected tiles.
   auto occupied = pos.filtered([this, layer](Vec2I pos) { return tileIsOccupied(pos, layer, true, false); });
-  auto toDamage = occupied.filtered([this](Vec2I pos) { return !isTileProtected(pos); });
-  auto toDing = occupied.filtered([this](Vec2I pos) { return isTileProtected(pos); });
+  List<Vec2I> toDing;
+  List<Vec2I> toDamage;
+  std::ranges::partition_copy(occupied, std::back_inserter(toDing), std::back_inserter(toDamage),
+      [this](Vec2I pos) { return isTileProtected(pos); });
 
   if (toDamage.size() + toDing.size() == 0)
     return TileDamageResult::None;
