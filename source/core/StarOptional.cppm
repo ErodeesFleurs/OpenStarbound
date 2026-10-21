@@ -1,6 +1,5 @@
 module;
 import std;
-import star.hash;
 import star.stream_formatter;
 
 namespace Star {
@@ -14,15 +13,6 @@ T takeOptional(std::optional<T>& value) {
 }
 
 template <typename T>
-bool putOptional(std::optional<T>& value, T& destination) {
-  if (!value)
-    return false;
-  destination = std::move(*value);
-  value.reset();
-  return true;
-}
-
-template <typename T>
 T* optionalPtr(std::optional<T>& value) {
   return value ? std::addressof(*value) : nullptr;
 }
@@ -30,12 +20,6 @@ T* optionalPtr(std::optional<T>& value) {
 template <typename T>
 T const* optionalPtr(std::optional<T> const& value) {
   return value ? std::addressof(*value) : nullptr;
-}
-
-template <typename T, typename Function>
-void execOptional(std::optional<T>& value, Function&& function) {
-  if (value)
-    function(*value);
 }
 
 // Explicit diagnostic view: std::optional itself has no ostream/formatter hook.
@@ -71,9 +55,7 @@ struct std::formatter<Star::OptionalOutput<T>> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::takeOptional;
-  using ::Star::putOptional;
   using ::Star::optionalPtr;
-  using ::Star::execOptional;
   using ::Star::OptionalOutput;
   using ::Star::outputOptional;
   using ::Star::operator<<;

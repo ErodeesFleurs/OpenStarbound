@@ -97,32 +97,6 @@ TEST(OptionalOperations, TakePreservesSourceOnFailureAndTransfersOwnership) {
   EXPECT_TRUE(weak.expired());
 }
 
-TEST(OptionalOperations, PutResetsOnlyAfterSuccessfulAssignment) {
-  struct Value {
-    int payload;
-    bool reject;
-    Value& operator=(Value&& other) {
-      if (other.reject)
-        throw std::runtime_error("assignment");
-      payload = other.payload;
-      other.payload = -1;
-      return *this;
-    }
-  };
-  std::optional<Value> source(std::in_place, 7, true);
-  Value target{3, false};
-  EXPECT_THROW(putOptional(source, target), std::runtime_error);
-  ASSERT_TRUE(source);
-  EXPECT_EQ(source->payload, 7);
-  EXPECT_EQ(target.payload, 3);
-  source->reject = false;
-  EXPECT_TRUE(putOptional(source, target));
-  EXPECT_FALSE(source);
-  EXPECT_EQ(target.payload, 7);
-  EXPECT_FALSE(putOptional(source, target));
-  EXPECT_EQ(target.payload, 7);
-}
-
 TEST(VariantTest, AlternativeOrdering) {
   Variant<int, double> value(2);
   EXPECT_TRUE(value < 3);
