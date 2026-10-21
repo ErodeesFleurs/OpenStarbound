@@ -31,7 +31,6 @@ import star.set;
 import star.audio;
 import star.map;
 import star.either;
-import star.variant;
 import star.random;
 import star.weighted_pool;
 import star.strong_typedef;
@@ -555,7 +554,7 @@ float Chat::visible() const {
 bool Chat::sendEvent(InputEvent const& event) {
   if (!m_scripted && active()) {
     if (hasFocus()) {
-      if (event.is<KeyDownEvent>()) {
+      if (std::holds_alternative<KeyDownEvent>(event)) {
         auto actions = context()->actions(event);
         if (actions.contains(InterfaceAction::ChatStop)) {
           stopChat();
@@ -576,7 +575,7 @@ bool Chat::sendEvent(InputEvent const& event) {
       }
     }
 
-    if (auto mouseWheel = event.ptr<MouseWheelEvent>()) {
+    if (auto mouseWheel = std::get_if<MouseWheelEvent>(&event)) {
       if (inMember(*context()->mousePosition(event))) {
         if (mouseWheel->mouseWheel == MouseWheel::Down)
           scrollDown();
@@ -586,10 +585,10 @@ bool Chat::sendEvent(InputEvent const& event) {
       }
     }
 
-    if (event.is<MouseMoveEvent>() && inMember(*context()->mousePosition(event)))
+    if (std::holds_alternative<MouseMoveEvent>(event) && inMember(*context()->mousePosition(event)))
       m_timeChatLastActive = Time::monotonicMilliseconds();
 
-    if (event.is<MouseButtonDownEvent>()) {
+    if (std::holds_alternative<MouseButtonDownEvent>(event)) {
       if (m_chatLog->inMember(*context()->mousePosition(event))) {
         m_expanded = !m_expanded;
         updateSize();

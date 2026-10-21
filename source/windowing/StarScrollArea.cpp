@@ -36,7 +36,6 @@ import star.user_generated_content_service;
 import star.desktop_service;
 import star.image;
 import star.application_controller;
-import star.variant;
 import star.renderer;
 import star.asset_source;
 import star.assets;
@@ -389,13 +388,13 @@ bool ScrollArea::sendEvent(InputEvent const& event) {
     return false;
 
   if (m_dragActive) {
-    if (event.is<MouseButtonUpEvent>()) {
+    if (std::holds_alternative<MouseButtonUpEvent>(event)) {
       blur();
       m_dragActive = false;
       m_vBar->thumb()->setPressed(false);
       m_hBar->thumb()->setPressed(false);
       return true;
-    } else if (event.is<MouseMoveEvent>()) {
+    } else if (std::holds_alternative<MouseMoveEvent>(event)) {
       auto thumbDragPosition = *context()->mousePosition(event) - screenPosition() - m_dragOffset;
       if (m_dragDirection == GuiDirection::Vertical) {
         m_scrollOffset = m_vBar->offsetFromThumbPosition(thumbDragPosition);
@@ -410,7 +409,7 @@ bool ScrollArea::sendEvent(InputEvent const& event) {
   if (mousePos && !inMember(*mousePos))
     return false;
 
-  if (event.is<MouseButtonDownEvent>()) {
+  if (std::holds_alternative<MouseButtonDownEvent>(event)) {
     if (m_vBar->thumb()->inMember(*mousePos)) {
       focus();
       m_dragOffset = *mousePos - screenPosition() - m_vBar->thumb()->position();
@@ -431,7 +430,7 @@ bool ScrollArea::sendEvent(InputEvent const& event) {
   if (Widget::sendEvent(event))
     return true;
 
-  if (auto mouseWheel = event.ptr<MouseWheelEvent>()) {
+  if (auto mouseWheel = std::get_if<MouseWheelEvent>(&event)) {
     if (mouseWheel->mouseWheel == MouseWheel::Up)
       scrollAreaBy({0, m_buttonAdvance * 3});
     else

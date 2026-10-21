@@ -1,6 +1,5 @@
 module;
 import std;
-import star.variant;
 import star.json;
 
 import star.string;
@@ -111,7 +110,7 @@ struct Drawable {
   ImagePart& imagePart();
   ImagePart const& imagePart() const;
 
-  MVariant<LinePart, PolyPart, ImagePart> part;
+  std::variant<std::monostate, LinePart, PolyPart, ImagePart> part;
 
   Vec2F position;
   Color color;
@@ -166,39 +165,39 @@ RectF Drawable::boundBoxAll(ImageMetadataDatabase const& imageMetadata, Drawable
 }
 
 inline bool Drawable::isLine() const {
-  return part.is<LinePart>();
+  return std::holds_alternative<LinePart>(part);
 }
 
 inline Drawable::LinePart& Drawable::linePart() {
-  return part.get<LinePart>();
+  return std::get<LinePart>(part);
 }
 
 inline Drawable::LinePart const& Drawable::linePart() const {
-  return part.get<LinePart>();
+  return std::get<LinePart>(part);
 }
 
 inline bool Drawable::isPoly() const {
-  return part.is<PolyPart>();
+  return std::holds_alternative<PolyPart>(part);
 }
 
 inline Drawable::PolyPart& Drawable::polyPart() {
-  return part.get<PolyPart>();
+  return std::get<PolyPart>(part);
 }
 
 inline Drawable::PolyPart const& Drawable::polyPart() const {
-  return part.get<PolyPart>();
+  return std::get<PolyPart>(part);
 }
 
 inline bool Drawable::isImage() const {
-  return part.is<ImagePart>();
+  return std::holds_alternative<ImagePart>(part);
 }
 
 inline Drawable::ImagePart& Drawable::imagePart() {
-  return part.get<ImagePart>();
+  return std::get<ImagePart>(part);
 }
 
 inline Drawable::ImagePart const& Drawable::imagePart() const {
-  return part.get<ImagePart>();
+  return std::get<ImagePart>(part);
 }
 
 }

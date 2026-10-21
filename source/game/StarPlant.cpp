@@ -11,7 +11,6 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-import star.variant;
 import star.casting;
 import star.strong_typedef;
 import star.rpc_promise;

@@ -21,7 +21,6 @@ import star.game_types;
 import star.warping;
 import star.json_rpc;
 import std;
-import star.variant;
 import star.version;
 
 namespace Star {
@@ -62,7 +61,7 @@ public:
 
   bool hasInvitationPending();
   std::pair<Uuid, String> pullInvitation();
-  List<Variant<std::pair<String, bool>, StringList>> pullInviteResults();
+  List<std::variant<std::pair<String, bool>, StringList>> pullInviteResults();
 
   void update();
 
@@ -95,7 +94,7 @@ private:
   bool m_hasPendingInvitation;
   std::pair<Uuid, String> m_pendingInvitation;
   double m_pollInvitationsTimer;
-  List<Variant<std::pair<String, bool>, StringList>> m_pendingInviteResults;
+  List<std::variant<std::pair<String, bool>, StringList>> m_pendingInviteResults;
 
   bool m_fullUpdateRunning;
   double m_fullUpdateTimer;

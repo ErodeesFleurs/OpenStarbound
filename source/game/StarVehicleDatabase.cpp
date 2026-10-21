@@ -1,7 +1,6 @@
 import star.json;
 import star.json_extra;
 import star.id_map;
-import star.variant;
 import star.casting;
 import star.data_stream;
 import star.game_types;

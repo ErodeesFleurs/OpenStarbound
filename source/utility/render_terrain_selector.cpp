@@ -4,7 +4,6 @@ import star.file;
 import star.lexical_cast;
 import star.image;
 import star.string;
-import star.variant;
 import star.ordered_map;
 import star.ordered_set;
 import std;

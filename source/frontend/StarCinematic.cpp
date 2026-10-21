@@ -41,7 +41,6 @@ import star.weighted_pool;
 import star.casting;
 import star.strong_typedef;
 import star.interpolation;
-import star.variant;
 import star.rpc_promise;
 import star.net_compatibility;
 import star.worker_pool;
@@ -443,7 +442,7 @@ void Cinematic::drawDrawable(Drawable const& drawable, float drawableScale, Vec2
         drawableColor, 0.0f);
   } else {
     if constexpr (Star::DebugEnabled) {
-      Star::starAssertFailed((drawable.part.empty()));
+      Star::starAssertFailed((std::holds_alternative<std::monostate>(drawable.part)));
     }
   }
 }
@@ -699,9 +698,9 @@ void Cinematic::stop() {
 bool Cinematic::handleInputEvent(InputEvent const& event) {
   if (completed())
     return false;
-  if (event.is<MouseButtonUpEvent>() || event.is<KeyUpEvent>())
+  if (std::holds_alternative<MouseButtonUpEvent>(event) || std::holds_alternative<KeyUpEvent>(event))
     return false;
-  if (event.is<KeyDownEvent>()) {
+  if (std::holds_alternative<KeyDownEvent>(event)) {
     if (m_currentTimeSkip) {
       setTime(takeOptional(m_currentTimeSkip).skipToTime);
       return true;

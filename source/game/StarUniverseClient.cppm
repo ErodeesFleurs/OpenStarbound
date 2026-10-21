@@ -6,7 +6,6 @@ import star.game_types;
 import star.string;
 import star.either;
 import star.vector;
-import star.variant;
 import star.color;
 import star.bi_map;
 import star.random;

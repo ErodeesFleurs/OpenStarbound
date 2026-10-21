@@ -8,7 +8,6 @@ import star.id_map;
 import star.data_stream;
 import star.bi_map;
 import star.casting;
-import star.variant;
 import star.rpc_promise;
 import star.strong_typedef;
 import star.game_types;

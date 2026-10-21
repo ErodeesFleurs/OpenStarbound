@@ -3,7 +3,6 @@ import star.json_extra;
 import star.interpolation;
 import star.id_map;
 import star.poly;
-import star.variant;
 import star.casting;
 import star.vector;
 import star.data_stream;
@@ -808,27 +807,27 @@ void MovementController::updateForceRegions(float) {
   m_appliedForceRegion = false;
   auto handleForceRegions = [&](List<PhysicsForceRegion> const& forces) {
       for (auto const& force : forces) {
-        bool categoryCheck = force.call([myCategories = m_parameters.physicsEffectCategories.value_or(StringSet{})](auto& fr) {
+        bool categoryCheck = std::visit([myCategories = m_parameters.physicsEffectCategories.value_or(StringSet{})](auto& fr) {
             return fr.categoryFilter.check(myCategories);
-          });
+          }, force);
         if (!categoryCheck)
           continue;
 
-        bool boundsCheck = force.call([geometry, myBounds = collisionBoundBox()](auto& fr) {
+        bool boundsCheck = std::visit([geometry, myBounds = collisionBoundBox()](auto& fr) {
             return geometry.rectIntersectsRect(myBounds, fr.boundBox());
-          });
+          }, force);
         if (!boundsCheck)
           continue;
 
         m_appliedForceRegion = true;
-        if (auto directionalForceRegion = force.ptr<DirectionalForceRegion>()) {
+        if (auto directionalForceRegion = std::get_if<DirectionalForceRegion>(&force)) {
           float forceEffect = geometry.polyOverlapArea(directionalForceRegion->region, body) / body.convexArea();
           if (directionalForceRegion->xTargetVelocity)
             approachXVelocity(*directionalForceRegion->xTargetVelocity, directionalForceRegion->controlForce * forceEffect);
           if (directionalForceRegion->yTargetVelocity)
             approachYVelocity(*directionalForceRegion->yTargetVelocity, directionalForceRegion->controlForce * forceEffect);
 
-        } else if (auto radialForceRegion = force.ptr<RadialForceRegion>()) {
+        } else if (auto radialForceRegion = std::get_if<RadialForceRegion>(&force)) {
           Vec2F direction = geometry.diff(pos, radialForceRegion->center);
           float distance = vmag(direction);
           if (distance > 0 && distance < radialForceRegion->outerRadius) {
@@ -840,7 +839,7 @@ void MovementController::updateForceRegions(float) {
                 radialForceRegion->controlForce * incidence,
                 true);
           }
-        } else if (auto gradientForceRegion = force.ptr<GradientForceRegion>()) {
+        } else if (auto gradientForceRegion = std::get_if<GradientForceRegion>(&force)) {
           float overlapFactor = geometry.polyOverlapArea(gradientForceRegion->region, body) / body.convexArea();
 
           Vec2F gNorm = gradientForceRegion->gradient.direction();

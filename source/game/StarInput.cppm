@@ -3,7 +3,6 @@ import std;
 import star.string;
 import star.list;
 import star.map;
-import star.variant;
 import star.format;
 import star.hash;
 import star.json;
@@ -22,7 +21,7 @@ struct InputExceptionTag {
 };
 using InputException = StarError<InputExceptionTag, StarException>;
 
-typedef Variant<Key, MouseButton, ControllerButton> InputVariant;
+typedef std::variant<Key, MouseButton, ControllerButton> InputVariant;
 
 template <>
 struct hash<InputVariant> {
@@ -59,7 +58,7 @@ public:
     ControllerButton button = ControllerButton::Invalid;
   };
 
-  typedef MVariant<KeyBind, MouseBind, ControllerBind> Bind;
+  typedef std::variant<std::monostate, KeyBind, MouseBind, ControllerBind> Bind;
 
   static Bind bindFromJson(Json const& json);
   static Json bindToJson(Bind const& bind);

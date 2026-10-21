@@ -113,7 +113,7 @@ String LuaBindings::formatLua(String const& string, List<LuaValue> const& args) 
       else if (*next == '%')
         result += '%';
       else if (*next == 's')
-        result += toString(popArg());
+        result += toString(outputLuaValue(popArg()));
       else
         throw StarException::format("Improper lua log format specifier {}", (char)*next);
       ++next;
@@ -158,13 +158,13 @@ LuaCallbacks LuaBindings::makeUtilityCallbacks(RandomService& random, Logger& lo
     XXHash64 hash;
 
     for (auto const& value : values) {
-      if (auto b = value.ptr<LuaBoolean>())
+      if (auto b = std::get_if<LuaBoolean>(&value))
         xxHash64Push(hash, *b);
-      else if (auto i = value.ptr<LuaInt>())
+      else if (auto i = std::get_if<LuaInt>(&value))
         xxHash64Push(hash, *i);
-      else if (auto f = value.ptr<LuaFloat>())
+      else if (auto f = std::get_if<LuaFloat>(&value))
         xxHash64Push(hash, *f);
-      else if (auto s = value.ptr<LuaString>())
+      else if (auto s = std::get_if<LuaString>(&value))
         xxHash64Push(hash, s->ptr());
       else
         throw LuaException("Unhashable lua type passed to staticRandomXX binding");
@@ -243,7 +243,7 @@ String LuaBindings::UtilityCallbacks::printJson(Json const& arg, std::optional<i
 }
 
 String LuaBindings::UtilityCallbacks::print(LuaValue const& value) {
-  return toString(value);
+  return toString(outputLuaValue(value));
 }
 
 LuaValue LuaBindings::UtilityCallbacks::interpolateSinEase(LuaEngine& engine, double offset, LuaValue const& value1, LuaValue const& value2) {

@@ -20,7 +20,6 @@ import star.asset_path;
 import star.casting;
 import star.strong_typedef;
 import star.bi_map;
-import star.variant;
 import star.rpc_promise;
 import star.a_star;
 

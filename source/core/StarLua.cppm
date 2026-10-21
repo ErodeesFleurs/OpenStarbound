@@ -13,7 +13,6 @@ import star.list;
 import star.map;
 import star.set;
 import star.optional;
-import star.variant;
 import star.format;
 import star.image_processing;
 import star.hash;
@@ -86,7 +85,7 @@ class LuaTable;
 class LuaFunction;
 class LuaThread;
 class LuaUserData;
-typedef Variant<LuaNilType, LuaBoolean, LuaInt, LuaFloat, LuaString, LuaTable, LuaFunction, LuaThread, LuaUserData> LuaValue;
+typedef std::variant<LuaNilType, LuaBoolean, LuaInt, LuaFloat, LuaString, LuaTable, LuaFunction, LuaThread, LuaUserData> LuaValue;
 
 // Used to wrap multiple return values from calling a lua function or to pass
 // multiple values as arguments to a lua function from a container.  If this is
@@ -158,7 +157,7 @@ namespace LuaDetail {
   // functions to be wrapped with the least amount of overhead.  Arguments are
   // passed non-const so that they can be moved into wrapped functions that
   // take values without copying.
-  typedef Variant<LuaValue, LuaVariadic<LuaValue>> LuaFunctionReturn;
+  typedef std::variant<LuaValue, LuaVariadic<LuaValue>> LuaFunctionReturn;
   typedef std::function<LuaFunctionReturn(LuaEngine&, std::size_t argc, LuaValue* argv)> LuaWrappedFunction;
 }
 
@@ -298,6 +297,19 @@ public:
   template <typename T>
   T& get() const;
 };
+// The referenced Lua value must outlive this diagnostic view.
+struct LuaValueOutput {
+  LuaValue const& value;
+};
+
+inline LuaValueOutput outputLuaValue(LuaValue const& value) {
+  return {value};
+}
+
+
+inline std::ostream& operator<<(std::ostream& output, LuaValueOutput value) {
+  return output << value.value;
+}
 
 inline const LuaValue LuaNil = LuaValue();
 
@@ -807,7 +819,7 @@ struct LuaConverter<bool> {
   }
 
   static std::optional<bool> to(LuaEngine&, LuaValue const& v) {
-    if (auto b = v.ptr<LuaBoolean>())
+    if (auto b = std::get_if<LuaBoolean>(&v))
       return *b;
     if (v == LuaNil)
       return false;
@@ -822,11 +834,11 @@ struct LuaIntConverter {
   }
 
   static std::optional<T> to(LuaEngine&, LuaValue const& v) {
-    if (auto n = v.ptr<LuaInt>())
+    if (auto n = std::get_if<LuaInt>(&v))
       return *n;
-    if (auto n = v.ptr<LuaFloat>())
+    if (auto n = std::get_if<LuaFloat>(&v))
       return *n;
-    if (auto s = v.ptr<LuaString>()) {
+    if (auto s = std::get_if<LuaString>(&v)) {
       if (auto n = maybeLexicalCast<LuaInt>(s->ptr()))
         return *n;
       if (auto n = maybeLexicalCast<LuaFloat>(s->ptr()))
@@ -873,11 +885,11 @@ struct LuaFloatConverter {
   }
 
   static std::optional<T> to(LuaEngine&, LuaValue const& v) {
-    if (auto n = v.ptr<LuaFloat>())
+    if (auto n = std::get_if<LuaFloat>(&v))
       return *n;
-    if (auto n = v.ptr<LuaInt>())
+    if (auto n = std::get_if<LuaInt>(&v))
       return *n;
-    if (auto s = v.ptr<LuaString>()) {
+    if (auto s = std::get_if<LuaString>(&v)) {
       if (auto n = maybeLexicalCast<LuaFloat>(s->ptr()))
         return *n;
       if (auto n = maybeLexicalCast<LuaInt>(s->ptr()))
@@ -900,12 +912,12 @@ struct LuaConverter<String> {
   }
 
   static std::optional<String> to(LuaEngine&, LuaValue const& v) {
-    if (v.is<LuaString>())
-      return v.get<LuaString>().toString();
-    if (v.is<LuaInt>())
-      return String(toString(v.get<LuaInt>()));
-    if (v.is<LuaFloat>())
-      return String(toString(v.get<LuaFloat>()));
+    if (std::holds_alternative<LuaString>(v))
+      return std::get<LuaString>(v).toString();
+    if (std::holds_alternative<LuaInt>(v))
+      return String(toString(std::get<LuaInt>(v)));
+    if (std::holds_alternative<LuaFloat>(v))
+      return String(toString(std::get<LuaFloat>(v)));
     return {};
   }
 };
@@ -952,12 +964,12 @@ struct LuaConverter<LuaString> {
   }
 
   static std::optional<LuaString> to(LuaEngine& engine, LuaValue v) {
-    if (v.is<LuaString>())
-      return LuaString(std::move(v.get<LuaString>()));
-    if (v.is<LuaInt>())
-      return engine.createString(toString(v.get<LuaInt>()));
-    if (v.is<LuaFloat>())
-      return engine.createString(toString(v.get<LuaFloat>()));
+    if (std::holds_alternative<LuaString>(v))
+      return LuaString(std::move(std::get<LuaString>(v)));
+    if (std::holds_alternative<LuaInt>(v))
+      return engine.createString(toString(std::get<LuaInt>(v)));
+    if (std::holds_alternative<LuaFloat>(v))
+      return engine.createString(toString(std::get<LuaFloat>(v)));
     return {};
   }
 };
@@ -969,7 +981,7 @@ struct LuaValueConverter {
   }
 
   static std::optional<T> to(LuaEngine&, LuaValue v) {
-    if (auto p = v.ptr<T>()) {
+    if (auto p = std::get_if<T>(&v)) {
       return std::move(*p);
     }
     return {};
@@ -1047,7 +1059,7 @@ struct LuaMapConverter {
   }
 
   static std::optional<T> to(LuaEngine& engine, LuaValue const& v) {
-    auto table = v.ptr<LuaTable>();
+    auto table = std::get_if<LuaTable>(&v);
     if (!table)
       return {};
 
@@ -1078,14 +1090,14 @@ struct LuaContainerConverter {
   }
 
   static std::optional<T> to(LuaEngine& engine, LuaValue const& v) {
-    auto table = v.ptr<LuaTable>();
+    auto table = std::get_if<LuaTable>(&v);
     if (!table)
       return {};
 
     T result;
     bool failed = false;
     table->iterate([&result, &failed, &engine](LuaValue key, LuaValue value) {
-        if (!key.is<LuaInt>()) {
+        if (!std::holds_alternative<LuaInt>(key)) {
           failed = true;
           return false;
         }
@@ -1194,9 +1206,9 @@ namespace LuaDetail {
   template <typename T>
   struct FromFunctionReturn {
     static T convert(LuaEngine& engine, LuaFunctionReturn const& ret) {
-      if (auto l = ret.ptr<LuaValue>()) {
+      if (auto l = std::get_if<LuaValue>(&ret)) {
         return engine.luaTo<T>(*l);
-      } else if (auto vec = ret.ptr<LuaVariadic<LuaValue>>()) {
+      } else if (auto vec = std::get_if<LuaVariadic<LuaValue>>(&ret)) {
         return engine.luaTo<T>(vec->at(0));
       } else {
         return engine.luaTo<T>(LuaNil);
@@ -1207,9 +1219,9 @@ namespace LuaDetail {
   template <typename T>
   struct FromFunctionReturn<LuaVariadic<T>> {
     static LuaVariadic<T> convert(LuaEngine& engine, LuaFunctionReturn const& ret) {
-      if (auto l = ret.ptr<LuaValue>()) {
+      if (auto l = std::get_if<LuaValue>(&ret)) {
         return {engine.luaTo<T>(*l)};
-      } else if (auto vec = ret.ptr<LuaVariadic<LuaValue>>()) {
+      } else if (auto vec = std::get_if<LuaVariadic<LuaValue>>(&ret)) {
         LuaVariadic<T> ret(vec->size());
         for (std::size_t i = 0; i < vec->size(); ++i)
           ret[i] = engine.luaTo<T>((*vec)[i]);
@@ -1223,9 +1235,9 @@ namespace LuaDetail {
   template <typename ArgFirst, typename... ArgRest>
   struct FromFunctionReturn<LuaTupleReturn<ArgFirst, ArgRest...>> {
     static LuaTupleReturn<ArgFirst, ArgRest...> convert(LuaEngine& engine, LuaFunctionReturn const& ret) {
-      if (auto l = ret.ptr<LuaValue>()) {
+      if (auto l = std::get_if<LuaValue>(&ret)) {
         return doConvertSingle(engine, *l, std::index_sequence_for<ArgRest...>{});
-      } else if (auto vec = ret.ptr<LuaVariadic<LuaValue>>()) {
+      } else if (auto vec = std::get_if<LuaVariadic<LuaValue>>(&ret)) {
         return doConvertMulti(engine, *vec, std::index_sequence_for<ArgRest...>{});
       } else {
         return doConvertNone(engine, std::index_sequence_for<ArgRest...>{});
@@ -1383,7 +1395,7 @@ namespace LuaDetail {
         if (argc == 0)
           throw LuaException("No object argument passed to wrapped method");
         return toWrappedReturn(engine,
-            (Return const&)func(argv[0].get<LuaUserData>().get<T>(), ArgGet<Args>::get(engine, argc - 1, argv + 1, Indexes)...));
+            (Return const&)func(std::get<LuaUserData>(argv[0]).get<T>(), ArgGet<Args>::get(engine, argc - 1, argv + 1, Indexes)...));
       };
     }
 
@@ -1400,7 +1412,7 @@ namespace LuaDetail {
       return [func = std::move(func)](LuaEngine& engine, std::size_t argc, LuaValue* argv) {
         if (argc == 0)
           throw LuaException("No object argument passed to wrapped method");
-        func(argv[0].get<LuaUserData>().get<T>(), ArgGet<Args>::get(engine, argc - 1, argv + 1, Indexes)...);
+        func(std::get<LuaUserData>(argv[0]).get<T>(), ArgGet<Args>::get(engine, argc - 1, argv + 1, Indexes)...);
         return LuaFunctionReturn();
       };
     }
@@ -1420,7 +1432,7 @@ namespace LuaDetail {
           throw LuaException("No object argument passed to wrapped method");
         return toWrappedReturn(
             engine,
-            (Return const&)func(argv[0].get<LuaUserData>().get<T>(), engine, ArgGet<Args>::get(engine, argc - 1, argv + 1, Indexes)...));
+            (Return const&)func(std::get<LuaUserData>(argv[0]).get<T>(), engine, ArgGet<Args>::get(engine, argc - 1, argv + 1, Indexes)...));
       };
     }
 
@@ -1437,7 +1449,7 @@ namespace LuaDetail {
       return [func = std::move(func)](LuaEngine& engine, std::size_t argc, LuaValue* argv) {
         if (argc == 0)
           throw LuaException("No object argument passed to wrapped method");
-        func(argv[0].get<LuaUserData>().get<T>(), engine, ArgGet<Args>::get(engine, argc - 1, argv + 1, Indexes)...);
+        func(std::get<LuaUserData>(argv[0]).get<T>(), engine, ArgGet<Args>::get(engine, argc - 1, argv + 1, Indexes)...);
         return LuaValue();
       };
     }
@@ -1867,7 +1879,7 @@ Ret LuaContext::eval(String const& lua) {
 template <typename Ret, typename... Args>
 Ret LuaContext::invokePath(String const& key, Args const&... args) const {
   auto p = getPath(key);
-  if (auto f = p.ptr<LuaFunction>())
+  if (auto f = std::get_if<LuaFunction>(&p))
     return f->invoke<Ret>(args...);
   throw LuaException::format("invokePath called on path '{}' which is not function type", key);
 }
@@ -1939,7 +1951,7 @@ LuaValue LuaUserDataConverter<T>::from(LuaEngine& engine, T t) {
 
 template <typename T>
 std::optional<T> LuaUserDataConverter<T>::to(LuaEngine&, LuaValue const& v) {
-  if (auto ud = v.ptr<LuaUserData>()) {
+  if (auto ud = std::get_if<LuaUserData>(&v)) {
     if (ud->is<T>())
       return ud->get<T>();
   }
@@ -2395,6 +2407,8 @@ export namespace Star {
   using ::Star::LuaInt;
   using ::Star::LuaFloat;
   using ::Star::LuaValue;
+  using ::Star::LuaValueOutput;
+  using ::Star::outputLuaValue;
   using ::Star::LuaReference;
   using ::Star::LuaString;
   using ::Star::LuaTable;
@@ -2460,4 +2474,4 @@ export namespace Star {
   }
 }
 
-export template <> struct std::formatter<Star::LuaValue> : Star::StreamFormatter {};
+export template <> struct std::formatter<Star::LuaValueOutput> : Star::StreamFormatter {};

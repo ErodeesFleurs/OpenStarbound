@@ -35,7 +35,6 @@ import star.worker_pool;
 
 import star.sector_array_2d;
 import star.perlin;
-import star.variant;
 
 
 import star.collision_block;
@@ -136,7 +135,7 @@ private:
 
   typedef std::tuple<MaterialId, MaterialRenderPieceIndex, MaterialHue, bool> MaterialPieceTextureKey;
   typedef String AssetTextureKey;
-  typedef Variant<MaterialPieceTextureKey, AssetTextureKey> TextureKey;
+  typedef std::variant<MaterialPieceTextureKey, AssetTextureKey> TextureKey;
 
   struct TextureKeyHash {
     std::size_t operator()(TextureKey const& key) const;

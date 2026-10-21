@@ -30,7 +30,6 @@ import star.strong_typedef;
 import star.audio;
 import star.map;
 import star.set;
-import star.variant;
 import star.rpc_promise;
 import star.ordered_map;
 import star.net_compatibility;
@@ -203,7 +202,7 @@ public:
   float timeOfDay() const override;
   std::shared_ptr<LuaRoot> luaRoot() override;
   RpcPromise<Vec2F> findUniqueEntity(String const& uniqueId) override;
-  RpcPromise<Json> sendEntityMessage(Variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) override;
+  RpcPromise<Json> sendEntityMessage(std::variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) override;
   bool isTileProtected(Vec2I const& pos) const override;
   StringMap<LuaCallbacks> luaThreadCallbacks() const override;
 

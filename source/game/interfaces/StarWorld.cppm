@@ -6,7 +6,6 @@ import star.lua;
 import star.json;
 import star.id_map;
 import star.poly;
-import star.variant;
 import star.casting;
 import star.vector;
 import star.data_stream;
@@ -196,7 +195,7 @@ public:
   // Send a message to a local or remote scripted entity.  If the target is
   // local, the promise will be finished before being returned.  Entity id can
   // either be EntityId or a uniqueId.
-  virtual RpcPromise<Json> sendEntityMessage(Variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) = 0;
+  virtual RpcPromise<Json> sendEntityMessage(std::variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) = 0;
 
   // Helper non-virtual methods.
 

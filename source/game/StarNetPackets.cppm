@@ -14,7 +14,6 @@ import star.format;
 import star.version;
 import star.ordered_map;
 import star.either;
-import star.variant;
 import star.color;
 import star.random;
 import star.weighted_pool;
@@ -1121,7 +1120,7 @@ struct EntityMessagePacket : PacketBase<PacketType::EntityMessage> {
   std::string_view dynamicTypeName() const noexcept override { return Star::typeName<EntityMessagePacket>(); }
 
   EntityMessagePacket();
-  EntityMessagePacket(Variant<EntityId, String> entityId, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection = ServerConnectionId);
+  EntityMessagePacket(std::variant<EntityId, String> entityId, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection = ServerConnectionId);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -1129,7 +1128,7 @@ struct EntityMessagePacket : PacketBase<PacketType::EntityMessage> {
   void readJson(Json const& json) override;
   Json writeJson() const override;
 
-  Variant<EntityId, String> entityId;
+  std::variant<EntityId, String> entityId;
   String message;
   JsonArray args;
   Uuid uuid;

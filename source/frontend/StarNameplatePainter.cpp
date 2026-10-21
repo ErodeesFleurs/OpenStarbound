@@ -32,7 +32,6 @@ import star.version;
 import star.either;
 import star.random;
 import star.weighted_pool;
-import star.variant;
 import star.rpc_promise;
 import star.ordered_map;
 import star.net_compatibility;

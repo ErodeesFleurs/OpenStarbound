@@ -22,7 +22,6 @@ import star.bi_map;
 import star.random;
 import star.perlin;
 import star.weighted_pool;
-import star.variant;
 import star.id_map;
 import star.set;
 import star.casting;
@@ -197,7 +196,7 @@ void TeamClient::invitePlayer(String const& playerName) {
       m_pendingInviteResults.append(std::make_pair(playerName, false));
     else if (response.isType(Json::Type::Array)) {
       m_pendingInviteResults.push_back(StringList());
-      StringList& invited = m_pendingInviteResults.back().get<StringList>();
+      StringList& invited = std::get<StringList>(m_pendingInviteResults.back());
       for (auto& entry : response.toArray()) {
         if (!entry.isType(Json::Type::Array))
           continue;
@@ -251,7 +250,7 @@ std::pair<Uuid, String> TeamClient::pullInvitation() {
   return m_pendingInvitation;
 }
 
-List<Variant<std::pair<String, bool>, StringList>> TeamClient::pullInviteResults() {
+List<std::variant<std::pair<String, bool>, StringList>> TeamClient::pullInviteResults() {
   return take(m_pendingInviteResults);
 }
 
@@ -387,7 +386,7 @@ void TeamClient::writePlayerData(JsonObject& request, std::shared_ptr<Player> pl
 
   WarpMode mode = WarpMode::None;
   if (player->log()->introComplete()) {
-    if (m_clientContext->playerWorldId().is<CelestialWorldId>())
+    if (std::holds_alternative<CelestialWorldId>(m_clientContext->playerWorldId()))
       mode = WarpMode::BeamOnly;
     else
       mode = player->isDeployed() ? WarpMode::DeployOnly : WarpMode::BeamOnly;

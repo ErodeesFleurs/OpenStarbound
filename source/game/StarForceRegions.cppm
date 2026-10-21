@@ -5,7 +5,6 @@ import star.data_stream;
 import star.json;
 
 import star.poly;
-import star.variant;
 
 import star.vector;
 import star.line;
@@ -100,7 +99,7 @@ struct GradientForceRegion {
 DataStream& operator>>(DataStream& ds, GradientForceRegion& rfr);
 DataStream& operator<<(DataStream& ds, GradientForceRegion const& rfr);
 
-typedef Variant<DirectionalForceRegion, RadialForceRegion, GradientForceRegion> PhysicsForceRegion;
+typedef std::variant<DirectionalForceRegion, RadialForceRegion, GradientForceRegion> PhysicsForceRegion;
 
 PhysicsForceRegion jsonToPhysicsForceRegion(Json const& json);
 

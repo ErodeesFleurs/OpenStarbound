@@ -38,7 +38,6 @@ import star.hash;
 import star.string_view;
 import star.directives;
 import star.asset_path;
-import star.variant;
 
 import star.damage_types;
 import star.world_geometry;

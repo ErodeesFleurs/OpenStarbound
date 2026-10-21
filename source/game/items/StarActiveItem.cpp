@@ -16,7 +16,6 @@ import star.string_view;
 import star.thread;
 import star.directives;
 import star.asset_path;
-import star.variant;
 import star.rpc_promise;
 import star.a_star;
 import std;
@@ -257,9 +256,9 @@ void ActiveItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Move
 
   if (isClient) {
     for (auto forceRegion : forceRegions()) {
-      if (auto dfr = forceRegion.ptr<DirectionalForceRegion>())
+      if (auto dfr = std::get_if<DirectionalForceRegion>(&forceRegion))
         root().spatialLogger().logPoly("world", dfr->region, { 155, 0, 255, 255 });
-      else if (auto rfr = forceRegion.ptr<RadialForceRegion>())
+      else if (auto rfr = std::get_if<RadialForceRegion>(&forceRegion))
         root().spatialLogger().logPoint("world", rfr->center, { 155, 0, 255, 255 });
     }
   }
@@ -268,14 +267,14 @@ void ActiveItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Move
 List<DamageSource> ActiveItem::damageSources() const {
   List<DamageSource> damageSources = m_damageSources.get();
   for (auto ds : m_itemDamageSources.get()) {
-    if (ds.damageArea.is<PolyF>()) {
-      auto& poly = ds.damageArea.get<PolyF>();
+    if (std::holds_alternative<PolyF>(ds.damageArea)) {
+      auto& poly = std::get<PolyF>(ds.damageArea);
       poly.rotate(m_armAngle.get());
       if (owner()->facingDirection() == Direction::Left)
         poly.flipHorizontal(0.0f);
       poly.translate(handPosition(Vec2F()));
-    } else if (ds.damageArea.is<Line2F>()) {
-      auto& line = ds.damageArea.get<Line2F>();
+    } else if (std::holds_alternative<Line2F>(ds.damageArea)) {
+      auto& line = std::get<Line2F>(ds.damageArea);
       line.rotate(m_armAngle.get());
       if (owner()->facingDirection() == Direction::Left)
         line.flipHorizontal(0.0f);
@@ -301,12 +300,12 @@ List<PolyF> ActiveItem::shieldPolys() const {
 List<PhysicsForceRegion> ActiveItem::forceRegions() const {
   List<PhysicsForceRegion> forceRegions = m_forceRegions.get();
   for (auto fr : m_itemForceRegions.get()) {
-    if (auto dfr = fr.ptr<DirectionalForceRegion>()) {
+    if (auto dfr = std::get_if<DirectionalForceRegion>(&fr)) {
       dfr->region.rotate(m_armAngle.get());
       if (owner()->facingDirection() == Direction::Left)
         dfr->region.flipHorizontal(0.0f);
       dfr->region.translate(owner()->position() + handPosition(Vec2F()));
-    } else if (auto rfr = fr.ptr<RadialForceRegion>()) {
+    } else if (auto rfr = std::get_if<RadialForceRegion>(&fr)) {
       rfr->center = rfr->center.rotate(m_armAngle.get());
       if (owner()->facingDirection() == Direction::Left)
         rfr->center[0] *= -1;

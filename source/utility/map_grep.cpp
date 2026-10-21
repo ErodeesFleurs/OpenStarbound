@@ -3,7 +3,6 @@ import star.native_runtime;
 import star.file;
 import star.logging;
 import star.string;
-import star.variant;
 import star.ordered_map;
 import star.ordered_set;
 import std;
@@ -50,7 +49,7 @@ using namespace Star::Dungeon;
 typedef String TileName;
 typedef std::pair<String, String> TileProperty;
 
-typedef MVariant<TileName, TileProperty> MatchCriteria;
+typedef std::variant<std::monostate, TileName, TileProperty> MatchCriteria;
 
 struct SearchParameters {
   MatchCriteria criteria;
@@ -62,14 +61,14 @@ String const MapFilenameSuffix = ".json";
 
 std::optional<String> matchTile(SearchParameters const& search, Tiled::Tile const& tile) {
   Tiled::Properties const& properties = tile.properties;
-  if (search.criteria.is<TileName>()) {
+  if (std::holds_alternative<TileName>(search.criteria)) {
     if (auto tileName = properties.opt<String>("//name"))
-      if (tileName->regexMatch(search.criteria.get<TileName>()))
+      if (tileName->regexMatch(std::get<TileName>(search.criteria)))
         return tileName;
   } else {
     String propertyName;
     String matchValue;
-    std::tie(propertyName, matchValue) = search.criteria.get<TileProperty>();
+    std::tie(propertyName, matchValue) = std::get<TileProperty>(search.criteria);
     if (auto propertyValue = properties.opt<String>(propertyName))
       if (propertyValue->regexMatch(matchValue))
         return properties.opt<String>("//name").value_or("?");

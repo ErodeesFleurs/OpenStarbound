@@ -13,7 +13,7 @@ LuaValue LuaConverter<Color>::from(LuaEngine& engine, Color const& c) {
 }
 
 std::optional<Color> LuaConverter<Color>::to(LuaEngine& engine, LuaValue const& v) {
-  if (auto t = v.ptr<LuaTable>()) {
+  if (auto t = std::get_if<LuaTable>(&v)) {
     Color c = Color::rgba(0, 0, 0, 255);
     std::optional<int> r = engine.luaMaybeTo<int>(t->get(1));
     std::optional<int> g = engine.luaMaybeTo<int>(t->get(2));
@@ -32,7 +32,7 @@ std::optional<Color> LuaConverter<Color>::to(LuaEngine& engine, LuaValue const& 
     }
 
     return c;
-  } else if (auto s = v.ptr<LuaString>()) {
+  } else if (auto s = std::get_if<LuaString>(&v)) {
     try {
       return Color(s->ptr());
     } catch (ColorException const&) {}

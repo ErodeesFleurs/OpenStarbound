@@ -37,7 +37,6 @@ import star.user_generated_content_service;
 import star.desktop_service;
 import star.image;
 import star.application_controller;
-import star.variant;
 import star.renderer;
 import star.asset_source;
 import star.assets;
@@ -250,7 +249,7 @@ bool PaneManager::keyboardCapturedForTextInput() const {
 }
 
 bool PaneManager::sendInputEvent(InputEvent const& event) {
-  if (event.is<MouseMoveEvent>()) {
+  if (std::holds_alternative<MouseMoveEvent>(event)) {
     m_tooltipLastMousePos = *m_context->mousePosition(event);
 
     for (auto const& layerPair : m_displayedPanes) {
@@ -263,7 +262,7 @@ bool PaneManager::sendInputEvent(InputEvent const& event) {
     }
   }
 
-  if (event.is<MouseButtonDownEvent>()) {
+  if (std::holds_alternative<MouseButtonDownEvent>(event)) {
     m_tooltipShowTimer.reset();
     if (m_activeTooltip) {
       dismiss(m_activeTooltip);
@@ -273,7 +272,7 @@ bool PaneManager::sendInputEvent(InputEvent const& event) {
     }
   }
 
-  if (event.is<MouseButtonUpEvent>()) {
+  if (std::holds_alternative<MouseButtonUpEvent>(event)) {
     for (auto const& layerPair : m_displayedPanes) {
       for (auto const& panePair : layerPair.second) {
         if (panePair.first->dragActive()) {
@@ -288,7 +287,7 @@ bool PaneManager::sendInputEvent(InputEvent const& event) {
   // the keyboard otherwise it will always be used to close first before being
   // a normal event. This is so a window can control its own closing if it
   // really needs to (like the keybindings window).
-  if (event.is<KeyDownEvent>() && m_context->actions(event).contains(InterfaceAction::GuiClose)) {
+  if (std::holds_alternative<KeyDownEvent>(event) && m_context->actions(event).contains(InterfaceAction::GuiClose)) {
     if (auto top = topPane({PaneLayer::ModalWindow, PaneLayer::Window})) {
       dismiss(top);
       return true;
@@ -298,14 +297,14 @@ bool PaneManager::sendInputEvent(InputEvent const& event) {
   // If there is a pane that has captured the keyboard, keyboard events will
   // ONLY be sent to it.
   auto keyCapturePane = keyboardCapturedPane();
-  if (keyCapturePane && (event.is<KeyDownEvent>() || event.is<KeyUpEvent>() || event.is<TextInputEvent>()))
+  if (keyCapturePane && (std::holds_alternative<KeyDownEvent>(event) || std::holds_alternative<KeyUpEvent>(event) || std::holds_alternative<TextInputEvent>(event)))
     return keyCapturePane->sendEvent(event);
 
   bool foundModal = false;
   for (auto& layerPair : m_displayedPanes) {
     for (auto const& panePair : copy(layerPair.second)) {
       if (panePair.first->sendEvent(event)) {
-        if (event.is<MouseButtonDownEvent>())
+        if (std::holds_alternative<MouseButtonDownEvent>(event))
           layerPair.second.toFront(panePair.first);
         return true;
       }

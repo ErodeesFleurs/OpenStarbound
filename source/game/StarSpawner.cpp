@@ -14,7 +14,6 @@ import star.list;
 import star.bi_map;
 import star.data_stream;
 import star.casting;
-import star.variant;
 import star.rpc_promise;
 import star.strong_typedef;
 import star.vector;
@@ -385,10 +384,10 @@ void Spawner::spawnInCell(Vec2I const& cell) {
       int targetGroupSize = this->root().random().randInt(spawnType.groupSize[0], spawnType.groupSize[1]);
       for (int i = 0; i < targetGroupSize; ++i) {
         String monsterType;
-        if (auto monsterPool = spawnType.monsterType.maybe<WeightedPool<String>>())
+        if (auto monsterPool = std::get_if<WeightedPool<String>>(&spawnType.monsterType))
           monsterType = monsterPool->select(this->root().random());
         else
-          monsterType = spawnType.monsterType.get<String>();
+          monsterType = std::get<String>(spawnType.monsterType);
 
         auto monsterVariant = monsterDatabase->monsterVariant(monsterType, spawnSeed, spawnType.monsterParameters);
         auto monsterBoundBox = monsterVariant.movementSettings.standingPoly->boundBox();

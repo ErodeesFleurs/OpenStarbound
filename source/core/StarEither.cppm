@@ -2,7 +2,6 @@ module;
 import std;
 import star.optional;
 import star.format;
-import star.variant;
 
 namespace Star {
 
@@ -84,7 +83,7 @@ private:
   typedef EitherLeftValue<Left> LeftType;
   typedef EitherRightValue<Right> RightType;
 
-  Variant<LeftType, RightType> m_value;
+  std::variant<LeftType, RightType> m_value;
 };
 
 template <typename Value>
@@ -125,10 +124,10 @@ Either<Left, Right>::Either(Either const& rhs)
 template <typename Left, typename Right>
 Either<Left, Right>::Either(Either&& rhs)
   : m_value(std::move(rhs.m_value)) {
-  rhs.m_value.call([](auto& side) {
+  std::visit([](auto& side) {
     if constexpr (requires { optionalPtr(side.value); })
       side.value.reset();
-  });
+  }, rhs.m_value);
 }
 
 template <typename Left, typename Right>
@@ -142,10 +141,10 @@ Either<Left, Right>& Either<Left, Right>::operator=(Either&& rhs) {
   if (this == &rhs)
     return *this;
   m_value = std::move(rhs.m_value);
-  rhs.m_value.call([](auto& side) {
+  std::visit([](auto& side) {
     if constexpr (requires { optionalPtr(side.value); })
       side.value.reset();
-  });
+  }, rhs.m_value);
   return *this;
 }
 
@@ -165,12 +164,12 @@ Either<Left, Right>& Either<Left, Right>::operator=(EitherRightValue<T> right) {
 
 template <typename Left, typename Right>
 bool Either<Left, Right>::isLeft() const {
-  return m_value.template is<LeftType>();
+  return std::holds_alternative<LeftType>(m_value);
 }
 
 template <typename Left, typename Right>
 bool Either<Left, Right>::isRight() const {
-  return m_value.template is<RightType>();
+  return std::holds_alternative<RightType>(m_value);
 }
 
 template <typename Left, typename Right>
@@ -227,28 +226,28 @@ std::optional<Right> Either<Left, Right>::maybeRight() const {
 
 template <typename Left, typename Right>
 Left const* Either<Left, Right>::leftPtr() const {
-  if (auto l = m_value.template ptr<LeftType>())
+  if (auto l = std::get_if<LeftType>(&m_value))
     return &l->value;
   return nullptr;
 }
 
 template <typename Left, typename Right>
 Right const* Either<Left, Right>::rightPtr() const {
-  if (auto r = m_value.template ptr<RightType>())
+  if (auto r = std::get_if<RightType>(&m_value))
     return &r->value;
   return nullptr;
 }
 
 template <typename Left, typename Right>
 Left* Either<Left, Right>::leftPtr() {
-  if (auto l = m_value.template ptr<LeftType>())
+  if (auto l = std::get_if<LeftType>(&m_value))
     return &l->value;
   return nullptr;
 }
 
 template <typename Left, typename Right>
 Right* Either<Left, Right>::rightPtr() {
-  if (auto r = m_value.template ptr<RightType>())
+  if (auto r = std::get_if<RightType>(&m_value))
     return &r->value;
   return nullptr;
 }

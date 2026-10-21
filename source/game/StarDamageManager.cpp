@@ -1,6 +1,7 @@
 import std;
 import star.format;
 import star.json;
+import star.string;
 import star.id_map;
 import star.map;
 import star.set;
@@ -14,7 +15,6 @@ import star.strong_typedef;
 import star.data_stream_extra;
 import star.logging;
 import star.color;
-import star.variant;
 import star.list;
 import star.rpc_promise;
 import star.light_source;
@@ -103,7 +103,7 @@ void DamageManager::update(float dt) {
     for (auto eventIt = events.begin(); eventIt != events.end();) {
       auto& event = *eventIt;
       event.timeout -= dt;
-      auto entityIdTimeoutGroup = event.timeoutGroup.maybe<EntityId>();
+      auto entityIdTimeoutGroup = std::get_if<EntityId>(&event.timeoutGroup);
       if (event.timeout <= 0.0f || (entityIdTimeoutGroup && !m_world->entity(*entityIdTimeoutGroup)))
         eventIt = events.erase(eventIt);
       else
@@ -120,9 +120,9 @@ void DamageManager::update(float dt) {
       if (damageSource.trackSourceEntity)
         damageSource.translate(causingEntity->position());
 
-      if (auto poly = damageSource.damageArea.ptr<PolyF>())
+      if (auto poly = std::get_if<PolyF>(&damageSource.damageArea))
         m_world->root().spatialLogger().logPoly("world", *poly, Color::Orange.toRgba());
-      else if (auto line = damageSource.damageArea.ptr<Line2F>())
+      else if (auto line = std::get_if<Line2F>(&damageSource.damageArea))
         m_world->root().spatialLogger().logLine("world", *line, Color::Orange.toRgba());
 
       for (auto const& hitResultPair : queryHit(damageSource, causingEntity->entityId())) {
@@ -136,10 +136,10 @@ void DamageManager::update(float dt) {
         bool allowDamage = true;
         for (auto const& event : eventList) {
           if (damageSource.damageRepeatGroup) {
-            if (event.timeoutGroup == *damageSource.damageRepeatGroup)
+            if (auto group = std::get_if<String>(&event.timeoutGroup); group && *group == *damageSource.damageRepeatGroup)
               allowDamage = false;
           } else {
-            if (event.timeoutGroup == causingEntity->entityId())
+            if (auto entityId = std::get_if<EntityId>(&event.timeoutGroup); entityId && *entityId == causingEntity->entityId())
               allowDamage = false;
           }
         }
@@ -227,13 +227,13 @@ SmallList<std::pair<EntityId, HitType>, 4> DamageManager::queryHit(DamageSource 
       return;
 
     if (source.rayCheck) {
-      if (auto poly = source.damageArea.ptr<PolyF>()) {
+      if (auto poly = std::get_if<PolyF>(&source.damageArea)) {
         if (auto sourceEntity = m_world->entity(source.sourceEntityId)) {
           auto overlap = m_world->geometry().rectOverlap(targetEntity->metaBoundBox().translated(targetEntity->position()), poly->boundBox());
           if (!overlap.isEmpty() && m_world->lineTileCollision(overlap.center(), sourceEntity->position()))
             return;
         }
-      } else if (auto line = source.damageArea.ptr<Line2F>()) {
+      } else if (auto line = std::get_if<Line2F>(&source.damageArea)) {
         if (auto hitPoly = targetEntity->hitPoly()) {
           if (auto intersection = m_world->geometry().lineIntersectsPolyAt(*line, *hitPoly)) {
             if (m_world->lineTileCollision(line->min(), *intersection))
@@ -249,9 +249,9 @@ SmallList<std::pair<EntityId, HitType>, 4> DamageManager::queryHit(DamageSource 
     return;
   };
 
-  if (auto poly = source.damageArea.ptr<PolyF>())
+  if (auto poly = std::get_if<PolyF>(&source.damageArea))
     m_world->forEachEntity(poly->boundBox(), doQueryHit);
-  else if (auto line = source.damageArea.ptr<Line2F>())
+  else if (auto line = std::get_if<Line2F>(&source.damageArea))
     m_world->forEachEntityLine(line->min(), line->max(), doQueryHit);
 
   return resultList;

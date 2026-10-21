@@ -2,7 +2,6 @@ module;
 import std;
 import star.list;
 import star.set;
-import star.variant;
 import star.data_stream;
 import star.format;
 import star.net_compatibility;
@@ -147,7 +146,7 @@ private:
   };
   typedef ElementAdditionWrapper<ElementAdditionType> ElementAddition;
 
-  typedef Variant<ElementReset, ElementRemoval, ElementAddition> ElementChange;
+  typedef std::variant<ElementReset, ElementRemoval, ElementAddition> ElementChange;
 
   typedef IdMap<ElementId, std::shared_ptr<Element>> ElementMap;
 
@@ -298,7 +297,7 @@ bool NetElementDynamicGroup<Element>::writeNetDelta(DataStream& ds, std::uint64_
 
     for (auto const& p : m_changeData) {
       if (p.first >= fromVersion) {
-        if (ElementAddition const* elementAddition = p.second.template ptr<ElementAddition>()) {
+        if (ElementAddition const* elementAddition = std::get_if<ElementAddition>(&p.second)) {
           ElementId id = elementAddition->first;
           if (std::shared_ptr<Element> const* element = m_idMap.ptr(id)) {
             willWrite();
@@ -348,15 +347,15 @@ void NetElementDynamicGroup<Element>::readNetDelta(DataStream& ds, float interpo
         auto changeUpdate = ds.read<ElementChange>();
         addChangeData(changeUpdate);
 
-        if (changeUpdate.template is<ElementReset>()) {
+        if (std::holds_alternative<ElementReset>(changeUpdate)) {
           m_idMap.clear();
-        } else if (auto addition = changeUpdate.template ptr<ElementAddition>()) {
+        } else if (auto addition = std::get_if<ElementAddition>(&changeUpdate)) {
           std::shared_ptr<Element> element = m_createElement();
           DataStreamBuffer storeBuffer(std::move(std::get<1>(*addition)));
           element->netLoad(storeBuffer, rules);
           readyElement(element);
           m_idMap.add(std::get<0>(*addition), std::move(element));
-        } else if (auto removal = changeUpdate.template ptr<ElementRemoval>()) {
+        } else if (auto removal = std::get_if<ElementRemoval>(&changeUpdate)) {
           m_idMap.remove(*removal);
         }
       } else {

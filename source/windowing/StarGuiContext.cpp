@@ -36,7 +36,6 @@ import star.user_generated_content_service;
 import star.desktop_service;
 import star.image;
 import star.application_controller;
-import star.variant;
 import star.renderer;
 import star.asset_source;
 import star.assets;
@@ -175,13 +174,13 @@ std::optional<Vec2I> GuiContext::mousePosition(InputEvent const& event, float pi
     return Vec2I(pos / pixelRatio);
   };
 
-  if (auto mouseMoveEvent = event.ptr<MouseMoveEvent>())
+  if (auto mouseMoveEvent = std::get_if<MouseMoveEvent>(&event))
     return getInterfacePosition(mouseMoveEvent->mousePosition);
-  else if (auto mouseDownEvent = event.ptr<MouseButtonDownEvent>())
+  else if (auto mouseDownEvent = std::get_if<MouseButtonDownEvent>(&event))
     return getInterfacePosition(mouseDownEvent->mousePosition);
-  else if (auto mouseUpEvent = event.ptr<MouseButtonUpEvent>())
+  else if (auto mouseUpEvent = std::get_if<MouseButtonUpEvent>(&event))
     return getInterfacePosition(mouseUpEvent->mousePosition);
-  else if (auto mouseWheelEvent = event.ptr<MouseWheelEvent>())
+  else if (auto mouseWheelEvent = std::get_if<MouseWheelEvent>(&event))
     return getInterfacePosition(mouseWheelEvent->mousePosition);
   else
     return {};

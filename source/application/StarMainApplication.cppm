@@ -11,7 +11,6 @@ import star.user_generated_content_service;
 import star.desktop_service;
 import star.image;
 import star.application_controller;
-import star.variant;
 import star.bi_map;
 import star.ref_ptr;
 import star.renderer;

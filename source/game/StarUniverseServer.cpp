@@ -6,7 +6,6 @@ import star.json_extra;
 import star.ordered_map;
 import star.either;
 import star.vector;
-import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
@@ -519,7 +518,7 @@ void UniverseServer::clientFlyShip(ConnectionId clientId, Vec3I const& system, S
   auto clientSystem = clientContext->systemWorld();
   bool sameSystem = clientSystem && clientSystem->location() == system;
   bool sameLocation = clientSystem && clientSystem->clientShipLocation(clientId) == location;
-  if (m_pendingArrivals.contains(clientId) && sameSystem && location && !sameLocation) {
+  if (m_pendingArrivals.contains(clientId) && sameSystem && !std::holds_alternative<std::monostate>(location) && !sameLocation) {
     // for continuing flight within a system, set the new destination immediately
     clientSystem->setClientDestination(clientId, location);
     return;
@@ -842,17 +841,17 @@ UniverseServer::WorldServerPromise::WorldServerPromise(WorkerPoolPromise<std::sh
   : currentPromise(promise) {}
   
 bool UniverseServer::WorldServerPromise::done() const {
-  if (auto wpp = currentPromise.ptr<WorkerPoolPromise<std::shared_ptr<WorldServerThread>>>()) {
+  if (auto wpp = std::get_if<WorkerPoolPromise<std::shared_ptr<WorldServerThread>>>(&currentPromise)) {
     return wpp->done();
-  } else if (auto rpcp = currentPromise.ptr<RpcPromise<WorldChunks>>()) {
+  } else if (auto rpcp = std::get_if<RpcPromise<WorldChunks>>(&currentPromise)) {
     return rpcp->finished();
   }
   return false;
 }
 bool UniverseServer::WorldServerPromise::poll() {
-  if (auto wpp = currentPromise.ptr<WorkerPoolPromise<std::shared_ptr<WorldServerThread>>>()) {
+  if (auto wpp = std::get_if<WorkerPoolPromise<std::shared_ptr<WorldServerThread>>>(&currentPromise)) {
     return wpp->poll();
-  } else if (auto rpcp = currentPromise.ptr<RpcPromise<WorldChunks>>()) {
+  } else if (auto rpcp = std::get_if<RpcPromise<WorldChunks>>(&currentPromise)) {
     if (rpcp->finished()) {
       if (rpcp->succeeded()) {
         currentPromise = producer.value()(*rpcp->result());
@@ -865,7 +864,7 @@ bool UniverseServer::WorldServerPromise::poll() {
   return false;
 }
 std::shared_ptr<WorldServerThread> UniverseServer::WorldServerPromise::get() {
-  if (auto wpp = currentPromise.ptr<WorkerPoolPromise<std::shared_ptr<WorldServerThread>>>()) {
+  if (auto wpp = std::get_if<WorkerPoolPromise<std::shared_ptr<WorldServerThread>>>(&currentPromise)) {
     return wpp->get();
   }
   return nullptr;
@@ -877,8 +876,8 @@ void UniverseServer::processUniverseFlags() {
 
   if (auto actions = m_universeSettings->pullPendingFlagActions()) {
     for (auto action : *actions) {
-      if (action.is<PlaceDungeonFlagAction>()) {
-        auto placeDungeonAction = action.get<PlaceDungeonFlagAction>();
+      if (std::holds_alternative<PlaceDungeonFlagAction>(action)) {
+        auto placeDungeonAction = std::get<PlaceDungeonFlagAction>(action);
         if (instanceWorldStoredOrActive(placeDungeonAction.targetInstance)) {
           auto worldId = InstanceWorldId(placeDungeonAction.targetInstance);
           m_pendingFlagActions.append(std::pair<WorldId, UniverseFlagAction>{worldId, placeDungeonAction});
@@ -888,12 +887,12 @@ void UniverseServer::processUniverseFlags() {
   }
 
   eraseWhere(m_pendingFlagActions, [&](std::pair<WorldId, UniverseFlagAction> const& p) {
-    if (p.first.is<InstanceWorldId>() && instanceWorldStoredOrActive(p.first.get<InstanceWorldId>())) {
+    if (std::holds_alternative<InstanceWorldId>(p.first) && instanceWorldStoredOrActive(std::get<InstanceWorldId>(p.first))) {
       // world is stored or active; perform flag actions once it loads
       if (auto maybeTargetWorld = triggerWorldCreation(p.first)) {
         if (auto targetWorld = maybeTargetWorld.value_or(std::shared_ptr<WorldServerThread>{})) {
-          if (p.second.is<PlaceDungeonFlagAction>()) {
-            auto placeDungeonAction = p.second.get<PlaceDungeonFlagAction>();
+          if (std::holds_alternative<PlaceDungeonFlagAction>(p.second)) {
+            auto placeDungeonAction = std::get<PlaceDungeonFlagAction>(p.second);
             locker.unlock();
             targetWorld->executeAction([&](WorldServerThread*, WorldServer* worldServer) {
               worldServer->placeDungeon(placeDungeonAction.dungeonId, placeDungeonAction.targetPosition, 0);
@@ -1129,7 +1128,7 @@ void UniverseServer::processPlanetTypeChanges() {
   RecursiveMutexLocker locker(m_mainLock);
 
   for (auto const& worldId : m_worlds.keys()) {
-    if (auto celestialWorldId = worldId.ptr<CelestialWorldId>()) {
+    if (auto celestialWorldId = std::get_if<CelestialWorldId>(&worldId)) {
       if (auto world = getWorld(worldId)) {
         locker.unlock();
         auto newPlanetType = world->pullNewPlanetType();
@@ -1154,7 +1153,7 @@ void UniverseServer::warpPlayers() {
     if (!clientContext)
       continue;
 
-    if (auto toPlayerUuid = warpAction.ptr<WarpToPlayer>()) {
+    if (auto toPlayerUuid = std::get_if<WarpToPlayer>(&warpAction)) {
       bool authorized = clientContext->isAdmin() || !m_secureWarps;
       if (!authorized) {
         auto requesterTeam = m_teamManager->getTeam(clientContext->playerUuid());
@@ -1201,8 +1200,8 @@ void UniverseServer::warpPlayers() {
             clientContext->setPlayerWorld(toWorld);
             m_chatProcessor->joinChannel(clientId, printWorldId(warpToWorld.world));
 
-            if (warpToWorld.world.is<ClientShipWorldId>()) {
-              if (auto clientId = getClientForUuid(warpToWorld.world.get<ClientShipWorldId>())) {
+            if (std::holds_alternative<ClientShipWorldId>(warpToWorld.world)) {
+              if (auto clientId = getClientForUuid(std::get<ClientShipWorldId>(warpToWorld.world))) {
                 if (auto systemWorld = m_clients.get(*clientId)->systemWorld())
                   clientContext->setOrbitWarpAction(systemWorld->clientWarpAction(*clientId));
               }
@@ -1320,11 +1319,11 @@ void UniverseServer::flyShips() {
     if (!clientShip)
       return true;// ship is broken
 
-    CelestialCoordinate destination = location.maybe<CelestialCoordinate>().value_or(CelestialCoordinate(system));
+    CelestialCoordinate destination = std::holds_alternative<CelestialCoordinate>(location) ? std::get<CelestialCoordinate>(location) : CelestialCoordinate(system);
     bool interstellar = clientSystem ? clientContext->shipCoordinate().location() != system : true;
     if (!interstellar) {
       // don't fly to null locations in the same system
-      if (!location)
+      if (std::holds_alternative<std::monostate>(location))
         return true;
 
       clientSystem->setClientDestination(clientId, location);
@@ -1333,7 +1332,7 @@ void UniverseServer::flyShips() {
       clientSystem->removeClient(clientId);
       clientContext->setSystemWorld({});
 
-      if (location)
+      if (!std::holds_alternative<std::monostate>(location))
         m_queuedFlights.set(clientId, {std::make_tuple(system, location, settings), {}});
 
       destination = CelestialCoordinate(system);
@@ -1396,7 +1395,7 @@ void UniverseServer::arriveShips() {
     }
 
     auto location = clientSystem->clientShipLocation(clientId);
-    if (!location)
+    if (std::holds_alternative<std::monostate>(location))
       return false;
 
     if (!coordinate.isSystem() && !triggerWorldCreation(CelestialWorldId(coordinate)))
@@ -1483,7 +1482,7 @@ void UniverseServer::clearBrokenWorlds() {
     // Clear out all broken worlds
     eraseWhere(m_worlds, [this](auto const& p) {
       if (!p.second.has_value()) {
-        m_root.logger().info("UniverseServer: Clearing broken world {}", p.first);
+        m_root.logger().info("UniverseServer: Clearing broken world {}", printWorldId(p.first));
         return true;
       } else {
         return false;
@@ -1547,24 +1546,24 @@ void UniverseServer::handleUniverseMessages() {
   locker.unlock();
   
   for (auto& message : messages) {
-    if (message.keeper.is<std::pair<Uuid,ConnectionId>>()) {
-      auto p = message.keeper.get<std::pair<Uuid,ConnectionId>>();
+    if (std::holds_alternative<std::pair<Uuid, ConnectionId>>(message.keeper)) {
+      auto p = std::get<std::pair<Uuid, ConnectionId>>(message.keeper);
       auto uuid = p.first;
       auto clientId = p.second;
       if (auto resp = receiveMessage(message.message, false, message.args))
-        if (resp->is<RpcPromise<Json>>()) {
-          m_universeMessagePromises[uuid] = std::make_pair(clientId, resp->get<RpcPromise<Json>>());
+        if (std::holds_alternative<RpcPromise<Json>>(*resp)) {
+          m_universeMessagePromises[uuid] = std::make_pair(clientId, std::get<RpcPromise<Json>>(*resp));
         } else
-          m_connectionServer->sendPackets(clientId, {std::make_shared<UniverseMessageResponse>(makeRight(resp->get<Json>()), uuid)});
+          m_connectionServer->sendPackets(clientId, {std::make_shared<UniverseMessageResponse>(makeRight(std::get<Json>(*resp)), uuid)});
       else
         m_connectionServer->sendPackets(clientId, {std::make_shared<UniverseMessageResponse>(makeLeft("Message not handled by universe"), uuid)});
     } else {
-      auto keeper = message.keeper.get<RpcPromiseKeeper<Json>>();
+      auto keeper = std::get<RpcPromiseKeeper<Json>>(message.keeper);
       if (auto resp = receiveMessage(message.message, true, message.args))
-        if (resp->is<RpcPromise<Json>>())
-          keeper.chain(resp->get<RpcPromise<Json>>());
+        if (std::holds_alternative<RpcPromise<Json>>(*resp))
+          keeper.chain(std::get<RpcPromise<Json>>(*resp));
         else
-          keeper.fulfill(resp->get<Json>());
+          keeper.fulfill(std::get<Json>(*resp));
       else
         keeper.fail("Message not handled by universe");
     }
@@ -1582,7 +1581,7 @@ void UniverseServer::shutdownInactiveWorlds() {
       locker.unlock();
       if (world->serverErrorOccurred()) {
         world->stop();
-        m_root.logger().error("UniverseServer: World {} has stopped due to an error", worldId);
+        m_root.logger().error("UniverseServer: World {} has stopped due to an error", printWorldId(worldId));
         worldDiedWithError(world->worldId());
       } else if (world->noClients() && world->shouldExpire()) {
         bool anyPendingWarps = false;
@@ -1608,7 +1607,7 @@ void UniverseServer::shutdownInactiveWorlds() {
         }
 
         if (!anyPendingWarps) {
-          m_root.logger().info("UniverseServer: Stopping idle world {}", worldId);
+          m_root.logger().info("UniverseServer: Stopping idle world {}", printWorldId(worldId));
           world->stop();
         }
       }
@@ -1617,7 +1616,7 @@ void UniverseServer::shutdownInactiveWorlds() {
       if (world->isJoined()) {
         auto kickClients = world->clients();
         if (!kickClients.empty()) {
-          m_root.logger().info("UniverseServer: World {} shutdown, kicking/removing {} players/subworlds", worldId, world->clients().size());
+          m_root.logger().info("UniverseServer: World {} shutdown, kicking/removing {} players/subworlds", printWorldId(worldId), world->clients().size());
           for (auto clientId : world->clients()) {
             if (clientId >= MinClientSubWorldConnectionId) {
               // subworlds are immediately removed
@@ -1631,13 +1630,13 @@ void UniverseServer::shutdownInactiveWorlds() {
           }
         }
 
-        if (worldId.is<ClientShipWorldId>()) {
+        if (std::holds_alternative<ClientShipWorldId>(worldId)) {
           world->unloadAll(true);
-          if (auto clientId = getClientForUuid(worldId.get<ClientShipWorldId>()))
+          if (auto clientId = getClientForUuid(std::get<ClientShipWorldId>(worldId)))
             m_clients.get(*clientId)->updateShipChunks(world->readChunks());
-        } else if (worldId.is<ClientCustomWorldId>()) {
+        } else if (std::holds_alternative<ClientCustomWorldId>(worldId)) {
           world->unloadAll(true);
-          auto ccwId = worldId.get<ClientCustomWorldId>();
+          auto ccwId = std::get<ClientCustomWorldId>(worldId);
           if (auto clientId = getClientForUuid(ccwId.uuid)) {
             m_clients.get(*clientId)->updateCustomWorldChunks(ccwId.name, world->readChunks());
             m_clients.get(*clientId)->setCustomWorldActive(ccwId.name, false);
@@ -1651,7 +1650,7 @@ void UniverseServer::shutdownInactiveWorlds() {
 
         m_worlds.remove(worldId);
         // Once a world is shutdown, mark its shutdown time in m_tempWorldIndex
-        if (auto instanceWorldId = worldId.maybe<InstanceWorldId>()) {
+        if (auto instanceWorldId = std::get_if<InstanceWorldId>(&worldId)) {
           if (m_tempWorldIndex.contains(*instanceWorldId))
             m_tempWorldIndex[*instanceWorldId].first = m_universeClock->milliseconds();
         }
@@ -1867,7 +1866,7 @@ void UniverseServer::loadTempWorldIndex() {
       for (auto p : settings.iterateObject()) {
         WorldId worldId = parseWorldId(p.first);
         std::pair<std::uint64_t, std::uint64_t> deleteTime = {p.second.get(0).toUInt(), p.second.get(1).toUInt()};
-        m_tempWorldIndex.insert(worldId.get<InstanceWorldId>(), deleteTime);
+        m_tempWorldIndex.insert(std::get<InstanceWorldId>(worldId), deleteTime);
       }
     } catch (std::exception const&) {
       ExceptionDiagnostic const e(std::current_exception());
@@ -2045,15 +2044,15 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
         auto const& action = warpAction->action;
         bool blocked = m_secureWarps;
 
-        if (action.is<WarpAlias>() || action.is<WarpToPlayer>()) {
+        if (std::holds_alternative<WarpAlias>(action) || std::holds_alternative<WarpToPlayer>(action)) {
           blocked = false;
-        } else if (auto warpToWorld = action.ptr<WarpToWorld>()) {
-          if (warpToWorld->world.empty() || 
-              warpToWorld->world.is<ClientShipWorldId>() || 
-              warpToWorld->world.is<CelestialWorldId>() ||
-              warpToWorld->world.is<InstanceWorldId>() || 
-              warpToWorld->world.is<CustomWorldId>() ||
-              warpToWorld->world.is<ClientCustomWorldId>()) {
+        } else if (auto warpToWorld = std::get_if<WarpToWorld>(&action)) {
+          if (std::holds_alternative<std::monostate>(warpToWorld->world) ||
+              std::holds_alternative<ClientShipWorldId>(warpToWorld->world) ||
+              std::holds_alternative<CelestialWorldId>(warpToWorld->world) ||
+              std::holds_alternative<InstanceWorldId>(warpToWorld->world) ||
+              std::holds_alternative<CustomWorldId>(warpToWorld->world) ||
+              std::holds_alternative<ClientCustomWorldId>(warpToWorld->world)) {
             blocked = false;
           }
         }
@@ -2101,7 +2100,7 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
           }
 
           if (!blocked) {
-            if (auto targetEntityId = entityMessage->entityId.ptr<EntityId>()) {
+            if (auto targetEntityId = std::get_if<EntityId>(&entityMessage->entityId)) {
               auto targetConnection = connectionForEntity(*targetEntityId);
               if (targetConnection != clientId) {
                 clientsLocker.lock();
@@ -2145,12 +2144,12 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
           m_connectionServer->sendPackets(clientId, currentWorld->removeClient(mainToSubWorldConnectionId(clientId)));
           clientContext->clearSubWorld(cwtRequest->subWorldId);
         }
-        if (cwtRequest->worldId) {
+        if (!std::holds_alternative<std::monostate>(cwtRequest->worldId)) {
           auto configuration = m_root.configuration();
           bool ownWorld = false;
-          if (auto shipWorldId = cwtRequest->worldId.ptr<ClientShipWorldId>()) {
+          if (auto shipWorldId = std::get_if<ClientShipWorldId>(&cwtRequest->worldId)) {
             ownWorld = (*shipWorldId) == clientContext->playerUuid();
-          } else if (auto customWorldId = cwtRequest->worldId.ptr<ClientCustomWorldId>()) {
+          } else if (auto customWorldId = std::get_if<ClientCustomWorldId>(&cwtRequest->worldId)) {
             ownWorld = customWorldId->uuid == clientContext->playerUuid();
           }
           if (
@@ -2161,7 +2160,7 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
               || (cwtRequest->worldId == clientContext->playerWorldId() && configuration->get("allowClientSubWorldsCurrentWorld").optBool().value_or(true)))
           ) {
             // not valid, immediately reject it
-            m_root.logger().info("UniverseServer: Rejecting client {} subworld {} request for world {}", clientId, cwtRequest->subWorldId, cwtRequest->worldId);
+            m_root.logger().info("UniverseServer: Rejecting client {} subworld {} request for world {}", clientId, cwtRequest->subWorldId, printWorldId(cwtRequest->worldId));
             m_connectionServer->sendPackets(clientId, {std::make_shared<ClientSubWorldReject>(cwtRequest->subWorldId)});
           } else {
             m_pendingSubWorlds[clientId][cwtRequest->subWorldId] = cwtRequest->worldId;
@@ -2203,16 +2202,16 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
         else {
           auto response = m_universeMessageResponses.take(universeMessageResponse->uuid).second;
           messageLocker.unlock();
-          if (response.is<ConnectionId>()) {
+          if (std::holds_alternative<ConnectionId>(response)) {
             clientsLocker.lock();
-            if (auto client = m_clients.get(response.get<ConnectionId>()))
-              m_connectionServer->sendPackets(response.get<ConnectionId>(),{std::move(universeMessageResponse)});
+            if (auto client = m_clients.get(std::get<ConnectionId>(response)))
+              m_connectionServer->sendPackets(std::get<ConnectionId>(response),{std::move(universeMessageResponse)});
             clientsLocker.unlock();
           } else {
             if (universeMessageResponse->response.isRight())
-              response.get<RpcPromiseKeeper<Json>>().fulfill(universeMessageResponse->response.right());
+              std::get<RpcPromiseKeeper<Json>>(response).fulfill(universeMessageResponse->response.right());
             else
-              response.get<RpcPromiseKeeper<Json>>().fail(universeMessageResponse->response.left());
+              std::get<RpcPromiseKeeper<Json>>(response).fail(universeMessageResponse->response.left());
           }
         }
       } else if (is<SystemObjectSpawnPacket>(packet)) {
@@ -2469,20 +2468,20 @@ void UniverseServer::acceptConnection(UniverseConnection connection, std::option
     // Do not revive players at non-persistent instance worlds or on ship worlds that
     // are not their own ship.
     bool useReviveWarp = true;
-    if (reviveWarp.world.is<InstanceWorldId>()) {
-      String instance = reviveWarp.world.get<InstanceWorldId>().instance;
+    if (std::holds_alternative<InstanceWorldId>(reviveWarp.world)) {
+      String instance = std::get<InstanceWorldId>(reviveWarp.world).instance;
       auto worldConfig = m_root.assets()->json("/instance_worlds.config").opt(instance);
       if (!worldConfig || !worldConfig->getBool("persistent", false))
         useReviveWarp = false;
     }
 
-    if ((reviveWarp.world.is<ClientShipWorldId>() && reviveWarp.world.get<ClientShipWorldId>() != clientConnect->playerUuid)
-      || reviveWarp.world.is<ClientCustomWorldId>()
+    if ((std::holds_alternative<ClientShipWorldId>(reviveWarp.world) && std::get<ClientShipWorldId>(reviveWarp.world) != clientConnect->playerUuid)
+      || std::holds_alternative<ClientCustomWorldId>(reviveWarp.world)
     )
       useReviveWarp = false;
 
     if (useReviveWarp) {
-      m_root.logger().info("UniverseServer: Reviving player at {}", reviveWarp.world);
+      m_root.logger().info("UniverseServer: Reviving player at {}", printWorldId(reviveWarp.world));
       clientWarpPlayer(clientId, reviveWarp, false);
     } else {
       m_root.logger().info("UniverseServer: Player revive position is expired, spawning back at own ship");
@@ -2539,25 +2538,25 @@ WarpToWorld UniverseServer::resolveWarpAction(WarpAction warpAction, ConnectionI
     }
   }*/
 
-  if (auto toWorld = warpAction.ptr<WarpToWorld>()) {
-    if (!toWorld->world)
+  if (auto toWorld = std::get_if<WarpToWorld>(&warpAction)) {
+    if (std::holds_alternative<std::monostate>(toWorld->world))
       toWorldId = clientContext->playerWorldId();
     else
       toWorldId = toWorld->world;
     spawnTarget = toWorld->target;
-  } else if (auto toPlayerUuid = warpAction.ptr<WarpToPlayer>()) {
+  } else if (auto toPlayerUuid = std::get_if<WarpToPlayer>(&warpAction)) {
     if (auto toClientId = getClientForUuid(*toPlayerUuid)) {
       if (auto toClientWorld = m_clients.get(*toClientId)->playerWorld()) {
         if (auto toClientPosition = toClientWorld->playerRevivePosition(*toClientId)) {
           toWorldId = toClientWorld->worldId();
           if (deploy)
-            spawnTarget.reset();
+            spawnTarget.emplace<0>();
           else
             spawnTarget = SpawnTargetPosition(*toClientPosition);
         }
       }
     }
-  } else if (auto shortcut = warpAction.ptr<WarpAlias>()) {
+  } else if (auto shortcut = std::get_if<WarpAlias>(&warpAction)) {
     if (*shortcut == WarpAlias::Return) {
       if (auto returnWarp = clientContext->playerReturnWarp()) {
         toWorldId = returnWarp.world;
@@ -2565,7 +2564,7 @@ WarpToWorld UniverseServer::resolveWarpAction(WarpAction warpAction, ConnectionI
       }
     } else if (*shortcut == WarpAlias::OrbitedWorld) {
       if (auto warpAction = clientContext->orbitWarpAction()) {
-        if (auto warpToWorld = warpAction->first.maybe<WarpToWorld>()) {
+        if (auto warpToWorld = std::get_if<WarpToWorld>(&warpAction->first)) {
           toWorldId = warpToWorld->world;
           spawnTarget = warpToWorld->target;
         }
@@ -2575,7 +2574,7 @@ WarpToWorld UniverseServer::resolveWarpAction(WarpAction warpAction, ConnectionI
     }
   }
 
-  if (auto shipWorldId = toWorldId.ptr<ClientShipWorldId>()) {
+  if (auto shipWorldId = std::get_if<ClientShipWorldId>(&toWorldId)) {
     if (m_secureWarps && !canWarpToShip(clientId, *shipWorldId))
       return {};
   }
@@ -2609,7 +2608,7 @@ bool UniverseServer::canWarpToShip(ConnectionId clientId, Uuid const& targetShip
     if (!otherTeam || *otherTeam != *callerTeam)
       continue;
     WorldId otherWorldId = otherClient.second->playerWorldId();
-    if (auto otherShipWorld = otherWorldId.ptr<ClientShipWorldId>()) {
+    if (auto otherShipWorld = std::get_if<ClientShipWorldId>(&otherWorldId)) {
       if (*otherShipWorld == targetShipUuid)
         return true;
     }
@@ -2792,15 +2791,15 @@ std::optional<std::shared_ptr<WorldServerThread>> UniverseServer::triggerWorldCr
 }
 
 std::optional<UniverseServer::WorldServerPromise> UniverseServer::makeWorldPromise(WorldId const& worldId) {
-  if (auto celestialWorld = worldId.ptr<CelestialWorldId>())
+  if (auto celestialWorld = std::get_if<CelestialWorldId>(&worldId))
     return celestialWorldPromise(*celestialWorld);
-  else if (auto shipWorld = worldId.ptr<ClientShipWorldId>())
+  else if (auto shipWorld = std::get_if<ClientShipWorldId>(&worldId))
     return shipWorldPromise(*shipWorld);
-  else if (auto instanceWorld = worldId.ptr<InstanceWorldId>())
+  else if (auto instanceWorld = std::get_if<InstanceWorldId>(&worldId))
     return instanceWorldPromise(*instanceWorld);
-  else if (auto customWorld = worldId.ptr<CustomWorldId>())
+  else if (auto customWorld = std::get_if<CustomWorldId>(&worldId))
     return customWorldPromise(*customWorld);
-  else if (auto clientCustomWorld = worldId.ptr<ClientCustomWorldId>())
+  else if (auto clientCustomWorld = std::get_if<ClientCustomWorldId>(&worldId))
     return clientCustomWorldPromise(*clientCustomWorld);
   else
     return {};
@@ -3046,8 +3045,8 @@ std::optional<UniverseServer::WorldServerPromise> UniverseServer::instanceWorldP
 
     if (!worldExisted) {
       for (auto flagAction : m_universeSettings->currentFlagActionsForInstanceWorld(instanceWorldId.instance)) {
-        if (flagAction.is<PlaceDungeonFlagAction>()) {
-          auto placeDungeonAction = flagAction.get<PlaceDungeonFlagAction>();
+        if (std::holds_alternative<PlaceDungeonFlagAction>(flagAction)) {
+          auto placeDungeonAction = std::get<PlaceDungeonFlagAction>(flagAction);
           worldServer->placeDungeon(placeDungeonAction.dungeonId, placeDungeonAction.targetPosition, 0);
         }
       }
@@ -3188,9 +3187,9 @@ void UniverseServer::notifyWorldCreated(WorldId const& worldId) {
           m_connectionServer->sendPackets(p.first, {std::make_shared<NotifyWorldLoad>(worldId)});
         } else {
           bool ownWorld = false;
-          if (auto shipWorldId = worldId.ptr<ClientShipWorldId>()) {
+          if (auto shipWorldId = std::get_if<ClientShipWorldId>(&worldId)) {
             ownWorld = (*shipWorldId) == p.second->playerUuid();
-          } else if (auto customWorldId = worldId.ptr<ClientCustomWorldId>()) {
+          } else if (auto customWorldId = std::get_if<ClientCustomWorldId>(&worldId)) {
             ownWorld = customWorldId->uuid == p.second->playerUuid();
           }
           if (ownWorld) {
@@ -3202,9 +3201,9 @@ void UniverseServer::notifyWorldCreated(WorldId const& worldId) {
   } else {
     // notify only the world owner
     std::optional<Uuid> uuid = {};
-    if (auto shipWorldId = worldId.ptr<ClientShipWorldId>()) {
+    if (auto shipWorldId = std::get_if<ClientShipWorldId>(&worldId)) {
       uuid = *shipWorldId;
-    } else if (auto customWorldId = worldId.ptr<ClientCustomWorldId>()) {
+    } else if (auto customWorldId = std::get_if<ClientCustomWorldId>(&worldId)) {
       uuid = customWorldId->uuid;
     }
     if (uuid) {
@@ -3272,8 +3271,8 @@ bool UniverseServer::instanceWorldStoredOrActive(InstanceWorldId const& worldId)
 }
 
 void UniverseServer::worldDiedWithError(WorldId world) {
-  if (world.is<ClientShipWorldId>()) {
-    if (auto clientId = getClientForUuid(world.get<ClientShipWorldId>()))
+  if (std::holds_alternative<ClientShipWorldId>(world)) {
+    if (auto clientId = getClientForUuid(std::get<ClientShipWorldId>(world)))
       m_pendingDisconnections.add(*clientId, "Client ship world has errored");
   }
 }

@@ -43,7 +43,6 @@ import star.ref_ptr;
 import star.logging;
 import star.version;
 import star.either;
-import star.variant;
 import star.weighted_pool;
 import star.data_stream_devices;
 
@@ -306,15 +305,15 @@ StringList ClientCommandProcessor::handleCommand(String const& commandLine, bool
     } else {
       auto player = m_universeClient->mainPlayer();
       if (auto messageResult = player->receiveMessage(connectionForEntity(player->entityId()), "/" + command, {allArguments})) {
-        if (messageResult->is<Json>()) {
-          auto res = messageResult->ptr<Json>();
+        if (std::holds_alternative<Json>(*messageResult)) {
+          auto res = std::get_if<Json>(&*messageResult);
           if (res->isType(Json::Type::String))
             result.append(*res->stringPtr());
           else if (!res->isNull())
             result.append(res->repr(1, true));
         } else {
           Uuid uuid(m_context.root().random());
-          m_commandPromises[uuid] = messageResult->get<RpcPromise<Json>>();
+          m_commandPromises[uuid] = std::get<RpcPromise<Json>>(*messageResult);
         }
       } else {
         m_universeClient->sendChat(commandLine, ChatSendMode::Broadcast);

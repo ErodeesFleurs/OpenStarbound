@@ -31,7 +31,6 @@ import star.audio;
 import star.map;
 import star.ordered_map;
 import star.either;
-import star.variant;
 import star.random;
 import star.weighted_pool;
 import star.ordered_set;
@@ -312,23 +311,23 @@ bool ActionBar::sendEvent(InputEvent const& event) {
   auto inventory = m_player->inventory();
 
   auto customBarIndexes = inventory->customBarIndexes();
-  if (auto mouseWheel = event.ptr<MouseWheelEvent>()) {
+  if (auto mouseWheel = std::get_if<MouseWheelEvent>(&event)) {
     auto abl = inventory->selectedActionBarLocation();
 
     int index = 0;
-    if (!abl) {
+    if (std::holds_alternative<std::monostate>(abl)) {
       if (mouseWheel->mouseWheel == MouseWheel::Down)
         index = 0;
       else
         index = customBarIndexes + EssentialItemCount - 1;
     } else {
-      if (auto cbi = abl.ptr<CustomBarIndex>()) {
+      if (auto cbi = std::get_if<CustomBarIndex>(&abl)) {
         if (*cbi < customBarIndexes / 2)
           index = *cbi;
         else
           index = *cbi + EssentialItemCount;
       } else {
-        index = customBarIndexes / 2 + (int)abl.get<EssentialItem>();
+        index = customBarIndexes / 2 + (int)std::get<EssentialItem>(abl);
       }
 
       if (mouseWheel->mouseWheel == MouseWheel::Down)
@@ -350,7 +349,7 @@ bool ActionBar::sendEvent(InputEvent const& event) {
     return true;
   }
 
-  if (event.is<MouseMoveEvent>()) {
+  if (std::holds_alternative<MouseMoveEvent>(event)) {
     m_customBarHover.reset();
     Vec2I screenPosition = *context()->mousePosition(event);
     for (std::uint8_t i = 0; i < customBarIndexes; ++i) {
@@ -370,11 +369,11 @@ bool ActionBar::sendEvent(InputEvent const& event) {
       inventory->selectActionBarLocation((EssentialItem)((int)action - (int)InterfaceAction::EssentialBar1));
 
     if (action == InterfaceAction::InterfaceDeselectHands) {
-      if (auto previousSelectedLocation = inventory->selectedActionBarLocation()) {
+      if (auto previousSelectedLocation = inventory->selectedActionBarLocation(); !std::holds_alternative<std::monostate>(previousSelectedLocation)) {
         m_emptyHandsPreviousActionBarLocation = inventory->selectedActionBarLocation();
         inventory->selectActionBarLocation({});
       } else {
-        inventory->selectActionBarLocation(take(m_emptyHandsPreviousActionBarLocation));
+        inventory->selectActionBarLocation(std::exchange(m_emptyHandsPreviousActionBarLocation, {}));
       }
     }
 
@@ -388,13 +387,13 @@ bool ActionBar::sendEvent(InputEvent const& event) {
 void ActionBar::update(float) {
   auto inventory = m_player->inventory();
   auto abl = inventory->selectedActionBarLocation();
-  if (abl.is<CustomBarIndex>()) {
-    auto overlayLoc = m_customBarWidgets.at(abl.get<CustomBarIndex>()).left->position();
+  if (std::holds_alternative<CustomBarIndex>(abl)) {
+    auto overlayLoc = m_customBarWidgets.at(std::get<CustomBarIndex>(abl)).left->position();
     m_customSelectedWidget->setPosition(overlayLoc + m_actionBarSelectOffset);
     m_customSelectedWidget->show();
     m_essentialSelectedWidget->hide();
-  } else if (abl.is<EssentialItem>()) {
-    auto overlayLoc = m_essentialBarWidgets.at((std::size_t)abl.get<EssentialItem>())->position();
+  } else if (std::holds_alternative<EssentialItem>(abl)) {
+    auto overlayLoc = m_essentialBarWidgets.at((std::size_t)std::get<EssentialItem>(abl))->position();
     m_essentialSelectedWidget->setPosition(overlayLoc + m_actionBarSelectOffset);
     m_essentialSelectedWidget->show();
     m_customSelectedWidget->hide();

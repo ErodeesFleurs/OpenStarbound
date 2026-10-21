@@ -10,7 +10,6 @@ import star.format;
 import star.string;
 import star.list;
 import star.logging;
-import star.variant;
 import star.thread;
 import star.random;
 import star.input_event;
@@ -190,14 +189,14 @@ void Star::PcP2PNetworkingService::setActivityData(
       if (auto lobby = m_discordServerLobby)
         activity.GetParty().SetId(toString(lobby->first).c_str());
 
-      if (m_joinLocation.is<JoinLocal>()) {
+      if (std::holds_alternative<JoinLocal>(m_joinLocation)) {
         if (auto lobby = m_discordServerLobby) {
           String joinSecret = strf("connect:discord_{}_{}_{}", m_state->discordCurrentUser->GetId(), lobby->first, lobby->second);
           m_state->logger.info("Setting Discord join secret as {}", joinSecret);
           activity.GetSecrets().SetJoin(joinSecret.utf8Ptr());
         }
-      } else if (m_joinLocation.is<JoinRemote>()) {
-        String address = toString((HostAddressWithPort)m_joinLocation.get<JoinRemote>());
+      } else if (std::holds_alternative<JoinRemote>(m_joinLocation)) {
+        String address = toString((HostAddressWithPort)std::get<JoinRemote>(m_joinLocation));
         String joinSecret = strf("connect:address_{}", address);
         m_state->logger.info("Setting Discord join secret as {}", joinSecret);
         activity.GetSecrets().SetJoin(joinSecret.utf8Ptr());
@@ -219,9 +218,11 @@ void Star::PcP2PNetworkingService::setActivityData(
 #endif
 }
 
-MVariant<P2PNetworkingPeerId, HostAddressWithPort> PcP2PNetworkingService::pullPendingJoin() {
+std::variant<std::monostate, P2PNetworkingPeerId, HostAddressWithPort> PcP2PNetworkingService::pullPendingJoin() {
   MutexLocker serviceLocker(m_mutex);
-  return take(m_pendingJoin);
+  auto join = std::move(m_pendingJoin);
+  m_pendingJoin.emplace<0>();
+  return join;
 }
 
 std::optional<std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> Star::PcP2PNetworkingService::pullJoinRequest() {
@@ -495,7 +496,7 @@ void PcP2PNetworkingService::discordCloseSocket(DiscordP2PSocket* socket) {
     m_discordOpenSockets.remove(socket->remoteUserId);
 
     if (socket->mode == DiscordSocketMode::Connected) {
-      if (!m_joinLocation.is<JoinLocal>() && m_discordOpenSockets.empty()) {
+      if (!std::holds_alternative<JoinLocal>(m_joinLocation) && m_discordOpenSockets.empty()) {
         auto res = m_state->discordCore->LobbyManager().DisconnectNetwork(socket->lobbyId);
         if (res != discord::Result::Ok)
           m_state->logger.error("Failed to leave network for lobby {} (err {})", socket->lobbyId, (int)res);
@@ -649,18 +650,18 @@ void PcP2PNetworkingService::setJoinLocation(JoinLocation location) {
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
   if (m_state->steamAvailable) {
-    if (m_joinLocation.is<JoinUnavailable>()) {
+    if (std::holds_alternative<JoinUnavailable>(m_joinLocation)) {
       m_state->logger.info("Clearing Steam rich presence connection");
       SteamAPI_ISteamFriends_SetRichPresence(SteamAPI_SteamFriends(), "connect", "");
 
-    } else if (m_joinLocation.is<JoinLocal>()) {
+    } else if (std::holds_alternative<JoinLocal>(m_joinLocation)) {
       auto steamId = SteamAPI_ISteamUser_GetSteamID(SteamAPI_SteamUser());
       m_state->logger.info("Setting Steam rich presence connection as steamid_{}", steamId);
       SteamAPI_ISteamFriends_SetRichPresence(SteamAPI_SteamFriends(), "connect",
           strf("+platform:connect:steamid_{}", steamId).c_str());
 
-    } else if (m_joinLocation.is<JoinRemote>()) {
-      auto address = (HostAddressWithPort)location.get<JoinRemote>();
+    } else if (std::holds_alternative<JoinRemote>(m_joinLocation)) {
+      auto address = (HostAddressWithPort)std::get<JoinRemote>(location);
       m_state->logger.info("Setting Steam rich presence connection as address_{}", address);
       SteamAPI_ISteamFriends_SetRichPresence(SteamAPI_SteamFriends(), "connect",
           strf("+platform:connect:address_{}", address).c_str());
@@ -683,7 +684,7 @@ void PcP2PNetworkingService::setJoinLocation(JoinLocation location) {
       m_discordForceUpdateActivity = true;
     }
 
-    if (auto joinLocal = m_joinLocation.maybe<JoinLocal>()) {
+    if (auto joinLocal = std::get_if<JoinLocal>(&m_joinLocation)) {
       discord::LobbyTransaction createLobby{};
       if (m_state->discordCore->LobbyManager().GetLobbyCreateTransaction(&createLobby) != discord::Result::Ok)
         throw ApplicationException::format("discord::Lobbies::CreateLobbyTransaction failed");

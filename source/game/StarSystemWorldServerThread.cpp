@@ -1,7 +1,6 @@
 import star.xx_hash;
 import star.json;
 import star.vector;
-import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;

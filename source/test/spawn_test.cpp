@@ -3,7 +3,6 @@ import star.string;
 import star.ordered_map;
 import star.either;
 import star.vector;
-import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
@@ -55,7 +54,7 @@ void validateWorld(Root& root, TestUniverse& testUniverse) {
 
   // Just make sure the test world draws something for now, this will grow to
   // include more than this.
-  EXPECT_GE(testUniverse.currentClientDrawables().size(), 1u) << strf("world: {}", testUniverse.currentPlayerWorld());
+  EXPECT_GE(testUniverse.currentClientDrawables().size(), 1u) << strf("world: {}", printWorldId(testUniverse.currentPlayerWorld()));
 
   auto assets = root.assets();
   for (auto const& drawable : testUniverse.currentClientDrawables()) {

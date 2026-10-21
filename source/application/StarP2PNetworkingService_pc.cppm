@@ -29,7 +29,6 @@ import star.platform_services_pc;
 import star.algorithm;
 import star.strong_typedef;
 import star.either;
-import star.variant;
 import star.rpc_promise;
 
 namespace Star {
@@ -44,7 +43,7 @@ public:
   void setJoinRemote(HostAddressWithPort location) override;
   void setActivityData(const char* title, const char* details, std::int64_t startTime, std::optional<std::pair<std::uint16_t, std::uint16_t>>) override;
 
-  MVariant<P2PNetworkingPeerId, HostAddressWithPort> pullPendingJoin() override;
+  std::variant<std::monostate, P2PNetworkingPeerId, HostAddressWithPort> pullPendingJoin() override;
   std::optional<std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> pullJoinRequest() override;
 
   void setAcceptingP2PConnections(bool acceptingP2PConnections) override;
@@ -129,7 +128,7 @@ private:
     }
   };
   typedef JoinRemoteWrapper<HostAddressWithPort> JoinRemote;
-  typedef Variant<JoinUnavailable, JoinLocal, JoinRemote> JoinLocation;
+  typedef std::variant<JoinUnavailable, JoinLocal, JoinRemote> JoinLocation;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
 
@@ -216,7 +215,7 @@ private:
   JoinLocation m_joinLocation;
   bool m_acceptingP2PConnections = false;
   List<std::unique_ptr<P2PSocket>> m_pendingIncomingConnections;
-  MVariant<P2PNetworkingPeerId, HostAddressWithPort> m_pendingJoin;
+  std::variant<std::monostate, P2PNetworkingPeerId, HostAddressWithPort> m_pendingJoin;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
 

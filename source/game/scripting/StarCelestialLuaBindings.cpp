@@ -42,7 +42,6 @@ import star.rpc_promise;
 import star.image;
 import star.audio;
 import star.map;
-import star.variant;
 import star.game_types;
 import star.color;
 import star.weighted_pool;
@@ -326,10 +325,10 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(Root& root, Universe* universe)
       });
     callbacks.registerCallback("objectWarpActionWorld", [systemWorld](String const& uuid) -> std::optional<String> {
         if (std::optional<WarpAction> action = systemWorld->objectWarpAction((Uuid(uuid)))) {
-          return action.value().maybe<WarpToWorld>().transform([](WarpToWorld const& warp) { return printWorldId(warp.world); });
-        } else {
-          return {};
+          if (auto warp = std::get_if<WarpToWorld>(&*action))
+            return printWorldId(warp->world);
         }
+        return {};
       });
     callbacks.registerCallback("objectOrbit", [systemWorld](String const& uuid) -> Json {
         if (auto object = systemWorld->getObject(Uuid(uuid)))

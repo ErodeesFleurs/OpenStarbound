@@ -9,7 +9,6 @@ import star.a_star;
 import star.casting;
 import star.data_stream;
 import star.strong_typedef;
-import star.variant;
 import star.list;
 import star.rpc_promise;
 

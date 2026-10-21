@@ -7,7 +7,6 @@ import star.poly;
 import star.list;
 import star.bi_map;
 import star.data_stream_extra;
-import star.variant;
 import star.casting;
 import star.strong_typedef;
 import star.rpc_promise;

@@ -42,23 +42,23 @@ import star.poly;
 namespace Star {
 
 LuaValue LuaConverter<InventorySlot>::from(LuaEngine& engine, InventorySlot k) {
-  if (auto equipment = k.ptr<EquipmentSlot>())
+  if (auto equipment = std::get_if<EquipmentSlot>(&k))
     return engine.createString(EquipmentSlotNames.getRight(*equipment));
-  else if (auto bag = k.ptr<BagSlot>()) {
+  else if (auto bag = std::get_if<BagSlot>(&k)) {
     auto table = engine.createTable(2, 0);
     table.set(1, bag->first);
     table.set(2, bag->second);
     return table;
   }
-  else if (k.is<SwapSlot>())
+  else if (std::holds_alternative<SwapSlot>(k))
     return engine.createString("swap");
-  else if (k.is<TrashSlot>())
+  else if (std::holds_alternative<TrashSlot>(k))
     return engine.createString("trash");
   else return {}; // avoid UB if every accounted-for case fails
 }
 
 std::optional<InventorySlot> LuaConverter<InventorySlot>::to(LuaEngine&, LuaValue const& v) {
-  if (auto str = v.ptr<LuaString>()) {
+  if (auto str = std::get_if<LuaString>(&v)) {
     auto string = str->toString();
     if (string.equalsIgnoreCase("swap"))
       return {SwapSlot()};
@@ -69,7 +69,7 @@ std::optional<InventorySlot> LuaConverter<InventorySlot>::to(LuaEngine&, LuaValu
     else
       return {};
   }
-  else if (auto table = v.ptr<LuaTable>())
+  else if (auto table = std::get_if<LuaTable>(&v))
     return {BagSlot(table->get<LuaString>(1).toString(), (std::uint8_t)table->get<unsigned>(2))};
   else
     return {};
@@ -80,7 +80,7 @@ LuaValue LuaConverter<CollisionKind>::from(LuaEngine& engine, CollisionKind k) {
 }
 
 std::optional<CollisionKind> LuaConverter<CollisionKind>::to(LuaEngine&, LuaValue const& v) {
-  if (auto str = v.ptr<LuaString>())
+  if (auto str = std::get_if<LuaString>(&v))
     return CollisionKindNames.maybeLeft(str->ptr());
   return {};
 }
@@ -97,7 +97,7 @@ LuaValue LuaConverter<CollisionSet>::from(LuaEngine& engine, CollisionSet const&
 }
 
 std::optional<CollisionSet> LuaConverter<CollisionSet>::to(LuaEngine& engine, LuaValue const& v) {
-  auto table = v.ptr<LuaTable>();
+  auto table = std::get_if<LuaTable>(&v);
   if (!table)
     return {};
 
@@ -155,10 +155,10 @@ std::optional<PlatformerAStar::Parameters> LuaConverter<PlatformerAStar::Paramet
   p.mustEndOnGround = false;
   p.enableWalkSpeedJumps = false;
   p.enableVerticalJumpAirControl = false;
-  if (v == LuaNil)
+  if (std::holds_alternative<LuaNilType>(v))
     return p;
 
-  auto table = v.ptr<LuaTable>();
+  auto table = std::get_if<LuaTable>(&v);
   if (!table)
     return {};
 
@@ -202,10 +202,10 @@ LuaValue LuaConverter<ActorJumpProfile>::from(LuaEngine& engine, ActorJumpProfil
 }
 
 std::optional<ActorJumpProfile> LuaConverter<ActorJumpProfile>::to(LuaEngine&, LuaValue const& v) {
-  if (v == LuaNil)
+  if (std::holds_alternative<LuaNilType>(v))
     return ActorJumpProfile();
 
-  auto table = v.ptr<LuaTable>();
+  auto table = std::get_if<LuaTable>(&v);
   if (!table)
     return {};
 
@@ -270,10 +270,10 @@ LuaValue LuaConverter<ActorMovementParameters>::from(LuaEngine& engine, ActorMov
 }
 
 std::optional<ActorMovementParameters> LuaConverter<ActorMovementParameters>::to(LuaEngine&, LuaValue const& v) {
-  if (v == LuaNil)
+  if (std::holds_alternative<LuaNilType>(v))
     return ActorMovementParameters();
 
-  auto table = v.ptr<LuaTable>();
+  auto table = std::get_if<LuaTable>(&v);
   if (!table)
     return {};
 
@@ -342,10 +342,10 @@ LuaValue LuaConverter<ActorMovementModifiers>::from(LuaEngine& engine, ActorMove
 }
 
 std::optional<ActorMovementModifiers> LuaConverter<ActorMovementModifiers>::to(LuaEngine&, LuaValue const& v) {
-  if (v == LuaNil)
+  if (std::holds_alternative<LuaNilType>(v))
     return ActorMovementModifiers();
 
-  auto table = v.ptr<LuaTable>();
+  auto table = std::get_if<LuaTable>(&v);
   if (!table)
     return {};
 
@@ -390,9 +390,9 @@ LuaValue LuaConverter<EphemeralStatusEffect>::from(LuaEngine& engine, EphemeralS
 }
 
 std::optional<EphemeralStatusEffect> LuaConverter<EphemeralStatusEffect>::to(LuaEngine& engine, LuaValue const& v) {
-  if (auto s = v.ptr<LuaString>()) {
+  if (auto s = std::get_if<LuaString>(&v)) {
     return EphemeralStatusEffect{UniqueStatusEffect(s->ptr()), {}};
-  } else if (auto table = v.ptr<LuaTable>()) {
+  } else if (auto table = std::get_if<LuaTable>(&v)) {
     auto effect = engine.luaMaybeTo<String>(table->get("effect"));
     auto duration = engine.luaMaybeTo<std::optional<float>>(table->get("duration"));
     if (!duration)
@@ -417,7 +417,7 @@ LuaValue LuaConverter<DamageRequest>::from(LuaEngine& engine, DamageRequest cons
 }
 
 std::optional<DamageRequest> LuaConverter<DamageRequest>::to(LuaEngine&, LuaValue const& v) {
-  auto table = v.ptr<LuaTable>();
+  auto table = std::get_if<LuaTable>(&v);
   if (!table)
     return {};
 
@@ -458,7 +458,7 @@ LuaValue LuaConverter<DamageNotification>::from(LuaEngine& engine, DamageNotific
 }
 
 std::optional<DamageNotification> LuaConverter<DamageNotification>::to(LuaEngine&, LuaValue const& v) {
-  auto table = v.ptr<LuaTable>();
+  auto table = std::get_if<LuaTable>(&v);
   if (!table)
     return {};
   try {
@@ -487,7 +487,7 @@ LuaValue LuaConverter<LiquidLevel>::from(LuaEngine& engine, LiquidLevel const& v
 }
 
 std::optional<LiquidLevel> LuaConverter<LiquidLevel>::to(LuaEngine& engine, LuaValue const& v) {
-  if (auto table = v.ptr<LuaTable>()) {
+  if (auto table = std::get_if<LuaTable>(&v)) {
     auto liquid = engine.luaMaybeTo<LiquidId>(table->get(1));
     auto level = engine.luaMaybeTo<std::uint8_t>(table->get(2));
     if (liquid && level)
@@ -498,12 +498,12 @@ std::optional<LiquidLevel> LuaConverter<LiquidLevel>::to(LuaEngine& engine, LuaV
 
 LuaValue LuaConverter<Drawable>::from(LuaEngine& engine, Drawable const& v) {
   auto table = engine.createTable();
-  if (auto line = v.part.ptr<Drawable::LinePart>()) {
+  if (auto line = std::get_if<Drawable::LinePart>(&v.part)) {
     table.set("line", line->line);
     table.set("width", line->width);
-  } else if (auto poly = v.part.ptr<Drawable::PolyPart>()) {
+  } else if (auto poly = std::get_if<Drawable::PolyPart>(&v.part)) {
     table.set("poly", poly->poly);
-  } else if (auto image = v.part.ptr<Drawable::ImagePart>()) {
+  } else if (auto image = std::get_if<Drawable::ImagePart>(&v.part)) {
     table.set("image", AssetPath::join(image->image));
     table.set("transformation", image->transformation);
   }
@@ -516,7 +516,7 @@ LuaValue LuaConverter<Drawable>::from(LuaEngine& engine, Drawable const& v) {
 }
 
 std::optional<Drawable> LuaConverter<Drawable>::to(LuaEngine& engine, LuaValue const& v) {
-  if (auto table = v.ptr<LuaTable>()) {
+  if (auto table = std::get_if<LuaTable>(&v)) {
     std::optional<Drawable> result;
     result.emplace();
     Drawable& drawable = result.value();
@@ -559,7 +559,7 @@ LuaValue LuaConverter<Collection>::from(LuaEngine& engine, Collection const& c) 
 }
 
 std::optional<Collection> LuaConverter<Collection>::to(LuaEngine& engine, LuaValue const& v) {
-  if (auto table = v.ptr<LuaTable>()) {
+  if (auto table = std::get_if<LuaTable>(&v)) {
     auto name = engine.luaMaybeTo<String>(table->get("name"));
     auto type = engine.luaMaybeTo<String>(table->get("type"));
     auto title = engine.luaMaybeTo<String>(table->get("title"));
@@ -581,7 +581,7 @@ LuaValue LuaConverter<Collectable>::from(LuaEngine& engine, Collectable const& c
 }
 
 std::optional<Collectable> LuaConverter<Collectable>::to(LuaEngine& engine, LuaValue const& v) {
-  if (auto table = v.ptr<LuaTable>()) {
+  if (auto table = std::get_if<LuaTable>(&v)) {
     auto name = engine.luaMaybeTo<String>(table->get("name"));
     if (name) {
       return Collectable(*name,
@@ -646,8 +646,8 @@ LuaValue LuaConverter<NodeStatus>::from(LuaEngine&, NodeStatus const& status) {
 }
 
 NodeStatus LuaConverter<NodeStatus>::to(LuaEngine&, LuaValue const& v) {
-  if (v.is<LuaBoolean>())
-    return v.get<LuaBoolean>() == true ? NodeStatus::Success : NodeStatus::Failure;
+  if (std::holds_alternative<LuaBoolean>(v))
+    return std::get<LuaBoolean>(v) == true ? NodeStatus::Success : NodeStatus::Failure;
   else
     return NodeStatus::Running;
 }

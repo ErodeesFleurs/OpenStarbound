@@ -6,7 +6,6 @@ import star.xx_hash;
 import star.id_map;
 import star.list;
 import star.bi_map;
-import star.variant;
 import star.casting;
 import star.either;
 import star.rect;
@@ -286,7 +285,7 @@ public:
   float timeOfDay() const override;
   std::shared_ptr<LuaRoot> luaRoot() override;
   RpcPromise<Vec2F> findUniqueEntity(String const& uniqueId) override;
-  RpcPromise<Json> sendEntityMessage(Variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) override;
+  RpcPromise<Json> sendEntityMessage(std::variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) override;
   bool isTileProtected(Vec2I const& pos) const override;
   
   StringMap<LuaCallbacks> luaThreadCallbacks() const override;
@@ -543,7 +542,7 @@ private:
   StableHashSet<DungeonId> m_protectedDungeonIds;
   bool m_tileProtectionEnabled = true;
 
-  HashMap<Uuid, std::pair<ConnectionId, MVariant<ConnectionId, RpcPromiseKeeper<Json>>>> m_entityMessageResponses;
+  HashMap<Uuid, std::pair<ConnectionId, std::variant<std::monostate, ConnectionId, RpcPromiseKeeper<Json>>>> m_entityMessageResponses;
   HashMap<Uuid, std::pair<ConnectionId, RpcPromise<Json>>> m_entityMessagePromises;
 
   List<PhysicsForceRegion> m_forceRegions;

@@ -82,8 +82,8 @@ TEST(FormattedJsonTest, Parsing) {
 List<String> keyOrder(FormattedJson const& json) {
   List<String> keys;
   for (JsonElement const& elem : json.elements()) {
-    if (elem.is<ObjectKeyElement>())
-      keys.append(elem.get<ObjectKeyElement>().key);
+    if (auto key = std::get_if<ObjectKeyElement>(&elem))
+      keys.append(key->key);
   }
   return keys;
 }

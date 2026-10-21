@@ -24,7 +24,6 @@ import star.strong_typedef;
 import star.audio;
 import star.map;
 import star.set;
-import star.variant;
 import star.rpc_promise;
 import star.ordered_map;
 import star.net_compatibility;

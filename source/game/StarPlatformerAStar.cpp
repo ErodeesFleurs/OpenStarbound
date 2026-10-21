@@ -7,7 +7,6 @@ import star.logging;
 import star.random;
 import star.bi_map;
 import star.a_star;
-import star.variant;
 import star.casting;
 import star.data_stream;
 import star.strong_typedef;

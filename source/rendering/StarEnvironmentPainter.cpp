@@ -37,7 +37,6 @@ import star.set;
 import star.worker_pool;
 
 import star.sector_array_2d;
-import star.variant;
 
 import star.tile_damage;
 import star.plant_database;

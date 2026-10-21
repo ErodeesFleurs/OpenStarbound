@@ -38,7 +38,6 @@ import star.ref_ptr;
 import star.logging;
 import star.version;
 import star.either;
-import star.variant;
 import star.random;
 import star.weighted_pool;
 import star.ordered_set;

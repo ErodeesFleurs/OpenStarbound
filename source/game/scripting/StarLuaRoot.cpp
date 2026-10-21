@@ -139,7 +139,7 @@ LuaContext LuaRoot::createContext(StringList const& scriptPaths) {
 
   auto cache = m_scriptCache;
   newContext.setRequireFunction([cache](LuaContext& context, LuaString const& module) {
-    if (!context.get("_SBLOADED").is<LuaTable>())
+    if (!std::holds_alternative<LuaTable>(context.get("_SBLOADED")))
       context.set("_SBLOADED", context.createTable());
     auto t = context.get<LuaTable>("_SBLOADED");
     if (!t.contains(module)) {

@@ -4,7 +4,6 @@ import star.data_stream;
 import star.json;
 import star.json_extra;
 import star.poly;
-import star.variant;
 import star.data_stream_extra;
 
 import star.force_regions;

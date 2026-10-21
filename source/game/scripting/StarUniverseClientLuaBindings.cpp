@@ -10,7 +10,6 @@ import star.data_stream;
 import star.vector;
 import star.string;
 import star.either;
-import star.variant;
 import star.color;
 import star.bi_map;
 import star.random;

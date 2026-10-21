@@ -15,7 +15,6 @@ import star.directives;
 import star.asset_path;
 import star.casting;
 import star.bi_map;
-import star.variant;
 import star.rpc_promise;
 import star.a_star;
 import star.set;
@@ -250,11 +249,11 @@ void ArmorItem::refreshStatusEffects() {
     for (auto effectConfig : leveledStatusEffects.iterateArray()) {
       float levelFunctionFactor = functionDatabase->function(effectConfig.getString("levelFunction"))->evaluate(level);
       auto statModifier = jsonToStatModifier(effectConfig);
-      if (auto p = statModifier.ptr<StatBaseMultiplier>())
+      if (auto p = std::get_if<StatBaseMultiplier>(&statModifier))
         p->baseMultiplier = 1 + (p->baseMultiplier - 1) * levelFunctionFactor;
-      else if (auto p = statModifier.ptr<StatValueModifier>())
+      else if (auto p = std::get_if<StatValueModifier>(&statModifier))
         p->value *= levelFunctionFactor;
-      else if (auto p = statModifier.ptr<StatEffectiveMultiplier>())
+      else if (auto p = std::get_if<StatEffectiveMultiplier>(&statModifier))
         p->effectiveMultiplier = 1 + (p->effectiveMultiplier - 1) * levelFunctionFactor;
       m_statusEffects.append(statModifier);
     }

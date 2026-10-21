@@ -2,7 +2,6 @@ module;
 import std;
 import star.string;
 import star.list;
-import star.variant;
 import star.json;
 
 import star.thread;
@@ -21,7 +20,7 @@ struct PlaceDungeonFlagAction {
   Vec2I targetPosition;
 };
 
-typedef MVariant<PlaceDungeonFlagAction> UniverseFlagAction;
+typedef std::variant<std::monostate, PlaceDungeonFlagAction> UniverseFlagAction;
 
 UniverseFlagAction parseUniverseFlagAction(Json const& json);
 

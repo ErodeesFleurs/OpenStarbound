@@ -106,7 +106,7 @@ List<UniverseFlagAction> UniverseSettings::currentFlagActionsForInstanceWorld(St
   List<UniverseFlagAction> res;
   for (String flag : m_flags) {
     for (auto flagAction : m_flagActions.maybe(flag).value_or(List<UniverseFlagAction>{})) {
-      if (flagAction.is<PlaceDungeonFlagAction>() && flagAction.get<PlaceDungeonFlagAction>().targetInstance == instanceName)
+      if (std::holds_alternative<PlaceDungeonFlagAction>(flagAction) && std::get<PlaceDungeonFlagAction>(flagAction).targetInstance == instanceName)
         res.append(flagAction);
     }
   }

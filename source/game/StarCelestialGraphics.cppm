@@ -4,7 +4,6 @@ import star.string;
 import star.json;
 
 import star.celestial_coordinate;
-import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;

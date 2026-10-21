@@ -8,7 +8,6 @@ import star.net_compatibility;
 import star.byte_array;
 import star.id_map;
 import star.poly;
-import star.variant;
 import star.casting;
 import star.vector;
 import star.data_stream;

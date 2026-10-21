@@ -36,7 +36,6 @@ import star.user_generated_content_service;
 import star.desktop_service;
 import star.image;
 import star.application_controller;
-import star.variant;
 import star.renderer;
 import star.asset_source;
 import star.assets;
@@ -158,27 +157,27 @@ bool CanvasWidget::sendEvent(InputEvent const& event) {
 
   auto& context = (*this->context());
   auto interfaceScale = m_ignoreInterfaceScale ? 1 : context.interfaceScale();
-  if (auto mouseButtonDown = event.ptr<MouseButtonDownEvent>()) {
+  if (auto mouseButtonDown = std::get_if<MouseButtonDownEvent>(&event)) {
     if (inMember(*context.mousePosition(event, interfaceScale)) && m_captureMouse) {
       m_clickEvents.append({*context.mousePosition(event, interfaceScale) - screenPosition(), mouseButtonDown->mouseButton, true});
       m_clickEvents.limitSizeBack(MaximumEventBuffer);
       return true;
     }
-  } else if (auto mouseButtonUp = event.ptr<MouseButtonUpEvent>()) {
+  } else if (auto mouseButtonUp = std::get_if<MouseButtonUpEvent>(&event)) {
     if (m_captureMouse) {
       m_clickEvents.append({*context.mousePosition(event, interfaceScale) - screenPosition(), mouseButtonUp->mouseButton, false});
       m_clickEvents.limitSizeBack(MaximumEventBuffer);
       return true;
     }
-  } else if (event.is<MouseMoveEvent>()) {
+  } else if (std::holds_alternative<MouseMoveEvent>(event)) {
     m_mousePosition = *context.mousePosition(event, interfaceScale) - screenPosition();
     return false;
-  } else if (auto keyDown = event.ptr<KeyDownEvent>()) {
+  } else if (auto keyDown = std::get_if<KeyDownEvent>(&event)) {
     if (m_captureKeyboard) {
       m_keyEvents.append({keyDown->key, true});
       return true;
     }
-  } else if (auto keyUp = event.ptr<KeyUpEvent>()) {
+  } else if (auto keyUp = std::get_if<KeyUpEvent>(&event)) {
     if (m_captureKeyboard) {
       m_keyEvents.append({keyUp->key, false});
       m_keyEvents.limitSizeBack(MaximumEventBuffer);
@@ -197,23 +196,23 @@ void CanvasWidget::renderImpl() {
   auto renderingOffset = Vec2F(screenPosition());
 
   for (auto const& op : m_renderOps) {
-    if (auto args = op.ptr<ImageOp>())
+    if (auto args = std::get_if<ImageOp>(&op))
       std::apply(std::bind_front(&CanvasWidget::renderImage, this, renderingOffset), *args);
-    if (auto args = op.ptr<ImageRectOp>())
+    if (auto args = std::get_if<ImageRectOp>(&op))
       std::apply(std::bind_front(&CanvasWidget::renderImageRect, this, renderingOffset), *args);
-    if (auto args = op.ptr<DrawableOp>())
+    if (auto args = std::get_if<DrawableOp>(&op))
       std::apply(std::bind_front(&CanvasWidget::renderDrawable, this, renderingOffset), *args);
-    if (auto args = op.ptr<TiledImageOp>())
+    if (auto args = std::get_if<TiledImageOp>(&op))
       std::apply(std::bind_front(&CanvasWidget::renderTiledImage, this, renderingOffset), *args);
-    if (auto args = op.ptr<LineOp>())
+    if (auto args = std::get_if<LineOp>(&op))
       std::apply(std::bind_front(&CanvasWidget::renderLine, this, renderingOffset), *args);
-    if (auto args = op.ptr<RectOp>())
+    if (auto args = std::get_if<RectOp>(&op))
       std::apply(std::bind_front(&CanvasWidget::renderRect, this, renderingOffset), *args);
-    if (auto args = op.ptr<PolyOp>())
+    if (auto args = std::get_if<PolyOp>(&op))
       std::apply(std::bind_front(&CanvasWidget::renderPoly, this, renderingOffset), *args);
-    if (auto args = op.ptr<TrianglesOp>())
+    if (auto args = std::get_if<TrianglesOp>(&op))
       std::apply(std::bind_front(&CanvasWidget::renderTriangles, this, renderingOffset), *args);
-    if (auto args = op.ptr<TextOp>())
+    if (auto args = std::get_if<TextOp>(&op))
       std::apply(std::bind_front(&CanvasWidget::renderText, this, renderingOffset), *args);
   }
 }

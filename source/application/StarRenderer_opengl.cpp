@@ -11,7 +11,6 @@ import star.rect;
 import star.image;
 import star.casting;
 import star.texture_atlas;
-import star.variant;
 import star.bi_map;
 import star.ref_ptr;
 import star.renderer;
@@ -419,17 +418,17 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
     } else {
       String type = p.second.getString("type");
       if (type == "bool") {
-        effectParameter.parameterType = RenderEffectParameter::typeIndexOf<bool>();
+        effectParameter.parameterType = 5;
       } else if (type == "int") {
-        effectParameter.parameterType = RenderEffectParameter::typeIndexOf<int>();
+        effectParameter.parameterType = 1;
       } else if (type == "float") {
-        effectParameter.parameterType = RenderEffectParameter::typeIndexOf<float>();
+        effectParameter.parameterType = 0;
       } else if (type == "vec2") {
-        effectParameter.parameterType = RenderEffectParameter::typeIndexOf<Vec2F>();
+        effectParameter.parameterType = 4;
       } else if (type == "vec3") {
-        effectParameter.parameterType = RenderEffectParameter::typeIndexOf<Vec3F>();
+        effectParameter.parameterType = 3;
       } else if (type == "vec4") {
-        effectParameter.parameterType = RenderEffectParameter::typeIndexOf<Vec4F>();
+        effectParameter.parameterType = 2;
       } else {
         throw RendererException::format("Unrecognized effect parameter type '{}'", type);
       }
@@ -527,22 +526,22 @@ void OpenGlRenderer::setEffectParameter(String const& parameterName, RenderEffec
   if (!ptr || (ptr->parameterValue && *ptr->parameterValue == value))
     return;
 
-  if (ptr->parameterType != value.typeIndex())
+  if (ptr->parameterType != static_cast<std::uint8_t>(value.index()))
     throw RendererException::format("OpenGlRenderer::setEffectParameter '{}' parameter type mismatch", parameterName);
 
   flushImmediatePrimitives();
 
-  if (auto v = value.ptr<bool>())
+  if (auto v = std::get_if<bool>(&value))
     glUniform1i(ptr->parameterUniform, *v);
-  else if (auto v = value.ptr<int>())
+  else if (auto v = std::get_if<int>(&value))
     glUniform1i(ptr->parameterUniform, *v);
-  else if (auto v = value.ptr<float>())
+  else if (auto v = std::get_if<float>(&value))
     glUniform1f(ptr->parameterUniform, *v);
-  else if (auto v = value.ptr<Vec2F>())
+  else if (auto v = std::get_if<Vec2F>(&value))
     glUniform2f(ptr->parameterUniform, (*v)[0], (*v)[1]);
-  else if (auto v = value.ptr<Vec3F>())
+  else if (auto v = std::get_if<Vec3F>(&value))
     glUniform3f(ptr->parameterUniform, (*v)[0], (*v)[1], (*v)[2]);
-  else if (auto v = value.ptr<Vec4F>())
+  else if (auto v = std::get_if<Vec4F>(&value))
     glUniform4f(ptr->parameterUniform, (*v)[0], (*v)[1], (*v)[2], (*v)[3]);
 
   ptr->parameterValue = value;
@@ -559,7 +558,7 @@ void OpenGlRenderer::setEffectScriptableParameter(String const& effectName, Stri
   if (!ptr || (ptr->parameterValue && *ptr->parameterValue == value))
     return;
 
-  if (ptr->parameterType != value.typeIndex())
+  if (ptr->parameterType != static_cast<std::uint8_t>(value.index()))
     throw RendererException::format("OpenGlRenderer::setEffectScriptableParameter '{}' parameter type mismatch", parameterName);
 
   ptr->parameterValue = value;
@@ -578,7 +577,7 @@ std::optional<RenderEffectParameter> OpenGlRenderer::getEffectScriptableParamete
   
   return ptr->parameterValue;
 }
-std::optional<VariantTypeIndex> OpenGlRenderer::getEffectScriptableParameterType(String const& effectName, String const& parameterName) {
+std::optional<std::uint8_t> OpenGlRenderer::getEffectScriptableParameterType(String const& effectName, String const& parameterName) {
   auto find = m_effects.find(effectName);
   if (find == m_effects.end())
     return {};
@@ -1113,14 +1112,14 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
   std::uint8_t textureIndex = 0;
   Vec2F textureOffset = {};
   for (auto& primitive : primitives) {
-    if (auto tri = primitive.ptr<RenderTriangle>()) {
+    if (auto tri = std::get_if<RenderTriangle>(&primitive)) {
       std::tie(textureIndex, textureOffset) = addCurrentTexture(std::move(tri->texture));
 
       appendBufferVertex(tri->a, textureIndex, textureOffset, tri->c, tri->b);
       appendBufferVertex(tri->b, textureIndex, textureOffset, tri->a, tri->c);
       appendBufferVertex(tri->c, textureIndex, textureOffset, tri->b, tri->a);
 
-    } else if (auto quad = primitive.ptr<RenderQuad>()) {
+    } else if (auto quad = std::get_if<RenderQuad>(&primitive)) {
       std::tie(textureIndex, textureOffset) = addCurrentTexture(std::move(quad->texture));
 
       // = prev and next are altered - the diagonal across the quad is bad for the rounding check
@@ -1132,7 +1131,7 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
       appendBufferVertex(quad->c, textureIndex, textureOffset, quad->b, quad->d); //
       appendBufferVertex(quad->d, textureIndex, textureOffset, quad->c, quad->a);
 
-    } else if (auto poly = primitive.ptr<RenderPoly>()) {
+    } else if (auto poly = std::get_if<RenderPoly>(&primitive)) {
       if (poly->vertexes.size() > 2) {
         std::tie(textureIndex, textureOffset) = addCurrentTexture(std::move(poly->texture));
 
@@ -1337,17 +1336,17 @@ void OpenGlRenderer::setupGlUniforms(Effect& effect, Vec2U screenSize) {
     auto mvalue = ptr->parameterValue;
     if (mvalue) {
       RenderEffectParameter value = mvalue.value_or(RenderEffectParameter{});
-      if (auto v = value.ptr<bool>())
+      if (auto v = std::get_if<bool>(&value))
         glUniform1i(ptr->parameterUniform, *v);
-      else if (auto v = value.ptr<int>())
+      else if (auto v = std::get_if<int>(&value))
         glUniform1i(ptr->parameterUniform, *v);
-      else if (auto v = value.ptr<float>())
+      else if (auto v = std::get_if<float>(&value))
         glUniform1f(ptr->parameterUniform, *v);
-      else if (auto v = value.ptr<Vec2F>())
+      else if (auto v = std::get_if<Vec2F>(&value))
         glUniform2f(ptr->parameterUniform, (*v)[0], (*v)[1]);
-      else if (auto v = value.ptr<Vec3F>())
+      else if (auto v = std::get_if<Vec3F>(&value))
         glUniform3f(ptr->parameterUniform, (*v)[0], (*v)[1], (*v)[2]);
-      else if (auto v = value.ptr<Vec4F>())
+      else if (auto v = std::get_if<Vec4F>(&value))
         glUniform4f(ptr->parameterUniform, (*v)[0], (*v)[1], (*v)[2], (*v)[3]);
     }
   }

@@ -5,7 +5,6 @@ import star.vector;
 import star.spline;
 import star.casting;
 import star.strong_typedef;
-import star.variant;
 import star.rpc_promise;
 import star.a_star;
 import std;

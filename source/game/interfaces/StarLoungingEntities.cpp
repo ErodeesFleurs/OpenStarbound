@@ -17,7 +17,6 @@ import star.vector;
 import star.game_types;
 import star.strong_typedef;
 import star.bi_map;
-import star.variant;
 import star.rpc_promise;
 import star.lua_root;
 import star.drawable;

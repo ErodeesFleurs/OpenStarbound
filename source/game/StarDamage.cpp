@@ -109,15 +109,15 @@ DamageSource::DamageSource(DamageType damageType,
 
 Json DamageSource::toJson() const {
   Json damageAreaJson;
-  if (auto p = damageArea.ptr<PolyF>())
+  if (auto p = std::get_if<PolyF>(&damageArea))
     damageAreaJson = jsonFromPolyF(*p);
-  else if (auto l = damageArea.ptr<Line2F>())
+  else if (auto l = std::get_if<Line2F>(&damageArea))
     damageAreaJson = jsonFromLine2F(*l);
 
   Json knockbackJson;
-  if (auto p = knockback.ptr<float>())
+  if (auto p = std::get_if<float>(&knockback))
     knockbackJson = *p;
-  else if (auto p = knockback.ptr<Vec2F>())
+  else if (auto p = std::get_if<Vec2F>(&knockback))
     knockbackJson = jsonFromVec2F(*p);
 
   return JsonObject{{"damageType", DamageTypeNames.getRight(damageType)},
@@ -135,22 +135,22 @@ Json DamageSource::toJson() const {
 }
 
 bool DamageSource::intersectsWithPoly(WorldGeometry const& geometry, PolyF const& targetPoly) const {
-  if (auto poly = damageArea.ptr<PolyF>())
+  if (auto poly = std::get_if<PolyF>(&damageArea))
     return geometry.polyIntersectsPoly(*poly, targetPoly);
-  else if (auto line = damageArea.ptr<Line2F>())
+  else if (auto line = std::get_if<Line2F>(&damageArea))
     return geometry.lineIntersectsPoly(*line, targetPoly);
   else
     return false;
 }
 
 Vec2F DamageSource::knockbackMomentum(WorldGeometry const& worldGeometry, Vec2F const& targetCenter) const {
-  if (auto v = knockback.ptr<Vec2F>()) {
+  if (auto v = std::get_if<Vec2F>(&knockback)) {
     return *v;
-  } else if (auto s = knockback.ptr<float>()) {
+  } else if (auto s = std::get_if<float>(&knockback)) {
     if (*s != 0) {
-      if (auto poly = damageArea.ptr<PolyF>())
+      if (auto poly = std::get_if<PolyF>(&damageArea))
         return worldGeometry.diff(targetCenter, poly->center()).normalized() * *s;
-      else if (auto line = damageArea.ptr<Line2F>())
+      else if (auto line = std::get_if<Line2F>(&damageArea))
         return vnorm(line->diff()) * *s;
     }
   }
@@ -173,9 +173,9 @@ bool DamageSource::operator==(DamageSource const& rhs) const {
 }
 
 DamageSource& DamageSource::translate(Vec2F const& position) {
-  if (auto poly = damageArea.ptr<PolyF>())
+  if (auto poly = std::get_if<PolyF>(&damageArea))
     poly->translate(position);
-  else if (auto line = damageArea.ptr<Line2F>())
+  else if (auto line = std::get_if<Line2F>(&damageArea))
     line->translate(position);
   return *this;
 }

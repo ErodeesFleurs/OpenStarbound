@@ -2,7 +2,6 @@ import star.json_extra;
 import star.json;
 import star.id_map;
 import star.game_types;
-import star.variant;
 import star.casting;
 import star.strong_typedef;
 import star.list;

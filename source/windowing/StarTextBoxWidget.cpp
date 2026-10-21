@@ -38,7 +38,6 @@ import star.user_generated_content_service;
 import star.desktop_service;
 import star.image;
 import star.application_controller;
-import star.variant;
 import star.renderer;
 import star.asset_source;
 import star.assets;
@@ -334,7 +333,7 @@ bool TextBoxWidget::sendEvent(InputEvent const& event) {
   if (!hasFocus())
     return false;
 
-  if (event.is<KeyUpEvent>()) {
+  if (std::holds_alternative<KeyUpEvent>(event)) {
     m_repeatCode = SpecialRepeatKeyCodes::None;
     m_callback(this);
     return false;
@@ -349,7 +348,7 @@ bool TextBoxWidget::sendEvent(InputEvent const& event) {
 }
 
 bool TextBoxWidget::innerSendEvent(InputEvent const& event) {
-  if (auto keyDown = event.ptr<KeyDownEvent>()) {
+  if (auto keyDown = std::get_if<KeyDownEvent>(&event)) {
     m_repeatKeyThreshold = Time::monotonicMilliseconds() + 300LL;
 
     if (keyDown->key == Key::Escape) {
@@ -471,7 +470,7 @@ bool TextBoxWidget::innerSendEvent(InputEvent const& event) {
     }
   }
 
-  if (auto textInput = event.ptr<TextInputEvent>()) {
+  if (auto textInput = std::get_if<TextInputEvent>(&event)) {
     if (modText(m_text.substr(0, m_cursorOffset) + textInput->text + m_text.substr(m_cursorOffset)))
       m_cursorOffset += textInput->text.size();
     return true;

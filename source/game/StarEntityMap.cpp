@@ -17,7 +17,6 @@ import star.strong_typedef;
 import star.bi_map;
 import star.list;
 import star.ordered_map;
-import star.variant;
 import star.rpc_promise;
 import star.lua;
 import star.color;

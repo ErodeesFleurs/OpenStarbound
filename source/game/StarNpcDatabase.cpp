@@ -26,7 +26,6 @@ import star.data_stream_devices;
 import star.byte_array;
 import star.encode;
 import star.casting;
-import star.variant;
 import star.rpc_promise;
 import star.a_star;
 import star.lua;

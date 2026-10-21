@@ -34,7 +34,7 @@ Directives::Entry::Entry(Entry const& other) {
 }
 
 ImageOperation const& Directives::Entry::loadOperation(Shared const& parent) const {
-  if (operation.is<NullImageOperation>()) {
+  if (std::holds_alternative<NullImageOperation>(operation)) {
     try
       { operation = imageOperationFromString(string(parent)); }
     catch (StarException const& e)
@@ -390,12 +390,12 @@ void DirectivesGroup::applyExistingImage(Image& image, ImageReferenceCallback re
   bool first = true;
   forEach([&](Directives::Entry const& entry, Directives const& directives) {
     ImageOperation const& operation = entry.loadOperation(*directives);
-    if (auto error = operation.ptr<ErrorImageOperation>())
-      if (auto string = error->cause.ptr<std::string>())
+    if (auto error = std::get_if<ErrorImageOperation>(&operation))
+      if (auto string = std::get_if<std::string>(&error->cause))
         throw DirectivesException::format("ImageOperation parse error: {}", *string);
       else
-        std::rethrow_exception(error->cause.get<std::exception_ptr>());
-    else if (!first && entry.begin != 0 && operation.is<NullImageOperation>())
+        std::rethrow_exception(std::get<std::exception_ptr>(error->cause));
+    else if (!first && entry.begin != 0 && std::holds_alternative<NullImageOperation>(operation))
       throw DirectivesException::format("Invalid image operation: {}", entry.string(*directives));
     else
       processImageOperation(operation, image, refCallback);

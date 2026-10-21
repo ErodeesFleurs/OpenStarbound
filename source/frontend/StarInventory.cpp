@@ -33,7 +33,6 @@ import star.logging;
 import star.format;
 import star.version;
 import star.either;
-import star.variant;
 import star.random;
 import star.weighted_pool;
 import star.ordered_set;
@@ -280,12 +279,12 @@ InventoryPane::InventoryPane(GuiContext& guiContext, MainInterface* parent, std:
       }
     }
     else if (auto swapSlot = inventory->swapSlotItem()) {
-      if (auto es = slot.ptr<EquipmentSlot>()) {
+      if (auto es = std::get_if<EquipmentSlot>(&slot)) {
         if (inventory->itemAllowedAsEquipment(swapSlot, *es))
           inventory->setItem(slot, swapSlot->take(1));
-      } else if (slot.is<TrashSlot>()) {
+      } else if (std::holds_alternative<TrashSlot>(slot)) {
         inventory->setItem(slot, swapSlot->take(1));
-      } else if (auto bs = slot.ptr<BagSlot>()) {
+      } else if (auto bs = std::get_if<BagSlot>(&slot)) {
         if (inventory->itemAllowedInBag(swapSlot, bs->first))
           inventory->setItem(slot, swapSlot->take(1));
       }

@@ -19,7 +19,6 @@ import star.json_tool;
 import star.json_editor;
 import star.formatted_json;
 import star.json_path;
-import star.variant;
 import star.logging;
 
 using namespace Star;
@@ -212,10 +211,10 @@ int Star::edit(Logger& logger, int argc, char* argv[], std::shared_ptr<::Star::J
   QApplication app(argc, argv);
   StringList files;
   for (Input const& input : inputs) {
-    if (input.is<FindInput>())
-      files.appendAll(findFiles(logger, input.get<FindInput>()));
+    if (std::holds_alternative<FindInput>(input))
+      files.appendAll(findFiles(logger, std::get<FindInput>(input)));
     else
-      files.append(input.get<FileInput>().filename);
+      files.append(std::get<FileInput>(input).filename);
   }
   JsonEditor e(path, options, files);
   e.show();

@@ -18,7 +18,6 @@ import star.ref_ptr;
 import star.logging;
 import star.version;
 
-import star.variant;
 import star.image;
 import star.renderer;
 import star.asset_texture_group;

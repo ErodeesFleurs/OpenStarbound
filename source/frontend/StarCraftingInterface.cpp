@@ -45,7 +45,6 @@ import star.lua;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-import star.variant;
 import star.net_compatibility;
 import star.worker_pool;
 

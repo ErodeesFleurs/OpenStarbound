@@ -10,7 +10,6 @@ import star.random;
 import star.weighted_pool;
 import star.casting;
 import star.strong_typedef;
-import star.variant;
 import star.rpc_promise;
 import star.ordered_map;
 import star.net_compatibility;

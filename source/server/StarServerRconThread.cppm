@@ -50,7 +50,6 @@ import star.worker_pool;
 
 import star.sector_array_2d;
 import star.color;
-import star.variant;
 import star.image;
 
 
@@ -331,10 +330,10 @@ void ServerRconClient::processRequest() {
         try {
           m_universe->root().logger().info("RCON {}: {}", m_socket->remoteAddress(), command);
           auto res = handleCommand(command);
-          if (res.is<String>())
-            sendCmdResponse(requestId, res.get<String>());
+          if (std::holds_alternative<String>(res))
+            sendCmdResponse(requestId, std::get<String>(res));
           else
-            m_commandPromises[requestId] = res.get<RpcPromise<String>>();
+            m_commandPromises[requestId] = std::get<RpcPromise<String>>(res);
         } catch (std::exception const&) {
           ExceptionDiagnostic const e(std::current_exception());
           sendCmdResponse(requestId, strf("RCON: Error executing: {}: {}", command, outputException(e, true)));

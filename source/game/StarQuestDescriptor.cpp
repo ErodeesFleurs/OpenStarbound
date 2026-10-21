@@ -9,7 +9,6 @@ import star.random;
 import star.ttl_cache;
 import star.casting;
 import star.game_types;
-import star.variant;
 import star.list;
 import star.rpc_promise;
 import star.bi_map;
@@ -206,20 +205,20 @@ QuestParam QuestParam::diskLoad(Root& root, Json const& json) {
 }
 
 Json questParamDetailToJson(QuestParamDetail const& detail) {
-  if (detail.is<QuestItem>()) {
-    QuestItem item = detail.get<QuestItem>();
+  if (std::holds_alternative<QuestItem>(detail)) {
+    QuestItem item = std::get<QuestItem>(detail);
     return JsonObject{{"type", "item"}, {"item", item.descriptor().toJson()}};
 
-  } else if (detail.is<QuestItemTag>()) {
-    String tag = detail.get<QuestItemTag>();
+  } else if (std::holds_alternative<QuestItemTag>(detail)) {
+    String tag = std::get<QuestItemTag>(detail);
     return JsonObject{{"type", "itemTag"}, {"tag", tag}};
 
-  } else if (detail.is<QuestItemList>()) {
-    List<ItemDescriptor> itemList = detail.get<QuestItemList>();
+  } else if (std::holds_alternative<QuestItemList>(detail)) {
+    List<ItemDescriptor> itemList = std::get<QuestItemList>(detail);
     return JsonObject{{"type", "itemList"}, {"items", itemList.transformed(std::mem_fn(&ItemDescriptor::toJson))}};
 
-  } else if (detail.is<QuestEntity>()) {
-    QuestEntity entity = detail.get<QuestEntity>();
+  } else if (std::holds_alternative<QuestEntity>(detail)) {
+    QuestEntity entity = std::get<QuestEntity>(detail);
     return JsonObject{
         {"type", "entity"},
         {"uniqueId", jsonFromOptional(entity.uniqueId)},
@@ -227,22 +226,22 @@ Json questParamDetailToJson(QuestParamDetail const& detail) {
         {"gender", jsonFromOptional(entity.gender.transform([](Gender gender) { return GenderNames.getRight(gender); }))}
       };
 
-  } else if (detail.is<QuestLocation>()) {
-    QuestLocation location = detail.get<QuestLocation>();
+  } else if (std::holds_alternative<QuestLocation>(detail)) {
+    QuestLocation location = std::get<QuestLocation>(detail);
     return JsonObject{
         {"type", "location"},
         {"uniqueId", jsonFromOptional<String>(location.uniqueId)},
         {"region", jsonFromRectF(location.region)}
       };
 
-  } else if (detail.is<QuestMonsterType>()) {
-    QuestMonsterType monsterType = detail.get<QuestMonsterType>();
+  } else if (std::holds_alternative<QuestMonsterType>(detail)) {
+    QuestMonsterType monsterType = std::get<QuestMonsterType>(detail);
     return JsonObject{
         {"type", "monsterType"}, {"typeName", monsterType.typeName}, {"parameters", monsterType.parameters}};
 
   }
-  else if (detail.is<QuestNpcType>()) {
-    QuestNpcType npcType = detail.get<QuestNpcType>();
+  else if (std::holds_alternative<QuestNpcType>(detail)) {
+    QuestNpcType npcType = std::get<QuestNpcType>(detail);
     return JsonObject{ {"type", "npcType"},
         {"species", npcType.species},
         {"typeName", npcType.typeName},
@@ -250,18 +249,18 @@ Json questParamDetailToJson(QuestParamDetail const& detail) {
         {"seed", jsonFromOptional(npcType.seed)}
     };
 
-  } else if (detail.is<QuestCoordinate>()) {
+  } else if (std::holds_alternative<QuestCoordinate>(detail)) {
     return JsonObject{
       {"type", "coordinate"},
-      {"coordinate", detail.get<QuestCoordinate>().coordinate.toJson()}
+      {"coordinate", std::get<QuestCoordinate>(detail).coordinate.toJson()}
     };
 
-  } else if (detail.is<QuestJson>()) {
-    return detail.get<QuestJson>().set("type", "json");
+  } else if (std::holds_alternative<QuestJson>(detail)) {
+    return std::get<QuestJson>(detail).set("type", "json");
 
   } else {
     if constexpr (Star::DebugEnabled) {
-      Star::starAssertFailed((detail.empty()));
+      Star::starAssertFailed((std::holds_alternative<std::monostate>(detail)));
     }
     return JsonObject{{"type", "noDetail"}};
   }
@@ -275,12 +274,12 @@ Json QuestParam::toJson() const {
 }
 
 Json questParamDetailDiskStore(Root& root, QuestParamDetail const& detail) {
-  if (detail.is<QuestItem>()) {
-    QuestItem item = detail.get<QuestItem>();
+  if (std::holds_alternative<QuestItem>(detail)) {
+    QuestItem item = std::get<QuestItem>(detail);
     return JsonObject{{"type", "item"}, {"item", item.descriptor().diskStore(*root.versioningDatabase())}};
 
-  } else if (detail.is<QuestItemList>()) {
-    List<ItemDescriptor> itemList = detail.get<QuestItemList>();
+  } else if (std::holds_alternative<QuestItemList>(detail)) {
+    List<ItemDescriptor> itemList = std::get<QuestItemList>(detail);
     return JsonObject{{"type", "itemList"}, {"items", itemList.transformed([&root](ItemDescriptor const& item) { return item.diskStore(*root.versioningDatabase()); })}};
   } else {
     return questParamDetailToJson(detail);
@@ -375,12 +374,12 @@ String questParamText(Root& root, QuestParam const& parameter) {
 
   auto itemDatabase = root.itemDatabase();
 
-  if (parameter.detail.is<QuestItem>()) {
-    QuestItem item = parameter.detail.get<QuestItem>();
+  if (std::holds_alternative<QuestItem>(parameter.detail)) {
+    QuestItem item = std::get<QuestItem>(parameter.detail);
     return itemDatabase->itemShared(item.descriptor())->friendlyName();
 
-  } else if (parameter.detail.is<QuestItemList>()) {
-    QuestItemList itemList = parameter.detail.get<QuestItemList>();
+  } else if (std::holds_alternative<QuestItemList>(parameter.detail)) {
+    QuestItemList itemList = std::get<QuestItemList>(parameter.detail);
     StringList itemStrings = itemList.transformed([&itemDatabase](ItemDescriptor const& itemDesc) -> String {
       return strf("{} {}", itemDesc.count(), itemDatabase->itemShared(itemDesc)->friendlyName());
     });

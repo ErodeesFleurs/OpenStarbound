@@ -1,7 +1,6 @@
 import star.json;
 import star.json_extra;
 import star.id_map;
-import star.variant;
 import star.casting;
 import star.vector;
 import star.data_stream;
@@ -223,15 +222,15 @@ List<std::shared_ptr<Item>> TreasureDatabase::createTreasure(String const& treas
 
   int mix = 0;
   for (auto const& fillEntry : itemPool.fill) {
-    if (fillEntry.is<String>()) {
-      auto poolContents = createTreasure(fillEntry.get<String>(), level, seed + ++mix, visitedPools, itemCatalog);
+    if (std::holds_alternative<String>(fillEntry)) {
+      auto poolContents = createTreasure(std::get<String>(fillEntry), level, seed + ++mix, visitedPools, itemCatalog);
       for (auto item : poolContents) {
         if (itemPool.allowDuplication || previousDescriptors.add(item->descriptor().singular()))
           treasureItems.append(item);
       }
     } else {
       float itemLevel = level + itemPool.levelVariance[0] + staticRandomFloat(seed, ++mix, "FillLevelVariance") * (itemPool.levelVariance[1] - itemPool.levelVariance[0]);
-      auto fillItem = itemCatalog->item(fillEntry.get<ItemDescriptor>(), itemLevel, seed + ++mix);
+      auto fillItem = itemCatalog->item(std::get<ItemDescriptor>(fillEntry), itemLevel, seed + ++mix);
       if (itemPool.allowDuplication || previousDescriptors.add(fillItem->descriptor().singular()))
         treasureItems.append(fillItem);
     }
@@ -243,15 +242,15 @@ List<std::shared_ptr<Item>> TreasureDatabase::createTreasure(String const& treas
     for (int i = 0; i < poolRounds; ++i) {
       auto poolEntry = itemPool.pool.select(staticRandomU64(seed, i, "TreasureItem"));
 
-      if (poolEntry.is<String>()) {
-        auto poolContents = createTreasure(poolEntry.get<String>(), level, staticRandomU64(seed, i, "TreasureSeedRecursion"), visitedPools, itemCatalog);
+      if (std::holds_alternative<String>(poolEntry)) {
+        auto poolContents = createTreasure(std::get<String>(poolEntry), level, staticRandomU64(seed, i, "TreasureSeedRecursion"), visitedPools, itemCatalog);
         for (auto item : poolContents) {
           if (itemPool.allowDuplication || previousDescriptors.add(item->descriptor().singular()))
             treasureItems.append(item);
         }
       } else {
         float itemLevel = level + itemPool.levelVariance[0] + staticRandomFloat(staticRandomU64(seed, i, "TreasureLevelSeedMixer"), "PoolLevelVariance") * (itemPool.levelVariance[1] - itemPool.levelVariance[0]);
-        auto roundItem = poolEntry.get<ItemDescriptor>();
+        auto roundItem = std::get<ItemDescriptor>(poolEntry);
         if (itemPool.allowDuplication || previousDescriptors.add(roundItem.singular()))
           treasureItems.append(itemCatalog->item(roundItem, itemLevel, seed + ++mix));
       }

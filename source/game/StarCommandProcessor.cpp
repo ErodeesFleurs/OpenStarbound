@@ -10,7 +10,6 @@ import star.random;
 import star.ttl_cache;
 import star.casting;
 import star.game_types;
-import star.variant;
 import star.strong_typedef;
 import star.list;
 import star.rpc_promise;
@@ -937,7 +936,7 @@ String CommandProcessor::clientCoordinate(ConnectionId connectionId, String cons
 
   if (targetClientId) {
     auto worldId = m_universe->clientWorld(targetClientId);
-    return strf("{} current location is {}", targetLabel, worldId);
+    return strf("{} current location is {}", targetLabel, printWorldId(worldId));
   } else {
     return "";
   }
@@ -960,7 +959,7 @@ String CommandProcessor::eval(ConnectionId connectionId, String const& lua) {
   if (auto errorMsg = adminCheck(connectionId, "execute server script"))
     return *errorMsg;
 
-  return toString(m_scriptComponent.context()->eval(lua));
+  return toString(outputLuaValue(m_scriptComponent.context()->eval(lua)));
 }
 
 String CommandProcessor::entityEval(ConnectionId connectionId, String const& lua) {
@@ -989,7 +988,7 @@ String CommandProcessor::entityEval(ConnectionId connectionId, String const& lua
         }
 
         if (auto res = targetEntity->evalScript(lua))
-          message = toString(*res);
+          message = toString(outputLuaValue(*res));
         else
           message = "Error evaluating script in entity context, check log";
       });
@@ -1242,9 +1241,9 @@ ServerCommandResult CommandProcessor::handleCommand(ConnectionId connectionId, S
   if (it != s_commandMap.end()) {
     return (this->*it->second)(connectionId, argumentString);
   }
-  if (auto res = m_scriptComponent.invoke<Variant<RpcPromise<Json>,LuaValue>>("command", command, connectionId, jsonFromStringList(m_parser.tokenizeToStringList(argumentString)))) {
-    if (res->is<RpcPromise<Json>>()) {
-      return res->get<RpcPromise<Json>>().wrap([](Json res) -> String {
+  if (auto res = m_scriptComponent.invoke<std::variant<RpcPromise<Json>,LuaValue>>("command", command, connectionId, jsonFromStringList(m_parser.tokenizeToStringList(argumentString)))) {
+    if (std::holds_alternative<RpcPromise<Json>>(*res)) {
+      return std::get<RpcPromise<Json>>(*res).wrap([](Json res) -> String {
         if (res.isType(Json::Type::String))
           return *res.stringPtr();
         else if (!res.isNull())
@@ -1253,7 +1252,7 @@ ServerCommandResult CommandProcessor::handleCommand(ConnectionId connectionId, S
           return "";
       });
     } else {
-      return String(toString(res->get<LuaValue>()));
+      return String(toString(outputLuaValue(std::get<LuaValue>(*res))));
     }
   }
   return String(strf("No such command {}", command));

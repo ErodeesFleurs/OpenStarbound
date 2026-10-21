@@ -35,7 +35,6 @@ import star.user_generated_content_service;
 import star.desktop_service;
 import star.image;
 import star.application_controller;
-import star.variant;
 import star.renderer;
 import star.asset_source;
 import star.assets;
@@ -210,13 +209,13 @@ void SliderBarWidget::update(float dt) {
 }
 
 bool SliderBarWidget::sendEvent(InputEvent const& event) {
-  if (event.is<MouseButtonUpEvent>()) {
+  if (std::holds_alternative<MouseButtonUpEvent>(event)) {
     blur();
     m_jogDragActive = false;
   }
 
   if (m_enabled) {
-    if (event.is<MouseButtonDownEvent>()) {
+    if (std::holds_alternative<MouseButtonDownEvent>(event)) {
       if (m_jog->inMember(*context()->mousePosition(event))) {
         focus();
         m_jogDragPos = *context()->mousePosition(event) - screenPosition();
@@ -224,7 +223,7 @@ bool SliderBarWidget::sendEvent(InputEvent const& event) {
       }
     }
 
-    if (event.is<MouseMoveEvent>()) {
+    if (std::holds_alternative<MouseMoveEvent>(event)) {
       if (m_jogDragActive)
         m_jogDragPos = *context()->mousePosition(event) - screenPosition();
     }

@@ -14,7 +14,6 @@ import star.casting;
 import star.game_types;
 import star.liquid_types;
 import star.material_types;
-import star.variant;
 import star.rpc_promise;
 import star.vector;
 import star.rect;
@@ -328,24 +327,24 @@ LuaCallbacks LuaBindings::makeRootCallbacks(Root& owner, ItemDatabase const* ite
       return (itemCatalog ? itemCatalog : databaseOwner.get())->itemFile(itemName);
     });
 
-  callbacks.registerCallback("materialConfig", [root](Variant<MaterialId, String> const& materialNameOrId) -> Json {
+  callbacks.registerCallback("materialConfig", [root](std::variant<MaterialId, String> const& materialNameOrId) -> Json {
       MaterialId materialId;
-      if (auto id = materialNameOrId.ptr<MaterialId>())
+      if (auto id = std::get_if<MaterialId>(&materialNameOrId))
         materialId = *id;
       else
-        materialId = root->materialDatabase()->materialId(materialNameOrId.get<String>());
+        materialId = root->materialDatabase()->materialId(std::get<String>(materialNameOrId));
 
       if (auto path = root->materialDatabase()->materialPath(materialId))
         return JsonObject{{"path", *path}, {"config", root->materialDatabase()->materialConfig(materialId).value()}};
       return {};
     });
 
-  callbacks.registerCallback("modConfig", [root](Variant<ModId, String> const& modNameOrId) -> Json {
+  callbacks.registerCallback("modConfig", [root](std::variant<ModId, String> const& modNameOrId) -> Json {
       ModId modId;
-      if (auto id = modNameOrId.ptr<ModId>())
+      if (auto id = std::get_if<ModId>(&modNameOrId))
         modId = *id;
       else
-        modId = root->materialDatabase()->modId(modNameOrId.get<String>());
+        modId = root->materialDatabase()->modId(std::get<String>(modNameOrId));
 
       if (auto path = root->materialDatabase()->modPath(modId))
         return JsonObject{{"path", *path}, {"config", root->materialDatabase()->modConfig(modId).value()}};

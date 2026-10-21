@@ -8,7 +8,6 @@ import star.strong_typedef;
 import star.data_stream;
 import star.vector;
 import star.game_types;
-import star.variant;
 import star.color;
 import star.bi_map;
 import star.random;
@@ -41,10 +40,10 @@ import star.player_universe_map;
 namespace Star {
 
 template<> Json jsonFromBookmarkTarget<OrbitTarget>(OrbitTarget const& target) {
-  if (auto uuid = target.maybe<Uuid>())
+  if (auto uuid = std::get_if<Uuid>(&target))
     return uuid->hex();
   else
-    return target.get<CelestialCoordinate>().toJson();
+    return std::get<CelestialCoordinate>(target).toJson();
 };
 template<> OrbitTarget jsonToBookmarkTarget<OrbitTarget>(Json const& json) {
   if (json.type() == Json::Type::String)
@@ -136,14 +135,14 @@ bool PlayerUniverseMap::removeTeleportBookmark(TeleportBookmark const& bookmark)
 }
 
 void PlayerUniverseMap::invalidateWarpAction(WarpAction const& warpAction) {
-  if (auto warpToWorld = warpAction.maybe<WarpToWorld>())
+  if (auto warpToWorld = std::get_if<WarpToWorld>(&warpAction))
     removeTeleportBookmark({ {warpToWorld->world, warpToWorld->target}, "", "", ""});
 }
 
 std::optional<OrbitBookmark> PlayerUniverseMap::worldBookmark(CelestialCoordinate const& world) const {
   if (auto systemMap = universeMap().systems.ptr(world.location())) {
     for (auto& bookmark : systemMap->bookmarks) {
-      if (bookmark.target == world)
+      if (auto coordinate = std::get_if<CelestialCoordinate>(&bookmark.target); coordinate && *coordinate == world)
         return bookmark;
     }
   }
@@ -159,7 +158,7 @@ List<OrbitBookmark> PlayerUniverseMap::systemBookmarks(CelestialCoordinate const
 List<OrbitBookmark> PlayerUniverseMap::planetBookmarks(CelestialCoordinate const& planet) const {
   if (auto systemMap = universeMap().systems.ptr(planet.location())) {
     return systemMap->bookmarks.values().filtered([planet](OrbitBookmark const& bookmark) {
-      if (auto coordinate = bookmark.target.maybe<CelestialCoordinate>())
+      if (auto coordinate = std::get_if<CelestialCoordinate>(&bookmark.target))
         return coordinate->planet().orbitNumber() == planet.planet().orbitNumber();
       return false;
     });

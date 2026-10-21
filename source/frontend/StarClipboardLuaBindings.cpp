@@ -73,8 +73,8 @@ LuaCallbacks LuaBindings::makeClipboardCallbacks(Input& input, RootBase& root, L
     if (appController->isFocused()) {
       StringMap<ByteArray> clipboardData;
       data.iterate([&](LuaValue const& key, LuaValue const& value) {
-        ByteArray bytes(value.get<LuaString>().ptr(), value.get<LuaString>().length());
-        clipboardData[key.get<LuaString>().toString()] = std::move(bytes);
+        ByteArray bytes(std::get<LuaString>(value).ptr(), std::get<LuaString>(value).length());
+        clipboardData[std::get<LuaString>(key).toString()] = std::move(bytes);
       });
       return appController->setClipboardData(std::move(clipboardData));
     }
@@ -84,12 +84,12 @@ LuaCallbacks LuaBindings::makeClipboardCallbacks(Input& input, RootBase& root, L
   callbacks.registerCallback("setImage", [appController, &root, &logger](LuaValue const& imgOrPath) -> bool {
     if (appController->isFocused()) {
       auto buffer = std::make_shared<Buffer>();
-      if (imgOrPath.is<LuaUserData>() && imgOrPath.get<LuaUserData>().is<Image>()) {
-        auto& image = imgOrPath.get<LuaUserData>().get<Image>();
+      if (std::holds_alternative<LuaUserData>(imgOrPath) && std::get<LuaUserData>(imgOrPath).is<Image>()) {
+        auto& image = std::get<LuaUserData>(imgOrPath).get<Image>();
         image.writePng(logger, buffer);
         return appController->setClipboardImage(image, &buffer->data());
       } else {
-        auto image = root.assets()->image(imgOrPath.get<LuaString>().toString());
+        auto image = root.assets()->image(std::get<LuaString>(imgOrPath).toString());
         image->writePng(logger, buffer);
         return appController->setClipboardImage(*image, &buffer->data());
       }

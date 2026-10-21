@@ -28,7 +28,6 @@ import star.set;
 import star.audio;
 import star.map;
 import star.id_map;
-import star.variant;
 import star.rpc_promise;
 import star.strong_typedef;
 import star.a_star;

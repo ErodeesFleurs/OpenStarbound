@@ -1,7 +1,6 @@
 module;
 
 import std;
-import star.variant;
 
 import star.byte_array;
 import star.either;
@@ -86,7 +85,7 @@ public:
 
   // If this player joins another peer's game using the P2P UI, this will return
   // a pending join location
-  virtual MVariant<P2PNetworkingPeerId, HostAddressWithPort> pullPendingJoin() = 0;
+  virtual std::variant<std::monostate, P2PNetworkingPeerId, HostAddressWithPort> pullPendingJoin() = 0;
   // This will return a username and a promise keeper to respond to the join request
   virtual std::optional<std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> pullJoinRequest() = 0;
 

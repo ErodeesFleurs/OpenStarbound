@@ -1,6 +1,5 @@
 import std;
 import star.string;
-import star.stream_formatter;
 import star.json;
 import star.bi_map;
 import star.strong_typedef;
@@ -47,17 +46,17 @@ InventorySlot jsonToInventorySlot(Json const& json) {
 }
 
 Json jsonFromInventorySlot(InventorySlot const& slot) {
-  if (slot.is<EquipmentSlot>()) {
+  if (std::holds_alternative<EquipmentSlot>(slot)) {
     return JsonObject{
       {"type", "equipment"},
-      {"location", EquipmentSlotNames.getRight(slot.get<EquipmentSlot>())}
+      {"location", EquipmentSlotNames.getRight(std::get<EquipmentSlot>(slot))}
     };
-  } else if (slot.is<SwapSlot>()) {
+  } else if (std::holds_alternative<SwapSlot>(slot)) {
     return JsonObject{{"type", "swap"}};
-  } else if (slot.is<TrashSlot>()) {
+  } else if (std::holds_alternative<TrashSlot>(slot)) {
     return JsonObject{{"type", "trash"}};
   } else {
-    auto bagSlot = slot.get<BagSlot>();
+    auto bagSlot = std::get<BagSlot>(slot);
     return JsonObject{
       {"type", bagSlot.first},
       {"location", bagSlot.second}
@@ -98,10 +97,10 @@ SelectedActionBarLocation jsonToSelectedActionBarLocation(Json const& json) {
 }
 
 Json jsonFromSelectedActionBarLocation(SelectedActionBarLocation const& location) {
-  if (location.is<CustomBarIndex>())
-    return location.get<CustomBarIndex>();
-  else if (location.is<EssentialItem>())
-    return EssentialItemNames.getRight(location.get<EssentialItem>());
+  if (std::holds_alternative<CustomBarIndex>(location))
+    return std::get<CustomBarIndex>(location);
+  else if (std::holds_alternative<EssentialItem>(location))
+    return EssentialItemNames.getRight(std::get<EssentialItem>(location));
   else
     return Json();
 }

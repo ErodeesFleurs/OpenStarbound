@@ -5,7 +5,6 @@ import star.hash;
 import star.xx_hash;
 
 import star.data_stream;
-import star.variant;
 import star.string;
 import star.list;
 import star.format;
@@ -280,7 +279,7 @@ private:
   Json const* ptr(std::size_t index) const;
   Json const* ptr(String const& key) const;
 
-  Variant<Empty, double, bool, std::int64_t, std::shared_ptr<String const>, std::shared_ptr<JsonArray const>, std::shared_ptr<JsonObject const>> m_data;
+  std::variant<Empty, double, bool, std::int64_t, std::shared_ptr<String const>, std::shared_ptr<JsonArray const>, std::shared_ptr<JsonObject const>> m_data;
 };
 
 std::ostream& operator<<(std::ostream& os, Json const& v);

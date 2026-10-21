@@ -2,7 +2,6 @@ import std;
 import star.memory;
 import star.format;
 import star.string;
-import star.variant;
 import star.ordered_map;
 import star.ordered_set;
 import star.option_parser;
@@ -56,10 +55,10 @@ std::pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringLi
         continue;
       }
 
-      if (option->is<Switch>()) {
+      if (std::holds_alternative<Switch>(*option)) {
         result.switches.add(std::move(flag));
       } else {
-        auto const& parameter = option->get<Parameter>();
+        auto const& parameter = std::get<Parameter>(*option);
         if (it == arguments.end()) {
           errors.append(strf("Option '-{}' must be followed by an argument", flag));
           continue;
@@ -78,8 +77,8 @@ std::pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringLi
   }
 
   for (auto const& pair : m_options) {
-    if (pair.second.is<Parameter>()) {
-      auto const& na = pair.second.get<Parameter>();
+    if (std::holds_alternative<Parameter>(pair.second)) {
+      auto const& na = std::get<Parameter>(pair.second);
       if (na.requirementMode == Required && !result.parameters.contains(pair.first))
         errors.append(strf("Missing required flag with argument '-{}'", pair.first));
     }
@@ -116,10 +115,10 @@ void OptionParser::printHelp(std::ostream& os) const {
   String cmdLineText;
 
   for (auto const& p : m_options) {
-    if (p.second.is<Switch>()) {
+    if (std::holds_alternative<Switch>(p.second)) {
       cmdLineText += strf(" [-{}]", p.first);
     } else {
-      auto const& parameter = p.second.get<Parameter>();
+      auto const& parameter = std::get<Parameter>(p.second);
       if (parameter.requirementMode == Optional)
         cmdLineText += strf(" [-{} <{}>]", parameter.flag, parameter.argument);
       else if (parameter.requirementMode == Required)
@@ -144,13 +143,13 @@ void OptionParser::printHelp(std::ostream& os) const {
     format(os, "Command Line Usage: {}{}\n", m_commandName, cmdLineText);
 
   for (auto const& p : m_options) {
-    if (p.second.is<Switch>()) {
-      auto const& sw = p.second.get<Switch>();
+    if (std::holds_alternative<Switch>(p.second)) {
+      auto const& sw = std::get<Switch>(p.second);
       if (!sw.description.empty())
         format(os, "  -{}\t- {}\n", sw.flag, sw.description);
     }
-    if (p.second.is<Parameter>()) {
-      auto const& parameter = p.second.get<Parameter>();
+    if (std::holds_alternative<Parameter>(p.second)) {
+      auto const& parameter = std::get<Parameter>(p.second);
       if (!parameter.description.empty())
         format(os, "  -{} <{}>\t- {}\n", parameter.flag, parameter.argument, parameter.description);
     }

@@ -4,7 +4,6 @@ import star.type_identity;
 import star.string;
 import star.json;
 import star.byte_array;
-import star.variant;
 
 import star.vector;
 import star.game_types;

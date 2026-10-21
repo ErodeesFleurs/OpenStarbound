@@ -2,7 +2,6 @@ import star.json;
 import star.json_extra;
 import star.id_map;
 import star.poly;
-import star.variant;
 import star.casting;
 import star.vector;
 import star.strong_typedef;
@@ -387,7 +386,7 @@ List<DamageSource> Monster::damageSources() const {
   float levelPowerMultiplier = this->root().functionDatabase()->function(m_monsterVariant.powerLevelFunction)->evaluate(m_monsterLevel.value());
   if (m_damageOnTouch && !m_monsterVariant.touchDamageConfig.isNull()) {
     DamageSource damageSource(m_monsterVariant.touchDamageConfig);
-    if (auto damagePoly = damageSource.damageArea.ptr<PolyF>())
+    if (auto damagePoly = std::get_if<PolyF>(&damageSource.damageArea))
       damagePoly->rotate(m_movementController->rotation());
     damageSource.damage *= m_monsterVariant.touchDamageMultiplier * levelPowerMultiplier * m_statusController->stat("powerMultiplier");
     damageSource.sourceEntityId = entityId();
@@ -403,13 +402,15 @@ List<DamageSource> Monster::damageSources() const {
     String anchorPart = pair.second.getString("anchorPart");
     DamageSource ds = DamageSource(pair.second.get("damageSource"));
     ds.damage *= levelPowerMultiplier * m_statusController->stat("powerMultiplier");
-    ds.damageArea.call([this,&anchorPart](auto& poly) {
-      poly.transform(m_networkedAnimator.partTransformation(anchorPart));
-      if (m_networkedAnimator.flipped())
-        poly.flipHorizontal(m_networkedAnimator.flippedRelativeCenterLine());
-    });
-    if (ds.knockback.is<Vec2F>()) {
-      Vec2F knockback = ds.knockback.get<Vec2F>();
+    std::visit([this,&anchorPart](auto& poly) {
+      if constexpr (!std::is_same_v<std::remove_cvref_t<decltype(poly)>, std::monostate>) {
+        poly.transform(m_networkedAnimator.partTransformation(anchorPart));
+        if (m_networkedAnimator.flipped())
+          poly.flipHorizontal(m_networkedAnimator.flippedRelativeCenterLine());
+      }
+    }, ds.damageArea);
+    if (std::holds_alternative<Vec2F>(ds.knockback)) {
+      Vec2F knockback = std::get<Vec2F>(ds.knockback);
       knockback = m_networkedAnimator.partTransformation(anchorPart).transformVec2(knockback);
       if (m_networkedAnimator.flipped())
         knockback = Vec2F(-knockback[0], knockback[1]);
@@ -417,9 +418,9 @@ List<DamageSource> Monster::damageSources() const {
     }
 
     List<DamageSource> partSources;
-    if (auto line = ds.damageArea.maybe<Line2F>()) {
+    if (auto line = std::get_if<Line2F>(&ds.damageArea)) {
       if (pair.second.getBool("checkLineCollision", false)) {
-        Line2F worldLine = line.value_or(Line2F{}).translated(position());
+        Line2F worldLine = line->translated(position());
         float length = worldLine.length();
 
         auto bounces = pair.second.getInt("bounces", 0);
@@ -434,8 +435,8 @@ List<DamageSource> Monster::damageSources() const {
             Vec2F dir = worldLine.direction();
             Vec2F normal = Vec2F((*collision).second);
             Vec2F reflection = dir - (2 * dir.piecewiseMultiply(normal).sum() * normal);
-            if (ds.knockback.is<Vec2F>())
-              ds.knockback = ds.knockback.get<Vec2F>().rotate(reflection.angleBetween(worldLine.direction()));
+            if (std::holds_alternative<Vec2F>(ds.knockback))
+              ds.knockback = std::get<Vec2F>(ds.knockback).rotate(reflection.angleBetween(worldLine.direction()));
 
             worldLine.min() = (*collision).first;
             worldLine.max() = worldLine.min() + (reflection * length);

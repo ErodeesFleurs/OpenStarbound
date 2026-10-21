@@ -14,7 +14,6 @@ import star.format;
 import star.version;
 import star.ordered_map;
 import star.either;
-import star.variant;
 import star.color;
 import star.random;
 import star.weighted_pool;
@@ -1244,7 +1243,7 @@ void DamageNotificationPacket::write(DataStream& ds) const {
 
 EntityMessagePacket::EntityMessagePacket() : uuid(unfilledPacketUuid()) {}
 
-EntityMessagePacket::EntityMessagePacket(Variant<EntityId, String> entityId, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection)
+EntityMessagePacket::EntityMessagePacket(std::variant<EntityId, String> entityId, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection)
   : entityId(entityId), message(std::move(message)), args(std::move(args)), uuid(uuid), fromConnection(fromConnection) {}
 
 void EntityMessagePacket::read(DataStream& ds) {
@@ -1277,7 +1276,7 @@ void EntityMessagePacket::readJson(Json const& json) {
 
 Json EntityMessagePacket::writeJson() const {
   return JsonObject{
-    {"entityId", entityId.is<EntityId>() ? Json(entityId.get<EntityId>()) : Json(entityId.get<String>())},
+    {"entityId", std::holds_alternative<EntityId>(entityId) ? Json(std::get<EntityId>(entityId)) : Json(std::get<String>(entityId))},
     {"message", message},
     {"args", args},
     {"uuid", uuid.hex()},

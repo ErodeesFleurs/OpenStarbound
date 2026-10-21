@@ -19,7 +19,6 @@ import star.version;
 import star.file;
 import star.id_map;
 import star.casting;
-import star.variant;
 import star.rpc_promise;
 import star.strong_typedef;
 import star.game_types;
@@ -234,7 +233,7 @@ void TestUniverse::warpPlayer(WorldId worldId) {
   // build several times that, so the runner's per-case timeout
   // (OPENSTARBOUND_TEST_TIMEOUT) is the practical limit.
   std::int64_t startTime = Time::monotonicMilliseconds();
-  while (m_mainPlayer->isTeleporting() || m_client->playerWorld().empty()) {
+  while (m_mainPlayer->isTeleporting() || std::holds_alternative<std::monostate>(m_client->playerWorld())) {
     m_client->update(0.016f);
     Thread::sleep(16);
     if (Time::monotonicMilliseconds() - startTime > 300000)

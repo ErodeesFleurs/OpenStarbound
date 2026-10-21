@@ -98,12 +98,12 @@ KeyMod keyModsFromJson(Json const& json, std::uint8_t* priority = nullptr) {
 }
 
 std::size_t hash<InputVariant>::operator()(InputVariant const& v) const {
-  std::size_t indexHash = hashOf(v.typeIndex());
-  if (auto key = v.ptr<Key>())
+  std::size_t indexHash = hashOf(static_cast<std::uint8_t>(v.index()));
+  if (auto key = std::get_if<Key>(&v))
     hashCombine(indexHash, hashOf(*key));
-  else if (auto mButton = v.ptr<MouseButton>())
+  else if (auto mButton = std::get_if<MouseButton>(&v))
     hashCombine(indexHash, hashOf(*mButton));
-  else if (auto cButton = v.ptr<ControllerButton>())
+  else if (auto cButton = std::get_if<ControllerButton>(&v))
     hashCombine(indexHash, hashOf(*cButton));
 
   return indexHash;
@@ -113,52 +113,52 @@ Json Input::inputEventToJson(InputEvent const& input) {
   String type;
   Json data;
 
-  if (auto keyDown = input.ptr<KeyDownEvent>()) {
+  if (auto keyDown = std::get_if<KeyDownEvent>(&input)) {
     type = "KeyDown";
     data = JsonObject{
       {"key", KeyNames.getRight(keyDown->key)},
       {"mods", keyModsToJson(keyDown->mods)}
     };
-  } else if (auto keyUp = input.ptr<KeyUpEvent>()) {
+  } else if (auto keyUp = std::get_if<KeyUpEvent>(&input)) {
     type = "KeyUp";
     data = JsonObject{
       {"key", KeyNames.getRight(keyUp->key)}
     };
-  } else if (auto mouseDown = input.ptr<MouseButtonDownEvent>()) {
+  } else if (auto mouseDown = std::get_if<MouseButtonDownEvent>(&input)) {
     type = "MouseButtonDown";
     data = JsonObject{
       {"mouseButton", MouseButtonNames.getRight(mouseDown->mouseButton)},
       {"mousePosition", jsonFromVec2F(mouseDown->mousePosition)}
     };
-  } else if (auto mouseUp = input.ptr<MouseButtonUpEvent>()) {
+  } else if (auto mouseUp = std::get_if<MouseButtonUpEvent>(&input)) {
     type = "MouseButtonUp";
     data = JsonObject{
       {"mouseButton", MouseButtonNames.getRight(mouseUp->mouseButton)},
       {"mousePosition", jsonFromVec2F(mouseUp->mousePosition)}
     };
-  } else if (auto mouseWheel = input.ptr<MouseWheelEvent>()) {
+  } else if (auto mouseWheel = std::get_if<MouseWheelEvent>(&input)) {
     type = "MouseWheel";
     data = JsonObject{
       {"mouseWheel", mouseWheel->mouseWheel == MouseWheel::Up ? 1 : -1},
       {"mousePosition", jsonFromVec2F(mouseWheel->mousePosition)}
     };
-  } else if (auto mouseMove = input.ptr<MouseMoveEvent>()) {
+  } else if (auto mouseMove = std::get_if<MouseMoveEvent>(&input)) {
     type = "MouseMove";
     data = JsonObject{
       {"mouseMove", jsonFromVec2F(mouseMove->mouseMove)},
       {"mousePosition", jsonFromVec2F(mouseMove->mousePosition)}
     };
-  } else if (auto controllerDown = input.ptr<ControllerButtonDownEvent>()) {
+  } else if (auto controllerDown = std::get_if<ControllerButtonDownEvent>(&input)) {
     type = "ControllerButtonDown";
     data = JsonObject{
       {"controllerButton", ControllerButtonNames.getRight(controllerDown->controllerButton)},
       {"controller", controllerDown->controller}};
-  } else if (auto controllerUp = input.ptr<ControllerButtonUpEvent>()) {
+  } else if (auto controllerUp = std::get_if<ControllerButtonUpEvent>(&input)) {
     type = "ControllerButtonUp";
     data = JsonObject{
       {"controllerButton", ControllerButtonNames.getRight(controllerUp->controllerButton)},
       {"controller", controllerUp->controller}};
-  } else if (auto controllerAxis = input.ptr<ControllerAxisEvent>()) {
+  } else if (auto controllerAxis = std::get_if<ControllerAxisEvent>(&input)) {
     type = "ControllerAxis";
     data = JsonObject{
       {"controllerAxis", ControllerAxisNames.getRight(controllerAxis->controllerAxis)},
@@ -216,7 +216,7 @@ Input::Bind Input::bindFromJson(Json const& json) {
 }
 
 Json Input::bindToJson(Bind const& bind) {
-  if (auto keyBind = bind.ptr<KeyBind>()) {
+  if (auto keyBind = std::get_if<KeyBind>(&bind)) {
     auto obj = JsonObject{
       {"type", "key"},
       {"value", KeyNames.getRight(keyBind->key)}
@@ -225,7 +225,7 @@ Json Input::bindToJson(Bind const& bind) {
       obj.emplace("mods", std::move(mods));
     return obj;
   }
-  else if (auto mouseBind = bind.ptr<MouseBind>()) {
+  else if (auto mouseBind = std::get_if<MouseBind>(&bind)) {
     auto obj = JsonObject{
       {"type", "mouse"},
       {"value", MouseButtonNames.getRight(mouseBind->button)}
@@ -234,7 +234,7 @@ Json Input::bindToJson(Bind const& bind) {
       obj.emplace("mods", std::move(mods));
     return obj;
   }
-  else if (auto controllerBind = bind.ptr<ControllerBind>()) {
+  else if (auto controllerBind = std::get_if<ControllerBind>(&bind)) {
     return JsonObject{
       {"type", "controller"},
       {"value", ControllerButtonNames.getRight(controllerBind->button)},
@@ -443,7 +443,7 @@ void Input::update() {
 
 bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
   m_inputEvents.emplace_back(input, gameProcessed);
-  if (auto keyDown = input.ptr<KeyDownEvent>()) {
+  if (auto keyDown = std::get_if<KeyDownEvent>(&input)) {
     auto keyToMod = KeysToMods.rightPtr(keyDown->key);
     if (keyToMod)
       m_pressedMods |= *keyToMod;
@@ -460,7 +460,7 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
       }
     }
   }
-  else if (auto keyUp = input.ptr<KeyUpEvent>()) {
+  else if (auto keyUp = std::get_if<KeyUpEvent>(&input)) {
     auto keyToMod = KeysToMods.rightPtr(keyUp->key);
     if (keyToMod)
       m_pressedMods &= ~*keyToMod;
@@ -479,7 +479,7 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
       }
     }
   }
-  else if (auto mouseDown = input.ptr<MouseButtonDownEvent>()) {
+  else if (auto mouseDown = std::get_if<MouseButtonDownEvent>(&input)) {
     m_mousePosition = mouseDown->mousePosition;
     if (!gameProcessed) {
       auto& state = m_mouseStates[mouseDown->mouseButton];
@@ -492,7 +492,7 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
       }
     }
   }
-  else if (auto mouseUp = input.ptr<MouseButtonUpEvent>()) {
+  else if (auto mouseUp = std::get_if<MouseButtonUpEvent>(&input)) {
     m_mousePosition = mouseUp->mousePosition;
     if (auto state = m_mouseStates.ptr(mouseUp->mouseButton)) {
       state->releasePositions.append(mouseUp->mousePosition);
@@ -506,10 +506,10 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
       }
     }
   }
-  else if (auto mouseMove = input.ptr<MouseMoveEvent>()) {
+  else if (auto mouseMove = std::get_if<MouseMoveEvent>(&input)) {
     m_mousePosition = mouseMove->mousePosition;
   }
-  else if (auto controllerDown = input.ptr<ControllerButtonDownEvent>()) {
+  else if (auto controllerDown = std::get_if<ControllerButtonDownEvent>(&input)) {
     if (!gameProcessed) {
       auto& state = m_controllerStates[controllerDown->controllerButton];
       state.press();
@@ -520,7 +520,7 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
       }
     }
   }
-  else if (auto controllerUp = input.ptr<ControllerButtonUpEvent>()) {
+  else if (auto controllerUp = std::get_if<ControllerButtonUpEvent>(&input)) {
     if (auto state = m_controllerStates.ptr(controllerUp->controllerButton))
       state->release();
 
@@ -543,11 +543,11 @@ void Input::rebuildMappings() {
     for (auto& pair : category.second.entries) {
       auto& entry = pair.second;
       for (auto& bind : entry.customBinds) {
-        if (auto keyBind = bind.ptr<KeyBind>())
+        if (auto keyBind = std::get_if<KeyBind>(&bind))
           m_bindMappings[keyBind->key].emplace_back(entry, *keyBind);
-        if (auto mouseBind = bind.ptr<MouseBind>())
+        if (auto mouseBind = std::get_if<MouseBind>(&bind))
           m_bindMappings[mouseBind->button].emplace_back(entry, *mouseBind);
-        if (auto controllerBind = bind.ptr<ControllerBind>())
+        if (auto controllerBind = std::get_if<ControllerBind>(&bind))
           m_bindMappings[controllerBind->button].emplace_back(entry);
       }
     }

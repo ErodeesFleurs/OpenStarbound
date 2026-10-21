@@ -4,7 +4,6 @@ import star.data_stream_extra;
 import star.ordered_map;
 import star.either;
 import star.vector;
-import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
@@ -131,7 +130,7 @@ SystemLocation SystemWorldClient::shipDestination() const {
 // ship is flying if the system world is uninitialized or the ship doesn't have a location
 bool SystemWorldClient::flying() const {
   if (m_ship)
-    return m_ship->systemLocation().empty();
+    return std::holds_alternative<std::monostate>(m_ship->systemLocation());
   return true;
 }
 
@@ -142,7 +141,7 @@ void SystemWorldClient::update(float dt) {
   m_ship->clientUpdate(dt);
 
   auto location = m_ship->systemLocation();
-  if (auto uuid = location.maybe<Uuid>()) {
+  if (auto uuid = std::get_if<Uuid>(&location)) {
     if (auto object = getObject(*uuid)) {
       std::optional<CelestialOrbit> orbit;
 
@@ -151,10 +150,10 @@ void SystemWorldClient::update(float dt) {
       else
         m_universeMap->addMappedObject(CelestialCoordinate(m_location), *uuid, object->name());
     }
-  } else if (auto coordinate = location.maybe<CelestialCoordinate>()) {
+  } else if (auto coordinate = std::get_if<CelestialCoordinate>(&location)) {
     if (coordinate->isPlanetaryBody() || coordinate->isSatelliteBody())
       m_universeMap->addMappedCoordinate(coordinate->planet());
-  } else if (auto orbit = location.maybe<CelestialOrbit>()) {
+  } else if (auto orbit = std::get_if<CelestialOrbit>(&location)) {
     if (orbit->target.isPlanetaryBody() || orbit->target.isSatelliteBody())
       m_universeMap->addMappedCoordinate(orbit->target.planet());
   }

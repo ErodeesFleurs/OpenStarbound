@@ -3,7 +3,6 @@ import std;
 import star.list;
 import star.format;
 import star.string;
-import star.variant;
 import star.ordered_map;
 import star.ordered_set;
 
@@ -73,7 +72,7 @@ private:
     String description;
   };
 
-  typedef Variant<Switch, Parameter> Option;
+  typedef std::variant<Switch, Parameter> Option;
 
   String m_commandName;
   String m_summary;

@@ -3,7 +3,6 @@ import star.json;
 import std;
 import star.type_identity;
 import star.string;
-import star.variant;
 import star.rpc_promise;
 import star.game_types;
 import star.data_stream;
@@ -23,7 +22,7 @@ public:
   struct Message {
     String message;
     JsonArray args;
-    Variant<std::pair<Uuid,ConnectionId>,RpcPromiseKeeper<Json>> keeper;
+    std::variant<std::pair<Uuid, ConnectionId>, RpcPromiseKeeper<Json>> keeper;
   };
 
   virtual ~Universe() = default;

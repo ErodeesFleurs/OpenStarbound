@@ -30,7 +30,6 @@ import star.material_types;
 import star.audio;
 import star.map;
 import star.string;
-import star.variant;
 import star.ordered_set;
 import std;
 import star.format;

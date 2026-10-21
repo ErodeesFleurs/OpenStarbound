@@ -10,7 +10,6 @@ import star.ttl_cache;
 import star.casting;
 import star.game_types;
 import star.poly;
-import star.variant;
 import star.strong_typedef;
 import star.list;
 import star.rpc_promise;

@@ -28,7 +28,6 @@ import std;
 import star.format;
 import star.version;
 import star.id_map;
-import star.variant;
 import star.rpc_promise;
 import star.lua;
 import star.spline;

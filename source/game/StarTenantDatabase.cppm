@@ -3,7 +3,6 @@ import std;
 import star.string;
 import star.list;
 import star.map;
-import star.variant;
 import star.format;
 import star.json;
 
@@ -38,7 +37,7 @@ struct TenantMonsterSpawnable {
   std::optional<Json> overrides;
 };
 
-typedef MVariant<TenantNpcSpawnable, TenantMonsterSpawnable> TenantSpawnable;
+typedef std::variant<std::monostate, TenantNpcSpawnable, TenantMonsterSpawnable> TenantSpawnable;
 
 struct TenantRent {
   Vec2F periodRange;

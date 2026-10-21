@@ -6,7 +6,6 @@ import star.json_extra;
 import star.id_map;
 import star.casting;
 import star.strong_typedef;
-import star.variant;
 import star.rpc_promise;
 import star.a_star;
 import star.audio;

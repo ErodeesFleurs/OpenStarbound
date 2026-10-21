@@ -37,7 +37,6 @@ import star.worker_pool;
 
 import star.sector_array_2d;
 import star.perlin;
-import star.variant;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
@@ -304,38 +303,38 @@ bool TileDrawer::determineMatchingPieces(MaterialPieceResultList& resultList, bo
       for (auto const& ruleEntry : matchPoint.rule->entries) {
         bool valid = true;
         if (isMod) {
-          if (ruleEntry.rule.is<MaterialRule::RuleEmpty>()) {
+          if (std::holds_alternative<MaterialRule::RuleEmpty>(ruleEntry.rule)) {
             valid = neighborMod == NoModId;
-          } else if (ruleEntry.rule.is<MaterialRule::RuleConnects>()) {
+          } else if (std::holds_alternative<MaterialRule::RuleConnects>(ruleEntry.rule)) {
             valid = isConnectableMaterial(neighborMaterial);
-          } else if (ruleEntry.rule.is<MaterialRule::RuleShadows>()) {
+          } else if (std::holds_alternative<MaterialRule::RuleShadows>(ruleEntry.rule)) {
             valid = neighborShadowing;
-          } else if (auto equalsSelf = ruleEntry.rule.ptr<MaterialRule::RuleEqualsSelf>()) {
+          } else if (auto equalsSelf = std::get_if<4>(&ruleEntry.rule)) {
             valid = neighborMod == baseMod;
             if (equalsSelf->matchHue)
               valid = valid && baseModHue == neighborModHue;
-          } else if (auto equalsId = ruleEntry.rule.ptr<MaterialRule::RuleEqualsId>()) {
+          } else if (auto equalsId = std::get_if<MaterialRule::RuleEqualsId>(&ruleEntry.rule)) {
             valid = neighborMod == equalsId->id;
-          } else if (auto propertyEquals = ruleEntry.rule.ptr<MaterialRule::RulePropertyEquals>()) {
+          } else if (auto propertyEquals = std::get_if<MaterialRule::RulePropertyEquals>(&ruleEntry.rule)) {
             if (auto profile = materialDb->modRenderProfile(neighborMod))
               valid = profile->ruleProperties.get(propertyEquals->propertyName, Json()) == propertyEquals->compare;
             else
               valid = false;
           }
         } else {
-          if (ruleEntry.rule.is<MaterialRule::RuleEmpty>()) {
+          if (std::holds_alternative<MaterialRule::RuleEmpty>(ruleEntry.rule)) {
             valid = neighborMaterial == EmptyMaterialId;
-          } else if (ruleEntry.rule.is<MaterialRule::RuleConnects>()) {
+          } else if (std::holds_alternative<MaterialRule::RuleConnects>(ruleEntry.rule)) {
             valid = isConnectableMaterial(neighborMaterial);
-          } else if (ruleEntry.rule.is<MaterialRule::RuleShadows>()) {
+          } else if (std::holds_alternative<MaterialRule::RuleShadows>(ruleEntry.rule)) {
             valid = neighborShadowing;
-          } else if (auto equalsSelf = ruleEntry.rule.ptr<MaterialRule::RuleEqualsSelf>()) {
+          } else if (auto equalsSelf = std::get_if<4>(&ruleEntry.rule)) {
             valid = neighborMaterial == baseMaterial;
             if (equalsSelf->matchHue)
               valid = valid && baseHue == neighborHue;
-          } else if (auto equalsId = ruleEntry.rule.ptr<MaterialRule::RuleEqualsId>()) {
+          } else if (auto equalsId = std::get_if<MaterialRule::RuleEqualsId>(&ruleEntry.rule)) {
             valid = neighborMaterial == equalsId->id;
-          } else if (auto propertyEquals = ruleEntry.rule.ptr<MaterialRule::RulePropertyEquals>()) {
+          } else if (auto propertyEquals = std::get_if<MaterialRule::RulePropertyEquals>(&ruleEntry.rule)) {
             if (auto profile = materialDb->materialRenderProfile(neighborMaterial))
               valid = profile->ruleProperties.get(propertyEquals->propertyName) == propertyEquals->compare;
             else

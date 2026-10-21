@@ -3,7 +3,6 @@ module;
 import std;
 import star.string;
 import star.list;
-import star.variant;
 import star.json;
 import star.strong_typedef;
 import star.data_stream;
@@ -73,11 +72,11 @@ public:
   // may come only from modifiers and have no base value.
   float statEffectiveValue(String const& statName) const;
 
-  void addResource(String resourceName, MVariant<String, float> max = {}, MVariant<String, float> delta = {});
+  void addResource(String resourceName, std::variant<std::monostate, String, float> max = {}, std::variant<std::monostate, String, float> delta = {});
   void removeResource(String const& resourceName);
 
-  MVariant<String, float> resourceMax(String const& resourceName) const;
-  MVariant<String, float> resourceDelta(String const& resourceName) const;
+  std::variant<std::monostate, String, float> resourceMax(String const& resourceName) const;
+  std::variant<std::monostate, String, float> resourceDelta(String const& resourceName) const;
 
   StringList resourceNames() const;
   bool isResource(String const& resourceName) const;
@@ -131,8 +130,8 @@ private:
   };
 
   struct Resource {
-    MVariant<String, float> max;
-    MVariant<String, float> delta;
+    std::variant<std::monostate, String, float> max;
+    std::variant<std::monostate, String, float> delta;
     bool locked;
     float value;
     std::optional<float> maxValue;

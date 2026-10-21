@@ -6,7 +6,6 @@ import star.json;
 import star.net_compatibility;
 import star.byte_array;
 import star.vector;
-import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
@@ -70,7 +69,7 @@ DataStream& operator>>(DataStream& ds, CelestialOrbit& orbit);
 DataStream& operator<<(DataStream& ds, CelestialOrbit const& orbit);
 
 // in transit, at a planet, orbiting a planet,, at a system object, or at a vector position
-typedef MVariant<CelestialCoordinate, CelestialOrbit, Uuid, Vec2F> SystemLocation;
+typedef std::variant<std::monostate, CelestialCoordinate, CelestialOrbit, Uuid, Vec2F> SystemLocation;
 Json jsonFromSystemLocation(SystemLocation const& location);
 SystemLocation jsonToSystemLocation(Json const& json);
 

@@ -24,7 +24,6 @@ import star.weighted_pool;
 import star.strong_typedef;
 import star.casting;
 import star.rpc_promise;
-import star.variant;
 import std;
 import star.optional;
 import star.rect;
@@ -466,8 +465,8 @@ void WorldServer::removeCentralStructure() {
 }
 
 bool WorldServer::spawnTargetValid(SpawnTarget const& spawnTarget) const {
-  if (spawnTarget.is<SpawnTargetUniqueEntity>())
-    return (bool)m_entityMap->get<WarpTargetEntity>(m_worldStorage->loadUniqueEntity(spawnTarget.get<SpawnTargetUniqueEntity>()));
+  if (std::holds_alternative<SpawnTargetUniqueEntity>(spawnTarget))
+    return (bool)m_entityMap->get<WarpTargetEntity>(m_worldStorage->loadUniqueEntity(std::get<SpawnTargetUniqueEntity>(spawnTarget)));
   return true;
 }
 
@@ -477,13 +476,13 @@ bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarge
     return false;
 
   Vec2F playerStart;
-  if (spawnTarget.is<SpawnTargetPosition>()) {
-    playerStart = spawnTarget.get<SpawnTargetPosition>();
-  } else if (spawnTarget.is<SpawnTargetX>()) {
-    auto targetX = spawnTarget.get<SpawnTargetX>();
+  if (std::holds_alternative<SpawnTargetPosition>(spawnTarget)) {
+    playerStart = std::get<SpawnTargetPosition>(spawnTarget);
+  } else if (std::holds_alternative<SpawnTargetX>(spawnTarget)) {
+    auto targetX = std::get<SpawnTargetX>(spawnTarget);
     playerStart = findPlayerSpaceStart(targetX);
-  } else if (spawnTarget.is<SpawnTargetUniqueEntity>()) {
-    if (auto target = m_entityMap->get<WarpTargetEntity>(m_worldStorage->loadUniqueEntity(spawnTarget.get<SpawnTargetUniqueEntity>())))
+  } else if (std::holds_alternative<SpawnTargetUniqueEntity>(spawnTarget)) {
+    if (auto target = m_entityMap->get<WarpTargetEntity>(m_worldStorage->loadUniqueEntity(std::get<SpawnTargetUniqueEntity>(spawnTarget))))
       playerStart = target->position() + target->footPosition();
     else
       return false;
@@ -558,14 +557,14 @@ List<std::shared_ptr<Packet>> WorldServer::removeClient(ConnectionId clientId) {
     auto& entry = m_entityMessageResponses[uuid];
     if (entry.first == clientId) {
       auto response = entry.second;
-      if (response.is<ConnectionId>()) {
-        if (auto clientInfo = m_clientInfo.value(response.get<ConnectionId>()))
+      if (std::holds_alternative<ConnectionId>(response)) {
+        if (auto clientInfo = m_clientInfo.value(std::get<ConnectionId>(response)))
           clientInfo->outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(makeLeft("Client disconnected"), uuid));
       } else {
-        response.get<RpcPromiseKeeper<Json>>().fail("Client disconnected");
+        std::get<RpcPromiseKeeper<Json>>(response).fail("Client disconnected");
       }
       m_entityMessageResponses.remove(uuid);
-    } else if (entry.second.is<ConnectionId>() && entry.second.get<ConnectionId>() == clientId) {
+    } else if (std::holds_alternative<ConnectionId>(entry.second) && std::get<ConnectionId>(entry.second) == clientId) {
       m_entityMessageResponses.remove(uuid);
     }
   }
@@ -659,11 +658,11 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<std::shared_
       sanitized.reserve(mtpacket->modifications.size());
       for (auto const& pair : mtpacket->modifications) {
         bool ok = true;
-        if (auto pl = pair.second.ptr<PlaceLiquid>())
+        if (auto pl = std::get_if<PlaceLiquid>(&pair.second))
           ok = liquidsDb->isValidLiquidId(pl->liquid);
-        else if (auto pm = pair.second.ptr<PlaceMaterial>())
+        else if (auto pm = std::get_if<PlaceMaterial>(&pair.second))
           ok = materialDb->isValidMaterialId(pm->material);
-        else if (auto pmod = pair.second.ptr<PlaceMod>())
+        else if (auto pmod = std::get_if<PlaceMod>(&pair.second))
           ok = materialDb->isValidModId(pmod->mod);
         if (ok)
           sanitized.append(pair);
@@ -683,7 +682,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<std::shared_
       TileModificationList rejected;
       for (auto const& pair : rtpacket->modifications) {
         bool ok = true;
-        if (auto pm = pair.second.ptr<PlaceMaterial>())
+        if (auto pm = std::get_if<PlaceMaterial>(&pair.second))
           ok = materialDb->isValidMaterialId(pm->material);
         if (ok)
           sanitized.append(pair);
@@ -916,21 +915,21 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<std::shared_
         continue;
 
       std::shared_ptr<Entity> entity;
-      if (entityMessagePacket->entityId.is<EntityId>())
-        entity = m_entityMap->entity(entityMessagePacket->entityId.get<EntityId>());
+      if (std::holds_alternative<EntityId>(entityMessagePacket->entityId))
+        entity = m_entityMap->entity(std::get<EntityId>(entityMessagePacket->entityId));
       else
-        entity = m_entityMap->entity(loadUniqueEntity(entityMessagePacket->entityId.get<String>()));
+        entity = m_entityMap->entity(loadUniqueEntity(std::get<String>(entityMessagePacket->entityId)));
 
       if (!entity) {
         clientInfo->outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(makeLeft("Unknown entity"), entityMessagePacket->uuid));
       } else {
         if (entity->isMaster()) {
           if (auto response = entity->receiveMessage(clientId, entityMessagePacket->message, entityMessagePacket->args)) {
-            if (response->is<Json>())
-              clientInfo->outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(makeRight(response->get<Json>()), entityMessagePacket->uuid));
+            if (std::holds_alternative<Json>(*response))
+              clientInfo->outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(makeRight(std::get<Json>(*response)), entityMessagePacket->uuid));
             else {
               // delay the response until this promise is done
-              m_entityMessagePromises[entityMessagePacket->uuid] = std::make_pair(clientId, response->get<RpcPromise<Json>>());
+              m_entityMessagePromises[entityMessagePacket->uuid] = std::make_pair(clientId, std::get<RpcPromise<Json>>(*response));
             }
           } else
             clientInfo->outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(makeLeft("Message not handled by entity"), entityMessagePacket->uuid));
@@ -946,14 +945,14 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<std::shared_
         this->root().logger().warn("EntityMessageResponse received for unknown context [{}]!", entityMessageResponsePacket->uuid.hex());
       else {
         auto response = m_entityMessageResponses.take(entityMessageResponsePacket->uuid).second;
-        if (response.is<ConnectionId>()) {
-          if (auto clientInfo = m_clientInfo.value(response.get<ConnectionId>()))
+        if (std::holds_alternative<ConnectionId>(response)) {
+          if (auto clientInfo = m_clientInfo.value(std::get<ConnectionId>(response)))
             clientInfo->outgoingPackets.append(std::move(entityMessageResponsePacket));
         } else {
           if (entityMessageResponsePacket->response.isRight())
-            response.get<RpcPromiseKeeper<Json>>().fulfill(entityMessageResponsePacket->response.right());
+            std::get<RpcPromiseKeeper<Json>>(response).fulfill(entityMessageResponsePacket->response.right());
           else
-            response.get<RpcPromiseKeeper<Json>>().fail(entityMessageResponsePacket->response.left());
+            std::get<RpcPromiseKeeper<Json>>(response).fail(entityMessageResponsePacket->response.left());
         }
       }
     } else if (auto pingPacket = as<PingPacket>(packet)) {
@@ -1365,7 +1364,7 @@ bool WorldServer::replaceTile(Vec2I const& pos, TileModification const& modifica
   if (!WorldImpl::validateTileReplacement(this->root(), modification))
     return false;
   
-  if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
+  if (auto placeMaterial = std::get_if<PlaceMaterial>(&modification)) {
     if (!isTileConnectable(pos, placeMaterial->layer, true))
       return false;
 
@@ -1393,7 +1392,7 @@ TileModificationList WorldServer::replaceTiles(TileModificationList const& modif
     TileLayer layer;
 
     for (auto pair : modificationList) {
-      if (auto placeMaterial = pair.second.ptr<PlaceMaterial>()) {
+      if (auto placeMaterial = std::get_if<PlaceMaterial>(&pair.second)) {
         layer = placeMaterial->layer;
 
         if (placeMaterial->material == material(pair.first, layer)) {
@@ -1979,7 +1978,7 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
     if (!ignoreTileProtection && isTileProtected(pos))
       continue;
 
-    if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
+    if (auto placeMaterial = std::get_if<PlaceMaterial>(&modification)) {
       bool allowTileOverlap = placeMaterial->collisionOverride != TileCollisionOverride::None && collisionKindFromOverride(placeMaterial->collisionOverride) < CollisionKind::Dynamic;
       if (!WorldImpl::canPlaceMaterial(this->root(), m_entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, allowTileOverlap, m_tileGetterFunction))
         continue;
@@ -2035,7 +2034,7 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
         dirtyCollision(RectI::withSize(pos, {1, 1}));
       queueTileUpdates(pos);
 
-    } else if (auto placeMod = modification.ptr<PlaceMod>()) {
+    } else if (auto placeMod = std::get_if<PlaceMod>(&modification)) {
       if (!WorldImpl::canPlaceMod(this->root(), pos, placeMod->layer, placeMod->mod, m_tileGetterFunction))
         continue;
 
@@ -2060,7 +2059,7 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
       m_liquidEngine->visitLocation(pos);
       queueTileUpdates(pos);
 
-    } else if (auto placeMaterialColor = modification.ptr<PlaceMaterialColor>()) {
+    } else if (auto placeMaterialColor = std::get_if<PlaceMaterialColor>(&modification)) {
       if (!WorldImpl::canPlaceMaterialColorVariant(this->root(), pos, placeMaterialColor->layer, placeMaterialColor->color, m_tileGetterFunction))
         continue;
 
@@ -2082,7 +2081,7 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
 
       queueTileUpdates(pos);
 
-    } else if (auto plpacket = modification.ptr<PlaceLiquid>()) {
+    } else if (auto plpacket = std::get_if<PlaceLiquid>(&modification)) {
       if (!this->root().liquidsDatabase()->isValidLiquidId(plpacket->liquid)) {
         this->root().logger().warn("WorldServer: rejected PlaceLiquid with invalid liquid id {} at ({}, {})",
                      (int)plpacket->liquid, pos[0], pos[1]);
@@ -2865,21 +2864,21 @@ RpcPromise<Vec2F> WorldServer::findUniqueEntity(String const& uniqueId) {
     return RpcPromise<Vec2F>::createFailed("Unknown entity");
 }
 
-RpcPromise<Json> WorldServer::sendEntityMessage(Variant<EntityId, String> const& entityId, String const& message, JsonArray const& args) {
+RpcPromise<Json> WorldServer::sendEntityMessage(std::variant<EntityId, String> const& entityId, String const& message, JsonArray const& args) {
   std::shared_ptr<Entity> entity;
-  if (entityId.is<EntityId>())
-    entity = m_entityMap->entity(entityId.get<EntityId>());
+  if (std::holds_alternative<EntityId>(entityId))
+    entity = m_entityMap->entity(std::get<EntityId>(entityId));
   else
-    entity = m_entityMap->entity(loadUniqueEntity(entityId.get<String>()));
+    entity = m_entityMap->entity(loadUniqueEntity(std::get<String>(entityId)));
 
   if (!entity) {
     return RpcPromise<Json>::createFailed("Unknown entity");
   } else if (entity->isMaster()) {
     if (auto resp = entity->receiveMessage(ServerConnectionId, message, args)) {
-      if (resp->is<Json>())
-        return RpcPromise<Json>::createFulfilled(resp->get<Json>());
+      if (std::holds_alternative<Json>(*resp))
+        return RpcPromise<Json>::createFulfilled(std::get<Json>(*resp));
       else
-        return resp->get<RpcPromise<Json>>();
+        return std::get<RpcPromise<Json>>(*resp);
     } else
       return RpcPromise<Json>::createFailed("Message not handled by entity");
   } else {

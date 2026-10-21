@@ -5,7 +5,6 @@ import star.json;
 import star.string;
 import star.list;
 
-import star.variant;
 import star.image;
 import star.poly;
 import star.bi_map;
@@ -94,7 +93,7 @@ RenderQuad renderTexturedRect(TexturePtr texture, RectF const& screenCoords, Vec
 RenderQuad renderFlatRect(RectF const& rect, Vec4B color, float param1 = 0.0f);
 RenderPoly renderFlatPoly(PolyF const& poly, Vec4B color, float param1 = 0.0f);
 
-typedef Variant<RenderTriangle, RenderQuad, RenderPoly> RenderPrimitive;
+typedef std::variant<RenderTriangle, RenderQuad, RenderPoly> RenderPrimitive;
 
 class Texture : public RefCounter {
 public:
@@ -141,7 +140,7 @@ public:
   virtual void set(List<RenderPrimitive>& primitives) = 0;
 };
 
-typedef Variant<float, int, Vec4F, Vec3F, Vec2F, bool> RenderEffectParameter;
+typedef std::variant<float, int, Vec4F, Vec3F, Vec2F, bool> RenderEffectParameter;
 
 class Renderer {
 public:
@@ -164,7 +163,7 @@ public:
   virtual void setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) = 0;
   virtual void setEffectScriptableParameter(String const& effectName, String const& parameterName, RenderEffectParameter const& parameter) = 0;
   virtual std::optional<RenderEffectParameter> getEffectScriptableParameter(String const& effectName, String const& parameterName) = 0;
-  virtual std::optional<VariantTypeIndex> getEffectScriptableParameterType(String const& effectName, String const& parameterName) = 0;
+  virtual std::optional<std::uint8_t> getEffectScriptableParameterType(String const& effectName, String const& parameterName) = 0;
   virtual void setEffectTexture(String const& textureName, ImageView const& image) = 0;
   virtual bool switchEffectConfig(String const& name) = 0;
 

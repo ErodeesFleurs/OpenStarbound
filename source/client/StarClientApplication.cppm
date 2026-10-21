@@ -3,7 +3,6 @@ import std;
 import star.json;
 import star.string;
 import star.list;
-import star.variant;
 import star.thread;
 import star.vector;
 import star.byte_array;
@@ -77,7 +76,7 @@ private:
   };
 
   struct PendingMultiPlayerConnection {
-    Variant<P2PNetworkingPeerId, HostAddressWithPort> server;
+    std::variant<P2PNetworkingPeerId, HostAddressWithPort> server;
     String account;
     String password;
     bool forceLegacy;

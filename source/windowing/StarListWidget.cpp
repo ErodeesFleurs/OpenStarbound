@@ -39,7 +39,6 @@ import star.user_generated_content_service;
 import star.desktop_service;
 import star.image;
 import star.application_controller;
-import star.variant;
 import star.renderer;
 import star.asset_source;
 import star.assets;
@@ -95,12 +94,12 @@ bool ListWidget::sendEvent(InputEvent const& event) {
   for (std::size_t i = m_members.size(); i != 0; --i) {
     auto child = m_members[i - 1];
     if (child->sendEvent(event)
-        || (event.is<MouseButtonDownEvent>() && child->inMember(*context()->mousePosition(event))
-              && event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Left)) {
+        || (std::holds_alternative<MouseButtonDownEvent>(event) && child->inMember(*context()->mousePosition(event))
+              && std::get<MouseButtonDownEvent>(event).mouseButton == MouseButton::Left)) {
       setSelected(i - 1);
       return true;
     }
-    setHovered(i - 1, event.is<MouseMoveEvent>() && child->inMember(*context()->mousePosition(event)));
+    setHovered(i - 1, std::holds_alternative<MouseMoveEvent>(event) && child->inMember(*context()->mousePosition(event)));
   }
 
   return false;

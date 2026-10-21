@@ -27,7 +27,6 @@ import star.poly;
 import star.color;
 import star.string;
 import star.lua;
-import star.variant;
 import star.weighted_pool;
 import star.logging;
 import star.parametric_function;
@@ -262,7 +261,7 @@ namespace LuaBindings {
     Vec2F distance(World* world, Vec2F const& arg1, Vec2F const& arg2);
     bool polyContains(World* world, PolyF const& poly, Vec2F const& pos);
     LuaValue xwrap(World* world, LuaEngine& engine, LuaValue const& positionOrX);
-    LuaValue nearestTo(World* world, LuaEngine& engine, Variant<Vec2F, float> const& sourcePositionOrX, Variant<Vec2F, float> const& targetPositionOrX);
+    LuaValue nearestTo(World* world, LuaEngine& engine, std::variant<Vec2F, float> const& sourcePositionOrX, std::variant<Vec2F, float> const& targetPositionOrX);
   }
 
   namespace WorldCollisionCallbacks {
@@ -375,7 +374,7 @@ namespace LuaBindings {
     std::uint64_t day(World* world);
     double timeOfDay(World* world);
     float dayLength(World* world);
-    std::optional<LiquidLevel> liquidAt(World* world, Variant<RectF, Vec2I> boundBoxOrPoint);
+    std::optional<LiquidLevel> liquidAt(World* world, std::variant<RectF, Vec2I> boundBoxOrPoint);
     float gravity(World* world, Vec2F const& arg1);
     bool spawnLiquid(World* world, Vec2F const& arg1, LiquidId arg2, float arg3);
     std::optional<LiquidLevel> destroyLiquid(World* world, Vec2F const& position);
@@ -1052,7 +1051,7 @@ namespace LuaBindings {
     callbacks.registerCallbackWithSignature<std::uint64_t>("day", std::bind(WorldEnvironmentCallbacks::day, world));
     callbacks.registerCallbackWithSignature<double>("timeOfDay", std::bind(WorldEnvironmentCallbacks::timeOfDay, world));
     callbacks.registerCallbackWithSignature<float>("dayLength", std::bind(WorldEnvironmentCallbacks::dayLength, world));
-    callbacks.registerCallbackWithSignature<std::optional<LiquidLevel>, Variant<RectF, Vec2I>>("liquidAt", std::bind(WorldEnvironmentCallbacks::liquidAt, world, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<std::optional<LiquidLevel>, std::variant<RectF, Vec2I>>("liquidAt", std::bind(WorldEnvironmentCallbacks::liquidAt, world, std::placeholders::_1));
     callbacks.registerCallbackWithSignature<float, Vec2F>("gravity", std::bind(WorldEnvironmentCallbacks::gravity, world, std::placeholders::_1));
     callbacks.registerCallbackWithSignature<bool, Vec2F, LiquidId, float>("spawnLiquid", std::bind(WorldEnvironmentCallbacks::spawnLiquid, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     callbacks.registerCallbackWithSignature<std::optional<LiquidLevel>, Vec2F>("destroyLiquid", std::bind(WorldEnvironmentCallbacks::destroyLiquid, world, std::placeholders::_1));
@@ -1068,7 +1067,7 @@ namespace LuaBindings {
     callbacks.registerCallbackWithSignature<Vec2F, Vec2F, Vec2F>("distance", std::bind(WorldGeometryCallbacks::distance, world, std::placeholders::_1, std::placeholders::_2));
     callbacks.registerCallbackWithSignature<bool, PolyF, Vec2F>("polyContains", std::bind(WorldGeometryCallbacks::polyContains, world, std::placeholders::_1, std::placeholders::_2));
     callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, LuaValue>("xwrap", std::bind(WorldGeometryCallbacks::xwrap, world, std::placeholders::_1, std::placeholders::_2));
-    callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, Variant<Vec2F, float>, Variant<Vec2F, float>>("nearestTo", std::bind(WorldGeometryCallbacks::nearestTo, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, std::variant<Vec2F, float>, std::variant<Vec2F, float>>("nearestTo", std::bind(WorldGeometryCallbacks::nearestTo, world, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   }
   
   void addWorldCollisionCallbacks(LuaCallbacks& callbacks, World* world) {
@@ -1105,24 +1104,24 @@ namespace LuaBindings {
     return engine.luaFrom<Vec2F>(world->geometry().xwrap(engine.luaTo<Vec2F>(positionOrX)));
   }
 
-  LuaValue WorldGeometryCallbacks::nearestTo(World* world, LuaEngine& engine, Variant<Vec2F, float> const& sourcePositionOrX, Variant<Vec2F, float> const& targetPositionOrX) {
-    if (targetPositionOrX.is<Vec2F>()) {
-      Vec2F targetPosition = targetPositionOrX.get<Vec2F>();
+  LuaValue WorldGeometryCallbacks::nearestTo(World* world, LuaEngine& engine, std::variant<Vec2F, float> const& sourcePositionOrX, std::variant<Vec2F, float> const& targetPositionOrX) {
+    if (std::holds_alternative<Vec2F>(targetPositionOrX)) {
+      Vec2F targetPosition = std::get<Vec2F>(targetPositionOrX);
       Vec2F sourcePosition;
-      if (sourcePositionOrX.is<Vec2F>())
-        sourcePosition = sourcePositionOrX.get<Vec2F>();
+      if (std::holds_alternative<Vec2F>(sourcePositionOrX))
+        sourcePosition = std::get<Vec2F>(sourcePositionOrX);
       else
-        sourcePosition[0] = sourcePositionOrX.get<float>();
+        sourcePosition[0] = std::get<float>(sourcePositionOrX);
 
       return engine.luaFrom<Vec2F>(world->geometry().nearestTo(sourcePosition, targetPosition));
 
     } else {
-      float targetX = targetPositionOrX.get<float>();
+      float targetX = std::get<float>(targetPositionOrX);
       float sourceX;
-      if (sourcePositionOrX.is<Vec2F>())
-        sourceX = sourcePositionOrX.get<Vec2F>()[0];
+      if (std::holds_alternative<Vec2F>(sourcePositionOrX))
+        sourceX = std::get<Vec2F>(sourcePositionOrX)[0];
       else
-        sourceX = sourcePositionOrX.get<float>();
+        sourceX = std::get<float>(sourcePositionOrX);
 
       return LuaFloat(world->geometry().nearestTo(sourceX, targetX));
     }
@@ -1522,8 +1521,8 @@ namespace LuaBindings {
     world->setProperty(arg1, arg2);
   }
 
-  std::optional<LiquidLevel> WorldEnvironmentCallbacks::liquidAt(World* world, Variant<RectF, Vec2I> boundBoxOrPoint) {
-    LiquidLevel liquidLevel = boundBoxOrPoint.call([world](auto const& bbop) { return world->liquidLevel(bbop); });
+  std::optional<LiquidLevel> WorldEnvironmentCallbacks::liquidAt(World* world, std::variant<RectF, Vec2I> boundBoxOrPoint) {
+    LiquidLevel liquidLevel = std::visit([world](auto const& bbop) { return world->liquidLevel(bbop); }, boundBoxOrPoint);
     if (liquidLevel.liquid != EmptyLiquidId)
       return liquidLevel;
     return {};
@@ -2241,7 +2240,7 @@ namespace LuaBindings {
   }
 
   RpcPromise<Json> WorldEntityCallbacks::sendEntityMessage(World* world, LuaEngine& engine, LuaValue entityId, String const& message, LuaVariadic<Json> args) {
-    if (entityId.is<LuaString>())
+    if (std::holds_alternative<LuaString>(entityId))
       return world->sendEntityMessage(engine.luaTo<String>(entityId), message, JsonArray::from(std::move(args)));
     else
       return world->sendEntityMessage(engine.luaTo<EntityId>(entityId), message, JsonArray::from(std::move(args)));

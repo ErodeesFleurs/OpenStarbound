@@ -13,7 +13,6 @@ import star.thread;
 import star.directives;
 import star.asset_path;
 import star.drawable;
-import star.variant;
 import star.image;
 import star.bi_map;
 import star.ref_ptr;
@@ -35,7 +34,7 @@ void DrawablePainter::drawDrawable(Drawable const& drawable) {
   Vec4B color = drawable.color.toRgba();
   auto& primitives = m_renderer->immediatePrimitives();
 
-  if (auto linePart = drawable.part.ptr<Drawable::LinePart>()) {
+  if (auto linePart = std::get_if<Drawable::LinePart>(&drawable.part)) {
     auto line = linePart->line;
     line.translate(drawable.position);
     Vec2F left = Vec2F(vnorm(line.diff())).rot90() * linePart->width / 2.0f;
@@ -48,16 +47,16 @@ void DrawablePainter::drawDrawable(Drawable const& drawable) {
       line.max() + left,
       color, fullbright);
     if (auto* endColor = optionalPtr(linePart->endColor)) {
-      RenderQuad& quad = primitive.get<RenderQuad>();
+      RenderQuad& quad = std::get<RenderQuad>(primitive);
       quad.c.color = quad.d.color = endColor->toRgba();
     }
-  } else if (auto polyPart = drawable.part.ptr<Drawable::PolyPart>()) {
+  } else if (auto polyPart = std::get_if<Drawable::PolyPart>(&drawable.part)) {
     PolyF poly = polyPart->poly;
     poly.translate(drawable.position);
 
     primitives.emplace_back(std::in_place_type_t<RenderPoly>(), poly.vertexes(), color, 0.0f);
 
-  } else if (auto imagePart = drawable.part.ptr<Drawable::ImagePart>()) {
+  } else if (auto imagePart = std::get_if<Drawable::ImagePart>(&drawable.part)) {
     TexturePtr texture = m_textureGroup->loadTexture(imagePart->image);
 
     Vec2F position = drawable.position;

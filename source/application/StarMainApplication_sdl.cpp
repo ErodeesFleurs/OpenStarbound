@@ -32,7 +32,6 @@ import star.desktop_service;
 import star.image;
 import star.rect;
 import star.application_controller;
-import star.variant;
 import star.bi_map;
 import star.ref_ptr;
 import star.renderer;

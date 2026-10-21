@@ -1,6 +1,5 @@
 import std;
 import star.json;
-import star.variant;
 import star.list;
 import star.image;
 import star.poly;

@@ -37,7 +37,6 @@ import star.user_generated_content_service;
 import star.desktop_service;
 import star.image;
 import star.application_controller;
-import star.variant;
 import star.renderer;
 import star.asset_source;
 import star.assets;
@@ -119,14 +118,14 @@ bool KeybindingsMenu::sendEvent(InputEvent const& event) {
     if (m_activeKeybinding->parent()->fetchChild<ButtonWidget>("deleteBinding")->sendEvent(event))
       return true;
 
-    if (auto keyUp = event.ptr<KeyUpEvent>()) {
+    if (auto keyUp = std::get_if<KeyUpEvent>(&event)) {
       if (auto modKey = std::ranges::find(KeyChordMods, keyUp->key, &std::pair<Key, KeyMod>::first);
           modKey != KeyChordMods.end()) {
         m_currentMods &= ~modKey->second;
         setKeybinding(KeyChord{keyUp->key, m_currentMods});
         return true;
       }
-    } else if (auto keyDown = event.ptr<KeyDownEvent>()) {
+    } else if (auto keyDown = std::get_if<KeyDownEvent>(&event)) {
       std::optional<KeyMod> modKey = KeyModNames.maybeLeft(KeyNames.getRight(keyDown->key));
 
       if (modKey) {

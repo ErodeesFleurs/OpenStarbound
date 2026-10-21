@@ -1,7 +1,6 @@
 module;
 import std;
 import star.string;
-import star.variant;
 import star.format;
 import star.json;
 import star.bi_map;
@@ -128,7 +127,7 @@ struct MicroDungeonNamesWrapper : BaseType {
 };
 typedef MicroDungeonNamesWrapper<StringSet> MicroDungeonNames;
 
-typedef Variant<GrassVariant, BushVariant, TreePair, ObjectPool, TreasureBoxSet, MicroDungeonNames> BiomeItem;
+typedef std::variant<GrassVariant, BushVariant, TreePair, ObjectPool, TreasureBoxSet, MicroDungeonNames> BiomeItem;
 BiomeItem variantToBiomeItem(Assets const& assets, Json const& store);
 Json variantFromBiomeItem(BiomeItem const& biomeItem);
 

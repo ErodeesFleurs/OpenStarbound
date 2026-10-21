@@ -5,7 +5,6 @@ import star.json_extra;
 import star.id_map;
 import star.data_stream_extra;
 import star.poly;
-import star.variant;
 import star.casting;
 import star.data_stream;
 import star.game_types;
@@ -326,10 +325,10 @@ void StatusController::addPersistentEffects(
     persistentEffectCategory.modifierEffectsGroupId = m_statCollection.addStatModifierGroup();
 
   for (auto const& effect : effectList) {
-    if (effect.is<StatModifier>())
-      persistentEffectCategory.statModifiers.append(effect.get<StatModifier>());
-    else if (effect.is<UniqueStatusEffect>())
-      persistentEffectCategory.uniqueEffects.add(effect.get<UniqueStatusEffect>());
+    if (std::holds_alternative<StatModifier>(effect))
+      persistentEffectCategory.statModifiers.append(std::get<StatModifier>(effect));
+    else if (std::holds_alternative<UniqueStatusEffect>(effect))
+      persistentEffectCategory.uniqueEffects.add(std::get<UniqueStatusEffect>(effect));
   }
   m_statCollection.setStatModifierGroup(
       *persistentEffectCategory.modifierEffectsGroupId, persistentEffectCategory.statModifiers);

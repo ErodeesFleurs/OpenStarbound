@@ -189,7 +189,7 @@ Set<InterfaceAction> KeyBindings::actions(Key key) const {
 }
 
 Set<InterfaceAction> KeyBindings::actions(InputEvent const& event) const {
-  if (auto keyDown = event.ptr<KeyDownEvent>())
+  if (auto keyDown = std::get_if<KeyDownEvent>(&event))
     return actions(KeyChord{keyDown->key, keyDown->mods});
   return {};
 }

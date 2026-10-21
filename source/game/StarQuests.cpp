@@ -31,7 +31,6 @@ import star.listener;
 import star.format;
 import star.version;
 import star.id_map;
-import star.variant;
 import star.rpc_promise;
 import star.lua;
 import star.audio;
@@ -239,12 +238,12 @@ Quest::Quest(Root& root, QuestArcDescriptor const& questArc, std::size_t arcPos,
     if (!m_parameters.contains(rewardParamName))
       continue;
     QuestParam const& rewardParam = m_parameters[rewardParamName];
-    if (rewardParam.detail.is<QuestItem>()) {
-      addReward(rewardParam.detail.get<QuestItem>().descriptor());
+    if (std::holds_alternative<QuestItem>(rewardParam.detail)) {
+      addReward(std::get<QuestItem>(rewardParam.detail).descriptor());
     } else {
-      if (!rewardParam.detail.is<QuestItemList>())
+      if (!std::holds_alternative<QuestItemList>(rewardParam.detail))
         throw StarException::format("Quest parameter {} cannot be used as a reward parameter", rewardParamName);
-      for (auto item : rewardParam.detail.get<QuestItemList>())
+      for (auto item : std::get<QuestItemList>(rewardParam.detail))
         addReward(item);
     }
   }
@@ -635,31 +634,31 @@ std::optional<String> Quest::customIndicator(std::shared_ptr<Entity> const& enti
 
   for (String const& indicator : m_indicators) {
     auto param = parameters().get(indicator);
-    if (param.detail.is<QuestEntity>()) {
-      QuestEntity questEntity = param.detail.get<QuestEntity>();
+    if (std::holds_alternative<QuestEntity>(param.detail)) {
+      QuestEntity questEntity = std::get<QuestEntity>(param.detail);
       if (questEntity.uniqueId && entity->uniqueId() == questEntity.uniqueId) {
         return param.indicator.value_or(defaultCustomIndicator());
       }
 
-    } else if (param.detail.is<QuestItem>()) {
-      QuestItem questItem = param.detail.get<QuestItem>();
+    } else if (std::holds_alternative<QuestItem>(param.detail)) {
+      QuestItem questItem = std::get<QuestItem>(param.detail);
       if (hasItemIndicator(m_root, entity, {questItem.descriptor()}))
         return param.indicator.value_or(defaultCustomIndicator());
 
-    } else if (param.detail.is<QuestItemTag>()) {
-      String questItemTag = param.detail.get<QuestItemTag>();
+    } else if (std::holds_alternative<QuestItemTag>(param.detail)) {
+      String questItemTag = std::get<QuestItemTag>(param.detail);
       if (auto itemDrop = as<ItemDrop>(entity)) {
         if (itemDrop->item()->itemTags().contains(questItemTag))
           return param.indicator.value_or(defaultCustomIndicator());
       }
 
-    } else if (param.detail.is<QuestItemList>()) {
-      QuestItemList questItemList = param.detail.get<QuestItemList>();
+    } else if (std::holds_alternative<QuestItemList>(param.detail)) {
+      QuestItemList questItemList = std::get<QuestItemList>(param.detail);
       if (hasItemIndicator(m_root, entity, questItemList))
         return param.indicator.value_or(defaultCustomIndicator());
 
-    } else if (param.detail.is<QuestMonsterType>()) {
-      QuestMonsterType questMonsterType = param.detail.get<QuestMonsterType>();
+    } else if (std::holds_alternative<QuestMonsterType>(param.detail)) {
+      QuestMonsterType questMonsterType = std::get<QuestMonsterType>(param.detail);
       if (auto monster = as<Monster>(entity)) {
         if (monster->typeName() == questMonsterType.typeName) {
           TeamType team = monster->getTeam().type;

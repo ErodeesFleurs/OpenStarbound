@@ -1064,8 +1064,8 @@ std::shared_ptr<Image const> Assets::applyImagePatches(std::shared_ptr<Image con
         context->load(patchStream, patchPath);
       }
       auto newResult = context->invokePath<LuaValue>("patch", result, path);
-      if (!newResult.is<LuaNilType>()) {
-        if (auto ud = newResult.ptr<LuaUserData>()) {
+      if (!std::holds_alternative<LuaNilType>(newResult)) {
+        if (auto ud = std::get_if<LuaUserData>(&newResult)) {
           if (ud->is<Image>())
             result = std::move(newResult);
           else
@@ -1079,7 +1079,7 @@ std::shared_ptr<Image const> Assets::applyImagePatches(std::shared_ptr<Image con
       m_logger.warn("Patch '{}' for image '{}' isn't a Lua script, ignoring", patchPath, path);
     }
   }
-  return std::make_shared<Image>(std::move(result.get<LuaUserData>().get<Image>()));
+  return std::make_shared<Image>(std::move(std::get<LuaUserData>(result).get<Image>()));
 }
 
 Json Assets::checkPatchArray(String const& path, std::shared_ptr<AssetSource> const& source, Json const result, JsonArray const patchData, std::optional<Json> const external) const {

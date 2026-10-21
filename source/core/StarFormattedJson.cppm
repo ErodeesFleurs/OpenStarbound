@@ -2,7 +2,6 @@ module;
 import star.string;
 import star.list;
 import star.map;
-import star.variant;
 import star.stream_formatter;
 
 import std;
@@ -20,7 +19,6 @@ struct WhitespaceElement;
 struct ColonElement;
 struct CommaElement;
 
-typedef Variant<ValueElement, ObjectKeyElement, WhitespaceElement, ColonElement, CommaElement> JsonElement;
 
 struct ValueElement {
   ValueElement(FormattedJson const& json);
@@ -49,6 +47,8 @@ struct ColonElement {
 struct CommaElement {
   bool operator==(CommaElement const&) const;
 };
+using JsonElement = std::variant<ValueElement, ObjectKeyElement, WhitespaceElement, ColonElement, CommaElement>;
+
 
 std::ostream& operator<<(std::ostream& os, JsonElement const& elem);
 

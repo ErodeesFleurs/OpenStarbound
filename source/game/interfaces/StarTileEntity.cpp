@@ -8,7 +8,6 @@ import star.material_types;
 import star.strong_typedef;
 import star.bi_map;
 import star.list;
-import star.variant;
 import star.rpc_promise;
 import star.data_stream_extra;
 import star.ordered_map;

@@ -9,7 +9,6 @@ import star.btree_database;
 import star.time;
 import star.file;
 import star.string;
-import star.variant;
 import star.ordered_set;
 import star.option_parser;
 import std;

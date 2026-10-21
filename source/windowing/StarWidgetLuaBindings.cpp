@@ -11,7 +11,6 @@ import star.random;
 import star.ttl_cache;
 import star.casting;
 import star.game_types;
-import star.variant;
 import star.strong_typedef;
 import star.rpc_promise;
 import star.vector;
@@ -158,11 +157,11 @@ LuaMethods<std::shared_ptr<CanvasWidget>> LuaUserDataMethods<std::shared_ptr<Can
           canvasWidget->drawImage(image, position, scale.value_or(1.0f), color.value_or(Color::White).toRgba());
       });
   methods.registerMethod("drawImageDrawable",
-      [](std::shared_ptr<CanvasWidget> canvasWidget, String image, Vec2F position, MVariant<Vec2F, float> scale, std::optional<Color> color, std::optional<float> rotation) {
+      [](std::shared_ptr<CanvasWidget> canvasWidget, String image, Vec2F position, std::variant<std::monostate, Vec2F, float> scale, std::optional<Color> color, std::optional<float> rotation) {
         auto drawable = Drawable::makeImage(*canvasWidget->context()->root().imageMetadataDatabase(), image, 1.0, true, {0.0, 0.0}, color.value_or(Color::White));
-        if (auto s = scale.maybe<Vec2F>())
+        if (auto s = std::get_if<Vec2F>(&scale))
           drawable.transform(Mat3F::scaling(*s));
-        else if(auto s = scale.maybe<float>())
+        else if(auto s = std::get_if<float>(&scale))
           drawable.transform(Mat3F::scaling(*s));
         if (rotation)
           drawable.rotate(*rotation);

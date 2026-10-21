@@ -35,7 +35,6 @@ import star.logging;
 import star.time;
 import star.version;
 import star.either;
-import star.variant;
 import star.random;
 import star.weighted_pool;
 import star.ordered_set;
@@ -253,8 +252,8 @@ TeamBar::TeamBar(GuiContext& guiContext, MainInterface* mainInterface, std::shar
 }
 
 bool TeamBar::sendEvent(InputEvent const& event) {
-  if (event.is<MouseButtonDownEvent>()
-      && (event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Left || event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Right)) {
+  if (std::holds_alternative<MouseButtonDownEvent>(event)
+      && (std::get<MouseButtonDownEvent>(event).mouseButton == MouseButton::Left || std::get<MouseButtonDownEvent>(event).mouseButton == MouseButton::Right)) {
     if (m_teamMemberMenu->isDisplayed() && !m_teamMemberMenu->inMember(*context()->mousePosition(event)))
       m_teamMemberMenu->dismiss();
   }

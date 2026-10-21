@@ -3,7 +3,6 @@ module;
 import std;
 import star.string;
 import star.list;
-import star.variant;
 import star.format;
 import star.json;
 import star.strong_typedef;
@@ -61,7 +60,7 @@ struct StatEffectiveMultiplier {
 DataStream& operator>>(DataStream& ds, StatEffectiveMultiplier& effectiveMultiplier);
 DataStream& operator<<(DataStream& ds, StatEffectiveMultiplier const& effectiveMultiplier);
 
-typedef MVariant<StatValueModifier, StatBaseMultiplier, StatEffectiveMultiplier> StatModifier;
+typedef std::variant<std::monostate, StatValueModifier, StatBaseMultiplier, StatEffectiveMultiplier> StatModifier;
 
 StatModifier jsonToStatModifier(Json const& config);
 Json jsonFromStatModifier(StatModifier const& modifier);
@@ -77,7 +76,7 @@ typedef String UniqueStatusEffect;
 typedef List<std::pair<UniqueStatusEffect, std::optional<float>>> ActiveUniqueStatusEffectSummary;
 
 // Persistent status effects can either be a modifier effect or unique effect
-typedef MVariant<StatModifier, UniqueStatusEffect> PersistentStatusEffect;
+typedef std::variant<std::monostate, StatModifier, UniqueStatusEffect> PersistentStatusEffect;
 
 // Reads either a name of a unique stat effect or a stat modifier object
 PersistentStatusEffect jsonToPersistentStatusEffect(Json const& config);

@@ -1,7 +1,6 @@
 import std;
 import star.string;
 import star.list;
-import star.variant;
 import star.json;
 import star.either;
 import star.strong_typedef;
@@ -22,7 +21,7 @@ StatCollection::StatCollection(Json const& config) {
     m_stats.addStat(stat.first, stat.second.getFloat("baseValue", 0.0));
 
   for (auto const& resource : config.getObject("resources", {})) {
-    auto statOrValue = [&resource](String const& statName, String const& valueName, MVariant<String, float> def = {}) -> MVariant<String, float> {
+    auto statOrValue = [&resource](String const& statName, String const& valueName, std::variant<std::monostate, String, float> def = {}) -> std::variant<std::monostate, String, float> {
       if (auto maxStat = resource.second.optString(statName))
         return *maxStat;
       else if (auto maxValue = resource.second.optFloat(valueName))
@@ -31,8 +30,8 @@ StatCollection::StatCollection(Json const& config) {
         return def;
     };
 
-    MVariant<String, float> resourceMax = statOrValue("maxStat", "maxValue");
-    MVariant<String, float> resourceDelta = statOrValue("deltaStat", "deltaValue");
+    std::variant<std::monostate, String, float> resourceMax = statOrValue("maxStat", "maxValue");
+    std::variant<std::monostate, String, float> resourceDelta = statOrValue("deltaStat", "deltaValue");
     m_stats.addResource(resource.first, resourceMax, resourceDelta);
 
     if (auto initialValue = resource.second.optFloat("initialValue")) {
@@ -42,7 +41,7 @@ StatCollection::StatCollection(Json const& config) {
       m_stats.setResourcePercentage(resource.first, *percentage);
       m_defaultResourceValues[resource.first] = makeRight(*percentage);
     } else {
-      if (m_stats.resourceMax(resource.first)) {
+      if (!std::holds_alternative<std::monostate>(m_stats.resourceMax(resource.first))) {
         m_stats.setResourcePercentage(resource.first, 1.0f);
         m_defaultResourceValues[resource.first] = makeRight(1.0f);
       } else {

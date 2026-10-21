@@ -20,7 +20,6 @@ import star.asset_path;
 import star.game_types;
 import star.liquid_types;
 import star.vector;
-import star.variant;
 
 import star.animation;
 import star.particle;

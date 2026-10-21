@@ -5,7 +5,6 @@ import star.interpolation;
 import star.ordered_map;
 import star.either;
 import star.vector;
-import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
@@ -129,14 +128,16 @@ SystemLocation jsonToSystemLocation(Json const& json) {
 }
 
 Json jsonFromSystemLocation(SystemLocation const& location) {
-  if (auto coordinate = location.maybe<CelestialCoordinate>())
+  if (auto coordinate = std::get_if<CelestialCoordinate>(&location))
     return JsonArray{"coordinate", coordinate->toJson()};
-  else if (auto orbit = location.maybe<CelestialOrbit>())
+  else if (auto orbit = std::get_if<CelestialOrbit>(&location))
     return JsonArray{"orbit", orbit->toJson()};
-  else if(auto uuid = location.maybe<Uuid>())
+  else if (auto uuid = std::get_if<Uuid>(&location))
     return JsonArray{"object", uuid->hex()};
+  else if (auto position = std::get_if<Vec2F>(&location))
+    return jsonFromVec2F(*position);
   else
-    return jsonFromOptional<Vec2F>(location.maybe<Vec2F>(), jsonFromVec2F);
+    return {};
 }
 
 SystemWorldConfig SystemWorldConfig::fromJson(Json const& json) {
@@ -330,14 +331,14 @@ Json SystemWorld::systemObjectTypeConfig(Root& root, String const& name) {
 }
 
 std::optional<Vec2F> SystemWorld::systemLocationPosition(SystemLocation const& location) const {
-  if (auto coordinate = location.maybe<CelestialCoordinate>()) {
+  if (auto coordinate = std::get_if<CelestialCoordinate>(&location)) {
     return planetPosition(*coordinate);
-  } else if (auto orbit = location.maybe<CelestialOrbit>()) {
+  } else if (auto orbit = std::get_if<CelestialOrbit>(&location)) {
     return orbitPosition(*orbit);
-  } else if (auto objectUuid = location.maybe<Uuid>()) {
+  } else if (auto objectUuid = std::get_if<Uuid>(&location)) {
     if (auto object = getObject(*objectUuid))
       return object->position();
-  } else if (auto position = location.maybe<Vec2F>()) {
+  } else if (auto position = std::get_if<Vec2F>(&location)) {
     return Vec2F(*position);
   }
   return {};
@@ -353,8 +354,8 @@ Vec2F SystemWorld::randomArrivalPosition() const {
 std::optional<WarpAction> SystemWorld::objectWarpAction(Uuid const& uuid) const {
   if (auto object = getObject(uuid)) {
     WarpAction warpAction = object->warpAction();
-    if (auto warpToWorld = warpAction.ptr<WarpToWorld>()) {
-      if (auto instanceWorldId = warpToWorld->world.ptr<InstanceWorldId>()) {
+    if (auto warpToWorld = std::get_if<WarpToWorld>(&warpAction)) {
+      if (auto instanceWorldId = std::get_if<InstanceWorldId>(&warpToWorld->world)) {
         instanceWorldId->uuid = object->uuid();
         if (auto parameters = m_celestialDatabase->parameters(CelestialCoordinate(m_location))) {
           std::optional<float> systemThreatLevel = parameters->getParameter("spaceThreatLevel").optFloat();
@@ -591,9 +592,9 @@ SystemLocation SystemClientShip::destination() const {
 
 void SystemClientShip::setDestination(SystemLocation const& destination) {
   auto location = m_systemLocation.get();
-  if (location.is<CelestialCoordinate>() || location.is<Uuid>())
+  if (std::holds_alternative<CelestialCoordinate>(location) || std::holds_alternative<Uuid>(location))
     m_departTimer = m_config.departTime;
-  else if(m_destination.get().empty())
+  else if (std::holds_alternative<std::monostate>(m_destination.get()))
     m_departTimer = m_config.spaceDepartTime;
   m_destination.set(destination);
   m_systemLocation.set({});
@@ -604,7 +605,7 @@ void SystemClientShip::setSpeed(float speed) {
 }
 
 bool SystemClientShip::flying() const {
-  return m_systemLocation.get().empty();
+  return std::holds_alternative<std::monostate>(m_systemLocation.get());
 }
 
 void SystemClientShip::clientUpdate(float dt) {
@@ -612,9 +613,11 @@ void SystemClientShip::clientUpdate(float dt) {
 }
 
 void SystemClientShip::serverUpdate(SystemWorld* system, float dt) {
-  // if destination is an orbit we haven't started orbiting yet, update the time
-  if (auto orbit = m_destination.get().maybe<CelestialOrbit>())
-    orbit->enterTime = system->time();
+  // Preserve the local orbit copy; this does not update the stored destination.
+  if (auto destinationOrbit = std::get_if<CelestialOrbit>(&m_destination.get())) {
+    auto orbit = *destinationOrbit;
+    orbit.enterTime = system->time();
+  }
 
   auto nearPlanetOrbit = [this,system](CelestialCoordinate const& planet) -> CelestialOrbit {
     Vec2F toShip = system->planetPosition(planet) - position();
@@ -626,15 +629,15 @@ void SystemClientShip::serverUpdate(SystemWorld* system, float dt) {
     };
   };
 
-  if (auto coordinate = m_systemLocation.get().maybe<CelestialCoordinate>()) {
+  if (auto coordinate = std::get_if<CelestialCoordinate>(&m_systemLocation.get())) {
     if (!m_orbit || m_orbit->target != *coordinate)
       m_orbit = nearPlanetOrbit(*coordinate);
-  } else if (m_systemLocation.get().empty()) {
+  } else if (std::holds_alternative<std::monostate>(m_systemLocation.get())) {
     m_departTimer = std::max(0.0f, m_departTimer - dt);
     if (m_departTimer > 0.0f)
       return;
 
-    if (auto coordinate = m_destination.get().maybe<CelestialCoordinate>()) {
+    if (auto coordinate = std::get_if<CelestialCoordinate>(&m_destination.get())) {
       if (!m_orbit || m_orbit->target != *coordinate)
         m_orbit = nearPlanetOrbit(*coordinate);
     } else {

@@ -9,7 +9,6 @@ import star.periodic;
 import star.logging;
 import star.thread;
 import star.listener;
-import star.variant;
 import star.game_types;
 import star.list;
 import star.rpc_promise;
@@ -254,7 +253,7 @@ std::optional<Ret> LuaBaseComponent::invoke(String const& name, V&&... args) {
 
   try {
     auto method = m_context->getPath(name);
-    if (method == LuaNil)
+    if (std::holds_alternative<LuaNilType>(method))
       return {};
     return m_context->luaTo<LuaFunction>(std::move(method)).invoke<Ret>(std::forward<V>(args)...);
   } catch (LuaException const& e) {
@@ -400,10 +399,10 @@ std::optional<Ret> LuaUpdatableComponent<Base>::update(V&&... args) {
   }
   for (auto& message : messages) {
     if (auto resp = handleThreadMessage(message))
-      if (resp->template is<RpcPromise<Json>>())
-        message.promise.chain(resp->template get<RpcPromise<Json>>());
+      if (std::holds_alternative<RpcPromise<Json>>(*resp))
+        message.promise.chain(std::get<RpcPromise<Json>>(*resp));
       else
-        message.promise.fulfill(resp->template get<Json>());
+        message.promise.fulfill(std::get<Json>(*resp));
     else
       message.promise.fail("Message not handled");
   }
@@ -445,17 +444,17 @@ void LuaWorldComponent<Base>::uninit() {
 template <typename Base>
 LuaMessageHandlingComponent<Base>::LuaMessageHandlingComponent(Root& root) : Base(root) {
   LuaCallbacks scriptCallbacks;
-  scriptCallbacks.registerCallback("setHandler", [this](Variant<String, Json> message, std::optional<LuaFunction> handler) {
+  scriptCallbacks.registerCallback("setHandler", [this](std::variant<String, Json> message, std::optional<LuaFunction> handler) {
       MessageHandler handlerInfo = {};
 
-      if (Json* config = message.ptr<Json>()) {
+      if (Json* config = std::get_if<Json>(&message)) {
         handlerInfo.passName = config->getBool("passName", false);
         handlerInfo.localOnly = config->getBool("localOnly", false);
         handlerInfo.name = config->getString("name");
       } else {
         handlerInfo.passName = true;
         handlerInfo.localOnly = false;
-        handlerInfo.name = message.get<String>();
+        handlerInfo.name = std::get<String>(message);
       }
 
       if (handler) {

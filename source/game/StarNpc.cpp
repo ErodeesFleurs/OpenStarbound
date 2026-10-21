@@ -14,7 +14,6 @@ import star.data_stream;
 import star.bi_map;
 import star.game_types;
 import star.data_stream_extra;
-import star.variant;
 import star.strong_typedef;
 import star.rpc_promise;
 import star.logging;
@@ -1408,7 +1407,7 @@ List<DamageSource> Npc::damageSources() const {
       config = config.set("poly", jsonFromPolyF(m_movementController->collisionPoly()));
     }
     DamageSource damageSource(config);
-    if (auto damagePoly = damageSource.damageArea.ptr<PolyF>())
+    if (auto damagePoly = std::get_if<PolyF>(&damageSource.damageArea))
       damagePoly->rotate(m_movementController->rotation());
     damageSource.damage *= m_statusController->stat("powerMultiplier");
     damageSources.append(damageSource);

@@ -270,7 +270,7 @@ Json TeamManager::fetchTeamStatus(Json const& arguments) {
       member["energy"] = mem.energyPercentage;
       member["x"] = mem.position[0];
       member["y"] = mem.position[1];
-      if ((mem.world.is<CustomWorldId>() || mem.world.is<ClientCustomWorldId>()) && playerMem.version < 1) {
+      if ((std::holds_alternative<CustomWorldId>(mem.world) || std::holds_alternative<ClientCustomWorldId>(mem.world)) && playerMem.version < 1) {
         // caller is too old to handle custom worlds, pretend they're testarena instead to prevent invalid worldid disconnects
         member["world"] = "InstanceWorld:testarena";
       } else {

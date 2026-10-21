@@ -40,7 +40,6 @@ import star.user_generated_content_service;
 import star.desktop_service;
 import star.image;
 import star.application_controller;
-import star.variant;
 import star.renderer;
 import star.asset_source;
 import star.assets;
@@ -164,7 +163,7 @@ void ItemSlotWidget::update(float dt) {
 
 bool ItemSlotWidget::sendEvent(InputEvent const& event) {
   if (m_visible) {
-    if (auto mouseButton = event.ptr<MouseButtonDownEvent>()) {
+    if (auto mouseButton = std::get_if<MouseButtonDownEvent>(&event)) {
       if (mouseButton->mouseButton == MouseButton::Left
         || (m_rightClickCallback && mouseButton->mouseButton == MouseButton::Right)
         || (m_middleClickCallback && mouseButton->mouseButton == MouseButton::Middle)) {

@@ -1,7 +1,6 @@
 import star.json;
 import star.json_extra;
 import star.id_map;
-import star.variant;
 import star.casting;
 import star.vector;
 import star.data_stream;
@@ -143,8 +142,8 @@ void PhysicsObject::init(World* world, EntityId entityId, EntityMode mode) {
   m_metaBoundBox = Object::metaBoundBox();
   for (auto const& p : m_physicsForces) {
     PhysicsForceRegion forceRegion = p.second.forceRegion;
-    forceRegion.call([pos = position()](auto& fr) { fr.translate(pos); });
-    m_metaBoundBox.combine(forceRegion.call([](auto& fr) { return fr.boundBox(); }));
+    std::visit([pos = position()](auto& fr) { fr.translate(pos); }, forceRegion);
+    m_metaBoundBox.combine(std::visit([](auto& fr) { return fr.boundBox(); }, forceRegion));
   }
 }
 
@@ -168,7 +167,7 @@ List<PhysicsForceRegion> PhysicsObject::forceRegions() const {
   for (auto const& p : m_physicsForces) {
     if (p.second.enabled.get()) {
       PhysicsForceRegion forceRegion = p.second.forceRegion;
-      forceRegion.call([pos = position()](auto& fr) { fr.translate(pos); });
+      std::visit([pos = position()](auto& fr) { fr.translate(pos); }, forceRegion);
       forces.append(std::move(forceRegion));
     }
   }

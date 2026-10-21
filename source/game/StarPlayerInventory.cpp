@@ -10,7 +10,6 @@ import star.random;
 import star.ttl_cache;
 import star.casting;
 import star.game_types;
-import star.variant;
 import star.list;
 import star.rpc_promise;
 import star.optional;
@@ -222,7 +221,7 @@ std::shared_ptr<Item> PlayerInventory::stackWith(InventorySlot const& slot, std:
   if (!items || items->empty())
     return {};
 
-  if (auto es = slot.ptr<EquipmentSlot>()) {
+  if (auto es = std::get_if<EquipmentSlot>(&slot)) {
     auto& itemSlot = retrieveForMutation(slot);
     if (!itemSlot && itemAllowedAsEquipment(items, *es))
       m_equipment[*es] = items->take(1);
@@ -242,7 +241,7 @@ std::shared_ptr<Item> PlayerInventory::stackWith(InventorySlot const& slot, std:
 }
 
 std::shared_ptr<Item> PlayerInventory::takeSlot(InventorySlot const& slot) {
-  if (slot.is<SwapSlot>())
+  if (std::holds_alternative<SwapSlot>(slot))
     m_swapReturnSlot = {};
   return take(retrieveForMutation(slot));
 }
@@ -251,13 +250,13 @@ bool PlayerInventory::exchangeItems(InventorySlot const& first, InventorySlot co
   auto& firstItems = retrieveForMutation(first);
   auto& secondItems = retrieveForMutation(second);
 
-  if (first.is<BagSlot>() && !itemAllowedInBag(secondItems, first.get<BagSlot>().first))
+  if (std::holds_alternative<BagSlot>(first) && !itemAllowedInBag(secondItems, std::get<BagSlot>(first).first))
     return false;
-  if (second.is<BagSlot>() && !itemAllowedInBag(firstItems, second.get<BagSlot>().first))
+  if (std::holds_alternative<BagSlot>(second) && !itemAllowedInBag(firstItems, std::get<BagSlot>(second).first))
     return false;
-  if (first.is<EquipmentSlot>() && (itemSafeCount(secondItems) > 1 || !itemAllowedAsEquipment(secondItems, first.get<EquipmentSlot>())))
+  if (std::holds_alternative<EquipmentSlot>(first) && (itemSafeCount(secondItems) > 1 || !itemAllowedAsEquipment(secondItems, std::get<EquipmentSlot>(first))))
     return false;
-  if (second.is<EquipmentSlot>() && (itemSafeCount(firstItems) > 1 || !itemAllowedAsEquipment(firstItems, second.get<EquipmentSlot>())))
+  if (std::holds_alternative<EquipmentSlot>(second) && (itemSafeCount(firstItems) > 1 || !itemAllowedAsEquipment(firstItems, std::get<EquipmentSlot>(second))))
     return false;
 
   std::swap(firstItems, secondItems);
@@ -273,19 +272,19 @@ bool PlayerInventory::setItem(InventorySlot const& slot, std::shared_ptr<Item> c
   if (auto currencyItem = as<CurrencyItem>(item)) {
     m_currencies[currencyItem->currencyType()] += currencyItem->totalValue();
     return true;
-  } else if (auto es = slot.ptr<EquipmentSlot>()) {
+  } else if (auto es = std::get_if<EquipmentSlot>(&slot)) {
     if (itemAllowedAsEquipment(item, *es)) {
       m_equipment[*es] = item;
       return true;
     }
-  } else if (slot.is<SwapSlot>()) {
+  } else if (std::holds_alternative<SwapSlot>(slot)) {
     m_swapSlot = item;
     return true;
-  } else if (slot.is<TrashSlot>()) {
+  } else if (std::holds_alternative<TrashSlot>(slot)) {
     m_trashSlot = item;
     return true;
   } else {
-    auto bs = slot.get<BagSlot>();
+    auto bs = std::get<BagSlot>(slot);
     if (itemAllowedInBag(item, bs.first)) {
       m_bags[bs.first]->setItem(bs.second, item);
       return true;
@@ -310,7 +309,7 @@ bool PlayerInventory::consumeSlot(InventorySlot const& slot, std::uint64_t count
 }
 
 bool PlayerInventory::slotValid(InventorySlot const& slot) const {
-  if (auto bagSlot = slot.ptr<BagSlot>()) {
+  if (auto bagSlot = std::get_if<BagSlot>(&slot)) {
     if (auto bag = bagContents(bagSlot->first)) {
       if ((std::size_t)bagSlot->second >= bag->size())
         return false;
@@ -607,13 +606,13 @@ void PlayerInventory::condenseBagStacks(String const& bagType) {
 
   m_customBar.forEach([&](auto const&, CustomBarLink& link) {
       if (link.first) {
-        if (auto bs = link.first->ptr<BagSlot>()) {
+        if (auto bs = std::get_if<BagSlot>(&*link.first)) {
           if (bs->first == bagType && !bag->at(bs->second))
             link.first = {};
         }
       }
       if (link.second) {
-        if (auto bs = link.second->ptr<BagSlot>()) {
+        if (auto bs = std::get_if<BagSlot>(&*link.second)) {
           if (bs->first == bagType && !bag->at(bs->second))
             link.second = {};
         }
@@ -629,13 +628,13 @@ void PlayerInventory::sortBag(String const& bagType) {
   MultiArray<std::pair<std::shared_ptr<Item>, std::shared_ptr<Item>>, 2> savedCustomBar(m_customBar.size());
   m_customBar.forEach([&](auto const& index, CustomBarLink const& link) {
       if (link.first) {
-        if (auto bs = link.first->ptr<BagSlot>()) {
+        if (auto bs = std::get_if<BagSlot>(&*link.first)) {
           if (bs->first == bagType)
             savedCustomBar(index).first = bag->at(bs->second);
         }
       }
       if (link.second) {
-        if (auto bs = link.second->ptr<BagSlot>()) {
+        if (auto bs = std::get_if<BagSlot>(&*link.second)) {
           if (bs->first == bagType)
             savedCustomBar(index).second = bag->at(bs->second);
         }
@@ -685,7 +684,7 @@ void PlayerInventory::sortBag(String const& bagType) {
 
 void PlayerInventory::shiftSwap(InventorySlot const& slot) {
   normalizeItem(m_swapSlot);
-  if (auto es = slot.ptr<EquipmentSlot>()) {
+  if (auto es = std::get_if<EquipmentSlot>(&slot)) {
     if (itemAllowedAsEquipment(m_swapSlot, *es)) {
       auto& equipSlot = retrieveForMutation(slot);
       if (itemSafeCount(m_swapSlot) <= 1) {
@@ -695,11 +694,11 @@ void PlayerInventory::shiftSwap(InventorySlot const& slot) {
         equipSlot = m_swapSlot->take(1);
       }
     }
-  } else if (slot.is<TrashSlot>()) {
+  } else if (std::holds_alternative<TrashSlot>(slot)) {
     normalizeItem(m_trashSlot);
     std::swap(m_swapSlot, m_trashSlot);
     swapCustomBarLinks(SwapSlot(), slot);
-  } else if (auto bs = slot.ptr<BagSlot>()) {
+  } else if (auto bs = std::get_if<BagSlot>(&slot)) {
     if (itemAllowedInBag(m_swapSlot, bs->first)) {
       m_swapSlot = m_bags[bs->first]->swapItems(bs->second, m_swapSlot);
       swapCustomBarLinks(SwapSlot(), slot);
@@ -878,11 +877,11 @@ std::shared_ptr<Item> PlayerInventory::primaryHeldItem() const {
   if (auto swapItem = swapSlotItem())
     return swapItem;
 
-  if (m_selectedActionBar.is<EssentialItem>())
-    return m_essential.value(m_selectedActionBar.get<EssentialItem>());
+  if (std::holds_alternative<EssentialItem>(m_selectedActionBar))
+    return m_essential.value(std::get<EssentialItem>(m_selectedActionBar));
 
-  if (m_selectedActionBar.is<CustomBarIndex>()) {
-    if (auto slot = m_customBar.at(m_customBarGroup, m_selectedActionBar.get<CustomBarIndex>()).first)
+  if (std::holds_alternative<CustomBarIndex>(m_selectedActionBar)) {
+    if (auto slot = m_customBar.at(m_customBarGroup, std::get<CustomBarIndex>(m_selectedActionBar)).first)
       return itemsAt(*slot);
   }
 
@@ -891,10 +890,10 @@ std::shared_ptr<Item> PlayerInventory::primaryHeldItem() const {
 
 std::shared_ptr<Item> PlayerInventory::secondaryHeldItem() const {
   auto pri = primaryHeldItem();
-  if (itemSafeTwoHanded(pri) || swapSlotItem() || !m_selectedActionBar || m_selectedActionBar.is<EssentialItem>())
+  if (itemSafeTwoHanded(pri) || swapSlotItem() || !std::holds_alternative<CustomBarIndex>(m_selectedActionBar))
     return {};
 
-  auto const& cbl = m_customBar.at(m_customBarGroup, m_selectedActionBar.get<CustomBarIndex>());
+  auto const& cbl = m_customBar.at(m_customBarGroup, std::get<CustomBarIndex>(m_selectedActionBar));
 
   if (cbl.first && itemSafeTwoHanded(itemsAt(*cbl.first)))
     return {};
@@ -908,16 +907,16 @@ std::shared_ptr<Item> PlayerInventory::secondaryHeldItem() const {
 std::optional<InventorySlot> PlayerInventory::primaryHeldSlot() const {
   if (swapSlotItem())
     return InventorySlot(SwapSlot());
-  if (m_selectedActionBar.is<CustomBarIndex>())
-    return customBarPrimarySlot(m_selectedActionBar.get<CustomBarIndex>());
+  if (std::holds_alternative<CustomBarIndex>(m_selectedActionBar))
+    return customBarPrimarySlot(std::get<CustomBarIndex>(m_selectedActionBar));
   return {};
 }
 
 std::optional<InventorySlot> PlayerInventory::secondaryHeldSlot() const {
   if (swapSlotItem() || itemSafeTwoHanded(primaryHeldItem()))
     return {};
-  if (m_selectedActionBar.is<CustomBarIndex>())
-    return customBarSecondarySlot(m_selectedActionBar.get<CustomBarIndex>());
+  if (std::holds_alternative<CustomBarIndex>(m_selectedActionBar))
+    return customBarSecondarySlot(std::get<CustomBarIndex>(m_selectedActionBar));
   return {};
 }
 
@@ -974,8 +973,8 @@ void PlayerInventory::load(Json const& store) {
     for (std::size_t j = 0; j < m_customBar.size(1); ++j) {
       Json cbl = store.get("customBar").get(i, JsonArray()).get(j, JsonArray());
       auto validateLink = [this](std::optional<InventorySlot> link) -> std::optional<InventorySlot> {
-        if (link && link->is<BagSlot>()) {
-          auto& slot = link->get<BagSlot>();
+        if (link && std::holds_alternative<BagSlot>(*link)) {
+          auto& slot = std::get<BagSlot>(*link);
           if (m_bags.contains(slot.first) && std::size_t(slot.second) < m_bags[slot.first]->size())
             return link;
           else
@@ -1216,14 +1215,14 @@ void PlayerInventory::normalizeItem(std::shared_ptr<Item>& item) {
 }
 
 std::shared_ptr<Item> PlayerInventory::retrieve(InventorySlot const& slot) const {
-  if (auto es = slot.ptr<EquipmentSlot>()) {
+  if (auto es = std::get_if<EquipmentSlot>(&slot)) {
     auto const* item = m_equipment.ptr(*es);
     return item && *item && !(*item)->empty() ? *item : std::shared_ptr<Item>();
-  } else if (auto bs = slot.ptr<BagSlot>()) {
+  } else if (auto bs = std::get_if<BagSlot>(&slot)) {
     if (auto bag = m_bags.ptr(bs->first))
       return std::as_const(**bag).at(bs->second);
   } else {
-    auto const& item = slot.is<SwapSlot>() ? m_swapSlot : m_trashSlot;
+    auto const& item = std::holds_alternative<SwapSlot>(slot) ? m_swapSlot : m_trashSlot;
     return item && !item->empty() ? item : std::shared_ptr<Item>();
   }
 
@@ -1236,12 +1235,12 @@ std::shared_ptr<Item>& PlayerInventory::retrieveForMutation(InventorySlot const&
     return item;
   };
 
-  if (auto es = slot.ptr<EquipmentSlot>())
+  if (auto es = std::get_if<EquipmentSlot>(&slot))
     return normalized(m_equipment[*es]);
-  else if (auto bs = slot.ptr<BagSlot>()) {
+  else if (auto bs = std::get_if<BagSlot>(&slot)) {
     if (auto bag = m_bags.ptr(bs->first))
       return normalized((*bag)->at(bs->second));
-  } else if (slot.is<SwapSlot>())
+  } else if (std::holds_alternative<SwapSlot>(slot))
     return normalized(m_swapSlot);
   else
     return normalized(m_trashSlot);

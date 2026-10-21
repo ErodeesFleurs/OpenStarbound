@@ -4,7 +4,6 @@ import star.id_map;
 import star.bi_map;
 import star.a_star;
 import star.poly;
-import star.variant;
 import star.casting;
 import star.data_stream;
 import star.strong_typedef;
@@ -1444,7 +1443,7 @@ bool PathController::validateEdge(ActorMovementController& movementController, P
         if (object->isMaster()) {
           auto arg = m_world->luaRoot()->luaEngine().createString("closedDoor");
           auto res = object->callScript("hasCapability", LuaVariadic<LuaValue>{arg});
-          if (res && res->is<LuaBoolean>() && res->get<LuaBoolean>()){
+          if (res && std::holds_alternative<LuaBoolean>(*res) && std::get<LuaBoolean>(*res)){
             m_world->sendEntityMessage(e->entityId(), "openDoor");
             return true;
           }

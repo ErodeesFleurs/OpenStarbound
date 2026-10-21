@@ -101,20 +101,20 @@ DataStream& operator<<(DataStream& ds, ClientCustomWorldId const& clientWorldId)
 }
 
 String printWorldId(WorldId const& worldId) {
-  if (auto instanceWorldId = worldId.ptr<InstanceWorldId>()) {
+  if (auto instanceWorldId = std::get_if<InstanceWorldId>(&worldId)) {
     if (instanceWorldId->level && *instanceWorldId->level < 0.0f)
       throw StarException::format("InstanceWorldId level component cannot be negative");
 
     String uuidPart = instanceWorldId->uuid ? instanceWorldId->uuid->hex() : "-";
     String levelPart = instanceWorldId->level ? toString(*instanceWorldId->level) : "-";
     return strf("InstanceWorld:{}:{}:{}", instanceWorldId->instance, uuidPart, levelPart);
-  } else if (auto celestialWorldId = worldId.ptr<CelestialWorldId>()) {
+  } else if (auto celestialWorldId = std::get_if<CelestialWorldId>(&worldId)) {
     return strf("CelestialWorld:{}", *celestialWorldId);
-  } else if (auto clientShipWorldId = worldId.ptr<ClientShipWorldId>()) {
+  } else if (auto clientShipWorldId = std::get_if<ClientShipWorldId>(&worldId)) {
     return strf("ClientShipWorld:{}", clientShipWorldId->hex());
-  } else if (auto customWorldId = worldId.ptr<CustomWorldId>()) {
+  } else if (auto customWorldId = std::get_if<CustomWorldId>(&worldId)) {
     return strf("CustomWorld:{}", *customWorldId);
-  } else if (auto clientCustomWorldId = worldId.ptr<ClientCustomWorldId>()) {
+  } else if (auto clientCustomWorldId = std::get_if<ClientCustomWorldId>(&worldId)) {
     return strf("ClientCustomWorld:{}:{}", clientCustomWorldId->uuid.hex(), clientCustomWorldId->name);
   } else {
     return "Nowhere";
@@ -203,12 +203,12 @@ std::ostream& operator<<(std::ostream& os, WorldId const& worldId) {
 }
 
 Json spawnTargetToJson(SpawnTarget spawnTarget) {
-  if (spawnTarget.is<SpawnTargetUniqueEntity>())
-    return spawnTarget.get<SpawnTargetUniqueEntity>();
-  else if (spawnTarget.is<SpawnTargetPosition>())
-    return jsonFromVec2F(spawnTarget.get<SpawnTargetPosition>());
-  else if (spawnTarget.is<SpawnTargetX>())
-    return Json(spawnTarget.get<SpawnTargetX>());
+  if (std::holds_alternative<SpawnTargetUniqueEntity>(spawnTarget))
+    return std::get<SpawnTargetUniqueEntity>(spawnTarget);
+  else if (std::holds_alternative<SpawnTargetPosition>(spawnTarget))
+    return jsonFromVec2F(std::get<SpawnTargetPosition>(spawnTarget));
+  else if (std::holds_alternative<SpawnTargetX>(spawnTarget))
+    return Json(std::get<SpawnTargetX>(spawnTarget));
   else
     return Json();
 }
@@ -225,11 +225,11 @@ SpawnTarget spawnTargetFromJson(Json v) {
 }
 
 String printSpawnTarget(SpawnTarget spawnTarget) {
-  if (auto str = spawnTarget.ptr<SpawnTargetUniqueEntity>())
+  if (auto str = std::get_if<SpawnTargetUniqueEntity>(&spawnTarget))
     return *str;
-  else if (auto pos = spawnTarget.ptr<SpawnTargetPosition>())
+  else if (auto pos = std::get_if<SpawnTargetPosition>(&spawnTarget))
     return strf("{}.{}", (*pos)[0], (*pos)[1]);
-  else if (auto x = spawnTarget.ptr<SpawnTargetX>())
+  else if (auto x = std::get_if<SpawnTargetX>(&spawnTarget))
     return toString(x->t);
   else
     return "";
@@ -251,7 +251,7 @@ bool WarpToWorld::operator==(WarpToWorld const& rhs) const {
 }
 
 WarpToWorld::operator bool() const {
-  return (bool)world;
+  return !std::holds_alternative<std::monostate>(world);
 }
 
 Json WarpToWorld::toJson() const {
@@ -288,19 +288,19 @@ WarpAction parseWarpAction(String const& warpString) {
 }
 
 String printWarpAction(WarpAction const& warpAction) {
-  if (auto warpAlias = warpAction.ptr<WarpAlias>()) {
+  if (auto warpAlias = std::get_if<WarpAlias>(&warpAction)) {
     if (*warpAlias == WarpAlias::Return)
       return "Return";
     else if (*warpAlias == WarpAlias::OrbitedWorld)
       return "OrbitedWorld";
     else if (*warpAlias == WarpAlias::OwnShip)
       return "OwnShip";
-  } else if (auto warpToPlayer = warpAction.ptr<WarpToPlayer>()) {
+  } else if (auto warpToPlayer = std::get_if<WarpToPlayer>(&warpAction)) {
     return strf("Player:{}", warpToPlayer->hex());
-  } else if (auto warpToWorld = warpAction.ptr<WarpToWorld>()) {
+  } else if (auto warpToWorld = std::get_if<WarpToWorld>(&warpAction)) {
     auto toWorldString = printWorldId(warpToWorld->world);
-    if (auto spawnTarget = warpToWorld->target)
-      toWorldString = strf("{}={}", toWorldString, printSpawnTarget(spawnTarget));
+    if (!std::holds_alternative<std::monostate>(warpToWorld->target))
+      toWorldString = strf("{}={}", toWorldString, printSpawnTarget(warpToWorld->target));
     return toWorldString;
   }
 
@@ -308,7 +308,7 @@ String printWarpAction(WarpAction const& warpAction) {
 }
 
 JsonObject warpActionToJson(WarpAction const& warpAction) {
-  if (auto warpAlias = warpAction.ptr<WarpAlias>()) {
+  if (auto warpAlias = std::get_if<WarpAlias>(&warpAction)) {
     auto out = JsonObject{
       {"actionKind", "Alias"}
     };
@@ -319,18 +319,18 @@ JsonObject warpActionToJson(WarpAction const& warpAction) {
     else if (*warpAlias == WarpAlias::OwnShip)
       out.set("actionAlias","OwnShip");
     return out;
-  } else if (auto warpToPlayer = warpAction.ptr<WarpToPlayer>()) {
+  } else if (auto warpToPlayer = std::get_if<WarpToPlayer>(&warpAction)) {
     return JsonObject{
       {"actionKind", "Player"},
       {"uuid", warpToPlayer->hex()}
     };
-  } else if (auto warpToWorld = warpAction.ptr<WarpToWorld>()) {
+  } else if (auto warpToWorld = std::get_if<WarpToWorld>(&warpAction)) {
     auto out = JsonObject{
       {"actionKind", "World"},
       {"worldId", printWorldId(warpToWorld->world)}
     };
-    if (auto spawnTarget = warpToWorld->target)
-      out.set("spawnTarget", spawnTargetToJson(spawnTarget));
+    if (!std::holds_alternative<std::monostate>(warpToWorld->target))
+      out.set("spawnTarget", spawnTargetToJson(warpToWorld->target));
     return out;
   }
 

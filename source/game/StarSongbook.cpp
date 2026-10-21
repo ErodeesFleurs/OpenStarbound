@@ -4,7 +4,6 @@ import star.thread;
 import star.game_types;
 import star.lexical_cast;
 import star.random;
-import star.variant;
 import star.casting;
 import star.strong_typedef;
 import star.rpc_promise;

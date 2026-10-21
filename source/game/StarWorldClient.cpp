@@ -13,7 +13,6 @@ import star.casting;
 import star.game_types;
 import star.material_types;
 import star.poly;
-import star.variant;
 import star.list;
 import star.rpc_promise;
 import star.vector;
@@ -1235,7 +1234,7 @@ void WorldClient::handleIncomingPackets(List<std::shared_ptr<Packet>> const& pac
         auto findPrediction = m_predictedTiles.find(modification.first);
         if (findPrediction != m_predictedTiles.end()) {
           auto& p = findPrediction->second;
-          if (auto placeMaterial = modification.second.ptr<PlaceMaterial>()) {
+          if (auto placeMaterial = std::get_if<PlaceMaterial>(&modification.second)) {
             if (placeMaterial->layer == TileLayer::Foreground) {
               p.foreground.reset();
               p.foregroundHueShift.reset();
@@ -1248,7 +1247,7 @@ void WorldClient::handleIncomingPackets(List<std::shared_ptr<Packet>> const& pac
               p.background.reset();
               p.backgroundHueShift.reset();
             }
-          } else if (auto placeMod = modification.second.ptr<PlaceMod>()) {
+          } else if (auto placeMod = std::get_if<PlaceMod>(&modification.second)) {
             if (placeMod->layer == TileLayer::Foreground) {
               p.foregroundMod.reset();
               p.foregroundModHueShift.reset();
@@ -1257,12 +1256,12 @@ void WorldClient::handleIncomingPackets(List<std::shared_ptr<Packet>> const& pac
               p.backgroundMod.reset();
               p.backgroundModHueShift.reset();
             }
-          } else if (auto placeColor = modification.second.ptr<PlaceMaterialColor>()) {
+          } else if (auto placeColor = std::get_if<PlaceMaterialColor>(&modification.second)) {
             if (placeColor->layer == TileLayer::Foreground)
               p.foregroundColorVariant.reset();
             else
               p.backgroundColorVariant.reset();
-          } else if (modification.second.is<PlaceLiquid>()) {
+          } else if (std::holds_alternative<PlaceLiquid>(modification.second)) {
             p.liquid.reset();
           }
 
@@ -1271,10 +1270,10 @@ void WorldClient::handleIncomingPackets(List<std::shared_ptr<Packet>> const& pac
         }
 
         if (!m_headless) {
-          if (auto placeMaterial = modification.second.ptr<PlaceMaterial>()) {
+          if (auto placeMaterial = std::get_if<PlaceMaterial>(&modification.second)) {
             auto stack = materialDatabase->materialItemDrop(placeMaterial->material);
             tryGiveMainPlayerItem(itemDatabase->item(stack), true);
-          } else if (auto placeMod = modification.second.ptr<PlaceMod>()) {
+          } else if (auto placeMod = std::get_if<PlaceMod>(&modification.second)) {
             auto stack = materialDatabase->modItemDrop(placeMod->mod);
             tryGiveMainPlayerItem(itemDatabase->item(stack), true);
           }
@@ -1361,10 +1360,10 @@ void WorldClient::handleIncomingPackets(List<std::shared_ptr<Packet>> const& pac
 
     } else if (auto entityMessagePacket = as<EntityMessagePacket>(packet)) {
       std::shared_ptr<Entity> entity;
-      if (entityMessagePacket->entityId.is<EntityId>())
-        entity = m_entityMap->entity(entityMessagePacket->entityId.get<EntityId>());
+      if (std::holds_alternative<EntityId>(entityMessagePacket->entityId))
+        entity = m_entityMap->entity(std::get<EntityId>(entityMessagePacket->entityId));
       else
-        entity = m_entityMap->uniqueEntity(entityMessagePacket->entityId.get<String>());
+        entity = m_entityMap->uniqueEntity(std::get<String>(entityMessagePacket->entityId));
 
       if (!entity) {
         m_outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(makeLeft("Unknown entity"), entityMessagePacket->uuid));
@@ -1379,11 +1378,11 @@ void WorldClient::handleIncomingPackets(List<std::shared_ptr<Packet>> const& pac
           fromConnection = ServerConnectionId;
 
         if (auto response = entity->receiveMessage(entityMessagePacket->fromConnection, entityMessagePacket->message, entityMessagePacket->args)) {
-          if (response->is<Json>()) {
-            m_outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(makeRight(response->get<Json>()), entityMessagePacket->uuid));
+          if (std::holds_alternative<Json>(*response)) {
+            m_outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(makeRight(std::get<Json>(*response)), entityMessagePacket->uuid));
           } else {
             // delay the response until this promise is done
-            m_entityMessagePromises[entityMessagePacket->uuid] = response->get<RpcPromise<Json>>();
+            m_entityMessagePromises[entityMessagePacket->uuid] = std::get<RpcPromise<Json>>(*response);
           } 
         } else
           m_outgoingPackets.append(std::make_shared<EntityMessageResponsePacket>(makeLeft("Message not handled by entity"), entityMessagePacket->uuid));
@@ -2841,26 +2840,26 @@ RpcPromise<Vec2F> WorldClient::findUniqueEntity(String const& uniqueId) {
   return pair.first;
 }
 
-RpcPromise<Json> WorldClient::sendEntityMessage(Variant<EntityId, String> const& entityId, String const& message, JsonArray const& args) {
+RpcPromise<Json> WorldClient::sendEntityMessage(std::variant<EntityId, String> const& entityId, String const& message, JsonArray const& args) {
   if (!inWorld())
     return RpcPromise<Json>::createFailed("Not currently in a world");
 
   std::shared_ptr<Entity> entity;
-  if (entityId.is<EntityId>())
-    entity = m_entityMap->entity(entityId.get<EntityId>());
+  if (std::holds_alternative<EntityId>(entityId))
+    entity = m_entityMap->entity(std::get<EntityId>(entityId));
   else
-    entity = m_entityMap->uniqueEntity(entityId.get<String>());
+    entity = m_entityMap->uniqueEntity(std::get<String>(entityId));
 
   // Only fail with "unknown entity" if we know this entity should exist on the
   // client, because it's entity id indicates it is master here.
-  if (entityId.is<EntityId>() && !entity && m_clientId == connectionForEntity(entityId.get<EntityId>())) {
+  if (std::holds_alternative<EntityId>(entityId) && !entity && m_clientId == connectionForEntity(std::get<EntityId>(entityId))) {
     return RpcPromise<Json>::createFailed("Unknown entity");
   } else if (entity && entity->isMaster()) {
     if (auto resp = entity->receiveMessage(m_clientId.value(), message, args)) {
-      if (resp->is<Json>())
-        return RpcPromise<Json>::createFulfilled(resp->get<Json>());
+      if (std::holds_alternative<Json>(*resp))
+        return RpcPromise<Json>::createFulfilled(std::get<Json>(*resp));
       else
-        return resp->get<RpcPromise<Json>>();
+        return std::get<RpcPromise<Json>>(*resp);
     } else
       return RpcPromise<Json>::createFailed("Message not handled by entity");
   } else {
@@ -2911,9 +2910,9 @@ void WorldClient::renderCollisionDebug() {
 
   for (auto const& physics : query<PhysicsEntity>(RectF(clientWindow))) {
     for (auto const& forceRegion : physics->forceRegions()) {
-      if (auto dfr = forceRegion.ptr<DirectionalForceRegion>())
+      if (auto dfr = std::get_if<DirectionalForceRegion>(&forceRegion))
         logPoly(dfr->region, {}, 1.0f, 1.0f, 0.0f);
-      else if (auto rfr = forceRegion.ptr<RadialForceRegion>())
+      else if (auto rfr = std::get_if<RadialForceRegion>(&forceRegion))
         logPoly(PolyF(rfr->boundBox()), {}, 0.0f, 1.0f, 1.0f);
     }
 
@@ -2929,7 +2928,7 @@ void WorldClient::informTilePrediction(Vec2I const& pos, TileModification const&
   auto now = Time::monotonicMilliseconds();
   auto& p = m_predictedTiles[pos];
   p.time = now;
-  if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
+  if (auto placeMaterial = std::get_if<PlaceMaterial>(&modification)) {
     if (placeMaterial->layer == TileLayer::Foreground) {
       auto materialDatabase = this->root().materialDatabase();
       if (!materialDatabase->isCascadingFallingMaterial(placeMaterial->material)
@@ -2949,19 +2948,19 @@ void WorldClient::informTilePrediction(Vec2I const& pos, TileModification const&
       p.backgroundHueShift = placeMaterial->materialHueShift;
     }
   }
-  else if (auto placeMod = modification.ptr<PlaceMod>()) {
+  else if (auto placeMod = std::get_if<PlaceMod>(&modification)) {
     if (placeMod->layer == TileLayer::Foreground)
       p.foregroundMod = placeMod->mod;
     else
       p.backgroundMod = placeMod->mod;
   }
-  else if (auto placeColor = modification.ptr<PlaceMaterialColor>()) {
+  else if (auto placeColor = std::get_if<PlaceMaterialColor>(&modification)) {
     if (placeColor->layer == TileLayer::Foreground)
       p.foregroundColorVariant = placeColor->color;
     else
       p.backgroundColorVariant = placeColor->color;
   }
-  else if (auto placeLiquid = modification.ptr<PlaceLiquid>()) {
+  else if (auto placeLiquid = std::get_if<PlaceLiquid>(&modification)) {
     if (!p.liquid || p.liquid->liquid != placeLiquid->liquid)
       p.liquid = LiquidLevel(placeLiquid->liquid, placeLiquid->liquidLevel);
     else

@@ -4,7 +4,6 @@ import star.optional;
 import star.list;
 import star.set;
 import star.hash;
-import star.variant;
 import star.rect;
 import star.map;
 import star.ordered_set;
@@ -33,7 +32,7 @@ struct CellularLiquidSourceCell {
 };
 
 template <typename LiquidId>
-using CellularLiquidCell = Variant<CellularLiquidCollisionCell, CellularLiquidFlowCell<LiquidId>, CellularLiquidSourceCell<LiquidId>>;
+using CellularLiquidCell = std::variant<CellularLiquidCollisionCell, CellularLiquidFlowCell<LiquidId>, CellularLiquidSourceCell<LiquidId>>;
 
 template <typename LiquidId>
 struct CellularLiquidWorld {
@@ -537,9 +536,9 @@ typename LiquidCellEngine<LiquidId>::WorkingCell* LiquidCellEngine<LiquidId>::wo
   auto res = m_workingCells.insert(std::make_pair(p, std::optional<WorkingCell>()));
   if (res.second) {
     auto cellData = m_cellWorld->cell(p);
-    if (auto flowCell = cellData.template ptr<CellularLiquidFlowCell<LiquidId>>())
+    if (auto flowCell = std::get_if<CellularLiquidFlowCell<LiquidId>>(&cellData))
       res.first->second = WorkingCell{p, flowCell->liquid, false, flowCell->level, flowCell->pressure, nullptr, nullptr, nullptr, nullptr};
-    else if (auto sourceCell = cellData.template ptr<CellularLiquidSourceCell<LiquidId>>())
+    else if (auto sourceCell = std::get_if<CellularLiquidSourceCell<LiquidId>>(&cellData))
       res.first->second = WorkingCell{p, sourceCell->liquid, true, 1.0f, sourceCell->pressure, nullptr, nullptr, nullptr, nullptr};
   }
   return optionalPtr(res.first->second);

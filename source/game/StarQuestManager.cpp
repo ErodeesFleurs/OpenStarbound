@@ -30,7 +30,6 @@ import star.listener;
 import star.format;
 import star.version;
 import star.id_map;
-import star.variant;
 import star.rpc_promise;
 import star.a_star;
 import star.ordered_set;
@@ -517,8 +516,8 @@ StringSet QuestManager::interestingObjects() {
   StringSet result;
   m_quests.values().exec([&result](std::shared_ptr<Quest> const& quest) {
     if (auto resp = quest->receiveMessage("interestingObjects", true, JsonArray()))
-      if (resp->is<Json>())
-        result.addAll(jsonToStringSet(resp->get<Json>()));
+      if (std::holds_alternative<Json>(*resp))
+        result.addAll(jsonToStringSet(std::get<Json>(*resp)));
   });
   return result;
 }

@@ -8,7 +8,6 @@ import star.ordered_map;
 import star.rect;
 import star.either;
 import star.vector;
-import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
@@ -299,10 +298,10 @@ void TitleScreen::render() {
 }
 
 bool TitleScreen::handleInputEvent(InputEvent const& event) {
-  if (auto mouseMove = event.ptr<MouseMoveEvent>())
+  if (auto mouseMove = std::get_if<MouseMoveEvent>(&event))
     m_cursorScreenPos = Vec2I(mouseMove->mousePosition);
 
-  if (event.is<KeyDownEvent>()) {
+  if (std::holds_alternative<KeyDownEvent>(event)) {
     if (m_guiContext->actions(event).contains(InterfaceAction::TitleBack)) {
       back();
       return true;

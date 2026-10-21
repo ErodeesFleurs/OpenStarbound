@@ -4,7 +4,6 @@ import star.interpolation;
 import star.ordered_map;
 import star.either;
 import star.vector;
-import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;

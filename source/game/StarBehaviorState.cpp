@@ -10,7 +10,6 @@ import star.game_types;
 import star.lua;
 import star.random;
 import star.lua_game_converters;
-import star.variant;
 
 import star.behavior_database;
 import star.behavior_state;
@@ -39,7 +38,7 @@ Blackboard::Blackboard(LuaTable luaContext) : m_luaContext(std::move(luaContext)
 }
 
 void Blackboard::set(NodeParameterType type, String const& key, LuaValue value) {
-  if (value.is<LuaNilType>())
+  if (std::holds_alternative<LuaNilType>(value))
     m_board.get(type).remove(key);
   else
     m_board.get(type).set(key, value);
@@ -66,7 +65,7 @@ LuaTable Blackboard::parameters(StringMap<NodeParameter> const& parameters, std:
 
   LuaTable table = m_luaContext.engine().createTable();
   for (auto const& p : parameters) {
-    if (auto key = p.second.second.maybe<String>()) {
+    if (auto key = std::get_if<String>(&p.second.second)) {
       auto& typeInput = m_input.get(p.second.first);
       if (!typeInput.contains(*key))
         typeInput.add(*key, {});
@@ -74,7 +73,7 @@ LuaTable Blackboard::parameters(StringMap<NodeParameter> const& parameters, std:
       typeInput.get(*key).append({nodeId, p.first});
       table.set(p.first, get(p.second.first, *key));
     } else {
-      Json value = p.second.second.get<Json>();
+      Json value = std::get<Json>(p.second.second);
       if (value.isNull())
         continue;
 
@@ -163,12 +162,14 @@ NodeStatus BehaviorState::run(float dt) {
   m_lastDt = dt;
   NodeStatus status;
 
-  auto ephemeral = m_board.maybe<std::shared_ptr<Blackboard>>().transform([](auto const& b) { return b->takeEphemerals(); });
+  std::optional<Set<std::pair<NodeParameterType, String>>> ephemeral;
+  if (auto master = std::get_if<std::shared_ptr<Blackboard>>(&m_board))
+    ephemeral = (*master)->takeEphemerals();
 
   status = runNode(*m_tree->root, m_rootState);
 
   if (ephemeral)
-    m_board.get<std::shared_ptr<Blackboard>>()->clearEphemerals(*ephemeral);
+    std::get<std::shared_ptr<Blackboard>>(m_board)->clearEphemerals(*ephemeral);
 
   return status;
 }
@@ -178,17 +179,17 @@ void BehaviorState::clear() {
 }
 
 std::weak_ptr<Blackboard> BehaviorState::blackboardPtr() {
-  if (auto master = m_board.maybe<std::shared_ptr<Blackboard>>())
+  if (auto master = std::get_if<std::shared_ptr<Blackboard>>(&m_board))
     return std::weak_ptr<Blackboard>(*master);
   else
-    return m_board.get<std::weak_ptr<Blackboard>>();
+    return std::get<std::weak_ptr<Blackboard>>(m_board);
 }
 
 std::shared_ptr<Blackboard> BehaviorState::board() {
-  if (auto master = m_board.maybe<std::shared_ptr<Blackboard>>())
+  if (auto master = std::get_if<std::shared_ptr<Blackboard>>(&m_board))
     return *master;
   else
-    return m_board.get<std::weak_ptr<Blackboard>>().lock();
+    return std::get<std::weak_ptr<Blackboard>>(m_board).lock();
 }
 
 LuaThread BehaviorState::nodeLuaThread(String const& funcName) {
@@ -199,12 +200,12 @@ LuaThread BehaviorState::nodeLuaThread(String const& funcName) {
 
 NodeStatus BehaviorState::runNode(BehaviorNode const& node, NodeState& state) {
   NodeStatus status = NodeStatus::Invalid;
-  if (node.is<ActionNode>())
-    status = runAction(node.get<ActionNode>(), state);
-  else if(node.is<DecoratorNode>())
-    status = runDecorator(node.get<DecoratorNode>(), state);
-  else if(node.is<CompositeNode>())
-    status = runComposite(node.get<CompositeNode>(), state);
+  if (auto action = std::get_if<ActionNode>(&node))
+    status = runAction(*action, state);
+  else if (auto decorator = std::get_if<DecoratorNode>(&node))
+    status = runDecorator(*decorator, state);
+  else if (auto composite = std::get_if<CompositeNode>(&node))
+    status = runComposite(*composite, state);
   else
     StarException("Unidentified behavior node type");
 
@@ -231,7 +232,7 @@ NodeStatus BehaviorState::runAction(ActionNode const& node, NodeState& state) {
     if (status != NodeStatus::Success && status != NodeStatus::Failure)
       state.emplace(ActionState{thread});
   } else {
-    LuaThread const& thread = state->get<ActionState>().thread;
+    LuaThread const& thread = std::get<ActionState>(*state).thread;
 
     try {
       result = thread.resume<ActionReturn>(m_lastDt).value_or(ActionReturn(NodeStatus::Invalid, LuaNil));
@@ -244,7 +245,7 @@ NodeStatus BehaviorState::runAction(ActionNode const& node, NodeState& state) {
       m_threads.append(thread);
   }
 
-  if (auto table = std::get<1>(result).maybe<LuaTable>())
+  if (auto table = std::get_if<LuaTable>(&std::get<1>(result)))
     board()->setOutput(node, *table);
 
   return std::get<0>(result);
@@ -268,7 +269,7 @@ NodeStatus BehaviorState::runDecorator(DecoratorNode const& node, NodeState& sta
     state.emplace(DecoratorState(thread));
   }
 
-  DecoratorState& decorator = state->get<DecoratorState>();
+  DecoratorState& decorator = std::get<DecoratorState>(*state);
   // decorator runs its child on yield and is resumed with the child's status on success or failure
   while (status == NodeStatus::Running) {
     auto childStatus = runNode(*node.child, *decorator.child);
@@ -290,18 +291,18 @@ NodeStatus BehaviorState::runDecorator(DecoratorNode const& node, NodeState& sta
 
 NodeStatus BehaviorState::runComposite(CompositeNode const& node, NodeState& state) {
   NodeStatus status;
-  if (node.is<SequenceNode>())
-    status =  runSequence(node.get<SequenceNode>(), state);
-  else if (node.is<SelectorNode>())
-    status = runSelector(node.get<SelectorNode>(), state);
-  else if (node.is<ParallelNode>())
-    status = runParallel(node.get<ParallelNode>(), state);
-  else if (node.is<DynamicNode>())
-    status = runDynamic(node.get<DynamicNode>(), state);
-  else if (node.is<RandomizeNode>())
-    status = runRandomize(node.get<RandomizeNode>(), state);
+  if (auto sequence = std::get_if<SequenceNode>(&node))
+    status = runSequence(*sequence, state);
+  else if (auto selector = std::get_if<SelectorNode>(&node))
+    status = runSelector(*selector, state);
+  else if (auto parallel = std::get_if<ParallelNode>(&node))
+    status = runParallel(*parallel, state);
+  else if (auto dynamic = std::get_if<DynamicNode>(&node))
+    status = runDynamic(*dynamic, state);
+  else if (auto randomize = std::get_if<RandomizeNode>(&node))
+    status = runRandomize(*randomize, state);
   else
-    throw StarException(strf("Unable to run composite node type with variant type index {}", node.typeIndex()));
+    throw StarException(strf("Unable to run composite node type with variant type index {}", node.index()));
 
   return status;
 }
@@ -310,7 +311,7 @@ NodeStatus BehaviorState::runSequence(SequenceNode const& node, NodeState& state
   if (!state.has_value())
     state.emplace(CompositeState(node.children.size()));
 
-  CompositeState& composite = state->get<CompositeState>();
+  CompositeState& composite = std::get<CompositeState>(*state);
   while (composite.index < node.children.size()) {
     auto child = node.children.get(composite.index);
     NodeStatus childStatus = runNode(*child, *composite.children[composite.index]);
@@ -328,7 +329,7 @@ NodeStatus BehaviorState::runSelector(SelectorNode const& node, NodeState& state
   if (!state.has_value())
     state.emplace(CompositeState(node.children.size()));
 
-  CompositeState& composite = state->get<CompositeState>();
+  CompositeState& composite = std::get<CompositeState>(*state);
   while (composite.index < node.children.size()) {
     NodeStatus childStatus = runNode(*node.children[composite.index], *composite.children[composite.index]);
 
@@ -345,7 +346,7 @@ NodeStatus BehaviorState::runParallel(ParallelNode const& node, NodeState& state
   if (!state.has_value())
     state.emplace(CompositeState(node.children.size()));
 
-  CompositeState& composite = state->get<CompositeState>();
+  CompositeState& composite = std::get<CompositeState>(*state);
 
   int failed = 0;
   int succeeded = 0;
@@ -368,7 +369,7 @@ NodeStatus BehaviorState::runDynamic(DynamicNode const& node, NodeState& state) 
   if (!state.has_value())
     state.emplace(CompositeState(node.children.size()));
 
-  CompositeState& composite = state->get<CompositeState>();
+  CompositeState& composite = std::get<CompositeState>(*state);
   for (std::size_t i = 0; i <= composite.index; i++) {
     auto child = node.children.get(i);
     auto status = runNode(*child, *composite.children.get(i));
@@ -392,7 +393,7 @@ NodeStatus BehaviorState::runRandomize(RandomizeNode const& node, NodeState& sta
   if (!state.has_value())
     state.emplace(CompositeState(node.children.size(), luaExecutionRoot(m_luaContext.engine()).random().randUInt(node.children.size() - 1)));
 
-  CompositeState& composite = state->get<CompositeState>();
+  CompositeState& composite = std::get<CompositeState>(*state);
   auto child = node.children.get(composite.index);
   NodeStatus status = runNode(*child, *composite.children[composite.index]);
   return status;

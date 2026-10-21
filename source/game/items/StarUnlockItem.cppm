@@ -3,7 +3,6 @@ import std;
 import star.type_identity;
 import star.json;
 import star.id_map;
-import star.variant;
 import star.casting;
 import star.vector;
 import star.data_stream;

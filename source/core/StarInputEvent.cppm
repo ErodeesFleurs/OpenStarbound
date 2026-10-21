@@ -2,7 +2,6 @@ module;
 import std;
 import star.string;
 import star.bi_map;
-import star.variant;
 import star.vector;
 
 namespace Star {
@@ -278,7 +277,7 @@ struct ControllerButtonUpEvent {
   ControllerButton controllerButton;
 };
 
-typedef Variant<
+typedef std::variant<
     KeyDownEvent,
     KeyUpEvent,
     TextInputEvent,

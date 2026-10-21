@@ -41,7 +41,6 @@ import star.set;
 import star.worker_pool;
 
 import star.sector_array_2d;
-import star.variant;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;

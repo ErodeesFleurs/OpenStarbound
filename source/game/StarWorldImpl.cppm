@@ -24,7 +24,6 @@ import star.image;
 import star.color;
 import star.thread;
 import star.data_stream;
-import star.variant;
 import std;
 import star.worker_pool;
 
@@ -445,16 +444,16 @@ namespace WorldImpl {
     bool good = false;
     bool perhaps = false;
     
-    if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
+    if (auto placeMaterial = std::get_if<PlaceMaterial>(&modification)) {
       bool allowTileOverlap = placeMaterial->collisionOverride != TileCollisionOverride::None && collisionKindFromOverride(placeMaterial->collisionOverride) < CollisionKind::Dynamic;
       perhaps = WorldImpl::perhapsCanPlaceMaterial(root, entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, allowTileOverlap, getTile);
       if (perhaps)
         good = WorldImpl::canPlaceMaterial(root, entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, allowTileOverlap, getTile);
-    } else if (auto placeMod = modification.ptr<PlaceMod>()) {
+    } else if (auto placeMod = std::get_if<PlaceMod>(&modification)) {
       good = WorldImpl::canPlaceMod(root, pos, placeMod->layer, placeMod->mod, getTile);
-    } else if (auto placeMaterialColor = modification.ptr<PlaceMaterialColor>()) {
+    } else if (auto placeMaterialColor = std::get_if<PlaceMaterialColor>(&modification)) {
       good = WorldImpl::canPlaceMaterialColorVariant(root, pos, placeMaterialColor->layer, placeMaterialColor->color, getTile);
-    } else if (modification.is<PlaceLiquid>()) {
+    } else if (std::holds_alternative<PlaceLiquid>(modification)) {
       good = getTile(pos).collision == CollisionKind::None;
     } else {
       good = false;
@@ -464,7 +463,7 @@ namespace WorldImpl {
   }
 
   inline bool validateTileReplacement(Root& root, TileModification const& modification) {
-    if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
+    if (auto placeMaterial = std::get_if<PlaceMaterial>(&modification)) {
       if (!isRealMaterial(placeMaterial->material))
         return false;
       

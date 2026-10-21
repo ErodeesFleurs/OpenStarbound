@@ -1,7 +1,6 @@
 module;
 import std;
 import star.list;
-import star.variant;
 import star.data_stream;
 import star.format;
 import star.map;
@@ -102,7 +101,7 @@ private:
   };
   struct ClearChange {};
 
-  typedef Variant<SetChange, RemoveChange, ClearChange> ElementChange;
+  typedef std::variant<SetChange, RemoveChange, ClearChange> ElementChange;
 
   static void writeChange(DataStream& ds, ElementChange const& change);
   static ElementChange readChange(DataStream& ds);
@@ -416,11 +415,11 @@ std::uint64_t NetElementMapWrapper<BaseMap>::changeDataLastVersion() const {
 
 template <typename BaseMap>
 void NetElementMapWrapper<BaseMap>::writeChange(DataStream& ds, ElementChange const& change) {
-  if (auto sc = change.template ptr<SetChange>()) {
+  if (auto sc = std::get_if<SetChange>(&change)) {
     ds.write<std::uint8_t>(0);
     ds.write(sc->key);
     ds.write(sc->value);
-  } else if (auto rc = change.template ptr<RemoveChange>()) {
+  } else if (auto rc = std::get_if<RemoveChange>(&change)) {
     ds.write<std::uint8_t>(1);
     ds.write(rc->key);
   } else {
@@ -472,9 +471,9 @@ void NetElementMapWrapper<BaseMap>::addPendingChangeData(ElementChange change, f
 
 template <typename BaseMap>
 void NetElementMapWrapper<BaseMap>::applyChange(ElementChange change) {
-  if (auto set = change.template ptr<SetChange>())
+  if (auto set = std::get_if<SetChange>(&change))
     BaseMap::set(std::move(set->key), std::move(set->value));
-  else if (auto remove = change.template ptr<RemoveChange>())
+  else if (auto remove = std::get_if<RemoveChange>(&change))
     BaseMap::remove(std::move(remove->key));
   else
     BaseMap::clear();

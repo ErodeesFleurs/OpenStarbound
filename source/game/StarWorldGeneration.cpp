@@ -32,7 +32,6 @@ import star.hash;
 import star.string_view;
 import star.directives;
 import star.asset_path;
-import star.variant;
 import star.string;
 import star.image;
 import star.ordered_map;
@@ -546,14 +545,14 @@ void DungeonGeneratorWorld::placeBiomeItems(Vec2I const& pos, List<BiomeItemPlac
   std::sort(potentialItems.begin(), potentialItems.end(), std::less<BiomeItemPlacement>());
   for (auto const& placement : potentialItems) {
     auto seed = m_worldServer->worldTemplate()->seedFor(placement.position[0], placement.position[1]);
-    if (placement.item.is<GrassVariant>()) {
-      auto& grass = placement.item.get<GrassVariant>();
+    if (std::holds_alternative<GrassVariant>(placement.item)) {
+      auto& grass = std::get<GrassVariant>(placement.item);
       placePlant(m_worldServer->root().plantDatabase()->createPlant(grass, seed), placement.position);
-    } else if (placement.item.is<BushVariant>()) {
-      auto& bush = placement.item.get<BushVariant>();
+    } else if (std::holds_alternative<BushVariant>(placement.item)) {
+      auto& bush = std::get<BushVariant>(placement.item);
       placePlant(m_worldServer->root().plantDatabase()->createPlant(bush, seed), placement.position);
-    } else if (placement.item.is<TreePair>()) {
-      auto& treePair = placement.item.get<TreePair>();
+    } else if (std::holds_alternative<TreePair>(placement.item)) {
+      auto& treePair = std::get<TreePair>(placement.item);
       TreeVariant treeVariant;
       if (seed % 2 == 0)
         treeVariant = treePair.first;
@@ -561,15 +560,15 @@ void DungeonGeneratorWorld::placeBiomeItems(Vec2I const& pos, List<BiomeItemPlac
         treeVariant = treePair.second;
 
       placePlant(m_worldServer->root().plantDatabase()->createPlant(treeVariant, seed), placement.position);
-    } else if (placement.item.is<ObjectPool>()) {
-      auto& objectPool = placement.item.get<ObjectPool>();
+    } else if (std::holds_alternative<ObjectPool>(placement.item)) {
+      auto& objectPool = std::get<ObjectPool>(placement.item);
       auto direction = seed % 2 ? Direction::Left : Direction::Right;
       auto objectPair = objectPool.select(seed);
       if (auto object = m_worldServer->root().objectDatabase()->createForPlacement(
               m_worldServer, objectPair.first, placement.position, direction, objectPair.second))
         m_worldServer->addEntity(object);
-    } else if (placement.item.is<TreasureBoxSet>()) {
-      auto& treasureBoxSet = placement.item.get<TreasureBoxSet>();
+    } else if (std::holds_alternative<TreasureBoxSet>(placement.item)) {
+      auto& treasureBoxSet = std::get<TreasureBoxSet>(placement.item);
       auto direction = seed % 2 ? Direction::Left : Direction::Right;
       if (auto treasureContainer = m_worldServer->root().treasureDatabase()->createTreasureChest(m_worldServer, treasureBoxSet, placement.position, direction, seed))
         m_worldServer->addEntity(treasureContainer);
@@ -1034,9 +1033,9 @@ void WorldGenerator::generateMicroDungeons(WorldStorage* worldStorage, ServerTil
     if (queued && queued->fulfilled)
       continue;
 
-    if (placement.item.is<MicroDungeonNames>()) {
+    if (std::holds_alternative<MicroDungeonNames>(placement.item)) {
       auto seed = m_worldServer->worldTemplate()->seedFor(placement.position[0], placement.position[1]);
-      auto const& dungeonName = staticRandomFrom(placement.item.get<MicroDungeonNames>(), seed);
+      auto const& dungeonName = staticRandomFrom(std::get<MicroDungeonNames>(placement.item), seed);
       std::optional<DungeonId> dungeonId;
       if constexpr (Star::DebugEnabled) {
         Star::starAssertFailed((!dungeonName.empty()));
@@ -1256,14 +1255,14 @@ void WorldGenerator::prepareSector(WorldStorage* worldStorage, ServerTileSectorA
   std::sort(placementQueue.begin(), placementQueue.end(), std::less<BiomeItemPlacement>());
   for (auto const& placement : placementQueue) {
     auto seed = m_worldServer->worldTemplate()->seedFor(placement.position[0], placement.position[1]);
-    if (placement.item.is<GrassVariant>()) {
-      auto& grass = placement.item.get<GrassVariant>();
+    if (std::holds_alternative<GrassVariant>(placement.item)) {
+      auto& grass = std::get<GrassVariant>(placement.item);
       placePlant(worldStorage, m_worldServer->root().plantDatabase()->createPlant(grass, seed), placement.position);
-    } else if (placement.item.is<BushVariant>()) {
-      auto& bush = placement.item.get<BushVariant>();
+    } else if (std::holds_alternative<BushVariant>(placement.item)) {
+      auto& bush = std::get<BushVariant>(placement.item);
       placePlant(worldStorage, m_worldServer->root().plantDatabase()->createPlant(bush, seed), placement.position);
-    } else if (placement.item.is<TreePair>()) {
-      auto& treePair = placement.item.get<TreePair>();
+    } else if (std::holds_alternative<TreePair>(placement.item)) {
+      auto& treePair = std::get<TreePair>(placement.item);
       TreeVariant treeVariant;
       if (seed % 2 == 0)
         treeVariant = treePair.first;
@@ -1271,15 +1270,15 @@ void WorldGenerator::prepareSector(WorldStorage* worldStorage, ServerTileSectorA
         treeVariant = treePair.second;
 
       placePlant(worldStorage, m_worldServer->root().plantDatabase()->createPlant(treeVariant, seed), placement.position);
-    } else if (placement.item.is<ObjectPool>()) {
-      auto& objectPool = placement.item.get<ObjectPool>();
+    } else if (std::holds_alternative<ObjectPool>(placement.item)) {
+      auto& objectPool = std::get<ObjectPool>(placement.item);
       auto direction = seed % 2 ? Direction::Left : Direction::Right;
       auto objectPair = objectPool.select(seed);
       if (auto object = m_worldServer->root().objectDatabase()->createForPlacement(
               m_worldServer, objectPair.first, placement.position, direction, objectPair.second))
         m_worldServer->addEntity(object);
-    } else if (placement.item.is<TreasureBoxSet>()) {
-      auto& treasureBoxSet = placement.item.get<TreasureBoxSet>();
+    } else if (std::holds_alternative<TreasureBoxSet>(placement.item)) {
+      auto& treasureBoxSet = std::get<TreasureBoxSet>(placement.item);
       auto direction = seed % 2 ? Direction::Left : Direction::Right;
       if (auto treasureContainer = m_worldServer->root().treasureDatabase()->createTreasureChest(
               m_worldServer, treasureBoxSet, placement.position, direction, seed))
@@ -1568,14 +1567,14 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
 
   auto placeBiomeItem = [&](BiomeItemPlacement biomeItemPlacement, Vec2I position) {
       auto seed = m_worldServer->worldTemplate()->seedFor(position[0], position[1]);
-      if (biomeItemPlacement.item.is<GrassVariant>()) {
-        auto& grass = biomeItemPlacement.item.get<GrassVariant>();
+      if (std::holds_alternative<GrassVariant>(biomeItemPlacement.item)) {
+        auto& grass = std::get<GrassVariant>(biomeItemPlacement.item);
         simplePlacePlant(m_worldServer->root().plantDatabase()->createPlant(grass, seed), position);
-      } else if (biomeItemPlacement.item.is<BushVariant>()) {
-        auto& bush = biomeItemPlacement.item.get<BushVariant>();
+      } else if (std::holds_alternative<BushVariant>(biomeItemPlacement.item)) {
+        auto& bush = std::get<BushVariant>(biomeItemPlacement.item);
         simplePlacePlant(m_worldServer->root().plantDatabase()->createPlant(bush, seed), position);
-      } else if (biomeItemPlacement.item.is<TreePair>()) {
-        auto& treePair = biomeItemPlacement.item.get<TreePair>();
+      } else if (std::holds_alternative<TreePair>(biomeItemPlacement.item)) {
+        auto& treePair = std::get<TreePair>(biomeItemPlacement.item);
         TreeVariant treeVariant;
         if (seed % 2 == 0)
           treeVariant = treePair.first;
@@ -1583,8 +1582,8 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
           treeVariant = treePair.second;
 
         simplePlacePlant(m_worldServer->root().plantDatabase()->createPlant(treeVariant, seed), position);
-      } else if (biomeItemPlacement.item.is<ObjectPool>()) {
-        auto& objectPool = biomeItemPlacement.item.get<ObjectPool>();
+      } else if (std::holds_alternative<ObjectPool>(biomeItemPlacement.item)) {
+        auto& objectPool = std::get<ObjectPool>(biomeItemPlacement.item);
         auto direction = seed % 2 ? Direction::Left : Direction::Right;
         auto objectPair = objectPool.select(seed);
         if (auto object = m_worldServer->root().objectDatabase()->createForPlacement(m_worldServer, objectPair.first, position, direction, objectPair.second)) {

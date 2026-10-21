@@ -18,7 +18,6 @@ import star.asset_path;
 import star.bi_map;
 import star.strong_typedef;
 import star.vector;
-import star.variant;
 import star.casting;
 
 import star.drawable;

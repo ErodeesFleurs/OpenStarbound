@@ -1,6 +1,5 @@
 import std;
 import star.data_stream;
-import star.variant;
 import star.game_types;
 import star.list;
 import star.bi_map;

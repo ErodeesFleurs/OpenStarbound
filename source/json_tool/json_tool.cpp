@@ -9,7 +9,6 @@ import star.file;
 import star.logging;
 import star.json_tool;
 import star.json_editor;
-import star.variant;
 import star.lexical_cast;
 import star.formatted_json;
 import star.json_path;
@@ -102,14 +101,14 @@ FormattedJson Star::addOrSet(bool add,
   };
   JsonPath::ObjectOp<FormattedJson> objectOp = [&value, &insertLocation](
       FormattedJson const& object, String const& key) {
-    if (insertLocation.is<AtBeginning>())
+    if (std::holds_alternative<AtBeginning>(insertLocation))
       return object.prepend(key, value);
-    if (insertLocation.is<AtEnd>())
+    if (std::holds_alternative<AtEnd>(insertLocation))
       return object.append(key, value);
-    if (insertLocation.is<BeforeKey>())
-      return object.insertBefore(key, value, insertLocation.get<BeforeKey>().key);
-    if (insertLocation.is<AfterKey>())
-      return object.insertAfter(key, value, insertLocation.get<AfterKey>().key);
+    if (std::holds_alternative<BeforeKey>(insertLocation))
+      return object.insertBefore(key, value, std::get<BeforeKey>(insertLocation).key);
+    if (std::holds_alternative<AfterKey>(insertLocation))
+      return object.insertAfter(key, value, std::get<AfterKey>(insertLocation).key);
     return object.set(key, value);
   };
   JsonPath::ArrayOp<FormattedJson> arrayOp = [&value, add](FormattedJson const& array, std::optional<std::size_t> i) {
@@ -169,8 +168,8 @@ bool process(std::function<void(FormattedJson const&)> output,
     Command const& command,
     Options const& options,
     FormattedJson const& input) {
-  if (command.is<GetCommand>()) {
-    GetCommand const& getCmd = command.get<GetCommand>();
+  if (std::holds_alternative<GetCommand>(command)) {
+    GetCommand const& getCmd = std::get<GetCommand>(command);
     try {
       FormattedJson value = getCmd.path->get(input);
       if (getCmd.children) {
@@ -183,20 +182,20 @@ bool process(std::function<void(FormattedJson const&)> output,
         throw e;
     }
 
-  } else if (command.is<SetCommand>()) {
-    SetCommand const& setCmd = command.get<SetCommand>();
+  } else if (std::holds_alternative<SetCommand>(command)) {
+    SetCommand const& setCmd = std::get<SetCommand>(command);
     output(addOrSet(false, setCmd.path, input, options.insertLocation, setCmd.value));
 
-  } else if (command.is<AddCommand>()) {
-    AddCommand const& addCmd = command.get<AddCommand>();
+  } else if (std::holds_alternative<AddCommand>(command)) {
+    AddCommand const& addCmd = std::get<AddCommand>(command);
     output(addOrSet(true, addCmd.path, input, options.insertLocation, addCmd.value));
 
-  } else if (command.is<RemoveCommand>()) {
-    output(command.get<RemoveCommand>().path->remove(input));
+  } else if (std::holds_alternative<RemoveCommand>(command)) {
+    output(std::get<RemoveCommand>(command).path->remove(input));
 
   } else {
     if constexpr (Star::DebugEnabled) {
-      Star::starAssertFailed((command.empty()));
+      Star::starAssertFailed((std::holds_alternative<std::monostate>(command)));
     }
     output(input);
   }
@@ -211,17 +210,17 @@ bool process(
 
 bool process(Logger& logger,
     std::function<void(FormattedJson const&)> output, Command const& command, Options const& options, Input const& input) {
-  if (input.is<JsonLiteralInput>()) {
-    return process(output, command, options, input.get<JsonLiteralInput>().json);
+  if (std::holds_alternative<JsonLiteralInput>(input)) {
+    return process(output, command, options, std::get<JsonLiteralInput>(input).json);
   }
 
   bool success = true;
   StringList files;
 
-  if (input.is<FileInput>()) {
-    files = StringList{input.get<FileInput>().filename};
+  if (std::holds_alternative<FileInput>(input)) {
+    files = StringList{std::get<FileInput>(input).filename};
   } else {
-    files = findFiles(logger, input.get<FindInput>());
+    files = findFiles(logger, std::get<FindInput>(input));
   }
 
   for (String const& file : files) {
@@ -268,7 +267,7 @@ std::optional<ParsedArgs> parseArgs(int argc, char** argv) {
     String const& arg = args.takeFirst();
     if (arg == "--get" || arg == "--opt") {
       // Retrieve values at a given path in the Json document
-      if (!parsed.command.empty() || args.empty())
+      if (!std::holds_alternative<std::monostate>(parsed.command) || args.empty())
         return {};
       std::shared_ptr<::Star::JsonPath::Path> path;
       bool children = false;
@@ -277,7 +276,7 @@ std::optional<ParsedArgs> parseArgs(int argc, char** argv) {
 
     } else if (arg == "--set") {
       // Set the value at the given path in the Json document
-      if (!parsed.command.empty() || args.size() < 2)
+      if (!std::holds_alternative<std::monostate>(parsed.command) || args.size() < 2)
         return {};
       std::shared_ptr<::Star::JsonPath::Path> path = parsePath(args.takeFirst());
       FormattedJson value = FormattedJson::parse(args.takeFirst());
@@ -285,7 +284,7 @@ std::optional<ParsedArgs> parseArgs(int argc, char** argv) {
 
     } else if (arg == "--add") {
       // Add (insert) a path to a Json document
-      if (!parsed.command.empty() || args.size() < 2)
+      if (!std::holds_alternative<std::monostate>(parsed.command) || args.size() < 2)
         return {};
       std::shared_ptr<::Star::JsonPath::Path> path = parsePath(args.takeFirst());
       FormattedJson value = FormattedJson::parse(args.takeFirst());
@@ -293,13 +292,13 @@ std::optional<ParsedArgs> parseArgs(int argc, char** argv) {
 
     } else if (arg == "--remove") {
       // Remove a path from a Json document
-      if (!parsed.command.empty() || args.empty())
+      if (!std::holds_alternative<std::monostate>(parsed.command) || args.empty())
         return {};
       parsed.command = RemoveCommand{parsePath(args.takeFirst())};
 
     } else if (arg == "--edit") {
       // Interactive bullk Json editor
-      if (!parsed.command.empty() || args.empty())
+      if (!std::holds_alternative<std::monostate>(parsed.command) || args.empty())
         return {};
       parsed.command = EditCommand{parsePath(args.takeFirst())};
 
@@ -353,7 +352,7 @@ std::optional<ParsedArgs> parseArgs(int argc, char** argv) {
 
     } else if (arg == "--at") {
       // Insert new object keys at the beginning or end of the document
-      if (!parsed.options.insertLocation.empty() || args.size() < 1)
+      if (!std::holds_alternative<std::monostate>(parsed.options.insertLocation) || args.size() < 1)
         return {};
       String pos = args.takeFirst();
       if (pos == "beginning" || pos == "start")
@@ -365,13 +364,13 @@ std::optional<ParsedArgs> parseArgs(int argc, char** argv) {
 
     } else if (arg == "--before") {
       // Insert new object keys before the given key
-      if (!parsed.options.insertLocation.empty() || args.size() < 1)
+      if (!std::holds_alternative<std::monostate>(parsed.options.insertLocation) || args.size() < 1)
         return {};
       parsed.options.insertLocation = BeforeKey{args.takeFirst()};
 
     } else if (arg == "--after") {
       // Insert new object keys after the given key
-      if (!parsed.options.insertLocation.empty() || args.size() < 1)
+      if (!std::holds_alternative<std::monostate>(parsed.options.insertLocation) || args.size() < 1)
         return {};
       parsed.options.insertLocation = AfterKey{args.takeFirst()};
 
@@ -389,13 +388,13 @@ std::optional<ParsedArgs> parseArgs(int argc, char** argv) {
 
   bool anyFileInputs = false, anyNonFileInputs = false;
   for (Input const& input : parsed.inputs) {
-    if (input.is<FindInput>() || input.is<FileInput>()) {
+    if (std::holds_alternative<FindInput>(input) || std::holds_alternative<FileInput>(input)) {
       anyFileInputs = true;
     } else {
       anyNonFileInputs = true;
     }
   }
-  if (parsed.command.is<EditCommand>() && !anyFileInputs) {
+  if (std::holds_alternative<EditCommand>(parsed.command) && !anyFileInputs) {
     cerrf("Files to edit must be supplied when using --edit.\n");
     return {};
   }
@@ -404,19 +403,19 @@ std::optional<ParsedArgs> parseArgs(int argc, char** argv) {
     cerrf("In-place writing (-i) can only be used with files specified on the command line.\n");
     return {};
   }
-  if (parsed.options.inPlace && parsed.command.is<EditCommand>()) {
+  if (parsed.options.inPlace && std::holds_alternative<EditCommand>(parsed.command)) {
     cerrf("Interactive edit (--edit) is always in-place. Explicitly specifying -i is not needed.\n");
     return {};
   }
-  if (parsed.command.is<EditCommand>() && anyNonFileInputs) {
+  if (std::holds_alternative<EditCommand>(parsed.command) && anyNonFileInputs) {
     cerrf("Interactie edit (--edit) can only be used with file input sources.\n");
     return {};
   }
 
-  if (parsed.options.editFormat && !parsed.command.is<EditCommand>()) {
+  if (parsed.options.editFormat && !std::holds_alternative<EditCommand>(parsed.command)) {
     cerrf("--input can only be used with --edit.\n");
     return {};
-  } else if (!parsed.options.editFormat && parsed.command.is<EditCommand>()) {
+  } else if (!parsed.options.editFormat && std::holds_alternative<EditCommand>(parsed.command)) {
     parsed.options.editFormat = std::make_shared<GenericInputFormat>();
   }
 
@@ -463,8 +462,8 @@ int main(int argc, char** argv) {
     std::shared_ptr<::Star::Output> output = parsedArgs->options.output;
     bool success = true;
 
-    if (parsedArgs->command.is<EditCommand>()) {
-      return edit(logger, argc, argv, parsedArgs->command.get<EditCommand>().path, parsedArgs->options, parsedArgs->inputs);
+    if (std::holds_alternative<EditCommand>(parsedArgs->command)) {
+      return edit(logger, argc, argv, std::get<EditCommand>(parsedArgs->command).path, parsedArgs->options, parsedArgs->inputs);
 
     } else if (parsedArgs->inputs.size() == 0) {
       // No files were provided. Reading from stdin

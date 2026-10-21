@@ -1,5 +1,4 @@
 module;
-import star.variant;
 import star.json;
 
 import star.string;
@@ -11,8 +10,8 @@ import std;
 
 namespace Star {
 
-typedef Variant<String,RpcPromise<String>> ServerCommandResult;
-typedef Variant<Json,RpcPromise<Json>> ChainableJsonMessageResponse;
+typedef std::variant<String,RpcPromise<String>> ServerCommandResult;
+typedef std::variant<Json,RpcPromise<Json>> ChainableJsonMessageResponse;
 
 enum class Direction : std::uint8_t {
   Left,

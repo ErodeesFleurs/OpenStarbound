@@ -9,7 +9,6 @@ import star.lua;
 import star.color;
 import star.poly;
 import star.line;
-import star.variant;
 import star.rpc_promise;
 
 import star.matrix3;
@@ -67,7 +66,7 @@ struct LuaConverter<Vector<T, N>> {
   }
 
   static std::optional<Vector<T, N>> to(LuaEngine& engine, LuaValue const& v) {
-    auto table = v.ptr<LuaTable>();
+    auto table = std::get_if<LuaTable>(&v);
     if (!table)
       return {};
 
@@ -93,7 +92,7 @@ struct LuaConverter<Matrix3<T>> {
   }
 
   static std::optional<Matrix3<T>> to(LuaEngine& engine, LuaValue const& v) {
-    if (auto table = v.ptr<LuaTable>()) {
+    if (auto table = std::get_if<LuaTable>(&v)) {
       auto r1 = engine.luaMaybeTo<typename Matrix3<T>::Vec3>(table->get(1));
       auto r2 = engine.luaMaybeTo<typename Matrix3<T>::Vec3>(table->get(2));
       auto r3 = engine.luaMaybeTo<typename Matrix3<T>::Vec3>(table->get(3));
@@ -121,7 +120,7 @@ struct LuaConverter<Rect<T>> {
     if (v == LuaNil)
       return Rect<T>::null();
 
-    if (auto table = v.ptr<LuaTable>()) {
+    if (auto table = std::get_if<LuaTable>(&v)) {
       auto xMin = engine.luaMaybeTo<T>(table->get(1));
       auto yMin = engine.luaMaybeTo<T>(table->get(2));
       auto xMax = engine.luaMaybeTo<T>(table->get(3));
@@ -156,7 +155,7 @@ struct LuaConverter<Line<T, N>> {
   }
 
   static std::optional<Line<T, N>> to(LuaEngine& engine, LuaValue const& v) {
-    if (auto table = v.ptr<LuaTable>()) {
+    if (auto table = std::get_if<LuaTable>(&v)) {
       auto min = engine.luaMaybeTo<Vector<T, N>>(table->get(1));
       auto max = engine.luaMaybeTo<Vector<T, N>>(table->get(2));
       if (min && max)
@@ -166,121 +165,59 @@ struct LuaConverter<Line<T, N>> {
   }
 };
 
-// Sort of magical converter, tries to convert from all the types in the
-// Variant in order, returning the first correct type.  Types should not be
-// ambiguous, or the more specific types should come first, which relies on the
-// implementation of the converters.
-template <typename FirstType, typename... RestTypes>
-struct LuaConverter<Variant<FirstType, RestTypes...>> {
-  static LuaValue from(LuaEngine& engine, Variant<FirstType, RestTypes...> const& variant) {
-    return variant.call([&engine](auto const& a) { return engine.luaFrom(a); });
-  }
-
-  static LuaValue from(LuaEngine& engine, Variant<FirstType, RestTypes...>&& variant) {
-    return variant.call([&engine](auto& a) { return engine.luaFrom(std::move(a)); });
-  }
-
-  static std::optional<Variant<FirstType, RestTypes...>> to(LuaEngine& engine, LuaValue const& v) {
-    return checkTypeTo<FirstType, RestTypes...>(engine, v);
-  }
-
-  template <typename CheckType1, typename CheckType2, typename... CheckTypeRest>
-  static std::optional<Variant<FirstType, RestTypes...>> checkTypeTo(LuaEngine& engine, LuaValue const& v) {
-    if (auto t1 = engine.luaMaybeTo<CheckType1>(v))
-      return std::optional<Variant<FirstType, RestTypes...>>(std::in_place, std::in_place_type<CheckType1>, takeOptional(t1));
-    else
-      return checkTypeTo<CheckType2, CheckTypeRest...>(engine, v);
-  }
-
-  template <typename Type>
-  static std::optional<Variant<FirstType, RestTypes...>> checkTypeTo(LuaEngine& engine, LuaValue const& v) {
-    if (auto converted = engine.luaMaybeTo<Type>(v))
-      return std::optional<Variant<FirstType, RestTypes...>>(std::in_place, std::in_place_type<Type>, takeOptional(converted));
-    return {};
-  }
-
-  static std::optional<Variant<FirstType, RestTypes...>> to(LuaEngine& engine, LuaValue&& v) {
-    return checkTypeTo<FirstType, RestTypes...>(engine, std::move(v));
-  }
-
-  template <typename CheckType1, typename CheckType2, typename... CheckTypeRest>
-  static std::optional<Variant<FirstType, RestTypes...>> checkTypeTo(LuaEngine& engine, LuaValue&& v) {
-    if (auto t1 = engine.luaMaybeTo<CheckType1>(v))
-      return std::optional<Variant<FirstType, RestTypes...>>(std::in_place, std::in_place_type<CheckType1>, takeOptional(t1));
-    else
-      return checkTypeTo<CheckType2, CheckTypeRest...>(engine, std::move(v));
-  }
-
-  template <typename Type>
-  static std::optional<Variant<FirstType, RestTypes...>> checkTypeTo(LuaEngine& engine, LuaValue&& v) {
-    if (auto converted = engine.luaMaybeTo<Type>(std::move(v)))
-      return std::optional<Variant<FirstType, RestTypes...>>(std::in_place, std::in_place_type<Type>, takeOptional(converted));
-    return {};
-  }
-};
-
-// Similarly to Variant converter, tries to convert from all types in order.
-// An empty MVariant is converted to nil and vice versa.
+// Probe alternatives in declaration order; failed probes must not consume v.
+// A leading monostate represents successful nil, not conversion failure.
 template <typename... Types>
-struct LuaConverter<MVariant<Types...>> {
-  static LuaValue from(LuaEngine& engine, MVariant<Types...> const& variant) {
-    LuaValue value;
-    variant.call([&value, &engine](auto const& a) {
-        value = engine.luaFrom(a);
-      });
-    return value;
+struct LuaConverter<std::variant<Types...>> {
+  using Value = std::variant<Types...>;
+
+  static LuaValue from(LuaEngine& engine, Value const& value) {
+    return std::visit([&engine](auto const& payload) -> LuaValue {
+      if constexpr (std::is_same_v<std::remove_cvref_t<decltype(payload)>, std::monostate>)
+        return LuaNil;
+      else
+        return engine.luaFrom(payload);
+    }, value);
   }
 
-  static LuaValue from(LuaEngine& engine, MVariant<Types...>&& variant) {
-    LuaValue value;
-    variant.call([&value, &engine](auto& a) {
-        value = engine.luaFrom(std::move(a));
-      });
-    return value;
+  static LuaValue from(LuaEngine& engine, Value&& value) {
+    return std::visit([&engine](auto& payload) -> LuaValue {
+      if constexpr (std::is_same_v<std::remove_cvref_t<decltype(payload)>, std::monostate>)
+        return LuaNil;
+      else
+        return engine.luaFrom(std::move(payload));
+    }, value);
   }
 
-  static std::optional<MVariant<Types...>> to(LuaEngine& engine, LuaValue const& v) {
-    if (v == LuaNil)
-      return MVariant<Types...>();
-    return checkTypeTo<Types...>(engine, v);
-  }
-
-  template <typename CheckType1, typename CheckType2, typename... CheckTypeRest>
-  static std::optional<MVariant<Types...>> checkTypeTo(LuaEngine& engine, LuaValue const& v) {
-    if (auto t1 = engine.luaMaybeTo<CheckType1>(v))
-      return std::optional<MVariant<Types...>>(std::in_place, std::in_place_type<CheckType1>, takeOptional(t1));
+  template <std::size_t Index = 0, typename Input>
+  static std::optional<Value> checkTypeTo(LuaEngine& engine, Input&& v) {
+    using Type = std::variant_alternative_t<Index, Value>;
+    if constexpr (std::is_same_v<Type, std::monostate>) {
+      if (v == LuaNil)
+        return std::optional<Value>(std::in_place, std::in_place_index<Index>);
+    } else {
+      auto converted = [&] {
+        if constexpr (Index + 1 == sizeof...(Types))
+          return engine.luaMaybeTo<Type>(std::forward<Input>(v));
+        else
+          return engine.luaMaybeTo<Type>(v);
+      }();
+      if (converted)
+        return std::optional<Value>(std::in_place, std::in_place_index<Index>, takeOptional(converted));
+    }
+    if constexpr (Index + 1 < sizeof...(Types))
+      return checkTypeTo<Index + 1>(engine, std::forward<Input>(v));
     else
-      return checkTypeTo<CheckType2, CheckTypeRest...>(engine, v);
+      return {};
   }
 
-  template <typename CheckType>
-  static std::optional<MVariant<Types...>> checkTypeTo(LuaEngine& engine, LuaValue const& v) {
-    if (auto converted = engine.luaMaybeTo<CheckType>(v))
-      return std::optional<MVariant<Types...>>(std::in_place, std::in_place_type<CheckType>, takeOptional(converted));
-    return {};
+  static std::optional<Value> to(LuaEngine& engine, LuaValue const& v) {
+    return checkTypeTo(engine, v);
   }
 
-  static std::optional<MVariant<Types...>> to(LuaEngine& engine, LuaValue&& v) {
-    if (v == LuaNil)
-      return MVariant<Types...>();
-    return checkTypeTo<Types...>(engine, std::move(v));
+  static std::optional<Value> to(LuaEngine& engine, LuaValue&& v) {
+    return checkTypeTo(engine, std::move(v));
   }
-
-  template <typename CheckType1, typename CheckType2, typename... CheckTypeRest>
-  static std::optional<MVariant<Types...>> checkTypeTo(LuaEngine& engine, LuaValue&& v) {
-    if (auto t1 = engine.luaMaybeTo<CheckType1>(v))
-      return std::optional<MVariant<Types...>>(std::in_place, std::in_place_type<CheckType1>, takeOptional(t1));
-    else
-      return checkTypeTo<CheckType2, CheckTypeRest...>(engine, std::move(v));
-  }
-
-  template <typename CheckType>
-  static std::optional<MVariant<Types...>> checkTypeTo(LuaEngine& engine, LuaValue&& v) {
-    if (auto converted = engine.luaMaybeTo<CheckType>(std::move(v)))
-      return std::optional<MVariant<Types...>>(std::in_place, std::in_place_type<CheckType>, takeOptional(converted));
-    return {};
-  }
-
 };
 
 template <>
@@ -359,10 +296,8 @@ export namespace Star {
   struct LuaConverter<Polygon<T>>;
   template <typename T, std::size_t N>
   struct LuaConverter<Line<T, N>>;
-  template <typename FirstType, typename... RestTypes>
-  struct LuaConverter<Variant<FirstType, RestTypes...>>;
   template <typename... Types>
-  struct LuaConverter<MVariant<Types...>>;
+  struct LuaConverter<std::variant<Types...>>;
   template <>
   struct LuaConverter<Color>;
   template <>

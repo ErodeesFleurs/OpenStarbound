@@ -4,7 +4,6 @@ import star.format;
 import star.list;
 import star.rect;
 import star.map;
-import star.variant;
 import star.string;
 
 import star.array;
@@ -30,7 +29,7 @@ struct NullImageOperation {
 };
 
 struct ErrorImageOperation {
-  Variant<std::string, std::exception_ptr> cause;
+  std::variant<std::string, std::exception_ptr> cause;
 };
 
 struct HueShiftImageOperation {
@@ -144,7 +143,7 @@ struct FlipImageOperation {
   Mode mode;
 };
 
-typedef Variant<NullImageOperation, ErrorImageOperation, HueShiftImageOperation, SaturationShiftImageOperation, BrightnessMultiplyImageOperation, FadeToColorImageOperation,
+typedef std::variant<NullImageOperation, ErrorImageOperation, HueShiftImageOperation, SaturationShiftImageOperation, BrightnessMultiplyImageOperation, FadeToColorImageOperation,
   ScanLinesImageOperation, SetColorImageOperation, ColorReplaceImageOperation, AlphaMaskImageOperation, BlendImageOperation,
   MultiplyImageOperation, BorderImageOperation, ScaleImageOperation, CropImageOperation, FlipImageOperation> ImageOperation;
 

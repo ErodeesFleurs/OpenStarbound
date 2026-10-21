@@ -24,7 +24,6 @@ import star.vector;
 import star.text;
 
 
-import star.variant;
 import star.image;
 import star.renderer;
 import star.font_texture_group;

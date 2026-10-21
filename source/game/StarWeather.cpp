@@ -13,7 +13,6 @@ import star.string;
 import star.version;
 import star.time;
 import star.id_map;
-import star.variant;
 import star.casting;
 import star.vector;
 import star.data_stream;

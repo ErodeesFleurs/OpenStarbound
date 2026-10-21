@@ -3,7 +3,6 @@ import star.xx_hash;
 import star.json_extra;
 import star.game_types;
 import star.vector;
-import star.variant;
 import star.color;
 import star.bi_map;
 import star.random;
@@ -397,16 +396,16 @@ void UniverseClient::update(float dt) {
   if (!isConnected())
     return;
 
-  if (!m_warping && !m_pendingWarp) {
+  if (!m_warping && std::holds_alternative<std::monostate>(m_pendingWarp)) {
     if (auto playerWarp = m_mainPlayer->pullPendingWarp())
       warpPlayer(parseWarpAction(playerWarp->action), (bool)playerWarp->animation, playerWarp->animation.value_or("default"), playerWarp->deploy);
   }
 
-  if (m_pendingWarp) {
+  if (!std::holds_alternative<std::monostate>(m_pendingWarp)) {
     // completely forbid warps to custom worlds on old servers to prevent issues
     if (m_connection.value().packetSocket().netRules().version() < 15) {
-      if (auto warpToWorld = m_pendingWarp.ptr<WarpToWorld>()) {
-        if (warpToWorld->world.is<CustomWorldId>() || warpToWorld->world.is<ClientCustomWorldId>()) {
+      if (auto warpToWorld = std::get_if<WarpToWorld>(&m_pendingWarp)) {
+        if (std::holds_alternative<CustomWorldId>(warpToWorld->world) || std::holds_alternative<ClientCustomWorldId>(warpToWorld->world)) {
           m_root.logger().warn("Attempting to warp to a custom world on an old server, cancelling.");
           m_pendingWarp = WarpAction();
           m_warping.reset();
@@ -415,7 +414,7 @@ void UniverseClient::update(float dt) {
       }
     }
   }
-  if (m_pendingWarp) {
+  if (!std::holds_alternative<std::monostate>(m_pendingWarp)) {
     if ((m_warping && !m_mainPlayer->isTeleportingOut()) || (!m_warping && m_warpDelay.tick(dt))) {
       m_connection.value().pushSingle(std::make_shared<PlayerWarpPacket>(take(m_pendingWarp), m_mainPlayer->isDeploying()));
       m_warpDelay.reset();
@@ -491,12 +490,12 @@ void UniverseClient::update(float dt) {
   messageLocker.unlock();
   
   for (auto& message : messages) {
-    auto keeper = message.keeper.get<RpcPromiseKeeper<Json>>();
+    auto keeper = std::get<RpcPromiseKeeper<Json>>(message.keeper);
     if (auto resp = receiveMessage(message.message, true, message.args))
-      if (resp->is<RpcPromise<Json>>())
-        keeper.chain(resp->get<RpcPromise<Json>>());
+      if (std::holds_alternative<RpcPromise<Json>>(*resp))
+        keeper.chain(std::get<RpcPromise<Json>>(*resp));
       else
-        keeper.fulfill(resp->get<Json>());
+        keeper.fulfill(std::get<Json>(*resp));
     else
       keeper.fail("Message not handled by universe");
   }
@@ -508,9 +507,9 @@ void UniverseClient::update(float dt) {
   m_teamClient->update();
   for (auto& result : m_teamClient->pullInviteResults()) {
     String printout;
-    if (auto pair = result.ptr<std::pair<String, bool>>()) {
+    if (auto pair = std::get_if<std::pair<String, bool>>(&result)) {
       printout = strf(pair->second ? "Invited {}" : "Couldn't find anyone to invite named {}", pair->first);
-    } else if (auto invited = result.ptr<StringList>()) {
+    } else if (auto invited = std::get_if<StringList>(&result)) {
       printout = "";
       for (std::size_t i = 0; i != invited->size(); ++i) {
         String& name = invited->at(i);
@@ -613,7 +612,7 @@ std::optional<BeamUpRule> UniverseClient::beamUpRule() const {
 bool UniverseClient::canBeamUp() const {
   auto playerWorldId = m_clientContext->playerWorldId();
 
-  if (playerWorldId.empty() || playerWorldId.is<ClientShipWorldId>())
+  if (std::holds_alternative<std::monostate>(playerWorldId) || std::holds_alternative<ClientShipWorldId>(playerWorldId))
     return false;
   if (m_mainPlayer->isAdmin())
     return true;
@@ -647,7 +646,7 @@ bool UniverseClient::canBeamDown(bool deploy) const {
 
 bool UniverseClient::canBeamToTeamShip() const {
   auto playerWorldId = m_clientContext->playerWorldId();
-  if (playerWorldId.empty())
+  if (std::holds_alternative<std::monostate>(playerWorldId))
     return false;
 
   if (m_mainPlayer->isAdmin())
@@ -656,7 +655,7 @@ bool UniverseClient::canBeamToTeamShip() const {
   if (canBeamUp())
     return true;
 
-  if (playerWorldId.is<ClientShipWorldId>() && m_clientContext->shipUpgrades().capabilities.contains("teleport"))
+  if (std::holds_alternative<ClientShipWorldId>(playerWorldId) && m_clientContext->shipUpgrades().capabilities.contains("teleport"))
     return true;
 
   return false;
@@ -666,7 +665,7 @@ bool UniverseClient::canTeleport() const {
   if (m_mainPlayer->isAdmin())
     return true;
 
-  if (m_clientContext->playerWorldId().is<ClientShipWorldId>())
+  if (std::holds_alternative<ClientShipWorldId>(m_clientContext->playerWorldId()))
     return !flying() && m_clientContext->shipUpgrades().capabilities.contains("teleport");
 
   return m_mainPlayer->canUseTool();
@@ -680,9 +679,9 @@ void UniverseClient::warpPlayer(WarpAction const& warpAction, bool animate, Stri
   m_mainPlayer->stopLounging();
 
   // Check if the warp target is within the same world
-  if (auto warpToWorld = warpAction.ptr<WarpToWorld>()) {
-    if (warpToWorld->world.empty() || warpToWorld->world == playerWorld()) {
-      if (auto pos = warpToWorld->target.ptr<SpawnTargetPosition>()) {
+  if (auto warpToWorld = std::get_if<WarpToWorld>(&warpAction)) {
+    if (std::holds_alternative<std::monostate>(warpToWorld->world) || warpToWorld->world == playerWorld()) {
+      if (auto pos = std::get_if<SpawnTargetPosition>(&warpToWorld->target)) {
         m_mainPlayer->moveTo(*pos);
         return;
       }
@@ -711,7 +710,7 @@ CelestialCoordinate UniverseClient::shipCoordinate() const {
 }
 
 bool UniverseClient::playerOnOwnShip() const {
-  return playerWorld().is<ClientShipWorldId>() && playerWorld().get<ClientShipWorldId>() == m_clientContext->playerUuid();
+  return std::holds_alternative<ClientShipWorldId>(playerWorld()) && std::get<ClientShipWorldId>(playerWorld()) == m_clientContext->playerUuid();
 }
 
 bool UniverseClient::playerIsOriginal() const {
@@ -974,16 +973,16 @@ void UniverseClient::setSubWorldWorld(ClientSubWorldId subWorldId, WorldId world
     m_root.logger().error("UniverseClient: Not setting subworld world, server is too old.");
     return;
   }
-  if (worldId) {
+  if (!std::holds_alternative<std::monostate>(worldId)) {
     if (m_subWorlds.hasRightValue(worldId)) {
-      m_root.logger().error("UniverseClient: Not setting subworld world, one is already on world {}.",worldId);
+      m_root.logger().error("UniverseClient: Not setting subworld world, one is already on world {}.", printWorldId(worldId));
       return;
     }
-    m_root.logger().info("UniverseClient: Requesting subworld {} on world {}", subWorldId, worldId);
+    m_root.logger().info("UniverseClient: Requesting subworld {} on world {}", subWorldId, printWorldId(worldId));
     m_subWorlds.add(subWorldId,worldId);
   } else if (m_subWorlds.hasLeftValue(subWorldId)) {
     // clear the world
-    m_root.logger().info("UniverseClient: Requesting destroy of subworld {}", subWorldId, worldId);
+    m_root.logger().info("UniverseClient: Requesting destroy of subworld {}", subWorldId);
     m_subWorlds.removeLeft(subWorldId);
   }
   m_connection.value().pushSingle(std::make_shared<ClientSubWorldRequest>(subWorldId,worldId));
@@ -1011,7 +1010,7 @@ ClientSubWorldId UniverseClient::getSubWorldOnWorld(WorldId worldId) {
   if (swid == 0) {
     swid = createSubWorld(); // create a new one
   }
-  if (worldId) {
+  if (!std::holds_alternative<std::monostate>(worldId)) {
     setSubWorldWorld(swid, worldId);
   }
   return swid;
@@ -1040,10 +1039,10 @@ RpcPromise<Json> UniverseClient::sendMainWorldMessage(String const& message, Jso
     return RpcPromise<Json>::createFailed("Not connected");
   }
   if (auto resp = m_worldClient->receiveMessage(ServerConnectionId, message, args)) {
-    if (resp->is<RpcPromise<Json>>())
-      return resp->get<RpcPromise<Json>>();
+    if (std::holds_alternative<RpcPromise<Json>>(*resp))
+      return std::get<RpcPromise<Json>>(*resp);
     else
-      return RpcPromise<Json>::createFulfilled(resp->get<Json>());
+      return RpcPromise<Json>::createFulfilled(std::get<Json>(*resp));
   } else {
     return RpcPromise<Json>::createFailed("Message not handled by world");
   }
@@ -1071,10 +1070,12 @@ void UniverseClient::handlePackets(List<std::shared_ptr<Packet>> const& packets)
       for (auto& context : m_scriptContexts) {
         auto& luaContext = *context.second->context();
         auto method = luaContext.get(functionName);
-        if (method != LuaNil) {
+        if (!std::holds_alternative<LuaNilType>(method)) {
           if (!packetJson)
             packetJson = packet->writeJson();
-          if ((skip = luaContext.luaTo<LuaFunction>(std::move(method)).invoke<LuaValue>(*packetJson).maybe<LuaBoolean>().value_or(LuaBoolean{}))) {
+          auto result = luaContext.luaTo<LuaFunction>(std::move(method)).invoke<LuaValue>(*packetJson);
+          auto handled = std::get_if<LuaBoolean>(&result);
+          if ((skip = handled && *handled)) {
             break;
           }
         }
@@ -1128,8 +1129,8 @@ void UniverseClient::handlePackets(List<std::shared_ptr<Packet>> const& packets)
         m_celestialDatabase->pushResponses(std::move(celestialResponse->responses));
 
       } else if (auto warpResult = as<PlayerWarpResultPacket>(packet)) {
-        if (m_mainPlayer->isDeploying() && m_warping && m_warping.value().is<WarpToPlayer>()) {
-          Uuid target = m_warping.value().get<WarpToPlayer>();
+        if (m_mainPlayer->isDeploying() && m_warping && std::holds_alternative<WarpToPlayer>(*m_warping)) {
+          Uuid target = std::get<WarpToPlayer>(*m_warping);
           for (auto member : m_teamClient->members()) {
             if (member.uuid == target) {
               if (member.warpMode != WarpMode::DeployOnly && member.warpMode != WarpMode::BeamOrDeploy)
@@ -1173,13 +1174,13 @@ void UniverseClient::handlePackets(List<std::shared_ptr<Packet>> const& packets)
           }
         }
       } else if (auto worldLoadNotification = as<NotifyWorldLoad>(packet)) {
-        if (auto customWorldId = worldLoadNotification->worldId.ptr<ClientCustomWorldId>()) {
+        if (auto customWorldId = std::get_if<ClientCustomWorldId>(&worldLoadNotification->worldId)) {
           if (customWorldId->uuid == m_clientContext->playerUuid()) {
             for (auto& p : m_scriptContexts) {
               p.second->invoke("clientCustomWorldLoaded",customWorldId->name,printWorldId(worldLoadNotification->worldId));
             }
           }
-        } else if (auto shipWorldId = worldLoadNotification->worldId.ptr<ClientShipWorldId>()) {
+        } else if (auto shipWorldId = std::get_if<ClientShipWorldId>(&worldLoadNotification->worldId)) {
           if (*shipWorldId == m_clientContext->playerUuid()) {
             for (auto& p : m_scriptContexts) {
               p.second->invoke("shipWorldLoaded",printWorldId(worldLoadNotification->worldId));
@@ -1217,11 +1218,11 @@ void UniverseClient::handlePackets(List<std::shared_ptr<Packet>> const& packets)
         }
       } else if (auto universeMessage = as<UniverseMessage>(packet)) {
         if (auto response = receiveMessage(universeMessage->message, false, universeMessage->args)) {
-          if (response->is<Json>()) {
-            m_connection.value().pushSingle(std::make_shared<UniverseMessageResponse>(makeRight(response->get<Json>()), universeMessage->uuid));
+          if (std::holds_alternative<Json>(*response)) {
+            m_connection.value().pushSingle(std::make_shared<UniverseMessageResponse>(makeRight(std::get<Json>(*response)), universeMessage->uuid));
           } else {
             // delay the response until this promise is done
-            m_universeMessagePromises[universeMessage->uuid] = response->get<RpcPromise<Json>>();
+            m_universeMessagePromises[universeMessage->uuid] = std::get<RpcPromise<Json>>(*response);
           } 
         } else
           m_connection.value().pushSingle(std::make_shared<UniverseMessageResponse>(makeLeft("Message not handled by universe"), universeMessage->uuid));

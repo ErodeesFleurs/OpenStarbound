@@ -129,7 +129,9 @@ MaterialRenderProfile parseMaterialRenderProfile(ImageMetadataDatabase const& im
       } else if (type.equalsIgnoreCase("Shadows")) {
         rule->entries.append({MaterialRule::RuleShadows(), inverse});
       } else if (type.equalsIgnoreCase("EqualsSelf")) {
-        rule->entries.append({MaterialRule::RuleEqualsSelf{ruleEntry.getBool("matchHue", false)}, inverse});
+        MaterialRule::RuleEntry entry{{}, inverse};
+        entry.rule.emplace<4>(MaterialRule::RuleEqualsSelf{ruleEntry.getBool("matchHue", false)});
+        rule->entries.append(std::move(entry));
       } else if (type.equalsIgnoreCase("EqualsId")) {
         rule->entries.append({MaterialRule::RuleEqualsId{(std::uint16_t)ruleEntry.getUInt("id")}, inverse});
       } else if (type.equalsIgnoreCase("PropertyEquals")) {

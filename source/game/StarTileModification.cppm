@@ -2,7 +2,6 @@ module;
 
 import std;
 import star.data_stream;
-import star.variant;
 import star.vector;
 import star.game_types;
 import star.liquid_types;
@@ -57,7 +56,7 @@ struct PlaceLiquid {
 DataStream& operator>>(DataStream& ds, PlaceLiquid& tileLiquidPlacement);
 DataStream& operator<<(DataStream& ds, PlaceLiquid const& tileLiquidPlacement);
 
-typedef MVariant<PlaceMaterial, PlaceMod, PlaceMaterialColor, PlaceLiquid> TileModification;
+typedef std::variant<std::monostate, PlaceMaterial, PlaceMod, PlaceMaterialColor, PlaceLiquid> TileModification;
 typedef List<std::pair<Vec2I, TileModification>> TileModificationList;
 
 }

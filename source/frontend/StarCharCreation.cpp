@@ -11,7 +11,6 @@ import star.random;
 import star.ttl_cache;
 import star.casting;
 import star.game_types;
-import star.variant;
 import star.strong_typedef;
 import star.rpc_promise;
 import star.vector;
@@ -370,7 +369,7 @@ void CharCreationPane::tick(float dt) {
 
 bool CharCreationPane::sendEvent(InputEvent const& event) {
   if (active() && m_previewPlayer) {
-    if (event.is<KeyDownEvent>()) {
+    if (std::holds_alternative<KeyDownEvent>(event)) {
       auto actions = context()->actions(event);
       if (actions.contains(InterfaceAction::EmoteBlabbering))
         m_previewPlayer->addEmote(HumanoidEmote::Blabbering);

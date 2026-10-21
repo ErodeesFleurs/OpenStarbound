@@ -175,7 +175,7 @@ struct WhitespaceStyle {
 template <class ElementType>
 FormattedJson::ElementLocation indexOf(FormattedJson::ElementList const& elements, FormattedJson::ElementLocation pos) {
   for (; pos < elements.size(); ++pos) {
-    if (elements[pos].is<ElementType>())
+    if (std::holds_alternative<ElementType>(elements[pos]))
       return pos;
   }
   return NPos;
@@ -186,7 +186,7 @@ FormattedJson::ElementLocation lastIndexOf(
     FormattedJson::ElementList const& elements, FormattedJson::ElementLocation pos) {
   while (pos > 0) {
     --pos;
-    if (elements[pos].is<ElementType>())
+    if (std::holds_alternative<ElementType>(elements[pos]))
       return pos;
   }
   return NPos;
@@ -196,8 +196,8 @@ String concatWhitespace(FormattedJson::ElementList const& elements, FormattedJso
     FormattedJson::ElementLocation to) {
   String whitespace;
   for (JsonElement const& elem : elements.slice(from, to)) {
-    if (elem.is<WhitespaceElement>())
-      whitespace += elem.get<WhitespaceElement>().whitespace;
+    if (std::holds_alternative<WhitespaceElement>(elem))
+      whitespace += std::get<WhitespaceElement>(elem).whitespace;
   }
   return whitespace;
 }
@@ -264,13 +264,13 @@ void insertWhitespace(FormattedJson::ElementList& destination, FormattedJson::El
 
 void insertWithWhitespace(FormattedJson::ElementList& destination, WhitespaceStyle const& style,
     FormattedJson::ElementLocation& at, JsonElement const& element) {
-  if (element.is<ValueElement>())
+  if (std::holds_alternative<ValueElement>(element))
     insertWhitespace(destination, at, style.beforeValue);
-  if (element.is<ObjectKeyElement>())
+  if (std::holds_alternative<ObjectKeyElement>(element))
     insertWhitespace(destination, at, style.beforeKey);
-  if (element.is<ColonElement>())
+  if (std::holds_alternative<ColonElement>(element))
     insertWhitespace(destination, at, style.beforeColon);
-  if (element.is<CommaElement>())
+  if (std::holds_alternative<CommaElement>(element))
     insertWhitespace(destination, at, style.beforeComma);
   destination.insertAt(at++, element);
 }
@@ -335,7 +335,7 @@ void removeValueFromArray(List<JsonElement>& elements, std::size_t loc) {
   std::size_t commaLoc = elements.indexOf(CommaElement{}, loc);
   if (commaLoc != NPos) {
     elements.eraseAt(loc, commaLoc + 1);
-    while (loc < elements.size() && elements.at(loc).is<WhitespaceElement>())
+    while (loc < elements.size() && std::holds_alternative<WhitespaceElement>(elements.at(loc)))
       elements.eraseAt(loc);
   } else {
     commaLoc = elements.lastIndexOf(CommaElement{}, loc);
@@ -463,7 +463,7 @@ String FormattedJson::printJson() const {
 }
 
 Json elemToJson(JsonElement const& elem) {
-  return elem.get<ValueElement>().value->toJson();
+  return std::get<ValueElement>(elem).value->toJson();
 }
 
 FormattedJson::ElementList const& FormattedJson::elements() const {
@@ -489,7 +489,7 @@ FormattedJson FormattedJson::object(ElementList const& elements) {
 FormattedJson FormattedJson::array(ElementList const& elements) {
   FormattedJson json = ofType(Json::Type::Array);
   for (JsonElement const& elem : elements) {
-    if (elem.is<ColonElement>() || elem.is<ObjectKeyElement>())
+    if (std::holds_alternative<ColonElement>(elem) || std::holds_alternative<ObjectKeyElement>(elem))
       throw JsonException("Invalid FormattedJson element in Json array");
     json.appendElement(elem);
   }
@@ -516,20 +516,20 @@ void FormattedJson::appendElement(JsonElement const& elem) {
   ElementLocation loc = m_elements.size();
   m_elements.append(elem);
 
-  if (elem.is<ObjectKeyElement>()) {
+  if (std::holds_alternative<ObjectKeyElement>(elem)) {
     if constexpr (Star::DebugEnabled) {
       Star::starAssertFailed((isType(Json::Type::Object)));
     }
     m_lastKey = loc;
 
-  } else if (elem.is<ValueElement>()) {
+  } else if (std::holds_alternative<ValueElement>(elem)) {
     m_lastValue = loc;
 
     if (m_lastKey.has_value()) {
       if constexpr (Star::DebugEnabled) {
         Star::starAssertFailed((isType(Json::Type::Object)));
       }
-      String key = m_elements[*m_lastKey].get<ObjectKeyElement>().key;
+      String key = std::get<ObjectKeyElement>(m_elements[*m_lastKey]).key;
 
       m_objectEntryLocations[key] = std::make_pair(*m_lastKey, loc);
       m_jsonValue = m_jsonValue.set(key, elemToJson(elem));
@@ -547,7 +547,7 @@ void FormattedJson::appendElement(JsonElement const& elem) {
 }
 
 FormattedJson const& FormattedJson::getFormattedJson(ElementLocation loc) const {
-  return *m_elements[loc].get<ValueElement>().value;
+  return *std::get<ValueElement>(m_elements[loc]).value;
 }
 
 FormattedJson FormattedJson::formattedAs(String const& formatting) const {
@@ -683,18 +683,18 @@ void JsonStreamer<FormattedJson>::toJsonStream(FormattedJson const& val, JsonStr
   }
 
   for (JsonElement elem : val.elements()) {
-    if (elem.is<ObjectKeyElement>()) {
-      String::WideString key = elem.get<ObjectKeyElement>().key.wideString();
+    if (std::holds_alternative<ObjectKeyElement>(elem)) {
+      String::WideString key = std::get<ObjectKeyElement>(elem).key.wideString();
       stream.objectKey(key.c_str(), key.length());
-    } else if (elem.is<WhitespaceElement>()) {
-      String::WideString white = elem.get<WhitespaceElement>().whitespace.wideString();
+    } else if (std::holds_alternative<WhitespaceElement>(elem)) {
+      String::WideString white = std::get<WhitespaceElement>(elem).whitespace.wideString();
       stream.putWhitespace(white.c_str(), white.length());
-    } else if (elem.is<ColonElement>()) {
+    } else if (std::holds_alternative<ColonElement>(elem)) {
       stream.putColon();
-    } else if (elem.is<CommaElement>()) {
+    } else if (std::holds_alternative<CommaElement>(elem)) {
       stream.putComma();
     } else {
-      toJsonStream(*elem.get<ValueElement>().value, stream, sort);
+      toJsonStream(*std::get<ValueElement>(elem).value, stream, sort);
     }
   }
 
@@ -705,15 +705,15 @@ void JsonStreamer<FormattedJson>::toJsonStream(FormattedJson const& val, JsonStr
 }
 
 std::ostream& operator<<(std::ostream& os, JsonElement const& elem) {
-  if (elem.is<ValueElement>())
-    return os << "ValueElement{" << elem.get<ValueElement>().value << "}";
-  if (elem.is<ObjectKeyElement>())
-    return os << "ObjectKeyElement{" << elem.get<ObjectKeyElement>().key << "}";
-  if (elem.is<WhitespaceElement>())
-    return os << "WhitespaceElement{" << elem.get<WhitespaceElement>().whitespace << "}";
-  if (elem.is<ColonElement>())
+  if (std::holds_alternative<ValueElement>(elem))
+    return os << "ValueElement{" << std::get<ValueElement>(elem).value << "}";
+  if (std::holds_alternative<ObjectKeyElement>(elem))
+    return os << "ObjectKeyElement{" << std::get<ObjectKeyElement>(elem).key << "}";
+  if (std::holds_alternative<WhitespaceElement>(elem))
+    return os << "WhitespaceElement{" << std::get<WhitespaceElement>(elem).whitespace << "}";
+  if (std::holds_alternative<ColonElement>(elem))
     return os << "ColonElement{}";
-  if (elem.is<CommaElement>())
+  if (std::holds_alternative<CommaElement>(elem))
     return os << "CommaElement{}";
   if constexpr (Star::DebugEnabled) {
     Star::starAssertFailed((false));

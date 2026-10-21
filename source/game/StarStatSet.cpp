@@ -1,7 +1,6 @@
 import std;
 import star.string;
 import star.list;
-import star.variant;
 import star.json;
 import star.strong_typedef;
 import star.data_stream;
@@ -127,7 +126,7 @@ float StatSet::statEffectiveValue(String const& statName) const {
     return 0.0f;
 }
 
-void StatSet::addResource(String resourceName, MVariant<String, float> max, MVariant<String, float> delta) {
+void StatSet::addResource(String resourceName, std::variant<std::monostate, String, float> max, std::variant<std::monostate, String, float> delta) {
   auto pair = m_resources.insert({std::move(resourceName), Resource{std::move(max), std::move(delta), false, 0.0f, {}}});
   if (!pair.second)
     throw StatusException::format("Added duplicate resource named '{}' in StatSet", resourceName);
@@ -143,11 +142,11 @@ StringList StatSet::resourceNames() const {
   return m_resources.keys();
 }
 
-MVariant<String, float> StatSet::resourceMax(String const& resourceName) const {
+std::variant<std::monostate, String, float> StatSet::resourceMax(String const& resourceName) const {
   return getResource(resourceName).max;
 }
 
-MVariant<String, float> StatSet::resourceDelta(String const& resourceName) const {
+std::variant<std::monostate, String, float> StatSet::resourceDelta(String const& resourceName) const {
   return getResource(resourceName).delta;
 }
 
@@ -244,10 +243,10 @@ void StatSet::update(float dt) {
 
   for (auto const& p : m_statModifierGroups) {
     for (auto const& modifier : p.second) {
-      if (auto baseMultiplier = modifier.ptr<StatBaseMultiplier>()) {
+      if (auto baseMultiplier = std::get_if<StatBaseMultiplier>(&modifier)) {
         auto& stat = m_effectiveStats[baseMultiplier->statName];
         stat.baseModifiedValue += (baseMultiplier->baseMultiplier - 1.0f) * stat.baseValue;
-      } else if (auto valueModifier = modifier.ptr<StatValueModifier>()) {
+      } else if (auto valueModifier = std::get_if<StatValueModifier>(&modifier)) {
         auto& stat = m_effectiveStats[valueModifier->statName];
         stat.baseModifiedValue += valueModifier->value;
       }
@@ -262,7 +261,7 @@ void StatSet::update(float dt) {
 
   for (auto const& p : m_statModifierGroups) {
     for (auto const& modifier : p.second) {
-      if (auto effectiveMultiplier = modifier.ptr<StatEffectiveMultiplier>()) {
+      if (auto effectiveMultiplier = std::get_if<StatEffectiveMultiplier>(&modifier)) {
         auto& stat = m_effectiveStats[effectiveMultiplier->statName];
         stat.effectiveModifiedValue *= effectiveMultiplier->effectiveMultiplier;
       }
@@ -274,10 +273,10 @@ void StatSet::update(float dt) {
 
   for (auto& p : m_resources) {
     std::optional<float> newMaxValue;
-    if (p.second.max.is<String>())
-      newMaxValue = statEffectiveValue(p.second.max.get<String>());
-    else if (p.second.max.is<float>())
-      newMaxValue = p.second.max.get<float>();
+    if (std::holds_alternative<String>(p.second.max))
+      newMaxValue = statEffectiveValue(std::get<String>(p.second.max));
+    else if (std::holds_alternative<float>(p.second.max))
+      newMaxValue = std::get<float>(p.second.max);
 
     // If the resource has a maximum value, rather than keeping the absolute
     // value of the resource the same between updates, the resource value
@@ -291,10 +290,10 @@ void StatSet::update(float dt) {
 
     if (dt != 0.0f) {
       float delta = 0.0f;
-      if (p.second.delta.is<String>())
-        delta = statEffectiveValue(p.second.delta.get<String>());
-      else if (p.second.delta.is<float>())
-        delta = p.second.delta.get<float>();
+      if (std::holds_alternative<String>(p.second.delta))
+        delta = statEffectiveValue(std::get<String>(p.second.delta));
+      else if (std::holds_alternative<float>(p.second.delta))
+        delta = std::get<float>(p.second.delta);
       p.second.setValue(p.second.value + delta * dt);
     }
   }

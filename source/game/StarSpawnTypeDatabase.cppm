@@ -2,7 +2,6 @@ module;
 import std;
 import star.string;
 import star.set;
-import star.variant;
 import star.format;
 import star.json;
 
@@ -62,7 +61,7 @@ struct SpawnType {
   Vec2F dayLevelAdjustment;
   Vec2F nightLevelAdjustment;
 
-  Variant<String, WeightedPool<String>> monsterType;
+  std::variant<String, WeightedPool<String>> monsterType;
   Json monsterParameters;
 
   Vec2I groupSize;

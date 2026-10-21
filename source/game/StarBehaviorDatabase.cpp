@@ -50,10 +50,10 @@ Json jsonFromNodeParameter(NodeParameter const& parameter) {
   JsonObject json {
     {"type", NodeParameterTypeNames.getRight(parameter.first)}
   };
-  if (auto key = parameter.second.maybe<String>())
+  if (auto key = std::get_if<String>(&parameter.second))
     json.set("key", *key);
   else
-    json.set("value", parameter.second.get<Json>());
+    json.set("value", std::get<Json>(parameter.second));
   return json;
 }
 
@@ -103,9 +103,11 @@ void applyTreeParameters(StringMap<NodeParameter>& nodeParameters, StringMap<Nod
 }
 
 NodeParameterValue replaceBehaviorTag(NodeParameterValue const& parameter, StringMap<NodeParameterValue> const& treeParameters) {
-  std::optional<String> strVal = parameter.maybe<String>();
-  if (!strVal && parameter.get<Json>().isType(Json::Type::String))
-    strVal = parameter.get<Json>().toString();
+  std::optional<String> strVal;
+  if (auto key = std::get_if<String>(&parameter))
+    strVal = *key;
+  else if (std::get<Json>(parameter).isType(Json::Type::String))
+    strVal = std::get<Json>(parameter).toString();
   if (strVal) {
     String key = *strVal;
     if (key.beginsWith('<') && key.endsWith('>')) {
@@ -125,10 +127,10 @@ std::optional<String> replaceOutputBehaviorTag(std::optional<String> const& outp
   if (auto out = output) {
     if (out->beginsWith('<') && out->endsWith('>')) {
       if (auto replace = treeParameters.maybe(out->substr(1, out->size() - 2))) {
-        if (auto key = replace->maybe<String>())
+        if (auto key = std::get_if<String>(&*replace))
           return *key;
-        else if (replace->get<Json>().isType(Json::Type::String))
-          return replace->get<Json>().toString();
+        else if (std::get<Json>(*replace).isType(Json::Type::String))
+          return std::get<Json>(*replace).toString();
         else
           return {};
       } else {
@@ -160,10 +162,10 @@ SequenceNode::SequenceNode(List<std::shared_ptr<BehaviorNode const>> children) :
 SelectorNode::SelectorNode(List<std::shared_ptr<BehaviorNode const>> children) : children(children) { }
 
 ParallelNode::ParallelNode(StringMap<NodeParameter> parameters, List<std::shared_ptr<BehaviorNode const>> children) : children(children) {
-  int s = parameters.get("success").second.get<Json>().optInt().value_or(-1);
+  int s = std::get<Json>(parameters.get("success").second).optInt().value_or(-1);
   succeed = s == -1 ? children.size() : s;
 
-  int f = parameters.get("fail").second.get<Json>().optInt().value_or(-1);
+  int f = std::get<Json>(parameters.get("fail").second).optInt().value_or(-1);
   fail = f == -1 ? children.size() : f;
 }
 

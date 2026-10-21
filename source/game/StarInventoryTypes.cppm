@@ -1,8 +1,6 @@
 module;
 import std;
 import star.string;
-import star.variant;
-import star.stream_formatter;
 import star.json;
 
 import star.bi_map;
@@ -74,7 +72,7 @@ template <typename BaseType> struct TrashSlotWrapper;
       return *this;
     }
     friend std::ostream& operator<<(std::ostream& ostream,
-        Variant<EquipmentSlot, BagSlot, SwapSlotWrapper<Empty>, TrashSlotWrapper<Empty>> const& slot);
+        std::variant<EquipmentSlot, BagSlot, SwapSlotWrapper<Empty>, TrashSlotWrapper<Empty>> const& slot);
   };
   typedef SwapSlotWrapper<Empty> SwapSlot;
 template <typename BaseType>
@@ -115,7 +113,7 @@ typedef TrashSlotWrapper<Empty> TrashSlot;
 
 // Any manageable location in the player inventory can be pointed to by an
 // InventorySlot
-typedef Variant<EquipmentSlot, BagSlot, SwapSlot, TrashSlot> InventorySlot;
+typedef std::variant<EquipmentSlot, BagSlot, SwapSlot, TrashSlot> InventorySlot;
 
 InventorySlot jsonToInventorySlot(Json const& json);
 Json jsonFromInventorySlot(InventorySlot const& slot);
@@ -136,7 +134,7 @@ extern EnumMap<EssentialItem> const EssentialItemNames;
 // at a time, which is either an entry on the custom bar, or one of the
 // essential items, or nothing.
 typedef std::uint8_t CustomBarIndex;
-typedef MVariant<CustomBarIndex, EssentialItem> SelectedActionBarLocation;
+typedef std::variant<std::monostate, CustomBarIndex, EssentialItem> SelectedActionBarLocation;
 
 SelectedActionBarLocation jsonToSelectedActionBarLocation(Json const& json);
 Json jsonFromSelectedActionBarLocation(SelectedActionBarLocation const& location);
@@ -147,8 +145,6 @@ inline constexpr std::uint8_t EssentialItemCount = 4;
 }
 
 export module star.inventory_types;
-
-export template <> struct std::formatter<Star::InventorySlot> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::EquipmentSlot;

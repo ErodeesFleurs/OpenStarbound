@@ -1,7 +1,6 @@
 module;
 import std;
 import star.string;
-import star.variant;
 import star.json;
 
 import star.vector;
@@ -36,7 +35,7 @@ struct PortraitChatAction {
   Json config;
 };
 
-typedef MVariant<SayChatAction, PortraitChatAction> ChatAction;
+typedef std::variant<std::monostate, SayChatAction, PortraitChatAction> ChatAction;
 
 }
 

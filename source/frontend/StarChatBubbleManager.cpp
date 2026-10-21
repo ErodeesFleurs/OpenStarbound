@@ -37,7 +37,6 @@ import star.math_common;
 import star.either;
 import star.random;
 import star.weighted_pool;
-import star.variant;
 import star.rpc_promise;
 import star.net_compatibility;
 import star.worker_pool;
@@ -331,8 +330,8 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
     Json config = JsonObject{};
     Vec2F position;
 
-    if (action.is<SayChatAction>()) {
-      auto sayAction = action.get<SayChatAction>();
+    if (std::holds_alternative<SayChatAction>(action)) {
+      auto sayAction = std::get<SayChatAction>(action);
       config = sayAction.config.optObject().value_or(JsonObject{});
       position = sayAction.position;
 
@@ -423,8 +422,8 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       for (auto& bubble : oldBubbles.slice(0, m_maxMessagePerEntity - 1))
         m_bubbles.addBubble(bubble.idealDestination, bubble.boundBox, bubble.contents, 0);
 
-    } else if (action.is<PortraitChatAction>()) {
-      auto portraitAction = action.get<PortraitChatAction>();
+    } else if (std::holds_alternative<PortraitChatAction>(action)) {
+      auto portraitAction = std::get<PortraitChatAction>(action);
       config = portraitAction.config.optObject().value_or(JsonObject{});
       position = portraitAction.position;
 

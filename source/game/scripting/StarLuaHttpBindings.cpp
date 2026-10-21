@@ -228,7 +228,7 @@ struct LuaConverter<LuaHttpResponse> {
   }
 
   static std::optional<LuaHttpResponse> to(LuaEngine& /*engine*/, LuaValue const& v) {
-    if (auto table = v.ptr<LuaTable>()) {
+    if (auto table = std::get_if<LuaTable>(&v)) {
       LuaHttpResponse response;
       response.statusCode = table->get<std::optional<int>>("status").value_or(0);
       if (table->contains("body"))
@@ -293,10 +293,10 @@ LuaCallbacks LuaBindings::makeHttpCallbacks(std::shared_ptr<LuaHttpSession> cons
         auto const& optTable = *options;
         if (optTable.contains("headers")) {
           auto headersValue = optTable.get("headers");
-          if (auto headersTable = headersValue.ptr<LuaTable>()) {
+          if (auto headersTable = std::get_if<LuaTable>(&headersValue)) {
             headersTable->iterate([&](LuaValue key, LuaValue value) {
-              if (auto keyStr = key.ptr<LuaString>()) {
-                if (auto valStr = value.ptr<LuaString>())
+              if (auto keyStr = std::get_if<LuaString>(&key)) {
+                if (auto valStr = std::get_if<LuaString>(&value))
                   request.headers[keyStr->toString()] = valStr->toString();
                 else
                   request.headers[keyStr->toString()] = engine.luaTo<String>(value);
@@ -306,7 +306,7 @@ LuaCallbacks LuaBindings::makeHttpCallbacks(std::shared_ptr<LuaHttpSession> cons
         }
         if (optTable.contains("body")) {
           auto bodyValue = optTable.get("body");
-          if (auto strValue = bodyValue.ptr<LuaString>())
+          if (auto strValue = std::get_if<LuaString>(&bodyValue))
             request.body = strValue->toString();
           else
             request.body = engine.luaTo<Json>(bodyValue).repr();

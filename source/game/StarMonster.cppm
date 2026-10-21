@@ -29,7 +29,6 @@ import star.string_view;
 import star.directives;
 import star.asset_path;
 import star.game_types;
-import star.variant;
 import star.rpc_promise;
 import star.a_star;
 import star.lua;

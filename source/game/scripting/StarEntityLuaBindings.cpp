@@ -10,7 +10,6 @@ import star.data_stream;
 import star.game_types;
 import star.strong_typedef;
 import star.bi_map;
-import star.variant;
 import star.list;
 import star.rpc_promise;
 import star.a_star;

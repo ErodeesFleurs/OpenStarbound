@@ -32,7 +32,6 @@ import star.listener;
 import std;
 import star.format;
 import star.version;
-import star.variant;
 import star.either;
 import star.image;
 import star.rpc_promise;

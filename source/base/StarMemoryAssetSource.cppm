@@ -1,7 +1,6 @@
 module;
 import std;
 import star.string;
-import star.variant;
 import star.format;
 import star.json;
 import star.byte_array;
@@ -47,7 +46,7 @@ public:
   ByteArray read(String const& path) override;
   std::shared_ptr<Image const> image(String const& path);
 private:
-  typedef Variant<ByteArray, std::shared_ptr<Image>> FileEntry;
+  using FileEntry = std::variant<ByteArray, std::shared_ptr<Image>>;
 
   String m_name;
   JsonObject m_metadata;
@@ -125,10 +124,10 @@ std::shared_ptr<IODevice> MemoryAssetSource::open(String const& path) {
   auto p = m_files.ptr(path);
   if (!p)
     throw AssetSourceException::format("Requested file '{}' does not exist in memory", path);
-  else if (auto byteArray = p->ptr<ByteArray>())
+  else if (auto byteArray = std::get_if<ByteArray>(p))
     return std::make_shared<AssetReader>(byteArray->ptr(), byteArray->size(), path);
   else {
-    auto image = p->get<std::shared_ptr<Image>>().get();
+    auto image = std::get<std::shared_ptr<Image>>(*p).get();
     return std::make_shared<AssetReader>((char*)image->data(), image->width() * image->height() * image->bytesPerPixel(), path);
   }
 }
@@ -161,10 +160,10 @@ ByteArray MemoryAssetSource::read(String const& path) {
   auto p = m_files.ptr(path);
   if (!p)
     throw AssetSourceException::format("Requested file '{}' does not exist in memory", path);
-  else if (auto bytes = p->ptr<ByteArray>())
+  else if (auto bytes = std::get_if<ByteArray>(p))
     return *bytes;
   else {
-    Image const* image = p->get<std::shared_ptr<Image>>().get();
+    Image const* image = std::get<std::shared_ptr<Image>>(*p).get();
     return ByteArray((char const*)image->data(), image->width() * image->height() * image->bytesPerPixel());
   }
 }
@@ -173,7 +172,7 @@ std::shared_ptr<Image const> MemoryAssetSource::image(String const& path) {
   auto p = m_files.ptr(path);
   if (!p)
     throw AssetSourceException::format("Requested file '{}' does not exist in memory", path);
-  else if (auto imagePtr = p->ptr<std::shared_ptr<Image>>())
+  else if (auto imagePtr = std::get_if<std::shared_ptr<Image>>(p))
     return *imagePtr;
   else
     return nullptr;

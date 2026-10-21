@@ -4,7 +4,6 @@ import star.json_extra;
 import star.ordered_map;
 import star.either;
 import star.vector;
-import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
@@ -148,14 +147,15 @@ SystemLocation SystemWorldServer::clientShipLocation(ConnectionId clientId) cons
 
 std::optional<std::pair<WarpAction, WarpMode>> SystemWorldServer::clientWarpAction(ConnectionId clientId) const {
   auto ship = m_ships.get(m_clientShips.get(clientId));
-  if (auto objectUuid = ship->systemLocation().maybe<Uuid>()) {
+  auto location = ship->systemLocation();
+  if (auto objectUuid = std::get_if<Uuid>(&location)) {
     if (auto action = objectWarpAction(*objectUuid)) {
       return std::pair<WarpAction, WarpMode>(*action, WarpMode::DeployOnly);
     }
-  } else if (auto coordinate = ship->systemLocation().maybe<CelestialCoordinate>()) {
+  } else if (auto coordinate = std::get_if<CelestialCoordinate>(&location)) {
     WarpAction warpAction = WarpToWorld(CelestialWorldId(*coordinate));
     return std::pair<WarpAction, WarpMode>(warpAction, WarpMode::BeamOrDeploy);
-  } else if (auto position = ship->systemLocation().maybe<Vec2F>()) {
+  } else if (auto position = std::get_if<Vec2F>(&location)) {
     // player can beam to asteroid fields simply by being in proximity to them
     for (auto planet : planets()) {
       if (std::abs(planetPosition(planet).magnitude() - position->magnitude()) > systemConfig().asteroidBeamDistance)
@@ -184,11 +184,11 @@ List<ConnectionId> SystemWorldServer::clients() const {
 }
 
 void SystemWorldServer::addClientShip(ConnectionId clientId, Uuid const& uuid, float shipSpeed, SystemLocation location) {
-  if (auto objectUuid = location.maybe<Uuid>()) {
+  if (auto objectUuid = std::get_if<Uuid>(&location)) {
     if (getObject(*objectUuid) == nullptr)
-      location.reset();
+      location.emplace<0>();
   }
-  if (!location)
+  if (std::holds_alternative<std::monostate>(location))
     location = randomArrivalPosition();
 
   std::shared_ptr<SystemClientShip> ship = std::make_shared<SystemClientShip>(this, uuid, shipSpeed, location);
@@ -233,12 +233,12 @@ List<InstanceWorldId> SystemWorldServer::activeInstanceWorlds() const {
       if (!action.has_value())
         return false;
 
-      if (auto warpToWorld = action->maybe<WarpToWorld>()) {
-        if (auto instanceWorldId = warpToWorld->world.maybe<InstanceWorldId>())
+      if (auto warpToWorld = std::get_if<WarpToWorld>(&*action)) {
+        if (std::holds_alternative<InstanceWorldId>(warpToWorld->world))
           return true;
       }
       return false;
-  }).transformed([](std::optional<WarpAction> const& action) { return action->get<WarpToWorld>().world.get<InstanceWorldId>(); });
+  }).transformed([](std::optional<WarpAction> const& action) { return std::get<InstanceWorldId>(std::get<WarpToWorld>(*action).world); });
 
 }
 
@@ -257,7 +257,10 @@ void SystemWorldServer::removeObject(Uuid objectUuid) {
   for (auto p : m_clientShips) {
     auto ship = m_ships.get(p.second);
     auto location = ship->systemLocation();
-    if (location == objectUuid || ship->destination() == objectUuid) {
+    auto destination = ship->destination();
+    auto locationUuid = std::get_if<Uuid>(&location);
+    auto destinationUuid = std::get_if<Uuid>(&destination);
+    if ((locationUuid && *locationUuid == objectUuid) || (destinationUuid && *destinationUuid == objectUuid)) {
       ship->setDestination(*systemLocationPosition(objectUuid));
       if (!ship->flying())
         m_shipFlights.append(p.first);
@@ -503,9 +506,9 @@ Vec2F SystemWorldServer::randomObjectSpawnPosition(RandomSource& rand) const {
 SkyParameters SystemWorldServer::locationSkyParameters(SystemLocation const& location) const {
   SkyParameters skyParameters = systemConfig().emptySkyParameters;
 
-  if (auto coordinate = location.maybe<CelestialCoordinate>()) {
+  if (auto coordinate = std::get_if<CelestialCoordinate>(&location)) {
     return SkyParameters(this->root(), *coordinate, m_celestialDatabase);
-  } else if (auto position = location.maybe<Vec2F>()) {
+  } else if (auto position = std::get_if<Vec2F>(&location)) {
     for (auto planet : planets()) {
       if (std::abs(position->magnitude() - planetPosition(planet).magnitude()) > systemConfig().asteroidBeamDistance)
         continue;
@@ -516,14 +519,14 @@ SkyParameters SystemWorldServer::locationSkyParameters(SystemLocation const& loc
         }
       }
     }
-  } else if (!location.empty()) {
+  } else if (!std::holds_alternative<std::monostate>(location)) {
     CelestialCoordinate orbitTarget;
-    if (auto objectUuid = location.maybe<Uuid>()) {
+    if (auto objectUuid = std::get_if<Uuid>(&location)) {
       auto object = getObject(*objectUuid);
       skyParameters = object->skyParameters();
       if (auto target = object->orbitTarget())
         orbitTarget = *target;
-    } else if (auto orbit = location.maybe<CelestialOrbit>()) {
+    } else if (auto orbit = std::get_if<CelestialOrbit>(&location)) {
       orbitTarget = orbit->target;
     }
 

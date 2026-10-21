@@ -5,7 +5,6 @@ import star.casting;
 import star.data_stream;
 import star.strong_typedef;
 import star.game_types;
-import star.variant;
 import star.list;
 import star.rpc_promise;
 import star.bi_map;
@@ -238,10 +237,10 @@ void ScriptableThread::update() {
   }
   for (auto& message : messages) {
     if (auto resp = receiveMessage(message.message, message.args))
-      if (resp->is<RpcPromise<Json>>())
-        message.promise.chain(resp->get<RpcPromise<Json>>());
+      if (std::holds_alternative<RpcPromise<Json>>(*resp))
+        message.promise.chain(std::get<RpcPromise<Json>>(*resp));
       else
-        message.promise.fulfill(resp->get<Json>());
+        message.promise.fulfill(std::get<Json>(*resp));
     else
       message.promise.fail("Message not handled by thread");
   }

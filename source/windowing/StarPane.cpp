@@ -42,7 +42,6 @@ import star.user_generated_content_service;
 import star.desktop_service;
 import star.image;
 import star.application_controller;
-import star.variant;
 import star.renderer;
 import star.asset_source;
 import star.assets;
@@ -132,8 +131,8 @@ bool Pane::isDisplayed() const {
 
 bool Pane::sendEvent(InputEvent const& event) {
   if (m_visible) {
-    if (event.is<MouseButtonDownEvent>() || event.is<MouseButtonUpEvent>() || event.is<MouseMoveEvent>()
-        || event.is<MouseWheelEvent>()) {
+    if (std::holds_alternative<MouseButtonDownEvent>(event) || std::holds_alternative<MouseButtonUpEvent>(event) || std::holds_alternative<MouseMoveEvent>(event)
+        || std::holds_alternative<MouseWheelEvent>(event)) {
       Vec2I mousePos = *m_context->mousePosition(event);
       // First, handle preliminary mouse out / click up events
       if (m_mouseOver) {
@@ -143,7 +142,7 @@ bool Pane::sendEvent(InputEvent const& event) {
         }
       }
 
-      if (event.is<MouseButtonUpEvent>())
+      if (std::holds_alternative<MouseButtonUpEvent>(event))
         m_clickDown.reset();
 
       std::shared_ptr<Widget> newClickDown;
@@ -164,9 +163,9 @@ bool Pane::sendEvent(InputEvent const& event) {
         std::shared_ptr<Widget> topWidget = widget;
         std::shared_ptr<Widget> child = getChildAt(mousePos);
         if (child->active() && child->interactive()) {
-          if (event.is<MouseButtonDownEvent>()
-              && (event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Left
-                      || event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Right)) {
+          if (std::holds_alternative<MouseButtonDownEvent>(event)
+              && (std::get<MouseButtonDownEvent>(event).mouseButton == MouseButton::Left
+                      || std::get<MouseButtonDownEvent>(event).mouseButton == MouseButton::Right)) {
             if (!newClickDown)
               newClickDown = child;
 
@@ -209,7 +208,7 @@ bool Pane::sendEvent(InputEvent const& event) {
       }
     }
 
-    if (event.is<MouseButtonDownEvent>()) {
+    if (std::holds_alternative<MouseButtonDownEvent>(event)) {
       Vec2I mousePos = *m_context->mousePosition(event);
       if (inDragArea(mousePos) && !m_lockPosition) {
         setDragActive(true, mousePos);

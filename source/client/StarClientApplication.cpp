@@ -20,7 +20,6 @@ import star.string;
 import star.byte_array;
 import star.encode;
 import star.logging;
-import star.variant;
 import star.ordered_map;
 import star.ordered_set;
 import star.format;
@@ -585,10 +584,10 @@ void ClientApplication::windowChanged(WindowMode windowMode, Vec2U screenSize) {
 }
 
 void ClientApplication::processInput(InputEvent const& event) {
-  if (auto keyDown = event.ptr<KeyDownEvent>()) {
+  if (auto keyDown = std::get_if<KeyDownEvent>(&event)) {
     m_heldKeyEvents.append(*keyDown);
     m_edgeKeyEvents.append(*keyDown);
-  } else if (auto keyUp = event.ptr<KeyUpEvent>()) {
+  } else if (auto keyUp = std::get_if<KeyUpEvent>(&event)) {
     eraseWhere(m_heldKeyEvents, [&](auto& keyEvent) {
       return keyEvent.key == keyUp->key;
     });
@@ -599,7 +598,7 @@ void ClientApplication::processInput(InputEvent const& event) {
         return KeyDownEvent{keyEvent.key, keyEvent.mods & ~*modKey};
       });
   }
-  else if (auto cAxis = event.ptr<ControllerAxisEvent>()) {
+  else if (auto cAxis = std::get_if<ControllerAxisEvent>(&event)) {
     if (cAxis->controllerAxis == ControllerAxis::LeftX)
       m_controllerLeftStick[0] = cAxis->controllerAxisValue;
     else if (cAxis->controllerAxis == ControllerAxis::LeftY)
@@ -633,8 +632,13 @@ void ClientApplication::update() {
   auto& app = appController();
   if (m_state >= MainAppState::Title) {
     if (auto p2pNetworkingService = app->p2pNetworkingService()) {
-      if (auto join = p2pNetworkingService->pullPendingJoin()) {
-        m_pendingMultiPlayerConnection = PendingMultiPlayerConnection{join.takeValue(), {}, {}, false};
+      auto join = p2pNetworkingService->pullPendingJoin();
+      if (!std::holds_alternative<std::monostate>(join)) {
+        if (auto peer = std::get_if<P2PNetworkingPeerId>(&join))
+          m_pendingMultiPlayerConnection = PendingMultiPlayerConnection{std::move(*peer), {}, {}, false};
+        else
+          m_pendingMultiPlayerConnection = PendingMultiPlayerConnection{std::move(std::get<HostAddressWithPort>(join)), {}, {}, false};
+        join.emplace<0>();
         changeState(MainAppState::Title);
       }
       
@@ -970,7 +974,7 @@ void ClientApplication::changeState(MainAppState newState) {
     auto configuration = m_root->configuration();
 
     if (m_pendingMultiPlayerConnection) {
-      if (auto address = m_pendingMultiPlayerConnection->server.ptr<HostAddressWithPort>()) {
+      if (auto address = std::get_if<HostAddressWithPort>(&m_pendingMultiPlayerConnection->server)) {
         m_titleScreen->setMultiPlayerAddress(toString(address->address()));
         m_titleScreen->setMultiPlayerPort(toString(address->port()));
         m_titleScreen->setMultiPlayerAccount(configuration->getPath("title.multiPlayerAccount").toString());
@@ -1022,7 +1026,7 @@ void ClientApplication::changeState(MainAppState newState) {
 
       auto multiPlayerConnection = takeOptional(m_pendingMultiPlayerConnection);
 
-      if (auto address = multiPlayerConnection.server.ptr<HostAddressWithPort>()) {
+      if (auto address = std::get_if<HostAddressWithPort>(&multiPlayerConnection.server)) {
         try {
           packetSocket = TcpPacketSocket::open(m_root->logger(), TcpSocket::connectTo(*address));
         } catch (StarException const& e) {
@@ -1031,7 +1035,7 @@ void ClientApplication::changeState(MainAppState newState) {
         }
 
       } else {
-        auto p2pPeerId = multiPlayerConnection.server.ptr<P2PNetworkingPeerId>();
+        auto p2pPeerId = std::get_if<P2PNetworkingPeerId>(&multiPlayerConnection.server);
 
         if (auto p2pNetworkingService = app->p2pNetworkingService()) {
           auto result = p2pNetworkingService->connectToPeer(*p2pPeerId);
@@ -1054,7 +1058,7 @@ void ClientApplication::changeState(MainAppState newState) {
         return;
       }
 
-      if (auto address = multiPlayerConnection.server.ptr<HostAddressWithPort>())
+      if (auto address = std::get_if<HostAddressWithPort>(&multiPlayerConnection.server))
         m_currentRemoteJoin = *address;
       else
         m_currentRemoteJoin.reset();
@@ -1278,7 +1282,7 @@ void ClientApplication::updateTitle(float dt) {
     changeState(MainAppState::SinglePlayer);
 
   } else if (m_titleScreen->currentState() == TitleState::StartMultiPlayer) {
-    if (!m_pendingMultiPlayerConnection || m_pendingMultiPlayerConnection->server.is<HostAddressWithPort>()) {
+    if (!m_pendingMultiPlayerConnection || std::holds_alternative<HostAddressWithPort>(m_pendingMultiPlayerConnection->server)) {
       auto addressString = m_titleScreen->multiPlayerAddress().trim();
       auto portString = m_titleScreen->multiPlayerPort().trim();
       portString = portString.empty() ? toString(m_root->configuration()->get("gameServerPort").toUInt()) : portString;
@@ -1365,7 +1369,7 @@ void ClientApplication::updateRunning(float dt) {
         if (tag == "playerYPos")
           return toString(std::round(m_player->position().y()));
         if (tag == "worldName") {
-          if (m_universeClient->clientContext()->playerWorldId().is<ClientShipWorldId>())
+          if (std::holds_alternative<ClientShipWorldId>(m_universeClient->clientContext()->playerWorldId()))
             return "Player Ship";
           else if (WorldTemplate const* worldTemplate = worldClient ? worldClient->currentTemplate().get() : nullptr) {
             auto worldName = worldTemplate->worldName();

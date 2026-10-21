@@ -25,7 +25,6 @@ import star.string;
 import star.vector;
 import star.text;
 
-import star.variant;
 import star.image;
 import star.renderer;
 import star.font_texture_group;
@@ -414,7 +413,7 @@ void TextPainter::modifyDirectives(Directives& directives) {
   if (directives) {
     directives.loadOperations();
     for (auto& entry : directives->entries) {
-      if (auto border = entry.operation.ptr<BorderImageOperation>())
+      if (auto border = std::get_if<BorderImageOperation>(&entry.operation))
         border->includeTransparent = true;
     }
   }

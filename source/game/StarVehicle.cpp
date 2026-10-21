@@ -1,7 +1,6 @@
 import star.json;
 import star.json_extra;
 import star.id_map;
-import star.variant;
 import star.casting;
 import star.strong_typedef;
 import star.rpc_promise;
@@ -614,7 +613,7 @@ List<PhysicsForceRegion> Vehicle::forceRegions() const {
         translatePos += localTranslation;
       }
 
-      forceRegion.call([translatePos](auto& fr) { fr.translate(translatePos); });
+      std::visit([translatePos](auto& fr) { fr.translate(translatePos); }, forceRegion);
       forces.append(std::move(forceRegion));
     }
   }
@@ -629,7 +628,10 @@ List<DamageSource> Vehicle::damageSources() const {
 
       if (p.second.attachToPart) {
         Mat3F partTransformation = m_networkedAnimator.finalPartTransformation(p.second.attachToPart.value());
-        damageSource.damageArea.call([partTransformation](auto& da) { da.transform(partTransformation); });
+        std::visit([partTransformation](auto& da) {
+          if constexpr (!std::is_same_v<std::remove_cvref_t<decltype(da)>, std::monostate>)
+            da.transform(partTransformation);
+        }, damageSource.damageArea);
       }
 
       damageSource.team = m_damageTeam.get();

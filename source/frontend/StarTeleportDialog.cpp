@@ -4,7 +4,6 @@ import star.xx_hash;
 import star.json;
 import star.ordered_map;
 import star.either;
-import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
@@ -235,7 +234,7 @@ TeleportDialog::TeleportDialog(GuiContext& guiContext, std::shared_ptr<UniverseC
 
     auto warpAction = parseWarpAction(dest.getString("warpAction"));
     bool deploy = dest.getBool("deploy", false);
-    if (warpAction == WarpAlias::OrbitedWorld && !m_client->canBeamDown(deploy))
+    if (std::holds_alternative<WarpAlias>(warpAction) && std::get<WarpAlias>(warpAction) == WarpAlias::OrbitedWorld && !m_client->canBeamDown(deploy))
       continue;
 
     auto entry = destList->addItem();
@@ -248,8 +247,8 @@ TeleportDialog::TeleportDialog(GuiContext& guiContext, std::shared_ptr<UniverseC
 
     if (dest.getBool("mission", false)) {
       // if the warpaction is for an instance world, set the uuid to the team uuid
-      if (auto warpToWorld = warpAction.ptr<WarpToWorld>()) {
-        if (auto worldId = warpToWorld->world.ptr<InstanceWorldId>())
+      if (auto warpToWorld = std::get_if<WarpToWorld>(&warpAction)) {
+        if (auto worldId = std::get_if<InstanceWorldId>(&warpToWorld->world))
           warpAction = WarpToWorld(InstanceWorldId(worldId->instance, m_client->teamUuid(), worldId->level), warpToWorld->target);
       }
     }
@@ -331,7 +330,7 @@ void TeleportDialog::teleport() {
     };
 
     m_client->worldClient()->sendEntityMessage(m_sourceEntityId, "onTeleport", {printWarpAction(warpAction)});
-    if (warpAction.is<WarpAlias>() && warpAction.get<WarpAlias>() == WarpAlias::OrbitedWorld) {
+    if (std::holds_alternative<WarpAlias>(warpAction) && std::get<WarpAlias>(warpAction) == WarpAlias::OrbitedWorld) {
       warp(take(destination).first, "beam");
     } else {
       warp(take(destination).first);

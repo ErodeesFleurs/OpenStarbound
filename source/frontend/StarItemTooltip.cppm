@@ -28,7 +28,6 @@ import star.map;
 import star.parametric_function;
 import star.multi_array_interpolator;
 import star.multi_table;
-import star.variant;
 import star.rpc_promise;
 import star.a_star;
 import star.logging;
@@ -321,7 +320,7 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
 
 void ItemTooltipBuilder::describePersistentEffect(
     GuiContext& context, std::shared_ptr<ListWidget> const& container, PersistentStatusEffect const& effect) {
-  if (auto uniqueStatusEffect = effect.ptr<UniqueStatusEffect>()) {
+  if (auto uniqueStatusEffect = std::get_if<UniqueStatusEffect>(&effect)) {
     auto statusEffectDatabase = context.root().statusEffectDatabase();
     auto effectConfig = statusEffectDatabase->uniqueEffectConfig(*uniqueStatusEffect);
     if (effectConfig.icon) {
@@ -329,23 +328,23 @@ void ItemTooltipBuilder::describePersistentEffect(
       listItem->setLabel("statusLabel", effectConfig.label);
       listItem->fetchChild<ImageWidget>("statusImage")->setImage(*effectConfig.icon);
     }
-  } else if (auto modifierEffect = effect.ptr<StatModifier>()) {
+  } else if (auto modifierEffect = std::get_if<StatModifier>(&effect)) {
     auto statsConfig = context.root().assets()->json("/interface/stats/stats.config");
-    if (auto baseMultiplier = modifierEffect->ptr<StatBaseMultiplier>()) {
+    if (auto baseMultiplier = std::get_if<StatBaseMultiplier>(modifierEffect)) {
       if (statsConfig.contains(baseMultiplier->statName)) {
         auto listItem = container->addItem();
         listItem->fetchChild<ImageWidget>("statusImage")
             ->setImage(statsConfig.get(baseMultiplier->statName).getString("icon"));
         listItem->setLabel("statusLabel", strf("{:.1f}%", (baseMultiplier->baseMultiplier - 1) * 100));
       }
-    } else if (auto valueModifier = modifierEffect->ptr<StatValueModifier>()) {
+    } else if (auto valueModifier = std::get_if<StatValueModifier>(modifierEffect)) {
       if (statsConfig.contains(valueModifier->statName)) {
         auto listItem = container->addItem();
         listItem->fetchChild<ImageWidget>("statusImage")
             ->setImage(statsConfig.get(valueModifier->statName).getString("icon"));
         listItem->setLabel("statusLabel", strf("{}{:.2f}", valueModifier->value < 0 ? "-" : "", valueModifier->value));
       }
-    } else if (auto effectiveMultiplier = modifierEffect->ptr<StatEffectiveMultiplier>()) {
+    } else if (auto effectiveMultiplier = std::get_if<StatEffectiveMultiplier>(modifierEffect)) {
       if (statsConfig.contains(effectiveMultiplier->statName)) {
         auto listItem = container->addItem();
         listItem->fetchChild<ImageWidget>("statusImage")

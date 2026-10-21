@@ -170,12 +170,12 @@ AssetPath ImageMetadataDatabase::filterProcessing(AssetPath const& path) {
     directives.loadOperations();
   path.directives.forEach([&](auto const& entry, Directives const& directives) {
     ImageOperation const& operation = entry.operation;
-    if (!(operation.is<HueShiftImageOperation>()           ||
-          operation.is<SaturationShiftImageOperation>()    ||
-          operation.is<BrightnessMultiplyImageOperation>() ||
-          operation.is<FadeToColorImageOperation>()        ||
-          operation.is<ScanLinesImageOperation>()          ||
-          operation.is<SetColorImageOperation>())) {
+    if (!(std::holds_alternative<HueShiftImageOperation>(operation)           ||
+          std::holds_alternative<SaturationShiftImageOperation>(operation)    ||
+          std::holds_alternative<BrightnessMultiplyImageOperation>(operation) ||
+          std::holds_alternative<FadeToColorImageOperation>(operation)        ||
+          std::holds_alternative<ScanLinesImageOperation>(operation)          ||
+          std::holds_alternative<SetColorImageOperation>(operation))) {
       filtered += "?";
       filtered += entry.string(*directives);
     }
@@ -288,7 +288,7 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
     directives.loadOperations();
 
   bool complete = path.directives.forEachAbortable([&](auto const& entry, Directives const&) -> bool {
-    entry.operation.call(osa);
+    std::visit(osa, entry.operation);
     return !osa.hasError;
   });
 

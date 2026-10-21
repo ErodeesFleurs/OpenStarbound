@@ -2,7 +2,6 @@ module;
 import std;
 import star.string;
 import star.list;
-import star.variant;
 import star.json;
 
 import star.vector;
@@ -23,8 +22,8 @@ struct DamageSource {
   friend DataStream& operator<<(DataStream& ds, DamageSource const& damageSource);
   friend DataStream& operator>>(DataStream& ds, DamageSource& damageSource);
 
-  typedef MVariant<PolyF, Line2F> DamageArea;
-  typedef MVariant<float, Vec2F> Knockback;
+  typedef std::variant<std::monostate, PolyF, Line2F> DamageArea;
+  typedef std::variant<std::monostate, float, Vec2F> Knockback;
 
   DamageSource();
   DamageSource(Json const& v);

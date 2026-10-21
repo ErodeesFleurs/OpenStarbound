@@ -7,7 +7,6 @@ import star.map;
 import star.bi_map;
 import star.thread;
 import star.listener;
-import star.variant;
 import star.image;
 import star.ref_ptr;
 import star.renderer;

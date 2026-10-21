@@ -25,7 +25,6 @@ import star.strong_typedef;
 import star.audio;
 import star.map;
 import star.set;
-import star.variant;
 import star.rpc_promise;
 import star.ordered_map;
 import star.net_compatibility;
@@ -284,10 +283,10 @@ void WorldClientThread::update() {
     }
     for (auto& message : messages) {
       if (auto resp = m_worldClient->receiveMessage(ServerConnectionId, message.message, message.args))
-        if (resp->is<RpcPromise<Json>>())
-          message.promise.chain(resp->get<RpcPromise<Json>>());
+        if (std::holds_alternative<RpcPromise<Json>>(*resp))
+          message.promise.chain(std::get<RpcPromise<Json>>(*resp));
         else
-          message.promise.fulfill(resp->get<Json>());
+          message.promise.fulfill(std::get<Json>(*resp));
       else
         message.promise.fail("Message not handled by world");
     }

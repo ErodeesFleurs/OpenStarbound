@@ -2,7 +2,6 @@ module;
 import std;
 import star.string;
 import star.list;
-import star.variant;
 import star.json;
 
 import star.game_types;
@@ -160,7 +159,7 @@ struct QuestCoordinate {
 
 typedef Json QuestJson;
 
-typedef MVariant<QuestItem, QuestItemTag, QuestItemList, QuestEntity, QuestLocation, QuestMonsterType, QuestNpcType, QuestCoordinate, QuestJson> QuestParamDetail;
+typedef std::variant<std::monostate, QuestItem, QuestItemTag, QuestItemList, QuestEntity, QuestLocation, QuestMonsterType, QuestNpcType, QuestCoordinate, QuestJson> QuestParamDetail;
 
 struct QuestParam {
   friend DataStream& operator>>(DataStream& ds, QuestParam& param);

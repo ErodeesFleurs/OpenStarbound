@@ -6,7 +6,6 @@ import star.json;
 import star.vector;
 import star.casting;
 import star.input_event;
-import star.variant;
 import star.color;
 import star.list;
 import star.rect;
@@ -127,7 +126,7 @@ private:
   typedef std::tuple<List<std::tuple<Vec2F, Vec2F, Vec2F>>, Vec4B> TrianglesOp;
   typedef std::tuple<String, TextPositioning, TextStyle> TextOp;
 
-  typedef MVariant<RectOp, ImageOp, ImageRectOp, DrawableOp, TiledImageOp, LineOp, PolyOp, TrianglesOp, TextOp> RenderOp;
+  typedef std::variant<std::monostate, RectOp, ImageOp, ImageRectOp, DrawableOp, TiledImageOp, LineOp, PolyOp, TrianglesOp, TextOp> RenderOp;
   List<RenderOp> m_renderOps;
 };
 

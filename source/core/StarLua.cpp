@@ -8,7 +8,6 @@ import star.list;
 import star.map;
 import star.set;
 import star.optional;
-import star.variant;
 import star.format;
 import star.array;
 import star.thread;
@@ -24,18 +23,18 @@ import star.algorithm;
 namespace Star {
 
 std::ostream& operator<<(std::ostream& os, LuaValue const& value) {
-  if (value.is<LuaBoolean>()) {
-    os << (value.get<LuaBoolean>() ? "true" : "false");
-  } else if (value.is<LuaInt>()) {
-    os << value.get<LuaInt>();
-  } else if (value.is<LuaFloat>()) {
-    os << value.get<LuaFloat>();
-  } else if (value.is<LuaString>()) {
-    os << value.get<LuaString>().ptr();
-  } else if (value.is<LuaTable>()) {
+  if (std::holds_alternative<LuaBoolean>(value)) {
+    os << (std::get<LuaBoolean>(value) ? "true" : "false");
+  } else if (std::holds_alternative<LuaInt>(value)) {
+    os << std::get<LuaInt>(value);
+  } else if (std::holds_alternative<LuaFloat>(value)) {
+    os << std::get<LuaFloat>(value);
+  } else if (std::holds_alternative<LuaString>(value)) {
+    os << std::get<LuaString>(value).ptr();
+  } else if (std::holds_alternative<LuaTable>(value)) {
     os << "{";
     bool first = true;
-    value.get<LuaTable>().iterate([&os, &first](LuaValue const& key, LuaValue const& value) {
+    std::get<LuaTable>(value).iterate([&os, &first](LuaValue const& key, LuaValue const& value) {
       if (first)
         first = false;
       else
@@ -43,12 +42,12 @@ std::ostream& operator<<(std::ostream& os, LuaValue const& value) {
       os << key << ": " << value;
     });
     os << "}";
-  } else if (value.is<LuaFunction>()) {
-    os << "<function reg:" << value.get<LuaFunction>().handleIndex() << ">";
-  } else if (value.is<LuaThread>()) {
-    os << "<thread reg:" << value.get<LuaThread>().handleIndex() << ">";
-  } else if (value.is<LuaUserData>()) {
-    os << "<userdata reg:" << value.get<LuaUserData>().handleIndex() << ">";
+  } else if (std::holds_alternative<LuaFunction>(value)) {
+    os << "<function reg:" << std::get<LuaFunction>(value).handleIndex() << ">";
+  } else if (std::holds_alternative<LuaThread>(value)) {
+    os << "<thread reg:" << std::get<LuaThread>(value).handleIndex() << ">";
+  } else if (std::holds_alternative<LuaUserData>(value)) {
+    os << "<userdata reg:" << std::get<LuaUserData>(value).handleIndex() << ">";
   } else {
     os << "nil";
   }
@@ -172,20 +171,20 @@ std::optional<Json> LuaConverter<Json>::to(LuaEngine&, LuaValue const& v) {
   if (v == LuaNil)
     return Json();
 
-  if (auto b = v.ptr<LuaBoolean>())
+  if (auto b = std::get_if<LuaBoolean>(&v))
     return Json(*b);
 
-  if (auto i = v.ptr<LuaInt>())
+  if (auto i = std::get_if<LuaInt>(&v))
     return Json(*i);
 
-  if (auto f = v.ptr<LuaFloat>())
+  if (auto f = std::get_if<LuaFloat>(&v))
     return Json(*f);
 
-  if (auto s = v.ptr<LuaString>())
+  if (auto s = std::get_if<LuaString>(&v))
     return Json(s->toString());
 
-  if (v.is<LuaTable>())
-    return LuaDetail::tableToJsonContainer(v.get<LuaTable>());
+  if (std::holds_alternative<LuaTable>(v))
+    return LuaDetail::tableToJsonContainer(std::get<LuaTable>(v));
 
   return {};
 }
@@ -923,7 +922,7 @@ std::optional<LuaTable> LuaEngine::tableGetMetatable(int handleIndex) {
     lua_pop(m_state, 1);
     return {};
   }
-  LuaTable table = popLuaValue(m_state).get<LuaTable>();
+  LuaTable table = std::get<LuaTable>(popLuaValue(m_state));
   lua_pop(m_state, 1);
   return table;
 }
@@ -1166,10 +1165,10 @@ LuaFunction LuaEngine::createWrappedFunction(LuaDetail::LuaWrappedFunction funct
         res = (*func)(*self, argumentCount, args.ptr());
       }
 
-      if (auto val = res.ptr<LuaValue>()) {
+      if (auto val = std::get_if<LuaValue>(&res)) {
         self->pushLuaValue(state, *val);
         return 1;
-      } else if (auto vec = res.ptr<LuaVariadic<LuaValue>>()) {
+      } else if (auto vec = std::get_if<LuaVariadic<LuaValue>>(&res)) {
         for (auto const& r : *vec)
           self->pushLuaValue(state, r);
         return (int)vec->size();
@@ -1243,7 +1242,7 @@ void LuaEngine::pushLuaValue(lua_State* state, LuaValue const& luaValue) {
     }
   };
 
-  luaValue.call(Pusher{this, state});
+  std::visit(Pusher{this, state}, luaValue);
 }
 
 LuaValue LuaEngine::popLuaValue(lua_State* state) {
@@ -1590,18 +1589,14 @@ void LuaDetail::jcontResize(LuaTable const& table, std::size_t targetSize) {
 }
 
 std::optional<LuaInt> LuaDetail::asInteger(LuaValue const& v) {
-  if (v.is<LuaInt>())
-    return v.get<LuaInt>();
-  if (v.is<LuaFloat>()) {
-    auto f = v.get<LuaFloat>();
+  if (std::holds_alternative<LuaInt>(v))
+    return std::get<LuaInt>(v);
+  if (std::holds_alternative<LuaFloat>(v)) {
+    auto f = std::get<LuaFloat>(v);
     if ((LuaFloat)(LuaInt)f == f)
       return (LuaInt)f;
     return {};
   }
-  /*// Kae: This prevents 1-1 conversion between Lua and Star::Json.
-  if (v.is<LuaString>())
-    return maybeLexicalCast<LuaInt>(v.get<LuaString>().ptr());
-  //*/
   return {};
 }
 

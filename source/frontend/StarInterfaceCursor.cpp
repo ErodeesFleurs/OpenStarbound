@@ -67,17 +67,17 @@ void InterfaceCursor::setCursor(String const& configFile) {
     m_size = Vec2I{imageMetadata->imageSize(config.getString("image"))};
   } else {
     m_drawable = Animation(root, config.get("animation"), "/interface");
-    m_size = Vec2I(m_drawable.get<Animation>().drawable(1.0f).boundBox(*imageMetadata, false).size());
+    m_size = Vec2I(std::get<Animation>(m_drawable).drawable(1.0f).boundBox(*imageMetadata, false).size());
   }
 
   m_scale = config.getUInt("scale", 0);
 }
 
 Drawable InterfaceCursor::drawable() const {
-  if (m_drawable.is<String>())
-    return Drawable::makeImage(*m_guiContext->root().imageMetadataDatabase(), m_drawable.get<String>(), 1.0f, false, {});
+  if (std::holds_alternative<String>(m_drawable))
+    return Drawable::makeImage(*m_guiContext->root().imageMetadataDatabase(), std::get<String>(m_drawable), 1.0f, false, {});
   else
-    return m_drawable.get<Animation>().drawable(1.0f);
+    return std::get<Animation>(m_drawable).drawable(1.0f);
 }
 
 Vec2I InterfaceCursor::size() const {
@@ -93,8 +93,8 @@ float InterfaceCursor::scale(float interfaceScale) const {
 }
 
 void InterfaceCursor::update(float dt) {
-  if (m_drawable.is<Animation>()) {
-    m_drawable.get<Animation>().update(dt);
+  if (std::holds_alternative<Animation>(m_drawable)) {
+    std::get<Animation>(m_drawable).update(dt);
   }
 }
 

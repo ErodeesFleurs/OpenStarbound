@@ -54,7 +54,6 @@ import star.map;
 import star.ref_ptr;
 import star.listener;
 import star.version;
-import star.variant;
 import star.ordered_set;
 
 import star.lua_root;

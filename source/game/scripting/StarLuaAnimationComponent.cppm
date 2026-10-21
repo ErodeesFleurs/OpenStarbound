@@ -78,7 +78,7 @@ LuaAnimationComponent<Base>::LuaAnimationComponent(Root& root) : Base(root) {
       if (renderLayerName)
         renderLayer = parseRenderLayer(*renderLayerName);
 
-      if (auto image = drawable.part.ptr<Drawable::ImagePart>())
+      if (auto image = std::get_if<Drawable::ImagePart>(&drawable.part))
         image->transformation.scale(0.125f);
 
       m_drawables.append({std::move(drawable), renderLayer});
@@ -89,7 +89,7 @@ LuaAnimationComponent<Base>::LuaAnimationComponent(Root& root) : Base(root) {
       if (renderLayerName)
         renderLayer = parseRenderLayer(*renderLayerName);
 
-      if (auto image = drawable.part.ptr<Drawable::ImagePart>())
+      if (auto image = std::get_if<Drawable::ImagePart>(&drawable.part))
         image->transformation.scale(0.125f);
 
       m_drawables.append({std::move(drawable), renderLayer});

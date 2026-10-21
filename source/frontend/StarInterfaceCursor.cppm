@@ -3,7 +3,6 @@ import std;
 import star.json;
 
 import star.string;
-import star.variant;
 import star.data_stream;
 import star.color;
 import star.list;
@@ -48,7 +47,7 @@ private:
   Vec2I m_offset;
   Vec2I m_size;
   unsigned int m_scale;
-  MVariant<String, Animation> m_drawable;
+  std::variant<std::monostate, String, Animation> m_drawable;
 };
 
 }

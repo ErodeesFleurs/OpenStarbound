@@ -8,7 +8,6 @@ import star.id_map;
 import star.poly;
 import star.game_types;
 import star.liquid_types;
-import star.variant;
 import star.casting;
 import star.vector;
 import star.data_stream;

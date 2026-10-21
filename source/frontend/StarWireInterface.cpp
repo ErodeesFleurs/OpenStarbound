@@ -40,7 +40,6 @@ import star.random_point;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-import star.variant;
 import star.rpc_promise;
 import star.net_compatibility;
 import star.worker_pool;
@@ -371,10 +370,10 @@ void WirePane::renderImpl() {
 }
 
 bool WirePane::sendEvent(InputEvent const& event) {
-  if (event.is<MouseMoveEvent>())
+  if (std::holds_alternative<MouseMoveEvent>(event))
     m_mousePos = *context()->mousePosition(event);
 
-  if (event.is<MouseButtonDownEvent>())
+  if (std::holds_alternative<MouseButtonDownEvent>(event))
     m_mousePos = *context()->mousePosition(event);
 
   return false;

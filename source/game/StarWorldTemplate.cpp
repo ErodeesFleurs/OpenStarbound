@@ -16,7 +16,6 @@ import star.game_types;
 import star.material_types;
 import star.vector;
 import star.poly;
-import star.variant;
 import star.id_map;
 import star.set;
 import star.casting;

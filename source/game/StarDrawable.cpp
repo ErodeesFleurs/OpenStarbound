@@ -160,12 +160,12 @@ Drawable::Drawable(ImageMetadataDatabase const& imageMetadata, Json const& json)
 
 Json Drawable::toJson() const {
   JsonObject json;
-  if (auto line = part.ptr<LinePart>()) {
+  if (auto line = std::get_if<LinePart>(&part)) {
     json.set("line", jsonFromLine2F(line->line));
     json.set("width", line->width);
-  } else if (auto poly = part.ptr<PolyPart>()) {
+  } else if (auto poly = std::get_if<PolyPart>(&part)) {
     json.set("poly", jsonFromPolyF(poly->poly));
-  } else if (auto image = part.ptr<ImagePart>()) {
+  } else if (auto image = std::get_if<ImagePart>(&part)) {
     json.set("image", AssetPath::join(image->image));
     json.set("transformation", jsonFromMat3F(image->transformation));
   }
@@ -182,11 +182,11 @@ void Drawable::translate(Vec2F const& translation) {
 }
 
 void Drawable::rotate(float rotation, Vec2F const& rotationCenter) {
-  if (auto line = part.ptr<LinePart>())
+  if (auto line = std::get_if<LinePart>(&part))
     line->line.rotate(rotation);
-  else if (auto poly = part.ptr<PolyPart>())
+  else if (auto poly = std::get_if<PolyPart>(&part))
     poly->poly.rotate(rotation);
-  else if (auto image = part.ptr<ImagePart>())
+  else if (auto image = std::get_if<ImagePart>(&part))
     image->transformation.rotate(rotation);
 
   position = (position - rotationCenter).rotate(rotation) + rotationCenter;
@@ -197,11 +197,11 @@ void Drawable::scale(float scaling, Vec2F const& scaleCenter) {
 }
 
 void Drawable::scale(Vec2F const& scaling, Vec2F const& scaleCenter) {
-  if (auto line = part.ptr<LinePart>())
+  if (auto line = std::get_if<LinePart>(&part))
     line->line.scale(scaling);
-  else if (auto poly = part.ptr<PolyPart>())
+  else if (auto poly = std::get_if<PolyPart>(&part))
     poly->poly.scale(scaling);
-  else if (auto image = part.ptr<ImagePart>())
+  else if (auto image = std::get_if<ImagePart>(&part))
     image->transformation.scale(scaling);
 
   position = (position - scaleCenter).piecewiseMultiply(scaling) + scaleCenter;
@@ -211,22 +211,22 @@ void Drawable::transform(Mat3F const& transformation) {
   Vec2F localTranslation = transformation.transformVec2(Vec2F());
   Mat3F localTransform = Mat3F::translation(-localTranslation) * transformation;
 
-  if (auto line = part.ptr<LinePart>())
+  if (auto line = std::get_if<LinePart>(&part))
     line->line.transform(localTransform);
-  else if (auto poly = part.ptr<PolyPart>())
+  else if (auto poly = std::get_if<PolyPart>(&part))
     poly->poly.transform(localTransform);
-  else if (auto image = part.ptr<ImagePart>())
+  else if (auto image = std::get_if<ImagePart>(&part))
     image->transformation = localTransform * image->transformation;
 
   position = transformation.transformVec2(position);
 }
 
 void Drawable::rebase(Vec2F const& newBase) {
-  if (auto line = part.ptr<LinePart>())
+  if (auto line = std::get_if<LinePart>(&part))
     line->line.translate(position - newBase);
-  else if (auto poly = part.ptr<PolyPart>())
+  else if (auto poly = std::get_if<PolyPart>(&part))
     poly->poly.translate(position - newBase);
-  else if (auto image = part.ptr<ImagePart>())
+  else if (auto image = std::get_if<ImagePart>(&part))
     image->transformation.translate(position - newBase);
 
   position = newBase;
@@ -234,14 +234,14 @@ void Drawable::rebase(Vec2F const& newBase) {
 
 RectF Drawable::boundBox(ImageMetadataDatabase const& imageMetadata, bool cropImages) const {
   RectF boundBox = RectF::null();
-  if (auto line = part.ptr<LinePart>()) {
+  if (auto line = std::get_if<LinePart>(&part)) {
     boundBox.combine(line->line.min());
     boundBox.combine(line->line.max());
 
-  } else if (auto poly = part.ptr<PolyPart>()) {
+  } else if (auto poly = std::get_if<PolyPart>(&part)) {
     boundBox.combine(poly->poly.boundBox());
 
-  } else if (auto image = part.ptr<ImagePart>()) {
+  } else if (auto image = std::get_if<ImagePart>(&part)) {
     RectF imageRegion = RectF::null();
     if (cropImages) {
       RectU nonEmptyRegion = imageMetadata.nonEmptyRegion(image->image);

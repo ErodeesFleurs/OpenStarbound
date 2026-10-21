@@ -9,7 +9,6 @@ import star.game_types;
 import star.liquid_types;
 import star.material_types;
 import star.list;
-import star.variant;
 import star.map;
 import star.ordered_set;
 import star.random;

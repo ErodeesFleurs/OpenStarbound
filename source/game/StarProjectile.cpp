@@ -6,7 +6,6 @@ import star.poly;
 import star.list;
 import star.bi_map;
 import star.data_stream;
-import star.variant;
 import star.casting;
 import star.vector;
 import star.game_types;
@@ -489,9 +488,9 @@ void Projectile::render(RenderCallback* renderCallback) {
 }
 
 void Projectile::renderLightSources(RenderCallback* renderCallback) {
-  for (auto renderable : m_pendingRenderables) {
-    if (renderable.is<LightSource>())
-      renderCallback->addLightSource(renderable.get<LightSource>());
+  for (auto const& renderable : m_pendingRenderables) {
+    if (auto lightSource = std::get_if<LightSource>(&renderable))
+      renderCallback->addLightSource(*lightSource);
   }
   renderCallback->addLightSource({position(), m_config->lightColor.toRgbF(), m_config->lightType, 0.0f, 0.0f, 0.0f});
 }
@@ -581,7 +580,7 @@ List<PhysicsForceRegion> Projectile::forceRegions() const {
   for (auto const& p : m_physicsForces) {
     if (p.second.enabled.get()) {
       PhysicsForceRegion forceRegion = p.second.forceRegion;
-      forceRegion.call([pos = position()](auto& fr) { fr.translate(pos); });
+      std::visit([pos = position()](auto& fr) { fr.translate(pos); }, forceRegion);
       forces.append(std::move(forceRegion));
     }
   }
@@ -1129,11 +1128,11 @@ LuaCallbacks Projectile::makeProjectileCallbacks() {
 }
 
 void Projectile::renderPendingRenderables(RenderCallback* renderCallback) {
-  for (auto renderable : m_pendingRenderables) {
-    if (renderable.is<std::shared_ptr<AudioInstance>>())
-      renderCallback->addAudio(renderable.get<std::shared_ptr<AudioInstance>>());
-    else if (renderable.is<Particle>())
-      renderCallback->addParticle(renderable.get<Particle>());
+  for (auto const& renderable : m_pendingRenderables) {
+    if (auto audio = std::get_if<std::shared_ptr<AudioInstance>>(&renderable))
+      renderCallback->addAudio(*audio);
+    else if (auto particle = std::get_if<Particle>(&renderable))
+      renderCallback->addParticle(*particle);
   }
   m_pendingRenderables.clear();
 }

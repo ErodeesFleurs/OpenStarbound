@@ -25,7 +25,6 @@ import star.asset_path;
 import star.set;
 import star.vector;
 import star.strong_typedef;
-import star.variant;
 import star.casting;
 import star.rpc_promise;
 import star.logging;

@@ -2,7 +2,6 @@ module;
 import std;
 import star.string;
 import star.list;
-import star.variant;
 import star.format;
 import star.json;
 
@@ -60,7 +59,7 @@ private:
   // Specifies either an item descriptor or the name of a valid treasurepool to
   // be
   // used when an entry is selected in a "fill" or "pool" list
-  typedef MVariant<String, ItemDescriptor> TreasureEntry;
+  typedef std::variant<std::monostate, String, ItemDescriptor> TreasureEntry;
 
   struct ItemPool {
     ItemPool();

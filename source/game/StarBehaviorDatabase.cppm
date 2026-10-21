@@ -3,7 +3,6 @@ module;
 import std;
 import star.string;
 import star.list;
-import star.variant;
 import star.bi_map;
 import star.json;
 import star.game_types;
@@ -21,9 +20,9 @@ struct DynamicNode;
 struct RandomizeNode;
 struct BehaviorTree;
 
-typedef Variant<SequenceNode, SelectorNode, ParallelNode, DynamicNode, RandomizeNode> CompositeNode;
+typedef std::variant<SequenceNode, SelectorNode, ParallelNode, DynamicNode, RandomizeNode> CompositeNode;
 
-typedef Variant<ActionNode, DecoratorNode, CompositeNode, std::shared_ptr<BehaviorTree const>> BehaviorNode;
+typedef std::variant<ActionNode, DecoratorNode, CompositeNode, std::shared_ptr<BehaviorTree const>> BehaviorNode;
 
 enum class NodeParameterType : std::uint8_t {
   Json,
@@ -38,7 +37,7 @@ enum class NodeParameterType : std::uint8_t {
 };
 extern EnumMap<NodeParameterType> const NodeParameterTypeNames;
 
-typedef Variant<String, Json> NodeParameterValue;
+typedef std::variant<String, Json> NodeParameterValue;
 typedef std::pair<NodeParameterType, NodeParameterValue> NodeParameter;
 typedef std::pair<NodeParameterType, std::pair<std::optional<String>, bool>> NodeOutput;
 

@@ -8,7 +8,6 @@ import star.strong_typedef;
 import star.data_stream;
 import star.vector;
 import star.game_types;
-import star.variant;
 import star.color;
 import star.bi_map;
 import star.random;
@@ -61,7 +60,7 @@ struct Bookmark {
   bool operator<(Bookmark<T> const& rhs) const;
 };
 
-typedef Variant<CelestialCoordinate, Uuid> OrbitTarget;
+typedef std::variant<CelestialCoordinate, Uuid> OrbitTarget;
 typedef std::pair<WorldId, SpawnTarget> TeleportTarget;
 
 typedef Bookmark<OrbitTarget> OrbitBookmark;

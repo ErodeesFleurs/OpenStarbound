@@ -16,7 +16,6 @@ import star.list;
 import star.image_processing;
 import std;
 import star.format;
-import star.variant;
 import star.rpc_promise;
 import star.a_star;
 import star.set;

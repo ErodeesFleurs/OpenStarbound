@@ -8,7 +8,6 @@ import star.data_stream;
 import star.poly;
 import star.strong_typedef;
 import star.game_types;
-import star.variant;
 import star.list;
 import star.rpc_promise;
 import star.vector;

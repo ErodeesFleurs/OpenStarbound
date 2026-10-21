@@ -36,7 +36,6 @@ import star.user_generated_content_service;
 import star.desktop_service;
 import star.image;
 import star.application_controller;
-import star.variant;
 import star.renderer;
 import star.asset_source;
 import star.assets;
@@ -117,7 +116,7 @@ bool QuestTrackerPane::sendEvent(InputEvent const& event) {
   if (Pane::sendEvent(event))
     return true;
 
-  if (event.is<MouseButtonDownEvent>() && event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Left) {
+  if (std::holds_alternative<MouseButtonDownEvent>(event) && std::get<MouseButtonDownEvent>(event).mouseButton == MouseButton::Left) {
     auto mousePos = *context()->mousePosition(event);
     if ((m_expanded && m_expandedFrame->inMember(mousePos)) ||
         (!m_expanded && m_frame->inMember(mousePos))) {

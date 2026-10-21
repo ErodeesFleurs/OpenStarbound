@@ -2,7 +2,6 @@ module;
 import std;
 import star.string;
 import star.map;
-import star.variant;
 import star.format;
 import star.json;
 
@@ -49,7 +48,8 @@ struct MaterialRule {
   };
 
   struct RuleEntry {
-    MVariant<RuleEmpty, RuleConnects, RuleShadows, RuleEqualsSelf, RuleEqualsSelf, RuleEqualsId, RulePropertyEquals> rule;
+    // Keep both EqualsSelf slots; type-selected rules use the first (index 4).
+    std::variant<std::monostate, RuleEmpty, RuleConnects, RuleShadows, RuleEqualsSelf, RuleEqualsSelf, RuleEqualsId, RulePropertyEquals> rule;
     bool inverse;
   };
 

@@ -5,7 +5,6 @@ import star.xx_hash;
 import star.lexical_cast;
 import star.logging;
 import star.string;
-import star.variant;
 import star.ordered_map;
 import star.ordered_set;
 import star.time;

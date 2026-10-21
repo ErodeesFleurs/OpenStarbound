@@ -3,7 +3,6 @@ import star.json;
 import star.strong_typedef;
 import star.data_stream;
 import star.game_types;
-import star.variant;
 import star.random;
 import star.weighted_pool;
 import star.either;

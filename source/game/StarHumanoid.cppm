@@ -1,6 +1,5 @@
 module;
 import std;
-import star.variant;
 import star.json;
 import star.data_stream;
 import star.game_types;
@@ -210,7 +209,7 @@ public:
   // Must have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
   struct WornBack : WornAny {};
 
-  typedef MVariant<WornHead, WornChest, WornLegs, WornBack> Wearable;
+  using Wearable = std::variant<std::monostate, WornHead, WornChest, WornLegs, WornBack>;
 
   struct Fashion {
     // 8 vanilla + 12 extra slots
@@ -546,7 +545,7 @@ private:
 template <typename T>
 inline T const* Humanoid::getLastWearableOfType() const {
   for (std::size_t i = m_fashion->wearables.size(); i != 0; --i) {
-    if (auto ptr = m_fashion->wearables[i - 1].ptr<T>())
+    if (auto ptr = std::get_if<T>(&m_fashion->wearables[i - 1]))
       return ptr;
   }
   return nullptr;

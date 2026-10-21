@@ -12,7 +12,6 @@ import star.random;
 import star.ttl_cache;
 import star.casting;
 import star.game_types;
-import star.variant;
 import star.rpc_promise;
 import star.vector;
 import star.bi_map;

@@ -30,7 +30,6 @@ import std;
 import star.format;
 import star.version;
 import star.id_map;
-import star.variant;
 import star.rpc_promise;
 import star.a_star;
 import star.ordered_set;
@@ -348,26 +347,26 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Root& root, Player* player) {
   });
 
   callbacks.registerCallback("selectedActionBarSlot", [player](LuaEngine& engine) -> std::optional<LuaValue> {
-    if (auto barLocation = player->inventory()->selectedActionBarLocation()) {
-      if (auto index = barLocation.ptr<CustomBarIndex>())
+    if (auto barLocation = player->inventory()->selectedActionBarLocation(); !std::holds_alternative<std::monostate>(barLocation)) {
+      if (auto index = std::get_if<CustomBarIndex>(&barLocation))
         return engine.luaFrom<CustomBarIndex>(*index + 1);
       else
-        return engine.luaFrom<String>(EssentialItemNames.getRight(barLocation.get<EssentialItem>()));
+        return engine.luaFrom<String>(EssentialItemNames.getRight(std::get<EssentialItem>(barLocation)));
     }
     else {
       return {};
     }
   });
 
-  callbacks.registerCallback("setSelectedActionBarSlot", [player](MVariant<int, String> const& slot) {
+  callbacks.registerCallback("setSelectedActionBarSlot", [player](std::variant<std::monostate, int, String> const& slot) {
     auto inventory = player->inventory();
-    if (!slot)
+    if (std::holds_alternative<std::monostate>(slot))
       inventory->selectActionBarLocation(SelectedActionBarLocation());
-    else if (auto index = slot.ptr<int>()) {
+    else if (auto index = std::get_if<int>(&slot)) {
       CustomBarIndex wrapped = (*index - 1) % (unsigned)inventory->customBarIndexes();
       inventory->selectActionBarLocation(SelectedActionBarLocation(wrapped));
     } else {
-      EssentialItem const& item = EssentialItemNames.getLeft(slot.get<String>());
+      EssentialItem const& item = EssentialItemNames.getLeft(std::get<String>(slot));
       inventory->selectActionBarLocation(SelectedActionBarLocation(item));
     }
   });

@@ -18,7 +18,6 @@ import star.lua;
 import star.string;
 import star.color;
 import star.asset_path;
-import star.variant;
 import star.rpc_promise;
 import star.logging;
 import star.interpolation;

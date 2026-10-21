@@ -4,7 +4,6 @@ import star.json;
 import star.string;
 import star.color;
 import star.font;
-import star.variant;
 import star.image;
 import star.bi_map;
 import star.ref_ptr;
@@ -84,15 +83,15 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
 
       bool broken = false;
       for (auto& entry : directives->entries) {
-        if (auto error = entry.operation.ptr<ErrorImageOperation>()) {
-          if (auto string = error->cause.ptr<std::string>()) {
+        if (auto error = std::get_if<ErrorImageOperation>(&entry.operation)) {
+          if (auto string = std::get_if<std::string>(&error->cause)) {
             if (!string->empty()) {
               m_root.logger().error("Error in parsed font directives: {}", *string);
               string->clear();
             }
-          } else if (auto& exception = error->cause.get<std::exception_ptr>()) {
+          } else if (auto& exception = std::get<std::exception_ptr>(error->cause)) {
             try
-              { std::rethrow_exception(error->cause.get<std::exception_ptr>()); }
+              { std::rethrow_exception(exception); }
             catch (std::exception const& e)
               { m_root.logger().error("Exception in parsed font directives: {}", e.what()); };
             exception = {};

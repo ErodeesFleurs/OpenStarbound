@@ -46,7 +46,6 @@ import star.hash;
 import star.string_view;
 import star.directives;
 import star.asset_path;
-import star.variant;
 import star.image;
 import star.map;
 
@@ -259,7 +258,7 @@ private:
   };
   
   struct WorldServerPromise {
-    Variant<WorkerPoolPromise<std::shared_ptr<WorldServerThread>>,RpcPromise<WorldChunks>> currentPromise;
+    std::variant<WorkerPoolPromise<std::shared_ptr<WorldServerThread>>, RpcPromise<WorldChunks>> currentPromise;
     std::optional<std::function<WorkerPoolPromise<std::shared_ptr<WorldServerThread>>(WorldChunks)>> producer;
     
     double startTime;
@@ -438,7 +437,7 @@ private:
   mutable RecursiveMutex m_messageLock;
   List<Universe::Message> m_universeMessages;
   
-  HashMap<Uuid, std::pair<ConnectionId, MVariant<ConnectionId, RpcPromiseKeeper<Json>>>> m_universeMessageResponses;
+  HashMap<Uuid, std::pair<ConnectionId, std::variant<std::monostate, ConnectionId, RpcPromiseKeeper<Json>>>> m_universeMessageResponses;
   HashMap<Uuid, std::pair<ConnectionId, RpcPromise<Json>>> m_universeMessagePromises;
 };
 

@@ -26,7 +26,6 @@ import star.set;
 import star.audio;
 import star.map;
 import star.id_map;
-import star.variant;
 import star.rpc_promise;
 import star.strong_typedef;
 import star.a_star;
@@ -168,7 +167,7 @@ CharSelectionPane::CharSelectionPane(GuiContext& guiContext, std::shared_ptr<Pla
 
 bool CharSelectionPane::sendEvent(InputEvent const& event) {
   if (m_visible) {
-    if (auto mouseWheel = event.ptr<MouseWheelEvent>()) {
+    if (auto mouseWheel = std::get_if<MouseWheelEvent>(&event)) {
       if (inMember(*context()->mousePosition(event))) {
         if (mouseWheel->mouseWheel == MouseWheel::Down)
           shiftCharacters(1);

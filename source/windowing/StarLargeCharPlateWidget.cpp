@@ -28,7 +28,6 @@ import star.set;
 import star.audio;
 import star.map;
 import star.id_map;
-import star.variant;
 import star.rpc_promise;
 import star.strong_typedef;
 import star.a_star;
@@ -265,7 +264,7 @@ void LargeCharPlateWidget::disableDelete() {
 }
 
 bool LargeCharPlateWidget::sendEvent(InputEvent const& event) {
-  if (event.is<MouseMoveEvent>() && m_delete) {
+  if (std::holds_alternative<MouseMoveEvent>(event) && m_delete) {
     if (m_delete->inMember(*m_context->mousePosition(event)))
       m_delete->mouseOver();
     else

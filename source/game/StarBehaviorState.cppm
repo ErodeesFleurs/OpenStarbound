@@ -5,7 +5,6 @@ import star.string;
 import star.list;
 import star.map;
 import star.set;
-import star.variant;
 import star.format;
 import star.json;
 import star.game_types;
@@ -53,7 +52,7 @@ private:
   Set<std::pair<NodeParameterType, String>> m_ephemeral;
 };
 
-typedef std::optional<Variant<ActionState,DecoratorState,CompositeState>> NodeState;
+typedef std::optional<std::variant<ActionState, DecoratorState, CompositeState>> NodeState;
 
 typedef std::pair<LuaFunction, LuaThread> Coroutine;
 
@@ -115,7 +114,7 @@ private:
 
   // The blackboard can either be created and owned by this behavior,
   // or a blackboard from another behavior can be used
-  Variant<std::shared_ptr<Blackboard>, std::weak_ptr<Blackboard>> m_board;
+  std::variant<std::shared_ptr<Blackboard>, std::weak_ptr<Blackboard>> m_board;
 
   // Keep threads here for recycling
   List<LuaThread> m_threads;

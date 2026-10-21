@@ -13,7 +13,6 @@ import star.thread;
 import star.directives;
 import star.asset_path;
 import star.drawable;
-import star.variant;
 import star.image;
 import star.bi_map;
 import star.ref_ptr;

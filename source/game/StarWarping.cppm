@@ -1,7 +1,6 @@
 module;
 import std;
 import star.string;
-import star.variant;
 import star.stream_formatter;
 import star.hash;
 import star.json;
@@ -34,7 +33,7 @@ struct InstanceWorldId {
   friend DataStream& operator<<(DataStream& ds, InstanceWorldId const& instanceWorldId);
   friend std::ostream& operator<<(std::ostream& os, InstanceWorldId const& worldId);
   friend std::ostream& operator<<(std::ostream& os,
-      MVariant<CelestialWorldIdWrapper<CelestialCoordinate>, ClientShipWorldIdWrapper<Uuid>,
+      std::variant<std::monostate, CelestialWorldIdWrapper<CelestialCoordinate>, ClientShipWorldIdWrapper<Uuid>,
           InstanceWorldId, CustomWorldIdWrapper<String>, ClientCustomWorldId> const& worldId);
 
   String instance;
@@ -190,7 +189,7 @@ DataStream& operator<<(DataStream& ds, ClientCustomWorldId const& clientWorldId)
     }
   };
   typedef CustomWorldIdWrapper<String> CustomWorldId;
-typedef MVariant<CelestialWorldId, ClientShipWorldId, InstanceWorldId, CustomWorldId, ClientCustomWorldId> WorldId;
+typedef std::variant<std::monostate, CelestialWorldId, ClientShipWorldId, InstanceWorldId, CustomWorldId, ClientCustomWorldId> WorldId;
 
 String printWorldId(WorldId const& worldId);
 WorldId parseWorldId(String const& printedId);
@@ -274,7 +273,7 @@ struct SpawnTargetPositionWrapper : BaseType {
 };
 typedef SpawnTargetPositionWrapper<Vec2F> SpawnTargetPosition;
 using SpawnTargetX = StrongTypedefBuiltin<float, struct SpawnTargetXTag>;
-typedef MVariant<SpawnTargetUniqueEntity, SpawnTargetPosition, SpawnTargetX> SpawnTarget;
+typedef std::variant<std::monostate, SpawnTargetUniqueEntity, SpawnTargetPosition, SpawnTargetX> SpawnTarget;
 
 Json spawnTargetToJson(SpawnTarget spawnTarget);
 SpawnTarget spawnTargetFromJson(Json v);
@@ -339,7 +338,7 @@ enum class WarpAlias {
   OwnShip
 };
 
-typedef MVariant<WarpToWorld, WarpToPlayer, WarpAlias> WarpAction;
+typedef std::variant<std::monostate, WarpToWorld, WarpToPlayer, WarpAlias> WarpAction;
 
 WarpAction parseWarpAction(String const& warpString);
 String printWarpAction(WarpAction const& warpAction);
@@ -384,7 +383,6 @@ export template <> struct std::formatter<Star::ClientShipWorldId> : Star::Stream
 export template <> struct std::formatter<Star::InstanceWorldId> : Star::StreamFormatter {};
 export template <> struct std::formatter<Star::CustomWorldId> : Star::StreamFormatter {};
 export template <> struct std::formatter<Star::ClientCustomWorldId> : Star::StreamFormatter {};
-export template <> struct std::formatter<Star::WorldId> : Star::StreamFormatter {};
 export template <> struct std::formatter<Star::WarpToWorld> : Star::StreamFormatter {};
 
 export namespace Star {

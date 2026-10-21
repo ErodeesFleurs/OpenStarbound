@@ -11,7 +11,6 @@ import star.rect;
 import star.image;
 import star.casting;
 import star.texture_atlas;
-import star.variant;
 import star.bi_map;
 import star.ref_ptr;
 import star.renderer;
@@ -51,7 +50,7 @@ public:
   void setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) override;
   void setEffectScriptableParameter(String const& effectName, String const& parameterName, RenderEffectParameter const& parameter) override;
   std::optional<RenderEffectParameter> getEffectScriptableParameter(String const& effectName, String const& parameterName) override;
-  std::optional<VariantTypeIndex> getEffectScriptableParameterType(String const& effectName, String const& parameterName) override;
+  std::optional<std::uint8_t> getEffectScriptableParameterType(String const& effectName, String const& parameterName) override;
   void setEffectTexture(String const& textureName, ImageView const& image) override;
 
   void setScissorRect(std::optional<RectI> const& scissorRect) override;
@@ -216,7 +215,7 @@ private:
 
   struct EffectParameter {
     GLint parameterUniform = -1;
-    VariantTypeIndex parameterType = 0;
+    std::uint8_t parameterType = 0;
     std::optional<RenderEffectParameter> parameterValue;
   };
 

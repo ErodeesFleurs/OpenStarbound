@@ -40,7 +40,6 @@ import std;
 import star.worker_pool;
 
 import star.sector_array_2d;
-import star.variant;
 import star.image;
 import star.net_compatibility;
 import star.map;

@@ -7,7 +7,6 @@ import star.bi_map;
 import star.data_stream;
 import star.game_types;
 import star.material_types;
-import star.variant;
 import star.casting;
 import star.vector;
 import star.strong_typedef;

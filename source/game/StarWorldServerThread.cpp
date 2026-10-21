@@ -5,7 +5,6 @@ import star.xx_hash;
 import star.id_map;
 import star.list;
 import star.bi_map;
-import star.variant;
 import star.casting;
 import star.either;
 import star.image;
@@ -395,8 +394,8 @@ void WorldServerThread::run() {
 
     while (!m_stop && !m_errorOccurred) {
       auto fidelity = lockedFidelity.value_or(automaticFidelity);
-      m_worldServer->root().logMap().set(strf("server_{}_fidelity", m_worldId), WorldServerFidelityNames.getRight(fidelity));
-      m_worldServer->root().logMap().set(strf("server_{}_update", m_worldId), strf("{:4.2f}Hz", tickApproacher.rate()));
+      m_worldServer->root().logMap().set(strf("server_{}_fidelity", printWorldId(m_worldId)), WorldServerFidelityNames.getRight(fidelity));
+      m_worldServer->root().logMap().set(strf("server_{}_update", printWorldId(m_worldId)), strf("{:4.2f}Hz", tickApproacher.rate()));
 
       update(fidelity);
       tickApproacher.setTargetTickRate(1.0f / m_worldServer->root().timing().serverTimestep);
@@ -464,10 +463,10 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
   }
   for (auto& message : messages) {
     if (auto resp = m_worldServer->receiveMessage(ServerConnectionId, message.message, message.args))
-      if (resp->is<RpcPromise<Json>>())
-        message.promise.chain(resp->get<RpcPromise<Json>>());
+      if (std::holds_alternative<RpcPromise<Json>>(*resp))
+        message.promise.chain(std::get<RpcPromise<Json>>(*resp));
       else
-        message.promise.fulfill(resp->get<Json>());
+        message.promise.fulfill(std::get<Json>(*resp));
     else
       message.promise.fail("Message not handled by world");
   }
@@ -486,7 +485,7 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
 
 void WorldServerThread::sync() {
   RecursiveMutexLocker locker(m_mutex);
-  m_worldServer->root().logger().debug("WorldServer: periodic sync to disk of world {}", m_worldId);
+  m_worldServer->root().logger().debug("WorldServer: periodic sync to disk of world {}", printWorldId(m_worldId));
   m_worldServer->sync();
 }
 

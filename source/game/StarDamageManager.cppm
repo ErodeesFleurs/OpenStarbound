@@ -3,7 +3,6 @@ import std;
 import star.string;
 import star.list;
 import star.map;
-import star.variant;
 import star.json;
 
 import star.data_stream;
@@ -88,7 +87,7 @@ public:
 
 private:
   struct EntityDamageEvent {
-    Variant<EntityId, String> timeoutGroup;
+    std::variant<EntityId, String> timeoutGroup;
     float timeout;
   };
 

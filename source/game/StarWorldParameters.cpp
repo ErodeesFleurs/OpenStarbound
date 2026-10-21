@@ -1,6 +1,5 @@
 import star.json;
 import star.json_extra;
-import star.variant;
 import star.vector;
 import star.game_types;
 import star.liquid_types;

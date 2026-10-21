@@ -2,7 +2,6 @@ import std;
 import star.format;
 import star.string;
 import star.list;
-import star.variant;
 import star.json;
 import star.lua;
 import star.lua_converters;
@@ -304,7 +303,7 @@ TEST(LuaTest, UserMethodTest) {
 TEST(LuaTest, GlobalTest) {
   auto luaEngine = LuaEngine::create();
   luaEngine->setGlobal("globalfoo", LuaInt(42));
-  EXPECT_EQ(luaEngine->getGlobal("globalfoo"), LuaInt(42));
+  EXPECT_EQ(std::get<LuaInt>(luaEngine->getGlobal("globalfoo")), 42);
 
   LuaContext luaContext = luaEngine->createContext();
   luaContext.load(R"SCRIPT(
@@ -313,7 +312,7 @@ TEST(LuaTest, GlobalTest) {
       end
     )SCRIPT");
 
-  EXPECT_EQ(luaContext.invokePath("test"), LuaInt(42));
+  EXPECT_EQ(std::get<LuaInt>(luaContext.invokePath("test")), 42);
 }
 
 TEST(LuaTest, ArgTest) {
@@ -331,7 +330,7 @@ TEST(LuaTest, ArgTest) {
         EXPECT_EQ(n, 2.0);
         EXPECT_EQ(s, String("3"));
         EXPECT_EQ(b, false);
-        EXPECT_EQ(o, LuaNil);
+        EXPECT_TRUE(std::holds_alternative<LuaNilType>(o));
       }));
 
   luaContext.invokePath("test");
@@ -346,16 +345,16 @@ TEST(LuaTest, ArrayTest) {
       end
     )SCRIPT");
 
-  auto arrayTable = luaContext.invokePath("test").get<LuaTable>();
+  auto arrayTable = std::get<LuaTable>(luaContext.invokePath("test"));
 
   EXPECT_EQ(arrayTable.length(), 5);
-  EXPECT_EQ(arrayTable.get(2), LuaInt(4));
-  EXPECT_EQ(arrayTable.get(5), LuaInt(10));
+  EXPECT_EQ(std::get<LuaInt>(arrayTable.get(2)), 4);
+  EXPECT_EQ(std::get<LuaInt>(arrayTable.get(5)), 10);
 
   List<std::pair<int, int>> values;
   arrayTable.iterate([&values](LuaValue const& key, LuaValue const& value) {
-    auto ikey = key.get<LuaInt>();
-    auto ivalue = value.get<LuaInt>();
+    auto ikey = std::get<LuaInt>(key);
+    auto ivalue = std::get<LuaInt>(value);
     values.append({ikey, ivalue});
   });
   List<std::pair<int, int>> compare = {{1, 2}, {2, 4}, {3, 6}, {4, 8}, {5, 10}};
@@ -378,14 +377,14 @@ TEST(LuaTest, PathTest) {
     )SCRIPT");
 
   EXPECT_EQ(luaContext.containsPath("foo.bar.baz"), true);
-  EXPECT_EQ(luaContext.getPath("foo.bar.baz"), LuaInt(1));
+  EXPECT_EQ(std::get<LuaInt>(luaContext.getPath("foo.bar.baz")), 1);
   EXPECT_EQ(luaContext.containsPath("foo.nothing.at.all"), false);
 
   luaContext.setPath("foo.bar.baf", LuaInt(5));
-  EXPECT_EQ(luaContext.invokePath("test"), LuaInt(5));
+  EXPECT_EQ(std::get<LuaInt>(luaContext.invokePath("test")), 5);
 
   luaContext.setPath("new.table.value", LuaInt(5));
-  EXPECT_EQ(luaContext.getPath("new.table.value"), LuaInt(5));
+  EXPECT_EQ(std::get<LuaInt>(luaContext.getPath("new.table.value")), 5);
 }
 
 TEST(LuaTest, CallbackTest) {
@@ -409,8 +408,8 @@ TEST(LuaTest, CallbackTest) {
       end
     )SCRIPT");
 
-  EXPECT_EQ(luaContext.invokePath("test1").get<LuaInt>(), 16);
-  EXPECT_EQ(luaContext.invokePath("test2"), LuaNil);
+  EXPECT_EQ(std::get<LuaInt>(luaContext.invokePath("test1")), 16);
+  EXPECT_TRUE(std::holds_alternative<LuaNilType>(luaContext.invokePath("test2")));
 }
 
 TEST(LuaTest, VariableParameters) {
@@ -518,7 +517,7 @@ TEST(LuaTest, Scope2) {
   context1.invokePath("init1");
   EXPECT_EQ(context1.getPath<int>("global.val"), 10);
 
-  EXPECT_TRUE(context2.getPath("global") == LuaNil);
+  EXPECT_TRUE(std::holds_alternative<LuaNilType>(context2.getPath("global")));
 
   context2.invokePath("init2");
   EXPECT_EQ(context2.getPath<int>("global.val"), 20);
@@ -569,12 +568,12 @@ TEST(LuaTest, Integers) {
       n6 = 5
     )SCRIPT");
 
-  EXPECT_EQ(context.get("n1"), LuaInt(0));
-  EXPECT_EQ(context.get("n2"), LuaInt(1));
-  EXPECT_EQ(context.get("n3"), LuaFloat(1.0));
-  EXPECT_EQ(context.get("n4"), LuaFloat(1.1));
-  EXPECT_EQ(context.get("n5"), LuaFloat(5.0));
-  EXPECT_EQ(context.get("n6"), LuaInt(5));
+  EXPECT_EQ(std::get<LuaInt>(context.get("n1")), 0);
+  EXPECT_EQ(std::get<LuaInt>(context.get("n2")), 1);
+  EXPECT_EQ(std::get<LuaFloat>(context.get("n3")), 1.0);
+  EXPECT_EQ(std::get<LuaFloat>(context.get("n4")), 1.1);
+  EXPECT_EQ(std::get<LuaFloat>(context.get("n5")), 5.0);
+  EXPECT_EQ(std::get<LuaInt>(context.get("n6")), 5);
 }
 
 TEST(LuaTest, Require) {
@@ -717,7 +716,7 @@ TEST(LuaTest, Multi) {
   EXPECT_EQ(d, 5);
   EXPECT_EQ(e, 10);
 
-  EXPECT_EQ(context4.invokePath("emptycallbacktest"), LuaNil);
+  EXPECT_TRUE(std::holds_alternative<LuaNilType>(context4.invokePath("emptycallbacktest")));
 }
 
 TEST(LuaTest, Limits) {
@@ -797,7 +796,7 @@ TEST(LuaTest, Errors) {
   LuaValue error;
   luaTie(status, error) = context.invokePath<LuaTupleReturn<bool, LuaValue>>("catchError");
   EXPECT_EQ(status, false);
-  EXPECT_TRUE(String(toString(error)).contains("lua caught the exception"));
+  EXPECT_TRUE(String(toString(outputLuaValue(error))).contains("lua caught the exception"));
 }
 
 TEST(LuaTest, ExceptionDiagnosticsLeaveBothCBoundariesClean) {
@@ -836,22 +835,22 @@ TEST(LuaTest, ExceptionDiagnosticsLeaveBothCBoundariesClean) {
   LuaValue error;
   luaTie(status, error) = context.invokePath<LuaTupleReturn<bool, LuaValue>>("captureWrapped");
   EXPECT_FALSE(status);
-  EXPECT_TRUE(String(toString(error)).contains("(IOException) wrapped callback failure"));
-  EXPECT_TRUE(String(toString(error)).contains("Caused by: std::exception: Lua third party cause"));
+  EXPECT_TRUE(String(toString(outputLuaValue(error))).contains("(IOException) wrapped callback failure"));
+  EXPECT_TRUE(String(toString(outputLuaValue(error))).contains("Caused by: std::exception: Lua third party cause"));
   EXPECT_TRUE(wrappedLifetime.expired());
   EXPECT_FALSE(std::current_exception());
   EXPECT_EQ(context.invokePath<int>("healthy", 7), 21);
 
   luaTie(status, error) = context.invokePath<LuaTupleReturn<bool, LuaValue>>("captureThirdParty");
   EXPECT_FALSE(status);
-  EXPECT_TRUE(String(toString(error)).contains("std::exception: direct Lua third party failure"));
+  EXPECT_TRUE(String(toString(outputLuaValue(error))).contains("std::exception: direct Lua third party failure"));
   EXPECT_FALSE(std::current_exception());
   EXPECT_EQ(context.invokePath<int>("healthy", 8), 24);
 
   luaTie(status, error) = context.invokePath<LuaTupleReturn<bool, LuaValue>>("captureRequire");
   EXPECT_FALSE(status);
-  EXPECT_TRUE(String(toString(error)).contains("(IOException) require callback failure"));
-  EXPECT_TRUE(String(toString(error)).contains("Caused by: std::exception: Lua third party cause"));
+  EXPECT_TRUE(String(toString(outputLuaValue(error))).contains("(IOException) require callback failure"));
+  EXPECT_TRUE(String(toString(outputLuaValue(error))).contains("Caused by: std::exception: Lua third party cause"));
   EXPECT_TRUE(requireLifetime.expired());
   EXPECT_FALSE(std::current_exception());
   EXPECT_EQ(context.invokePath<int>("healthy", 9), 27);
@@ -887,16 +886,29 @@ TEST(LuaTest, VariantTest) {
   auto engine = LuaEngine::create();
   auto context = engine->createContext();
 
-  typedef Variant<int, String> IntOrString;
+  using IntOrString = std::variant<int, String>;
 
   EXPECT_EQ(context.eval<IntOrString>("'foo'"), IntOrString(String("foo")));
   EXPECT_EQ(context.eval<IntOrString>("'1'"), IntOrString(1));
 
-  typedef MVariant<std::optional<int>, String> MIntOrString;
+  using StringOrInt = std::variant<String, int>;
+  EXPECT_EQ(context.eval<StringOrInt>("'1'"), StringOrInt(String("1")));
+
+  using MIntOrString = std::variant<std::monostate, std::optional<int>, String>;
 
   EXPECT_EQ(context.eval<MIntOrString>("'foo'"), MIntOrString(String("foo")));
   EXPECT_EQ(context.eval<MIntOrString>("'1'"), MIntOrString(std::optional<int>(1)));
-  EXPECT_EQ(context.eval<MIntOrString>("nil"), MIntOrString());
+  auto nil = engine->luaMaybeTo<MIntOrString>(context.eval<LuaValue>("nil"));
+  ASSERT_TRUE(nil);
+  EXPECT_TRUE(std::holds_alternative<std::monostate>(*nil));
+  context.set("variantNil", MIntOrString{});
+  EXPECT_TRUE(context.eval<bool>("variantNil == nil"));
+
+  using OptionalOrString = std::variant<std::optional<int>, String>;
+  auto optionalNil = engine->luaMaybeTo<OptionalOrString>(context.eval<LuaValue>("nil"));
+  ASSERT_TRUE(optionalNil);
+  ASSERT_TRUE(std::holds_alternative<std::optional<int>>(*optionalNil));
+  EXPECT_FALSE(std::get<std::optional<int>>(*optionalNil));
 }
 
 TEST(LuaTest, ProfilingTest) {

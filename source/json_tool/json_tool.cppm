@@ -3,7 +3,6 @@ import std;
 import star.json;
 import star.string;
 import star.list;
-import star.variant;
 import star.lexical_cast;
 
 import star.formatted_json;
@@ -37,7 +36,7 @@ struct EditCommand {
   std::shared_ptr<JsonPath::Path> path;
 };
 
-typedef MVariant<GetCommand, SetCommand, AddCommand, RemoveCommand, EditCommand> Command;
+using Command = std::variant<std::monostate, GetCommand, SetCommand, AddCommand, RemoveCommand, EditCommand>;
 
 struct AtBeginning {};
 
@@ -51,7 +50,7 @@ struct AfterKey {
   String key;
 };
 
-typedef MVariant<AtBeginning, AtEnd, BeforeKey, AfterKey> InsertLocation;
+using InsertLocation = std::variant<std::monostate, AtBeginning, AtEnd, BeforeKey, AfterKey>;
 
 class JsonInputFormat {
 public:
@@ -134,7 +133,7 @@ struct FindInput {
   String filenameSuffix;
 };
 
-typedef MVariant<JsonLiteralInput, FileInput, FindInput> Input;
+using Input = std::variant<std::monostate, JsonLiteralInput, FileInput, FindInput>;
 
 struct ParsedArgs {
   ParsedArgs() : inputs(), command(), options() {}

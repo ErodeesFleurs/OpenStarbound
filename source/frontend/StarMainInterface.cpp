@@ -18,7 +18,6 @@ import star.ordered_map;
 import star.either;
 import star.vector;
 import star.poly;
-import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;
@@ -613,15 +612,15 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
   auto inv = player->inventory();
   auto& root = m_guiContext->root();
 
-  if (auto mouseMove = event.ptr<MouseMoveEvent>())
+  if (auto mouseMove = std::get_if<MouseMoveEvent>(&event))
     m_cursorScreenIPos = Vec2I::round(m_cursorScreenPos = mouseMove->mousePosition);
 
   if (m_paneManager.sendInputEvent(event)) {
-    if (!event.is<MouseButtonUpEvent>() && !event.is<KeyUpEvent>())
+    if (!std::holds_alternative<MouseButtonUpEvent>(event) && !std::holds_alternative<KeyUpEvent>(event))
       return true;
   }
 
-  if (event.is<KeyDownEvent>()) {
+  if (std::holds_alternative<KeyDownEvent>(event)) {
     if (m_chat->hasFocus()) {
       if (m_guiContext->actions(event).contains(InterfaceAction::ChatSendLine)) {
         doChat(m_chat->currentChat(), true);
@@ -690,13 +689,13 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
 
     return false;
 
-  } else if (auto keyUp = event.ptr<KeyUpEvent>()) {
+  } else if (auto keyUp = std::get_if<KeyUpEvent>(&event)) {
     if (m_guiContext->actionsForKey(keyUp->key).contains(InterfaceAction::GuiShifting))
       m_guiContext->setShiftHeld(false);
 
     return false;
 
-  } else if (auto mouseDown = event.ptr<MouseButtonDownEvent>()) {
+  } else if (auto mouseDown = std::get_if<MouseButtonDownEvent>(&event)) {
     auto mouseButton = mouseDown->mouseButton;
     if (mouseButton >= MouseButton::Left && mouseButton <= MouseButton::Right
     && overlayClick(mouseDown->mousePosition, mouseDown->mouseButton)) {
@@ -709,7 +708,7 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
       if (mouseButton == MouseButton::Middle)
         player->beginTrigger();
     }
-  } else if (auto mouseUp = event.ptr<MouseButtonUpEvent>()) {
+  } else if (auto mouseUp = std::get_if<MouseButtonUpEvent>(&event)) {
     if (mouseUp->mouseButton == MouseButton::Left)
       player->endPrimaryFire();
     if (mouseUp->mouseButton == MouseButton::Right)
@@ -808,19 +807,19 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
           auto worldTemplate = m_client->worldClient()->currentTemplate();
 
           String icon, planetName;
-          if (m_client->playerWorld().is<ClientShipWorldId>()) {
+          if (std::holds_alternative<ClientShipWorldId>(m_client->playerWorld())) {
             icon = "ship";
             planetName = "Player Ship";
-          } else if (m_client->playerWorld().is<CelestialWorldId>()) {
+          } else if (std::holds_alternative<CelestialWorldId>(m_client->playerWorld())) {
             icon = worldTemplate->worldParameters()->typeName;
             planetName = worldTemplate->worldName();
-          } else if (m_client->playerWorld().is<InstanceWorldId>()) {
+          } else if (std::holds_alternative<InstanceWorldId>(m_client->playerWorld())) {
             icon = worldTemplate->worldParameters()->typeName;
             planetName = worldTemplate->worldName();
-          } else if (m_client->playerWorld().is<CustomWorldId>()) {
+          } else if (std::holds_alternative<CustomWorldId>(m_client->playerWorld())) {
             icon = worldTemplate->worldParameters()->typeName;
             planetName = worldTemplate->worldName();
-          } else if (m_client->playerWorld().is<ClientCustomWorldId>()) {
+          } else if (std::holds_alternative<ClientCustomWorldId>(m_client->playerWorld())) {
             icon = worldTemplate->worldParameters()->typeName;
             planetName = worldTemplate->worldName();
           } else {
@@ -1158,8 +1157,8 @@ void MainInterface::update(float dt) {
     auto chatActions = worldClient->pullPendingChatActions();
 
     for (auto& action : chatActions) {
-      if (action.is<PortraitChatAction>()) {
-        PortraitChatAction& portraitAction = action.get<PortraitChatAction>();
+      if (std::holds_alternative<PortraitChatAction>(action)) {
+        PortraitChatAction& portraitAction = std::get<PortraitChatAction>(action);
 
         String name;
         if (auto npc = as<Npc>(worldClient->entity(portraitAction.entity)))
@@ -1172,8 +1171,8 @@ void MainInterface::update(float dt) {
           Text::stripEscapeCodes(portraitAction.text),
           Text::stripEscapeCodes(portraitAction.portrait.replace("<frame>", "0"))};
         m_chat->addMessages({message}, false);
-      } else if (action.is<SayChatAction>()) {
-        SayChatAction& sayAction = action.get<SayChatAction>();
+      } else if (std::holds_alternative<SayChatAction>(action)) {
+        SayChatAction& sayAction = std::get<SayChatAction>(action);
 
         if (sayAction.config) {
           if (auto message = sayAction.config.opt("message"))
@@ -1795,8 +1794,8 @@ void MainInterface::renderDebug() {
     }
 
     if (!m_debugTextRect.isNull()) {
-      RenderQuad& quad = m_guiContext->renderer()->immediatePrimitives()
-        .emplace_back(std::in_place_type_t<RenderQuad>(), m_debugTextRect, m_config->debugBackgroundColor.toRgba(), 0.0f).get<RenderQuad>();
+      RenderQuad& quad = std::get<RenderQuad>(m_guiContext->renderer()->immediatePrimitives()
+        .emplace_back(std::in_place_type_t<RenderQuad>(), m_debugTextRect, m_config->debugBackgroundColor.toRgba(), 0.0f));
 
       quad.b.color[3] = quad.c.color[3] = 0;
     };

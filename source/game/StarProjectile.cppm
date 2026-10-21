@@ -9,7 +9,6 @@ import star.byte_array;
 import star.id_map;
 import star.ordered_map;
 import star.poly;
-import star.variant;
 import star.casting;
 import star.vector;
 import star.data_stream;
@@ -249,7 +248,7 @@ private:
   OrderedHashMap<String, PhysicsForceConfig> m_physicsForces;
   OrderedHashMap<String, PhysicsCollisionConfig> m_physicsCollisions;
 
-  List<Variant<std::shared_ptr<AudioInstance>, Particle, LightSource>> m_pendingRenderables;
+  List<std::variant<std::shared_ptr<AudioInstance>, Particle, LightSource>> m_pendingRenderables;
 };
 
 }

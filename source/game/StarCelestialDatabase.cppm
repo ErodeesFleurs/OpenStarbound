@@ -20,7 +20,6 @@ import star.btree_database;
 import star.either;
 import star.vector;
 import star.celestial_coordinate;
-import star.variant;
 import star.game_types;
 import star.color;
 import star.bi_map;

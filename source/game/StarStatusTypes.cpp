@@ -72,11 +72,11 @@ StatModifier jsonToStatModifier(Json const& config) {
 }
 
 Json jsonFromStatModifier(StatModifier const& modifier) {
-  if (auto baseMultiplier = modifier.ptr<StatBaseMultiplier>()) {
+  if (auto baseMultiplier = std::get_if<StatBaseMultiplier>(&modifier)) {
     return JsonObject{{"stat", baseMultiplier->statName}, {"baseMultiplier", baseMultiplier->baseMultiplier}};
-  } else if (auto valueModifier = modifier.ptr<StatValueModifier>()) {
+  } else if (auto valueModifier = std::get_if<StatValueModifier>(&modifier)) {
     return JsonObject{{"stat", valueModifier->statName}, {"amount", valueModifier->value}};
-  } else if (auto effectiveMultiplier = modifier.ptr<StatEffectiveMultiplier>()) {
+  } else if (auto effectiveMultiplier = std::get_if<StatEffectiveMultiplier>(&modifier)) {
     return JsonObject{{"stat", effectiveMultiplier->statName}, {"effectiveMultiplier", effectiveMultiplier->effectiveMultiplier}};
   } else {
     throw JsonException("No 'baseMultiplier', 'amount', or 'effectiveMultiplier' member found in json");
@@ -94,9 +94,9 @@ PersistentStatusEffect jsonToPersistentStatusEffect(Json const& config) {
 }
 
 Json jsonFromPersistentStatusEffect(PersistentStatusEffect const& effect) {
-  if (auto uniqueStatusEffect = effect.ptr<UniqueStatusEffect>())
+  if (auto uniqueStatusEffect = std::get_if<UniqueStatusEffect>(&effect))
     return Json(*uniqueStatusEffect);
-  else if (auto statModifier = effect.ptr<StatModifier>())
+  else if (auto statModifier = std::get_if<StatModifier>(&effect))
     return jsonFromStatModifier(*statModifier);
 
   return Json();

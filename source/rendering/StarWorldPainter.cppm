@@ -33,7 +33,6 @@ import star.worker_pool;
 
 import star.sector_array_2d;
 import star.perlin;
-import star.variant;
 
 
 namespace Star {

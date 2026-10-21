@@ -15,7 +15,6 @@ import star.asset_path;
 import star.game_types;
 import star.id_map;
 import star.ordered_map;
-import star.variant;
 import star.casting;
 import star.strong_typedef;
 import star.rpc_promise;

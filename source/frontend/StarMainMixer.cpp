@@ -42,7 +42,6 @@ import star.data_stream_devices;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-import star.variant;
 import star.ordered_set;
 import star.byte_array;
 

@@ -4,7 +4,6 @@ import star.json;
 import star.id_map;
 import star.lua;
 import star.poly;
-import star.variant;
 import star.casting;
 import star.vector;
 import star.data_stream;

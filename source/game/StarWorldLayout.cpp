@@ -12,7 +12,6 @@ import star.directives;
 import star.asset_path;
 import star.game_types;
 import star.liquid_types;
-import star.variant;
 import star.bi_map;
 import star.random;
 import star.perlin;

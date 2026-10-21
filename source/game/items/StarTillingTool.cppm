@@ -10,7 +10,6 @@ import star.bi_map;
 import star.data_stream;
 import star.casting;
 import star.strong_typedef;
-import star.variant;
 import star.rpc_promise;
 import star.a_star;
 import star.audio;

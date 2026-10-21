@@ -6,7 +6,6 @@ import star.map;
 
 import star.color;
 import star.font;
-import star.variant;
 import star.image;
 import star.bi_map;
 import star.ref_ptr;

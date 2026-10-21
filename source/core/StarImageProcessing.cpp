@@ -266,54 +266,54 @@ ImageOperation imageOperationFromString(StringView string) {
 }
 
 String imageOperationToString(ImageOperation const& operation) {
-  if (auto op = operation.ptr<HueShiftImageOperation>()) {
+  if (auto op = std::get_if<HueShiftImageOperation>(&operation)) {
     return strf("hueshift={}", op->hueShiftAmount * 360.0f);
-  } else if (auto op = operation.ptr<SaturationShiftImageOperation>()) {
+  } else if (auto op = std::get_if<SaturationShiftImageOperation>(&operation)) {
     return strf("saturation={}", op->saturationShiftAmount * 100.0f);
-  } else if (auto op = operation.ptr<BrightnessMultiplyImageOperation>()) {
+  } else if (auto op = std::get_if<BrightnessMultiplyImageOperation>(&operation)) {
     return strf("brightness={}", (op->brightnessMultiply - 1.0f) * 100.0f);
-  } else if (auto op = operation.ptr<FadeToColorImageOperation>()) {
+  } else if (auto op = std::get_if<FadeToColorImageOperation>(&operation)) {
     return strf("fade={}={}", Color::rgb(op->color).toHex(), op->amount);
-  } else if (auto op = operation.ptr<ScanLinesImageOperation>()) {
+  } else if (auto op = std::get_if<ScanLinesImageOperation>(&operation)) {
     return strf("scanlines={}={}={}={}",
         Color::rgb(op->fade1.color).toHex(),
         op->fade1.amount,
         Color::rgb(op->fade2.color).toHex(),
         op->fade2.amount);
-  } else if (auto op = operation.ptr<SetColorImageOperation>()) {
+  } else if (auto op = std::get_if<SetColorImageOperation>(&operation)) {
     return strf("setcolor={}", Color::rgb(op->color).toHex());
-  } else if (auto op = operation.ptr<ColorReplaceImageOperation>()) {
+  } else if (auto op = std::get_if<ColorReplaceImageOperation>(&operation)) {
     String str = "replace";
     for (auto const& pair : op->colorReplaceMap)
       str += strf(";{}={}", Color::rgba(pair.first).toHex(), Color::rgba(pair.second).toHex());
     return str;
-  } else if (auto op = operation.ptr<AlphaMaskImageOperation>()) {
+  } else if (auto op = std::get_if<AlphaMaskImageOperation>(&operation)) {
     if (op->mode == AlphaMaskImageOperation::Additive)
       return strf("addmask={};{};{}", op->maskImages.join("+"), op->offset[0], op->offset[1]);
     else if (op->mode == AlphaMaskImageOperation::Subtractive)
       return strf("submask={};{};{}", op->maskImages.join("+"), op->offset[0], op->offset[1]);
-  } else if (auto op = operation.ptr<BlendImageOperation>()) {
+  } else if (auto op = std::get_if<BlendImageOperation>(&operation)) {
     if (op->mode == BlendImageOperation::Multiply)
       return strf("blendmult={};{};{}", op->blendImages.join("+"), op->offset[0], op->offset[1]);
     else if (op->mode == BlendImageOperation::Screen)
       return strf("blendscreen={};{};{}", op->blendImages.join("+"), op->offset[0], op->offset[1]);
-  } else if (auto op = operation.ptr<MultiplyImageOperation>()) {
+  } else if (auto op = std::get_if<MultiplyImageOperation>(&operation)) {
     return strf("multiply={}", Color::rgba(op->color).toHex());
-  } else if (auto op = operation.ptr<BorderImageOperation>()) {
+  } else if (auto op = std::get_if<BorderImageOperation>(&operation)) {
     if (op->outlineOnly)
       return strf("outline={};{};{}", op->pixels, Color::rgba(op->startColor).toHex(), Color::rgba(op->endColor).toHex());
     else
       return strf("border={};{};{}", op->pixels, Color::rgba(op->startColor).toHex(), Color::rgba(op->endColor).toHex());
-  } else if (auto op = operation.ptr<ScaleImageOperation>()) {
+  } else if (auto op = std::get_if<ScaleImageOperation>(&operation)) {
     if (op->mode == ScaleImageOperation::Nearest)
       return strf("scalenearest={}", op->scale);
     else if (op->mode == ScaleImageOperation::Bilinear)
       return strf("scalebilinear={}", op->scale);
     else if (op->mode == ScaleImageOperation::Bicubic)
       return strf("scalebicubic={}", op->scale);
-  } else if (auto op = operation.ptr<CropImageOperation>()) {
+  } else if (auto op = std::get_if<CropImageOperation>(&operation)) {
     return strf("crop={};{};{};{}", op->subset.xMin(), op->subset.xMax(), op->subset.yMin(), op->subset.yMax());
-  } else if (auto op = operation.ptr<FlipImageOperation>()) {
+  } else if (auto op = std::get_if<FlipImageOperation>(&operation)) {
     if (op->mode == FlipImageOperation::FlipX)
       return "flipx";
     else if (op->mode == FlipImageOperation::FlipY)
@@ -347,9 +347,9 @@ String printImageOperations(List<ImageOperation> const& list) {
 }
 
 void addImageOperationReferences(ImageOperation const& operation, StringList& out) {
-  if (auto op = operation.ptr<AlphaMaskImageOperation>())
+  if (auto op = std::get_if<AlphaMaskImageOperation>(&operation))
     out.appendAll(op->maskImages);
-  else if (auto op = operation.ptr<BlendImageOperation>())
+  else if (auto op = std::get_if<BlendImageOperation>(&operation))
     out.appendAll(op->blendImages);
 }
 
@@ -377,14 +377,14 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
     // Convert to an image format that has alpha so certain operations function properly
     image = image.convert(image.pixelFormat() == PixelFormat::BGR24 ? PixelFormat::BGRA32 : PixelFormat::RGBA32);
   }
-  if (auto op = operation.ptr<HueShiftImageOperation>()) {
+  if (auto op = std::get_if<HueShiftImageOperation>(&operation)) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
       if (pixel[3] != 0)
         pixel = Color::hueShiftVec4B(pixel, op->hueShiftAmount);
     });
-  } else if (auto op = operation.ptr<SaturationShiftImageOperation>()) {
+  } else if (auto op = std::get_if<SaturationShiftImageOperation>(&operation)) {
     processSaturationShift(image, op);
-  } else if (auto op = operation.ptr<BrightnessMultiplyImageOperation>()) {
+  } else if (auto op = std::get_if<BrightnessMultiplyImageOperation>(&operation)) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
       if (pixel[3] != 0) {
         Color color = Color::rgba(pixel);
@@ -392,13 +392,13 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
         pixel = color.toRgba();
       }
     });
-  } else if (auto op = operation.ptr<FadeToColorImageOperation>()) {
+  } else if (auto op = std::get_if<FadeToColorImageOperation>(&operation)) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
       pixel[0] = op->rTable[pixel[0]];
       pixel[1] = op->gTable[pixel[1]];
       pixel[2] = op->bTable[pixel[2]];
     });
-  } else if (auto op = operation.ptr<ScanLinesImageOperation>()) {
+  } else if (auto op = std::get_if<ScanLinesImageOperation>(&operation)) {
     image.forEachPixel([&op](unsigned, unsigned y, Vec4B& pixel) {
       if (y % 2 == 0) {
         pixel[0] = op->fade1.rTable[pixel[0]];
@@ -410,19 +410,19 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
         pixel[2] = op->fade2.bTable[pixel[2]];
       }
     });
-  } else if (auto op = operation.ptr<SetColorImageOperation>()) {
+  } else if (auto op = std::get_if<SetColorImageOperation>(&operation)) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
       pixel[0] = op->color[0];
       pixel[1] = op->color[1];
       pixel[2] = op->color[2];
     });
-  } else if (auto op = operation.ptr<ColorReplaceImageOperation>()) {
+  } else if (auto op = std::get_if<ColorReplaceImageOperation>(&operation)) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
       if (auto m = op->colorReplaceMap.maybe(pixel))
         pixel = *m;
     });
 
-  } else if (auto op = operation.ptr<AlphaMaskImageOperation>()) {
+  } else if (auto op = std::get_if<AlphaMaskImageOperation>(&operation)) {
     if (op->maskImages.empty())
       return;
 
@@ -454,7 +454,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
       pixel[3] = std::min(pixel[3], maskAlpha);
     });
 
-  } else if (auto op = operation.ptr<BlendImageOperation>()) {
+  } else if (auto op = std::get_if<BlendImageOperation>(&operation)) {
     if (op->blendImages.empty())
       return;
 
@@ -480,14 +480,14 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
       pixel = Color::v4fToByte(fpixel);
     });
 
-  } else if (auto op = operation.ptr<MultiplyImageOperation>()) {
+  } else if (auto op = std::get_if<MultiplyImageOperation>(&operation)) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
       pixel = pixel.combine(op->color, [](std::uint8_t a, std::uint8_t b) -> std::uint8_t {
           return (std::uint8_t)(((int)a * (int)b) / 255);
         });
     });
 
-  } else if (auto op = operation.ptr<BorderImageOperation>()) {
+  } else if (auto op = std::get_if<BorderImageOperation>(&operation)) {
     Image borderImage(image.size() + Vec2U::filled(op->pixels * 2), PixelFormat::RGBA32);
     borderImage.copyInto(Vec2U::filled(op->pixels), image);
     Vec2I borderImageSize = Vec2I(borderImage.size());
@@ -540,7 +540,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
 
     image = borderImage;
 
-  } else if (auto op = operation.ptr<ScaleImageOperation>()) {
+  } else if (auto op = std::get_if<ScaleImageOperation>(&operation)) {
     auto scale = op->scale;
     if (scale[0] < 0.0f || scale[1] < 0.0f) {
       EmergencyLog::warn("Negative scale in ScaleImageOperation ({})", scale);
@@ -553,10 +553,10 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
     else if (op->mode == ScaleImageOperation::Bicubic)
       image = scaleBicubic(image, scale);
 
-  } else if (auto op = operation.ptr<CropImageOperation>()) {
+  } else if (auto op = std::get_if<CropImageOperation>(&operation)) {
     image = image.subImage(Vec2U(op->subset.min()), Vec2U(op->subset.size()));
 
-  } else if (auto op = operation.ptr<FlipImageOperation>()) {
+  } else if (auto op = std::get_if<FlipImageOperation>(&operation)) {
     if (op->mode == FlipImageOperation::FlipX || op->mode == FlipImageOperation::FlipXY) {
       for (std::size_t y = 0; y < image.height(); ++y) {
         for (std::size_t xLeft = 0; xLeft < image.width() / 2; ++xLeft) {

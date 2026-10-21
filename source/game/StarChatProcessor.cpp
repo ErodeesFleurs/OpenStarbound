@@ -265,11 +265,11 @@ bool ChatProcessor::handleCommand(ChatReceivedMessage& message) {
       response = strf("No such nick {}", target);
   } else if (m_commandHandler) {
     auto res = m_commandHandler(message.fromConnection, command, commandLine);
-    if (res.is<String>()) {
-      response = res.get<String>();
+    if (std::holds_alternative<String>(res)) {
+      response = std::get<String>(res);
     } else {
       Uuid uuid(m_random);
-      m_commandPromises[uuid] = std::make_pair(message.fromConnection,res.get<RpcPromise<String>>());
+      m_commandPromises[uuid] = std::make_pair(message.fromConnection,std::get<RpcPromise<String>>(res));
     }
   } else {
     response = strf("No such command {}", command);

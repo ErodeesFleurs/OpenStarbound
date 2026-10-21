@@ -43,7 +43,6 @@ import star.ref_ptr;
 import star.logging;
 import star.listener;
 import star.perlin;
-import star.variant;
 
 import star.tile_sector_array;
 import star.asset_source;
@@ -207,10 +206,10 @@ void TilePainter::cleanup() {
 }
 
 std::size_t TilePainter::TextureKeyHash::operator()(TextureKey const& key) const {
-  if (key.is<MaterialPieceTextureKey>())
-    return hashOf(key.typeIndex(), key.get<MaterialPieceTextureKey>());
+  if (std::holds_alternative<MaterialPieceTextureKey>(key))
+    return hashOf(static_cast<std::uint8_t>(key.index()), std::get<MaterialPieceTextureKey>(key));
   else
-    return hashOf(key.typeIndex(), key.get<AssetTextureKey>());
+    return hashOf(static_cast<std::uint8_t>(key.index()), std::get<AssetTextureKey>(key));
 }
 
 TilePainter::ChunkHash TilePainter::terrainChunkHash(WorldRenderData& renderData, Vec2I chunkIndex) {

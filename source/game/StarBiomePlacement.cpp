@@ -81,19 +81,19 @@ BiomeItem variantToBiomeItem(Assets const& assets, Json const& store) {
 }
 
 Json variantFromBiomeItem(BiomeItem const& biomeItem) {
-  if (auto grassVariant = biomeItem.ptr<GrassVariant>()) {
+  if (auto grassVariant = std::get_if<GrassVariant>(&biomeItem)) {
     return JsonArray{"grass", grassVariant->toJson()};
-  } else if (auto bushVariant = biomeItem.ptr<BushVariant>()) {
+  } else if (auto bushVariant = std::get_if<BushVariant>(&biomeItem)) {
     return JsonArray{"bush", bushVariant->toJson()};
-  } else if (auto treePair = biomeItem.ptr<TreePair>()) {
+  } else if (auto treePair = std::get_if<TreePair>(&biomeItem)) {
     return JsonArray{"treePair", JsonArray{treePair->first.toJson(), treePair->second.toJson()}};
-  } else if (auto objectPool = biomeItem.ptr<ObjectPool>()) {
+  } else if (auto objectPool = std::get_if<ObjectPool>(&biomeItem)) {
     return JsonArray{"objectPool", transform<JsonArray>(objectPool->items(), [](std::pair<double, std::pair<String, Json>> const& p) {
         return JsonArray{p.first, JsonArray{p.second.first, p.second.second}};
       })};
-  } else if (auto treasureBoxSet = biomeItem.ptr<TreasureBoxSet>()) {
+  } else if (auto treasureBoxSet = std::get_if<TreasureBoxSet>(&biomeItem)) {
     return JsonArray{"treasureBoxSet", String(*treasureBoxSet)};
-  } else if (auto microDungeonNames = biomeItem.ptr<MicroDungeonNames>()) {
+  } else if (auto microDungeonNames = std::get_if<MicroDungeonNames>(&biomeItem)) {
     return JsonArray{"microDungeon", jsonFromStringSet(*microDungeonNames)};
   } else {
     throw BiomeException(strf("Unrecognized biome item type"));

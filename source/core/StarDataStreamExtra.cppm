@@ -3,7 +3,6 @@ import std;
 import star.list;
 import star.map;
 import star.set;
-import star.variant;
 import star.data_stream;
 import star.multi_array;
 import star.color;
@@ -26,6 +25,11 @@ template <typename T>
 DataStream& operator<<(DataStream& ds, std::optional<T> const& value);
 template <typename T>
 DataStream& operator>>(DataStream& ds, std::optional<T>& value);
+
+template <typename... Types>
+DataStream& operator<<(DataStream& ds, std::variant<Types...> const& value);
+template <typename... Types>
+DataStream& operator>>(DataStream& ds, std::variant<Types...>& value);
 
 struct DataStreamWriteFunctor {
   DataStreamWriteFunctor(DataStream& ds) : ds(ds) {}
@@ -262,45 +266,39 @@ DataStream& operator>>(DataStream& ds, Matrix3<DataT>& mat3) {
 // alternatives provide DataStream::read<T>() specializations.
 
 namespace detail {
-template <typename First, typename... Rest, typename VariantType>
-void readVariantPayload(DataStream& ds, VariantType& variant, VariantTypeIndex typeIndex) {
-  if (typeIndex == 0) {
-    variant = ds.read<First>();
-  } else if constexpr (sizeof...(Rest) != 0) {
-    readVariantPayload<Rest...>(ds, variant, typeIndex - 1);
+template <std::size_t Index = 0, typename... Types>
+void readVariantPayload(DataStream& ds, std::variant<Types...>& value, std::uint8_t typeIndex) {
+  if (typeIndex == Index) {
+    using Type = std::variant_alternative_t<Index, std::variant<Types...>>;
+    if constexpr (std::is_same_v<Type, std::monostate>)
+      value.template emplace<Index>();
+    else
+      value.template emplace<Index>(ds.read<Type>());
+  } else if constexpr (Index + 1 < sizeof...(Types)) {
+    readVariantPayload<Index + 1>(ds, value, typeIndex);
   } else {
-    throw BadVariantType();
+    throw DataStreamException("Invalid variant type index");
   }
 }
 }
 
-template <typename FirstType, typename... RestTypes>
-DataStream& operator<<(DataStream& ds, Variant<FirstType, RestTypes...> const& variant) {
-  ds.write<VariantTypeIndex>(variant.typeIndex());
-  variant.call(DataStreamWriteFunctor{ds});
+template <typename... Types>
+DataStream& operator<<(DataStream& ds, std::variant<Types...> const& value) {
+  static_assert(sizeof...(Types) <= 255);
+  if (value.valueless_by_exception())
+    throw DataStreamException("Cannot serialize a valueless variant");
+  ds.write<std::uint8_t>(static_cast<std::uint8_t>(value.index()));
+  std::visit([&ds](auto const& payload) {
+    if constexpr (!std::is_same_v<std::remove_cvref_t<decltype(payload)>, std::monostate>)
+      ds << payload;
+  }, value);
   return ds;
 }
 
-template <typename FirstType, typename... RestTypes>
-DataStream& operator>>(DataStream& ds, Variant<FirstType, RestTypes...>& variant) {
-  detail::readVariantPayload<FirstType, RestTypes...>(ds, variant, ds.read<VariantTypeIndex>());
-  return ds;
-}
-
-template <typename... AllowedTypes>
-DataStream& operator<<(DataStream& ds, MVariant<AllowedTypes...> const& mvariant) {
-  ds.write<VariantTypeIndex>(mvariant.typeIndex());
-  mvariant.call(DataStreamWriteFunctor{ds});
-  return ds;
-}
-
-template <typename... AllowedTypes>
-DataStream& operator>>(DataStream& ds, MVariant<AllowedTypes...>& mvariant) {
-  auto typeIndex = ds.read<VariantTypeIndex>();
-  if (typeIndex == 0)
-    mvariant.reset();
-  else
-    detail::readVariantPayload<AllowedTypes...>(ds, mvariant, typeIndex - 1);
+template <typename... Types>
+DataStream& operator>>(DataStream& ds, std::variant<Types...>& value) {
+  static_assert(sizeof...(Types) <= 255);
+  detail::readVariantPayload(ds, value, ds.read<std::uint8_t>());
   return ds;
 }
 
